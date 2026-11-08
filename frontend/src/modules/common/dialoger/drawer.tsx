@@ -5,11 +5,7 @@ import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { cn } from '~/utils/cn';
 
-interface DialogerDrawerProps {
-  dialog: InternalDialog;
-}
-
-export function DialogerDrawer({ dialog }: DialogerDrawerProps) {
+export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName } = dialog;
 
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);

@@ -7,17 +7,10 @@ import { ComboboxGroup, ComboboxGroupLabel, ComboboxItem } from '~/modules/ui/co
 /** A picked history row, which re-runs its query in place. */
 export type HistoryEntry = { kind: 'history'; value: string };
 
-export function isHistoryEntry(selection: object): selection is HistoryEntry {
-  return 'kind' in selection && selection.kind === 'history';
-}
-
-interface SearchHistoryGroupProps {
-  searches: string[];
-  onRemove: (value: string) => void;
-}
+export const isHistoryEntry = (selection: object): selection is HistoryEntry => 'kind' in selection && selection.kind === 'history';
 
 /** Recent searches as combobox rows, each with its index (typed into the empty input, it picks the row) and a remove button. */
-export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupProps) {
+export function SearchHistoryGroup({ searches, onRemove }: { searches: string[]; onRemove: (value: string) => void }) {
   const { t } = useTranslation();
 
   return (

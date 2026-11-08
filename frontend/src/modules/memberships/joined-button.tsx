@@ -1,13 +1,28 @@
-import { CheckIcon, XIcon } from 'lucide-react';
+import { CheckIcon, UserRoundXIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
+import { DeleteForm } from '~/modules/common/delete-form';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
-import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
-import type { LeaveChannelProps } from '~/modules/memberships/use-leave-channel';
+import { useOverlayClose } from '~/modules/common/overlay-close';
+import { type LeaveChannelProps, useLeaveChannel } from '~/modules/memberships/use-leave-channel';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+
+/** Confirms leaving `channel`; it closes the dropdown or dialog it renders in once left. */
+function LeaveChannelForm({ channel, redirectPath, callback }: LeaveChannelProps) {
+  const overlay = useOverlayClose();
+  const { leave, isPending } = useLeaveChannel(channel, {
+    redirectPath,
+    callback: (args) => {
+      overlay?.close();
+      callback?.(args);
+    },
+  });
+
+  return <DeleteForm label="c:leave" icon={UserRoundXIcon} onDelete={leave} pending={isPending} />;
+}
 
 interface JoinedButtonProps extends LeaveChannelProps {
   /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */

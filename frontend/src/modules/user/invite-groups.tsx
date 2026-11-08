@@ -5,9 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
 import type { TKey } from '~/lib/i18n-locales';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { ExpandableTile, tileTones } from '~/modules/common/expandable-tile';
+import { ExpandableTile } from '~/modules/common/expandable-tile';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { StatusDot } from '~/modules/common/status-dot';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Chip } from '~/modules/ui/chip';
@@ -39,54 +38,8 @@ const revealStep = 50;
 // More hidden than this at once would be a sudden wall of chips, so they come a step at a time.
 const revealAllUpTo = 100;
 
-interface InviteFieldLineProps {
-  list: InviteList;
-  check: InviteCheck;
-}
-
-/**
- * The line under a field, shown only for text that is no address. What happened to an address is spoken only: its tile
- * rolls its count and its dot pulses. Stays mounted, so a change is announced.
- */
-export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
-  const { t } = useTranslation();
-  const { last, typedInvalid, people } = list;
-  const listed = last && !last.repeat && (list.emails.includes(last.address) || list.unparsed.includes(last.address)) ? last.address : null;
-
-  const content = () => {
-    if (typedInvalid) {
-      return (
-        <>
-          <StatusDot variant="destructive" pulse={false} />
-          <span className="min-w-0">
-            <span className={cn('font-medium', tileTones.destructive.text)}>{t('c:invite_state_not_address')}</span>
-            {` · ${lowercaseLabel(t('c:invite_state_check_spelling'))}`}
-          </span>
-        </>
-      );
-    }
-    if (last?.repeat) return t('c:invite_already_listed', { address: last.address });
-    if (listed) {
-      const { word, note } = check.viewOf(listed);
-      return [word, people.get(listed)?.name ?? listed, note].filter(Boolean).join(' · ');
-    }
-    return null;
-  };
-
-  return (
-    <div role="status" className={cn('text-muted-foreground flex items-baseline gap-1.5 text-sm', !typedInvalid && 'sr-only')}>
-      {content()}
-    </div>
-  );
-}
-
-interface EditableAddressProps {
-  value: string;
-  onFix: (text: string) => void;
-}
-
 /** A near-miss, corrected in place: Enter or leaving the field reads it again. */
-function EditableAddress({ value, onFix }: EditableAddressProps) {
+function EditableAddress({ value, onFix }: { value: string; onFix: (text: string) => void }) {
   const { t } = useTranslation();
   const [text, setText] = useState(value);
 
@@ -118,10 +71,7 @@ interface InviteChipProps {
   onRemove: () => void;
 }
 
-/**
- * An address as a plain chip. A long one wraps its fact under it and is never cut. A person's chip shows their address
- * while the mouse is on it and after a press, at the width of the longer of the two, so the row never moves.
- */
+/** A long address wraps its fact under it. A person's chip shows the address on hover or press, as wide as the longer, so the row never moves. */
 function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
   const { t } = useTranslation();
   const [pinned, setPinned] = useState(false);

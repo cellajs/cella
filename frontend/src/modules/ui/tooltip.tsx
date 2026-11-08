@@ -35,13 +35,7 @@ export function TooltipContent({
   }) {
   return (
     <TooltipPrimitive.Portal container={container}>
-      <TooltipPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        anchor={anchor}
-        className={cn('z-200', hideWhenDetached && 'data-anchor-hidden:hidden')}
-      >
+      <TooltipPrimitive.Positioner {...{ side, sideOffset, align, anchor }} className={cn('z-200', hideWhenDetached && 'data-anchor-hidden:hidden')}>
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(

@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { RefreshCwIcon } from 'lucide-react';
+import { CircleAlertIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -8,7 +8,6 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { SecretBox } from '~/modules/common/secret-box';
 import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
-import { WarningNote } from '~/modules/me/warning-note';
 import { Button } from '~/modules/ui/button';
 
 /** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */
@@ -44,7 +43,7 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
 
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const openManualKey = () => {
+  const openManualKey = () =>
     dialoger.getState().create(<SecretBox value={data.manualKey} />, {
       id: 'totp-manual-key',
       triggerRef,
@@ -52,13 +51,17 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
       description: t('c:totp_manual.text'),
       className: 'sm:max-w-md',
     });
-  };
 
   return (
     <div className="flex flex-col gap-2">
-      <WarningNote className="justify-center">
-        <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
-      </WarningNote>
+      <p className="text-muted-foreground flex items-start justify-center gap-2 text-sm font-normal">
+        <span className="flex h-lh shrink-0 items-center">
+          <CircleAlertIcon className="text-warning size-3.5" />
+        </span>
+        <span>
+          <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
+        </span>
+      </p>
 
       <QRCodeSVG className="mx-auto mt-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
       {expiredUri === data.totpUri ? (

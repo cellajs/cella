@@ -1,6 +1,7 @@
 import { appConfig, type ChannelEntityType } from 'shared';
 import { meKeys, myMembershipsQueryOptions } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { defaultStaleTime, queryClient } from '~/query/query-client';
 
@@ -27,9 +28,7 @@ export function invalidateMemberQueries(organizationId: string | null): void {
       queryKey,
       predicate: (query) =>
         !organizationId ||
-        query.queryKey.some(
-          (segment) => typeof segment === 'object' && segment !== null && 'organizationId' in segment && segment.organizationId === organizationId,
-        ),
+        query.queryKey.some((segment) => isFilterSegment(segment) && 'organizationId' in segment && segment.organizationId === organizationId),
       refetchType: 'active',
     });
   }

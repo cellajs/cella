@@ -5,6 +5,4 @@ import type { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/se
 export type AttachmentsRouteSearchParams = z.infer<typeof attachmentsRouteSearchParamsSchema>;
 
 /** Optimistic rows carry `_optimistic: true` and must not be queued for cloud ops (presigned URLs, downloads). */
-export function isPersisted(attachment: Attachment): boolean {
-  return !('_optimistic' in attachment);
-}
+export const isPersisted = (attachment: Attachment): boolean => !('_optimistic' in attachment);

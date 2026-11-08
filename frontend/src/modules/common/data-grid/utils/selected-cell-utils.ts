@@ -1,18 +1,6 @@
 import type { CalculatedColumn, CalculatedColumnParent, CellNavigationMode, Maybe, Position } from '../types';
 import { getColSpan } from './col-span-utils';
 
-interface IsSelectedCellEditableOpts<R, SR> {
-  selectedPosition: Position;
-  columns: readonly CalculatedColumn<R, SR>[];
-  rows: readonly R[];
-}
-
-export function isSelectedCellEditable<R, SR>({ selectedPosition, columns, rows }: IsSelectedCellEditableOpts<R, SR>): boolean {
-  const column = columns[selectedPosition.idx];
-  const row = rows[selectedPosition.rowIdx];
-  return isCellEditableUtil(column, row);
-}
-
 // https://github.com/vercel/next.js/issues/56480
 export function isCellEditableUtil<R, SR>(column: CalculatedColumn<R, SR>, row: R): boolean {
   return column.renderEditCell != null && (typeof column.editable === 'function' ? column.editable(row) : column.editable) !== false;
@@ -49,18 +37,13 @@ function getSelectedCellColSpan<R, SR>({
   column: CalculatedColumn<R, SR>;
 }) {
   const topSummaryRowsCount = topSummaryRows?.length ?? 0;
-  if (rowIdx === mainHeaderRowIdx) {
-    return getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
-  }
+  if (rowIdx === mainHeaderRowIdx) return getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
 
   if (topSummaryRows && rowIdx > mainHeaderRowIdx && rowIdx <= topSummaryRowsCount + mainHeaderRowIdx) {
     return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: topSummaryRows[rowIdx + topSummaryRowsCount] });
   }
 
-  if (rowIdx >= 0 && rowIdx < rows.length) {
-    const row = rows[rowIdx];
-    return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-  }
+  if (rowIdx >= 0 && rowIdx < rows.length) return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row: rows[rowIdx] });
 
   if (bottomSummaryRows) {
     return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
@@ -75,9 +58,7 @@ function findNextFocusableColumn<R, SR>(columns: readonly CalculatedColumn<R, SR
 
   while (idx >= 0 && idx <= maxIdx) {
     const column = columns[idx];
-    if (column.focusable !== false) {
-      return idx;
-    }
+    if (column.focusable !== false) return idx;
     idx += direction;
   }
 
@@ -126,9 +107,7 @@ export function getNextSelectedCellPosition<R, SR>({
     }
   };
 
-  const getParentRowIdx = (parent: CalculatedColumnParent<R, SR>) => {
-    return parent.level + mainHeaderRowIdx;
-  };
+  const getParentRowIdx = (parent: CalculatedColumnParent<R, SR>) => parent.level + mainHeaderRowIdx;
 
   const setHeaderGroupColAndRowSpan = () => {
     if (moveNext) {
@@ -170,9 +149,7 @@ export function getNextSelectedCellPosition<R, SR>({
   if (isCellWithinBounds(nextPosition)) {
     setColSpan(moveNext);
 
-    if (nextRowIdx < mainHeaderRowIdx) {
-      setHeaderGroupColAndRowSpan();
-    }
+    if (nextRowIdx < mainHeaderRowIdx) setHeaderGroupColAndRowSpan();
   }
 
   // Skip non-focusable columns when navigating horizontally
@@ -181,11 +158,7 @@ export function getNextSelectedCellPosition<R, SR>({
     if (column.focusable === false) {
       const direction = moveNext ? 1 : -1;
       const focusableIdx = findNextFocusableColumn(columns, nextIdx + direction, direction);
-      if (focusableIdx >= 0 && focusableIdx < columnsCount) {
-        nextIdx = focusableIdx;
-      } else {
-        nextIdx = currentIdx;
-      }
+      nextIdx = focusableIdx >= 0 && focusableIdx < columnsCount ? focusableIdx : currentIdx;
     }
   }
 

@@ -22,13 +22,11 @@ export function getQueryItems<TItem>(data: QueryData<TItem> | { pages: QueryData
     });
 }
 
-export function isQueryData<TItem>(data: unknown): data is QueryData<TItem> {
-  return typeof data === 'object' && data !== null && 'results' in data && 'totalSize' in data;
-}
+export const isQueryData = <TItem>(data: unknown): data is QueryData<TItem> =>
+  typeof data === 'object' && data !== null && 'results' in data && 'totalSize' in data;
 
-export function isInfiniteQueryData<TItem>(data: unknown): data is InfiniteQueryData<TItem> {
-  return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
-}
+export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQueryData<TItem> =>
+  typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
 
 /** Visits every flat or paged list cached under `prefix`. */
 export function forEachListQuery<TItem = ItemData>(prefix: QueryKey, visit: (queryKey: QueryKey, data: BaseQueryItem<TItem>) => void): void {
@@ -59,6 +57,5 @@ export function mapListItems<TItem>(
 }
 
 /** Matches every query whose key starts with `queryKey`. */
-export function getSimilarQueries<TItem, TPageParam = PageParam>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] {
-  return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey });
-}
+export const getSimilarQueries = <TItem, TPageParam = PageParam>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] =>
+  queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey });

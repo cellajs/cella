@@ -41,8 +41,7 @@ export function enrichWithAncestorSlugs(
     found = true;
   }
 
-  if (!found) return item;
-  if (!hasAncestorSlugsChanged(item.ancestorSlugs ?? null, slugs)) return item;
+  if (!found || !hasAncestorSlugsChanged(item.ancestorSlugs ?? null, slugs)) return item;
 
   return { ...item, ancestorSlugs: slugs };
 }

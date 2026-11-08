@@ -19,10 +19,7 @@ function initGleap() {
   Gleap.showFeedbackButton(false);
 }
 
-onlineManager.subscribe((online) => {
-  if (online) initGleap();
-  else Gleap.destroy();
-});
+onlineManager.subscribe((online) => (online ? initGleap() : Gleap.destroy()));
 
 if (onlineManager.isOnline()) initGleap();
 
@@ -31,11 +28,9 @@ function setGleapUser(user: User) {
 
   window.Gleap.setLanguage(user.languageCode || 'en');
 
-  if (window.Gleap.isUserIdentified()) {
-    window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
-  } else {
-    window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
-  }
+  const contact = { email: user.email, name: user.name || user.email };
+  if (window.Gleap.isUserIdentified()) window.Gleap.updateContact(contact);
+  else window.Gleap.identify(user.id, { ...contact, createdAt: new Date(user.createdAt) });
 }
 
 /** Connects the application session to the Gleap support widget. */
@@ -49,9 +44,7 @@ export function GleapSupport() {
       const { user } = userStore.getState();
       if (user && !Gleap.isUserIdentified()) setGleapUser(user);
 
-      const unsubscribe = userStore.subscribe((state) => {
-        const user = state.user;
-
+      const unsubscribe = userStore.subscribe(({ user }) => {
         if (user) return setGleapUser(user);
 
         window.Gleap?.clearIdentity();

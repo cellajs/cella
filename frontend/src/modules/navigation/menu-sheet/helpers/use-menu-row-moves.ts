@@ -1,15 +1,22 @@
 import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useRef } from 'react';
+import { getRelativeOrder } from 'shared/utils/display-order';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import type { UserMenuItem } from '~/modules/me/types';
 import { buildMembershipUpdate } from '~/modules/memberships/build-membership-update';
 import { canRestoreNow, useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { isArchivedDropData } from '~/modules/navigation/menu-sheet/helpers/is-archived-drop-data';
-import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
-import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { isArchivedDropData, isMenuItemDragData, sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+
+/** The display order `item` takes placed at `edge` of `target`, among the siblings its list orders it in. */
+const menuItemOrder = (siblings: UserMenuItem[], item: UserMenuItem, target: UserMenuItem, edge: 'top' | 'bottom') =>
+  getRelativeOrder(
+    siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder })),
+    target.membership.displayOrder,
+    item.id,
+    edge,
+  );
 
 interface MenuRowMovesOptions {
   item: UserMenuItem;
@@ -42,7 +49,9 @@ export function useMenuRowMoves({ item, siblings, listItems, prepareArchive }: M
         isWaitingToCrossRef.current = false;
         updateMembership(update);
       }, menuListOpenMs);
-    } else updateMembership(update);
+    } else {
+      updateMembership(update);
+    }
   };
 
   const move = (step: -1 | 1) => {

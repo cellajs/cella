@@ -39,9 +39,7 @@ const dragOutsideHold = (_api: unknown, event: MouseEvent | TouchEvent) => !(eve
 function useCarousel() {
   const context = React.useContext(CarouselContext);
 
-  if (!context) {
-    throw new Error('useCarousel must be used within a <Carousel />');
-  }
+  if (!context) throw new Error('useCarousel must be used within a <Carousel />');
 
   return context;
 }
@@ -70,13 +68,9 @@ export function Carousel({
     setCanScrollNext(api.canScrollNext());
   }, []);
 
-  const scrollPrev = () => {
-    api?.scrollPrev();
-  };
+  const scrollPrev = () => api?.scrollPrev();
 
-  const scrollNext = () => {
-    api?.scrollNext();
-  };
+  const scrollNext = () => api?.scrollNext();
 
   // Once per api: a setApi registers listeners on it, and an inline prop changes every render.
   const notifyApi = React.useEffectEvent((api: CarouselApi) => setApi?.(api));
@@ -223,10 +217,7 @@ export function CarouselNext({ className, variant = 'outline', size = 'icon', ..
 }
 
 const carouselDotsVariants = cva('group/dot focus-effect relative mx-1 flex cursor-pointer items-center justify-center rounded-full', {
-  variants: {
-    size: { default: 'size-5', sm: 'size-6', lg: 'size-7' },
-    gap: { default: '', sm: '', lg: '' },
-  },
+  variants: { size: { default: 'size-5', sm: 'size-6', lg: 'size-7' }, gap: { default: '', sm: '', lg: '' } },
   defaultVariants: { size: 'default', gap: 'default' },
 });
 

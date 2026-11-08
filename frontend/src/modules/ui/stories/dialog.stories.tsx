@@ -35,9 +35,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the dialog.
- */
+/** The default form of the dialog. */
 export const Default: Story = {};
 
 export const ShouldOpenCloseWithContinue: Story = {

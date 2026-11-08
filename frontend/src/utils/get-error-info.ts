@@ -5,7 +5,7 @@ import { isTKey, type TKey } from '~/lib/i18n-locales';
 import { isNetworkError } from '~/query/offline/network-retry';
 
 /** What an error page or toast describes: a failed API call, any other thrown error, or nothing at all. */
-export type ErrorNoticeError = ApiError | Error | null;
+type ErrorNoticeError = ApiError | Error | null;
 
 /** What a status means, for an error that has no type and no name of its own, as a proxy's answer has none. */
 const statusKeys: Partial<Record<number, TKey>> = {

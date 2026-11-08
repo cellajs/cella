@@ -1,9 +1,6 @@
 import { collapseMotion } from '~/modules/common/collapse-motion';
 
-/**
- * `collapseMotion` for a menu list an archive or restore moves rows into: it clips only while it opens or closes, so a
- * row on its way in stays visible.
- */
+/** `collapseMotion` for a menu list an archive or restore moves rows into: it clips only while it opens or closes, so arriving rows stay visible. */
 export const menuListMotion = {
   ...collapseMotion,
   initial: { ...collapseMotion.initial, overflow: 'hidden' },

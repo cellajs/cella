@@ -76,7 +76,14 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
       title={apiKey.name}
       status={{ tone: statusTones[status], label: t(`c:${status}`) }}
       meta={meta}
-      lead={secret && <NewKeySecret secret={secret} />}
+      lead={
+        secret && (
+          <div className="flex flex-col gap-2">
+            <SecretBox value={secret} />
+            <p className="text-muted-foreground text-sm">{t('c:api_key.text')}</p>
+          </div>
+        )
+      }
       details={
         <>
           <ExpandableTileDetail label={t('c:api_key')}>
@@ -128,12 +135,8 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
   );
 }
 
-interface KeylessAccountTileProps {
-  account: ServiceAccount;
-}
-
 /** A service account without a live key: it stays listed, so an account nothing uses does not dangle unseen. */
-export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
+export function KeylessAccountTile({ account }: { account: ServiceAccount }) {
   const { t } = useTranslation();
 
   return (
@@ -147,7 +150,7 @@ export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
         <>
           <ExpandableTileDetail label={t('c:role')}>{t(`c:${account.role}`)}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:last_used')}>
-            <LastUsed date={account.lastSeenAt} />
+            {account.lastSeenAt ? <RelativeDate date={account.lastSeenAt} /> : t('c:never_used')}
           </ExpandableTileDetail>
           {account.createdBy && (
             <ExpandableTileDetail label={t('c:created_by')}>
@@ -165,17 +168,6 @@ export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
   );
 }
 
-function NewKeySecret({ secret }: { secret: string }) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col gap-2">
-      <SecretBox value={secret} />
-      <p className="text-muted-foreground text-sm">{t('c:api_key.text')}</p>
-    </div>
-  );
-}
-
 /** Who created a key or an account, as their avatar and name, which open their profile. */
 function CreatedBy({ actor }: { actor: NonNullable<ApiKey['createdBy']> }) {
   const openProfile = useOpenUserSheet();
@@ -190,10 +182,4 @@ function CreatedBy({ actor }: { actor: NonNullable<ApiKey['createdBy']> }) {
       <span className="truncate">{actor.name}</span>
     </button>
   );
-}
-
-/** When the service account last authenticated a request; null means never. */
-function LastUsed({ date }: { date: string | null }) {
-  const { t } = useTranslation();
-  return date ? <RelativeDate date={date} /> : t('c:never_used');
 }

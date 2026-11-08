@@ -113,14 +113,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
             <ul className="no-focus-ring:gap-0 flex flex-col gap-1 py-1">
               {children.map((child) => (
-                <PageBranch
-                  key={child.page.id}
-                  node={child}
-                  variant="parent"
-                  activePageId={activePageId}
-                  expandedIds={expandedIds}
-                  onToggle={onToggle}
-                />
+                <PageBranch key={child.page.id} node={child} variant="parent" {...{ activePageId, expandedIds, onToggle }} />
               ))}
             </ul>
           ) : (
@@ -149,34 +142,4 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
       <span className="truncate">{page.name}</span>
     </Button>
   );
-}
-
-/** Build a hierarchical tree of pages; every level keeps the order of `pages`, which `docPages` sorts by display order. */
-export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
-  const validIds = new Set(pages.map((page) => page.id));
-  const byParent = new Map<string | null, DocPage[]>();
-  for (const page of pages) {
-    // Treat parentless pages (parent missing from visible set) as roots
-    const key = page.parentId && validIds.has(page.parentId) ? page.parentId : null;
-    const siblings = byParent.get(key);
-    if (siblings) siblings.push(page);
-    else byParent.set(key, [page]);
-  }
-
-  const build = (parentId: string | null): PageNode[] => (byParent.get(parentId) ?? []).map((page) => ({ page, children: build(page.id) }));
-
-  return build(null);
-}
-
-/** Compute the set of ancestor ids of the given page (excluding the page itself). */
-export function computeAncestorIds(pages: DocPage[], pageId: string | undefined): Set<string> {
-  const ancestors = new Set<string>();
-  if (!pageId) return ancestors;
-  const byId = new Map(pages.map((page) => [page.id, page]));
-  let current = byId.get(pageId);
-  while (current?.parentId && !ancestors.has(current.parentId)) {
-    ancestors.add(current.parentId);
-    current = byId.get(current.parentId);
-  }
-  return ancestors;
 }

@@ -31,8 +31,6 @@ import { useUserStore } from '~/modules/user/user-store';
 // Warn after this delay that the backend is slow to answer.
 const healthSlowMs = 5000;
 
-const passkeyEnabled = isStrategyEnabled('passkey');
-
 export function AuthenticatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -80,9 +78,7 @@ export function AuthenticatePage() {
 
     // An invitation pins the flow to its own step, unless the visitor chose to answer it with another account.
     if (!tokenData?.email || inviteOtherAccount) {
-      if (restrictedMode && step === 'checkEmail') {
-        setStep('signIn', '');
-      }
+      if (restrictedMode && step === 'checkEmail') setStep('signIn', '');
       return;
     }
     setStep('invitation', tokenData.email);
@@ -112,16 +108,14 @@ export function AuthenticatePage() {
   }
 
   // Signed in and holding a membership invitation: the confirm step accepts it as this account.
-  if (signedInUser && tokenData?.inactiveMembershipId) {
-    return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
-  }
+  if (signedInUser && tokenData?.inactiveMembershipId) return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
 
   // The steps that sign in or up; the invitation step lays out its own ways in.
   const isSigningIn = ['checkEmail', 'signIn', 'signUp'].includes(step);
   const invitation = inviteOtherAccount ? tokenData?.invitation : undefined;
 
   const passkeyWays: AuthAlternative[] =
-    step === 'signIn' && passkeyEnabled
+    step === 'signIn' && isStrategyEnabled('passkey')
       ? [{ id: 'passkey', icon: FingerprintPatternIcon, label: t('c:passkey.sign_in'), shortLabel: t('c:passkey'), onClick: passkeySignIn }]
       : [];
   const ssoWays = sso.institution ? [sso.institution, ...sso.federations] : sso.federations;

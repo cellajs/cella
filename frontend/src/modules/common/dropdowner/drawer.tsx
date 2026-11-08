@@ -12,20 +12,14 @@ export const useInDropdownerDrawer = () => useDropdownerSurface() === 'drawer';
 const drawerAnchor: MorphAnchor = { x: 'stretch', y: 'bottom' };
 const drawerMorph: MorphTiming = { duration: 380, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' };
 
-interface DropdownerDrawerProps {
-  dropdown: InternalDropdown;
-}
-
-export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
+export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   const { id, content, triggerLabel, kind, lead, history } = dropdown;
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useSwapMorph({ dropdownKey: dropdown.key, content, containerRef, contentRef, anchor: () => drawerAnchor, timing: drawerMorph });
 
-  const closeDropdown = () => {
-    dropdowner.getState().remove();
-  };
+  const closeDropdown = () => dropdowner.getState().remove();
 
   useEventListener('popstate', closeDropdown);
 

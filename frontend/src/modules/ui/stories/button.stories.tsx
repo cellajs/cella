@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LoaderCircleIcon, MailIcon } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 
-/**
- * Displays a button or a component that looks like a button.
- */
+/** Displays a button or a component that looks like a button. */
 const meta = {
   title: 'ui/Button',
   component: Button,
@@ -18,9 +16,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the button, used for primary actions and commands.
- */
+/** The default form of the button, used for primary actions and commands. */
 export const Default: Story = {};
 
 /**
@@ -92,9 +88,7 @@ export const Small: Story = { args: { size: 'sm' } };
  */
 export const Large: Story = { args: { size: 'lg' } };
 
-/**
- * Use the "icon" size for a button with only an icon.
- */
+/** Use the "icon" size for a button with only an icon. */
 export const Icon: Story = {
   args: {
     ...Secondary.args,
@@ -104,9 +98,7 @@ export const Icon: Story = {
   },
 };
 
-/**
- * Add the `disabled` prop to prevent interactions with the button.
- */
+/** Add the `disabled` prop to prevent interactions with the button. */
 export const Disabled: Story = { args: { disabled: true } };
 
 const buttonVariantNames = ['default', 'brand', 'destructive', 'success', 'info', 'warning', 'secondary'] as const;

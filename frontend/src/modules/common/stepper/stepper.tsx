@@ -18,15 +18,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
   const items = Children.toArray(children).map((child, index) => (isValidElement<StepProps>(child) ? cloneElement(child, { index }) : child));
 
   return (
-    <StepperContext.Provider
-      value={{
-        steps,
-        activeStep,
-        onClickStep,
-        nextStep,
-        setStep: setActiveStep,
-      }}
-    >
+    <StepperContext.Provider value={{ steps, activeStep, onClickStep, nextStep, setStep: setActiveStep }}>
       <div className={cn('flex w-full flex-col [--step-gap:0.5rem] [--step-icon-size:2rem]', className)}>{items}</div>
     </StepperContext.Provider>
   );

@@ -63,16 +63,9 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   return (
     <>
       <MembersTableBar
-        channel={channel}
-        selected={selected}
+        {...{ channel, selected, setSearch, columns, setColumns, clearSelection, isSheet, canUpdate }}
         searchVars={{ q, role, sort, order }}
-        setSearch={setSearch}
         queryKey={queryOptions.queryKey}
-        columns={columns}
-        setColumns={setColumns}
-        clearSelection={clearSelection}
-        isSheet={isSheet}
-        canUpdate={canUpdate}
       />
       <SearchScope q={q}>
         <DataTable<Member>

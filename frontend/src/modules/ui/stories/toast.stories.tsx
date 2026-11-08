@@ -5,9 +5,7 @@ import { toaster, toastManager } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { Toaster } from '~/modules/ui/toast';
 
-/**
- * A stack of toasts built on Base UI Toast. Repeating a message brings the open toast to the front.
- */
+/** A stack of toasts built on Base UI Toast. Repeating a message brings the open toast to the front. */
 const meta: Meta<typeof Toaster> = {
   title: 'ui/Toast',
   component: Toaster,
@@ -71,14 +69,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the toaster.
- */
+/** The default form of the toaster. */
 export const Default: Story = {};
 
-/**
- * On small screens the app stacks toasts from the top edge.
- */
+/** On small screens the app stacks toasts from the top edge. */
 export const Top: Story = { args: { position: 'top' } };
 
 export const ShouldShowToast: Story = {

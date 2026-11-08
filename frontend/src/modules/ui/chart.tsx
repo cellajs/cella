@@ -52,9 +52,7 @@ const ChartContext = React.createContext<ChartContextProps | null>(null);
 function useChart() {
   const context = React.useContext(ChartContext);
 
-  if (!context) {
-    throw new Error('useChart must be used within a <ChartContainer />');
-  }
+  if (!context) throw new Error('useChart must be used within a <ChartContainer />');
 
   return context;
 }
@@ -65,10 +63,7 @@ export function ChartContainer({
   children,
   config,
   ...props
-}: React.ComponentProps<'div'> & {
-  config: ChartConfig;
-  children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>['children'];
-}) {
+}: React.ComponentProps<'div'> & { config: ChartConfig; children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>['children'] }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
 
@@ -93,9 +88,7 @@ export function ChartContainer({
 function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color);
 
-  if (!colorConfig.length) {
-    return null;
-  }
+  if (!colorConfig.length) return null;
 
   return (
     <style
@@ -140,9 +133,7 @@ export function ChartTooltipContent({
   const { config } = useChart();
 
   const tooltipLabel = (() => {
-    if (hideLabel || !payload?.length) {
-      return null;
-    }
+    if (hideLabel || !payload?.length) return null;
 
     const [item] = payload;
     const key = `${labelKey || item?.dataKey || item?.name || 'value'}`;
@@ -153,20 +144,14 @@ export function ChartTooltipContent({
       return typeof v === 'string' || typeof v === 'number' ? v : undefined;
     })();
 
-    if (labelFormatter) {
-      return <div className={cn('font-medium', labelClassName)}>{labelFormatter(value, payload)}</div>;
-    }
+    if (labelFormatter) return <div className={cn('font-medium', labelClassName)}>{labelFormatter(value, payload)}</div>;
 
-    if (!value) {
-      return null;
-    }
+    if (!value) return null;
 
     return <div className={cn('font-medium', labelClassName)}>{value}</div>;
   })();
 
-  if (!active || !payload?.length) {
-    return null;
-  }
+  if (!active || !payload?.length) return null;
 
   const nestLabel = payload.length === 1 && indicator !== 'dot';
 
@@ -230,9 +215,7 @@ export const ChartLegend = RechartsPrimitive.Legend;
 export function ChartLegendContent({ className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey }: ChartLegendContentProps) {
   const { config } = useChart();
 
-  if (!payload?.length) {
-    return null;
-  }
+  if (!payload?.length) return null;
 
   return (
     <div className={cn('flex items-center justify-center gap-4', verticalAlign === 'top' ? 'pb-3' : 'pt-3', className)}>
@@ -256,9 +239,7 @@ export function ChartLegendContent({ className, hideIcon = false, payload, verti
 }
 
 function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
-  if (typeof payload !== 'object' || payload === null) {
-    return undefined;
-  }
+  if (typeof payload !== 'object' || payload === null) return undefined;
 
   const pl = payload as Record<string, unknown>;
   const payloadPayload =

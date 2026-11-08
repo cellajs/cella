@@ -14,8 +14,6 @@ const wheelZoomSensitivity = 0.002;
 /** Pointer travel in pixels under which a press counts as a tap: a fingertip wobbles more than a mouse. */
 const tapSlop = 10;
 
-const clampZoom = (zoom: number) => Math.min(maxZoom, Math.max(minZoom, zoom));
-
 type Offset = { x: number; y: number };
 type View = { zoom: number; offset: Offset };
 
@@ -33,7 +31,7 @@ const layerStyle = { transform: 'matrix(var(--zoom),0,0,var(--zoom),var(--pan-x)
  * At fit or below there is nothing to pan to, so the image returns to the centre.
  */
 function zoomAt({ zoom, offset }: View, nextZoom: number, anchor: Offset = centred): View {
-  const next = clampZoom(nextZoom);
+  const next = Math.min(maxZoom, Math.max(minZoom, nextZoom));
   if (next <= 1) return { zoom: next, offset: centred };
   const scale = next / zoom;
   return { zoom: next, offset: { x: anchor.x + (offset.x - anchor.x) * scale, y: anchor.y + (offset.y - anchor.y) * scale } };
@@ -128,7 +126,9 @@ export function usePanZoom(onBackdropClick?: () => void) {
       gesture.view = scaled.zoom > 1 ? { ...scaled, offset: { x: scaled.offset.x + shift.x, y: scaled.offset.y + shift.y } } : scaled;
     } else if (startView.zoom > 1) {
       gesture.view = { ...startView, offset: { x: startView.offset.x + shift.x, y: startView.offset.y + shift.y } };
-    } else return; // at fit one pointer swipes the carousel
+    } else {
+      return; // at fit one pointer swipes the carousel
+    }
 
     // Captured, a mouse drag keeps its moves and its release outside the viewport
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);

@@ -17,9 +17,7 @@ type Row = Record<string, unknown>;
 const rowsIn = (value: unknown): Row[] => (Array.isArray(value) ? value.filter(isRecord) : []);
 
 /** The rows of a queued create as the live objects of its variables, which an edit folds into. */
-export function createRowsOf(variables: unknown): Row[] {
-  return isRecord(variables) ? rowsIn(variables.data) : [];
-}
+export const createRowsOf = (variables: unknown): Row[] => (isRecord(variables) ? rowsIn(variables.data) : []);
 
 /** What a queued update holds, or null for variables that are no update of one row. */
 export function queuedUpdateOf(variables: unknown): { id: string; ops: Row; fieldTimestamps: Record<string, string> } | null {
@@ -39,9 +37,7 @@ export function entityIdsOf(variables: unknown): string[] {
 }
 
 /** The ids of the rows a queued delete removes: the `rows` of {@link DeleteVariables}. */
-export function deletedIdsOf(variables: unknown): string[] {
-  return isRecord(variables) ? idsIn(rowsIn(variables.rows)) : [];
-}
+export const deletedIdsOf = (variables: unknown): string[] => (isRecord(variables) ? idsIn(rowsIn(variables.rows)) : []);
 
 /** Rewrites variables a bundle of an older version queued into the shape the mutation reads now; null when it cannot. */
 type VariablesUpgrade = (variables: unknown, fromVersion: number) => unknown;
@@ -60,10 +56,7 @@ export function registerVariablesVersion(mutationKey: readonly unknown[], versio
   versions.set(versionKey(mutationKey), { version, upgrade });
 }
 
-/** The version of the variables a mutation of this key is issued with now. */
-function variablesVersionOf(mutationKey: unknown): number {
-  return versions.get(versionKey(mutationKey))?.version ?? 1;
-}
+const variablesVersionOf = (mutationKey: unknown): number => versions.get(versionKey(mutationKey))?.version ?? 1;
 
 /** A queued mutation as the persister stores it: `meta.variablesVersion` is the version of its variables. */
 type StoredMutation = DehydratedState['mutations'][number];
@@ -74,19 +67,14 @@ const stamped = (mutation: StoredMutation, variablesVersion: number): StoredMuta
 });
 
 /** Stamps a queued mutation this bundle issued with its key's current version for the persister; one from a restore keeps the stamp of the shape it holds. */
-export function withVariablesVersion(mutation: StoredMutation): StoredMutation {
-  return mutation.meta?.variablesVersion === undefined ? stamped(mutation, variablesVersionOf(mutation.mutationKey)) : mutation;
-}
+export const withVariablesVersion = (mutation: StoredMutation): StoredMutation =>
+  mutation.meta?.variablesVersion === undefined ? stamped(mutation, variablesVersionOf(mutation.mutationKey)) : mutation;
 
 /** Whether variables carry an stx: their mutation is a sync write, which the server arbitrates when it is sent again. */
-export function hasStx(variables: unknown): boolean {
-  return isRecord(variables) && isRecord(variables.stx);
-}
+export const hasStx = (variables: unknown): boolean => isRecord(variables) && isRecord(variables.stx);
 
 /** Whether queued variables carry the `replayed` stx flag a pause sets: what their mutation sends is a replay. */
-export function isReplayed(variables: unknown): boolean {
-  return isRecord(variables) && isRecord(variables.stx) && variables.stx.replayed === true;
-}
+export const isReplayed = (variables: unknown): boolean => isRecord(variables) && isRecord(variables.stx) && variables.stx.replayed === true;
 
 /**
  * Brings one mutation of a restored queue to the shape this bundle reads, before it is hydrated. One the upgrade does not know or throws

@@ -41,9 +41,7 @@ function Row<R, SR>({
     const column = viewportColumns[index];
     const { idx } = column;
     const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-    if (colSpan !== undefined) {
-      index += colSpan - 1;
-    }
+    if (colSpan !== undefined) index += colSpan - 1;
 
     const isCellSelected = selectedCellIdx === idx;
 
@@ -104,6 +102,4 @@ function Row<R, SR>({
 }
 
 const RowComponent = memo(Row) as <R, SR>(props: RenderRowProps<R, SR>) => React.JSX.Element;
-export function defaultRenderRow<R, SR>(key: React.Key, props: RenderRowProps<R, SR>) {
-  return <RowComponent key={key} {...props} />;
-}
+export const defaultRenderRow = <R, SR>(key: React.Key, props: RenderRowProps<R, SR>) => <RowComponent key={key} {...props} />;

@@ -11,10 +11,7 @@ interface DropdownSelectItemProps {
   children: ReactNode;
 }
 
-/**
- * A dropdowner menu row carrying single-select state. The trailing check stays mounted while
- * unselected, following the ComboboxItemIndicator convention, so labels stay column-aligned.
- */
+/** A single-select dropdowner row whose trailing check stays mounted while unselected (as ComboboxItemIndicator), so labels stay column-aligned. */
 export function DropdownSelectItem({ selected, onSelect, icon, children }: DropdownSelectItemProps) {
   return (
     <DropdownActionItem icon={icon} selected={selected} onSelect={onSelect}>

@@ -47,26 +47,24 @@ export function useAttachmentUrl(
       try {
         const resolved = await resolveAttachmentUrl(attachment.id, attachment, { preferredVariant });
 
-        if (!cancelled) {
-          if (resolved?.isLocal) blobUrlRef.current = resolved.url;
-          setResult({
-            url: resolved?.url ?? null,
-            isLocal: resolved?.isLocal ?? false,
-            resolvedVariant: resolved?.variant ?? null,
-            isLoading: false,
-            error: null,
-          });
-        }
+        if (cancelled) return;
+        if (resolved?.isLocal) blobUrlRef.current = resolved.url;
+        setResult({
+          url: resolved?.url ?? null,
+          isLocal: resolved?.isLocal ?? false,
+          resolvedVariant: resolved?.variant ?? null,
+          isLoading: false,
+          error: null,
+        });
       } catch (error) {
-        if (!cancelled) {
-          setResult({
-            url: null,
-            isLocal: false,
-            resolvedVariant: null,
-            isLoading: false,
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
+        if (cancelled) return;
+        setResult({
+          url: null,
+          isLocal: false,
+          resolvedVariant: null,
+          isLoading: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     };
 

@@ -3,9 +3,7 @@ import { uuidv7 } from 'uuidv7';
 import { createFieldTimestamps, sourceId } from '~/query/offline/hlc';
 
 /** Creates carry no field timestamps: the server assigns the initial values. */
-export function createStxForCreate(): StxBase {
-  return { mutationId: uuidv7(), sourceId, fieldTimestamps: {} };
-}
+export const createStxForCreate = (): StxBase => ({ mutationId: uuidv7(), sourceId, fieldTimestamps: {} });
 
 /**
  * HLC timestamps per changed scalar field; AWSet fields are commutative and need none. Build it when the edit is made, into the

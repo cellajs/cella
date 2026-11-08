@@ -18,12 +18,8 @@ export const useScrollSpy = (sectionIds?: readonly string[]) => {
 /** Current scroll-spy section; updates once scrolling settles or immediately on an explicit action. */
 export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection);
 
-interface RegisterSpySectionsProps {
-  ids: readonly string[];
-}
-
 /** Render after lazy content inside its Suspense boundary: the spy only observes anchors that exist at registration time. */
-export function RegisterSpySections({ ids }: RegisterSpySectionsProps) {
+export function RegisterSpySections({ ids }: { ids: readonly string[] }) {
   useScrollSpy(ids);
   return null;
 }

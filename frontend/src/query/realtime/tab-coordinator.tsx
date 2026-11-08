@@ -46,12 +46,11 @@ let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
 
 /** Resolves when `signal` aborts. A lock callback awaits this to hold the lock releasably, freeing it for a waiting follower without closing the tab. */
-function untilAborted(signal: AbortSignal): Promise<void> {
-  return new Promise<void>((resolve) => {
+const untilAborted = (signal: AbortSignal): Promise<void> =>
+  new Promise<void>((resolve) => {
     if (signal.aborted) return resolve();
     signal.addEventListener('abort', () => resolve(), { once: true });
   });
-}
 
 /** Idempotent: resolves once leader status is known, reusing the in-flight promise on repeat calls. */
 export async function initTabCoordinator(): Promise<void> {
@@ -148,11 +147,8 @@ function waitForLeadership(signal: AbortSignal): void {
       await untilAborted(signal);
     })
     .catch((error) => {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        console.debug('[TabCoordinator] Leadership wait aborted');
-      } else {
-        console.debug('[TabCoordinator] Leadership wait error:', error);
-      }
+      if (error instanceof DOMException && error.name === 'AbortError') console.debug('[TabCoordinator] Leadership wait aborted');
+      else console.debug('[TabCoordinator] Leadership wait error:', error);
     });
 }
 
@@ -199,9 +195,7 @@ export function postToFollowers(message: LeaderMessage): void {
   broadcastChannel?.postMessage(message);
 }
 
-export function isLeader(): boolean {
-  return tabCoordinatorStore.getState().isLeader;
-}
+export const isLeader = (): boolean => tabCoordinatorStore.getState().isLeader;
 
 /** Initializes multi-tab coordination. Only mounted in AppLayout. */
 export function TabCoordinator() {

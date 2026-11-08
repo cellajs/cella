@@ -17,7 +17,7 @@ export interface DateMiniOptions {
 }
 
 /** What `dateMini` shows: "now", a counted distance, or a date. */
-export type DateMiniKind = 'now' | 'count' | 'date';
+type DateMiniKind = 'now' | 'count' | 'date';
 
 export const dateMiniKind = (startDate: string, { compact }: DateMiniOptions = {}): DateMiniKind => {
   const diff = Math.abs(dayjs().diff(dayjs.utc(startDate)));

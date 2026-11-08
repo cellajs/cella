@@ -12,6 +12,7 @@ import { markCacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
+// The React Compiler cannot lower an `import()` inside a component, so the dynamic import lives at module level
 const loadUploadService = () => import('~/modules/attachment/offline/upload-service');
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
@@ -27,9 +28,8 @@ function warnMutationsWithoutDefaults(): void {
     .getAll()
     .filter((mutation) => mutation.state.isPaused && !mutation.options.mutationFn)
     .map((mutation) => mutation.options.mutationKey);
-  if (keys.length > 0) {
-    console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
-  }
+  if (keys.length === 0) return;
+  console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
 }
 
 const unsubscribeEnrichment = initChannelEnrichment();
@@ -41,12 +41,8 @@ if (import.meta.hot) {
   });
 }
 
-interface PersistedQueryProviderProps {
-  children: ReactNode;
-}
-
 /** Provides the query client with its persisted cache, and starts the services that work from it. */
-export function PersistedQueryProvider({ children }: PersistedQueryProviderProps) {
+export function PersistedQueryProvider({ children }: { children: ReactNode }) {
   useEffect(() => startYjsStore(), []);
 
   useEffect(() => {

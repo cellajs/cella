@@ -36,7 +36,6 @@ type OrganizationFilters = Omit<ListFilters<NonNullable<ListOrganizationsData['q
 
 const keys = createEntityKeys<OrganizationFilters>('organization');
 
-// Register query keys for dynamic lookup in stream handlers
 registerEntityQueryKeys('organization', keys);
 
 const findOrganizationInCache = createCacheFinder<Organization>('organization');
@@ -105,9 +104,7 @@ export const useOrganizationCreateMutation = () => {
       addMyMembershipCache(createdOrganization.included.membership);
       cacheCreate(listKey, [createdOrganization]);
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
   });
 };
 
@@ -124,9 +121,7 @@ export const useOrganizationUpdateMutation = () => {
       // Directly update detail cache so beforeLoad doesn't use stale slug for URL rewrite
       queryClient.setQueryData(keys.detail.byId(updatedOrganization.id), updatedOrganization);
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
   });
 };
 
@@ -142,9 +137,7 @@ export const useOrganizationPublishMutation = () => {
       cacheUpdate(listKey, [organization]);
       queryClient.setQueryData(keys.detail.byId(organization.id), organization);
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
   });
 };
 
@@ -165,9 +158,7 @@ export const useOrganizationDeleteMutation = () => {
         organizations.map(({ id }) => id),
       );
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
   });
 };
 

@@ -6,17 +6,12 @@ import { CellComponent } from './cell';
 import type { CellRendererProps, RenderRowProps } from './types';
 import { cn } from './utils/grid-utils';
 
-/**
- * Internal drag type for data-grid row drag-and-drop.
- * @internal
- */
+/** Internal drag type for data-grid row drag-and-drop. */
 const rowDragType = 'rdg-row';
 type RowDragData = { type: typeof rowDragType; rowIdx: number };
 type DropZone = 'top' | 'bottom' | 'center';
 
-function isRowDragData(data: Record<string, unknown>): data is RowDragData {
-  return data.type === rowDragType;
-}
+const isRowDragData = (data: Record<string, unknown>): data is RowDragData => data.type === rowDragType;
 
 /** Resolve the cursor's nearest allowed drop zone, or null when the row blocks all zones. */
 function resolveDropZone(rectTop: number, rectHeight: number, clientY: number, isZoneAllowed: (zone: DropZone) => boolean): DropZone | null {
@@ -36,16 +31,11 @@ function setRowDropEdge(rowEl: HTMLElement, zone: DropZone | null, prevRowElRef:
   let targetEl: HTMLElement | null = null;
   let attrValue: DropZone | null = null;
   if (zone !== null) {
-    if (zone === 'bottom') {
-      const next = rowEl.nextElementSibling;
-      // Redirect only to an accepting next grid row, skipping measurement nodes, so the indicator sits on a droppable area.
-      if (allowRedirect && next instanceof HTMLElement && next.classList.contains('rdg-row')) {
-        targetEl = next;
-        attrValue = 'top';
-      } else {
-        targetEl = rowEl;
-        attrValue = 'bottom';
-      }
+    const next = zone === 'bottom' ? rowEl.nextElementSibling : null;
+    // Redirect a bottom edge only to an accepting next grid row, skipping measurement nodes, so the indicator sits on a droppable area.
+    if (allowRedirect && next instanceof HTMLElement && next.classList.contains('rdg-row')) {
+      targetEl = next;
+      attrValue = 'top';
     } else {
       targetEl = rowEl;
       attrValue = zone;
@@ -53,16 +43,12 @@ function setRowDropEdge(rowEl: HTMLElement, zone: DropZone | null, prevRowElRef:
   }
 
   const prev = prevRowElRef.current;
-  if (prev && prev !== targetEl) {
-    prev.removeAttribute('data-drop-edge');
-  }
+  if (prev && prev !== targetEl) prev.removeAttribute('data-drop-edge');
   if (!targetEl) {
     prevRowElRef.current = null;
     return;
   }
-  if (targetEl.getAttribute('data-drop-edge') !== attrValue) {
-    targetEl.setAttribute('data-drop-edge', attrValue!);
-  }
+  if (targetEl.getAttribute('data-drop-edge') !== attrValue) targetEl.setAttribute('data-drop-edge', attrValue!);
   prevRowElRef.current = targetEl;
 }
 
@@ -176,9 +162,12 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
     return draggable({
       element: handle ?? el,
       getInitialData: (): RowDragData => ({ type: rowDragType, rowIdx }),
-      onGenerateDragPreview: ({ nativeSetDragImage }) => {
-        setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) });
-      },
+      onGenerateDragPreview: ({ nativeSetDragImage }) =>
+        setCustomNativeDragPreview({
+          nativeSetDragImage,
+          getOffset: () => ({ x: 16, y: 16 }),
+          render: ({ container }) => setPreview({ container }),
+        }),
       onDragStart: () => setIsDragging(true),
       onDrop: () => {
         setIsDragging(false);

@@ -26,7 +26,6 @@ import {
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
-import type { StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const streamName = 'AppStream';
@@ -50,6 +49,8 @@ const streamSilenceMs = 75_000;
 /** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
 const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
 
+type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
+
 interface StreamStoreState {
   state: StreamState;
 }
@@ -63,21 +64,17 @@ type StreamStore = StreamStoreState & StreamStoreActions;
 
 const initStore: StreamStoreState = { state: 'disconnected' };
 
-function createStreamStore() {
-  return createStore<StreamStore>()(
+const createStreamStore = () =>
+  createStore<StreamStore>()(
     devtools(
       (set) => ({
         ...initStore,
         setState: (state) => set({ state }),
         reset: () => set(initStore),
       }),
-      {
-        name: streamName,
-        enabled: isDebugMode,
-      },
+      { name: streamName, enabled: isDebugMode },
     ),
   );
-}
 
 /** The gate a restored queue awaits before it replays against reconciled cache state. */
 let initialCatchupResolve: (() => void) | null = null;
@@ -420,9 +417,8 @@ class StreamManager {
     this.consecutiveFailures++;
     console.debug(`[${streamName}] ${reason}`);
 
-    if (this.connectedAt && Date.now() - this.connectedAt >= minUptimeMs) {
-      this.currentBackoff = initialBackoffMs;
-    }
+    const stayedUp = this.connectedAt !== null && Date.now() - this.connectedAt >= minUptimeMs;
+    if (stayedUp) this.currentBackoff = initialBackoffMs;
     this.connectedAt = null;
 
     this.store.getState().setState('error');
@@ -658,9 +654,7 @@ export const appStreamManager = new StreamManager();
  * Resolves once a leader's catchup completes after page load or a sign-in, or fails; at once in a follower tab; and when
  * the stream gives up or disconnects. A reconnect opens nothing itself. Safe to call before any stream connects.
  */
-export function waitForActiveCatchup(): Promise<void> {
-  return initialCatchupGate;
-}
+export const waitForActiveCatchup = (): Promise<void> => initialCatchupGate;
 
 /** Resumes a restored queue after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list. */
 export function resumeRestoredMutations(): void {

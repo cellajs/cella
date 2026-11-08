@@ -1,23 +1,42 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useId } from 'react';
+import { useRouterState } from '@tanstack/react-router';
+import { memo, useId } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { filterOperations, useOperationSearch } from '~/modules/docs/operations/operations-filter';
+import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
+import { filterOperations } from '~/modules/docs/operations/operations-filter';
 import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
-import { OperationItem } from '~/modules/docs/sidebar/operation-item';
+import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
+import type { OperationSearch } from '~/modules/docs/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
+
+/** The search in the URL: the sidebar sits in the docs layout, outside the operations route. */
+function useOperationSearch(): OperationSearch {
+  const q = useRouterState({ select: (state) => state.location.search.q });
+  const filter = useRouterState({ select: (state) => state.location.search.filter });
+  return { q, filter };
+}
+
+function OperationItemBase({ operation, isActive }: { operation: GenOperationSummary; isActive: boolean }) {
+  const search = useOperationSearch();
+
+  return (
+    <SidebarHashItem link={operationLinkOptions(operation)} isActive={isActive} isHidden={!filterOperations([operation], search).length}>
+      <span className="flex-1 truncate">{operation.summary || operation.id}</span>
+      <MethodLabel method={operation.method} />
+    </SidebarHashItem>
+  );
+}
+
+export const OperationItem = memo(OperationItemBase);
 
 const itemKey = (op: GenOperationSummary) => op.hash;
 const renderItem = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
-interface OperationsSidebarProps {
-  activeTag?: string;
-  isOnRoute: boolean;
-}
-
-export function OperationsSidebar({ activeTag, isOnRoute }: OperationsSidebarProps) {
+export function OperationsSidebar({ activeTag, isOnRoute }: { activeTag?: string; isOnRoute: boolean }) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('operations');
 
@@ -40,17 +59,10 @@ export function OperationsSidebar({ activeTag, isOnRoute }: OperationsSidebarPro
           <CollapsibleTagItem
             type="operations"
             key={tag.name}
-            tag={tag}
             items={tagOperations}
-            isExpanded={isExpanded}
-            layoutId={layoutId}
-            isActive={isActive}
-            isAtTag={isAtTag}
-            isOnRoute={isOnRoute}
+            {...{ tag, isExpanded, layoutId, isActive, isAtTag, isOnRoute, renderItem, itemKey }}
             isHidden={!filterOperations(operationsByTag[tag.name] ?? [], search).length}
             activeItemIndex={activeOperationIndex}
-            renderItem={renderItem}
-            itemKey={itemKey}
             onPrerender={() => {
               prefetchTagDetails(tag.name);
               prerender(tag.name);

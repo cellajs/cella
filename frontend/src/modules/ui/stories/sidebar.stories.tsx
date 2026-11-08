@@ -15,9 +15,7 @@ import {
   SidebarWrapper,
 } from '~/modules/ui/sidebar';
 
-/**
- * A composable, themeable and customizable sidebar component.
- */
+/** A composable, themeable and customizable sidebar component. */
 const meta = {
   title: 'ui/Sidebar',
   component: Sidebar,
@@ -45,9 +43,7 @@ const items = [
   { title: 'SettingsIcon', url: '#', icon: SettingsIcon },
 ];
 
-/**
- * A simple sidebar with a group of menu items.
- */
+/** A simple sidebar with a group of menu items. */
 export const Simple: Story = {
   render: (args) => (
     <Sidebar {...args}>
@@ -74,9 +70,7 @@ export const Simple: Story = {
   ),
 };
 
-/**
- * A simple sidebar with a footer menu item.
- */
+/** A simple sidebar with a footer menu item. */
 export const Footer: Story = {
   render: (args) => (
     <Sidebar {...args}>

@@ -5,9 +5,6 @@ import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpe
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { type CustomBlockNoteEditor, isMediaBlock } from '~/modules/common/blocknote/types';
 
-/** A media block's carousel item, plus the attachment id that resolves its full-size variant. */
-type MediaSlide = CarouselItemData & { attachmentId?: string };
-
 /** Opens the carousel at the item of block `blockId`, else at the first. */
 export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
   const attachmentIndex = Math.max(
@@ -19,7 +16,7 @@ export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: str
 
 /** Opens editor media in a carousel starting at the media of block `blockId`. */
 export const openAttachment = async (editor: CustomBlockNoteEditor, blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
-  const slides: MediaSlide[] = [];
+  const slides: (CarouselItemData & { attachmentId?: string })[] = [];
 
   editor.forEachBlock((block) => {
     if (!isMediaBlock(block) || !block.props.url) return true;

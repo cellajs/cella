@@ -23,14 +23,9 @@ function formatTimeAgo(timestamp: number): string {
 const newestFirst = (spans: SpanData[], limit: number) => [...spans].sort((a, b) => b.startTime - a.startTime).slice(0, limit);
 
 function getStatusColorClass(status: SpanData['status']): string {
-  switch (status) {
-    case 'ok':
-      return 'bg-green-500';
-    case 'error':
-      return 'bg-red-500';
-    default:
-      return 'bg-muted-foreground';
-  }
+  if (status === 'ok') return 'bg-green-500';
+  if (status === 'error') return 'bg-red-500';
+  return 'bg-muted-foreground';
 }
 
 function getCategoryColorClass(name: string): string {
@@ -41,23 +36,15 @@ function getCategoryColorClass(name: string): string {
   return 'text-muted-foreground';
 }
 
-const emptyClass = tw('text-faint-foreground p-6 text-center');
 const tabClass = tw('text-muted-foreground hover:text-foreground cursor-pointer rounded px-2 py-1');
 const statCardClass = tw('bg-card mb-2 rounded-md p-3');
 const statLabelClass = tw('group-label');
 const statValueClass = tw('mt-1 text-xl font-semibold');
 
-interface SpanListProps {
-  spans: SpanData[];
-  filter: string;
-}
-
-function SpanList({ spans, filter }: SpanListProps) {
+function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
   const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
-  if (filtered.length === 0) {
-    return <div className={emptyClass}>No spans recorded yet</div>;
-  }
+  if (filtered.length === 0) return <div className="text-faint-foreground p-6 text-center">No spans recorded yet</div>;
 
   return (
     <div>
@@ -75,12 +62,7 @@ function SpanList({ spans, filter }: SpanListProps) {
   );
 }
 
-interface PrefixRowsProps {
-  values: Record<string, number>;
-  format?: (value: number) => string;
-}
-
-function PrefixRows({ values, format = String }: PrefixRowsProps) {
+function PrefixRows({ values, format = String }: { values: Record<string, number>; format?: (value: number) => string }) {
   return (
     <div className="mt-2">
       {Object.entries(values).map(([prefix, value]) => (
@@ -93,11 +75,7 @@ function PrefixRows({ values, format = String }: PrefixRowsProps) {
   );
 }
 
-interface SpansViewProps {
-  spans: SpanData[];
-}
-
-function StatsView({ spans }: SpansViewProps) {
+function StatsView({ spans }: { spans: SpanData[] }) {
   const stats = computeSpanStats(spans);
 
   return (
@@ -128,12 +106,8 @@ function StatsView({ spans }: SpansViewProps) {
 
 const tabs = ['spans', 'stats'] as const;
 
-interface SyncDevtoolsProps {
-  onClose: () => void;
-}
-
 /** Dev-only floating panel for the sync flow: recent spans and their stats. */
-export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
+export function SyncDevtools({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('spans');
   const [filter, setFilter] = useState('');

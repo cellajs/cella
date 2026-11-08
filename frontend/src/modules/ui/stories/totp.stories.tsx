@@ -3,18 +3,14 @@ import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '~/modules/ui/input-otp';
 
-/**
- * One-time password (OTP) input components for secure authentication flows.
- */
+/** One-time password (OTP) input components for secure authentication flows. */
 const meta: Meta = { title: 'ui/TOTP', component: InputOTP, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 
 type Story = StoryObj;
 
-/**
- * Basic OTP input with 6 digits.
- */
+/** Basic OTP input with 6 digits. */
 export const Default: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -33,9 +29,7 @@ export const Default: Story = {
   },
 };
 
-/**
- * OTP input with 4 digits for shorter codes.
- */
+/** OTP input with 4 digits for shorter codes. */
 export const FourDigits: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -52,9 +46,7 @@ export const FourDigits: Story = {
   },
 };
 
-/**
- * OTP input with separators for better readability.
- */
+/** OTP input with separators for better readability. */
 export const WithSeparators: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -74,9 +66,7 @@ export const WithSeparators: Story = {
   },
 };
 
-/**
- * OTP input with multiple groups for complex codes.
- */
+/** OTP input with multiple groups for complex codes. */
 export const MultipleGroups: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -100,9 +90,7 @@ export const MultipleGroups: Story = {
   },
 };
 
-/**
- * Pre-filled OTP input for demonstration.
- */
+/** Pre-filled OTP input for demonstration. */
 export const Prefilled: Story = {
   render: function Render() {
     const [value, setValue] = useState('123456');
@@ -121,9 +109,7 @@ export const Prefilled: Story = {
   },
 };
 
-/**
- * Disabled OTP input.
- */
+/** Disabled OTP input. */
 export const Disabled: Story = {
   render: function Render() {
     const [value, setValue] = useState('123456');
@@ -142,9 +128,7 @@ export const Disabled: Story = {
   },
 };
 
-/**
- * OTP input with custom styling.
- */
+/** OTP input with custom styling. */
 export const CustomStyling: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -165,9 +149,7 @@ export const CustomStyling: Story = {
   },
 };
 
-/**
- * Complete authentication form with OTP input.
- */
+/** Complete authentication form with OTP input. */
 export const AuthForm: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
@@ -215,9 +197,7 @@ export const AuthForm: Story = {
   },
 };
 
-/**
- * Recovery code input example.
- */
+/** Recovery code input example. */
 export const RecoveryCodes: Story = {
   render: function Render() {
     const [codes, setCodes] = useState(['', '', '']);

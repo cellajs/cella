@@ -60,51 +60,39 @@ export const useUIStore = create<UIStoreState>()(
     persist(
       immer((set) => ({
         ...initStore,
-        setMode: (mode) => {
+        setMode: (mode) =>
           set((state) => {
             state.mode = mode;
-          });
-        },
-        setTheme: (theme) => {
+          }),
+        setTheme: (theme) =>
           set((state) => {
             state.theme = theme;
-          });
-        },
-        setContrast: (contrast) => {
+          }),
+        setContrast: (contrast) =>
           set((state) => {
             state.contrast = contrast;
-          });
-        },
-        setPublicAlertSeen: (alertId) => {
+          }),
+        setPublicAlertSeen: (alertId) =>
           set((state) => {
             if (!state.publicAlertsSeen.includes(alertId)) state.publicAlertsSeen.push(alertId);
-          });
-        },
-        setHintSeen: (hintId) => {
+          }),
+        setHintSeen: (hintId) =>
           set((state) => {
             if (!state.hintsSeen.includes(hintId)) state.hintsSeen.push(hintId);
-          });
-        },
-        setFocusView: (focusView) => {
+          }),
+        setFocusView: (focusView) =>
           set((state) => {
             state.focusView = focusView;
-          });
-        },
-        lockUI: (source) => {
+          }),
+        lockUI: (source) =>
           set((state) => {
-            if (!state.uiLocks.includes(source)) {
-              state.uiLocks.push(source);
-            }
-          });
-        },
-        unlockUI: (source) => {
+            if (!state.uiLocks.includes(source)) state.uiLocks.push(source);
+          }),
+        unlockUI: (source) =>
           set((state) => {
             const index = state.uiLocks.indexOf(source);
-            if (index !== -1) {
-              state.uiLocks.splice(index, 1);
-            }
-          });
-        },
+            if (index !== -1) state.uiLocks.splice(index, 1);
+          }),
       })),
       {
         version: 1,

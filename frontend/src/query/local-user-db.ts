@@ -6,7 +6,7 @@ import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/of
 type DehydratedQuery = DehydratedState['queries'][number];
 
 /** A key/value row of a per-user zustand store. */
-export interface KvRecord {
+interface KvRecord {
   /** Store base name, e.g. `seen`, `sync`, `navigation`. */
   key: string;
   /** Serialized zustand state (createJSONStorage handles parse/stringify). */
@@ -24,7 +24,7 @@ export interface PersistedQueryRecord {
 }
 
 /** A React Query meta row: the cache's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
-export interface PersistedMetaRecord {
+interface PersistedMetaRecord {
   /** The cache's row: `rq`, with no mutations. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
@@ -55,7 +55,7 @@ export interface YDocRecord extends YjsDocScope {
 }
 
 /** A stored document's base: every update the last trim folded. */
-export interface YDocStateRecord extends YDocKey {
+interface YDocStateRecord extends YDocKey {
   state: Uint8Array;
 }
 
@@ -154,9 +154,7 @@ export class LocalUserDatabase extends Dexie {
 }
 
 /** The currently bound per-user DB, or `null` while signed out. */
-export function getLocalUserDb(): LocalUserDatabase | null {
-  return currentDb;
-}
+export const getLocalUserDb = (): LocalUserDatabase | null => currentDb;
 
 /** Open (or reuse) the per-user DB for `userId`. Idempotent per user; closes another user's. */
 export function bindLocalUserDb(userId: string): LocalUserDatabase {

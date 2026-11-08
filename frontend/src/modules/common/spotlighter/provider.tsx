@@ -6,10 +6,7 @@ import { spotlighter, useSpotlighter } from '~/modules/common/spotlighter/use-sp
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-const closeTop = () => {
-  const { stack } = spotlighter.getState();
-  stack[stack.length - 1]?.onClose();
-};
+const closeTop = () => spotlighter.getState().stack.at(-1)?.onClose();
 
 /** The one page-dim layer, mounted in AppLayout beside the other global layers (see use-spotlighter.ts). */
 export function Spotlighter() {

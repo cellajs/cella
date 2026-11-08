@@ -40,12 +40,7 @@ export function PopoverContent({
   return (
     <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        anchor={anchor}
-        collisionPadding={collisionPadding}
+        {...{ side, sideOffset, align, alignOffset, anchor, collisionPadding }}
         className={cn('z-200', positionerClassName)}
       >
         <PopoverPrimitive.Popup

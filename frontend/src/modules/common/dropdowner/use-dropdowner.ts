@@ -2,17 +2,14 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { type TriggerRef, withDefaults } from '~/modules/common/overlay-store-helpers';
 
-export type DropdownKind = 'menu' | 'panel';
+type DropdownKind = 'menu' | 'panel';
 
 export type DropdownData = {
   id: number | string;
   triggerId: string;
   triggerRef: TriggerRef;
   align?: 'start' | 'center' | 'end';
-  /**
-   * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead); 'panel' uses a
-   * Popover with a focus trap for arbitrary content. Defaults to 'panel'.
-   */
+  /** 'menu': Base UI's Menu (roving focus, arrow keys, typeahead); 'panel' (default): a Popover with a focus trap for arbitrary content. */
   kind?: DropdownKind;
   /** Bypass the 300ms "reopen with same triggerId" guard, for openers with no click to debounce. */
   programmatic?: boolean;

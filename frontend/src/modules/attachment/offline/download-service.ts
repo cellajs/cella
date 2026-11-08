@@ -79,9 +79,7 @@ class AttachmentDownloadService {
       if (!matchQuery({ queryKey: attachmentQueryKeys.list.base }, event.query)) return;
 
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
-      if (attachments.length > 0) {
-        this.queueForDownload(attachments);
-      }
+      if (attachments.length > 0) this.queueForDownload(attachments);
     });
 
     this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
@@ -125,12 +123,9 @@ class AttachmentDownloadService {
   /** Drops a deleted attachment's blobs and queue row: it is never re-downloaded, and its row would grow the dedupe registry. */
   private purge(ids: string[]): void {
     if (!ids.length || !getLocalUserDb()) return;
-    attachmentStorage.deleteBlobs(ids).catch((error) => {
-      console.error('[DownloadService] Failed to delete local blobs:', error);
-    });
-    downloadQueue.remove(ids).catch((error) => {
-      console.error('[DownloadService] Failed to remove queue entries:', error);
-    });
+    attachmentStorage.deleteBlobs(ids).catch((error) => console.error('[DownloadService] Failed to delete local blobs:', error));
+    // The queue logs its own failure and never rejects
+    void downloadQueue.remove(ids);
   }
 
   /**
@@ -186,9 +181,7 @@ class AttachmentDownloadService {
     await downloadQueue.enqueue(queueable, queueable[0].organizationId);
 
     // Call directly as well: enqueue may add no pending rows for the liveQuery to observe.
-    if (onlineManager.isOnline()) {
-      this.processQueueSoon();
-    }
+    if (onlineManager.isOnline()) this.processQueueSoon();
   }
 
   async processQueue(): Promise<void> {

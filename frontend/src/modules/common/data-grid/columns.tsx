@@ -13,9 +13,7 @@ function HeaderRenderer(props: RenderHeaderCellProps<unknown>) {
       tabIndex={props.tabIndex}
       indeterminate={isIndeterminate}
       checked={isRowSelected}
-      onChange={(checked) => {
-        onRowSelectionChange({ checked: isIndeterminate ? false : checked });
-      }}
+      onChange={(checked) => onRowSelectionChange({ checked: isIndeterminate ? false : checked })}
     />
   );
 }
@@ -29,9 +27,7 @@ function SelectFormatter(props: RenderCellProps<unknown>) {
       tabIndex={props.tabIndex}
       disabled={isRowSelectionDisabled}
       checked={isRowSelected}
-      onChange={(checked, isShiftClick) => {
-        onRowSelectionChange({ row: props.row, checked, isShiftClick });
-      }}
+      onChange={(checked, isShiftClick) => onRowSelectionChange({ row: props.row, checked, isShiftClick })}
     />
   );
 }
@@ -46,10 +42,6 @@ export const SelectColumn: Column<any, any> = {
   // The checkbox draws its own ring
   cellClass: 'rdg-cell-checkbox focus-ring:has-focus:outline-hidden',
   headerCellClass: 'rdg-cell-checkbox focus-ring:has-focus-visible:outline-hidden',
-  renderHeaderCell(props) {
-    return <HeaderRenderer {...props} />;
-  },
-  renderCell(props) {
-    return <SelectFormatter {...props} />;
-  },
+  renderHeaderCell: (props) => <HeaderRenderer {...props} />,
+  renderCell: (props) => <SelectFormatter {...props} />,
 };

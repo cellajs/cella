@@ -3,7 +3,7 @@ import { HeaderCell } from './header-cell';
 import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import { cn, getColSpan } from './utils/grid-utils';
 
-export interface HeaderRowProps<R, SR> {
+interface HeaderRowProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
   onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
@@ -48,24 +48,14 @@ function HeaderRow<R, SR>({
   for (let index = 0; index < columns.length; index++) {
     const column = columns[index];
     const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
-    if (colSpan !== undefined) {
-      index += colSpan - 1;
-    }
+    if (colSpan !== undefined) index += colSpan - 1;
 
     cells.push(
       <HeaderCell<R, SR>
         key={column.key}
         column={column}
-        colSpan={colSpan}
-        rowIdx={rowIdx}
+        {...{ colSpan, rowIdx, onColumnResize, onColumnResizeEnd, onColumnsReorder, moveColumn, onSortColumnsChange, sortColumns, selectCell }}
         isCellSelected={selectedCellIdx === column.idx}
-        onColumnResize={onColumnResize}
-        onColumnResizeEnd={onColumnResizeEnd}
-        onColumnsReorder={onColumnsReorder}
-        moveColumn={moveColumn}
-        onSortColumnsChange={onSortColumnsChange}
-        sortColumns={sortColumns}
-        selectCell={selectCell}
         shouldFocusGrid={shouldFocusGrid && index === 0}
       />,
     );

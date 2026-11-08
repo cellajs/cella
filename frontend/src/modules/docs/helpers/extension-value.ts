@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { GenExtensionDefinition, GenRateLimitPolicy } from 'sdk/docs-types';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import type { AccessValue } from '~/modules/docs/operations/access-explanation';
 
 const units = [
@@ -21,6 +22,9 @@ const policyText = ({ points, duration, blockDuration }: GenRateLimitPolicy, t: 
   if (blockDuration) return t('c:docs.rate_budget_blocked', { ...values, block: spanText(blockDuration, language) });
   return t('c:docs.rate_budget', values);
 };
+
+/** The name of a middleware extension as a table column and a detail row show it: `x-rate-limiter` reads "Rate limiter". */
+export const extensionLabel = (ext: GenExtensionDefinition) => upperFirst(ext.key.replace('x-', '').replace(/-/g, ' '));
 
 /** An extension value as the table and the access panel show it: its label, and for a limiter its budget before its text. */
 export const extensionValue = (ext: GenExtensionDefinition, value: string, t: TFunction, language: string | undefined): AccessValue => {

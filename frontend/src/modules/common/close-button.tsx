@@ -4,10 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-const sizeConfig = {
-  sm: { icon: 'size-4', button: 'size-6' },
-  md: { icon: 'size-5', button: 'size-7' },
-} as const;
+const sizeConfig = { sm: { icon: 'size-4', button: 'size-6' }, md: { icon: 'size-5', button: 'size-7' } } as const;
 
 interface CloseButtonProps {
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;

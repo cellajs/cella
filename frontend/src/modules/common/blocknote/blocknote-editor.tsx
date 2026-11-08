@@ -2,6 +2,7 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
+import * as blocknoteLocales from '@blocknote/core/locales';
 import { withCollaboration } from '@blocknote/core/yjs';
 import { EmojiPickerController, FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
@@ -18,14 +19,12 @@ import { checkedExtension } from '~/modules/common/blocknote/custom-elements/che
 import { headingLevelsExtension } from '~/modules/common/blocknote/custom-elements/heading-levels/heading-levels-extension';
 import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
-import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
-import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
+import { FilePanelBridge, useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { InlineUppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
 import { findClickedMediaBlockId, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
@@ -41,6 +40,7 @@ import {
   isMediaBlockType,
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { userStore } from '~/modules/user/user-store';
 import { getRouter } from '~/routes/-router-instance';
 import { cn } from '~/utils/cn';
 
@@ -78,6 +78,15 @@ type BlockNoteProps = CommonBlockNoteProps & {
 };
 
 const blockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
+
+const getDictionary = () => {
+  const user = userStore.getState().user;
+  if (!user) return { ...blocknoteLocales.en };
+
+  const locale = user.languageCode in blocknoteLocales ? blocknoteLocales[user.languageCode] : blocknoteLocales.en;
+
+  return { ...locale };
+};
 
 export function BlockNote({
   id,
@@ -262,11 +271,8 @@ export function BlockNote({
 
   return (
     <BlockNoteView
-      id={id}
+      {...{ id, editor, editable, autoFocus }}
       theme={mode}
-      editor={editor}
-      editable={editable}
-      autoFocus={autoFocus}
       ref={containerRef}
       className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)

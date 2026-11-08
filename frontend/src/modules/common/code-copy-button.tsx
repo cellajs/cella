@@ -18,8 +18,8 @@ export function CodeCopyButton({ value, variant = 'outline' }: CodeCopyButtonPro
   const { copied, copyToClipboard } = useCopyToClipboard();
 
   const handleCopy = async ({ currentTarget }: MouseEvent<HTMLButtonElement>) => {
-    const done = await copyToClipboard(typeof value === 'string' ? value : value());
-    if (done) announce(currentTarget, t('c:copied'));
+    const text = typeof value === 'string' ? value : value();
+    if (await copyToClipboard(text)) announce(currentTarget, t('c:copied'));
   };
 
   return (

@@ -5,10 +5,6 @@ import type { JsonViewerProps } from '~/modules/common/json-viewer/types';
 
 export type JsonPath = (string | number)[];
 
-/** Whether `path` is `target` or leads to it. */
-export const isPathPrefix = (path: JsonPath, target: JsonPath | null) =>
-  !!target?.length && path.length <= target.length && path.every((segment, index) => String(segment) === String(target[index]));
-
 const contains = (value: unknown, folded: string) => foldText(String(value)).includes(folded);
 
 /** Paths of the rows that show `searchText`, in render order; a row is one node, matched on its key or its primitive value. */
@@ -39,15 +35,6 @@ export const matchRowPaths = (value: unknown, searchText: string): JsonPath[] =>
   visit(value, [], null);
   return paths;
 };
-
-export function getValueType(value: unknown): string {
-  if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
-  if (Array.isArray(value)) return 'array';
-  return typeof value;
-}
-
-export const jsonSchemaTypes = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
 
 // Schema keywords that render as labels or inline constraints, so their own entries are hidden
 const labelKeys = new Set<string | number>([

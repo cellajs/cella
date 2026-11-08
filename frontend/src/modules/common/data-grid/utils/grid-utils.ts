@@ -15,22 +15,17 @@ export * from './wrap-text-utils';
 export const { min, max, floor, sign } = Math;
 
 export function assertIsValidKeyGetter<R, K extends React.Key>(keyGetter: Maybe<(row: NoInfer<R>) => K>): asserts keyGetter is (row: R) => K {
-  if (typeof keyGetter !== 'function') {
-    throw new Error('Please specify the rowKeyGetter prop to use selection');
-  }
+  if (typeof keyGetter !== 'function') throw new Error('Please specify the rowKeyGetter prop to use selection');
 }
 
 export function clampColumnWidth<R, SR>(width: number, { minWidth, maxWidth }: CalculatedColumn<R, SR>): number {
   const clampedWidth = max(width, minWidth);
 
   // ignore maxWidth if it less than minWidth
-  if (typeof maxWidth === 'number' && maxWidth >= minWidth) {
-    return min(clampedWidth, maxWidth);
-  }
+  if (typeof maxWidth === 'number' && maxWidth >= minWidth) return min(clampedWidth, maxWidth);
 
   return clampedWidth;
 }
 
-export function getHeaderCellRowSpan<R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number) {
-  return column.parent === undefined ? rowIdx : column.level - column.parent.level;
-}
+export const getHeaderCellRowSpan = <R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number) =>
+  column.parent === undefined ? rowIdx : column.level - column.parent.level;

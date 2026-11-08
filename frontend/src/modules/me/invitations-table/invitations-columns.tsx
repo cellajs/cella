@@ -7,7 +7,7 @@ import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { ActorCell } from '~/modules/user/actor-cell';
 
-export const useColumns = () => {
+export const useColumns = (): ColumnOrColumnGroup<Invitation>[] => {
   const { t } = useTranslation();
 
   const actionButtons = [
@@ -17,7 +17,7 @@ export const useColumns = () => {
 
   const { mutate: answerInvitation } = useHandleInvitationMutation();
 
-  const columns: ColumnOrColumnGroup<Invitation>[] = [
+  return [
     {
       key: 'name',
       name: '',
@@ -71,6 +71,4 @@ export const useColumns = () => {
       ),
     },
   ];
-
-  return columns;
 };

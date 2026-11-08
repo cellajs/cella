@@ -1,6 +1,5 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
-import type * as React from 'react';
-import { useRef } from 'react';
+import { type ComponentProps, useRef } from 'react';
 import { useStuck } from '~/hooks/use-stuck';
 import { type HeaderBarProps, HeaderClose, stuckEdgeClass } from '~/modules/ui/dialog';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -115,7 +114,7 @@ export function SheetHeader({ className, sticky, closeButton = true, children, .
   );
 }
 
-export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function SheetFooter({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 

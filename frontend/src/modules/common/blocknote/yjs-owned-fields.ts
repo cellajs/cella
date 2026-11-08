@@ -17,9 +17,7 @@ export function registerDescriptionColumns(entityType: ProductEntityType, column
  * An app's test reads its registration here.
  * @public
  */
-export function getYjsOwnedFields(entityType: string): string[] {
-  return ['description', ...(descriptionColumns.get(entityType) ?? [])];
-}
+export const getYjsOwnedFields = (entityType: string): string[] => ['description', ...(descriptionColumns.get(entityType) ?? [])];
 
 /** The stamp a Yjs-owned field is compared by: its own, else the description's, which derived columns follow. */
 function yjsFieldStamp(row: object, field: string): string | undefined {

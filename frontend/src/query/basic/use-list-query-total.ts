@@ -1,5 +1,4 @@
-import type { QueryKey } from '@tanstack/react-query';
-import { hashKey } from '@tanstack/react-query';
+import { hashKey, type QueryKey } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem } from '~/query/types';

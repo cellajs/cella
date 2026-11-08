@@ -62,13 +62,9 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   const childArray = React.Children.toArray(children);
   const count = childArray.length;
 
-  React.useEffect(() => {
-    setCount?.(count);
-  }, [count, setCount]);
+  React.useEffect(() => setCount?.(count), [count, setCount]);
 
-  if (!limit || count <= limit) {
-    return <>{childArray}</>;
-  }
+  if (!limit || count <= limit) return <>{childArray}</>;
 
   return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
 }

@@ -1,23 +1,28 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useId } from 'react';
+import { memo, useId } from 'react';
 import type { GenComponentSchema } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { schemaAnchor } from '~/modules/docs/helpers/reference-links';
+import { schemaAnchor, schemaLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
-import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
+import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { SidebarMenu } from '~/modules/ui/sidebar';
+
+function SchemaItemBase({ schema, isActive }: { schema: GenComponentSchema; isActive: boolean }) {
+  return (
+    <SidebarHashItem link={schemaLinkOptions(schema)} isActive={isActive}>
+      <span className="truncate">{schema.name}</span>
+    </SidebarHashItem>
+  );
+}
+
+export const SchemaItem = memo(SchemaItemBase);
 
 const itemKey = (schema: GenComponentSchema) => schema.name;
 const renderItem = (schema: GenComponentSchema, isActive: boolean) => <SchemaItem schema={schema} isActive={isActive} />;
 
-interface SchemasSidebarProps {
-  activeTag?: string;
-  isOnRoute: boolean;
-}
-
-export function SchemasSidebar({ activeTag, isOnRoute }: SchemasSidebarProps) {
+export function SchemasSidebar({ activeTag, isOnRoute }: { activeTag?: string; isOnRoute: boolean }) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('schemas');
 
@@ -37,16 +42,10 @@ export function SchemasSidebar({ activeTag, isOnRoute }: SchemasSidebarProps) {
           <CollapsibleTagItem
             type="schemas"
             key={tag.name}
-            tag={tag}
             items={tagSchemas}
             isExpanded={activeTag === tag.name}
-            layoutId={layoutId}
-            isActive={isActive}
-            isAtTag={isAtTag}
-            isOnRoute={isOnRoute}
+            {...{ tag, layoutId, isActive, isAtTag, isOnRoute, renderItem, itemKey }}
             activeItemIndex={activeSchemaIndex}
-            renderItem={renderItem}
-            itemKey={itemKey}
             onPrerender={() => prerender(tag.name)}
           />
         );

@@ -1,9 +1,6 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 
-/**
- * Id of every subject's first section: the text above the first heading. The page wrapper carries its spy anchor, so
- * a jump to it brings the subject title into view, the way the docs' `pageSectionId` wraps a page's own heading.
- */
+/** Id of each subject's first section, above its first heading: the page wrapper carries its spy anchor, so a jump to it shows the subject title. */
 export const legalOverviewId = 'overview';
 
 export interface LegalSectionConfig {

@@ -7,11 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { sendMagicLink, signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
-import { AuthEmailButton } from '~/modules/auth/auth-email-button';
-import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
+import { AuthEmailButton, AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
-import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
+import { type ConditionalMediationResult, isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
@@ -28,11 +26,7 @@ import { formResolver } from '~/utils/form-resolver';
 const passkeyEnabled = isStrategyEnabled('passkey');
 const magicLinkEnabled = isStrategyEnabled('magic');
 
-interface SignInStepProps {
-  invitation?: TokenInvitation;
-}
-
-export function SignInStep({ invitation }: SignInStepProps) {
+export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
   const { t } = useTranslation();
   const { email, resetAuthStore, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
@@ -83,11 +77,7 @@ export function SignInStep({ invitation }: SignInStepProps) {
     });
   };
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
@@ -127,7 +117,16 @@ export function SignInStep({ invitation }: SignInStepProps) {
       <AuthHeader
         image={invitation && <InvitationAvatar invitation={invitation} />}
         title={getTitle()}
-        description={restrictedMode && <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />}
+        description={
+          restrictedMode &&
+          (appConfig.has.selfRegistration ? (
+            <>
+              {t('c:new_here')} <InlineLinkButton onClick={() => setStep('signUp', form.getValues('email'))}>{t('c:sign_up')}</InlineLinkButton>
+            </>
+          ) : (
+            <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />
+          ))
+        }
       >
         {!restrictedMode && <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />}
       </AuthHeader>
@@ -153,18 +152,5 @@ export function SignInStep({ invitation }: SignInStepProps) {
         </form>
       )}
     </Form>
-  );
-}
-
-/** Where a visitor without an account goes from the neutral step: sign-up, or the notice that it is closed. */
-function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) {
-  const { t } = useTranslation();
-
-  if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
-
-  return (
-    <>
-      {t('c:new_here')} <InlineLinkButton onClick={() => onStep('signUp')}>{t('c:sign_up')}</InlineLinkButton>
-    </>
   );
 }

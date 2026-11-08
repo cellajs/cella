@@ -22,7 +22,7 @@ interface ReorderColumnOptions<TRow> {
 }
 
 /** Grip column of a reorderable table: a drag calls the grid's `onRowReorder`, the arrow keys and the move menu call `onMove`. */
-export function reorderColumn<TRow>({
+export const reorderColumn = <TRow,>({
   getId,
   getName,
   onMove,
@@ -30,32 +30,30 @@ export function reorderColumn<TRow>({
   getPosition,
   onShift,
   cellClass,
-}: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> {
-  return {
-    key: 'reorder',
-    name: '',
-    width: 36,
-    maxWidth: 36,
-    // The grip draws its own ring
-    cellClass: cn('focus-ring:has-focus:outline-hidden justify-center', cellClass),
-    rowDragHandle: true,
-    renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
-    renderCell: ({ row, rowIdx, tabIndex }) => {
-      const { index, total } = getPosition?.(rowIdx) ?? { index: rowIdx, total: rowCount };
-      return (
-        <ReorderCell
-          id={getId(row)}
-          name={getName(row)}
-          index={index}
-          total={total}
-          tabIndex={tabIndex}
-          onMove={(step) => onMove(rowIdx, step)}
-          onShift={onShift && ((direction) => onShift(rowIdx, direction))}
-        />
-      );
-    },
-  };
-}
+}: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> => ({
+  key: 'reorder',
+  name: '',
+  width: 36,
+  maxWidth: 36,
+  // The grip draws its own ring
+  cellClass: cn('focus-ring:has-focus:outline-hidden justify-center', cellClass),
+  rowDragHandle: true,
+  renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
+  renderCell: ({ row, rowIdx, tabIndex }) => {
+    const { index, total } = getPosition?.(rowIdx) ?? { index: rowIdx, total: rowCount };
+    return (
+      <ReorderCell
+        id={getId(row)}
+        name={getName(row)}
+        index={index}
+        total={total}
+        tabIndex={tabIndex}
+        onMove={(step) => onMove(rowIdx, step)}
+        onShift={onShift && ((direction) => onShift(rowIdx, direction))}
+      />
+    );
+  },
+});
 
 interface ReorderCellProps extends ReorderPosition {
   id: string;

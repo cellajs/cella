@@ -143,9 +143,7 @@ async function bustQueriesKeepMutations(db: LocalUserDatabase) {
   await db.transaction('rw', db.queries, db.meta, async () => {
     await db.queries.clear();
     const existing = await db.meta.get(cacheKey);
-    if (existing) {
-      await db.meta.put({ ...existing, bundledQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
-    }
+    if (existing) await db.meta.put({ ...existing, bundledQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
   });
   resetTracker();
 }
@@ -188,11 +186,8 @@ async function migrateCacheToCurrent(db: LocalUserDatabase, fromVersion: number)
 
 /** Cross-tab mutual exclusion for the migration pass (Web Locks when available). */
 async function withMigrationLock(migrate: () => Promise<void>) {
-  if (hasWebLocks) {
-    await navigator.locks.request(`cache-migration:${cacheKey}`, migrate);
-  } else {
-    await migrate();
-  }
+  if (hasWebLocks) await navigator.locks.request(`cache-migration:${cacheKey}`, migrate);
+  else await migrate();
 }
 
 async function flush() {
@@ -218,6 +213,7 @@ async function flush() {
     }
 
     const { queries } = client.clientState;
+    const { timestamp, buster } = client;
     // Each queued mutation is stored with the version of its variables, which the restore reads.
     const mutations = client.clientState.mutations.map((mutation) =>
       withVariablesVersion({ ...mutation, meta: storedMeta(mutation.meta), state: storedMutationState(mutation.state) }),
@@ -256,22 +252,13 @@ async function flush() {
         if (upserts.length > 0) await db.queries.bulkPut(upserts);
         if (removals.length > 0) await db.queries.bulkDelete(removals);
         if (mutationsChanged) {
-          if (mutations.length > 0) {
-            await db.meta.put({
-              key: tabMutationKey,
-              timestamp: client.timestamp,
-              buster: client.buster,
-              mutations,
-              bundledQueries: [],
-            });
-          } else {
-            await db.meta.delete(tabMutationKey);
-          }
+          if (mutations.length === 0) await db.meta.delete(tabMutationKey);
+          else await db.meta.put({ key: tabMutationKey, timestamp, buster, mutations, bundledQueries: [] });
         }
         await db.meta.put({
           key: cacheKey,
-          timestamp: client.timestamp,
-          buster: client.buster,
+          timestamp,
+          buster,
           clientCacheVersion: appConfig.clientCacheVersion,
           schemaVersion: currentSchemaVersion,
           bundledQueries,
@@ -305,9 +292,7 @@ export const persister = {
   persistClient: async (client: PersistedClient) => {
     if (!getLocalUserDb()) return;
     pendingClient = client;
-    if (!timer) {
-      timer = setTimeout(flush, persistThrottleMs);
-    }
+    if (!timer) timer = setTimeout(flush, persistThrottleMs);
   },
 
   /** Force-flush any pending throttled write immediately. */

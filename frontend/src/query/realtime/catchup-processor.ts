@@ -11,8 +11,7 @@ import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-
-const dayMs = 24 * 60 * 60 * 1000;
+import { dayMs } from '~/utils/date-mini';
 
 type PropagationHint = NonNullable<PostAppCatchupResponse['organizations'][string]['propagation']>[number];
 
@@ -134,7 +133,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
     }
   }
 
-  // Organization-level signal versions and propagation.
   const organizationIds = Object.keys(organizations);
   for (const organizationId of organizationIds) {
     const { signals, propagation } = organizations[organizationId];
@@ -207,6 +205,5 @@ function membershipChannelKeys(): Set<string> {
 }
 
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached, a range fetch has nothing to patch. */
-function hasAnyCachedList(keys: EntityQueryKeys, organizationId: string): boolean {
-  return queryClient.getQueriesData({ queryKey: keys.list.org(organizationId) }).some(([, data]) => data !== undefined);
-}
+const hasAnyCachedList = (keys: EntityQueryKeys, organizationId: string): boolean =>
+  queryClient.getQueriesData({ queryKey: keys.list.org(organizationId) }).some(([, data]) => data !== undefined);

@@ -52,9 +52,7 @@ const renderableBlocks = (nodes: unknown, ctx: MediaRefContext): CustomBlock[] =
     ? nodes.flatMap((node) => {
         if (!isDocumentNode(node)) return [];
         const children = renderableBlocks(childNodes(node), ctx);
-        if (typeof node.type !== 'string' || !isSchemaBlockType(node.type) || isRefusedMediaBlock(node, ctx)) {
-          return children;
-        }
+        if (typeof node.type !== 'string' || !isSchemaBlockType(node.type) || isRefusedMediaBlock(node, ctx)) return children;
         // A node of a schema type keeps its own shape; BlockNote reads it as the block it names.
         return [{ ...node, children } as CustomBlock];
       })
@@ -174,10 +172,9 @@ export function BlockNoteFullHtml({
   const fireReady = useEffectEvent(() => onReady?.());
   const readyFiredRef = useRef(false);
   useEffect(() => {
-    if (renderState.ready && !readyFiredRef.current) {
-      readyFiredRef.current = true;
-      fireReady();
-    }
+    if (!renderState.ready || readyFiredRef.current) return;
+    readyFiredRef.current = true;
+    fireReady();
   }, [renderState.ready]);
 
   useLayoutEffect(() => {

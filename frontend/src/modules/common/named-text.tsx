@@ -8,8 +8,6 @@ import { DrawerLeadContext } from '~/modules/ui/drawer';
 // A confirmation spells out this many names and counts the rest, so a large selection keeps its question short
 const maxListedNames = 3;
 
-const strongClass = 'wrap-break-word inline-block max-w-full font-semibold text-foreground';
-
 /**
  * The first three names and a count of the rest, as list parts: "a, b, c, and 37 more". `t` and `language` come from the
  * render, so the React Compiler's memo of the list follows a language change; the i18n singleton is invisible to it.
@@ -51,7 +49,7 @@ function Strong({ lists, name, children }: StrongProps) {
   if (text !== undefined && text === name) return <CutName text={text} />;
 
   const parts = text === undefined ? undefined : lists.get(text);
-  if (!parts) return <strong className={strongClass}>{children}</strong>;
+  if (!parts) return <strong className="text-foreground inline-block max-w-full font-semibold wrap-break-word">{children}</strong>;
 
   return parts.map((part, index) =>
     // biome-ignore lint/suspicious/noArrayIndexKey: list parts are positional and never reordered.

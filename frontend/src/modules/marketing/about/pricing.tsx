@@ -53,9 +53,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
   const handleActionClick = () => {
     if (action === 'contact_us') return contactFormHandler(buttonRef);
 
-    if (action === 'sign_in') {
-      navigate({ to: '/auth/authenticate', replace: true });
-    }
+    if (action === 'sign_in') navigate({ to: '/auth/authenticate', replace: true });
     if (action === 'waitlist_request') {
       dialoger.getState().create(<WaitlistForm dialog />, {
         id: waitlistDialogId,

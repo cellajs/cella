@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
-import { isPathPrefix, type JsonPath } from '~/modules/common/json-viewer/utils';
+import type { JsonPath } from '~/modules/common/json-viewer/utils';
+
+/** Whether `path` is `target` or leads to it. */
+const isPathPrefix = (path: JsonPath, target: JsonPath | null) =>
+  !!target?.length && path.length <= target.length && path.every((segment, index) => String(segment) === String(target[index]));
 
 // The $ref target's key: amber with a 2px ring, held for 70% of the time, then fading out
 const refTargetFlash: Keyframe[] = [

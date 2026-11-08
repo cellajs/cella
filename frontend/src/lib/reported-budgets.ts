@@ -31,10 +31,7 @@ export const recordReportedBudgets = (headers: Headers) => {
   }
 };
 
-/**
- * Milliseconds until `policy` has more than `share` of its quota left: the end of its window while it has no more, else
- * 0, as for a policy no response reported.
- */
+/** Milliseconds until `policy` has more than `share` of its quota left: its window's end while it has no more, else 0, as for an unreported one. */
 export const msUntilBudget = (policy: string, share: number) => {
   const budget = budgets.get(policy);
   const msLeft = budget ? budget.resetsAt - Date.now() : 0;

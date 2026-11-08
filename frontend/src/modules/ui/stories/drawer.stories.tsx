@@ -2,9 +2,7 @@ import type { Meta, StoryContext, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '~/modules/ui/drawer';
 
-/**
- * A drawer component for React.
- */
+/** A drawer component for React. */
 const meta = {
   title: 'ui/Drawer',
   component: Drawer,
@@ -32,9 +30,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the drawer.
- */
+/** The default form of the drawer. */
 export const Default: Story = {};
 
 export const ShouldOpenCloseWithSubmit: Story = {

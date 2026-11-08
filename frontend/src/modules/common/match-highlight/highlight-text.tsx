@@ -4,12 +4,8 @@ import { findMatchRanges } from 'shared/utils/text-match';
 import { useMatchScope } from '~/modules/common/match-highlight/match-scope';
 import { cn } from '~/utils/cn';
 
-interface HighlightTextProps {
-  text: string;
-}
-
 /** `text` with the scope's terms wrapped in `<mark>`; an ancestor with `data-match-current` turns them into the current match. */
-export function HighlightText({ text }: HighlightTextProps): ReactNode {
+export function HighlightText({ text }: { text: string }): ReactNode {
   const terms = useMatchScope();
   const ranges = findMatchRanges(text, terms);
   if (!ranges.length) return text;

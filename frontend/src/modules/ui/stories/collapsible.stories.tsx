@@ -3,9 +3,7 @@ import { InfoIcon } from 'lucide-react';
 import { expect, userEvent } from 'storybook/test';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 
-/**
- * An interactive component which expands/collapses a panel.
- */
+/** An interactive component which expands/collapses a panel. */
 const meta = {
   title: 'ui/Collapsible',
   component: Collapsible,
@@ -28,14 +26,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the collapsible.
- */
+/** The default form of the collapsible. */
 export const Default: Story = {};
 
-/**
- * Use the `disabled` prop to disable the interaction.
- */
+/** Use the `disabled` prop to disable the interaction. */
 export const Disabled: Story = { args: { disabled: true } };
 
 export const ShouldOpenClose: Story = {

@@ -20,7 +20,7 @@ const retryBaseMs = 2_000;
 /** Re-check delay while offline, where a fetch would fail; catchup reconciles on reconnect. */
 const offlineRecheckMs = 5_000;
 
-export interface EnqueueInput {
+interface EnqueueInput {
   entityType: ProductEntityType;
   organizationId: string;
   tenantId: string | null;
@@ -279,13 +279,10 @@ export function invalidateUndelivered(
   if (recountUnseen) invalidateUnseenCounts(entityType);
 }
 
-function advanceCaughtUp(entry: DirtyEntry): void {
+function advanceCaughtUp({ organizationId, channelId, entityType, untilSeq }: DirtyEntry): void {
   const store = syncStore.getState();
-  if (entry.channelId) {
-    store.setChannelSeq(entry.organizationId, entry.channelId, entry.entityType, entry.untilSeq);
-  } else {
-    store.setOrgSeq(entry.organizationId, entry.entityType, entry.untilSeq);
-  }
+  if (channelId) store.setChannelSeq(organizationId, channelId, entityType, untilSeq);
+  else store.setOrgSeq(organizationId, entityType, untilSeq);
 }
 
 function requeue(entry: DirtyEntry, delayMs: number): void {

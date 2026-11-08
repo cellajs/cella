@@ -6,8 +6,14 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { type TabIndicator, TabIndicatorBar } from '~/modules/common/page/tab-indicator';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
-import { truncateMiddle } from '~/utils/truncate-middle';
 import { tw } from '~/utils/tw';
+
+/** Truncates `text` to `maxLength` chars by dropping the middle and inserting an ellipsis (…). */
+const truncateMiddle = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  const edgeLength = Math.floor((maxLength - 1) / 2);
+  return `${text.slice(0, edgeLength)}…${text.slice(-edgeLength)}`;
+};
 
 export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: string; type?: EntityType };
 

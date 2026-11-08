@@ -31,17 +31,11 @@ type CollaborativeBlockNoteProps = PassthroughProps &
 
 type CollaborativeHostProps = PassthroughProps & Pick<CollaborativeBlockNoteProps, 'updateData'> & { scope: YjsDocScope; staticView: ReactNode };
 
-type StandaloneHostProps = PassthroughProps & Pick<CollaborativeBlockNoteProps, 'entityId' | 'description' | 'updateData'>;
-
 /** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
 const connectingNoticeMs = 1_000;
 
-interface SyncStatusProps {
-  text: string;
-}
-
 /** One line above the description saying why it is read-only, or what happens to its edits. */
-function SyncStatus({ text }: SyncStatusProps) {
+function SyncStatus({ text }: { text: string }) {
   return (
     <p role="status" className="text-muted-foreground mb-2 text-sm">
       {text}
@@ -72,11 +66,7 @@ export function CollaborativeBlockNote({
       <BlockNoteFullHtml
         id={`blocknote-${entityId}-static`}
         defaultValue={description ?? ''}
-        tenantId={tenantId}
-        organizationId={organizationId}
-        className={className}
-        dense={dense}
-        clickOpensPreview={clickOpensPreview}
+        {...{ tenantId, organizationId, className, dense, clickOpensPreview }}
       />
     </Suspense>
   );
@@ -91,7 +81,18 @@ export function CollaborativeBlockNote({
       staticView={staticView}
     />
   ) : (
-    <StandaloneHost {...blockNoteProps} entityId={entityId} description={description} updateData={updateData} />
+    // Built from `description` and writing through `updateData`. Unmount and navigation commit only after a user change;
+    // navigation compares with the description current then.
+    <BlockNote
+      id={`blocknote-${entityId}`}
+      defaultValue={description ?? undefined}
+      updateData={(blocks) => void updateData(blocks, false)}
+      onBeforeLoad={(editor) => {
+        const strBlocks = JSON.stringify(editor.document);
+        if (strBlocks !== description) void updateData(strBlocks, false);
+      }}
+      {...blockNoteProps}
+    />
   );
 
   // The upload dialog renders above the editor so it survives an editor remount.
@@ -165,24 +166,5 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
         editable={blockNoteProps.editable !== false && !stopped}
       />
     </>
-  );
-}
-
-/**
- * The editor of a type with Yjs off, built from `description` and writing through `updateData`. Unmount and navigation
- * commit only after a user change; navigation compares with the description current then.
- */
-function StandaloneHost({ entityId, description, updateData, ...blockNoteProps }: StandaloneHostProps) {
-  return (
-    <BlockNote
-      id={`blocknote-${entityId}`}
-      defaultValue={description ?? undefined}
-      updateData={(blocks) => void updateData(blocks, false)}
-      onBeforeLoad={(editor) => {
-        const strBlocks = JSON.stringify(editor.document);
-        if (strBlocks !== description) void updateData(strBlocks, false);
-      }}
-      {...blockNoteProps}
-    />
   );
 }

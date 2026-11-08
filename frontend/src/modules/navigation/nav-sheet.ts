@@ -19,10 +19,7 @@ const navSheetClassName = cn(
 type SheetOrganization = Pick<UserMenuItem, 'id' | 'name'>;
 
 /** Title and content key of a nav sheet. The key names the nav item only: the menu sheet fades between organizations itself. */
-const navSheetIdentity = (id: NavItemId, organization?: SheetOrganization) => ({
-  title: organization?.name ?? i18n.t(`c:${id}`),
-  contentKey: id,
-});
+const navSheetIdentity = (id: NavItemId, organization?: SheetOrganization) => ({ title: organization?.name ?? i18n.t(`c:${id}`), contentKey: id });
 
 interface OpenNavSheetOptions {
   /** The organization the menu sheet shows alone. */

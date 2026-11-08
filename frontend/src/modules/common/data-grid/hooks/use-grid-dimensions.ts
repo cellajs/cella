@@ -1,5 +1,4 @@
-import type { RefObject } from 'react';
-import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { type RefObject, useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { getScrollParent, viewportTopOf } from '~/utils/scroll-parent';
 
 interface GridDimensions {
@@ -81,14 +80,9 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       return { viewportHeight, scrollTop, measured: true };
     };
 
-    // --- Initial synchronous measurement ---
     commit(measureScroll(initialDimensions));
 
-    const remeasure = () => {
-      scheduleUpdate(() => {
-        commit(measureScroll(snapshotRef.current));
-      });
-    };
+    const remeasure = () => scheduleUpdate(() => commit(measureScroll(snapshotRef.current)));
 
     // Without row virtualization scrollTop is unused, and these listeners would only cause rerenders.
     let resizeObserver: ResizeObserver | null = null;

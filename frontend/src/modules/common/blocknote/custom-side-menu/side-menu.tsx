@@ -1,11 +1,20 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { SideMenu, SideMenuController, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
+import {
+  type BlockTypeSelectItem,
+  blockTypeSelectItems,
+  SideMenu,
+  SideMenuController,
+  useExtension,
+  useExtensionState,
+  usePortalElement,
+} from '@blocknote/react';
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
 import { type DragEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BlockTypeItems } from '~/modules/common/blocknote/custom-side-menu/block-type-items';
+import { getChecklistTypeItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import { useBlockNoteComponents } from '~/modules/common/blocknote/hooks/use-blocknote-components';
-import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps, CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface CustomSideMenuProps extends CustomBlockNoteMenuProps {
@@ -13,11 +22,7 @@ interface CustomSideMenuProps extends CustomBlockNoteMenuProps {
 }
 
 export function CustomSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomSideMenuProps) {
-  return (
-    <SideMenuController
-      sideMenu={() => <BlockSideMenu editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
-    />
-  );
+  return <SideMenuController sideMenu={() => <BlockSideMenu {...{ editor, allowedTypes, headingLevels, pinTitleBlock }} />} />;
 }
 
 function BlockSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomSideMenuProps) {
@@ -27,7 +32,7 @@ function BlockSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: C
   if (pinTitleBlock && block.id === editor.document[0]?.id) return null;
   return (
     <SideMenu>
-      <DragHandle block={block} editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />
+      <DragHandle {...{ block, editor, allowedTypes, headingLevels, pinTitleBlock }} />
     </SideMenu>
   );
 }
@@ -101,7 +106,7 @@ function DragHandle({ block, editor, allowedTypes, headingLevels, pinTitleBlock 
             sideMenu.unfreezeMenu();
           }}
         />
-        <BlockTypeItems editor={editor} block={block} allowedTypes={allowedTypes} headingLevels={headingLevels} />
+        <BlockTypeItems {...{ editor, block, allowedTypes, headingLevels }} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -146,4 +151,57 @@ function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsPro
       </Components.Generic.Menu.Item>
     </>
   );
+}
+
+const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
+
+/** The block types a block can switch to: the allowed switch types, with plain headings at `headingLevels` only. */
+const getBlockTypeItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: CustomBlockNoteMenuProps['headingLevels'],
+): BlockTypeSelectItem[] => {
+  const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
+  const isAllowedPlainHeading = (props: BlockTypeSelectItem['props']) =>
+    !props?.isToggleable && headingLevels.some((level) => level === props?.level);
+  return [...blockTypeSelectItems(editor), getChecklistTypeItem()].filter(
+    ({ type, props }) => switchTypes.includes(type) && (type !== 'heading' || isAllowedPlainHeading(props)),
+  );
+};
+
+/** Whether an item names the block's current type: its type, and each prop the item sets. */
+const isCurrentBlockType = (item: BlockTypeSelectItem, block: CustomBlock) => {
+  const blockProps: Record<string, unknown> = block.props;
+  return item.type === block.type && Object.entries(item.props ?? {}).every(([name, value]) => blockProps[name] === value);
+};
+
+interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {
+  block: CustomBlock;
+}
+
+function BlockTypeItems({ editor, block, allowedTypes, headingLevels }: BlockTypeItemsProps) {
+  const Components = useBlockNoteComponents();
+  const sideMenu = useExtension(SideMenuExtension);
+
+  const items = getBlockTypeItems(editor, allowedTypes, headingLevels);
+  if (!editor.isEditable || !items.some((item) => item.type === block.type)) return null;
+
+  const switchType = (item: BlockTypeSelectItem) => {
+    editor.updateBlock(block, { type: item.type as CustomBlock['type'], props: item.props });
+    sideMenu.unfreezeMenu();
+    // Refocus the editor so the open side menu does not block the blur update.
+    setTimeout(() => focusEditor(editor, block.id), 0);
+  };
+
+  return items.map((item) => (
+    <Components.Generic.Menu.Item
+      className="bn-menu-item"
+      key={item.name}
+      onClick={() => switchType(item)}
+      icon={<item.icon className="size-4" />}
+      checked={isCurrentBlockType(item, block)}
+    >
+      {item.name}
+    </Components.Generic.Menu.Item>
+  ));
 }

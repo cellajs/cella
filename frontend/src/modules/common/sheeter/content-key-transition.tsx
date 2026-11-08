@@ -7,16 +7,8 @@ function scrollToTop(element: HTMLElement | null) {
   if (scroller) scroller.scrollTop = 0;
 }
 
-interface ContentKeyTransitionProps {
-  contentKey?: string;
-  children: ReactNode;
-}
-
-/**
- * Fades in new content when `contentKey` changes; without a key the content renders as is. The old content fades out
- * first, at its own scroll position, and the new content then starts at the top.
- */
-export function ContentKeyTransition({ contentKey, children }: ContentKeyTransitionProps) {
+/** On a `contentKey` change the old content fades out at its scroll position, then the new fades in at the top; no key renders as is. */
+export function ContentKeyTransition({ contentKey, children }: { contentKey?: string; children: ReactNode }) {
   if (!contentKey) return children;
 
   return (

@@ -23,7 +23,9 @@ export function useInView({ once = false, threshold = 0 }: UseInViewOptions = {}
           if (entry.isIntersecting) {
             setInView(true);
             if (once) observer.disconnect();
-          } else if (!once) setInView(false);
+          } else if (!once) {
+            setInView(false);
+          }
         },
         { threshold },
       );

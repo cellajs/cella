@@ -1,14 +1,11 @@
 import type { CalculatedColumn } from '../types';
 
-const measuringCellClassname = 'invisible [contain:strict]';
-
-export function renderMeasuringCells<R, SR>(viewportColumns: readonly CalculatedColumn<R, SR>[]) {
-  return viewportColumns.map(({ key, idx, minWidth, maxWidth }) => (
+export const renderMeasuringCells = <R, SR>(viewportColumns: readonly CalculatedColumn<R, SR>[]) =>
+  viewportColumns.map(({ key, idx, minWidth, maxWidth }) => (
     <div
       key={key}
-      className={measuringCellClassname}
+      className="invisible [contain:strict]"
       style={{ gridColumnStart: idx + 1, gridRow: 1, minWidth, maxWidth }}
       data-measuring-cell-key={key}
     />
   ));
-}

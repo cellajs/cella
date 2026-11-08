@@ -4,8 +4,6 @@ import { bodyCellFocusRing, createCellEvent, getCellClassname, getCellStyle, onE
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
-const cellEditingClassname = 'p-0! [&>input]:border-0 [&>input]:bg-transparent';
-
 type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
 
 interface EditCellProps<R, SR> extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'>, SharedCellRendererProps<R, SR> {
@@ -27,17 +25,12 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
   const commitOnOutsideClick = column.editorOptions?.commitOnOutsideClick ?? true;
 
   function onClose(commitChanges = false, shouldFocusCell = true) {
-    if (commitChanges) {
-      onRowChange(row, true, shouldFocusCell);
-    } else {
-      closeEditor(shouldFocusCell);
-    }
+    if (commitChanges) onRowChange(row, true, shouldFocusCell);
+    else closeEditor(shouldFocusCell);
   }
 
   // useEffectEvent keeps the useLayoutEffect from tearing down between renders, which would drop valid mousedowns.
-  const commitOnOutsideMouseDown = useEffectEvent(() => {
-    onClose(true, false);
-  });
+  const commitOnOutsideMouseDown = useEffectEvent(() => onClose(true, false));
 
   function cancelTask() {
     captureEventRef.current = undefined;
@@ -61,20 +54,15 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
         const abortController = new AbortController();
         const { signal } = abortController;
         abortControllerRef.current = abortController;
-        // postTask runs the handler outside a React render and before the next paint.
-        scheduler
-          .postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal })
-          // ignore abort errors
-          .catch(() => {});
+        // postTask runs the handler outside a React render and before the next paint; the catch ignores abort errors.
+        scheduler.postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal }).catch(() => {});
       } else {
         frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
       }
     }
 
     function onWindowMouseDown(event: MouseEvent) {
-      if (captureEventRef.current === event) {
-        commitOnOutsideMouseDown();
-      }
+      if (captureEventRef.current === event) commitOnOutsideMouseDown();
     }
 
     addEventListener('mousedown', onWindowCaptureMouseDown, { capture: true });
@@ -106,13 +94,9 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
       if (cellEvent.isGridDefaultPrevented()) return;
     }
 
-    if (event.key === 'Escape') {
-      onClose();
-    } else if (event.key === 'Enter') {
-      onClose(true);
-    } else if (onEditorNavigation(event)) {
-      navigate(event);
-    }
+    if (event.key === 'Escape') onClose();
+    else if (event.key === 'Enter') onClose(true);
+    else if (onEditorNavigation(event)) navigate(event);
   }
 
   function onEditorRowChange(row: R, commitChangesAndFocus = false) {
@@ -124,7 +108,7 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
     column,
     bodyCellFocusRing,
     'rdg-editor-container',
-    !column.editorOptions?.displayCellContent && cellEditingClassname,
+    !column.editorOptions?.displayCellContent && 'p-0! [&>input]:border-0 [&>input]:bg-transparent',
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
   );
 

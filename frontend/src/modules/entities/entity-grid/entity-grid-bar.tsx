@@ -51,25 +51,14 @@ interface EntityGridBarProps<TSort extends string> {
   alwaysShow?: boolean;
 }
 
-export function EntityGridBar<TSort extends string>({
-  queryKey,
-  label,
-  entityType,
-  searchVars,
-  setSearch,
-  sortOptions,
-  focusView = false,
-  action,
-  viewToggle,
-  roleFilter = true,
-  alwaysShow = false,
-}: EntityGridBarProps<TSort>) {
+export function EntityGridBar<TSort extends string>(props: EntityGridBarProps<TSort>) {
+  const { searchVars, setSearch, sortOptions, focusView = false, action, roleFilter = true, alwaysShow = false } = props;
   const { sort, role } = searchVars;
   const isMobile = useBreakpointBelow('sm');
 
-  const total = useListQueryTotal(queryKey);
+  const total = useListQueryTotal(props.queryKey);
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', role: undefined } });
-  const searchFilters = useRoleSearchFilter({ entityType, value: role, onChange: (role) => setSearch({ role }) });
+  const searchFilters = useRoleSearchFilter({ entityType: props.entityType, value: role, onChange: (role) => setSearch({ role }) });
 
   if (!alwaysShow && !barFilters.isFiltered && (total ?? 0) <= gridPreviewLimit) {
     if (!action) return null;
@@ -84,11 +73,9 @@ export function EntityGridBar<TSort extends string>({
   return (
     <TableBarShell
       {...barFilters}
-      searchVars={searchVars}
-      total={total}
-      label={label}
+      {...{ searchVars, total, action, focusView }}
+      label={props.label}
       searchName="entitySearch"
-      action={action}
       searchFilters={roleFilter ? searchFilters : undefined}
       sort={{
         options: sortOptions,
@@ -98,8 +85,7 @@ export function EntityGridBar<TSort extends string>({
           if (option) setSearch({ sort: option.value, order: option.order });
         },
       }}
-      controls={viewToggle}
-      focusView={focusView}
+      controls={props.viewToggle}
     />
   );
 }

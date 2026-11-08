@@ -1,6 +1,7 @@
 import { ServerCrashIcon } from 'lucide-react';
 import { type Key, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import {
   type CellRendererProps,
@@ -11,13 +12,14 @@ import {
   type RowsChangeData,
 } from '~/modules/common/data-grid';
 import { EditStatusContext, useEditStatus } from '~/modules/common/data-grid/cell-renderers';
-import { DataTableSkeleton } from '~/modules/common/data-table/data-table-skeleton';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { Skeleton } from '~/modules/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 import { cn } from '~/utils/cn';
 
 const maxSelectableRows = 1000;
@@ -77,10 +79,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rowHeight?: number;
 }
 
-/** The row key of a table whose rows carry an `id`. */
-export function rowKeyById(row: { id: string }): string {
-  return row.id;
-}
+export const rowKeyById = (row: { id: string }): string => row.id;
 
 /** Bridges query presentation state and infinite scrolling to the DataGrid engine. */
 export function DataTable<TData>({
@@ -212,6 +211,50 @@ export function DataTable<TData>({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+interface DataTableSkeletonProps {
+  /** In px */
+  cellHeight: number;
+  columnCount: number;
+  /** Widths of the first columns; the rest size themselves. */
+  cellWidths: string[];
+}
+
+/** Keys of the placeholder rows, which never reorder. */
+const rowKeys = Array.from({ length: 20 }, (_, i) => i);
+
+function DataTableSkeleton({ columnCount, cellHeight, cellWidths }: DataTableSkeletonProps) {
+  const skeletonHeight = cellHeight - 18;
+  const isMobile = useBreakpointBelow('sm', false);
+  const columns = Array.from({ length: isMobile ? Math.min(columnCount, 3) : columnCount }, (_, i) => ({ key: i, style: { width: cellWidths[i] } }));
+
+  return (
+    <div className="fade-in animate-in w-full overflow-auto duration-300">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            {columns.map(({ key, style }) => (
+              <TableHead key={key} style={style}>
+                <Skeleton className="my-2 w-full" style={{ height: `${skeletonHeight}px` }} />
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rowKeys.map((rowKey) => (
+            <TableRow key={rowKey} className="hover:bg-transparent">
+              {columns.map(({ key, style }) => (
+                <TableCell key={key} style={style}>
+                  <Skeleton className="w-full" style={{ height: `${skeletonHeight}px` }} />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

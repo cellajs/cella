@@ -39,11 +39,9 @@ export function mergeServerResponse<T extends { id: string; entityType: ProductE
     return { ...cached, ...guardYjsOwnedFields(serverEntity.entityType, serverEntity, cached), ...skipped };
   }
 
-  const serverUpdates: Record<string, unknown> = {};
   const derivedFrom = (mutated: string) => (mutated === 'description' ? getYjsOwnedFields(serverEntity.entityType) : (derivedKeys[mutated] ?? []));
-  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap(derivedFrom)]) {
-    if (!skipKeys.includes(key)) serverUpdates[key] = serverRow[key];
-  }
+  const serverKeys = [...mutatedKeys, ...mutatedKeys.flatMap(derivedFrom)].filter((key) => !skipKeys.includes(key));
+  const serverUpdates: Record<string, unknown> = Object.fromEntries(serverKeys.map((key) => [key, serverRow[key]]));
 
   return {
     ...cached,

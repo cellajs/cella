@@ -1,9 +1,8 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
+import type { GenComponentSchema, GenOperationDetail, GenResponseSummary } from 'sdk/docs-types';
 import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
-import { getStatusColor } from '~/modules/docs/helpers/get-status-color';
 import { OperationSection } from '~/modules/docs/operations/operation-section';
 import { schemasQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 import { SchemaLink, useSchemaRefLink } from '~/modules/docs/schemas/schema-detail';
@@ -18,12 +17,22 @@ const triggerClass = tw(
   'focus-inset text-foreground-soft hover:text-foreground group-data-open/accordion-header:text-foreground py-2 font-normal hover:no-underline [&>svg]:size-4 [&>svg]:translate-y-1',
 );
 
-function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
-  if (response.schema) return response.schema;
-  // For error responses (no embedded schema), look up by name in schemas.gen.json
-  if (response.name) return schemas.find((schema) => schema.name === response.name)?.schema;
-  return undefined;
-}
+/** Status badge colors by status class, one step stronger while its accordion row is hovered. */
+const getStatusColor = (status: number): string => {
+  if (status >= 200 && status < 300) {
+    return 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/50 group-hover/accordion-header:text-emerald-800 group-hover/accordion-header:bg-emerald-100 dark:group-hover/accordion-header:text-emerald-200 dark:group-hover/accordion-header:bg-emerald-900/60';
+  }
+  if (status >= 300 && status < 400) {
+    return 'text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/50 group-hover/accordion-header:text-blue-800 group-hover/accordion-header:bg-blue-100 dark:group-hover/accordion-header:text-blue-200 dark:group-hover/accordion-header:bg-blue-900/60';
+  }
+  if (status >= 400 && status < 500) {
+    return 'text-orange-700 bg-orange-50 dark:text-orange-300 dark:bg-orange-950/50 group-hover/accordion-header:text-orange-800 group-hover/accordion-header:bg-orange-100 dark:group-hover/accordion-header:text-orange-200 dark:group-hover/accordion-header:bg-orange-900/60';
+  }
+  if (status >= 500) {
+    return 'text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/50 group-hover/accordion-header:text-red-800 group-hover/accordion-header:bg-red-100 dark:group-hover/accordion-header:text-red-200 dark:group-hover/accordion-header:bg-red-900/60';
+  }
+  return 'text-gray-700 bg-gray-50 dark:text-gray-300 dark:bg-gray-950/50 group-hover/accordion-header:text-gray-800 group-hover/accordion-header:bg-gray-100 dark:group-hover/accordion-header:text-gray-200 dark:group-hover/accordion-header:bg-gray-900/60';
+};
 
 /** A response that refers to a shared error component, which the backend documents once for every route answering that status. */
 const isSharedError = (response: GenResponseSummary) => response.ref?.startsWith('#/components/responses/') ?? false;
@@ -172,8 +181,9 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   return (
     <Accordion defaultValue={examplesOnly && rows.length ? [String(rows[0].status)] : undefined}>
       {rows.map((response) => {
-        const schema = resolveResponseSchema(response, schemas);
         const namedBody = response.name ? schemas.find((entry) => entry.name === response.name) : undefined;
+        // For error responses (no embedded schema), look up by name in schemas.gen.json
+        const schema = response.schema ?? namedBody?.schema;
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
             <AccordionTrigger className={triggerClass}>
@@ -220,16 +230,12 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
           </AccordionItem>
         );
       })}
-      {errors.length > 0 && <ErrorsItem responses={errors} schemas={schemas} operationId={operationId} zodIndex={zodIndex} typesIndex={typesIndex} />}
+      {errors.length > 0 && <ErrorsItem responses={errors} {...{ schemas, operationId, zodIndex, typesIndex }} />}
     </Accordion>
   );
 }
 
-interface OperationResponsesProps {
-  detail?: GenOperationDetail;
-}
-
-export function OperationResponses({ detail }: OperationResponsesProps) {
+export function OperationResponses({ detail }: { detail?: GenOperationDetail }) {
   const { t } = useTranslation();
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { zodIndex, typesIndex } = useDefinitionIndexes();
@@ -237,13 +243,7 @@ export function OperationResponses({ detail }: OperationResponsesProps) {
   return (
     <OperationSection title={t('c:docs.responses')}>
       <div className="mt-2">
-        <ResponsesAccordion
-          responses={detail?.responses ?? []}
-          schemas={schemas}
-          operationId={detail?.operationId ?? ''}
-          zodIndex={zodIndex}
-          typesIndex={typesIndex}
-        />
+        <ResponsesAccordion responses={detail?.responses ?? []} operationId={detail?.operationId ?? ''} {...{ schemas, zodIndex, typesIndex }} />
       </div>
     </OperationSection>
   );

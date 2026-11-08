@@ -1,15 +1,11 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
-interface PreserveDescriptionHeightProps {
-  children: ReactNode;
-}
-
 /**
  * Holds the slot's last non-empty height while its content is empty for a moment (the editor swapping for the static
  * description), so the card does not reflow. It sets only a min-height, outside React state so children never
  * re-render, and drops it once the content stays empty: an empty description settles to its natural size.
  */
-export function PreserveDescriptionHeight({ children }: PreserveDescriptionHeightProps) {
+export function PreserveDescriptionHeight({ children }: { children: ReactNode }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 

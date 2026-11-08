@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { Checkbox } from '~/modules/ui/checkbox';
-import type { RenderCheckboxProps } from '../types';
+
+interface RenderCheckboxProps extends Pick<React.ComponentProps<'input'>, 'aria-label' | 'aria-labelledby' | 'checked' | 'tabIndex' | 'disabled'> {
+  indeterminate?: boolean | undefined;
+  onChange: (checked: boolean, shift: boolean) => void;
+}
 
 export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
   const withShift = useRef(false);
-
-  const handleChange = (checked: boolean) => {
-    onChange(checked, withShift.current);
-  };
 
   return (
     <Checkbox
@@ -16,9 +16,7 @@ export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
         withShift.current = e.nativeEvent.shiftKey;
         e.stopPropagation();
       }}
-      onCheckedChange={(checked) => {
-        handleChange(!!checked);
-      }}
+      onCheckedChange={(checked) => onChange(!!checked, withShift.current)}
     />
   );
 }

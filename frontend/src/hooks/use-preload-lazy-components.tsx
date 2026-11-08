@@ -1,5 +1,4 @@
-import type { ComponentType, LazyExoticComponent } from 'react';
-import { useEffect } from 'react';
+import { type ComponentType, type LazyExoticComponent, useEffect } from 'react';
 
 /**
  * Starts a lazy component's import without rendering it; settles once it renders without suspending. A failed import

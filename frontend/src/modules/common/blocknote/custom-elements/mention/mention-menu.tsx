@@ -11,14 +11,12 @@ const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor, q
   const typed = query.toLowerCase();
   return members
     .filter(({ name }) => name.toLowerCase().includes(typed))
-    .map((member) => ({
-      id: member.id,
-      title: member.name,
+    .map(({ id, name, slug, thumbnailUrl }) => ({
+      id,
+      title: name,
       size: 'small',
-      onItemClick: () => {
-        editor.insertInlineContent([{ type: 'mention', props: { name: member.name, id: member.id, slug: member.slug } }]);
-      },
-      icon: <EntityAvatar type="user" id={member.id} name={member.name} url={member.thumbnailUrl} className="size-5" />,
+      onItemClick: () => editor.insertInlineContent([{ type: 'mention', props: { name, id, slug } }]),
+      icon: <EntityAvatar type="user" id={id} name={name} url={thumbnailUrl} className="size-5" />,
     }));
 };
 
@@ -41,12 +39,7 @@ function MentionMenuList({ items, selectedIndex, onItemClick }: SuggestionMenuPr
   );
 }
 
-interface MentionMenuProps {
-  members?: Member[];
-  editor: CustomBlockNoteEditor;
-}
-
-export function MentionMenu({ members, editor }: MentionMenuProps) {
+export function MentionMenu({ members, editor }: { members?: Member[]; editor: CustomBlockNoteEditor }) {
   if (!members?.length) return null;
   return (
     <SuggestionMenuController

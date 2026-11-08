@@ -11,8 +11,6 @@ import type { AuthStep } from '~/modules/auth/types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
 
-const oauthEnabled = isStrategyEnabled('oauth');
-
 const oauthProviderNames = { github: 'GitHub', google: 'Google', microsoft: 'Microsoft' } satisfies Record<BaseOAuthProviders, string>;
 
 /** The providers the app config enables, in its order. */
@@ -22,12 +20,8 @@ export const enabledOAuthProviders = appConfig.enabledOAuthProviders.map((id) =>
   icon: (() => <OAuthProviderIcon id={id} />) satisfies IconComponent,
 }));
 
-interface OAuthProviderIconProps {
-  id: EnabledOAuthProvider;
-}
-
 /** A provider's logo, beside text that names the provider. */
-export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
+export function OAuthProviderIcon({ id }: { id: EnabledOAuthProvider }) {
   return (
     <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" draggable={false} />
   );
@@ -58,12 +52,14 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
     } else if (tokenId) {
       params.set('tokenId', tokenId);
       params.set('kind', 'invite');
-    } else params.set('kind', 'auth');
+    } else {
+      params.set('kind', 'auth');
+    }
 
     window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params}`);
   };
 
-  if (!oauthEnabled) return [];
+  if (!isStrategyEnabled('oauth')) return [];
 
   return enabledOAuthProviders.map(({ id, name, icon }) => ({
     id,

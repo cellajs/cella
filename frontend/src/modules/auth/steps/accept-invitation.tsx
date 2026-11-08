@@ -10,17 +10,12 @@ import type { MeUser } from '~/modules/me/types';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 
-interface AcceptInvitationStepProps {
-  tokenData: TokenData;
-  user: MeUser;
-}
-
 /**
  * Confirm step for a signed-in visitor holding an invitation token. Accepting joins as the signed-in account, which must
  * hold the invited address: an account on another address is offered a link to that address, and opening it there lets
  * it join. Nothing happens without an explicit click, and both addresses are named.
  */
-export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepProps) {
+export function AcceptInvitationStep({ tokenData, user }: { tokenData: TokenData; user: MeUser }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

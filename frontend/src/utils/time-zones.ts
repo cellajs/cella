@@ -1,7 +1,7 @@
 import countries from '#json/countries.json';
 import { regionName } from '~/utils/region-name';
 
-export interface TimeZoneEntry {
+interface TimeZoneEntry {
   /** IANA id, the value a form stores. */
   zone: string;
   /** ISO 3166-1 alpha-2 code; null for UTC. */

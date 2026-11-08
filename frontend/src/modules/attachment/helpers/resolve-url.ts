@@ -34,9 +34,7 @@ export async function resolveAttachmentUrl(
   const { preferredVariant = 'original' } = options;
 
   const localResult = await attachmentStorage.createBlobUrlWithVariant(attachmentId, preferredVariant, true);
-  if (localResult) {
-    return { url: localResult.url, isLocal: true, variant: localResult.actualVariant };
-  }
+  if (localResult) return { url: localResult.url, isLocal: true, variant: localResult.actualVariant };
 
   const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;

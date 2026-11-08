@@ -7,10 +7,13 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
-import { mapleEnabled } from '~/lib/maple-enabled';
+import { isMapleOptedIn } from '~/env';
 
 // `@opentelemetry/instrumentation` and `-fetch` are pinned to the line @maple-dev/browser depends on (package.json),
 // so the boot bundle carries one copy of each, shared with Maple's.
+
+/** Select Maple tracing or the development tracer so exactly one provider registers. */
+export const mapleEnabled = !!appConfig.maplePublicIngestKey && (appConfig.mode !== 'development' || isMapleOptedIn);
 
 /** Devtools ring of completed frontend tracing spans. Only fed when Maple tracing is disabled. */
 export const spanStore = createSpanStore({ maxSpans: 500 });
@@ -26,9 +29,7 @@ if (!mapleEnabled) {
   // Guarded for test environments where appConfig is partially mocked.
   if (appConfig.backendUrl) {
     const backendOrigin = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}(/|$)`);
-    registerInstrumentations({
-      instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })],
-    });
+    registerInstrumentations({ instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })] });
   }
 }
 

@@ -13,7 +13,6 @@ import { passkeyAlgorithms } from 'shared/passkeys';
 import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyKind } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
-const isDevelopment = appConfig.mode === 'development';
 // The host the app is served on, as the backend verifies it: a passkey never crosses hosts.
 const relyingPartyId = () => new URL(appConfig.frontendUrl).hostname;
 
@@ -59,7 +58,8 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const email = getCurrentUser().email;
   const generatedName = generatePasskeyName();
-  const nameOnDevice = isDevelopment ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
+  const devSuffix = appConfig.mode === 'development' ? ` for ${appConfig.name}` : '';
+  const nameOnDevice = `${email} (${generatedName})${devSuffix}`;
 
   const attestation = await startRegistration({
     optionsJSON: {
@@ -81,10 +81,7 @@ export const getPasskeyRegistrationCredential = async () => {
   return { attestation, nameOnDevice };
 };
 
-/**
- * Returns the passkey verify credential (assertion plus the challenge kind). Only an MFA challenge lists the account's
- * passkeys; otherwise the browser offers its discoverable ones.
- */
+/** Assertion plus challenge kind. Only an MFA challenge lists the account's passkeys; otherwise the browser offers its discoverable ones. */
 export const getPasskeyVerifyCredential = async ({ kind }: { kind: PasskeyVerifyKind }) => {
   const { challenge, credentials } = await getChallenge({ kind });
 

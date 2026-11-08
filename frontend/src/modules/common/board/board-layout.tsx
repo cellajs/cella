@@ -2,14 +2,12 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
-import type { ReactNode } from 'react';
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { isPanelReorderDragData, PanelCollapseContext, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
+import { PanelCollapseContext, PanelDragHandleContext } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -55,6 +53,26 @@ interface BoardLayoutProps {
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
+type PanelReorderDragData = { dragItem: true; type: 'panelReorder'; panelId: string };
+
+const isPanelReorderDragData = (data: Record<string | symbol, unknown>): data is PanelReorderDragData =>
+  data.dragItem === true && data.type === 'panelReorder' && typeof data.panelId === 'string';
+
+/** Compute new panel order after dragging sourceId relative to targetId. Returns null if unchanged. */
+function reorderPanels(currentOrder: string[], sourceId: string, targetId: string, edge: Edge | null): string[] | null {
+  const fromIndex = currentOrder.indexOf(sourceId);
+  const toIndex = currentOrder.indexOf(targetId);
+  if (fromIndex === -1 || toIndex === -1) return null;
+
+  const newOrder = currentOrder.filter((id) => id !== sourceId);
+  const newTargetIdx = newOrder.indexOf(targetId);
+  const insertIdx = edge === 'right' ? newTargetIdx + 1 : newTargetIdx;
+  newOrder.splice(insertIdx, 0, sourceId);
+
+  if (newOrder.every((id, i) => currentOrder[i] === id)) return null;
+  return newOrder;
+}
+
 // Panel widths are pixel-based (not percentage); the wrapping ScrollArea adds auto-scroll during drag-and-drop.
 export function BoardLayout({
   boardId,
@@ -83,9 +101,7 @@ export function BoardLayout({
     panelGroupApiRef.current = api;
   }, []);
 
-  const handlePanelToggle = useCallback((panelId: string) => {
-    panelGroupApiRef.current?.togglePanel(panelId);
-  }, []);
+  const handlePanelToggle = useCallback((panelId: string) => panelGroupApiRef.current?.togglePanel(panelId), []);
 
   // The store only holds the state, so a panel marked open from outside, to reveal a form in it, gets its width here
   useEffect(
@@ -112,12 +128,7 @@ export function BoardLayout({
   }));
 
   // `idbKvStorage` debounces writes, so per-frame onLayoutChanged calls need no throttling here
-  const handleLayoutChanged = useCallback(
-    (layout: Record<string, number>) => {
-      onLayoutChanged?.(layout);
-    },
-    [onLayoutChanged],
-  );
+  const handleLayoutChanged = useCallback((layout: Record<string, number>) => onLayoutChanged?.(layout), [onLayoutChanged]);
 
   // Keep a ref to current panel IDs so drag wrappers can read it without needing deps
   const panelIdsRef = useLatestRef(panels.map((p) => p.panelId));
@@ -152,12 +163,10 @@ export function BoardLayout({
   const panelGroup = (
     <ResizablePanelGroup
       id={`panels-${boardId}`}
-      defaultLayout={defaultLayout}
+      {...{ defaultLayout, mustFit, fit }}
       onLayoutChanged={handleLayoutChanged}
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
-      mustFit={mustFit}
-      fit={fit}
       onFitChange={handleFitChange}
       className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
@@ -176,13 +185,11 @@ export function BoardLayout({
             <PanelCollapseScope panelId={panelId} onToggle={handlePanelToggle}>
               {reorderable ? (
                 <PanelDragWrapper
-                  panelId={panelId}
+                  {...{ panelId, panelIdsRef, onPanelReorder }}
                   index={i}
                   total={panels.length}
-                  panelIdsRef={panelIdsRef}
                   onEdgeChange={updateDropIndicator}
                   onPanelToggle={handlePanelToggle}
-                  onPanelReorder={onPanelReorder}
                 >
                   {children(panelId, i)}
                 </PanelDragWrapper>
@@ -207,9 +214,7 @@ export function BoardLayout({
 
   // Clips without a scroll container, so section bars and card headers stay sticky to the window
   // isolate: the board stacks as one layer, so its sticky headers and rings stay under the page's search field and tabs
-  if (autoHeight) {
-    return <div className="isolate overflow-x-clip transition">{panelGroup}</div>;
-  }
+  if (autoHeight) return <div className="isolate overflow-x-clip transition">{panelGroup}</div>;
 
   // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
@@ -269,9 +274,7 @@ function PanelDragWrapper({
     [panelId, panelIdsRef, onPanelReorder],
   );
 
-  const handleToggleCollapsed = useCallback(() => {
-    onPanelToggle(panelId);
-  }, [onPanelToggle, panelId]);
+  const handleToggleCollapsed = useCallback(() => onPanelToggle(panelId), [onPanelToggle, panelId]);
 
   const ctxValue = useMemo(
     () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
@@ -313,7 +316,7 @@ function PanelDragWrapper({
           element: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
           onDrop: () => followReorderFocus(panelId),
-          onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          onGenerateDragPreview: ({ nativeSetDragImage }) =>
             setCustomNativeDragPreview({
               nativeSetDragImage,
               getOffset: pointerOutsideOfPreview({ x: '8px', y: '4px' }),
@@ -321,8 +324,7 @@ function PanelDragWrapper({
                 setPreviewContainer(container);
                 return () => setPreviewContainer(null);
               },
-            });
-          },
+            }),
         }),
       );
     }

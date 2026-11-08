@@ -79,11 +79,7 @@ const patchCachedAttachment = (queryClient: QueryClient, organizationId: string,
   writeKeepingMark(queryClient, keys.detail.byId(row.id), () => patched);
 };
 
-type AttachmentsListParams = AttachmentFilters & {
-  tenantId: string;
-  organizationId: string;
-  limit?: number;
-};
+type AttachmentsListParams = AttachmentFilters & { tenantId: string; organizationId: string; limit?: number };
 
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const {
@@ -117,18 +113,16 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
  */
 const orgListSpansHomes = hierarchy.possibleHomeChannels('attachment').some((type) => type !== 'organization');
 
-export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { organizationId: string; tenantId: string }) => {
-  return syncedListOptions(
+export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { organizationId: string; tenantId: string }) =>
+  syncedListOptions(
     queryOptions({
       queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
-      queryFn: async () => {
-        return fetchAllPages((page) => listAttachments({ path: { tenantId, organizationId }, query: page }).then(liveItems), syncChunkSize);
-      },
+      queryFn: async () =>
+        fetchAllPages((page) => listAttachments({ path: { tenantId, organizationId }, query: page }).then(liveItems), syncChunkSize),
       staleTime: syncStaleTime,
     }),
     { organizationId, tenantId },
   );
-};
 
 export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) =>
   queryOptions({
@@ -247,9 +241,7 @@ const attachmentDeleteOptions = (
   },
   onError: (error, _variables, context) => {
     handleError('delete', error);
-    if (context?.deletedAttachments) {
-      insertEntitiesIntoHome(queryClient, context.deletedAttachments);
-    }
+    if (context?.deletedAttachments) insertEntitiesIntoHome(queryClient, context.deletedAttachments);
   },
   onSuccess: (result, variables) => {
     const rejectedIds = result?.rejectedIds ?? [];

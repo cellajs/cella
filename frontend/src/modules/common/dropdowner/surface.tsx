@@ -3,7 +3,7 @@ import { backIfCurrent, type InternalDropdown, removeIfCurrent } from '~/modules
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 
 /** Where dropdowner content renders: a desktop menu or panel popup, or the mobile drawer. */
-export type DropdownerSurface = 'menu' | 'panel' | 'drawer';
+type DropdownerSurface = 'menu' | 'panel' | 'drawer';
 
 const DropdownerSurfaceContext = createContext<DropdownerSurface | null>(null);
 

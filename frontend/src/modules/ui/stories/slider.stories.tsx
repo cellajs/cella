@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Slider } from '~/modules/ui/slider';
 
-/**
- * An input where the user selects a value from within a given range.
- */
+/** An input where the user selects a value from within a given range. */
 const meta = {
   title: 'ui/Slider',
   component: Slider,
@@ -16,19 +14,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the slider.
- */
+/** The default form of the slider. */
 export const Default: Story = {};
 
-/**
- * Reversed slider direction.
- */
+/** Reversed slider direction. */
 export const Inverted: Story = {
   args: { style: { direction: 'rtl' } },
 };
 
-/**
- * Use the `disabled` prop to disable the slider.
- */
+/** Use the `disabled` prop to disable the slider. */
 export const Disabled: Story = { args: { disabled: true } };

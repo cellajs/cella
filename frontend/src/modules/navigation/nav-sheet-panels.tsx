@@ -100,20 +100,19 @@ const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-
 export function NavSheetPanels() {
   const isMobile = useBreakpointBelow('sm', false);
 
-  if (isMobile) {
-    return (
-      <div className="relative mt-auto flex flex-col gap-1 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
-        <div aria-hidden className={cn(menuHairlineClass, 'absolute inset-x-0 top-0')} />
-        <NavSheetPanelRow id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
-          <PreferencesContent />
-        </NavSheetPanelRow>
-        <NavSheetPanelRow id="info" label="c:info" indicator={<InfoIndicator />}>
-          <InfoContent />
-        </NavSheetPanelRow>
-      </div>
-    );
-  }
-  return <NavSheetPanelBar />;
+  if (!isMobile) return <NavSheetPanelBar />;
+
+  return (
+    <div className="relative mt-auto flex flex-col gap-1 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+      <div aria-hidden className={cn(menuHairlineClass, 'absolute inset-x-0 top-0')} />
+      <NavSheetPanelRow id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
+        <PreferencesContent />
+      </NavSheetPanelRow>
+      <NavSheetPanelRow id="info" label="c:info" indicator={<InfoIndicator />}>
+        <InfoContent />
+      </NavSheetPanelRow>
+    </div>
+  );
 }
 
 function NavSheetPanelBar() {

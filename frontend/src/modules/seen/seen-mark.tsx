@@ -45,11 +45,10 @@ function retainObserver() {
 
 function releaseObserver() {
   observerRefCount--;
-  if (observerRefCount <= 0 && sharedObserver) {
-    sharedObserver.disconnect();
-    sharedObserver = null;
-    observerRefCount = 0;
-  }
+  if (observerRefCount > 0 || !sharedObserver) return;
+  sharedObserver.disconnect();
+  sharedObserver = null;
+  observerRefCount = 0;
 }
 
 interface SeenMarkProps {

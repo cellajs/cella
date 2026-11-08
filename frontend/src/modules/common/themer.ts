@@ -10,10 +10,7 @@ function setModeClass(mode: Mode) {
   setThemeColor();
 }
 
-/**
- * The browser chrome (Android's status bar, a PWA's title bar) takes the page background. The oklch token is painted
- * as one canvas pixel and read back as hex, which every browser parses: a canvas keeps oklch in its fillStyle.
- */
+/** Gives the browser chrome the page background as hex, which every browser parses: read from a painted pixel, since fillStyle keeps oklch. */
 function setThemeColor() {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   const canvas = meta && document.createElement('canvas').getContext('2d', { willReadFrequently: true });
@@ -24,10 +21,7 @@ function setThemeColor() {
   meta.content = `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/**
- * Raises the edge tokens for a user who asked for more contrast. `system` writes nothing: tailwind.css answers
- * `prefers-contrast: more` on its own, so the OS setting still applies if this never runs.
- */
+/** `more` raises the edge tokens; `system` writes nothing: tailwind.css answers `prefers-contrast: more` itself, even if this never runs. */
 function setContrastAttribute(contrast: Contrast) {
   if (contrast === 'more') root.dataset.contrast = 'more';
   else delete root.dataset.contrast;

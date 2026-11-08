@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Skeleton } from '~/modules/ui/skeleton';
 
-/**
- * Use to show a placeholder while content is loading.
- */
+/** Use to show a placeholder while content is loading. */
 const meta = { title: 'ui/Skeleton', component: Skeleton, tags: ['autodocs'], argTypes: {}, parameters: { layout: 'centered' } } satisfies Meta<
   typeof Skeleton
 >;
@@ -12,9 +10,7 @@ export default meta;
 
 type Story = StoryObj<typeof Skeleton>;
 
-/**
- * The default form of the skeleton.
- */
+/** The default form of the skeleton. */
 export const Default: Story = {
   render: (args) => (
     <div className="flex items-center space-x-4">

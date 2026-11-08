@@ -3,12 +3,7 @@ import { LogoMark, LogoText } from '~/modules/common/logo-art';
 import { cn } from '~/utils/cn';
 
 // Mark and text take one height, so the app's viewBoxes alone set their proportion
-const sizes = {
-  sm: 'h-5 gap-2',
-  md: 'h-7 gap-3',
-  lg: 'h-8 gap-3',
-  xl: 'h-9 gap-4',
-} as const;
+const sizes = { sm: 'h-5 gap-2', md: 'h-7 gap-3', lg: 'h-8 gap-3', xl: 'h-9 gap-4' } as const;
 
 interface LogoProps {
   className?: string;

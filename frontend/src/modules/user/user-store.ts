@@ -8,8 +8,6 @@ import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
 import { uiStore } from '~/modules/ui/ui-store';
 
-type LastUser = Pick<MeUser, 'id' | 'email'>;
-
 /** The `localStorage` key the store persists to, which every tab of the browser shares. */
 export const userStorageKey = `${appConfig.slug}-user`;
 
@@ -20,16 +18,14 @@ const mirrorLanguage = (language?: User['languageCode']) => {
 };
 
 /** Mirrors the stored contrast into the UI store, which applies it, so the choice survives sign-out and reaches the public pages. */
-const mirrorContrast = (contrast?: User['contrast']) => {
-  uiStore.getState().setContrast(contrast ?? 'system');
-};
+const mirrorContrast = (contrast?: User['contrast']) => uiStore.getState().setContrast(contrast ?? 'system');
 
 interface UserStoreState {
   /** Current user. `null` while signed out; set by the authenticated route guard. */
   user: MeUser | null;
   isSystemAdmin: boolean;
   /** The last user signed in on this browser, kept after sign-out. */
-  lastUser: LastUser | null;
+  lastUser: Pick<MeUser, 'id' | 'email'> | null;
   /** Stores what `/me` answered in one write; also sets lastUser. */
   setMe: (me: Me) => void;
   /** Merges into the user; also sets lastUser. */
@@ -37,11 +33,7 @@ interface UserStoreState {
   reset: () => void;
 }
 
-const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser'> = {
-  user: null,
-  isSystemAdmin: false,
-  lastUser: null,
-};
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser'> = { user: null, isSystemAdmin: false, lastUser: null };
 
 export const useUserStore = create<UserStoreState>()(
   devtools(
@@ -49,10 +41,7 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         ...initStore,
         updateUser: (user) => {
-          set((state) => ({
-            user: { ...state.user, ...user },
-            lastUser: { id: user.id, email: user.email },
-          }));
+          set((state) => ({ user: { ...state.user, ...user }, lastUser: { id: user.id, email: user.email } }));
 
           mirrorLanguage(user.languageCode);
           mirrorContrast(user.contrast);
@@ -74,11 +63,7 @@ export const useUserStore = create<UserStoreState>()(
         version: 2,
         migrate: () => ({}),
         name: userStorageKey,
-        partialize: (state) => ({
-          user: state.user,
-          isSystemAdmin: state.isSystemAdmin,
-          lastUser: state.lastUser,
-        }),
+        partialize: ({ user, isSystemAdmin, lastUser }) => ({ user, isSystemAdmin, lastUser }),
         storage: createJSONStorage(() => localStorage),
       },
     ),

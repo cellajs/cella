@@ -112,7 +112,6 @@ function patchSingleHost(
     return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) };
   }
 
-  // Array column of embedded objects.
   if (Array.isArray(embedded)) {
     const needsPatch = embedded.some((item: { id?: string }) => item.id && (updateSet.has(item.id) || removeSet.has(item.id)));
     if (!needsPatch) return host;
@@ -132,12 +131,9 @@ function patchSingleHost(
     return { ...host, [hostColumn]: patched };
   }
 
-  // Single object column.
   if (embedded && typeof embedded === 'object' && 'id' in embedded) {
     const cached = embedded as { id: string; updatedAt?: string };
-    if (removeSet.has(cached.id)) {
-      return { ...host, [hostColumn]: null };
-    }
+    if (removeSet.has(cached.id)) return { ...host, [hostColumn]: null };
     const fresh = updateSet.has(cached.id) ? freshEmbedded.get(cached.id) : undefined;
     if (fresh && isFresher(cached, fresh)) return { ...host, [hostColumn]: fresh };
   }

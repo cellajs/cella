@@ -38,11 +38,8 @@ function combine(stored: UnsavedYDoc[], unstored: UnstoredYDoc[]): UnsavedEdit[]
   return [...listed, ...inMemory];
 }
 
-/**
- * The edits sign-out would discard, live: the store's rows and the connections that keep saving on the sign-out page,
- * so the list shrinks as they save. Undefined until both sources answered.
- */
-export function useUnsavedEdits(): UnsavedEdit[] | undefined {
+/** The edits sign-out would discard, live from the store and the connections still saving, so the list shrinks; undefined until both answer. */
+function useUnsavedEdits(): UnsavedEdit[] | undefined {
   const [stored, setStored] = useState<UnsavedYDoc[]>();
   const [unstored, setUnstored] = useState<UnstoredYDoc[]>();
 
@@ -91,18 +88,29 @@ function UnsavedEditItem({ edit }: { edit: UnsavedEdit }) {
   );
 }
 
-interface UnsavedEditsDialogProps {
-  edits: UnsavedEdit[];
+interface UnsavedEditsGateProps {
+  /** Receives the live list: undefined until it is known, empty once nothing would be discarded. */
+  onChange: (edits: UnsavedEdit[] | undefined) => void;
+  /** Whether the dialog may show; it shows only while the list holds edits. */
+  open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-/** Asks before sign-out discards edits no server holds, listing them; closing it keeps editing. */
-export function UnsavedEditsDialog({ edits, onConfirm, onCancel }: UnsavedEditsDialogProps) {
+/**
+ * Watches the edits sign-out would discard and, while `open`, asks in a dialog that lists them; closing it keeps
+ * editing. The sign-out page loads it lazily: it reaches the Yjs connections and the editor chunk, which the auth
+ * pages otherwise never load.
+ */
+export function UnsavedEditsGate({ onChange, open, onConfirm, onCancel }: UnsavedEditsGateProps) {
   const { t } = useTranslation();
+  const edits = useUnsavedEdits();
+  useEffect(() => onChange(edits), [edits, onChange]);
+
+  if (!open || !edits?.length) return null;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open onOpenChange={(nextOpen) => !nextOpen && onCancel()}>
       <DialogContent className="sm:max-w-md">
         {/* Keep editing is the way out, so the dialog adds no close button */}
         <DialogHeader closeButton={false}>
@@ -125,23 +133,4 @@ export function UnsavedEditsDialog({ edits, onConfirm, onCancel }: UnsavedEditsD
       </DialogContent>
     </Dialog>
   );
-}
-
-interface UnsavedEditsGateProps {
-  /** Receives the live list: undefined until it is known, empty once nothing would be discarded. */
-  onChange: (edits: UnsavedEdit[] | undefined) => void;
-  /** Whether the dialog may show; it shows only while the list holds edits. */
-  open: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-/**
- * Watches the edits sign-out would discard and asks while `open`. The sign-out page loads it lazily: it reaches the Yjs
- * connections and the editor chunk, which the auth pages otherwise never load.
- */
-export function UnsavedEditsGate({ onChange, open, onConfirm, onCancel }: UnsavedEditsGateProps) {
-  const edits = useUnsavedEdits();
-  useEffect(() => onChange(edits), [edits, onChange]);
-  return open && edits?.length ? <UnsavedEditsDialog edits={edits} onConfirm={onConfirm} onCancel={onCancel} /> : null;
 }

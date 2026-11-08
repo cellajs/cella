@@ -57,15 +57,9 @@ export function FloatingNav({ items, resetTrigger }: FloatingNavProps) {
         return (
           <FloatingNavButton
             key={item.id}
+            {...item}
             className={isItemVisible ? 'opacity-100' : floatingHiddenClass}
             tabIndex={item.visible === false ? -1 : undefined}
-            id={item.id}
-            icon={item.icon}
-            onClick={item.onClick}
-            ariaLabel={item.ariaLabel}
-            direction={item.direction}
-            label={item.label}
-            labelVisible={item.labelVisible}
           />
         );
       })}

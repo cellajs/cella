@@ -1,8 +1,37 @@
-import { Suspense } from 'react';
-import type { ChannelEntityType } from 'shared';
+import { useQuery } from '@tanstack/react-query';
+import { type ReactNode, Suspense } from 'react';
+import { appConfig, type ChannelEntityType } from 'shared';
+import type { ToolsConfig } from 'shared/tools-config';
+import { type ChannelEntityContext, getTools, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
-import { type ChannelSettingsHost, useChannelSettingsSections } from '~/modules/entities/use-channel-settings-sections';
+import { heldContextRoles } from '~/modules/entities/context-roles';
+import { useCan } from '~/modules/entities/use-can';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
+
+type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityContext<C> & { entityType: C; toolsConfig: ToolsConfig };
+
+type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor & {
+  order: number;
+  render: (entity: ChannelEntityContext<C>) => ReactNode;
+};
+
+/** The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and context-role pairs. */
+function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
+  const channelType = entity.entityType;
+  const slot: `${C}.settings` = `${channelType}.settings`;
+
+  const can = useCan();
+  const grants = appConfig.entityActions.filter((action) => can(action, channelType, entity));
+
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const pairs = heldContextRoles(entity, myMemberships?.results ?? []);
+
+  // Cast: registered settings tools carry a render the descriptor type erases
+  const tools = getTools(slot) as ChannelSettingsSection<C>[];
+
+  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig[slot] });
+}
 
 interface ChannelSettingsPageProps<C extends ChannelEntityType> {
   entity: ChannelSettingsHost<C>;

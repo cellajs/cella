@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { type ListChanges, writeKeepingMark, writeListChanges } from '~/query/basic/cache-mutations';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -16,9 +17,8 @@ export function resolveHomeChannelId(entityType: string, entity: ItemData): stri
 }
 
 /** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
-export function matchesCanonicalHome(queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean {
-  return queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
-}
+export const matchesCanonicalHome = (queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean =>
+  queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
 
 /** Only the channel id columns both copies carry count, so a partial row never reads as moved. */
 function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {
@@ -31,7 +31,7 @@ function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean 
   return false;
 }
 
-export interface SpliceResult {
+interface SpliceResult {
   /** Rows already present in at least one scanned list cache, by id. */
   seen: Set<string>;
   /** Rows newly inserted into their canonical home list, by id. */
@@ -66,7 +66,7 @@ export function spliceEntitiesIntoListCaches(
   const homed = entities.map((entity) => ({ entity, homeChannelId: resolveHomeChannelId(entityType, entity) }));
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    result.sawFilteredList ||= queryKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null);
+    result.sawFilteredList ||= queryKey.slice(2).some(isFilterSegment);
 
     if (!isQueryData<ItemData>(queryData) && !isInfiniteQueryData<ItemData>(queryData)) continue;
     const cachedItems = new Map(getQueryItems(queryData).map((item) => [item.id, item]));

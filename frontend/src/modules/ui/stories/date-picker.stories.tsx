@@ -21,9 +21,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Combination of the calendar and a button that opens a popover.
- */
+/** Combination of the calendar and a button that opens a popover. */
 export const WithPopover: Story = {
   args: { captionLayout: 'dropdown' },
 
@@ -83,9 +81,7 @@ function isValidDate(date: Date | undefined) {
   return date ? !Number.isNaN(date.getTime()) : false;
 }
 
-/**
- * Combination of the calendar and an input field that allows typing a date.
- */
+/** Combination of the calendar and an input field that allows typing a date. */
 export const WithInput: Story = {
   args: { captionLayout: 'dropdown' },
 
@@ -171,9 +167,7 @@ export const ShouldEnterTextDate: Story = {
   },
 };
 
-/**
- * Combination of the calendar and an input field that allows changing the time.
- */
+/** Combination of the calendar and an input field that allows changing the time. */
 export const WithDateTime: Story = {
   args: { captionLayout: 'dropdown' },
 

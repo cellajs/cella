@@ -12,7 +12,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
@@ -34,30 +34,6 @@ function useSwitcherOrganizations() {
   };
 }
 
-interface SwitcherOrganizationItemProps {
-  organization: UserMenuItem;
-  selected: boolean;
-  unseenCount: number;
-}
-
-function SwitcherOrganizationItem({ organization, selected, unseenCount }: SwitcherOrganizationItemProps) {
-  return (
-    <DropdownSelectItem selected={selected} onSelect={() => showMenuOrganization(organization)}>
-      <span className={cn('flex min-w-0 items-center gap-3', organization.membership.archived && 'text-muted-foreground')}>
-        <EntityAvatar
-          className={cn('size-6 shrink-0', organization.membership.archived && 'opacity-70')}
-          type={organization.entityType}
-          id={organization.id}
-          name={organization.name}
-          url={organization.thumbnailUrl}
-        />
-        <span className="truncate">{organization.name}</span>
-        {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
-      </span>
-    </DropdownSelectItem>
-  );
-}
-
 interface OrganizationSwitcherMenuProps {
   organization: UserMenuItem;
   /** The switcher row, which a dialog opened from the menu returns focus to. */
@@ -76,8 +52,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
 
   const openOrganizationPage = () => {
     if (!navigationStore.getState().keepNavOpen) closeNavSheet();
-    const { to, params, search } = getChannelRoute(organization);
-    navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
+    navigate({ ...getChannelRoute(organization), ...pageTopHashNav, resetScroll: false });
   };
 
   // The create dialog opens over the page, as a section's create button does, since a phone's menu would hide it
@@ -86,9 +61,24 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
     createOrganization?.(triggerRef);
   };
 
-  const renderItem = (item: UserMenuItem) => (
-    <SwitcherOrganizationItem key={item.id} organization={item} selected={item.id === organization.id} unseenCount={unseenCounts.get(item.id) ?? 0} />
-  );
+  const renderItem = (item: UserMenuItem) => {
+    const unseenCount = unseenCounts.get(item.id) ?? 0;
+    return (
+      <DropdownSelectItem key={item.id} selected={item.id === organization.id} onSelect={() => showMenuOrganization(item)}>
+        <span className={cn('flex min-w-0 items-center gap-3', item.membership.archived && 'text-muted-foreground')}>
+          <EntityAvatar
+            className={cn('size-6 shrink-0', item.membership.archived && 'opacity-70')}
+            type={item.entityType}
+            id={item.id}
+            name={item.name}
+            url={item.thumbnailUrl}
+          />
+          <span className="truncate">{item.name}</span>
+          {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
+        </span>
+      </DropdownSelectItem>
+    );
+  };
 
   return (
     <>
@@ -118,12 +108,8 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
   );
 }
 
-interface OrganizationSwitcherProps {
-  organization: UserMenuItem;
-}
-
 /** Heads the mobile menu sheet: a row like the channel rows under it, which opens the organization switcher menu. */
-export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
+export function OrganizationSwitcher({ organization }: { organization: UserMenuItem }) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { active, unseenCounts } = useSwitcherOrganizations();

@@ -5,12 +5,7 @@ import { cn } from '~/utils/cn';
 const toggleVariants = cva(
   'focus-effect active:press hover:bg-hover hover:text-foreground data-pressed:inset-ring-input data-pressed:bg-muted data-pressed:text-foreground inline-flex items-center justify-center rounded-md bg-transparent text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 data-pressed:inset-ring',
   {
-    variants: {
-      size: {
-        default: 'h-10 px-3',
-        sm: 'h-9 px-2.5',
-      },
-    },
+    variants: { size: { default: 'h-10 px-3', sm: 'h-9 px-2.5' } },
     defaultVariants: { size: 'default' },
   },
 );

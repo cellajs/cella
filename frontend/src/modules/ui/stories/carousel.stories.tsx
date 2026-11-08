@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent } from 'storybook/test';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
-/**
- * A carousel with motion and swipe built using Embla.
- */
+/** A carousel with motion and swipe built using Embla. */
 const meta: Meta<typeof Carousel> = {
   title: 'ui/Carousel',
   component: Carousel,
@@ -33,14 +31,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the carousel.
- */
+/** The default form of the carousel. */
 export const Default: Story = {};
 
-/**
- * Use the `basis` utility class to change the size of the carousel.
- */
+/** Use the `basis` utility class to change the size of the carousel. */
 export const Size: Story = {
   render: (args) => (
     <Carousel {...args} className="mx-12 w-full max-w-xs">

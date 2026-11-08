@@ -124,11 +124,10 @@ export const useUpdateSelfFlagsMutation = () =>
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
     // Applied before the request and kept on failure: guards read flags from the store, so a late flag sends a just-onboarded user back.
-    onMutate: ({ userFlags }) => {
+    onMutate: ({ userFlags }) =>
       userStore.setState((state) => {
         if (state.user) Object.assign(state.user.userFlags, userFlags);
-      });
-    },
+      }),
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
@@ -213,16 +212,11 @@ export const useDeleteSelfMutation = () =>
   });
 
 const applyUpdatedSelf = (updatedUser: User) => {
-  const { updateUser } = userStore.getState();
-
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
-  updateUser(updatedUser);
+  userStore.getState().updateUser(updatedUser);
 };
 
-/**
- * Source of truth for the current user's memberships in the frontend. Read without an abort signal: the read belongs to
- * the whole app, and catchup awaits it, so a screen that unmounts must not cancel it.
- */
+/** The frontend's source of truth for the user's memberships, read without an abort signal: catchup awaits it, so an unmount must not cancel it. */
 export const myMembershipsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.memberships, queryFn: () => fetchAllPages((page) => listMyMemberships({ query: page }), syncChunkSize) });
 
@@ -257,10 +251,7 @@ export const useHandleInvitationMutation = () =>
     onSuccess: (_organization, { invitationId, action }) => applySettledInvitation(invitationId, action),
   });
 
-/**
- * Accepts the invitation behind the single-use token cookie, as the signed-in account. A refusal for an address the
- * account does not hold yet stays quiet: the accept step answers it by offering a link to that address.
- */
+/** Accepts the token cookie's invitation as the signed-in account; refusing an address it lacks stays quiet: the accept step offers it a link. */
 export const useAcceptInvitationTokenMutation = () =>
   useMutation<AcceptInvitationTokenResponse, ApiError, void>({
     mutationKey: meKeys.acceptInvitationToken,
@@ -291,15 +282,10 @@ export const useRevokeConnectedAppMutation = () =>
       });
       toaster.success(t('c:success.revoke_resource', { resource: t('c:connected_app') }));
     },
-    onError(error) {
-      console.error('Error revoking connected app:', error);
-    },
+    onError: (error) => console.error('Error revoking connected app:', error),
   });
 
-/**
- * Revokes sessions by id, after a step-up when another session is among them; each cached session takes the server's
- * revoked row, so it moves to the history.
- */
+/** Revokes sessions by id, stepping up when another session is among them; each cached session takes its revoked row and moves to history. */
 export const useRevokeSessionsMutation = () =>
   useMutation<RevokeMySessionsResponse['data'], ApiError, string[]>({
     mutationKey: meKeys.delete.sessions,

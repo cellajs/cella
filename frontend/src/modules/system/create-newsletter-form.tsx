@@ -27,21 +27,17 @@ import type { MutationData } from '~/query/types';
 import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
 
-/** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
 // Imported on submit, so @blocknote/core stays off the boot path.
 const loadBlocknoteHelpers = () => import('~/modules/common/blocknote/helpers/blocknote-helpers');
 
+/** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
 export const newsletterFormId = 'create-newsletter';
 
 // A newsletter goes out to every member it picks, so it never leaves without a subject
 const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.shape.subject.trim().min(1) });
 
 type FormValues = z.infer<typeof formSchema>;
-interface CreateNewsletterFormProps {
-  organizationIds: string[];
-}
-
-export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormProps) {
+export function CreateNewsletterForm({ organizationIds }: { organizationIds: string[] }) {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState(false);

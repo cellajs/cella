@@ -1,23 +1,84 @@
 import { onlineManager, useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
 import { KeyRoundIcon, PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { ApiKey, ServiceAccount } from 'sdk';
+import type { ApiKey, CreateServiceAccountData, CreateServiceAccountResponse, ServiceAccount } from 'sdk';
+import { zCreateServiceAccountBody } from 'sdk/zod.gen';
+import { hierarchy } from 'shared';
+import type { z } from 'zod';
 import { ensureStepUp } from '~/modules/auth/step-up';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { TileListHeading } from '~/modules/common/expandable-tile';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
+import { InputFormField } from '~/modules/common/form-fields/input';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { ApiKeyTile, isEndedKey, KeylessAccountTile, keyEndedAt } from '~/modules/service-accounts/api-key-tile';
-import { CreateApiKeyForm, type CreatedApiKey, createApiKeyDialogId } from '~/modules/service-accounts/create-api-key-form';
-import { apiKeysQueryOptions, serviceAccountsQueryOptions } from '~/modules/service-accounts/query';
+import { apiKeysQueryOptions, serviceAccountsQueryOptions, useCreateServiceAccountMutation } from '~/modules/service-accounts/query';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
+import { Form } from '~/modules/ui/field';
+import type { QueryOrgContext } from '~/query/types';
+import { formResolver } from '~/utils/form-resolver';
 
-interface ApiKeysCardProps {
-  organization: EnrichedOrganization;
+const createApiKeyDialogId = 'create-api-key';
+
+// Narrowed to the organization roles the create body accepts: the hierarchy can type a role registry-wide.
+const keyRole = hierarchy.getLeastPrivilegedRole('organization') as CreateServiceAccountData['body']['role'];
+
+const formSchema = zCreateServiceAccountBody.pick({ name: true });
+
+type FormValues = z.infer<typeof formSchema>;
+
+/** A key as the create response carries it: the one time it comes with its plaintext. */
+type CreatedApiKey = NonNullable<CreateServiceAccountResponse['apiKey']>;
+
+/** Creating a key makes a service account named after it, bound to this organization with its least privileged role. */
+function CreateApiKeyForm({ path, onCreated }: { path: QueryOrgContext; onCreated: (apiKey: CreatedApiKey) => void }) {
+  const { t } = useTranslation();
+  const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();
+
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { name: '' } });
+  const { isDirty } = useFormState({ control: form.control });
+
+  const closeDialog = () => dialoger.getState().remove(createApiKeyDialogId);
+
+  const onSubmit = (values: FormValues) => {
+    const name = values.name.trim();
+    // Awaited on the promise, which settles even when the dialog closed mid-request: the plaintext always reaches the card.
+    create({ path, body: { name, role: keyRole, key: { name } } }).then(
+      ({ apiKey }) => {
+        if (apiKey) onCreated(apiKey);
+        closeDialog();
+      },
+      // The mutation reports its own failures; the form stays open for another try.
+      () => {},
+    );
+  };
+
+  return (
+    <Form {...form}>
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <InputFormField
+          control={form.control}
+          name="name"
+          label={t('c:name')}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name') })}
+          required
+        />
+
+        <FormActions>
+          <SubmitButton loading={isPending}>{t('c:create')}</SubmitButton>
+          <CancelButton dirty={isDirty} onClick={() => form.reset()} />
+        </FormActions>
+      </form>
+    </Form>
+  );
 }
 
 /** A live key with its account, or an account without one. */
@@ -31,12 +92,10 @@ interface ActiveItem {
 }
 
 /** The organization's API keys, live ones first; Add API key opens the create dialog. */
-export function ApiKeysCard({ organization }: ApiKeysCardProps) {
+export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
-  const {
-    data: { results: accounts },
-  } = useSuspenseQuery(serviceAccountsQueryOptions(path));
+  const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results;
   const keyLists = useSuspenseQueries({ queries: accounts.map((account) => apiKeysQueryOptions(path, account.id)) });
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // Plaintext by key id, in component state only: it never enters the query cache, which persists.

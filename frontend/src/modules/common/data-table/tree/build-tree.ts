@@ -34,9 +34,7 @@ export function buildTree<T extends TreeItem>(items: T[], { toggledIds, defaultE
     else childrenMap.set(item.parentId, [item]);
   }
 
-  for (const siblings of childrenMap.values()) {
-    siblings.sort((a, b) => a.displayOrder - b.displayOrder);
-  }
+  for (const siblings of childrenMap.values()) siblings.sort((a, b) => a.displayOrder - b.displayOrder);
 
   // Walks the full tree, so heights stay valid while descendants are collapsed.
   const subtreeHeightCache = new Map<string, number>();
@@ -81,9 +79,7 @@ export function buildTree<T extends TreeItem>(items: T[], { toggledIds, defaultE
         _parentIsLastChild: parentIsLastChild,
         _subtreeHeight: computeSubtreeHeight(id),
       });
-      if (isExpanded) {
-        walk(id, depth + 1, isLastChild);
-      }
+      if (isExpanded) walk(id, depth + 1, isLastChild);
     }
   }
 

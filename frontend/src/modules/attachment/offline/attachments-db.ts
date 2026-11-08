@@ -3,7 +3,6 @@ import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
 import { getLocalUserDb } from '~/query/local-user-db';
 
-type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed';
 
@@ -11,9 +10,7 @@ export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed'
 export type BlobVariant = 'raw' | 'original' | 'converted' | 'preview' | 'thumbnail';
 
 /** Composite blob key, formatted `${attachmentId}:${variant}`. */
-export function makeBlobKey(attachmentId: string, variant: BlobVariant): string {
-  return `${attachmentId}:${variant}`;
-}
+export const makeBlobKey = (attachmentId: string, variant: BlobVariant): string => `${attachmentId}:${variant}`;
 
 /** Upload context stored with a blob, used when the upload service re-uploads it; the template decides the bucket. */
 export interface UploadContext {
@@ -42,7 +39,7 @@ export interface AttachmentBlob {
   contentType: string;
 
   /** How this blob was created: 'upload' (local, may need uploading) or 'download' (from cloud). */
-  source: BlobSource;
+  source: 'upload' | 'download';
 
   /** Upload status: 'uploaded' means "exists in cloud" (downloads included), 'local-only' means no cloud is configured, the rest apply to source='upload'. */
   uploadStatus: UploadStatus;

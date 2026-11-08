@@ -60,7 +60,9 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonSize,
         if (isDialog) {
           toaster.success(t('c:success.waitlist_request'));
           dialoger.getState().remove(waitlistDialogId);
-        } else setSentTo(body.email);
+        } else {
+          setSentTo(body.email);
+        }
         callback?.({ status: 'success' });
       },
     });

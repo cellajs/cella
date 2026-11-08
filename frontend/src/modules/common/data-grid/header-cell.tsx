@@ -1,8 +1,7 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { dropTargetForElements, draggable as makeDraggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DropIndicator } from '~/modules/common/drop-indicator';
@@ -19,15 +18,10 @@ import {
   stopPropagation,
 } from './utils/grid-utils';
 
-const resizeHandleClassname =
-  'cursor-col-resize absolute inset-y-0 inset-e-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:inset-e-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
-
 const draggableColumnType = 'grid-column';
 type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
 
-function isColumnDragData(data: Record<string, unknown>): data is ColumnDragData {
-  return data.type === draggableColumnType;
-}
+const isColumnDragData = (data: Record<string, unknown>): data is ColumnDragData => data.type === draggableColumnType;
 
 interface HeaderCellProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
@@ -88,13 +82,12 @@ export function HeaderCell<R, SR>({
       makeDraggable({
         element: el,
         getInitialData: (): ColumnDragData => ({ type: draggableColumnType, columnKey: column.key }),
-        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+        onGenerateDragPreview: ({ nativeSetDragImage }) =>
           setCustomNativeDragPreview({
             nativeSetDragImage,
             getOffset: () => ({ x: 16, y: 16 }),
             render: ({ container }) => setPreview({ container }),
-          });
-        },
+          }),
         onDragStart: () => setIsDragging(true),
         onDrop: () => {
           setIsDragging(false);
@@ -114,9 +107,7 @@ export function HeaderCell<R, SR>({
         onDragLeave: () => setClosestEdge(null),
         onDrop: ({ source }) => {
           setClosestEdge(null);
-          if (isColumnDragData(source.data)) {
-            onColumnsReorder(source.data.columnKey, column.key);
-          }
+          if (isColumnDragData(source.data)) onColumnsReorder(source.data.columnKey, column.key);
         },
       }),
     );
@@ -135,11 +126,8 @@ export function HeaderCell<R, SR>({
       }
       if (ctrlClick) {
         const nextSortColumns = [...sortColumns!];
-        if (nextSortColumn) {
-          nextSortColumns[sortIndex!] = nextSortColumn;
-        } else {
-          nextSortColumns.splice(sortIndex!, 1);
-        }
+        if (nextSortColumn) nextSortColumns[sortIndex!] = nextSortColumn;
+        else nextSortColumns.splice(sortIndex!, 1);
         onSortColumnsChange(nextSortColumns);
       } else {
         onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
@@ -149,9 +137,7 @@ export function HeaderCell<R, SR>({
 
   function handleFocus(event: React.FocusEvent<HTMLDivElement>) {
     onFocus?.(event);
-    if (shouldFocusGrid) {
-      selectCell({ idx: 0, rowIdx });
-    }
+    if (shouldFocusGrid) selectCell({ idx: 0, rowIdx });
   }
 
   function onMouseDown() {
@@ -159,9 +145,7 @@ export function HeaderCell<R, SR>({
   }
 
   function onClick(event: React.MouseEvent<HTMLSpanElement>) {
-    if (sortable) {
-      onSort(event.ctrlKey || event.metaKey);
-    }
+    if (sortable) onSort(event.ctrlKey || event.metaKey);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLSpanElement>) {
@@ -183,9 +167,7 @@ export function HeaderCell<R, SR>({
       const { width } = event.currentTarget.getBoundingClientRect();
       const offset = key === 'ArrowLeft' ? -10 : 10;
       const newWidth = clampColumnWidth(width + offset, column);
-      if (newWidth !== width) {
-        onColumnResize(column, newWidth);
-      }
+      if (newWidth !== width) onColumnResize(column, newWidth);
     }
   }
 
@@ -203,13 +185,8 @@ export function HeaderCell<R, SR>({
         aria-rowspan={rowSpan}
         aria-selected={isCellSelected}
         aria-sort={ariaSort}
-        tabIndex={tabIndex}
-        className={className}
-        style={style}
-        onMouseDown={onMouseDown}
+        {...{ tabIndex, className, style, onMouseDown, onClick, onKeyDown }}
         onFocus={handleFocus}
-        onClick={onClick}
-        onKeyDown={onKeyDown}
       >
         {content}
 
@@ -228,9 +205,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   const initialLeftRef = useRef<number>(undefined);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
-      return;
-    }
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     // Fix column resizing on a draggable column in FF
     event.preventDefault();
@@ -251,9 +226,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
     const { width } = event.currentTarget.parentElement!.getBoundingClientRect();
     // Use initial left edge so left-side column shifts don't eat the drag delta
     const newWidth = event.clientX + offset - initialLeft;
-    if (width > 0 && newWidth !== width) {
-      onColumnResize(column, newWidth);
-    }
+    if (width > 0 && newWidth !== width) onColumnResize(column, newWidth);
   }
 
   function onLostPointerCapture() {
@@ -269,7 +242,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   return (
     <div
       aria-hidden
-      className={resizeHandleClassname}
+      className='after:bg-foreground/30 hover:after:bg-primary/80 absolute inset-y-0 inset-e-0 w-4 cursor-col-resize after:absolute after:inset-e-0 after:top-1/2 after:h-4 after:w-0.5 after:-translate-y-1/2 after:rounded-full after:content-[""]'
       onClick={stopPropagation}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

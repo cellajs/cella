@@ -9,10 +9,7 @@ const yjsTokenRefetchMs = 4 * 60 * 1000;
 
 export const yjsTokenKeys = { entity: (entityType: ProductEntityType, entityId: string) => ['yjs', 'token', entityType, entityId] as const };
 
-/**
- * Why the backend will not issue a token, which no retry changes: `denied` for a 403, the caller may not edit the
- * entity; `deleted` for a 404, the entity is gone. Null for any other error.
- */
+/** Why the backend refuses a token, which no retry changes: `denied` for a 403 (no edit rights), `deleted` for a 404 (entity gone), else null. */
 export const yjsTokenRefusal = (error: unknown) => {
   if (!(error instanceof ApiError)) return null;
   if (error.status === 404) return 'deleted';

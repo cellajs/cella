@@ -64,16 +64,7 @@ export function MembersTableBar({
       triggerRef: deleteButtonRef,
       resource: 'c:member',
       count: selected.length,
-      content: (
-        <DeleteMemberships
-          tenantId={channel.tenantId}
-          organizationId={organizationId}
-          entityId={channel.id}
-          entityType={channel.entityType}
-          members={selected}
-          callback={clearSelection}
-        />
-      ),
+      content: <DeleteMemberships channel={channel} members={selected} callback={clearSelection} />,
       title: t('c:remove_resource', { resource: t('c:member_other') }),
       description: <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email) }} />,
     });
@@ -84,20 +75,10 @@ export function MembersTableBar({
     openInviteDialog({ channel, description, triggerRef, containerRef: inviteContainerRef });
   };
 
-  const fetchExport = (page: PageRequest) =>
-    fetchMembersForExport(
-      {
-        q,
-        sort,
-        order,
-        role,
-        entityId: channel.id,
-        entityType: channel.entityType,
-        tenantId: channel.tenantId,
-        organizationId,
-      },
-      page,
-    );
+  const fetchExport = (page: PageRequest) => {
+    const { id: entityId, entityType, tenantId } = channel;
+    return fetchMembersForExport({ q, sort, order, role, entityId, entityType, tenantId, organizationId }, page);
+  };
 
   return (
     <TableBarShell

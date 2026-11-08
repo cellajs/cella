@@ -36,7 +36,7 @@ function LegalNoticeLink({ subject, children }: { subject: LegalSubject; childre
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const openDialog = () => {
+  const openDialog = () =>
     dialoger.getState().create(<LegalDialog initialSubject={subject} />, {
       id: 'legal',
       triggerRef,
@@ -45,7 +45,6 @@ function LegalNoticeLink({ subject, children }: { subject: LegalSubject; childre
       outsideScroll: true,
       drawerOnMobile: false,
     });
-  };
 
   return (
     <InlineLinkButton ref={triggerRef} onClick={openDialog}>

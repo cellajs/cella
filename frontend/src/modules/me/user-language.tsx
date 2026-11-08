@@ -29,7 +29,7 @@ export function UserLanguage() {
 
   if (appConfig.languages.length < 2) return null;
 
-  const openDropdown = () => {
+  const openDropdown = () =>
     dropdowner.getState().create(
       <div className="flex flex-col">
         {appConfig.languages.map((language) => (
@@ -40,7 +40,6 @@ export function UserLanguage() {
       </div>,
       { id: 'user-language', triggerId: 'user-language-trigger', triggerRef, kind: 'menu' },
     );
-  };
 
   return (
     <Button

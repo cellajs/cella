@@ -1,7 +1,6 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
-import type * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { type ComponentProps, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStuck } from '~/hooks/use-stuck';
 import { Button } from '~/modules/ui/button';
@@ -93,10 +92,8 @@ export function DialogContent({
             dock
               ? 'grid items-end justify-items-center overflow-hidden p-4'
               : outsideScroll
-                ? // Outside scroll: the viewport scrolls
-                  'flex flex-col items-center overflow-y-auto overscroll-none p-4 max-sm:p-0'
-                : // Inside scroll: the popup scrolls
-                  'grid place-items-center overflow-hidden',
+                ? 'flex flex-col items-center overflow-y-auto overscroll-none p-4 max-sm:p-0'
+                : 'grid place-items-center overflow-hidden',
           ],
           viewportClassName,
         )}
@@ -129,7 +126,7 @@ export const stuckEdgeClass = tw(
   'after:bg-border after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:opacity-0 after:transition-opacity data-stuck:after:opacity-100',
 );
 
-export interface HeaderBarProps extends Omit<React.ComponentProps<'div'>, 'ref'> {
+export interface HeaderBarProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Only this bar sticks: a description renders after it and scrolls away with the content. */
   sticky?: boolean;
   closeButton?: boolean;
@@ -174,7 +171,7 @@ export function HeaderClose() {
   );
 }
 
-export function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="dialog-footer" className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />;
 }
 

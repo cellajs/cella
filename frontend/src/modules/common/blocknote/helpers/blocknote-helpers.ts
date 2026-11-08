@@ -2,14 +2,12 @@ import { BlockNoteEditor } from '@blocknote/core';
 import { parseBlocks } from 'shared/blocknote';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import type { AnyBlockNoteEditor, CustomBlock } from '~/modules/common/blocknote/types';
+import type { CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
 export const getHeadlessEditor = () => {
-  if (!headlessEditor) {
-    headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
-  }
+  if (!headlessEditor) headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
   return headlessEditor;
 };
 
@@ -46,16 +44,4 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
   } catch {
     return false;
   }
-};
-
-/** The outer `transact` carries `addToHistory: false`, which covers both the Yjs UndoManager and ProseMirror history. */
-export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
-  editor: TEditor,
-  block: Parameters<TEditor['updateBlock']>[0],
-  update: Parameters<TEditor['updateBlock']>[1],
-) => {
-  editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
-    tr.setMeta('addToHistory', false);
-    editor.updateBlock(block, update);
-  });
 };

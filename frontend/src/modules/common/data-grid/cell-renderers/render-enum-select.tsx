@@ -56,9 +56,7 @@ export function RenderEnumSelect<TRow extends { id: string; name?: string | null
   };
 
   // EditCell handles flushSync and focus restoration to the cell on commit.
-  const handleSelect = (value: TValue) => {
-    onRowChange(buildNextRow(value), true);
-  };
+  const handleSelect = (value: TValue) => onRowChange(buildNextRow(value), true);
 
   // ESC, outside click, drawer swipe → exit edit mode without committing.
   const handleOpenChange = (open: boolean) => {
@@ -120,9 +118,7 @@ function EnumSelectMenu<TValue extends string>({
 }) {
   // The Popover does not auto-focus a child, so the listbox is focused for arrow and typeahead keys.
   const listRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    listRef.current?.focus({ preventScroll: true });
-  }, []);
+  useEffect(() => listRef.current?.focus({ preventScroll: true }), []);
 
   return (
     <Combobox<TValue>

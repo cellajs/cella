@@ -21,11 +21,8 @@ function getMatchedBreakpoint() {
   let matched = sortedBreakpoints[0];
 
   for (const breakpoint of sortedBreakpoints) {
-    if (matchesBreakpoint(breakpoint)) {
-      matched = breakpoint;
-    } else {
-      break;
-    }
+    if (matchesBreakpoint(breakpoint)) matched = breakpoint;
+    else break;
   }
   return matched;
 }
@@ -37,15 +34,11 @@ function updateGlobalBreakpoint() {
   const newBreakpoint = getMatchedBreakpoint();
   if (newBreakpoint !== currentBreakpoint) {
     currentBreakpoint = newBreakpoint;
-    for (const listener of listeners) {
-      listener();
-    }
+    for (const listener of listeners) listener();
   }
 }
 
-for (const query of mediaQueries.values()) {
-  query?.addEventListener('change', updateGlobalBreakpoint);
-}
+for (const query of mediaQueries.values()) query?.addEventListener('change', updateGlobalBreakpoint);
 if (!window.matchMedia) window.addEventListener('resize', updateGlobalBreakpoint);
 
 function subscribe(callback: () => void) {
@@ -53,25 +46,19 @@ function subscribe(callback: () => void) {
   return () => listeners.delete(callback);
 }
 
-function getSnapshot() {
-  return currentBreakpoint;
-}
+const getSnapshot = () => currentBreakpoint;
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
+export const useCurrentBreakpoint = (enableReactivity = true): BreakpointKey => {
   const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot);
   return breakpointState as BreakpointKey;
-}
+};
 
-function useBreakpointIndex(enableReactivity = true) {
-  return sortedBreakpoints.indexOf(useCurrentBreakpoint(enableReactivity));
-}
+const useBreakpointIndex = (enableReactivity = true) => sortedBreakpoints.indexOf(useCurrentBreakpoint(enableReactivity));
 
-export function useBreakpointBelow(breakpoint: BreakpointKey, enableReactivity = true) {
-  return useBreakpointIndex(enableReactivity) < sortedBreakpoints.indexOf(breakpoint);
-}
+export const useBreakpointBelow = (breakpoint: BreakpointKey, enableReactivity = true) =>
+  useBreakpointIndex(enableReactivity) < sortedBreakpoints.indexOf(breakpoint);
 
-export function useBreakpointAbove(breakpoint: BreakpointKey, enableReactivity = true) {
-  return useBreakpointIndex(enableReactivity) >= sortedBreakpoints.indexOf(breakpoint);
-}
+export const useBreakpointAbove = (breakpoint: BreakpointKey, enableReactivity = true) =>
+  useBreakpointIndex(enableReactivity) >= sortedBreakpoints.indexOf(breakpoint);

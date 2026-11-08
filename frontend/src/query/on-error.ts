@@ -1,6 +1,7 @@
 import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
-import { ApiError, tearsDownSession } from '~/lib/api';
+import { isSessionLost } from 'shared/utils/session-lost';
+import { ApiError } from '~/lib/api';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -40,38 +41,40 @@ const getToastDescription = (error: ApiError, message: string): ReactNode => {
   return createElement(ApiErrorDescription, { message, cause, report });
 };
 
+/** Whether the global error handler signs the tab out over this refusal: a lost session's 401, except on an auth page. */
+const tearsDownSession = (error: ApiError): boolean => isSessionLost(error) && !location.pathname.startsWith('/auth/');
+
 /** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // The API client reports a request without a response; an ApiError means the server answered, so it falls through.
   if (isNetworkError(error)) return;
 
-  if (error instanceof ApiError) {
-    // A /me probe without a valid session shows no error.
-    if (error.path === '/me' && error.status === 401) return;
+  if (!(error instanceof ApiError)) return;
+  const { type, instance, path, status } = error;
+  // A /me probe without a valid session shows no error.
+  if (path === '/me' && status === 401) return;
 
-    // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
-    if (error.status >= 500) {
-      console.error('[api]', error.type ?? 'server_error', { instance: error.instance, path: error.path, status: error.status });
-    }
+  // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
+  if (status >= 500) console.error('[api]', type ?? 'server_error', { instance, path, status });
 
-    // A query or mutation with a local toast opts out through `meta`.
-    const suppress = meta?.suppressGlobalErrorToast;
-    // The API client raised the down alert for a service that is down; it lies over the toast stack, so no toast follows.
-    const skipToast = error.type === 'service_unavailable' || (typeof suppress === 'function' ? suppress(error) : suppress === true);
+  // A query or mutation with a local toast opts out through `meta`.
+  const suppress = meta?.suppressGlobalErrorToast;
+  const optedOut = typeof suppress === 'function' ? suppress(error) : suppress === true;
+  // The API client raised the down alert for a service that is down; it lies over the toast stack, so no toast follows.
+  const skipToast = type === 'service_unavailable' || optedOut;
 
-    if (!skipToast) {
-      const { title, message } = getErrorInfo({ error });
+  if (!skipToast) {
+    const { title, message } = getErrorInfo({ error });
 
-      const toastType = toastTypeBySeverity[error.severity ?? 'info'];
-      toaster[toastType](title, { description: getToastDescription(error, message) });
-    }
+    const toastType = toastTypeBySeverity[error.severity ?? 'info'];
+    toaster[toastType](title, { description: getToastDescription(error, message) });
+  }
 
-    if (tearsDownSession(error)) {
-      const redirect = location.pathname + location.search;
-      // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
-      teardownUserState(false);
-      // Dynamic import: the route tree imports this module, so a static router import would be a cycle.
-      import('~/routes/router').then(({ router }) => router.navigate({ to: '/auth/authenticate', search: { redirect } }));
-    }
+  if (tearsDownSession(error)) {
+    const redirect = location.pathname + location.search;
+    // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
+    teardownUserState(false);
+    // Dynamic import: the route tree imports this module, so a static router import would be a cycle.
+    import('~/routes/router').then(({ router }) => router.navigate({ to: '/auth/authenticate', search: { redirect } }));
   }
 };

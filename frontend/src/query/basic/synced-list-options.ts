@@ -15,7 +15,7 @@ import type { PageParam, QueryData } from '~/query/types';
  * Where a canonical list lives: its read is checked against this scope's cursor, and a range read is narrowed to it. Only
  * a home list, or the organization's list that spans homes, passes one: a range row cannot be checked against a server filter.
  */
-export interface SyncedListScope {
+interface SyncedListScope {
   organizationId: string;
   tenantId: string;
   /** The home channel the list holds; none for an org-homed list or one that spans homes. */

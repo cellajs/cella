@@ -5,11 +5,7 @@ import type { TKey } from '~/lib/i18n-locales';
 
 export type SheetTab = { id: string; label: TKey; element: ReactNode };
 
-interface SheetTabsProps {
-  tabs: SheetTab[];
-}
-
-export function SheetTabs({ tabs }: SheetTabsProps) {
+export function SheetTabs({ tabs }: { tabs: SheetTab[] }) {
   // Stable per instance, so the underline animates between tabs
   const layoutId = useId();
   const { t } = useTranslation();

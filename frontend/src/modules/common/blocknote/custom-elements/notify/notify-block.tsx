@@ -1,11 +1,11 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { createReactBlockSpec } from '@blocknote/react';
 import i18n from 'i18next';
-import { MessageCircleIcon } from 'lucide-react';
+import { CircleAlertIcon, CircleCheckIcon, CircleXIcon, InfoIcon, MessageCircleIcon } from 'lucide-react';
 import { typedEntries } from 'shared';
-import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
-import { notifyOptions } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
+import { type NotifyType, notifyConfig } from 'shared/utils/blocknote-schema-configs';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import type { IconComponent } from '~/modules/common/icons/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,14 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
+
+/** In menu order. */
+const notifyOptions = {
+  warning: { titleKey: 'c:warning', icon: CircleAlertIcon },
+  error: { titleKey: 'c:error', icon: CircleXIcon },
+  info: { titleKey: 'c:info', icon: InfoIcon },
+  success: { titleKey: 'c:success', icon: CircleCheckIcon },
+} as const satisfies Record<NotifyType, { titleKey: string; icon: IconComponent }>;
 
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {

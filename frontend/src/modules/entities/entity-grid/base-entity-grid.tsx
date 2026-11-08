@@ -54,30 +54,16 @@ function EntityGridSkeleton({ tileHeight = 215 }: { tileHeight?: number }) {
   );
 }
 
-export function BaseEntityGrid<TEntity extends { id: string }>({
-  label,
-  entities,
-  renderTile,
-  skeletonHeight,
-  isLoading,
-  isFetching,
-  error,
-  hasNextPage,
-  fetchMore,
-  isFiltered,
-  onResetFilters,
-  limitedView,
-  onExpand,
-  queryKey,
-}: BaseEntityGridProps<TEntity>) {
+export function BaseEntityGrid<TEntity extends { id: string }>(props: BaseEntityGridProps<TEntity>) {
+  const { entities, isFetching, error, hasNextPage, onResetFilters } = props;
   const { t } = useTranslation();
-  const total = useListQueryTotal(queryKey ?? noTotalKey);
+  const total = useListQueryTotal(props.queryKey ?? noTotalKey);
 
-  if (isLoading || !entities) return <EntityGridSkeleton tileHeight={skeletonHeight} />;
+  if (props.isLoading || !entities) return <EntityGridSkeleton tileHeight={props.skeletonHeight} />;
 
   if (!isFetching && !error && entities.length === 0) {
-    const resource = t(label, { count: 0 });
-    return isFiltered ? (
+    const resource = t(props.label, { count: 0 });
+    return props.isFiltered ? (
       <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }}>
         {onResetFilters && (
           <Button variant="secondary" onClick={onResetFilters}>
@@ -90,7 +76,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     );
   }
 
-  const isLimited = limitedView && entities.length > gridPreviewLimit;
+  const isLimited = props.limitedView && entities.length > gridPreviewLimit;
   const visibleEntities = isLimited ? entities.slice(0, gridPreviewLimit) : entities;
   // Without a list total, the loaded rows are the total only once every page is in
   const knownTotal = total ?? (hasNextPage ? null : entities.length);
@@ -100,18 +86,18 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     <div className="mb-12">
       <div className={entityGridClass}>
         {visibleEntities.map((entity) => (
-          <Fragment key={entity.id}>{renderTile(entity)}</Fragment>
+          <Fragment key={entity.id}>{props.renderTile(entity)}</Fragment>
         ))}
       </div>
 
       {isLimited ? (
         <div className="mt-4 flex justify-center">
-          <Button variant="ghost" onClick={onExpand}>
+          <Button variant="ghost" onClick={props.onExpand}>
             {expandLabel}
           </Button>
         </div>
       ) : (
-        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
+        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={props.fetchMore} />
       )}
     </div>
   );

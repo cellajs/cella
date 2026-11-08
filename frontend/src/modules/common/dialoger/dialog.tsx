@@ -11,26 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-interface DialogerDialogProps {
-  dialog: InternalDialog;
-}
-
-export function DialogerDialog({ dialog }: DialogerDialogProps) {
-  const {
-    id,
-    content,
-    open,
-    triggerRef,
-    description,
-    title,
-    titleContent = title,
-    outsideScroll = false,
-    className,
-    headerClassName,
-    searchLayout,
-    dock,
-    layer,
-  } = dialog;
+export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+  const { id, open, description, title, titleContent = title, outsideScroll = false, className, searchLayout, dock, layer } = dialog;
 
   // A container renders the dialog inline: the page keeps scrolling, and takes pointer input unless `overlay` dims it; focus stays in the dialog.
   // A phone has no room beside the form, so it fills the screen there.
@@ -39,9 +21,9 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
   const containerElement = isMobile ? undefined : dialog.containerElement;
   const inline = !!container;
 
-  const removeDialog = () => dialoger.getState().remove(dialog.id);
+  const removeDialog = () => dialoger.getState().remove(id);
 
-  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().hide(dialog.id), removeDialog);
+  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().hide(id), removeDialog);
 
   // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
   const dismiss = dialog.instantClose ? removeDialog : closeDialog;
@@ -62,23 +44,21 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         ref={popupRef}
         id={String(id)}
         container={containerElement}
-        layer={layer}
-        outsideScroll={outsideScroll}
-        dock={dock}
+        {...{ layer, outsideScroll, dock }}
         viewportClassName={searchLayout ? searchDialogLayout.viewportClassName : undefined}
         overlayClassName={searchLayout ? searchDialogLayout.overlayClassName : undefined}
         className={cn(className, searchLayout && searchDialogLayout.className, containerElement && (container?.overlay ? spotlightLift : 'z-40'))}
         initialFocus={() => touchInitialFocus(popupRef)}
-        finalFocus={() => finalFocusFor(triggerRef, String(id))}
+        finalFocus={() => finalFocusFor(dialog.triggerRef, String(id))}
       >
         {title && (
           // Inline, the page has no padding: top-4 keeps the stuck header off the window's edge
-          <DialogHeader sticky closeButton={!dock} className={cn(dock && 'justify-center', headerClassName, inline && 'sm:top-4')}>
+          <DialogHeader sticky closeButton={!dock} className={cn(dock && 'justify-center', dialog.headerClassName, inline && 'sm:top-4')}>
             <DialogTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</DialogTitle>
           </DialogHeader>
         )}
         {description && <DialogDescription className={cn(dock && 'text-center')}>{description}</DialogDescription>}
-        <OverlayCloseContext.Provider value={{ close: dismiss, back: dismiss }}>{content}</OverlayCloseContext.Provider>
+        <OverlayCloseContext.Provider value={{ close: dismiss, back: dismiss }}>{dialog.content}</OverlayCloseContext.Provider>
       </DialogContent>
     </Dialog>
   );

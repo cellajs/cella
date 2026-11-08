@@ -36,10 +36,9 @@ export function ReloadPrompt() {
       }, swUpdateInterval);
 
       const check = () => {
-        if (document.visibilityState === 'visible') {
-          console.debug('[ServiceWorker] Visibility/online update check');
-          registration.update();
-        }
+        if (document.visibilityState !== 'visible') return;
+        console.debug('[ServiceWorker] Visibility/online update check');
+        registration.update();
       };
       document.addEventListener('visibilitychange', check);
       const unsubscribeOnline = onlineManager.subscribe((online) => {

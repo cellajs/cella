@@ -1,7 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import type { TFunction } from 'i18next';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InviteOutcome } from 'sdk';
 import { appConfig } from 'shared';
@@ -17,7 +16,7 @@ import type { InvitePerson } from '~/modules/user/use-invite-list';
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
 
 /** How an address reads everywhere it shows: the line under a field, its tile and its chip. */
-export interface InviteView {
+interface InviteView {
   group: InviteGroupKey;
   tone: TileTone;
   word: string;
@@ -29,10 +28,7 @@ export interface InviteView {
 
 const day = (date?: string) => (date ? dayjs.utc(date).local().format('D MMM') : '');
 
-/**
- * The view of a checked address, from what the check or the invite answered for it.
- * @param held - The invite waits for its draft channel's publish, which mails only addresses that had no email yet.
- */
+/** The view of a checked address from what the check or the invite answered; `held` mails only addresses with no email yet, on publish. */
 export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, held?: boolean): InviteView => {
   if (outcome?.outcome === 'member') {
     const word = t('c:already_member');
@@ -81,10 +77,10 @@ export function useInviteCheck(
 ) {
   const { t } = useTranslation();
   const settled = useDebounce(emails, 300);
-  const sorted = useMemo(() => [...new Set(settled.map((email) => email.toLowerCase()))].sort(), [settled]);
+  const sorted = [...new Set(settled.map((email) => email.toLowerCase()))].sort();
   const { data, isFetching } = useQuery({ ...inviteCheckQueryOptions(channel, sorted), placeholderData: keepPreviousData });
 
-  const byEmail = useMemo(() => new Map((data ?? []).map((outcome) => [outcome.email, outcome])), [data]);
+  const byEmail = new Map((data ?? []).map((outcome) => [outcome.email, outcome]));
 
   const views = new Map<string, InviteView>();
   const groups: Record<InviteGroupKey, string[]> = { fix: [], unchecked: [], new: [], again: [], out: [] };

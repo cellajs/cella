@@ -11,6 +11,7 @@ import { CopiedIcon } from '~/modules/common/copied-icon';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
+import { SelectFormField } from '~/modules/common/form-fields/select';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
 import { openConfirm } from '~/modules/common/open-confirm';
@@ -55,13 +56,8 @@ const splitList = (value: string, separator: RegExp) =>
 /** The link an institution shares with its members: the entry page of its connection. */
 const entryLink = (connection: Connection) => `${appConfig.frontendUrl}/auth/sso/${connection.id}`;
 
-interface ConnectionsCardProps {
-  tenant: Tenant;
-  className?: string;
-}
-
 /** A tenant's SSO connection for system admins, and the form that adds one while the tenant has none. */
-export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
+export function ConnectionsCard({ tenant, className }: { tenant: Tenant; className?: string }) {
   const { t } = useTranslation();
   const { data: connections, isPending } = useQuery(connectionsQueryOptions(tenant.id));
   const { mutate: create, isPending: creating } = useConnectionCreateMutation();
@@ -77,7 +73,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
   const formContainerId = 'tenant-connections';
   const form = useFormWithDraft<FormValues>(`create-connection-${tenant.id}`, { formOptions, formContainerId });
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = (values: FormValues) =>
     create(
       {
         path: { tenantId: tenant.id },
@@ -96,7 +92,6 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
         },
       },
     );
-  };
 
   // A deleted connection ends its institution's sign-in, so the click asks first.
   const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) =>
@@ -177,28 +172,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
           {ssoConnections.length === 0 && federationItems.length > 0 && (
             <Form {...form}>
               <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                <FormField
-                  control={form.control}
-                  name="issuer"
-                  render={({ field }) => (
-                    <FormItem name="issuer">
-                      <FormLabel>{t('c:federation')}</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange} items={federationItems}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {federationItems.map(({ value, label }) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <SelectFormField control={form.control} name="issuer" label={t('c:federation')} options={federationItems} />
                 <FormField
                   control={form.control}
                   name="displayName"

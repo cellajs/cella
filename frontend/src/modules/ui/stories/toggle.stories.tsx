@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BoldIcon, ItalicIcon } from 'lucide-react';
 import { Toggle } from '~/modules/ui/toggle';
 
-/**
- * A two-state button that can be either on or off.
- */
+/** A two-state button that can be either on or off. */
 const meta: Meta<typeof Toggle> = {
   title: 'ui/Toggle',
   component: Toggle,
@@ -22,14 +20,10 @@ export default meta;
 
 type Story = StoryObj<typeof Toggle>;
 
-/**
- * The default form of the toggle.
- */
+/** The default form of the toggle. */
 export const Default: Story = {};
 
-/**
- * Use the text element to add a label to the toggle.
- */
+/** Use the text element to add a label to the toggle. */
 export const WithText: Story = {
   render: (args) => (
     <Toggle {...args}>
@@ -46,7 +40,5 @@ export const WithText: Story = {
  */
 export const Small: Story = { args: { size: 'sm' } };
 
-/**
- * Add the `disabled` prop to prevent interactions with the toggle.
- */
+/** Add the `disabled` prop to prevent interactions with the toggle. */
 export const Disabled: Story = { args: { disabled: true } };

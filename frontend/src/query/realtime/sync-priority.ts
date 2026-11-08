@@ -8,9 +8,7 @@ import { getRouter } from '~/routes/-router-instance';
 export function getRouteOrganizationId(): string | null {
   for (const match of getRouter().state.matches) {
     const context = match.context;
-    if (context && 'organization' in context && context.organization) {
-      return context.organization.id;
-    }
+    if (context && 'organization' in context && context.organization) return context.organization.id;
   }
   return null;
 }
@@ -19,9 +17,7 @@ export function getRouteOrganizationId(): string | null {
 function getRouteTenantId(): string | null {
   for (const match of getRouter().state.matches) {
     const context = match.context;
-    if (context && 'tenantId' in context) {
-      return context.tenantId;
-    }
+    if (context && 'tenantId' in context) return context.tenantId;
   }
   return null;
 }
@@ -32,9 +28,7 @@ type OrgTenantIdSource = { organizationId?: string | null; tenantId?: string | n
 export function resolveQueryOrgTenantIds(cached: OrgTenantIdSource | undefined, resource: string): { organizationId: string; tenantId: string } {
   const organizationId = cached?.organizationId ?? getRouteOrganizationId();
   const tenantId = cached?.tenantId ?? getRouteTenantId();
-  if (!organizationId || !tenantId) {
-    throw new Error(`Cannot resolve organizationId/tenantId for ${resource} fetch`);
-  }
+  if (!organizationId || !tenantId) throw new Error(`Cannot resolve organizationId/tenantId for ${resource} fetch`);
   return { organizationId, tenantId };
 }
 

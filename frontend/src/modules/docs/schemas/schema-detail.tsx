@@ -14,17 +14,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-function openSchemaSheet(schema: GenComponentSchema, trigger: HTMLAnchorElement) {
+const openSchemaSheet = (schema: GenComponentSchema, trigger: HTMLAnchorElement) =>
   openDocsSheet({ id: `schema-${schema.name}`, title: i18n.t('c:schema'), trigger, content: <SchemaDetail schema={schema} /> });
-}
-
-interface SchemaLinkProps {
-  schema: GenComponentSchema;
-  className?: string;
-}
 
 /** A schema's name, linking to it on the schemas page. A plain click opens it in a sheet over the current page. */
-export function SchemaLink({ schema, className }: SchemaLinkProps) {
+export function SchemaLink({ schema, className }: { schema: GenComponentSchema; className?: string }) {
   return (
     <Link
       {...schemaLinkOptions(schema)}
@@ -92,12 +86,8 @@ function SchemaDetail({ schema, id, className }: SchemaDetailProps) {
   );
 }
 
-interface TagSchemasListProps {
-  schemas: GenComponentSchema[];
-}
-
 /** Registers all schema refs with the shared scroll spy in one hook call. */
-export function TagSchemasList({ schemas }: TagSchemasListProps) {
+export function TagSchemasList({ schemas }: { schemas: GenComponentSchema[] }) {
   const sectionIds = schemas.map(schemaAnchor);
   useScrollSpy(sectionIds);
 

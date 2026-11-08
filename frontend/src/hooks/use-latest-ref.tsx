@@ -19,9 +19,7 @@ export function useLatestCallback<T extends AnyFunction | undefined | null>(fn: 
     ref.current = fn;
   });
 
-  const stableCallback = useCallback((...args: Parameters<NonNullable<T>>) => {
-    return ref.current?.(...args);
-  }, []);
+  const stableCallback = useCallback((...args: Parameters<NonNullable<T>>) => ref.current?.(...args), []);
 
   return (fn ? stableCallback : fn) as T;
 }

@@ -37,7 +37,7 @@ export interface DragState {
   end?: EndDragState;
 }
 
-export interface EndDragState {
+interface EndDragState {
   /** Fit at drag start */
   fit: boolean;
   /** What the panels may take for the row to fit: the parent's width less the separators */
@@ -46,7 +46,7 @@ export interface EndDragState {
   reach: number;
 }
 
-export interface FitInput {
+interface FitInput {
   panels: PanelConfig[];
   /** The user's widths: at or below `collapsedWidth` is a panel they closed, and anything unusable counts as `minWidth` */
   chosen: Record<string, number>;
@@ -72,7 +72,6 @@ function collapseProgress(panel: PanelConfig, rawWidth: number): number {
   return (panel.minWidth - rawWidth) / (panel.minWidth - snapPoint);
 }
 
-// Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses.
 /** Shares `available` by `weights`: whoever a share would take below `minWidth` holds it, and the others share the rest exactly. */
 export function distributeWidths(panels: PanelConfig[], weights: Record<string, number>, available: number): Record<string, number> {
   const widths: Record<string, number> = {};
@@ -102,6 +101,7 @@ export function distributeWidths(panels: PanelConfig[], weights: Record<string, 
   return widths;
 }
 
+/** Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses. */
 export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number): LayoutResult {
   const { separatorIndex, initialWidths, collapsedAtStart, autoFill, mustFit } = drag;
   const widths = { ...initialWidths };
@@ -137,9 +137,7 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
 
   let remaining = absDx;
   // Overflow mode funds the expand from trailing gap (O2); autoFill makes victims fund it.
-  if (expandCost > 0 && !autoFill) {
-    remaining -= expandCost;
-  }
+  if (expandCost > 0 && !autoFill) remaining -= expandCost;
 
   let totalFreed = 0;
   let collapseFreed = 0;
@@ -166,16 +164,13 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
 
   // G9 phase 2: collapse victims nearest first, only once all are at min
   if (remaining > 0) {
+    // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
+    const directVictimBlocked = autoFill && !mustFit && isExpandingFromCollapsed && totalFreed < expandCost;
     for (const victimIndex of victimIndices) {
       const victim = panels[victimIndex];
       if (!victim || remaining <= 0) break;
-      if (collapsedAtStart.has(victim.id)) continue;
-      if (!victim.collapsible) continue;
-
-      // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
-      if (autoFill && !mustFit && isExpandingFromCollapsed && victimIndex === directVictimIndex && totalFreed < expandCost) {
-        continue;
-      }
+      if (collapsedAtStart.has(victim.id) || !victim.collapsible) continue;
+      if (directVictimBlocked && victimIndex === directVictimIndex) continue;
 
       const rawWidth = victim.minWidth - remaining;
 
@@ -219,8 +214,7 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
 
     // F7: not funded yet, so the gate holds
     if (mustFit && isExpandingFromCollapsed && totalFreed + collapseFreed < expandCost) {
-      const side = draggingLeft ? 'left' : 'right';
-      hints.push({ panelId: grower.id, side, mode: 'expand', progress: 1, reach: 0 });
+      hints.push({ panelId: grower.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress: 1, reach: 0 });
       const neighbour = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
       if (neighbour && !hints.some((hint) => hint.panelId === neighbour.id)) {
         hints.push({ panelId: neighbour.id, side: draggingLeft ? 'right' : 'left', mode: 'cover', progress: 1, reach: expandCost });

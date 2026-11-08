@@ -47,11 +47,7 @@ export function OrganizationsTableBar({
   const openNewsletterSheet = () => {
     const ids = selected.map(({ id }) => id);
     const newsletterTabs: SheetTab[] = [
-      {
-        id: 'write',
-        label: 'c:write',
-        element: <CreateNewsletterForm organizationIds={ids} />,
-      },
+      { id: 'write', label: 'c:write', element: <CreateNewsletterForm organizationIds={ids} /> },
       { id: 'preview', label: 'c:preview', element: <NewsletterPreview /> },
     ];
 

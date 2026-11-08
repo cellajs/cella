@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { SearchIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeftRightIcon, BracesIcon, ChevronRightIcon, FileTextIcon, HashIcon, SearchIcon } from 'lucide-react';
+import { Fragment, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { parseTerms } from 'shared/utils/text-match';
 import { scrollToSectionById } from '~/hooks/scroll-spy-store';
@@ -10,18 +10,21 @@ import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MatchScope } from '~/modules/common/match-highlight/match-scope';
 import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
+import { SearchRowIcon } from '~/modules/common/search-row-icon';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
-import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
 import { useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
 import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
 import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { resolveSearchInput } from '~/utils/recent-searches';
 
@@ -176,5 +179,60 @@ export function DocsSearch() {
         </div>
       </div>
     </Combobox>
+  );
+}
+
+const treeLineClass = 'absolute left-2 w-px bg-border';
+
+/** Heading and text rows hang under their page row with a continuous tree line, which parts around a heading's icon. */
+function DocsSearchRow({ item }: { item: DocsSearchResult }) {
+  if (item.type === 'heading' || item.type === 'text') {
+    return (
+      <div className="relative flex w-full min-w-0 items-center gap-2">
+        {item.type === 'heading' ? (
+          <>
+            <span aria-hidden="true" className={cn(treeLineClass, '-top-2 bottom-[calc(50%+0.625rem)]')} />
+            <span aria-hidden="true" className={cn(treeLineClass, 'top-[calc(50%+0.625rem)] -bottom-2')} />
+          </>
+        ) : (
+          <span aria-hidden="true" className={cn(treeLineClass, '-inset-y-2')} />
+        )}
+        <SearchRowIcon>{item.type === 'heading' && <HashIcon className="text-muted-foreground size-3.5" />}</SearchRowIcon>
+        <span className={cn('truncate', item.type === 'text' && 'text-muted-foreground')}>
+          <HighlightText text={item.title} />
+        </span>
+      </div>
+    );
+  }
+
+  const LeadingIcon = item.method ? ArrowLeftRightIcon : item.type === 'schema' ? BracesIcon : FileTextIcon;
+  return (
+    <div className="flex w-full min-w-0 items-end gap-2">
+      {/* h-5 is the title's line: the icon and method stay on it under a breadcrumb */}
+      <SearchRowIcon className="h-5">
+        <LeadingIcon className="text-muted-foreground" />
+      </SearchRowIcon>
+      <div className="flex min-w-0 grow flex-col gap-0.5">
+        {item.breadcrumbs.length > 0 && (
+          <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
+            {item.breadcrumbs.map((crumb, index) => (
+              <Fragment key={crumb}>
+                {index > 0 && <ChevronRightIcon className="size-3" />}
+                <span className="truncate">{crumb}</span>
+              </Fragment>
+            ))}
+          </span>
+        )}
+        <span className={cn('truncate font-medium', item.deprecated && 'text-muted-foreground line-through')}>
+          <HighlightText text={item.title} />
+        </span>
+      </div>
+      {/* After the title: its width differs per method, and text keeps one column */}
+      {item.method && (
+        <span className="flex h-5 items-center">
+          <MethodLabel method={item.method} />
+        </span>
+      )}
+    </div>
   );
 }

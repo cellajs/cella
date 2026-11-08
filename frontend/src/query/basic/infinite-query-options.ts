@@ -10,9 +10,7 @@ const baseInfiniteQueryOptions = {
 };
 
 /** The paging params of one page read; the first page sends no token. */
-export function pageQuery(maxPageSize: number, pageToken: PageParam) {
-  return pageToken ? { maxPageSize, pageToken } : { maxPageSize };
-}
+export const pageQuery = (maxPageSize: number, pageToken: PageParam) => (pageToken ? { maxPageSize, pageToken } : { maxPageSize });
 
 /** A list starts over once a minute at most: a token of a fresh first page that dies too is a server fault, which toasts. */
 const restartInterval = 60_000;
@@ -40,22 +38,19 @@ type TokenPageContext = { pageParam: PageParam; signal: AbortSignal; client: Que
  * list restored from the persisted cache) starts the list over from its first page, without the global toast. A
  * call site that sets `meta` of its own spreads this `meta` into it.
  */
-export function tokenPaging<TPage extends QueryData<unknown>>(fetchPage: (pageToken: PageParam, signal: AbortSignal) => Promise<TPage>) {
-  return {
-    queryFn: async ({ pageParam, signal, client, queryKey }: TokenPageContext) => {
-      try {
-        return await fetchPage(pageParam, signal);
-      } catch (error) {
-        if (pageParam && error instanceof ApiError && error.type === 'invalid_page_token') startOver(client, queryKey, error);
-        throw error;
-      }
-    },
-    meta: { suppressGlobalErrorToast: (error: ApiError) => restartErrors.has(error) },
-    ...baseInfiniteQueryOptions,
-  };
-}
+export const tokenPaging = <TPage extends QueryData<unknown>>(fetchPage: (pageToken: PageParam, signal: AbortSignal) => Promise<TPage>) => ({
+  queryFn: async ({ pageParam, signal, client, queryKey }: TokenPageContext) => {
+    try {
+      return await fetchPage(pageParam, signal);
+    } catch (error) {
+      if (pageParam && error instanceof ApiError && error.type === 'invalid_page_token') startOver(client, queryKey, error);
+      throw error;
+    }
+  },
+  meta: { suppressGlobalErrorToast: (error: ApiError) => restartErrors.has(error) },
+  ...baseInfiniteQueryOptions,
+});
 
-/** A list's `orderBy` param from the sort and order a cache key holds. */
 export const orderByParam = <TSort extends string>(sort: TSort, order: SortOrder): `${TSort} ${SortOrder}` => `${sort} ${order}`;
 
 type Live<T> = Exclude<T, { deletedAt: string }>;

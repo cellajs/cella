@@ -29,9 +29,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the radio group.
- */
+/** The default form of the radio group. */
 export const Default: Story = {};
 
 export const ShouldToggleRadio: Story = {

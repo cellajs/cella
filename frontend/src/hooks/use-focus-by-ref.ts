@@ -13,9 +13,7 @@ export function useFocusByRef({ trigger, delay = 0 }: UseFocusByRefOptions = {})
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = () => {
-    if (focusRef.current && !isTouchInteraction()) {
-      focusRef.current.focus();
-    }
+    if (focusRef.current && !isTouchInteraction()) focusRef.current.focus();
   };
 
   useEffect(() => {

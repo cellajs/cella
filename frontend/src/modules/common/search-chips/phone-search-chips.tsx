@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import { type KeyboardEvent, type RefObject, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
@@ -17,81 +17,6 @@ import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
-
-interface ClosedSearchFieldProps {
-  triggerRef: RefObject<HTMLButtonElement | null>;
-  label: string;
-  chips: SearchChip[];
-  words: string[];
-  chipKeys: string[];
-  hasAlternatives: (chip: SearchChip) => boolean;
-  onOpen: (pickedChipKey?: string) => void;
-  onPressWord: (word: string) => void;
-  onRemoveWord: (word: string) => void;
-  disabled?: boolean;
-  className?: string;
-}
-
-/** The closed field: as many chips as fit on its line and a count of the others, over a trigger that opens the dialog. */
-function ClosedSearchField({
-  triggerRef,
-  label,
-  chips,
-  words,
-  chipKeys,
-  hasAlternatives,
-  onOpen,
-  onPressWord,
-  onRemoveWord,
-  disabled,
-  className,
-}: ClosedSearchFieldProps) {
-  const rowRef = useRef<HTMLDivElement>(null);
-
-  const chipCount = chips.length + words.length;
-  const { moreCount, hiddenClass } = useFittingChips(rowRef, chipKeys);
-
-  return (
-    <div className={cn('border-input relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border pl-1.5', className)}>
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={label}
-        aria-haspopup="dialog"
-        disabled={disabled}
-        onClick={() => onOpen()}
-        className="focus-effect absolute inset-0 rounded-md"
-      />
-      <SearchIcon className={cn('pointer-events-none size-5 shrink-0', chipCount === 0 && 'opacity-50')} />
-      {chipCount === 0 ? (
-        <span className="text-faint-foreground pointer-events-none truncate">{label}</span>
-      ) : (
-        <div ref={rowRef} className="pointer-events-none relative flex min-w-0 grow items-center gap-1.5">
-          {chips.map((chip, index) => (
-            <FilterChip
-              key={chip.key}
-              chip={chip}
-              size="lg"
-              onPress={hasAlternatives(chip) ? () => onOpen(chip.key) : undefined}
-              className={cn('shrink-0', hiddenClass(index))}
-            />
-          ))}
-          {words.map((text, index) => (
-            <WordChip
-              key={text}
-              text={text}
-              size="lg"
-              onPress={() => onPressWord(text)}
-              onRemove={() => onRemoveWord(text)}
-              className={cn('shrink-0', hiddenClass(chips.length + index))}
-            />
-          ))}
-          {moreCount > 0 && <MoreChipsButton count={moreCount} size="lg" onPress={() => onOpen()} className="pointer-events-auto" />}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** The field on a phone: its chips show while closed, and it opens as a dialog over the list, which a pick or the search key closes to show the results. */
 export function PhoneSearchChips({
@@ -116,6 +41,7 @@ export function PhoneSearchChips({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const highlightedRef = useRef<SearchSelection | undefined>(undefined);
 
   const search = useSearchWords({ value, onSearch });
@@ -126,7 +52,8 @@ export function PhoneSearchChips({
 
   const hasChips = chips.length > 0 || words.length > 0;
   const hasSearch = hasChips || !!typingWord;
-  const chipKeys = [...chips.map(({ key }) => key), ...words];
+  // The closed field shows as many chips as fit on its line and a count of the others
+  const { moreCount, hiddenClass } = useFittingChips(rowRef, [...chips.map(({ key }) => key), ...words]);
 
   const open = (pickedChipKey: string | null = null) => {
     // Rendered within the tap, so the input takes focus inside the gesture: iOS opens its keyboard for no later focus
@@ -196,22 +123,53 @@ export function PhoneSearchChips({
           <SearchIcon />
         </Button>
       ) : (
-        <ClosedSearchField
-          triggerRef={triggerRef}
-          label={label}
-          chips={chips}
-          words={words}
-          chipKeys={chipKeys}
-          hasAlternatives={hasAlternatives}
-          onOpen={open}
-          onPressWord={(text) => {
-            search.takeBackWord(text);
-            open();
-          }}
-          onRemoveWord={search.removeWord}
-          disabled={disabled}
-          className={cn(edgeless && 'edgeless', className)}
-        />
+        <div
+          className={cn(
+            'border-input relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border pl-1.5',
+            edgeless && 'edgeless',
+            className,
+          )}
+        >
+          <button
+            ref={triggerRef}
+            type="button"
+            aria-label={label}
+            aria-haspopup="dialog"
+            disabled={disabled}
+            onClick={() => open()}
+            className="focus-effect absolute inset-0 rounded-md"
+          />
+          <SearchIcon className={cn('pointer-events-none size-5 shrink-0', !hasChips && 'opacity-50')} />
+          {hasChips ? (
+            <div ref={rowRef} className="pointer-events-none relative flex min-w-0 grow items-center gap-1.5">
+              {chips.map((chip, index) => (
+                <FilterChip
+                  key={chip.key}
+                  chip={chip}
+                  size="lg"
+                  onPress={hasAlternatives(chip) ? () => open(chip.key) : undefined}
+                  className={cn('shrink-0', hiddenClass(index))}
+                />
+              ))}
+              {words.map((text, index) => (
+                <WordChip
+                  key={text}
+                  text={text}
+                  size="lg"
+                  onPress={() => {
+                    search.takeBackWord(text);
+                    open();
+                  }}
+                  onRemove={() => search.removeWord(text)}
+                  className={cn('shrink-0', hiddenClass(chips.length + index))}
+                />
+              ))}
+              {moreCount > 0 && <MoreChipsButton count={moreCount} size="lg" onPress={() => open()} className="pointer-events-auto" />}
+            </div>
+          ) : (
+            <span className="text-faint-foreground pointer-events-none truncate">{label}</span>
+          )}
+        </div>
       )}
 
       <Dialog
@@ -263,14 +221,11 @@ export function PhoneSearchChips({
               >
                 <ComboboxSearchInput
                   ref={inputRef}
-                  id={id}
-                  name={name}
+                  {...{ id, name, hasSearch, isSearching }}
                   aria-label={label}
                   placeholder={label}
                   enterKeyHint="search"
                   value={draft}
-                  hasSearch={hasSearch}
-                  isSearching={isSearching}
                   onKeyDown={handleKeyDown}
                   className="h-12 text-base"
                   // text-lg sizes the search icon
@@ -307,13 +262,7 @@ export function PhoneSearchChips({
               >
                 <ComboboxList className="h-full max-h-none overflow-visible p-0">
                   <SearchOptionsList
-                    pickingChip={pickingChip}
-                    pickingGroup={pickingGroup}
-                    typingWord={typingWord}
-                    groups={groups}
-                    recents={recents}
-                    hasChips={hasChips}
-                    resultCount={resultCount}
+                    {...{ pickingChip, pickingGroup, typingWord, groups, recents, hasChips, resultCount }}
                     isResultPending={isSearching || search.isPending}
                   />
                 </ComboboxList>

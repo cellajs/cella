@@ -7,9 +7,7 @@ interface StoryArgs {
   size: 'default' | 'sm' | 'xs';
 }
 
-/**
- * One exclusive choice among a few short options, with a pill on the selected one.
- */
+/** One exclusive choice among a few short options, with a pill on the selected one. */
 const meta: Meta<StoryArgs> = {
   title: 'ui/SegmentedControl',
   tags: ['autodocs'],
@@ -37,9 +35,7 @@ export const Small: Story = { args: { size: 'sm' } };
 
 export const ExtraSmall: Story = { args: { size: 'xs' } };
 
-/**
- * An icon-only item needs an `aria-label`.
- */
+/** An icon-only item needs an `aria-label`. */
 export const Icons: Story = {
   render: function Render({ size }) {
     const [value, setValue] = useState('list');

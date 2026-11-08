@@ -20,9 +20,8 @@ export function withDefaults<D extends object, T extends object>(defaults: D, da
   return merged as D & T;
 }
 
-export function updateById<T extends { id: unknown }>(items: T[], id: T['id'], updates: Partial<T>): T[] {
-  return items.map((item) => (item.id === id ? { ...item, ...updates } : item));
-}
+export const updateById = <T extends { id: unknown }>(items: T[], id: T['id'], updates: Partial<T>): T[] =>
+  items.map((item) => (item.id === id ? { ...item, ...updates } : item));
 
 /** Blurs a focused button or link and keeps it as the focus fallback: a modal sets aria-hidden on its ancestors. */
 export function blurAndStashTrigger() {
@@ -43,18 +42,15 @@ export function removeAndNotify<T extends Closable>(commit: (remaining: T[]) => 
 }
 
 /**
- * What `initialFocus` of an overlay opened from code, which Base UI cannot see as a touch open: on touch the popup
- * takes focus, as Base UI's own touch default does. Otherwise a `data-autofocus` element wins, so a confirmation
- * starts on its safe option.
+ * What `initialFocus` of an overlay opened from code, which Base UI cannot see as a touch open: on touch the popup takes focus, as Base UI's own
+ * touch default does. Otherwise a `data-autofocus` element wins, so a confirmation starts on its safe option.
  */
-export function touchInitialFocus(popupRef: RefObject<HTMLElement | null>) {
-  return isTouchInteraction() ? popupRef.current : (popupRef.current?.querySelector<HTMLElement>('[data-autofocus]') ?? true);
-}
+export const touchInitialFocus = (popupRef: RefObject<HTMLElement | null>) =>
+  isTouchInteraction() ? popupRef.current : (popupRef.current?.querySelector<HTMLElement>('[data-autofocus]') ?? true);
 
 /**
- * `finalFocus` of the overlay with element id `popupId`, resolved once its exit ends: a trigger inside a grid is
- * replaced by a new node once cell edit mode ends. Focus that left the overlay while it slid out (a focus bridge, the
- * page after a route change) stays where it went.
+ * `finalFocus` of the overlay with element id `popupId`, resolved once its exit ends: a trigger inside a grid is replaced by a new node once cell
+ * edit mode ends. Focus that left the overlay while it slid out (a focus bridge, the page after a route change) stays where it went.
  */
 export function finalFocusFor(triggerRef: TriggerRef | undefined, popupId: string) {
   if (!triggerRef) return true;

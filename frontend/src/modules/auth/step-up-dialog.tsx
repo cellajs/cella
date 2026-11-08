@@ -39,17 +39,12 @@ const headings = (view: View, holdsFactor: boolean) => {
   return { title: i18n.t('c:step_up'), description: i18n.t('c:step_up.text') };
 };
 
-interface StepUpDialogProps {
-  methods: StepUpMethod[];
-  onStepUp: () => void;
-}
-
 /**
  * Asks the user to prove it's them, in this dialog: with a passkey or TOTP they hold, or an emailed code. An action
  * that needs a factor the user lacks sets one up here, after the code when the sign-in is not recent; setting it up
  * steps the session up. A user who lost their factor sets up a new one the same way.
  */
-function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
+function StepUpDialog({ methods, onStepUp }: { methods: StepUpMethod[]; onStepUp: () => void }) {
   const { t } = useTranslation();
   const holdsFactor = methods.some(isFactor);
   const [view, setView] = useState<View>(firstView(methods));

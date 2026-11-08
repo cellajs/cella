@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Label } from '~/modules/ui/label';
 
-/**
- * Renders an accessible label associated with controls.
- */
+/** Renders an accessible label associated with controls. */
 const meta = {
   title: 'ui/Label',
   component: Label,
@@ -18,7 +16,5 @@ export default meta;
 
 type Story = StoryObj<typeof Label>;
 
-/**
- * The default form of the label.
- */
+/** The default form of the label. */
 export const Default: Story = {};

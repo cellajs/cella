@@ -23,7 +23,7 @@ const httpRetryMs = 1_000;
 const httpRetryMaxMs = 60_000;
 
 /** What a link asks of its connection. */
-export interface HttpLinkHandlers {
+interface HttpLinkHandlers {
   /** The ledger changed: the connection checks whether the server now holds every edit. */
   onChange(): void;
   /**
@@ -70,9 +70,8 @@ const retryDelay = (attempt: number) => Math.min(httpRetryMs * 2 ** attempt, htt
 /**
  * Merges consecutive updates into posts of at most `cap` bytes, in order. An update larger than `cap` cannot go over
  * HTTP: it is left out, counted in `oversize`, and waits for the socket, which takes up to 2 MB.
- * @testSeam
  */
-export function batchUpdates(updates: Uint8Array[], cap = httpChunkBytes): { batches: Uint8Array[]; oversize: number } {
+function batchUpdates(updates: Uint8Array[], cap = httpChunkBytes): { batches: Uint8Array[]; oversize: number } {
   const batches: Uint8Array[] = [];
   let oversize = 0;
   let group: Uint8Array[] = [];

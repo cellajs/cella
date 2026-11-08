@@ -18,8 +18,6 @@ import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { tw } from '~/utils/tw';
 
-const editingChipClass = 'border-foreground-soft bg-background pr-0.5 pl-2.5';
-
 interface PickedOption {
   group: SearchOptionGroup;
   option: SearchOption;
@@ -304,7 +302,7 @@ export function InlineSearchChips({
                     key={text}
                     onRemove={() => removeWord(text)}
                     removeLabel={t('c:remove_resource', { resource: text })}
-                    className={cn('max-w-48', editingChipClass)}
+                    className="border-foreground-soft bg-background max-w-48 pr-0.5 pl-2.5"
                     // A press on its X leaves focus in the edit: losing it would save the edit, and its chip would go before the click lands
                     onMouseDown={(event) => {
                       if (event.target !== wordInputRef.current) event.preventDefault();
@@ -370,12 +368,7 @@ export function InlineSearchChips({
           {isConnected && (
             <ComboboxList className="max-h-[min(24rem,60dvh)] border-t p-0 [--search-icon-start:1rem]">
               <SearchOptionsList
-                pickingChip={pickingChip}
-                pickingGroup={pickingGroup}
-                typingWord={typingWord}
-                groups={groups}
-                recents={recents}
-                hasChips={hasChips}
+                {...{ pickingChip, pickingGroup, typingWord, groups, recents, hasChips }}
                 // A count in the field is already in view above the rows
                 resultCount={isCountInField ? undefined : resultCount}
                 isResultPending={isSearching || search.isPending}

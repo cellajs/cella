@@ -223,9 +223,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               type={convertedContentType || contentType}
               imagePanZoom={isDialog}
               showButtons={currentItemIndex === index}
-              url={url}
-              pendingUpload={pendingUpload}
-              filename={filename}
+              {...{ url, pendingUpload, filename }}
               alt={name || filename || t('c:attachment')}
               onBackdropClick={isDialog ? () => removeDialog() : undefined}
             />

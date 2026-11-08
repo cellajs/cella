@@ -4,12 +4,8 @@ import type { NavBadgeProps } from '~/modules/navigation/types';
 import { notificationsQueryOptions } from '~/modules/notification/query';
 import { cn } from '~/utils/cn';
 
-interface UnreadCountBadgeProps {
-  className?: string;
-}
-
 /** Red unread pill; renders nothing at zero. Positioned by the caller (`absolute` over the bell, inline in the sheet header). */
-export function UnreadCountBadge({ className }: UnreadCountBadgeProps) {
+export function UnreadCountBadge({ className }: { className?: string }) {
   const { data } = useQuery(notificationsQueryOptions());
   const unreadCount = data?.unreadCount ?? 0;
 

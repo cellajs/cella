@@ -16,18 +16,12 @@ export type CustomUppyOptions = UppyOptions<UppyMeta, UppyBody>;
 
 export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url')[];
 
-export type UploadResults<T extends UploadTemplateId, K = UserMeta> = {
-  [key in TemplateStepKeys<T>]: UploadedFile<K>[];
-};
+export type UploadResults<T extends UploadTemplateId, K = UserMeta> = { [key in TemplateStepKeys<T>]: UploadedFile<K>[] };
 
 /** An assembly's results, typed by the steps of the template that ran it: Transloadit types them as files of any step. */
 export const uploadResultsOf = <T extends UploadTemplateId>(assembly: AssemblyResponse) => assembly.results as UploadResults<T>;
 
-type Stringified<T> = {
-  [K in keyof T]: string;
-};
-
-type UserMeta = Stringified<UppyMeta> & {
+type UserMeta = { [K in keyof UppyMeta]: string } & {
   filetype: string;
   name: string;
   /** The string 'null' when the file has no relative path. */

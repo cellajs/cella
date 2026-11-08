@@ -24,20 +24,16 @@ const defaultUploadInfo: BlobUploadInfo = {
   isLocalOnly: false,
 };
 
-function toUploadInfo(uploadStatus: UploadStatus): BlobUploadInfo {
-  return {
-    hasLocalBlob: true,
-    isUploaded: uploadStatus === 'uploaded',
-    isUploading: uploadStatus === 'uploading',
-    isFailed: uploadStatus === 'failed',
-    isPending: uploadStatus === 'pending',
-    isLocalOnly: uploadStatus === 'local-only',
-  };
-}
+const toUploadInfo = (uploadStatus: UploadStatus): BlobUploadInfo => ({
+  hasLocalBlob: true,
+  isUploaded: uploadStatus === 'uploaded',
+  isUploading: uploadStatus === 'uploading',
+  isFailed: uploadStatus === 'failed',
+  isPending: uploadStatus === 'pending',
+  isLocalOnly: uploadStatus === 'local-only',
+});
 
 const uploadedInfo = toUploadInfo('uploaded');
-
-const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => objectKeys(a).every((key) => a[key] === b[key]);
 
 /**
  * Upload info per attachment id. Primary keys come from the index alone, so cached downloads are never deserialized;
@@ -74,7 +70,7 @@ let stopLocalUserChange: (() => void) | null = null;
 function publish(next: Map<string, BlobUploadInfo>) {
   for (const [attachmentId, info] of next) {
     const prev = infos.get(attachmentId);
-    if (prev && sameInfo(prev, info)) next.set(attachmentId, prev);
+    if (prev && objectKeys(prev).every((key) => prev[key] === info[key])) next.set(attachmentId, prev);
   }
   infos = next;
   for (const listener of listeners) listener();
@@ -110,6 +106,5 @@ function subscribe(listener: () => void) {
 }
 
 /** Reactive upload status; falls back to the default "uploaded" info with no id or no blob. */
-export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
-  return useSyncExternalStore(subscribe, () => (attachmentId && infos.get(attachmentId)) || defaultUploadInfo);
-}
+export const useBlobUploadStatus = (attachmentId: string | null | undefined): BlobUploadInfo =>
+  useSyncExternalStore(subscribe, () => (attachmentId && infos.get(attachmentId)) || defaultUploadInfo);

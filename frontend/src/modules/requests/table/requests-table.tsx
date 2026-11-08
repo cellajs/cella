@@ -28,15 +28,7 @@ export function RequestsTable() {
 
   return (
     <>
-      <RequestsTableBar
-        queryKey={queryOptions.queryKey}
-        selected={selected}
-        columns={columns}
-        setColumns={setColumns}
-        searchVars={search}
-        setSearch={setSearch}
-        clearSelection={clearSelection}
-      />
+      <RequestsTableBar queryKey={queryOptions.queryKey} searchVars={search} {...{ selected, columns, setSearch, setColumns, clearSelection }} />
       <SearchScope q={q}>
         <DataTable<Request>
           {...{

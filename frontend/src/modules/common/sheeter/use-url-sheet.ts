@@ -13,15 +13,6 @@ interface UseUrlSheetConfig {
   options: Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
 }
 
-/** Clears the search param by replacing the current history entry. */
-function useCloseOverlay(searchParamKey: string) {
-  const navigate = useNavigate();
-
-  return () => {
-    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [searchParamKey]: undefined }) });
-  };
-}
-
 /** Opens a sheet while the search param `searchParamKey` is present and closes it when the param goes. */
 export function useUrlSheet(config: UseUrlSheetConfig) {
   const { searchParamKey, renderContent, onAfterClose, options } = config;
@@ -33,7 +24,7 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     shouldThrow: false,
     select: (match) => match.context.organization?.id,
   });
-  const close = useCloseOverlay(searchParamKey);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!value) return;
@@ -42,10 +33,9 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     if (sheeter.getState().get(id)) return;
 
     const handleClose = (isCleanup?: boolean) => {
-      if (!isCleanup) {
-        onAfterClose?.(value);
-        close();
-      }
+      if (isCleanup) return;
+      onAfterClose?.(value);
+      navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [searchParamKey]: undefined }) });
     };
 
     queueMicrotask(() => {

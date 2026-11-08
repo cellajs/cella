@@ -16,32 +16,9 @@ export type EnginePage = {
 };
 
 /** Indexed fields; display-only fields ride along on the documents unindexed. */
-const searchSchema = {
-  kind: 'enum',
-  pageId: 'string',
-  title: 'string',
-  content: 'string',
-  path: 'string',
-  tags: 'enum[]',
-} as const;
+const searchSchema = { kind: 'enum', pageId: 'string', title: 'string', content: 'string', path: 'string', tags: 'enum[]' } as const;
 
-type SearchDoc = {
-  id: string;
-  kind: DocsSearchResultType;
-  pageId: string;
-  title: string;
-  content: string;
-  path: string;
-  tags: string[];
-  // Unindexed display fields
-  breadcrumbs: string[];
-  to: string;
-  params?: { _splat: string };
-  search?: Record<string, string>;
-  hash?: string;
-  method?: string;
-  deprecated?: boolean;
-};
+type SearchDoc = Omit<DocsSearchResult, 'type'> & { kind: DocsSearchResultType; content: string; path: string; tags: string[] };
 
 const maxHits = 60;
 const maxChildRows = 5;
@@ -64,14 +41,7 @@ function createHyphenSplittingTokenizer(): Tokenizer {
 }
 
 function pageDocs(page: EnginePage): SearchDoc[] {
-  const base = {
-    pageId: page.slug,
-    path: '',
-    tags: [],
-    breadcrumbs: [],
-    to: '/docs/page/$',
-    params: { _splat: page.slug },
-  };
+  const base = { pageId: page.slug, path: '', tags: [], breadcrumbs: [], to: '/docs/page/$', params: { _splat: page.slug } };
   return [
     {
       ...base,
@@ -105,38 +75,34 @@ function pageDocs(page: EnginePage): SearchDoc[] {
 }
 
 /** Tier-1 breadcrumb labels: bare tag names ("base") are ambiguous on their own. */
-export type EngineLabels = { operations: string; schemas: string };
+type EngineLabels = { operations: string; schemas: string };
 const defaultLabels: EngineLabels = { operations: 'operations', schemas: 'schemas' };
 
-function operationDoc(op: GenOperationSummary, labels: EngineLabels): SearchDoc {
-  return {
-    id: `operation:${op.hash}`,
-    kind: 'operation',
-    pageId: `operation:${op.hash}`,
-    title: op.summary || op.id,
-    content: op.description,
-    path: `${op.method} ${op.path}`,
-    tags: op.tags,
-    breadcrumbs: [labels.operations, ...op.tags],
-    ...operationLinkOptions(op),
-    method: op.method,
-    deprecated: op.deprecated,
-  };
-}
+const operationDoc = (op: GenOperationSummary, labels: EngineLabels): SearchDoc => ({
+  id: `operation:${op.hash}`,
+  kind: 'operation',
+  pageId: `operation:${op.hash}`,
+  title: op.summary || op.id,
+  content: op.description,
+  path: `${op.method} ${op.path}`,
+  tags: op.tags,
+  breadcrumbs: [labels.operations, ...op.tags],
+  ...operationLinkOptions(op),
+  method: op.method,
+  deprecated: op.deprecated,
+});
 
-function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc {
-  return {
-    id: `schema:${schema.name}`,
-    kind: 'schema',
-    pageId: `schema:${schema.name}`,
-    title: schema.name,
-    content: schema.description ?? '',
-    path: '',
-    tags: [schema.schemaTag],
-    breadcrumbs: [labels.schemas, schema.schemaTag],
-    ...schemaLinkOptions(schema),
-  };
-}
+const schemaDoc = (schema: GenComponentSchema, labels: EngineLabels): SearchDoc => ({
+  id: `schema:${schema.name}`,
+  kind: 'schema',
+  pageId: `schema:${schema.name}`,
+  title: schema.name,
+  content: schema.description ?? '',
+  path: '',
+  tags: [schema.schemaTag],
+  breadcrumbs: [labels.schemas, schema.schemaTag],
+  ...schemaLinkOptions(schema),
+});
 
 /** Scope chip → the document kinds it allows. */
 const scopeKinds: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
@@ -164,28 +130,15 @@ export function createEngine(
   if (operations) insert(operations.map((op) => operationDoc(op, labels)));
   if (schemas) insert(schemas.map((schema) => schemaDoc(schema, labels)));
 
-  const toRow = (doc: SearchDoc, terms: string[]): DocsSearchResult => ({
-    id: doc.id,
-    pageId: doc.pageId,
-    type: doc.kind,
-    title: doc.kind === 'text' ? trimAroundMatch(doc.content, terms) : doc.title,
-    breadcrumbs: doc.breadcrumbs,
-    to: doc.to,
-    params: doc.params,
-    search: doc.search,
-    hash: doc.hash,
-    method: doc.method,
-    deprecated: doc.deprecated,
+  const toRow = ({ kind, title, content, path, tags, ...row }: SearchDoc, terms: string[]): DocsSearchResult => ({
+    ...row,
+    type: kind,
+    title: kind === 'text' ? trimAroundMatch(content, terms) : title,
   });
 
   return {
-    addOperations(operations: GenOperationSummary[]) {
-      insert(operations.map((op) => operationDoc(op, labels)));
-    },
-
-    addSchemas(schemas: GenComponentSchema[]) {
-      insert(schemas.map((schema) => schemaDoc(schema, labels)));
-    },
+    addOperations: (operations: GenOperationSummary[]) => insert(operations.map((op) => operationDoc(op, labels))),
+    addSchemas: (schemas: GenComponentSchema[]) => insert(schemas.map((schema) => schemaDoc(schema, labels))),
 
     async search(term: string, scope: DocsSearchScope = 'all'): Promise<DocsSearchResult[]> {
       const terms = parseTerms(term);
@@ -203,21 +156,17 @@ export function createEngine(
       });
 
       // Group hits by page, preserving global score order; a group ranks by its best hit
-      const groupOrder: string[] = [];
       const grouped = new Map<string, SearchDoc[]>();
       for (const hit of found.hits) {
         const doc = docsById.get(String(hit.id));
         if (!doc) continue;
-        if (!grouped.has(doc.pageId)) {
-          grouped.set(doc.pageId, []);
-          groupOrder.push(doc.pageId);
-        }
-        grouped.get(doc.pageId)?.push(doc);
+        const group = grouped.get(doc.pageId);
+        if (group) group.push(doc);
+        else grouped.set(doc.pageId, [doc]);
       }
 
       const rows: DocsSearchResult[] = [];
-      for (const pageId of groupOrder) {
-        const docs = grouped.get(pageId) ?? [];
+      for (const [pageId, docs] of grouped) {
         // Standalone rows (operations, schemas): no parent/child structure.
         if (pageId.startsWith('operation:') || pageId.startsWith('schema:')) {
           rows.push(...docs.map((doc) => toRow(doc, terms)));

@@ -25,12 +25,8 @@ export function UsersTable() {
     <>
       <UsersTableBar
         queryKey={queryOptions.queryKey}
-        selected={selected}
         searchVars={{ q, role, accounts, sort, order }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        clearSelection={clearSelection}
+        {...{ selected, columns, setSearch, setColumns, clearSelection }}
       />
       <SearchScope q={q}>
         <DataTable<BaseUser>

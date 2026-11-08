@@ -40,7 +40,6 @@ export const memberQueryKeys = keys;
 /** The most addresses one invite or check request takes; more go out in batches of this size. */
 const inviteBatchSize = 50;
 
-/** Splits addresses into request-sized batches. */
 const inviteBatches = (emails: string[]) =>
   Array.from({ length: Math.ceil(emails.length / inviteBatchSize) }, (_, index) =>
     emails.slice(index * inviteBatchSize, (index + 1) * inviteBatchSize),

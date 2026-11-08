@@ -6,13 +6,8 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { getChannelRouteParams } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
-interface MenuSheetChannelTabsProps {
-  channel: UserMenuItem;
-  className?: string;
-}
-
 /** A channel's page tabs as menu rows, for a channel type whose tabs show in the menu (`appConfig.navigation.pageTabs`). */
-export function MenuSheetChannelTabs({ channel, className }: MenuSheetChannelTabsProps) {
+export function MenuSheetChannelTabs({ channel, className }: { channel: UserMenuItem; className?: string }) {
   const { t } = useTranslation();
   const tabOptions = useChannelTabOptions(channel);
   const tabs = resolveChannelTabs(channel.entityType, getChannelRouteParams(channel), tabOptions);

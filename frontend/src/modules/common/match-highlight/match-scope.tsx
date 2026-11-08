@@ -3,13 +3,8 @@ import { parseTerms } from 'shared/utils/text-match';
 
 const MatchScopeContext = createContext<string[]>([]);
 
-interface MatchScopeProps {
-  terms: string[];
-  children: ReactNode;
-}
-
 /** Provides the folded search terms (`parseTerms`) that `HighlightText` and `useMatchHighlight` paint below it; without one nothing is painted. */
-export function MatchScope({ terms, children }: MatchScopeProps) {
+export function MatchScope({ terms, children }: { terms: string[]; children: ReactNode }) {
   return <MatchScopeContext.Provider value={terms}>{children}</MatchScopeContext.Provider>;
 }
 

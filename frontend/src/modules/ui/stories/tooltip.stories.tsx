@@ -34,24 +34,16 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the tooltip.
- */
+/** The default form of the tooltip. */
 export const Default: Story = {};
 
-/**
- * Use the `bottom` side to display the tooltip below the element.
- */
+/** Use the `bottom` side to display the tooltip below the element. */
 export const Bottom: Story = { args: { side: 'bottom' } };
 
-/**
- * Use the `left` side to display the tooltip to the left of the element.
- */
+/** Use the `left` side to display the tooltip to the left of the element. */
 export const Left: Story = { args: { side: 'left' } };
 
-/**
- * Use the `right` side to display the tooltip to the right of the element.
- */
+/** Use the `right` side to display the tooltip to the right of the element. */
 export const Right: Story = { args: { side: 'right' } };
 
 export const ShouldShowOnHover: Story = {

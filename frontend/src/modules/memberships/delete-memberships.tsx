@@ -1,23 +1,21 @@
-import type { ChannelEntityType } from 'shared';
 import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutations';
 import type { DeleteMembershipsVariables, Member } from '~/modules/memberships/types';
 
 interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembershipsVariables>, 'callback'> {
-  entityId: string;
-  tenantId: string;
-  organizationId: string;
+  channel: EnrichedChannel;
   members: Member[];
-  entityType: ChannelEntityType;
 }
 
-export function DeleteMemberships({ members, entityId, entityType, tenantId, organizationId, ...props }: DeleteMembershipsProps) {
+export function DeleteMemberships({ members, channel, ...props }: DeleteMembershipsProps) {
   const mutation = useMembershipsDeleteMutation();
 
   const toVariables = (items: Member[]) => ({
-    path: { tenantId, organizationId },
+    path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) },
     body: { ids: items.map(({ id }) => id) },
-    query: { entityId, entityType },
+    query: { entityId: channel.id, entityType: channel.entityType },
     members: items,
   });
 

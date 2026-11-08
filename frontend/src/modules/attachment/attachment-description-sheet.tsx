@@ -17,18 +17,12 @@ import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { tw } from '~/utils/tw';
 
-const sheetId = 'attachment-description';
-
-interface AttachmentDescriptionFormProps {
-  attachment: Attachment;
-}
-
 /**
  * Collaborative description editor for one attachment, read-only without update permission. The mention audience comes
  * from the row's home channel (its deepest ancestor), so an app that re-homes attachments needs no change here. The
  * relay saves a collaborative session; with Yjs off, the update mutation saves.
  */
-function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescriptionFormProps) {
+function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Attachment }) {
   const { tenantId, organizationId } = openedRow;
   // The sheet content is built once, so the row is read live: the editor and the save compare with the stored text.
   const { data: liveRow } = useQuery({
@@ -71,16 +65,11 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
       <LazyCollaborativeBlockNote
         entityType="attachment"
         entityId={attachment.id}
-        tenantId={tenantId}
-        organizationId={organizationId}
-        canEdit={canEdit}
         editable={canEdit}
         description={attachment.description}
-        updateData={updateData}
-        members={members}
         autoFocus={canEdit && !isTouchInteraction()}
-        waitingFallback={waitingFallback}
         className="min-h-40"
+        {...{ tenantId, organizationId, canEdit, updateData, members, waitingFallback }}
       />
     </Suspense>
   );
@@ -93,7 +82,7 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,
     {
-      id: sheetId,
+      id: 'attachment-description',
       triggerRef,
       side: 'right',
       className: tw('max-w-full lg:max-w-3xl'),

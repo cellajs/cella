@@ -4,9 +4,7 @@ import { Button } from '~/modules/ui/button';
 import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from '~/modules/ui/button-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
-/**
- * Groups related buttons together with proper spacing and visual connection.
- */
+/** Groups related buttons together with proper spacing and visual connection. */
 const meta = {
   title: 'ui/ButtonGroup',
   component: ButtonGroup,
@@ -22,9 +20,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default horizontal button group with multiple buttons.
- */
+/** Default horizontal button group with multiple buttons. */
 export const Default: Story = {
   render: () => (
     <ButtonGroup>
@@ -35,9 +31,7 @@ export const Default: Story = {
   ),
 };
 
-/**
- * Vertical button group for stacked actions.
- */
+/** Vertical button group for stacked actions. */
 export const Vertical: Story = {
   render: () => (
     <ButtonGroup orientation="vertical">
@@ -48,9 +42,7 @@ export const Vertical: Story = {
   ),
 };
 
-/**
- * Button group with different button variants.
- */
+/** Button group with different button variants. */
 export const MixedVariants: Story = {
   render: () => (
     <ButtonGroup>
@@ -61,9 +53,7 @@ export const MixedVariants: Story = {
   ),
 };
 
-/**
- * Button group with icons for enhanced visual communication.
- */
+/** Button group with icons for enhanced visual communication. */
 export const WithIcons: Story = {
   render: () => (
     <ButtonGroup>
@@ -83,9 +73,7 @@ export const WithIcons: Story = {
   ),
 };
 
-/**
- * Button group with text sections and separators.
- */
+/** Button group with text sections and separators. */
 export const WithTextAndSeparators: Story = {
   render: () => (
     <div className="space-y-4">
@@ -108,9 +96,7 @@ export const WithTextAndSeparators: Story = {
   ),
 };
 
-/**
- * Button group with select dropdown integration.
- */
+/** Button group with select dropdown integration. */
 export const WithSelect: Story = {
   render: () => (
     <ButtonGroup>
@@ -131,9 +117,7 @@ export const WithSelect: Story = {
   ),
 };
 
-/**
- * Button group with disabled states.
- */
+/** Button group with disabled states. */
 export const DisabledStates: Story = {
   render: () => (
     <div className="space-y-4">
@@ -158,9 +142,7 @@ export const DisabledStates: Story = {
   ),
 };
 
-/**
- * Button group with different sizes.
- */
+/** Button group with different sizes. */
 export const DifferentSizes: Story = {
   render: () => (
     <div className="space-y-4">
@@ -185,9 +167,7 @@ export const DifferentSizes: Story = {
   ),
 };
 
-/**
- * Complex button group with multiple sections and separators.
- */
+/** Complex button group with multiple sections and separators. */
 export const Complex: Story = {
   render: () => (
     <ButtonGroup>

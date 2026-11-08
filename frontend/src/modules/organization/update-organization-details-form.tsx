@@ -50,7 +50,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   // The editor reads its content once, at creation, so a reset remounts it to show the saved text again.
   const [editorKey, setEditorKey] = useState(0);
 
-  const onSubmit = (body: FormValues) => {
+  const onSubmit = (body: FormValues) =>
     mutate(
       { path: { tenantId: organization.tenantId, organizationId: organization.id }, body },
       {
@@ -61,7 +61,6 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
         },
       },
     );
-  };
 
   const discardChanges = () => {
     form.reset();

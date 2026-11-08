@@ -1,8 +1,7 @@
 import { appConfig } from 'shared';
 import { LegalContact, SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
-import { ProcessedDataTypes } from '~/modules/auth/legal/processed-data-types';
-import { Subprocessors } from '~/modules/auth/legal/subprocessors';
+import { ProcessedDataTypes, Subprocessors } from '~/modules/auth/legal/legal-tables';
 
 export function PrivacyText() {
   const appName = appConfig.name;

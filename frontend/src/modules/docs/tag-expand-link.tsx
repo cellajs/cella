@@ -22,16 +22,12 @@ export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMo
   return (
     <div className="flex justify-center">
       <Link
-        to={to}
-        search={search}
-        hash={hash}
+        {...{ to, search, hash, onMouseEnter, onClick }}
         replace
         draggable={false}
         resetScroll={false}
         className={cn(buttonVariants({ variant: isOpen ? 'outline-ghost' : 'secondary', size: 'lg' }), 'rounded-full')}
         aria-label={`${text}: ${tagName}`}
-        onMouseEnter={onMouseEnter}
-        onClick={onClick}
       >
         {text}
         {loading ? (

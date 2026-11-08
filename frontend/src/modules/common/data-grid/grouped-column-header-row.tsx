@@ -1,9 +1,10 @@
 import { memo } from 'react';
-import { GroupedColumnHeaderCell } from './grouped-column-header-cell';
 import { headerRowClassname } from './header-row';
+import { useRovingTabIndex } from './hooks';
 import type { CalculatedColumn, CalculatedColumnParent, Position } from './types';
+import { cn, getHeaderCellRowSpan, getHeaderCellStyle } from './utils/grid-utils';
 
-export interface GroupedColumnHeaderRowProps<R, SR> {
+interface GroupedColumnHeaderRowProps<R, SR> {
   rowIdx: number;
   level: number;
   columns: readonly CalculatedColumn<R, SR>[];
@@ -48,3 +49,36 @@ function GroupedColumnHeaderRow<R, SR>({ rowIdx, level, columns, selectedCellIdx
 const GroupedColumnHeaderRowMemo = memo(GroupedColumnHeaderRow) as <R, SR>(props: GroupedColumnHeaderRowProps<R, SR>) => React.JSX.Element;
 
 export { GroupedColumnHeaderRowMemo as GroupedColumnHeaderRow };
+
+interface GroupedColumnHeaderCellProps<R, SR> {
+  rowIdx: number;
+  selectCell: (position: Position) => void;
+  column: CalculatedColumnParent<R, SR>;
+  isCellSelected: boolean;
+}
+
+function GroupedColumnHeaderCell<R, SR>({ column, rowIdx, isCellSelected, selectCell }: GroupedColumnHeaderCellProps<R, SR>) {
+  const { tabIndex, onFocus } = useRovingTabIndex(isCellSelected);
+  const { colSpan } = column;
+  const rowSpan = getHeaderCellRowSpan(column, rowIdx);
+  const index = column.idx + 1;
+
+  function onMouseDown() {
+    selectCell({ idx: column.idx, rowIdx });
+  }
+
+  return (
+    <div
+      role="columnheader"
+      aria-colindex={index}
+      aria-colspan={colSpan}
+      aria-rowspan={rowSpan}
+      aria-selected={isCellSelected}
+      {...{ tabIndex, onFocus, onMouseDown }}
+      className={cn('rdg-cell', column.headerCellClass)}
+      style={{ ...getHeaderCellStyle(column, rowIdx, rowSpan), gridColumnStart: index, gridColumnEnd: index + colSpan }}
+    >
+      {column.name}
+    </div>
+  );
+}

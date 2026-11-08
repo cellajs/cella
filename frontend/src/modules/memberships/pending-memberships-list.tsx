@@ -1,5 +1,6 @@
+import { onlineManager } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { BirdIcon, MailIcon } from 'lucide-react';
+import { BirdIcon, MailIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
 import { resendInvitation } from 'sdk';
@@ -8,17 +9,36 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { ExpandableTile, ExpandableTileDetail, TileListHeading } from '~/modules/common/expandable-tile';
 import { MiddleCut } from '~/modules/common/middle-cut';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
+import { useWithdrawInvitationMutation } from '~/modules/memberships/query-mutations';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import type { PendingMembership } from '~/modules/memberships/types';
-import { WithdrawInvitationButton } from '~/modules/memberships/withdraw-invitation-button';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { queryClient } from '~/query/query-client';
 import { dateShort } from '~/utils/date-short';
+
+/** Withdraws a pending invitation, such as one sent to a mistyped address; inviting the address again undoes it. */
+function WithdrawInvitationButton({ channel, invitationId }: { channel: EnrichedChannel; invitationId: string }) {
+  const { t } = useTranslation();
+  const { mutate, isPending } = useWithdrawInvitationMutation();
+
+  const withdraw = () => {
+    if (!onlineManager.isOnline()) return toastOffline();
+    mutate({ channel, id: invitationId }, { onSuccess: () => toaster.success(t('c:success.withdraw_invitation')) });
+  };
+
+  return (
+    <Button variant="ghost" size="sm" onClick={withdraw} loading={isPending}>
+      <XIcon />
+      {t('c:withdraw')}
+    </Button>
+  );
+}
 
 interface PendingTileProps {
   row: PendingMembership;
@@ -71,12 +91,8 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
   );
 }
 
-interface PendingMembershipsListProps {
-  channel: EnrichedChannel;
-}
-
 /** A channel's pending invitations as tiles, newest first. */
-export function PendingMembershipsList({ channel }: PendingMembershipsListProps) {
+export function PendingMembershipsList({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
 
   const queryOptions = pendingMembershipsQueryOptions({

@@ -1,9 +1,11 @@
 import type { QueryClient, QueryFilters, QueryKey, SetDataOptions } from '@tanstack/react-query';
-import { getQueryKeySortOrder } from '~/query/basic/get-query-key-sort-order';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { forEachListQuery, getQueryItems, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
-import type { ItemData, QueryDataAction } from '~/query/basic/types';
+import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem } from '~/query/types';
+
+type QueryDataAction = 'create' | 'update' | 'remove';
 
 /**
  * Writes one cached query, keeping its refetch mark: `setQueryData` would clear `isInvalidated`, but a cache write is no
@@ -46,17 +48,23 @@ export async function cancelKeepingMark(client: QueryClient, queryKey: QueryKey)
   for (const query of owed) query.invalidate();
 }
 
+/** The order new rows enter a paged list in: the createdAt order its key names, else newest first. */
+function getQueryKeySortOrder(queryKey: QueryKey): 'asc' | 'desc' {
+  const sortData = queryKey.find(
+    (segment): segment is { sort: string; order?: 'asc' | 'desc' } => isFilterSegment(segment) && 'sort' in segment && 'order' in segment,
+  );
+  return sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
+}
+
 /** One page's items after the action: a create appends when `insertOrder` is 'asc', else prepends. */
 function changePageItems<T extends ItemData>(pageItems: T[], changedItems: T[], action: QueryDataAction, insertOrder?: 'asc' | 'desc') {
   switch (action) {
     case 'create':
       return insertOrder === 'asc' ? [...pageItems, ...changedItems] : [...changedItems, ...pageItems];
-
     case 'update': {
       const updates = new Map(changedItems.map((item) => [item.id, item]));
       return pageItems.map((item) => updates.get(item.id) ?? item);
     }
-
     case 'remove': {
       const removedIds = new Set(changedItems.map(({ id }) => id));
       return pageItems.filter((item) => !removedIds.has(item.id));

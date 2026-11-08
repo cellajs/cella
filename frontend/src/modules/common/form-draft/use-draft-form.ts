@@ -1,6 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import type { FieldPath, FieldPathValue, FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
-import { useForm, useFormState } from 'react-hook-form';
+import { type FieldPath, type FieldPathValue, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useFormState } from 'react-hook-form';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { flushKvWrites } from '~/query/idb-kv-storage';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';

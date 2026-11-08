@@ -89,7 +89,7 @@ export interface YDocWriter {
 }
 
 /** How a writer reports to its connection. */
-export interface YDocWriterOptions {
+interface YDocWriterOptions {
   /** The connection's rows; the writer adds each own row once committed. */
   applied?: AppliedRows;
   /** Runs when `pending` or `failed` changed. */
@@ -662,9 +662,7 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
 }
 
 /** The unsaved documents, live, for the sign-out dialog. */
-export function watchUnsavedYDocs(onChange: (docs: UnsavedYDoc[]) => void): () => void {
-  return watchLocalUserDb(readUnsaved, [], onChange);
-}
+export const watchUnsavedYDocs = (onChange: (docs: UnsavedYDoc[]) => void) => watchLocalUserDb(readUnsaved, [], onChange);
 
 type StoredState = { stored: boolean; unsynced: boolean };
 

@@ -77,7 +77,7 @@
         {
           "check": "review:agent",
           "result": "not-applicable",
-          "summary": "Searched frontend/src for video, audio, iframe, embed URLs and media files: the only media elements are the attachment renderers frontend/src/modules/attachment/render/video.tsx:7 and audio.tsx:7, mounted by attachment-render.tsx:77-78 for an uploaded file's URL. frontend/public/static holds png, svg and font files, no mp4/webm/mp3/gif. Marketing pages and docs MDX embed no players. Uploads allow video and audio (uploader/helpers/restrictions-note.ts:6-7), so the criterion concerns user-generated content only.",
+          "summary": "Searched frontend/src for video, audio, iframe, embed URLs and media files: the only media elements are the attachment renderers frontend/src/modules/attachment/render/video.tsx:7 and audio.tsx:7, mounted by attachment-render.tsx:77-78 for an uploaded file's URL. frontend/public/static holds png, svg and font files, no mp4/webm/mp3/gif. Marketing pages and docs MDX embed no players. Uploads allow video and audio (uploader/upload-dashboard.tsx:13-14), so the criterion concerns user-generated content only.",
           "where": [
             "frontend/src/modules/attachment/render/video.tsx",
             "frontend/src/modules/attachment/render/audio.tsx"

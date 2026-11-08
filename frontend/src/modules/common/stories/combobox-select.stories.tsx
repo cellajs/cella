@@ -4,9 +4,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 
-/**
- * A searchable dropdown component built on base-ui Combobox.
- */
+/** A searchable dropdown component built on base-ui Combobox. */
 const meta = {
   title: 'common/ComboboxSelect',
   component: ComboboxSelect,
@@ -37,9 +35,7 @@ const avatarOptions = mockOptions.map(({ value, label }) => ({
 
 const largeOptions = Array.from({ length: 1000 }, (_, i) => ({ value: i.toString(), label: `Option ${i + 1}` }));
 
-/**
- * Default combobox with basic options.
- */
+/** Default combobox with basic options. */
 export const Default: Story = {
   args: {
     options: mockOptions,
@@ -56,9 +52,7 @@ export const Default: Story = {
   },
 };
 
-/**
- * Combobox with avatar display for each option.
- */
+/** Combobox with avatar display for each option. */
 export const WithAvatars: Story = {
   args: {
     options: avatarOptions,
@@ -75,9 +69,7 @@ export const WithAvatars: Story = {
   },
 };
 
-/**
- * Combobox with custom option rendering.
- */
+/** Combobox with custom option rendering. */
 export const CustomRenderOption: Story = {
   args: {
     options: mockOptions,
@@ -105,9 +97,7 @@ export const CustomRenderOption: Story = {
   },
 };
 
-/**
- * Disabled combobox state.
- */
+/** Disabled combobox state. */
 export const Disabled: Story = {
   args: {
     options: mockOptions,
@@ -131,9 +121,7 @@ const placeholders: ComboboxSelectProps['placeholders'] = {
   notFound: 'c:no_resource_found' as TKey,
 };
 
-/**
- * Combobox with large number of options.
- */
+/** Combobox with large number of options. */
 export const LargeOptions: Story = {
   args: {
     options: largeOptions,
@@ -150,9 +138,7 @@ export const LargeOptions: Story = {
   },
 };
 
-/**
- * Combobox with custom placeholders.
- */
+/** Combobox with custom placeholders. */
 export const CustomPlaceholders: Story = {
   args: {
     options: mockOptions,
@@ -175,9 +161,7 @@ export const CustomPlaceholders: Story = {
   },
 };
 
-/**
- * Combobox with pre-selected value.
- */
+/** Combobox with pre-selected value. */
 export const WithPreselectedValue: Story = {
   args: {
     options: mockOptions,
@@ -194,9 +178,7 @@ export const WithPreselectedValue: Story = {
   },
 };
 
-/**
- * Multiple comboboxes side by side.
- */
+/** Multiple comboboxes side by side. */
 export const Multiple: Story = {
   args: {
     options: mockOptions,

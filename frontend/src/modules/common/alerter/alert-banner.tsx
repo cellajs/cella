@@ -46,10 +46,7 @@ export function AlertBanner({
 
   const isPublicContext = contextMode === 'public';
   const seenAlerts = isPublicContext ? publicAlertsSeen : alertsSeen;
-  const setAsSeen = () => {
-    if (isPublicContext) setPublicAlertSeen(id);
-    else setAlertSeen(id);
-  };
+  const setAsSeen = () => (isPublicContext ? setPublicAlertSeen(id) : setAlertSeen(id));
   const showAlert = !isServerDown && isOnline && !seenAlerts.includes(id);
 
   const alertContent = (

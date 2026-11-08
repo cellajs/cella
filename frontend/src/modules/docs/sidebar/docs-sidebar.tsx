@@ -1,18 +1,85 @@
 import { Link } from '@tanstack/react-router';
-import { SearchIcon } from 'lucide-react';
+import { PencilIcon, SearchIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { LogoMark } from '~/modules/common/logo-art';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
+import { DocsSidebarSection } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/docs-sidebar-sheet';
-import { LinksSection } from '~/modules/docs/sidebar/links-section';
-import { PagesSection } from '~/modules/docs/sidebar/pages-section';
+import { PagesSidebar } from '~/modules/docs/sidebar/pages-sidebar';
 import { UserTheme } from '~/modules/me/user-theme';
 import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
+import { useUserStore } from '~/modules/user/user-store';
+import { tw } from '~/utils/tw';
+
+/** Sidebar section with the docs pages tree (plus the admin manage-pages shortcut). */
+function PagesSection({ label }: { label: string }) {
+  const { t } = useTranslation();
+  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
+
+  return (
+    <DocsSidebarSection
+      label={label}
+      action={
+        isSystemAdmin && (
+          <TooltipButton toolTipContent={t('c:manage_pages')} side="right">
+            <Button variant="ghost" size="xs" className="h-7 w-8 p-0" render={<Link to="/docs/pages" onClick={closeSidebarSheetAndNavigate} />}>
+              <PencilIcon className="size-3.5" />
+            </Button>
+          </TooltipButton>
+        )
+      }
+    >
+      <PagesSidebar />
+    </DocsSidebarSection>
+  );
+}
+
+const rowClass = tw('w-full justify-start');
+
+function LinksSection({ label }: { label: string }) {
+  const { t } = useTranslation();
+  const contactRef = useRef<HTMLButtonElement>(null);
+  const hasStatusPage = !!appConfig.statusUrl.trim();
+
+  return (
+    <DocsSidebarSection label={label}>
+      <Button
+        variant="ghost"
+        className={rowClass}
+        render={<Link to="/docs/page/$" params={{ _splat: 'changelog' }} onClick={closeSidebarSheetAndNavigate} />}
+      >
+        {t('c:changelog')}
+      </Button>
+
+      {hasStatusPage && (
+        <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
+          {t('c:status')}
+        </Button>
+      )}
+
+      <Button ref={contactRef} variant="ghost" className={rowClass} onClick={() => contactFormHandler(contactRef)}>
+        {t('c:contact_us')}
+      </Button>
+
+      <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" onClick={closeSidebarSheetAndNavigate} />}>
+        openapi.json
+      </Button>
+
+      <Button variant="ghost" className={rowClass} render={<a href="/llms.txt" target="_blank" rel="noreferrer" />}>
+        llms.txt
+      </Button>
+    </DocsSidebarSection>
+  );
+}
+
+const sectionComponents = { apiReference: ApiReferenceSection, pages: PagesSection, links: LinksSection };
 
 /** The sections `docsConfig` lists, in their array order; one with `visible: false` is left out. */
 export function DocsSidebar() {
@@ -59,16 +126,8 @@ export function DocsSidebar() {
       {docsConfig.sections
         .filter((section) => section.visible)
         .map((section) => {
-          switch (section.id) {
-            case 'apiReference':
-              return <ApiReferenceSection key={section.id} label={section.label} />;
-            case 'pages':
-              return <PagesSection key={section.id} label={section.label} />;
-            case 'links':
-              return <LinksSection key={section.id} label={section.label} />;
-            default:
-              return null;
-          }
+          const Section = sectionComponents[section.id];
+          return <Section key={section.id} label={section.label} />;
         })}
     </SidebarContent>
   );

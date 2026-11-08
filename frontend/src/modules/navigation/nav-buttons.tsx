@@ -111,10 +111,7 @@ export function SidebarNavItemButton({
   return (
     <SidebarNavButton
       ref={buttonRef}
-      label={label}
-      isCollapsed={isCollapsed}
-      isActive={isActive}
-      itemClassName={itemClassName}
+      {...{ label, isCollapsed, isActive, itemClassName }}
       onClick={() => onClick(navItem.id, buttonRef)}
       className="relative"
       badge={<NavItemBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />}

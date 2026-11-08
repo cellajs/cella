@@ -5,6 +5,8 @@ import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-pare
  * a load or history step to a URL with a hash runs the router's hash scroll, which jumps to that element.
  */
 export const spyPrefix = 'spy-';
+
+const spyAnchor = (id: string) => document.getElementById(`${spyPrefix}${id}`);
 /** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
 const topThreshold = 64;
 const maxPendingFrames = 60; // ~1s at 60fps
@@ -32,13 +34,10 @@ const notify = () => {
 
 /** Toggles data-spy-active on matching data-spy-link elements, bypassing React to keep scrolling smooth. */
 const markActiveLinks = () => {
-  for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) {
-    delete element.dataset.spyActive;
-  }
+  for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) delete element.dataset.spyActive;
   if (currentSection) {
-    for (const element of document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
-      element.dataset.spyActive = '';
-    }
+    const sectionLinks = document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`);
+    for (const element of sectionLinks) element.dataset.spyActive = '';
   }
 };
 
@@ -85,7 +84,7 @@ const handleScroll = () => {
 
 /** Point the top watcher at the sections' scroller. */
 const watchScroller = () => {
-  const anchor = [...sections.keys()].map((id) => document.getElementById(`${spyPrefix}${id}`)).find((element) => element !== null);
+  const anchor = [...sections.keys()].map(spyAnchor).find((element) => element !== null);
   const next = anchor ? getScrollParent(anchor) : window;
   if (next === topWatchTarget) return;
 
@@ -127,7 +126,7 @@ const getBestSection = (): string | null => {
   // Every rendered anchor counts, not only those in view: after a long scroll the current section's anchor sits above the viewport
   const withPositions = [...sections.keys()]
     .flatMap((id) => {
-      const element = document.getElementById(`${spyPrefix}${id}`);
+      const element = spyAnchor(id);
       return element?.getClientRects().length ? [{ id, top: element.getBoundingClientRect().top }] : [];
     })
     .sort((a, b) => a.top - b.top);
@@ -151,9 +150,7 @@ const rebuild = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        sections.set(entry.target.id.replace(spyPrefix, ''), entry.intersectionRatio);
-      }
+      for (const entry of entries) sections.set(entry.target.id.replace(spyPrefix, ''), entry.intersectionRatio);
 
       // Skip section updates during programmatic scroll to prevent indicator jank
       if (isProgrammaticScroll()) return;
@@ -173,7 +170,7 @@ const rebuild = () => {
   );
 
   for (const id of sections.keys()) {
-    const element = document.getElementById(`${spyPrefix}${id}`);
+    const element = spyAnchor(id);
     if (element) observer.observe(element);
   }
 
@@ -214,9 +211,7 @@ export const registerSections = (ids: readonly string[]) => {
     markActiveLinks();
     notify();
     blockHashWrites(1000);
-    requestAnimationFrame(() => {
-      document.getElementById(`${spyPrefix}${hash}`)?.scrollIntoView({ behavior: 'instant' });
-    });
+    requestAnimationFrame(() => spyAnchor(hash)?.scrollIntoView({ behavior: 'instant' }));
     return;
   }
 
@@ -290,7 +285,7 @@ const isLaidOut = (element: HTMLElement): boolean => {
 const tryFlushPendingScroll = () => {
   if (!pendingScrollTarget) return;
 
-  const element = document.getElementById(`${spyPrefix}${pendingScrollTarget}`);
+  const element = spyAnchor(pendingScrollTarget);
   if (element && isLaidOut(element)) {
     const id = pendingScrollTarget;
     pendingScrollTarget = null;

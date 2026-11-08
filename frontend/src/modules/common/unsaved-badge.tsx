@@ -3,11 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 
-interface UnsavedBadgeProps {
-  title?: ReactNode;
-}
-
-export function UnsavedBadge({ title }: UnsavedBadgeProps) {
+export function UnsavedBadge({ title }: { title?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <>

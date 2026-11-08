@@ -11,23 +11,18 @@ import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
+import { SelectFormField } from '~/modules/common/form-fields/select';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateTenantBody.pick({ name: true, kind: true, status: true, authStrategies: true });
 
 type FormValues = z.infer<typeof formSchema>;
-
-interface UpdateTenantFormProps {
-  tenant: Tenant;
-  sheet?: boolean;
-}
 
 export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
@@ -36,7 +31,7 @@ const kindOptions = ['live', 'test'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 
-export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormProps) {
+export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; sheet?: boolean }) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
 
@@ -60,7 +55,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormPro
 
   useBeforeUnload(form.isDirty);
 
-  const onSubmit = (body: FormValues) => {
+  const onSubmit = (body: FormValues) =>
     mutate(
       { path: { tenantId: tenant.id }, body },
       {
@@ -71,65 +66,24 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormPro
         },
       },
     );
-  };
 
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField control={form.control} name="name" label={t('c:name')} required />
         {tenant.kind !== 'demo' && (
-          <FormField
+          <SelectFormField
             control={form.control}
             name="kind"
-            render={({ field }) => (
-              <FormItem name="kind">
-                <FormLabel>{t('c:kind')}</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  items={kindOptions.map((kind) => ({ value: kind, label: t(`c:${kind}`) }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kindOptions.map((kind) => (
-                      <SelectItem key={kind} value={kind}>
-                        {t(`c:${kind}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            label={t('c:kind')}
+            options={kindOptions.map((kind) => ({ value: kind, label: t(`c:${kind}`) }))}
           />
         )}
-        <FormField
+        <SelectFormField
           control={form.control}
           name="status"
-          render={({ field }) => (
-            <FormItem name="status">
-              <FormLabel>{t('c:status')}</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-                items={statusOptions.map((status) => ({ value: status, label: t(`c:${status}`) }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {t(`c:${status}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+          label={t('c:status')}
+          options={statusOptions.map((status) => ({ value: status, label: t(`c:${status}`) }))}
         />
         <FormField
           control={form.control}

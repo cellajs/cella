@@ -37,9 +37,7 @@ const helpLabelCellClass = tw('justify-start pt-[calc((var(--rdg-row-height)-1.5
 // Content stays on the row's first line, so nothing shifts while a description unfolds
 const firstLineCellClass = tw('grid grid-rows-(--rdg-row-height) content-start justify-center');
 
-function renderRowDragPreview(row: TabRow) {
-  return <RowDragPreview name={row.name} />;
-}
+const renderRowDragPreview = (row: TabRow) => <RowDragPreview name={row.name} />;
 
 interface TabsArrangementCardProps {
   entity: EnrichedChannel & { toolsConfig: ToolsConfig };
@@ -153,15 +151,12 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   return (
     <ToolCard label="c:tabs" description={t('c:tabs.text')}>
       <DataTable
-        rows={rows}
+        {...{ rows, columns, onRowReorder, renderRowDragPreview }}
         rowKeyGetter={rowKeyById}
         rowHeight={56}
-        columns={columns}
         hasNextPage={false}
         hideEndMarker
         enableVirtualization={false}
-        onRowReorder={onRowReorder}
-        renderRowDragPreview={renderRowDragPreview}
       />
     </ToolCard>
   );

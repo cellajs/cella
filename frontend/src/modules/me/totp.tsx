@@ -19,9 +19,7 @@ export function Totp() {
   const { t } = useTranslation();
 
   const user = useCurrentUser();
-  const {
-    data: { totp },
-  } = useSuspenseQuery(meAuthQueryOptions());
+  const totp = useSuspenseQuery(meAuthQueryOptions()).data.totp;
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement>(null);

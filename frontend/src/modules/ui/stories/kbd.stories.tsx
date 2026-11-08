@@ -2,25 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, CommandIcon, SpaceIcon } from 'lucide-react';
 import { Kbd, KbdGroup } from '~/modules/ui/kbd';
 
-/**
- * Keyboard key components for displaying keyboard shortcuts and hotkeys in documentation and UI.
- */
+/** Keyboard key components for displaying keyboard shortcuts and hotkeys in documentation and UI. */
 const meta: Meta = { title: 'ui/Kbd', component: Kbd, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 
 type Story = StoryObj;
 
-/**
- * Basic keyboard key display.
- */
+/** Basic keyboard key display. */
 export const Default: Story = {
   render: () => <Kbd>Ctrl</Kbd>,
 };
 
-/**
- * Single letter keys.
- */
+/** Single letter keys. */
 export const Letters: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -32,9 +26,7 @@ export const Letters: Story = {
   ),
 };
 
-/**
- * Number keys.
- */
+/** Number keys. */
 export const Numbers: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -47,9 +39,7 @@ export const Numbers: Story = {
   ),
 };
 
-/**
- * Special character keys.
- */
+/** Special character keys. */
 export const SpecialCharacters: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -62,9 +52,7 @@ export const SpecialCharacters: Story = {
   ),
 };
 
-/**
- * Modifier keys with icons.
- */
+/** Modifier keys with icons. */
 export const ModifierKeys: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -78,9 +66,7 @@ export const ModifierKeys: Story = {
   ),
 };
 
-/**
- * Arrow keys.
- */
+/** Arrow keys. */
 export const ArrowKeys: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -100,9 +86,7 @@ export const ArrowKeys: Story = {
   ),
 };
 
-/**
- * Action keys with icons.
- */
+/** Action keys with icons. */
 export const ActionKeys: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -118,9 +102,7 @@ export const ActionKeys: Story = {
   ),
 };
 
-/**
- * Keyboard shortcut combinations.
- */
+/** Keyboard shortcut combinations. */
 export const Shortcuts: Story = {
   render: () => (
     <div className="space-y-4">
@@ -158,9 +140,7 @@ export const Shortcuts: Story = {
   ),
 };
 
-/**
- * Complex keyboard shortcuts.
- */
+/** Complex keyboard shortcuts. */
 export const ComplexShortcuts: Story = {
   render: () => (
     <div className="space-y-4">
@@ -195,9 +175,7 @@ export const ComplexShortcuts: Story = {
   ),
 };
 
-/**
- * Function keys.
- */
+/** Function keys. */
 export const FunctionKeys: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -217,9 +195,7 @@ export const FunctionKeys: Story = {
   ),
 };
 
-/**
- * Navigation shortcuts.
- */
+/** Navigation shortcuts. */
 export const NavigationShortcuts: Story = {
   render: () => (
     <div className="space-y-4">
@@ -265,9 +241,7 @@ export const NavigationShortcuts: Story = {
   ),
 };
 
-/**
- * Editor shortcuts.
- */
+/** Editor shortcuts. */
 export const EditorShortcuts: Story = {
   render: () => (
     <div className="space-y-4">
@@ -325,9 +299,7 @@ export const EditorShortcuts: Story = {
   ),
 };
 
-/**
- * System shortcuts.
- */
+/** System shortcuts. */
 export const SystemShortcuts: Story = {
   render: () => (
     <div className="space-y-4">
@@ -379,9 +351,7 @@ export const SystemShortcuts: Story = {
   ),
 };
 
-/**
- * Custom styled keyboard keys.
- */
+/** Custom styled keyboard keys. */
 export const CustomStyled: Story = {
   render: () => (
     <div className="space-y-4">
@@ -404,9 +374,7 @@ export const CustomStyled: Story = {
   ),
 };
 
-/**
- * Interactive keyboard shortcut guide.
- */
+/** Interactive keyboard shortcut guide. */
 export const ShortcutGuide: Story = {
   render: () => (
     <div className="w-full max-w-2xl space-y-6">

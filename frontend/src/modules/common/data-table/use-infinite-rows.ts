@@ -6,14 +6,8 @@ import type { QueryData } from '~/query/types';
 export function useInfiniteRows<TRow, TError, TQueryKey extends QueryKey, TPageParam>(
   options: UseInfiniteQueryOptions<QueryData<TRow>, TError, InfiniteData<QueryData<TRow>>, TQueryKey, TPageParam>,
 ) {
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({ ...options, select: (data) => getQueryItems(data) });
+  const query = useInfiniteQuery({ ...options, select: (data) => getQueryItems(data) });
+  const { data: rows, isLoading, isFetching, error, fetchNextPage, hasNextPage } = query;
 
   return { rows, isLoading, isFetching, error, hasNextPage, fetchMore: fetchNextPage };
 }

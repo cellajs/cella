@@ -13,9 +13,7 @@ interface ResizeSnapshot<R, SR> {
   readonly leftCols: readonly CalculatedColumn<R, SR>[];
 }
 
-function getWidth<R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedColumn<R, SR>): number {
-  return widths.get(col.key) ?? col.minWidth;
-}
+const getWidth = <R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedColumn<R, SR>): number => widths.get(col.key) ?? col.minWidth;
 
 /** Auto columns stay flexible, every column pins to pixels during a drag, and only user widths survive it. */
 export function useColumnWidths<R, SR>(
@@ -72,9 +70,7 @@ export function useColumnWidths<R, SR>(
 
       if (onColumnResize) {
         const newWidth = measureColumnWidth(gridRef, column.key);
-        if (newWidth !== undefined) {
-          onColumnResize(column, newWidth);
-        }
+        if (newWidth !== undefined) onColumnResize(column, newWidth);
       }
       return;
     }
@@ -100,9 +96,7 @@ export function useColumnWidths<R, SR>(
     const newColumnWidths = new Map(columnWidths);
     for (const col of columns) {
       const w = redistributed.get(col.key);
-      if (w !== undefined) {
-        newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
-      }
+      if (w !== undefined) newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
     }
 
     flushSync(() => {
@@ -141,17 +135,12 @@ function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: nu
 
   if (delta === 0 && overflow === 0) return newWidths;
 
-  if (delta > 0) {
-    shrinkColumns(rightCols, newWidths, delta);
-  } else if (delta < 0) {
-    growColumns(rightCols, newWidths, -delta);
-  }
+  if (delta > 0) shrinkColumns(rightCols, newWidths, delta);
+  else if (delta < 0) growColumns(rightCols, newWidths, -delta);
 
   if (overflow > 0 && leftCols.length > 0) {
     const actualShrunk = shrinkColumns(leftCols, newWidths, overflow);
-    if (actualShrunk > 0) {
-      growColumns(rightCols, newWidths, actualShrunk);
-    }
+    if (actualShrunk > 0) growColumns(rightCols, newWidths, actualShrunk);
   }
 
   return newWidths;
@@ -190,9 +179,7 @@ function shrinkColumns<R, SR>(cols: readonly CalculatedColumn<R, SR>[], widths: 
 function growColumns<R, SR>(cols: readonly CalculatedColumn<R, SR>[], widths: Map<string, number>, amount: number): void {
   if (cols.length === 0 || amount <= 0) return;
   const share = amount / cols.length;
-  for (const col of cols) {
-    widths.set(col.key, getWidth(widths, col) + share);
-  }
+  for (const col of cols) widths.set(col.key, getWidth(widths, col) + share);
 }
 
 function measureColumnWidth(gridRef: React.RefObject<HTMLDivElement | null>, key: string) {

@@ -26,7 +26,7 @@ Behavior is preserved by default. The maintainer's rule: less code wins; a bug o
 [AGENTS.md](../../AGENTS.md) applies in full: its coding patterns, style and naming rules and comment budget. The sweep adds:
 
 Code shape
-- Components are `function` declarations; a wrapper takes a named function expression (`memo(function X() {})`), or `memo(XBase)` where the inner name would shadow the wrapper. A component stored as a value is `ComponentType<Props>`. Props are `interface XProps`; a union of shapes stays a `type`. React types are imported by name, never `React.X`.
+- Components are `function` declarations; a wrapper takes a named function expression (`memo(function X() {})`), or `memo(XBase)` where the inner name would shadow the wrapper. A component stored as a value is `ComponentType<Props>`. Props are `interface XProps`, except a shape of one or two undocumented members that one component reads, which sits inline on its signature when the line stays within 150 characters; a union of shapes stays a `type`. React types are imported by name, never `React.X`.
 - Imports use the `~/` alias, as named imports. No `index.ts` barrels.
 - Outside hooks a store is reached through its alias (`sheeter.getState()`, `uiStore`, `navigationStore`). Every store exports `export { useX as x };`.
 - An unavoidable `any` carries a `biome-ignore` line with its reason. A `useMemo` or `useCallback` stays only with a comment that says why.

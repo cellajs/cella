@@ -5,9 +5,7 @@ export function useRovingTabIndex(isSelected: boolean) {
   // https://www.w3.org/WAI/ARIA/apg/patterns/grid/#keyboardinteraction-settingfocusandnavigatinginsidecells
   const [isChildFocused, setIsChildFocused] = useState(false);
 
-  if (isChildFocused && !isSelected) {
-    setIsChildFocused(false);
-  }
+  if (isChildFocused && !isSelected) setIsChildFocused(false);
 
   function onFocus(event: React.FocusEvent<HTMLDivElement>) {
     // Do not steal focus if event originates from a focusable child

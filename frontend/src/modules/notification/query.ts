@@ -67,7 +67,6 @@ export const useUpdateNotificationPreferencesMutation = () =>
     onSuccess: (updated) => queryClient.setQueryData(notificationPreferencesQueryOptions().queryKey, updated),
   });
 
-// Imperative push-subscription calls for use-push-subscription.ts; not queries, so no cache keys.
 /** Turns one email category off, or back on, with the token of an unsubscribe link; no session needed. */
 export const useEmailCategoryMutation = () =>
   useMutation<void, ApiError, { query: UnsubscribeNotificationsData['query']; enabled: boolean }>({
@@ -78,6 +77,7 @@ export const useEmailCategoryMutation = () =>
     },
   });
 
+// Imperative push-subscription calls for use-push-subscription.ts; not queries, so no cache keys.
 export const fetchPushVapid = () => getPushVapid();
 export const registerPushSubscription = (body: CreatePushSubscriptionData['body']) => createPushSubscription({ body });
 export const unregisterPushSubscription = (endpoint: string) => removePushSubscription({ body: { endpoint } });

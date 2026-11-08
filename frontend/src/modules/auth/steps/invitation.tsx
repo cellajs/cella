@@ -4,7 +4,6 @@ import { MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type GetAuthHealthResponse, sendMagicLink } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
-import { useShallow } from 'zustand/react/shallow';
 import { ApiError } from '~/lib/api';
 import { type AuthAlternative, AuthAlternatives } from '~/modules/auth/auth-alternatives';
 import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
@@ -19,28 +18,17 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 
-const magicLinkEnabled = isStrategyEnabled('magic');
-
-interface InvitationStepProps {
-  tokenData: TokenData;
-  federations?: GetAuthHealthResponse['federations'];
-}
-
 /**
  * Landing step for a signed-out visitor holding an invitation: who invited them to what, and the ways in. The emailed
  * link goes to the invited address, where it signs in or creates the account. The institution of the invited
  * organization comes first when it has one. A membership invitation can also be answered with an account on another
  * address: the visitor signs in first and the confirm step follows.
  */
-export function InvitationStep({ tokenData, federations }: InvitationStepProps) {
+export function InvitationStep({ tokenData, federations }: { tokenData: TokenData; federations?: GetAuthHealthResponse['federations'] }) {
   const { t } = useTranslation();
-  const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
-    useShallow((state) => ({
-      setStep: state.setStep,
-      setMagicLinkSent: state.setMagicLinkSent,
-      setInviteOtherAccount: state.setInviteOtherAccount,
-    })),
-  );
+  const setStep = useAuthStore((state) => state.setStep);
+  const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
+  const setInviteOtherAccount = useAuthStore((state) => state.setInviteOtherAccount);
   const { redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { email, invitation, inviterName, ssoConnectionId } = tokenData;
@@ -50,10 +38,8 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
 
   const { mutate: sendLink, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email, redirect } }),
-    onSuccess: () => {
-      // An account may hold the invited address by now: the link then signs in.
-      setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup');
-    },
+    // An account may hold the invited address by now: the link then signs in.
+    onSuccess: () => setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup'),
     // The global handler toasts an ApiError; a failure without a server answer gets this toast
     onError: (error) => {
       if (!(error instanceof ApiError)) toaster.error(t('error:reported_try_later'));
@@ -66,7 +52,7 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
   const { institution } = sso;
 
   // The address shows once the link is sent, on the sent step.
-  const emailWay: AuthAlternative | null = magicLinkEnabled
+  const emailWay: AuthAlternative | null = isStrategyEnabled('magic')
     ? { id: 'email', icon: MailIcon, label: t('c:continue_with_email'), shortLabel: t('c:email'), loading: isPending, onClick: () => sendLink() }
     : null;
 

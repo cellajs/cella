@@ -49,10 +49,7 @@ export const useColumns = () => {
         label: t('c:delete'),
         icon: TrashIcon,
         variant: 'destructive',
-        confirm: (row) => ({
-          title: <DeleteQuestion resource="c:user" name={row.name} />,
-          content: <DeleteUsers users={[row]} />,
-        }),
+        confirm: (row) => ({ title: <DeleteQuestion resource="c:user" name={row.name} />, content: <DeleteUsers users={[row]} /> }),
       },
     ]),
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true, cellClass: 'text-muted-foreground' }),

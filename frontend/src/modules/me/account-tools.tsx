@@ -1,25 +1,26 @@
 import { onlineManager, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { BuildingIcon, InfoIcon, TrashIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { startOAuthConnect } from 'sdk';
+import { type MeAuthData, startOAuthConnect } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { enabledOAuthProviders, OAuthProviderIcon } from '~/modules/auth/oauth-strategy';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-strategy';
 import { withStepUp } from '~/modules/auth/step-up';
+import { DeleteForm } from '~/modules/common/delete-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { ExpandableTile, ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { HelpText } from '~/modules/common/help-text';
 import { NamedText } from '~/modules/common/named-text';
+import { useOverlayClose } from '~/modules/common/overlay-close';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
-import { DeleteSelf } from '~/modules/me/delete-self';
-import { IdentityTile } from '~/modules/me/identity-tile';
 import { MfaSwitch } from '~/modules/me/mfa-switch';
 import { PasskeysList } from '~/modules/me/passkeys-list';
-import { meAuthQueryOptions } from '~/modules/me/query';
+import { meAuthQueryOptions, useDeleteSelfMutation } from '~/modules/me/query';
 import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
 import { Accordion } from '~/modules/ui/accordion';
@@ -28,6 +29,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { dateShort } from '~/utils/date-short';
 
 export function AccountGeneralCard() {
   const user = useCurrentUser();
@@ -59,11 +61,41 @@ export function AccountConnectedAppsCard() {
   );
 }
 
+interface IdentityTileProps {
+  /** The provider or connection id. */
+  value: string;
+  icon: ReactNode;
+  title: string;
+  identity: Omit<MeAuthData['oauthIdentities'][number], 'provider'>;
+  /** The federation an institution's identity came through. */
+  via?: string;
+}
+
+/** An OAuth or institution identity the account holds, named by the address its issuer asserted last. */
+function IdentityTile({ value, icon, title, identity, via }: IdentityTileProps) {
+  const { t } = useTranslation();
+
+  return (
+    <ExpandableTile
+      {...{ value, icon, title }}
+      meta={identity.email ?? t('c:connected_on', { date: dateShort(identity.createdAt) })}
+      details={
+        <>
+          <ExpandableTileDetail label={t('c:connected')}>{dateShort(identity.createdAt)}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:last_used')}>
+            {identity.lastUsedAt ? dateShort(identity.lastUsedAt) : t('c:never_used')}
+          </ExpandableTileDetail>
+          {via && <ExpandableTileDetail label={t('c:via')}>{via}</ExpandableTileDetail>}
+        </>
+      }
+    />
+  );
+}
+
 export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const { oauthIdentities } = authData;
 
   // An SSO recovery link names a connection (`connect`), offered beside the user's own institutions even before they join its organization.
   const { connect } = useSearch({ from: '/_app/account' });
@@ -124,7 +156,7 @@ export function AccountAuthenticationCard() {
             </HelpText>
             <div className="mb-8 flex flex-col gap-2">
               {enabledOAuthProviders.map(({ id, name }) => {
-                const identity = oauthIdentities.find(({ provider }) => provider === id);
+                const identity = authData.oauthIdentities.find(({ provider }) => provider === id);
                 return identity ? (
                   <IdentityTile key={id} value={id} icon={<OAuthProviderIcon id={id} />} title={name} identity={identity} />
                 ) : (
@@ -188,12 +220,29 @@ export function AccountAuthenticationCard() {
   );
 }
 
+function DeleteSelf() {
+  const navigate = useNavigate();
+  const overlay = useOverlayClose();
+
+  const { mutate: deleteSelf, isPending } = useDeleteSelfMutation();
+
+  const deleteAndSignOut = () =>
+    deleteSelf(undefined, {
+      onSuccess: () => {
+        navigate({ to: '/auth/sign-out', replace: true, search: { force: true } });
+        overlay?.close();
+      },
+    });
+
+  return <DeleteForm label="c:delete_account" onDelete={deleteAndSignOut} pending={isPending} />;
+}
+
 export function AccountDeleteCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
-  const openDeleteDialog = () => {
+  const openDeleteDialog = () =>
     dialoger.getState().create(<DeleteSelf />, {
       id: 'delete-account',
       triggerRef: deleteButtonRef,
@@ -201,7 +250,6 @@ export function AccountDeleteCard() {
       title: t('c:delete_account'),
       description: <NamedText i18nKey="c:confirm.delete_account" values={{ email: user.email }} />,
     });
-  };
 
   return (
     <ToolCard label="c:delete_account" description={t('c:delete_account.text')}>

@@ -55,14 +55,15 @@ async function sendChunk(requests: PendingRequest[]) {
     const rejected = new Set(response.rejectedIds);
 
     for (const request of requests) {
-      const url = urlByPair.get(pairKey(request.attachmentId, request.variant));
+      const key = pairKey(request.attachmentId, request.variant);
+      const url = urlByPair.get(key);
       if (url) {
-        memo.set(pairKey(request.attachmentId, request.variant), { url, expiresAt: Date.now() + memoTtlMs });
+        memo.set(key, { url, expiresAt: Date.now() + memoTtlMs });
         request.resolve(url);
       } else if (rejected.has(request.attachmentId)) {
         request.reject(new PresignRejectedError(request.attachmentId));
       } else {
-        request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
+        request.reject(new Error(`No presigned URL returned for ${key}`));
       }
     }
   } catch (error) {
@@ -78,9 +79,7 @@ function flush() {
   pending = [];
 
   for (const requests of groupBy(batch, (request) => `${request.tenantId}:${request.organizationId}`).values()) {
-    for (let i = 0; i < requests.length; i += maxItemsPerCall) {
-      void sendChunk(requests.slice(i, i + maxItemsPerCall));
-    }
+    for (let i = 0; i < requests.length; i += maxItemsPerCall) void sendChunk(requests.slice(i, i + maxItemsPerCall));
   }
 }
 

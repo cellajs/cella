@@ -5,10 +5,10 @@ import { prefersMoreContrast } from '~/hooks/use-more-contrast';
 import type { ToastData } from '~/modules/ui/toast';
 
 /** Toast variants with their own icon. */
-export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
+type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 
 /** Base UI toast options; the message and severity come from the call. */
-export type ToastOptions = Omit<ToastManagerAddOptions<ToastData>, 'title' | 'type'>;
+type ToastOptions = Omit<ToastManagerAddOptions<ToastData>, 'title' | 'type'>;
 
 // Errors and toasts with a description carry more to read, so they stay longer
 const timeout = 4_000;
@@ -49,9 +49,8 @@ function close(id?: string) {
 }
 
 /**
- * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout: a reader who
- * needs stronger edges likely needs more than a few seconds as well. A toast that asks for a decision passes
- * `timeout: 0` itself; the rest close by themselves.
+ * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout: a reader who needs stronger edges likely
+ * needs more than a few seconds as well. A toast that asks for a decision passes `timeout: 0` itself; the rest close by themselves.
  */
 function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
   if (prefersMoreContrast()) return 0;

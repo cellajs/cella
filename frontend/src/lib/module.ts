@@ -5,7 +5,7 @@ import type { Tool } from '~/lib/placements';
 import type { StreamSignalHandler } from '~/query/realtime/signal-handlers';
 
 /** A frontend module's registration: shared metadata plus frontend-only capabilities. */
-export interface FrontendModule extends ModuleConfig {
+interface FrontendModule extends ModuleConfig {
   tools?: Tool[];
   /** The channel entity this module owns: its menu section, list query and members-table defaults. */
   channel?: ChannelModuleConfig;

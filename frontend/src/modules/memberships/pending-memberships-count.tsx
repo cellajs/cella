@@ -15,8 +15,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const PendingMembershipsList = lazyNamed(() => import('~/modules/memberships/pending-memberships-list'), 'PendingMembershipsList');
 
-type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
-const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
+const hasIncluded = (channel: EnrichedChannel): channel is EnrichedChannel & Pick<Organization, 'included'> => 'included' in channel;
 const countsOf = (channel?: EnrichedChannel) => (channel && hasIncluded(channel) ? channel.included.counts : undefined);
 
 /** The channel's cached detail, read without a fetch of its own: the detail refetch after a membership change rerenders it. */
@@ -33,7 +32,6 @@ function useCachedDetail({ entityType, id }: EnrichedChannel) {
   );
 }
 
-/** Opens a channel's pending invitations in a sheet. */
 export function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
   sheeter.getState().create(
     <div className="container">
@@ -51,11 +49,7 @@ export function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef
   );
 }
 
-interface PendingMembershipsCountProps {
-  channel: EnrichedChannel;
-}
-
-export function PendingMembershipsCount({ channel }: PendingMembershipsCountProps) {
+export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   // The prop is the row the bar was opened with, so an open sheet takes its count from the cached detail

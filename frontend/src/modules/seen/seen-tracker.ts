@@ -27,9 +27,7 @@ export function SeenTracker() {
     return () => {
       stopFlushInterval();
       cleanupBeacon();
-      if (isDev) {
-        delete window.__flushSeen;
-      }
+      if (isDev) delete window.__flushSeen;
     };
   }, []);
 

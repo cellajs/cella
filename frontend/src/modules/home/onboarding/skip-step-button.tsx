@@ -1,17 +1,28 @@
 import { RedoIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ConfirmForm } from '~/modules/common/confirm-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useOverlayClose } from '~/modules/common/overlay-close';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { SkipOrganization, skipOrganizationDialogId } from '~/modules/home/onboarding/skip-organization';
 import { Button } from '~/modules/ui/button';
 
-interface SkipStepButtonProps {
-  onComplete: () => void;
+const skipOrganizationDialogId = 'skip-org-creation';
+
+function SkipOrganization({ onComplete }: { onComplete: () => void }) {
+  const { t } = useTranslation();
+  const overlay = useOverlayClose();
+
+  const skip = () => {
+    overlay?.close();
+    onComplete();
+  };
+
+  return <ConfirmForm icon={RedoIcon} label={t('c:skip')} pending={false} allowOffline onConfirm={skip} />;
 }
 
 /** Skips an optional step; skipping the organization step asks first, and the confirmed skip ends onboarding through `onComplete`. */
-export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
+export function SkipStepButton({ onComplete }: { onComplete: () => void }) {
   const { nextStep, isOptionalStep, currentStep } = useStepper();
   const { t } = useTranslation();
 

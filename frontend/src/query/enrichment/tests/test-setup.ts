@@ -2,9 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { wideHierarchy } from 'shared/testing/wide-fixture';
 
 /** Provides an isolated React Query client for enrichment tests. */
-export const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, gcTime: 0 } },
-});
+export const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
 
 /** The types the mocked registry holds: the wide fixture's channel types, the only ones enrichment reads. */
 export function mockGetRegisteredEntityTypes(): string[] {

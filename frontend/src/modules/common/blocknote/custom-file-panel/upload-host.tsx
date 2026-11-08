@@ -1,4 +1,7 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { FilePanelExtension } from '@blocknote/core/extensions';
+import { useBlockNoteEditor, useExtension, useExtensionState } from '@blocknote/react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -10,7 +13,7 @@ interface EditorHandle {
 }
 
 /** Bridge → host channel: the editor reports which block opened its file panel and which editor is live. */
-export interface UploadHostApi {
+interface UploadHostApi {
   openFor: (blockId: string) => void;
   registerEditor: (handle: EditorHandle | null) => void;
 }
@@ -19,13 +22,26 @@ const UploadHostContext = createContext<UploadHostApi | null>(null);
 
 export const useUploadHost = () => useContext(UploadHostContext);
 
-interface UploadHostProviderProps {
-  baseFilePanelProps: BaseUppyFilePanelProps;
-  children: ReactNode;
+/** Reports the block that opened the file panel and the live editor up to `UploadHostProvider`; closing is host-driven. */
+export function FilePanelBridge({ host }: { host: UploadHostApi }) {
+  const editor = useBlockNoteEditor(customSchema);
+  const filePanel = useExtension(FilePanelExtension);
+  const activeBlockId = useExtensionState(FilePanelExtension);
+
+  useEffect(() => {
+    host.registerEditor({ editor, closeFilePanel: () => filePanel.closeMenu() });
+    return () => host.registerEditor(null);
+  }, [editor, filePanel, host]);
+
+  useEffect(() => {
+    if (activeBlockId) host.openFor(activeBlockId);
+  }, [activeBlockId, host]);
+
+  return null;
 }
 
 /** Owns the Uppy dialog outside the editor subtree, so a mid-upload remount cannot tear it down; a `FilePanelBridge` reports the block and editor. */
-export function UploadHostProvider({ baseFilePanelProps, children }: UploadHostProviderProps) {
+export function UploadHostProvider({ baseFilePanelProps, children }: { baseFilePanelProps: BaseUppyFilePanelProps; children: ReactNode }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 

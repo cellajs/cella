@@ -40,8 +40,8 @@ export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
   });
 
 /** One-step "create API key": the account and its first key come back together; the secret is in the response once. */
-export const useCreateServiceAccountMutation = () => {
-  return useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
+export const useCreateServiceAccountMutation = () =>
+  useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
     mutationKey: serviceAccountKeys.create,
     mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body })),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
@@ -61,10 +61,9 @@ export const useCreateServiceAccountMutation = () => {
       console.error('Error creating API key:', error);
     },
   });
-};
 
-export const useRevokeApiKeyMutation = () => {
-  return useMutation<RevokeApiKeyResponse, ApiError, MutationData<RevokeApiKeyData>>({
+export const useRevokeApiKeyMutation = () =>
+  useMutation<RevokeApiKeyResponse, ApiError, MutationData<RevokeApiKeyData>>({
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
@@ -78,4 +77,3 @@ export const useRevokeApiKeyMutation = () => {
       console.error('Error revoking API key:', error);
     },
   });
-};

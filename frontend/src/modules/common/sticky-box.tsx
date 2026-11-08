@@ -3,8 +3,6 @@ import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
 import { cn } from '~/utils/cn';
 import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-parent';
 
-const passiveArg = { passive: true } as const;
-
 interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** In px, from the top of the scroll container. */
   offsetTop?: number;
@@ -87,11 +85,11 @@ export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boole
 type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
 
 /**
- * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
- * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
- * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
- * publishes one of those variables never consumes it, since it would inherit its own value back
- * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
+ * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should use plain sticky CSS.
+ * The bar pins at the larger of `--sticky-stack-top` (section bars, which fold the nav offset in) and
+ * `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that publishes one of those variables never consumes it,
+ * since it would inherit its own value back from the parent it publishes on. Variable changes animate with the ancestor
+ * bar's transition.
  */
 export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, children, className, style, ...rest }: StickyBoxProps) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -107,10 +105,8 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
     const scrollParent = getScrollParent(sentinel);
     const root = scrollParent instanceof HTMLElement ? scrollParent : null;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        const { rootBounds } = entry;
-        if (!rootBounds) return;
-        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rootBounds.top);
+      ([{ rootBounds, isIntersecting, boundingClientRect }]) => {
+        if (rootBounds) setStuck(!isIntersecting && boundingClientRect.top < rootBounds.top);
       },
       { root, rootMargin: `${-offsetTop}px 0px 0px 0px`, threshold: [0] },
     );
@@ -159,7 +155,7 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
         ticking = false;
       });
     };
-    scrollParent.addEventListener('scroll', onScroll, passiveArg);
+    scrollParent.addEventListener('scroll', onScroll, { passive: true });
     return () => scrollParent.removeEventListener('scroll', onScroll);
   }, [hideWhenOutOfView, offsetTop, publishVar]);
 

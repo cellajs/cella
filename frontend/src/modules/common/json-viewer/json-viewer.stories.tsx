@@ -88,69 +88,43 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default JSON viewer with a simple object.
- */
+/** Default JSON viewer with a simple object. */
 export const Default: Story = { args: { value: simpleObject } };
 
-/**
- * Nested object with multiple levels of depth.
- */
+/** Nested object with multiple levels of depth. */
 export const NestedObject: Story = { args: { value: nestedObject, defaultInspectDepth: 2 } };
 
-/**
- * Arrays and collections display.
- */
+/** Arrays and collections display. */
 export const WithArrays: Story = { args: { value: arrayData, defaultInspectDepth: 3 } };
 
-/**
- * Single-line primitive arrays in schema mode.
- */
+/** Single-line primitive arrays in schema mode. */
 export const SingleLineArrays: Story = { args: { value: arrayData, openapiMode: 'schema', defaultInspectDepth: 3 } };
 
-/**
- * Copy to clipboard enabled on hover.
- */
+/** Copy to clipboard enabled on hover. */
 export const WithClipboard: Story = { args: { value: nestedObject, enableClipboard: true } };
 
-/**
- * Long strings are truncated with click to expand.
- */
+/** Long strings are truncated with click to expand. */
 export const LongStrings: Story = { args: { value: longStringData, collapseStringsAfterLength: 50 } };
 
-/**
- * Keys displayed without quotes for cleaner look.
- */
+/** Keys displayed without quotes for cleaner look. */
 export const WithoutKeyQuotes: Story = { args: { value: simpleObject, showKeyQuotes: false } };
 
-/**
- * Hidden root name for embedding in other contexts.
- */
+/** Hidden root name for embedding in other contexts. */
 export const HiddenRootName: Story = { args: { value: simpleObject, rootName: false } };
 
-/**
- * Custom root name.
- */
+/** Custom root name. */
 export const CustomRootName: Story = { args: { value: simpleObject, rootName: 'userData' } };
 
-/**
- * All nodes expanded regardless of depth.
- */
+/** All nodes expanded regardless of depth. */
 export const ExpandAll: Story = { args: { value: nestedObject, expandAll: true } };
 
-/**
- * Shallow default expansion (depth 1).
- */
+/** Shallow default expansion (depth 1). */
 export const ShallowExpansion: Story = { args: { value: nestedObject, defaultInspectDepth: 1 } };
 
-/**
- * Wider indentation for better readability.
- */
+/** Wider indentation for better readability. */
 export const WideIndent: Story = { args: { value: nestedObject, indentWidth: 4, defaultInspectDepth: 4 } };
 
-/**
- * Interactive search with highlighting.
- */
+/** Interactive search with highlighting. */
 export const WithSearch: Story = {
   render: function Render(args) {
     const [searchText, setSearchText] = useState('');
@@ -172,14 +146,10 @@ export const WithSearch: Story = {
   args: { value: nestedObject, defaultInspectDepth: 4 },
 };
 
-/**
- * OpenAPI schema mode with type labels and required indicators.
- */
+/** OpenAPI schema mode with type labels and required indicators. */
 export const OpenApiSchemaMode: Story = { args: { value: openApiSchemaData, openapiMode: 'schema', showKeyQuotes: false, defaultInspectDepth: 4 } };
 
-/**
- * Complex real-world API response structure.
- */
+/** Complex real-world API response structure. */
 export const ComplexApiResponse: Story = {
   args: {
     value: {
@@ -212,9 +182,7 @@ export const ComplexApiResponse: Story = {
   },
 };
 
-/**
- * Empty and edge case values.
- */
+/** Empty and edge case values. */
 export const EdgeCases: Story = {
   args: {
     value: {
@@ -231,9 +199,7 @@ export const EdgeCases: Story = {
   },
 };
 
-/**
- * All features combined for comprehensive testing.
- */
+/** All features combined for comprehensive testing. */
 export const AllFeatures: Story = {
   render: function Render(args) {
     const [searchText, setSearchText] = useState('');
@@ -257,9 +223,7 @@ export const AllFeatures: Story = {
 
 // Interaction tests
 
-/**
- * Tests that clicking a collapsed node expands it to show children.
- */
+/** Tests that clicking a collapsed node expands it to show children. */
 export const ShouldExpandOnClick: Story = {
   name: 'when collapsed node is clicked, should expand to show children',
   tags: ['!dev', '!autodocs'],
@@ -274,9 +238,7 @@ export const ShouldExpandOnClick: Story = {
   },
 };
 
-/**
- * Tests that clicking an expanded node collapses it.
- */
+/** Tests that clicking an expanded node collapses it. */
 export const ShouldCollapseOnClick: Story = {
   name: 'when expanded node is clicked, should collapse',
   tags: ['!dev', '!autodocs'],
@@ -293,9 +255,7 @@ export const ShouldCollapseOnClick: Story = {
   },
 };
 
-/**
- * Tests that the copy button stays faded until its node is hovered and copies content.
- */
+/** Tests that the copy button stays faded until its node is hovered and copies content. */
 export const ShouldShowCopyOnHover: Story = {
   name: 'when node is hovered, should show copy button',
   tags: ['!dev', '!autodocs'],
@@ -320,9 +280,7 @@ export const ShouldShowCopyOnHover: Story = {
   },
 };
 
-/**
- * Tests that long strings can be expanded by clicking.
- */
+/** Tests that long strings can be expanded by clicking. */
 export const ShouldExpandLongString: Story = {
   name: 'when truncated string is clicked, should expand full text',
   tags: ['!dev', '!autodocs'],
@@ -345,9 +303,7 @@ export const ShouldExpandLongString: Story = {
   },
 };
 
-/**
- * Tests search highlighting functionality.
- */
+/** Tests search highlighting functionality. */
 export const ShouldHighlightSearchMatches: Story = {
   name: 'when search text matches, should highlight matches',
   tags: ['!dev', '!autodocs'],
@@ -361,9 +317,7 @@ export const ShouldHighlightSearchMatches: Story = {
   },
 };
 
-/**
- * Tests that the row at searchMatchPath expands into view and carries the current-match marker.
- */
+/** Tests that the row at searchMatchPath expands into view and carries the current-match marker. */
 export const ShouldMarkCurrentMatch: Story = {
   name: 'when searchMatchPath points into a collapsed node, should expand it and mark the row current',
   tags: ['!dev', '!autodocs'],
@@ -376,9 +330,7 @@ export const ShouldMarkCurrentMatch: Story = {
   },
 };
 
-/**
- * Tests that primitive arrays render on single line in schema mode.
- */
+/** Tests that primitive arrays render on single line in schema mode. */
 export const ShouldRenderSingleLineArrays: Story = {
   name: 'when openapiMode is schema, primitive arrays render inline',
   tags: ['!dev', '!autodocs'],
@@ -399,9 +351,7 @@ export const ShouldRenderSingleLineArrays: Story = {
   },
 };
 
-/**
- * Tests schema mode displays type labels.
- */
+/** Tests schema mode displays type labels. */
 export const ShouldShowTypeLabelsInSchemaMode: Story = {
   name: 'when openapiMode is schema, should show type labels',
   tags: ['!dev', '!autodocs'],
