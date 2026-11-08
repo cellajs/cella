@@ -60,7 +60,7 @@ Payloads carry ids, never row bodies. The handler re-reads through the query the
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades when the scheduler stalls, a queue backs up or dead letters wait. It never fails, so a switch never blocks on it.
+`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran and how each queue stands. It degrades when the scheduler stalls, a queue backs up or dead letters wait. It never fails, so a switch never blocks on it.
 
 The maintainer runs as the runtime role, so index rebuilds are left to an operator. For those and for recent failures, query the job store schema as the owner role. The health payload names the queues that degrade.
 
