@@ -15,7 +15,7 @@ export function scalewayStatus(error: string | undefined): string | undefined {
   return error ? /Scaleway \S+ \S+ → (5\d\d)/.exec(error)?.[1] : undefined;
 }
 
-const SHORTAGE = /out of stock|scarce|quota/i;
+const SHORTAGE = /out of stock|scarce/i;
 
 /** The steps that fail when a new machine fetches its env file or images through a link that already expired. */
 const LINK_STEPS = new Set(['Compose runtime env', 'Switch machines']);
@@ -35,7 +35,9 @@ export function classifyRun(record: RunRecord): FailureClass {
   const { outcome, failedStep, error = '' } = record;
   const theRun = `${actionLabel('runs')} → the run`;
   if (outcome === 'blocked') {
-    return { side: 'settings', sentence: `A value is missing: the record names it (${actionLabel('secrets')} stores it).`, retryLikely: false };
+    const names = /required runtime values are not set: ([^\n]+)/.exec(error)?.[1];
+    const what = names ? `Waiting for ${names.replace(/ \[[^\]]+\]/g, '')}` : 'A value is missing: the record names it';
+    return { side: 'settings', sentence: `${what}: "${actionLabel('secrets')}" stores it and deploys again.`, retryLikely: false };
   }
   if (outcome === 'apply needed') {
     return {
@@ -51,6 +53,14 @@ export function classifyRun(record: RunRecord): FailureClass {
       side: 'platform',
       sentence: `Scaleway's API failed (${status}) during ${during}. Your code never ran there, and a retry usually passes.`,
       retryLikely: true,
+    };
+  }
+  if (/quota/i.test(error)) {
+    return {
+      side: 'platform',
+      sentence:
+        "Your Scaleway account's quota for that machine type is reached: ask for more in the console (Organization → Quotas), then deploy again.",
+      retryLikely: false,
     };
   }
   if (SHORTAGE.test(error)) {

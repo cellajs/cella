@@ -7,7 +7,6 @@ import { actionCommand, isOperatorActionId, menuPath } from '../lib/operator-act
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import type { Check, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, pc, warningMark } from '../lib/utils/cli-output';
-import { within } from '../lib/utils/retry';
 import { buildSession, rememberReport } from '../tasks/status';
 import { liveDbEndpoints } from './actions/db-exposure';
 import type { UpNext } from './menu';
@@ -39,12 +38,9 @@ export async function collectHome(context: InfraContext): Promise<HomeFacts> {
     projectId: context.projectId || undefined,
     operatorKey: rememberedOperatorKey(),
   });
-  const refs = within(
-    REFS_BUDGET_MS,
-    Promise.resolve()
-      .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']))
-      .catch(() => undefined),
-  );
+  const refs = Promise.resolve()
+    .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: REFS_BUDGET_MS })(['refs/tags/*', 'refs/heads/*']))
+    .catch(() => undefined);
   const [report, remote, liveEndpoints] = await Promise.all([buildStatusReport(session), refs, liveDbEndpoints(context)]);
   rememberReport(report);
   const facts = await session.scalewayFacts();

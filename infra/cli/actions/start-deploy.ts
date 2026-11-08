@@ -19,7 +19,6 @@ import { leaseDeploys, lockKey, makeControlClient, peekLock } from '../../lib/st
 import { checkMark, crossMark, pc, sleep, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { within } from '../../lib/utils/retry';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 
@@ -112,12 +111,9 @@ async function followRun(
 
 /** The repository's release tags and branch heads, which name a commit, when they answer within the budget. */
 function commitRefs(): Promise<RemoteRef[] | undefined> {
-  return within(
-    REFS_BUDGET_MS,
-    Promise.resolve()
-      .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']))
-      .catch(() => undefined),
-  );
+  return Promise.resolve()
+    .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: REFS_BUDGET_MS })(['refs/tags/*', 'refs/heads/*']))
+    .catch(() => undefined);
 }
 
 /**

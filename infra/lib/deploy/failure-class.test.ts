@@ -21,7 +21,7 @@ const cases: [string, RunRecord, Pick<FailureClass, 'side' | 'retryLikely'>, str
     'a missing value',
     failed({ outcome: 'blocked', failedStep: 'Check runtime secrets', error: 'Blocked: required runtime values are not set: RESEND_API_KEY' }),
     { side: 'settings', retryLikely: false },
-    'A value is missing',
+    'Waiting for RESEND_API_KEY',
   ],
   [
     'an apply owed',
@@ -34,6 +34,15 @@ const cases: [string, RunRecord, Pick<FailureClass, 'side' | 'retryLikely'>, str
     failed({ failedStep: 'Switch machines', error: `Scaleway POST ${SERVERS} → 503: {"message":"unavailable"}`, boot: [{ service: 'backend' }] }),
     { side: 'platform', retryLikely: true },
     `Scaleway's API failed (503) during "Switch machines"`,
+  ],
+  [
+    'a quota of the account reached, which no retry clears',
+    failed({
+      failedStep: 'Switch machines',
+      error: `Scaleway POST ${SERVERS} → 403: {"type":"quotas_exceeded","message":"Quota exceeded for this resource"}`,
+    }),
+    { side: 'platform', retryLikely: false },
+    'quota for that machine type is reached',
   ],
   [
     'a machine type out of stock',
