@@ -67,7 +67,9 @@ The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions 
 
 `admin_role` also owns the activities. Its bypass never depends on the `BYPASSRLS` attribute, which managed providers such as Scaleway cannot grant. The dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs, and refuse to run when either role is missing.
 
-Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope. The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
+Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
+
+The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
 ## Tenant kinds
 
@@ -88,7 +90,9 @@ A demo holds one account, admin of the tenant's organization, under a placeholde
 
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other. Deleting its organization archives a tenant, and so does a system admin when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
+A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
+
+Deleting its organization archives a tenant, and so does a system admin when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
 
 A system admin restores a tenant by setting it active again. After the archived period, or past its expiry, an hourly sweep removes the tenant with everything in it. The provisional accounts it leaves with no membership go too.
 
