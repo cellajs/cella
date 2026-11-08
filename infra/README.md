@@ -4,7 +4,7 @@ This document describes the Infra CLI: what it does, its commands and status che
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A schedule in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A schedule in the same Scaleway account deploys every release onto fresh machines. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
 
 ## What it does
 
@@ -54,7 +54,13 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure. A check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in. They flag what nobody declared, such as an extra key or policy. They also flag a person's key without an end date, a machine the live record does not name, and a main job whose image, command, schedule or env differs from the last apply. They read the live machines from the live record, which the deploy key writes. So they find only what an intruder did not disguise. `inventory.machines` needs the operator key and is `unknown` without it. To clear what they flag:
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in. They flag what nobody declared, such as an extra key or policy.
+
+They also flag a person's key without an end date, a machine the live record does not name, and a main job whose image, command, schedule or env differs from the last apply.
+
+They read the live machines from the live record, which the deploy key writes. So they find only what an intruder did not disguise. `inventory.machines` needs the operator key and is `unknown` without it.
+
+To clear what they flag:
 
 - **Rotate keys** replaces the environment's keys and deletes the others.
 - **Update identities** deletes a policy or key beside the declared one, and the retired machine identities.
@@ -71,7 +77,11 @@ Stable check `id`s:
 
 ## Deploy telemetry
 
-With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace. Every pipeline step is a span, and each machine's boot joins it. The sink and the key's name live in [config/telemetry.config.ts](config/telemetry.config.ts). Storing the key in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)). `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace. Every pipeline step is a span, and each machine's boot joins it.
+
+The sink and the key's name live in [config/telemetry.config.ts](config/telemetry.config.ts). Storing the key in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)). `OTEL_EXPORTER_OTLP_*` variables reach no deploy.
+
+The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
 
 ## Key files
 
