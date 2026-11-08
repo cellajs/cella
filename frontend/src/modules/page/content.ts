@@ -15,8 +15,8 @@ export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
 
 /** Page layouts: `default` a reading column with the heading aside, `wide` the full frame and no aside, for a table appendix. */
-export const docLayouts = ['default', 'wide'] as const;
-export type DocLayout = (typeof docLayouts)[number];
+const docLayouts = ['default', 'wide'] as const;
+type DocLayout = (typeof docLayouts)[number];
 
 const frontmatterSchema = z.object({
   title: z.string().min(1),
