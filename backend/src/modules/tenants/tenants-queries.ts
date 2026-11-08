@@ -4,6 +4,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
@@ -111,9 +112,14 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: TenantCrea
   return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
 };
 
-/** The demo tenant the user took, in its response shape; undefined for a user who holds none. */
-export const findDemoTenant = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) =>
-  findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), eq(tenantsTable.kind, 'demo')) });
+/**
+ * The demo tenant the account is a member of, in its response shape; undefined for an account seated in none. Membership,
+ * not `createdBy`: an app can seat guests in a demo on accounts of their own, and each of them gets it back.
+ */
+export const findDemoTenant = async (ctx: DbContext, { userId }: { userId: string }) => {
+  const memberOf = ctx.var.db.select({ tenantId: membershipsTable.tenantId }).from(membershipsTable).where(eq(membershipsTable.userId, userId));
+  return findTenant(ctx, { where: and(inArray(tenantsTable.id, memberOf), eq(tenantsTable.kind, 'demo')) });
+};
 
 /**
  * Makes the creations of one user wait for each other until the transaction ends, so a parallel burst reads the

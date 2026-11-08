@@ -29,8 +29,9 @@ export function PrivacyText() {
         </p>
         {appConfig.has.demos && (
           <p>
-            A demo needs no email address: it runs on a throwaway account that only your browser can open. We keep no personal data of its own, and it
-            goes with everything you put in it after {appConfig.retention.demoTenantDays} days.
+            A demo needs no email address: it runs on a throwaway account that only your browser can open. To cap how many demos one address takes, we
+            keep a hash of your IP address for a day; the demo itself goes with everything you put in it after {appConfig.retention.demoTenantDays}{' '}
+            days.
           </p>
         )}
         <ProcessedDataTypes />

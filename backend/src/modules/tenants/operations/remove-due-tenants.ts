@@ -36,7 +36,9 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
  * organization its admin deleted, or a contract ended) or past their `expiresAt` (a demo after its days). Each goes
  * with its organization and everything in it, the stored files through the deletion queue, then the provisional
  * accounts it orphaned: a member with no proven address and no membership left, such as a demo's account, which goes
- * with its actor row. For a kind with operator notices the operator gets a mail per tenant with what was removed: the
+ * with its actor row. An app's fixture account without an email row follows the same rule and goes with the last tenant
+ * that held it; a fixture that must outlive its tenants needs a proven address or a membership elsewhere. For a kind
+ * with operator notices the operator gets a mail per tenant with what was removed: the
  * written confirmation a processing agreement asks for. A tenant that fails is logged and tried again at the next run.
  * @returns The number of tenants removed.
  * @throws After every tenant ran, when any of them failed, so the jobs worker records a failed run.
