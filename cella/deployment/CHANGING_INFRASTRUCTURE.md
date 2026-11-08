@@ -4,10 +4,7 @@ This document explains how privileged infrastructure changes are reviewed and ap
 
 ### TL;DR
 
-Everything Pulumi manages is privileged, such as the database and the load balancer's pools. It changes only through an
-apply on your operator key, after you have seen its plan. An apply also publishes the engine every deploy runs, with the
-description of the app it applied. A deploy makes and deletes the machines and changes none of it. Every pull request
-says which applies merging owes.
+Everything Pulumi manages, such as the database and the load balancer's pools, is privileged: it changes only through an apply on your operator key, after you have seen its plan. An apply also publishes the engine every deploy runs, and a deploy only makes and deletes machines. Every pull request says which applies merging owes.
 
 ## Privileged changes
 
@@ -47,18 +44,28 @@ Three rules decide what a release owes:
 - **Changed description:** it ends **apply needed** until an apply from a checkout with the change.
 - **Engine code only:** a change to `infra/lib`, `infra/tasks` or `infra/resources` needs no apply.
 
-The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on. The database access actions and the seed run an `up` that keeps the main job's image. They refuse to run while no apply has published one, as that `up` would delete the main job.
+The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
+
+The database access actions and the seed run an `up` that keeps the main job's image. They refuse to run while no apply has published one, as that `up` would delete the main job.
 
 ## Pull request check
 
-Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes. An application or a policy that is new, gone or changed owes **Update identities**. A resource of the program or a change of the applied description owes an apply. A head that cannot render fails the check and blocks the merge. The check reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes. An application or a policy that is new, gone or changed owes **Update identities**. A resource of the program or a change of the applied description owes an apply.
 
-On the release PR, the check also fails while the release describes the app otherwise than the last apply of an environment that follows the releases. Merged, that release would end **apply needed**, so it merges only after its apply. GitHub holds no key to read `applied.json`. So each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`. It then runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
+A head that cannot render fails the check and blocks the merge. The check reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+
+On the release PR, the check also fails while the release describes the app otherwise than the last apply of an environment that follows the releases. Merged, that release would end **apply needed**, so it merges only after its apply.
+
+GitHub holds no key to read `applied.json`. So each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`. It then runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
 
 ## Identities
 
-An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets. No machine and no builder has an identity, as they fetch and write through links the deploy key signs. So toggling `enabled` or `singleVM`, or a runtime secret's consumers, changes no identity.
+An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets.
 
-Identities are IAM, so only an Owner moment writes them. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included. It makes the uploads application and its key, and writes that key into the runtime folder. It deletes the retired machine identities with their keys. It reads what differs with the observer key, and asks for an Owner API key only when something has to change. A deploy does not read identities.
+No machine and no builder has an identity, as they fetch and write through links the deploy key signs. So toggling `enabled` or `singleVM`, or a runtime secret's consumers, changes no identity.
+
+Identities are IAM, so only an Owner moment writes them. A deploy does not read identities. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included.
+
+It makes the uploads application and its key, and writes that key into the runtime folder. It deletes the retired machine identities with their keys. It reads what differs with the observer key, and asks for an Owner API key only when something has to change.
 
 The plan also names a policy beside a declared one, and a key beside the uploads key. **Update identities** deletes either. **Rotate keys** replaces the deploy and uploads keys and deletes the rest.
