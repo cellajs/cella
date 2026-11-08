@@ -4,7 +4,7 @@ This document explains how product data, and the facts around it, stay current a
 
 ### TL;DR
 
-When data changes, the server announces it on a live stream. The client fetches it through the normal API and patches only the affected cached entries. The sync engine adds no second data model, storage or permission check. Product rows travel as **changes**. Anything else a client must hear about travels as a **signal**, such as a new membership or an inbox item.
+The server announces each data change on a live stream: product rows as **changes**, anything else a client must hear about as **signals**. The client fetches the data through the normal API and patches only the affected cached entries. The sync engine adds no second data model, storage or permission check.
 
 ## One edit, end to end
 
@@ -113,7 +113,9 @@ A change frame names each changed row with its sequence position and the write t
 - **Move-out:** drop the row at once.
 - **Own echo:** fetch nothing, since the write's answer brought the stored row.
 
-A frame past a size bound names its rows by id alone, and past a larger bound names none. The client then fetches the range or refetches the lists. A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
+A frame past a size bound names its rows by id alone, and past a larger bound names none. The client then fetches the range or refetches the lists.
+
+A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
 
 ### Catchup
 
@@ -127,7 +129,11 @@ A view behind its frontier hands the gap to the fetch prioritizer. A view withou
 
 ### SSE wire
 
-Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval. The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame, never a 204, since a stock EventSource would stop at the 401 its one reconnect gets. No frame carries an event id. A reconnecting client resumes through catchup from its cursors. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
+
+The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame, never a 204, since a stock EventSource would stop at the 401 its one reconnect gets.
+
+No frame carries an event id. A reconnecting client resumes through catchup from its cursors. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 
@@ -151,7 +157,9 @@ Unseen badges count delivered rows with the server's own predicate. An exact ser
 
 ## Embeddings
 
-A product can reference other products through an id array column. The **host** row holds the ids, and each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` and the engine handles the rest. Host and embedded rows sync independently. An embedded row's change patches its copies inside cached host rows. A host write keeps only the ids of live rows in its organization.
+A product can reference other products through an id array column. The **host** row holds the ids, and each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` and the engine handles the rest.
+
+Host and embedded rows sync independently. An embedded row's change patches its copies inside cached host rows. A host write keeps only the ids of live rows in its organization.
 
 The embedding's `lifecycle` decides what a deletion does:
 
@@ -164,7 +172,11 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 ## Writes
 
-A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit pauses in the persisted replay queue. An HTTP error settles at once. A replay that meets a gateway error, as during a deploy, stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt. The attachment module sends a tab's writes one at a time and in order. An online write therefore waits behind a queued one.
+A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit pauses in the persisted replay queue.
+
+An HTTP error settles at once. A replay that meets a gateway error, as during a deploy, stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
+
+The attachment module sends a tab's writes one at a time and in order. An online write therefore waits behind a queued one.
 
 ### Merge metadata
 
@@ -187,7 +199,9 @@ A product's create, update and delete each carry one fixed shape, so the queue c
 - **Restore:** a refused delete puts its rows back.
 - **Order:** edits and deletes of a row wait for its attempted create, which may have committed.
 
-A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)). A bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read is dropped. A replay the server refuses with a 4xx rolls back and toasts, as a live edit does. A replay that meets a lost session stays queued for the same user's next sign-in.
+A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)). A bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read is dropped.
+
+A replay the server refuses with a 4xx rolls back and toasts, as a live edit does. A replay that meets a lost session stays queued for the same user's next sign-in.
 
 A replayed create is idempotent by its row ids, and a replayed delete by its mutation id. Rows an earlier attempt deleted count as deleted, not refused. An update has no such check.
 
