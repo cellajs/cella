@@ -73,7 +73,7 @@ Commit order is sequence order, across product types, and a change delivered twi
 
 ### Drafts
 
-A product table that opts into drafts is published with a row filter, so sync sees a draft only once it is published: publishing arrives as a create, unpublishing as a delete.
+Sync sees a draft only once it is published. Publishing arrives as a create, and unpublishing as a delete.
 
 ### Moves
 
@@ -95,7 +95,7 @@ When an update moves products to a path a subscriber can no longer read, that su
 
 ### Changes
 
-A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names them by id alone, and past a larger id bound names none: the client fetches the sequence range of a create or update; it handles deleted and moved rows by id as it does named ones, and when the frame names none of them it refetches the lists and drops the type's cached details below the frame's channel. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
+A change frame names each changed row with its sequence position and the write that changed it. The client fetches created and updated rows and patches them into its caches. A delete only marks the row's lists for a refetch, since no row is left to fetch. A move-out drops the row at once. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
 
 ### Catchup
 
@@ -148,7 +148,7 @@ An online write is ordered by arrival: the server stamps it with a fresh server 
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. A list read that starts or ends while a row has a pending mutation keeps the row as cached, the stored row once the mutation settled. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work. An edit of a row whose create was never sent folds into that create. While a row has a pending mutation, remote changes and list reads leave the cached row alone. When a row's last pending mutation settles, the row the server stored replaces the cached one. A refused delete puts its rows back. A create that was attempted may have committed, so later edits and deletes of its row are sent after it.
 
 A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read is dropped. A replay the server refuses with a 4xx rolls back and toasts, as a live edit does. A replay that meets a lost session stays queued for the same user's next sign-in.
 
@@ -156,7 +156,7 @@ A replayed create is idempotent by its row ids, and a replayed delete by its mut
 
 ## Resilience
 
-The REST API and the database work whatever the CDC worker does: it records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../cdc/README.md#failure-and-recovery)).
+The REST API and the database work whatever the CDC worker does. The worker records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../cdc/README.md#failure-and-recovery)).
 
 ### REST fallback
 
@@ -180,7 +180,7 @@ A rebuild starts a new sync generation, and the API ends every open stream. A cl
 
 ### Failure modes
 
-Each failure has one answer per level. The **core** is the normal path, built to absorb it; the **mid** level recovers when the core cannot, catchup on the client and reading again in the worker; the **lost case** starts over, a client by refetching once and the worker by rebuilding its books. A row that holds a second answer at a level names it as an open finding, to remove, and a failure nothing answers says None. A change that adds an answer to a failure edits its row here, in the [CDC worker's table](../cdc/README.md#failure-and-recovery) or in the [notifications table](../backend/src/modules/notification/README.md#failure-modes), and names its level.
+Each failure has one answer per level. The **core** is the normal path, built to absorb the failure. The **mid** level recovers when the core cannot: the client runs catchup and the worker reads again. The **lost case** starts over: a client refetches once and the worker rebuilds its books. A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row here, in the [CDC worker's table](../cdc/README.md#failure-and-recovery) or in the [notifications table](../backend/src/modules/notification/README.md#failure-modes).
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
@@ -226,4 +226,4 @@ One tab leads: it holds the stream, runs catchup and forwards what it receives t
 
 The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`). With it on, a description saves through the relay, never as a REST write, so it never enters the replay queue.
 
-The cache takes a description, and the columns derived from it, only from a server write of that field, so a read that lags the relay cannot undo a collaborative patch.
+The cache takes a description and its derived columns only from a server write of that field. A read that lags the relay therefore cannot undo a collaborative patch.
