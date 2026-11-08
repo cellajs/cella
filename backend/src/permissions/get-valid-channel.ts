@@ -56,8 +56,9 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * reads as missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
  * `membership` may be `null` while allowed: system admins and admins of a higher-level entity pass without one. An
  * update that merges its change with the stored row reads it `forUpdate`, in the transaction of its write, so two
- * overlapping merges cannot each start from the row the other replaces. `ignoreArchive` skips the archive check, for
- * the archive route alone, which must reach an archived channel to reopen it.
+ * overlapping merges cannot each start from the row the other replaces. `ignoreArchive` skips the archive check: for
+ * the archive route, which must reach an archived channel to reopen it, and for withdrawing an invitation, which
+ * removes a row as removing a member does.
  * @throws AppError 404 when the channel is not found or the caller may not read it.
  * @throws AppError 403 `channel_archived` when the channel is archived and `action` is no read or delete.
  * @throws AppError 403 `forbidden` when the caller reads the channel but may not perform `action`.

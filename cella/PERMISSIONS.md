@@ -144,7 +144,7 @@ Like a draft, an archive is checked before the engine. The check reads the conta
 
 ## In the interface
 
-The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone.
+The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone. `useCan` also applies the archive veto from the cached channel rows; `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
 A route gate (`requireEntityAction`) asks the same question before the page loads. Where the memberships cannot be read (offline with none cached), the gate lets the user through, and the server decides.
 
