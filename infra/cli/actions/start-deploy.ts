@@ -30,8 +30,9 @@ const MAX_TRIES = 3;
  * Start one run of the environment's main job by hand, on the operator key, for the environment's target as the environments file of this
  * checkout says it, and follow the run until it ends: deployed (or already serving), blocked (a runtime value is owed) or failed. A scheduled
  * run does the same by itself at the environment's cadence; this is the operator's way for a target the schedule does not start again.
+ * @param opts.asked the caller asked the person already, so the deploy starts without a second question.
  */
-export async function runStartDeploy(context: InfraContext): Promise<void> {
+export async function runStartDeploy(context: InfraContext, opts: { asked?: boolean } = {}): Promise<void> {
   const { appConfig, projectId } = context;
   const environment = context.environment;
   const target = await environmentTarget(context);
@@ -46,7 +47,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
       `\n${actionLabel('start-deploy')}: one run of ${environment}'s main job, for ${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}).\n`,
     ),
   );
-  if (!(await confirmOrDefault({ message: `Deploy ${target.sha.slice(0, 10)} to ${environment}?`, default: true }))) return;
+  if (!opts.asked && !(await confirmOrDefault({ message: `Deploy ${target.sha.slice(0, 10)} to ${environment}?`, default: true }))) return;
 
   const operator = await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };

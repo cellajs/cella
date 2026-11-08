@@ -5,12 +5,12 @@ import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
-import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { crossMark, pc, sleep, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { moveSecretsOutOfPrefix } from '../../tasks/move-secret-paths';
 import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { keyPairPrompt } from '../prompts/key-pair';
-import { forgetOperatorKey, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
+import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
@@ -84,6 +84,25 @@ function endOnRefusal(names: AppPrincipalNames, error: unknown): never {
   return endAction(1);
 }
 
+/** Reads of a key the setup minted after the first, and the pause before each: IAM refuses a new key until its policy holds, about a minute. */
+const MINTED_KEY_RETRIES = 6;
+const MINTED_KEY_PAUSE_MS = 10_000;
+
+/** Describe a key minted in this run, reading it again on a 401 or 403 while it is that new. */
+function describeMintedKey(pair: KeyPair): Promise<KeyDescription> {
+  return withSpinner('Waiting for the new key to hold', async () => {
+    for (let retry = 0; ; retry++) {
+      try {
+        return await describeKey(pair);
+      } catch (error) {
+        const status = scwErrorStatus(error);
+        if (retry === MINTED_KEY_RETRIES || (status !== 401 && status !== 403)) throw error;
+        await sleep(MINTED_KEY_PAUSE_MS);
+      }
+    }
+  });
+}
+
 interface Unlocked {
   /** The operator key: it authenticates API calls and every privileged action of the session. */
   accessKey: string;
@@ -110,7 +129,7 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
   }
   let desc: KeyDescription;
   try {
-    desc = await describeKey(pair);
+    desc = operatorKeyMintedThisRun() ? await describeMintedKey(pair) : await describeKey(pair);
   } catch (error) {
     return endOnRefusal(names, error);
   }
@@ -160,9 +179,9 @@ export interface OperatorKey extends KeyPair {
 
 /**
  * The key every privileged action runs on: a one-day key of the operator application, or of a member of the operators group, pasted once
- * per session and kept in this process's memory. It holds no IAM write, so nothing is minted from it, and it ends by itself within the
- * day, so nothing is left to revoke when the action ends. An Owner key never runs one, as the buckets admit no Owner; an app without
- * operators gets them from `operator-key` or its setup, with an Owner API key.
+ * per session or minted by a setup's Owner moment, and kept in this process's memory. It holds no IAM write, so nothing is minted from it,
+ * and it ends by itself within the day, so nothing is left to revoke when the action ends. An Owner key never runs one, as the buckets
+ * admit no Owner; an app without operators gets them from `operator-key` or its setup, with an Owner API key.
  */
 export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
   const unlocked = await unlock(stack);

@@ -4,6 +4,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { printInventory } from '../../tasks/status';
 import { endsAction, type InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
+import { printLaunchChecklist } from './setup-checklist';
 import { copyDeployKeyForMainJob, recordKeyRotation, runOperatorPart } from './setup-operator-part';
 import { runOwnerMoment, type SetupMode } from './setup-owner-moment';
 import { redeployAfterRotation } from './start-deploy';
@@ -15,6 +16,7 @@ import { redeployAfterRotation } from './start-deploy';
  * A rotation ends after its Owner moment; a resume that only re-syncs needs no Owner key.
  */
 export async function runSetup(context: InfraContext, mode: SetupMode): Promise<void> {
+  if (mode === 'resume') await printLaunchChecklist(context);
   const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
   const moment = writesIdentities ? await runOwnerMoment(context, mode) : undefined;
   if (writesIdentities && !moment) return;
