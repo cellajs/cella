@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { getSeedDb } from '#/db/db';
+import { env } from '#/env';
 import { recalculateCounters, recalculateViewCounts } from '#/modules/entities/counters-queries';
 import { requestBooks } from '#/modules/entities/sync-requests';
 import { startSpinner, succeedSpinner } from '#/utils/console';
@@ -7,8 +8,6 @@ import type { SeedScript } from '../types';
 
 // Seed scripts use the admin connection for privileged operations.
 const db = getSeedDb();
-
-const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
 /**
  * Makes the counters match the seeded rows. Whoever reads the replication slot owns the channel counters:
@@ -22,7 +21,7 @@ export const countersSeed = async () => {
   startSpinner('Recalculating counters...');
 
   const { productRows } = await recalculateViewCounts({ var: { db } });
-  const slot = await db.execute<Record<string, unknown>>(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
+  const slot = await db.execute<Record<string, unknown>>(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${env.CDC_SLOT_NAME}`);
 
   if (slot.rows.length > 0) {
     await requestBooks(db, 'rebuild');

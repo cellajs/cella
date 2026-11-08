@@ -5,7 +5,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv, promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { serviceSecretNames } from '#/env-service-secrets';
 
 const backendDir = fileURLToPath(new URL('..', import.meta.url));
 
@@ -26,15 +25,11 @@ const modeBound = {
   ADMIN_EMAIL: 'admin@example.com',
 };
 
-/**
- * Loads env.ts in a fresh process, as a deployed container does: validation is skipped under Vitest. Every mode-bound
- * secret not given is set empty, which counts as absent and keeps a developer's backend/.env from filling it in.
- */
+/** Loads env.ts in a fresh process, as a deployed container does; `VITEST` keeps a developer's env file out of it. */
 function loadEnv(vars: Record<string, string>) {
-  const absent = Object.fromEntries(serviceSecretNames.map((name) => [name, '']));
   const result = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', "await import('./src/env.ts')"], {
     cwd: backendDir,
-    env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', ...absent, ...vars },
+    env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', VITEST: 'true', ...vars },
     encoding: 'utf8',
     timeout: 20_000,
   });
@@ -81,14 +76,13 @@ const tsx = path.join(backendDir, 'node_modules/.bin/tsx');
 const strong = () => randomBytes(24).toString('base64url');
 
 /**
- * Loads the real env module in a process of its own, as a service boots: Vitest skips its validation.
+ * Loads the real env module in a process of its own, as a service boots.
  * @returns Whether it loaded, and what it printed.
  */
 const boot = async (mode: 'production' | 'development' | 'tunnel', overrides: Record<string, string>) => {
-  // Vitest sets VITEST, which would skip the validation. A tunnel is a development build in another config mode.
-  const { VITEST: _vitest, ...inherited } = process.env;
+  // A tunnel is a development build in another config mode.
   const nodeEnv = mode === 'tunnel' ? 'development' : mode;
-  const env = { ...inherited, NODE_ENV: nodeEnv, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
+  const env = { ...process.env, NODE_ENV: nodeEnv, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
   try {
     const script = "import('./src/env.ts').then(() => console.info('env loaded'))";
     const { stdout } = await promisify(execFile)(tsx, ['-e', script], { cwd: backendDir, env });
@@ -123,13 +117,15 @@ describe('secret env validation', () => {
 
     expect(loaded).toBe(false);
     expect(output).toContain('UNSUBSCRIBE_SECRET');
+    // A refused value never reaches the log.
+    expect(output).not.toContain('short-secret');
   });
 
   it('boots with a rotated cookie secret list, and in development on the example values (positive control)', async () => {
     const [rotated, development, blankInDevelopment] = await Promise.all([
       boot('production', { COOKIE_SECRET: `${strong()},${strong()}` }),
-      boot('development', { COOKIE_SECRET: 'cookie_secret', UNSUBSCRIBE_SECRET: 'some_secret_token' }),
-      boot('development', { COOKIE_SECRET: 'cookie_secret,' }),
+      boot('development', { COOKIE_SECRET: example.COOKIE_SECRET ?? '', UNSUBSCRIBE_SECRET: example.UNSUBSCRIBE_SECRET ?? '' }),
+      boot('development', { COOKIE_SECRET: `${example.COOKIE_SECRET},` }),
     ]);
 
     expect(rotated.loaded, rotated.output).toBe(true);
@@ -151,9 +147,8 @@ const secretNames = [
   'DATA_ENCRYPTION_KEY',
 ] as const;
 
-const example = parseEnv(readFileSync(path.join(backendDir, '.env.example'), 'utf8'));
+const example = parseEnv(readFileSync(path.join(backendDir, '..', '.env.example'), 'utf8'));
 const exampleSecrets = Object.fromEntries(secretNames.map((name) => [name, example[name] ?? '']));
-// Every name set, so a developer's backend/.env fills in none of them.
 const freshSecrets = () => Object.fromEntries(secretNames.map((name) => [name, strong()]));
 
 /**
@@ -165,7 +160,7 @@ describe('published secrets', () => {
     const { loaded, output } = await boot('tunnel', { ...freshSecrets(), [name]: exampleSecrets[name] });
 
     expect(loaded).toBe(false);
-    expect(output).toContain(`${name} equals its public value in backend/.env.example`);
+    expect(output).toContain(`${name} equals its public value in .env.example`);
   });
 
   it('boots in development on the example values (positive control)', async () => {

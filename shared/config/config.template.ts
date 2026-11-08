@@ -159,12 +159,12 @@ export const config = {
   /**
    * The services this app runs, each with the port it listens on, as app number 0 has them: the Vite proxy targets in
    * development, the deploy's container ports, and the folded workers' ports under `singleVM`. A mode file flips a
-   * flag, e.g. mcp on in staging only. `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback
+   * flag, e.g. mcp on in staging only. `frontend` is the Vite fallback
    * for when the origin carries no port (tunnel mode); otherwise the origin's port wins.
    */
   services: {
     frontend: { enabled: true, port: 3000 },
-    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
+    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial.
     backend: { enabled: true, port: 4000, internalPort: 4005 },
     // The port is its health endpoint.
     cdc: { enabled: true, port: 4001 },
@@ -309,7 +309,6 @@ export const config = {
    * each style's origin; tiles, fonts and icons must come from that same origin.
    */
   mapStyleUrls: { light: '', dark: '' },
-  matrixURL: 'https://matrix-client.matrix.org',
   /** Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off. */
   maplePublicIngestKey: '',
   /**

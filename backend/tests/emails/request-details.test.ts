@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
+import { env } from '#/env';
 import { mailer } from '#/lib/mailer';
 import { runWithLogContext } from '#/utils/logger';
 import { magicLinkEmail } from '../../emails/templates/magic-link';
 import { memberInviteEmail } from '../../emails/templates/member-invite';
+import { overrideConfig } from '../fixtures';
 
 type SentBody = { htmlContent: string; headers?: Record<string, string> };
 
@@ -34,15 +36,12 @@ const captureSends = () => {
       return new Response(null, { status: 201 });
     }),
   );
-  // Under Vitest `env` reads process.env directly.
-  process.env.BREVO_API_KEY = 'test-brevo-key';
-  process.env.TEST_SEND_EMAILS = 'true';
   return bodies;
 };
 
+overrideConfig(env, { BREVO_API_KEY: 'test-brevo-key' });
+
 afterEach(() => {
-  delete process.env.BREVO_API_KEY;
-  delete process.env.TEST_SEND_EMAILS;
   vi.unstubAllGlobals();
 });
 

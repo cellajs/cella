@@ -26,8 +26,6 @@ export type ServicePlacement = 'vm' | 'host';
 export interface ReleaseStep {
   /** Env applied to the release container (e.g. a process selector). */
   env?: Readonly<Record<string, string>>;
-  /** Env applied to the long-running app block whenever a release step exists (e.g. disable app-boot migration). */
-  appEnv?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -151,8 +149,7 @@ export interface AppServiceConfig {
    * A private, ACL-guarded LB frontend forwards to it, so consumers inside the private network reach it at a stable
    * address that follows every switch (`@{<slug>.internalHost}:@{<slug>.internalPort}`); the public LB pools never
    * forward to it. The internal pool gets WebSocket-grade timeouts and health-checks this port; only private-network
-   * sources pass the frontend's ACLs. Must differ from every service's `port` and `internalPort`. The container
-   * receives it as `INTERNAL_PORT`.
+   * sources pass the frontend's ACLs. Must differ from every service's `port` and `internalPort`.
    */
   internalPort?: number;
   /** Service whose image this one reuses, so CI builds no separate image for it (mcp reuses the backend image at the same SHA). */

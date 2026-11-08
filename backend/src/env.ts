@@ -1,46 +1,28 @@
 import { existsSync, readFileSync } from 'node:fs';
 import process from 'node:process';
-import { parseEnv } from 'node:util';
-import { createEnv } from '@t3-oss/env-core';
+import { parseEnv as parseDotenv } from 'node:util';
 import { appConfig, severityLevels } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
-import { envFlag, nodeEnvs } from 'shared/utils/worker-env';
+import { envFlag, parseEnv } from 'shared/utils/parse-env';
+import { defaultCdcSlotName, loadRootEnv, nodeEnvs } from 'shared/utils/worker-env';
 import { z } from 'zod';
-import { missingServiceSecrets, type ProcessService, processServices, type ServiceSecret } from '#/env-service-secrets';
+import { missingServiceSecrets, processServices, type ServiceSecret } from '#/env-service-secrets';
 
-// Resolved from this file (src/ or the dist/ bundle), so it works regardless of cwd (e.g. vitest workers).
-// Variables already in the environment win over the file.
-const envFile = new URL('../.env', import.meta.url);
-if (existsSync(envFile)) process.loadEnvFile(envFile);
-const exampleEnvFile = new URL('../.env.example', import.meta.url);
+loadRootEnv(import.meta.url);
+const exampleEnvFile = new URL('../../.env.example', import.meta.url);
 
 /** Minimum length of a secret that signs or authenticates; the CDC and Yjs workers hold their copies to the same. */
 const minSecretLength = 16;
 
 /**
  * Every secret the schema validates: each `secretString`, the cookie secret, and the relay's public key, which the
- * backend never parses but its `.env` hands to a relay started beside it.
+ * backend never parses but the `.env` it shares hands to a relay started beside it.
  */
 const secretNames = new Set(['COOKIE_SECRET', 'YJS_TOKEN_PUBLIC_KEY']);
 
 const secretString = (name: string, min = minSecretLength) => {
   secretNames.add(name);
   return z.string().min(min, `${name} must be at least ${min} characters`);
-};
-
-/** Development runs on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
-const minCookieSecretLength = appConfig.mode === 'development' ? 1 : minSecretLength;
-
-// biome-ignore lint/style/noProcessEnv: this file IS the env loader.
-const service: ProcessService = processServices.find((name) => name === process.env.SERVICE) ?? 'api';
-
-/** The port a process listens on unless `PORT` says otherwise: its service's configured one; the release companion listens nowhere. */
-const servicePort: Record<ProcessService, number> = {
-  api: appConfig.services.backend.port,
-  migrate: appConfig.services.backend.port,
-  mcp: appConfig.services.mcp.port,
-  oauth: appConfig.services.oauth.port,
-  jobs: appConfig.services.jobs.port,
 };
 
 /** A local stack's database URLs default to the compose containers; a deployed one receives them as runtime secrets. */
@@ -55,7 +37,7 @@ const localDatabase = (role: Parameters<typeof localDatabaseUrl>[1]) =>
  */
 const publishedSecrets = (): string[] => {
   if (appConfig.mode !== 'tunnel' || !existsSync(exampleEnvFile)) return [];
-  const example = parseEnv(readFileSync(exampleEnvFile, 'utf8'));
+  const example = parseDotenv(readFileSync(exampleEnvFile, 'utf8'));
   return [...secretNames].filter((name) => {
     const published = example[name];
     // A cookie secret list verifies with every entry, so one published entry forges as well as the first.
@@ -78,14 +60,16 @@ const federationSecrets = Object.fromEntries(
   }),
 ) as Record<string, z.ZodOptional<z.ZodString>>;
 
-/** The backend's validated environment: outside Vitest, a process whose env fails the schema stops at import. */
-export const env = createEnv({
-  server: {
+/** The backend's validated environment: a process whose env fails the schema stops at import. */
+const envSchema = z
+  .object({
     NODB: envFlag('false'),
     DEBUG: envFlag('false'),
     DATABASE_URL: localDatabase('runtime_role'),
     // Admin credential (table owner, BYPASSRLS): only the migrate, seed and maintenance paths need it; the request-serving API boots without it.
     DATABASE_ADMIN_URL: appConfig.isLocal ? localDatabase('postgres') : z.url().optional(),
+    // admin_role's password when the roles are created; unset, it takes the runtime role's from DATABASE_URL.
+    DATABASE_ADMIN_ROLE_PASSWORD: z.string().optional(),
     // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots
     // superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
@@ -95,9 +79,6 @@ export const env = createEnv({
     PG_CRON_DATABASE: z.string().optional(),
     // The build Node runs: a development or test stack, or a production build; `APP_MODE` names the config.
     NODE_ENV: z.enum(nodeEnvs).default('development'),
-    PORT: z.coerce.number().default(servicePort[service]),
-    // The internal listener: the CDC socket and the Yjs relay's routes, reached only from the private network.
-    INTERNAL_PORT: z.coerce.number().default(appConfig.services.backend.internalPort),
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
     // Web Push (has.push): both keys present enables sending. VAPID_SUBJECT must be a `mailto:` or `https:` URL; unset, it
@@ -108,28 +89,26 @@ export const env = createEnv({
 
     // One secret or a comma-separated list (the first signs, any verifies). Every entry counts on its own, so a stray
     // comma or a short entry stops the boot and never becomes a signing key.
-    COOKIE_SECRET: z.string().refine((value) => value.split(',').every((entry) => entry.trim().length >= minCookieSecretLength), {
-      message: `Every COOKIE_SECRET entry must be at least ${minCookieSecretLength} characters`,
+    COOKIE_SECRET: z.string().refine((value) => value.split(',').every((entry) => entry.trim().length >= minSecretLength), {
+      message: `Every COOKIE_SECRET entry must be at least ${minSecretLength} characters`,
     }),
 
     // Operator-managed runtime secret. When the secret has no version the env var is omitted and this
-    // defaults to 'none' (deny), so sys-admin routes stay off until an operator sets the allowlist.
+    // defaults to 'off' (deny), so sys-admin routes stay off until an operator sets the allowlist.
     SYSTEM_ADMIN_IP_ALLOWLIST: z
       .union([
-        z.literal('none'),
+        z.literal('off'),
         z.literal('*'),
         z.string().regex(/^(\d{1,3}\.){3}\d{1,3}(,(\d{1,3}\.){3}\d{1,3})*$/, 'Must be comma-separated IPv4 addresses'),
       ])
-      .default('none'),
+      .default('off'),
 
     ADMIN_EMAIL: z.email().optional(),
 
-    TUNNEL_URL: z.string().default(''),
-    TUNNEL_AUTH_TOKEN: z.string().default(''),
+    TUNNEL_AUTH_TOKEN: z.string().optional(),
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
     BREVO_API_KEY: z.string().optional(),
-    TEST_SEND_EMAILS: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
@@ -143,11 +122,8 @@ export const env = createEnv({
     TRANSLOADIT_KEY: z.string().optional(),
     TRANSLOADIT_SECRET: z.string().optional(),
 
-    S3_ACCESS_KEY_ID: z.string().default(''),
-    S3_ACCESS_KEY_SECRET: z.string().default(''),
-
-    ELEMENT_ROOM_ID: z.string().optional(),
-    ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_ACCESS_KEY_SECRET: z.string().optional(),
 
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
     // The standard OTLP destination; it wins over the Maple key. The OTel exporters read it and its sibling variables
@@ -166,7 +142,7 @@ export const env = createEnv({
     // means the geoip/ prefix of the public bucket), and the public address development geolocates for loopback sign-ins.
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
-    GEOIP_SOURCE_URL: z.string().default(''),
+    GEOIP_SOURCE_URL: z.string().optional(),
     GEOIP_DEV_SAMPLE_IP: z.string().default('193.0.6.139'),
 
     SCW_AI_API_KEY: z.string().optional(),
@@ -174,8 +150,11 @@ export const env = createEnv({
     // The process this backend image runs as.
     SERVICE: z.enum(processServices).default('api'),
 
-    // Apply migrations and roles before binding the API port. Production runs migrations as a service of their own.
-    RUN_MIGRATIONS_ON_BOOT: envFlag('true'),
+    // The slot the seed asks the CDC worker's books about; a test names a slot of its own.
+    CDC_SLOT_NAME: z.string().default(defaultCdcSlotName),
+
+    // Apply migrations and roles before binding the API port. A deployed stack runs them as a service of their own.
+    RUN_MIGRATIONS_ON_BOOT: envFlag(appConfig.isLocal ? 'true' : 'false'),
 
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])
@@ -183,28 +162,23 @@ export const env = createEnv({
 
     // Build-time git SHA baked into the image, reported by `/health` so a deploy can be verified against CI.
     RELEASE_SHA: z.string().default('unknown'),
-  },
-  // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
-  runtimeEnv: process.env,
-  emptyStringAsUndefined: true,
-  createFinalSchema: (shape) =>
-    z.object(shape).superRefine((values, ctx) => {
-      for (const name of missingServiceSecrets(values)) {
-        ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when SERVICE=${values.SERVICE}` });
-      }
-      for (const name of publishedSecrets()) {
-        const fix =
-          name === 'YJS_TOKEN_PUBLIC_KEY'
-            ? 'set the key `pnpm --filter backend yjs:public-key` prints for a fresh YJS_TOKEN_PRIVATE_KEY'
-            : 'set a fresh value in backend/.env, for example from `openssl rand -hex 32`';
-        const message = `${name} equals its public value in backend/.env.example, which tunnel mode refuses: ${fix}`;
-        ctx.addIssue({ code: 'custom', path: [name], message });
-      }
-    }),
-  // Skip validation under Vitest, whose env vars come from vitest.config.ts test.env.
-  // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
-  skipValidation: !!process.env.VITEST,
-});
+  })
+  .superRefine((values, ctx) => {
+    for (const name of missingServiceSecrets(values)) {
+      ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when SERVICE=${values.SERVICE}` });
+    }
+    for (const name of publishedSecrets()) {
+      const fix =
+        name === 'YJS_TOKEN_PUBLIC_KEY'
+          ? 'set the key `pnpm --filter backend yjs:public-key` prints for a fresh YJS_TOKEN_PRIVATE_KEY'
+          : 'set a fresh value in .env, for example from `openssl rand -hex 32`';
+      const message = `${name} equals its public value in .env.example, which tunnel mode refuses: ${fix}`;
+      ctx.addIssue({ code: 'custom', path: [name], message });
+    }
+  });
+
+// biome-ignore lint/style/noProcessEnv: this file IS the env loader.
+export const env = parseEnv(envSchema, process.env);
 
 /**
  * A service-bound secret for the code path that reads it. Throws in a process whose service does not receive it, so
