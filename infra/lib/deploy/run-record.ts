@@ -231,11 +231,16 @@ export function wroteRecord(run: Pick<JobRun, 'created_at' | 'terminated_at'>, t
   return record.startedAt >= (run.created_at ?? '') && (!run.terminated_at || record.startedAt <= run.terminated_at);
 }
 
-/** One line per run for a list: when, what, how it ended, and where it stopped. */
-export function runSummaryLine(record: RunRecord, refs?: readonly RemoteRef[]): string {
+/** How a run ended, where it stopped and how long it took: `failed at "Switch machines" in 2m46s`. */
+export function runOutcomeText(record: RunRecord): string {
   const seconds = record.endedAt ? Math.round((Date.parse(record.endedAt) - Date.parse(record.startedAt)) / 1000) : undefined;
   const took = seconds === undefined ? '' : ` in ${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
   const where = record.failedStep ? ` at "${record.failedStep}"` : '';
+  return `${record.outcome}${where}${took}`;
+}
+
+/** One line per run for a list: when, what (named by its release when the refs are given), how it ended, and where it stopped. */
+export function runSummaryLine(record: RunRecord, refs?: readonly RemoteRef[]): string {
   const target = refs ? commitName(refs, record.target).padEnd(12) : record.target.slice(0, 10);
-  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${target}  ${record.outcome}${where}${took}`;
+  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${target}  ${runOutcomeText(record)}`;
 }

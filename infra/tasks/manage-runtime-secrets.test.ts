@@ -15,7 +15,14 @@ const writeKey = vi.fn();
 const log = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ listSecretsUnder, listSecretVersions: async () => [], getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
+  createSecretManagerClient: () => ({
+    listSecretsUnder,
+    listSecretVersions: async () => [],
+    getSecretByName,
+    ensureSecret,
+    putSecretValue,
+    deleteSecret,
+  }),
 }));
 
 vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));

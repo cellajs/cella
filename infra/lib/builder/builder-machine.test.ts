@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { canonicalJson, descriptionHash } from '../deploy/applied-engine';
 import { parseReleaseManifest } from '../deploy/release-archives';
 import { agentBundleScript, BUILDER_ARCHIVE_DIR, BUILDER_SCRIPT, type BuilderValues, builderCloudConfig, frontendScript } from './builder-machine';
 
@@ -94,6 +95,42 @@ describe('the builder machine', () => {
     const parsed = parseReleaseManifest(readFileSync(join(dir, 'manifest.json'), 'utf8'), 'c'.repeat(40));
     expect(Object.keys(parsed.images).sort()).toEqual(['backend', 'infra-boot']);
     expect(parsed.frontend).toEqual({ sha256: 'a'.repeat(64), md5: 'b'.repeat(32), bytes: 10 });
+  });
+
+  it('puts the description in the manifest beside its hash only as the text the hash was taken of, quotes and all', () => {
+    const lines = BUILDER_SCRIPT.split('\n');
+    const block = lines.slice(lines.indexOf("DESCRIPTION_FIELD=''"), lines.indexOf('step archives'));
+    const write = lines.filter((line) => line.startsWith('printf \'{"release"'));
+    const description = { env: { QUOTED: 'a "b" \\ c', SHELL: "100%s $HOME `id` 'x'" }, general: { zones: ['nl-ams-1'] } };
+    const hash = descriptionHash(description);
+    // A target older than --json prints its hash for it, and the manifest carries the hash alone.
+    for (const [printed, describes] of [
+      [canonicalJson(description), description],
+      [hash, undefined],
+    ] as const) {
+      const dir = mkdtempSync(join(tmpdir(), 'builder-'));
+      mkdirSync(join(dir, 'build/infra/tasks'), { recursive: true });
+      writeFileSync(join(dir, 'build/infra/tasks/description-hash.ts'), '');
+      writeFileSync(join(dir, 'hash'), `${hash}\n`);
+      writeFileSync(join(dir, 'json'), `${printed}\n`);
+      const script = [
+        `SHA=${'c'.repeat(40)}`,
+        `docker() { case "$*" in *--json*) cat ${dir}/json ;; *) cat ${dir}/hash ;; esac; }`,
+        'command -v sha256sum >/dev/null || sha256sum() { shasum -a 256 "$@"; }',
+        ...block,
+        "IMAGES=''",
+        "FRONTEND_DIGEST=''",
+        ...write,
+      ]
+        .join('\n')
+        .replaceAll('/build/', `${dir}/build/`)
+        .replaceAll('/run/', `${dir}/`);
+      const run = spawnSync('bash', ['-eo', 'pipefail'], { input: script, encoding: 'utf8' });
+      expect(run.stderr).toBe('');
+      const manifest = parseReleaseManifest(readFileSync(join(dir, 'manifest.json'), 'utf8'), 'c'.repeat(40));
+      expect(manifest).toMatchObject({ description: hash });
+      expect(manifest.describes).toEqual(describes);
+    }
   });
 
   it('builds the boot bundle with the engine only, apart from the frontend', () => {

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { APPLY_NEEDED, ApplyNeededError, descriptionMismatch, type EngineStamp, engineMismatch, readEngineStamp } from '../lib/deploy/applied-engine';
+import { describeChanges } from '../lib/deploy/description-diff';
 import { type DeployTarget, type LiveRecord, rolesToReplace } from '../lib/deploy/live-record';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
@@ -69,6 +70,8 @@ export interface DeployEffects {
   readLive(stack: string): Promise<{ roles: MachineRole[]; record: LiveRecord; rotation: number }>;
   /** The stamp of the engine image the run started from; undefined outside one. */
   engineStamp(): EngineStamp | undefined;
+  /** The description of the app the engine image holds, which names what a target's own description changes. */
+  engineDescription(): Promise<Record<string, unknown>>;
   /** Switch the roles given (tasks/switch-machines.ts). */
   switchMachines(request: SwitchRequest): Promise<void>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
@@ -263,9 +266,18 @@ export async function runDeploy(
 
       // The engine composes, boots and switches as its own description says: a target that describes the app otherwise ends the run
       // before any value is read.
-      await step('Check the description', () => {
+      await step('Check the description', async () => {
         if (!stamp || !manifest) throw new Error('the description is checked after the engine and the build');
-        const owed = descriptionMismatch(stamp, opts.sha, manifest.description);
+        const { describes, description } = manifest;
+        // The paths only name the change: without them the run ends apply needed all the same, with the two hashes.
+        const changes =
+          describes && description !== stamp.descriptionHash
+            ? await fx.engineDescription().then(
+                (engine) => describeChanges(engine, describes),
+                () => [],
+              )
+            : [];
+        const owed = descriptionMismatch(stamp, opts.sha, description, changes);
         if (owed) throw owed;
         say(`[deploy] ${opts.sha.slice(0, 10)} describes the app as the applied engine does`);
       });
@@ -527,6 +539,7 @@ function createRealEffects(): DeployEffects {
       return { roles: machineRoles(appConfig), record, rotation: rotations.counter };
     },
     engineStamp: () => readEngineStamp(),
+    engineDescription: async () => (await import('../lib/deploy/app-description')).appDescription(),
     async switchMachines(request) {
       const [
         { engineConfig: appConfig },

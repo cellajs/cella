@@ -105,6 +105,16 @@ function releaseTags(refs: readonly RemoteRef[]): string[] {
   return [...new Set(refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag)))];
 }
 
+/** The release tags the refs name with the commit each points to, newest version first. */
+export function sortedReleases(refs: readonly RemoteRef[]): Array<{ tag: string; sha: string }> {
+  return releaseTags(refs)
+    .sort((a, b) => (newer(a, b) ? -1 : newer(b, a) ? 1 : 0))
+    .flatMap((tag) => {
+      const sha = tagCommit(refs, tag);
+      return sha ? [{ tag, sha }] : [];
+    });
+}
+
 /**
  * The name a person knows a commit by: its release tag (`0.34.0`), else the branch whose head it is as `<branch>@<short id>`, else its
  * short id. `sha` may be abbreviated, as the live record keeps it. Without refs, the short id.
@@ -146,11 +156,9 @@ export async function resolveTarget(opts: TargetQuery): Promise<Target | undefin
     return of(head.sha, `branch ${rule.branch}`);
   }
   if (rule.kind === 'releases') {
-    const refs = await opts.listRemote(['refs/tags/*']);
-    const newest = releaseTags(refs).reduce<string | undefined>((best, tag) => (best === undefined || newer(tag, best) ? tag : best), undefined);
-    const sha = newest ? tagCommit(refs, newest) : undefined;
-    if (!newest || !sha) throw new NoReleaseError(`${opts.environment} follows the releases, and the repository has none`);
-    return of(sha, `release ${newest}`);
+    const [newest] = sortedReleases(await opts.listRemote(['refs/tags/*']));
+    if (!newest) throw new NoReleaseError(`${opts.environment} follows the releases, and the repository has none`);
+    return of(newest.sha, `release ${newest.tag}`);
   }
   if (COMMIT.test(rule.ref)) return of(rule.ref, `pinned commit ${rule.ref.slice(0, 10)}`);
   const sha = tagCommit(await opts.listRemote([`refs/tags/${rule.ref}`, `refs/tags/${rule.ref}^{}`]), rule.ref);

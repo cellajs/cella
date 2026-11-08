@@ -86,11 +86,13 @@ export interface AppliedEngine {
   /** The commit the operator's checkout stood at. */
   commit: string;
   appliedAt: string;
+  /** The description the hash is taken of, as {@link canonicalJson} orders it; none in a record an apply wrote before it was kept. */
+  describes?: Record<string, unknown>;
 }
 
 const appliedEngineKey = (stack: string): string => `${controlPrefix(stack)}applied.json`;
 
-/** Parse the applied engine, refusing one whose hash, digest or commit has another form. */
+/** Parse the applied engine, refusing one whose hash, digest or commit has another form, or whose description is no object. */
 function parseAppliedEngine(text: string): AppliedEngine {
   let raw: unknown;
   try {
@@ -99,12 +101,13 @@ function parseAppliedEngine(text: string): AppliedEngine {
     throw new Error(`applied engine: not valid JSON (${errorMessage(error)})`);
   }
   if (!isRecord(raw)) throw new Error('applied engine: not an object');
-  const { descriptionHash: hash, imageDigest, commit, appliedAt } = raw;
+  const { descriptionHash: hash, imageDigest, commit, appliedAt, describes } = raw;
   if (typeof hash !== 'string' || !HASH.test(hash)) throw new Error('applied engine: descriptionHash is no sha256');
   if (typeof imageDigest !== 'string' || !DIGEST.test(imageDigest)) throw new Error('applied engine: imageDigest is no sha256 digest');
   if (typeof commit !== 'string' || !COMMIT.test(commit)) throw new Error('applied engine: commit is no commit id');
   if (typeof appliedAt !== 'string') throw new Error('applied engine: appliedAt is missing');
-  return { descriptionHash: hash, imageDigest, commit, appliedAt };
+  if (describes !== undefined && !isRecord(describes)) throw new Error('applied engine: describes is no object');
+  return { descriptionHash: hash, imageDigest, commit, appliedAt, ...(describes === undefined ? {} : { describes }) };
 }
 
 /** Read the applied engine; undefined before the first apply that published one. */
@@ -169,8 +172,14 @@ export function engineMismatch(stamp: EngineStamp | undefined, mode: string): Ap
 /**
  * Why the engine may not deploy this release: its own description, which its builder reported, differs from the one the image carries, or
  * is missing, as for a commit older than the applied engine.
+ * @param changes what differs, as `describeChanges` names it, when the builder reported the description and not only its hash
  */
-export function descriptionMismatch(stamp: EngineStamp, sha: string, description: string | undefined): ApplyNeededError | undefined {
+export function descriptionMismatch(
+  stamp: EngineStamp,
+  sha: string,
+  description: string | undefined,
+  changes: readonly string[] = [],
+): ApplyNeededError | undefined {
   const release = sha.slice(0, 10);
   if (!description) {
     return new ApplyNeededError(
@@ -178,11 +187,15 @@ export function descriptionMismatch(stamp: EngineStamp, sha: string, description
       'newer-target',
     );
   }
-  if (description !== stamp.descriptionHash) {
+  if (description === stamp.descriptionHash) return undefined;
+  if (changes.length > 0) {
     return new ApplyNeededError(
-      `${release} describes the app otherwise than the applied engine (${description.slice(0, 12)}, applied ${stamp.descriptionHash.slice(0, 12)})`,
+      `${release} changes the infrastructure: ${changes.join(', ')}; an apply from a checkout at it publishes that description`,
       'apply',
     );
   }
-  return undefined;
+  return new ApplyNeededError(
+    `${release} describes the app otherwise than the applied engine (${description.slice(0, 12)}, applied ${stamp.descriptionHash.slice(0, 12)})`,
+    'apply',
+  );
 }

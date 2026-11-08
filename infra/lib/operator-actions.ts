@@ -40,13 +40,13 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the deploy key and the uploads key; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
+      'Replace the deploy key and the uploads key; then deploy the live release again, so no machine keeps a deleted key, and start a target that has not run.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Env vars & secrets".',
+      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and a target that has not run started. Keys that protect stored data stay; third-party keys are pasted anew in "Env vars & secrets".',
   },
   'operator-key': {
     label: 'Set up operators',
@@ -65,6 +65,12 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description:
       "Deploy the environment's target now (production's newest release, or the environments file's line) and follow it step by step until it is deployed, blocked or failed.",
+  },
+  releases: {
+    label: 'Releases & roll back',
+    key: 'operator',
+    description:
+      'The last releases with how each deploy ended and which one serves; pick an earlier one to deploy it again. Production stays on it until the next release, or 60 days.',
   },
   'repository-key': {
     label: 'Set repository read key',
@@ -157,6 +163,13 @@ export const MENU_ROWS = {
     actions: ['start-deploy'],
     hotkey: 'd',
     description: OPERATOR_ACTIONS['start-deploy'].description,
+  },
+  releases: {
+    group: 'deploys',
+    label: OPERATOR_ACTIONS.releases.label,
+    actions: ['releases'],
+    hotkey: 'r',
+    description: OPERATOR_ACTIONS.releases.description,
   },
   runs: {
     group: 'deploys',
