@@ -28,7 +28,7 @@ A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challe
 
 From an address outside `SYSTEM_ADMIN_IP_ALLOWLIST`, a system administrator can neither sign in nor act as one.
 
-The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Without that proxy, a client can choose the address the allowlist and rate limits read.
+The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Without such a proxy, a client can choose the address the allowlist and rate limits read.
 
 ## Sign-up
 
