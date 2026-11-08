@@ -45,17 +45,17 @@ Resources and traffic flow:
 ```
 
 - **Load balancer:** the only public way to the machines, one path prefix per service on the app origin.
-- **Pools:** each lists its role's two reserved addresses for good, and traffic follows the agent's health.
+- **Pools:** each lists its role's two reserved addresses for good. Traffic follows the agent's health.
 - **Internal listener:** a second backend port for the CDC socket and Yjs materialization, private only.
 - **Machines:** made for one release and deleted with it.
 - **Firewall:** a machine admits only the load balancer, on the service and agent ports, and no SSH.
-- **Images:** loaded from the release archive, never a registry, refused unless the plan names the digest.
-- **Agent:** `infra-agent` boots the release and passes the check only while serving it, not draining.
-- **Placement:** a machine per service, unless `singleVM` co-hosts everything on the backend's.
+- **Images:** loaded from the release archive, never a registry. An image whose digest the plan does not name is refused.
+- **Agent:** `infra-agent` boots the release and passes the check only while serving it.
+- **Placement:** a machine per service. `singleVM` co-hosts everything on the backend's machine.
 - **Backend image:** also runs the oauth, mcp and jobs workers and the migrate companion.
 - **Frontend:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private, with logical replication on, exposed only by a break-glass action ([Runbooks](./deployment/RUNBOOKS.md)).
-- **Replication slot:** a stopped CDC worker's slot keeps WAL, and the worker warns while it is unbounded.
+- **Replication slot:** a stopped CDC worker's slot keeps WAL. The worker warns while that WAL has no bound.
 - **WAL bound:** set `max_slot_wal_keep_size` where the provider offers it.
 - **WAL on Scaleway:** unbounded, so it can fill the volume until a slot inactive for 24 hours is removed.
 - **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron.
@@ -85,7 +85,7 @@ A target is one of:
 
 Merging a line is not publishing a release. The file's rules:
 
-- **Releases only:** an environment that follows the releases, as production, takes only `releases` or a tag.
+- **Releases only:** production and any other environment that follows the releases take only `releases` or a tag.
 - **Pinned:** a line holds its environment until it is removed, also past a newer release.
 - **Retry:** raising the retry counter asks for the same target once more.
 - **Default branch:** a scheduled run reads the file there, so a change counts from its merge.
@@ -101,7 +101,7 @@ An earlier release that describes the app otherwise ends **apply needed** until 
 
 - **Idempotent:** running the same deploy twice changes nothing.
 - **Resumable:** a run that failed halfway resumes with the roles it did not switch.
-- **Full replace:** a raised retry counter, or a rotation since, replaces every machine.
+- **Full replace:** a raised retry counter or a rotation after the machines booted replaces every machine.
 
 ### The main job
 
@@ -211,12 +211,12 @@ A **switch** moves one role to its new machine:
 2. Its agent boots the release and answers the health check.
 3. Once every pool of the role shows the new address running, the deploy records it.
 4. The deploy orders the old machine to drain, and its agent fails the check.
-5. The load balancer stops routing to it, and its agent stops the containers after the drain time.
+5. The load balancer stops routing to it. Its agent stops the containers after the drain time.
 6. The deploy deletes the old machine.
 
-A new machine that does not serve within the wait is deleted, and the old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
+A new machine that does not serve within the wait is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
 
-The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
+The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy.
 
 ## Replacement strategies
 
