@@ -1,13 +1,12 @@
 # Authentication
 
-This document explains how people sign in and sign up, and the tokens, second factors and step-up behind it.
+This document explains how people sign in and sign up, and the tokens, second factors and step-up behind it. It assumes you know WebAuthn: a passkey, its credential id and user verification ([W3C WebAuthn](https://www.w3.org/TR/webauthn/)).
 
 ### TL;DR
 
-Nobody has a password. A person proves an inbox with a magic link, a device with a passkey, or an account at a
-provider, and gets a session whose cookie holds a random token while the database holds only its hash. Everything
-that must work once, such as an emailed link or a second-factor challenge, is a token with one lifecycle, and the
-actions that change how an account is protected first ask the session to prove its user again.
+Nobody has a password. A person signs in with a magic link, a passkey or a provider account, and gets a session cookie
+that holds a random token. Anything that must work once, such as an emailed link, is a token with one lifecycle.
+Changing how an account is protected first asks the session to prove its user again.
 
 ## Sign-in methods
 
@@ -17,32 +16,39 @@ actions that change how an account is protected first ask the session to prove i
 | Passkey | A WebAuthn passkey on the device |
 | Provider sign-in | An account at GitHub, Google or Microsoft |
 | Institutional sign-in | An account at the institution, asserted through an identity federation ([Institutional sign-in](./authentication/SSO.md)) |
-| TOTP | A code from an authenticator app; a second factor only, never a first |
+| TOTP | A code from an authenticator app, as a second factor only |
 
-Each method is a sub-module of `backend/src/modules/auth/`, and `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up. The sign-in page first asks whether the address is known, and learns it only in a browser that signed in to that account before. Every other browser gets the neutral sign-in step, whether or not the address has an account.
+Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up. The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
 
-Microsoft sign-in accepts every Entra tenant and personal account unless `MICROSOFT_TENANT_ID` narrows it to `organizations`, `consumers` or one tenant named by its GUID; a tenant's domain name there fails every sign-in, since tokens name the tenant by its GUID.
+`MICROSOFT_TENANT_ID` can narrow Microsoft sign-in to `organizations`, `consumers` or one tenant's GUID. A tenant's domain name there fails every sign-in, since tokens name the tenant by its GUID.
 
-A magic-link or provider sign-in ends in a [session](./authentication/SESSIONS.md), or first in an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own: signing out at the provider or the institution ends nothing here, and the app does not ask it again while the session lasts. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST` (none when unset, this machine in the development `.env`). The API reads the client address from the last `X-Forwarded-For` entry, so it must run behind exactly one proxy that appends the connecting peer to that header, as the template's load balancer does. An app behind no proxy, or one that passes the client's header through, lets a client choose the address its allowlist and rate limits read.
+A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own. Signing out at the provider or the institution ends nothing here. The app does not ask it again while the session lasts.
+
+A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`. The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Behind no proxy, or one that passes the client's header through, a client chooses the address the allowlist and rate limits read.
 
 ## Sign-up
 
-An account exists only once its inbox is proven. The account, its proven address and its waiting invitations are created together, so no unproven account ever holds an address.
+An account exists only once its inbox is proven. The account is created at the proof, with its address and its waiting invitations:
 
-- **Magic link.** A link to an unknown address names no user. The account is created when the link is clicked.
-- **Provider.** A provider sign-up waits on a verification mail to the provider's address. The account is created when the same provider account signs in again in the browser that opened the mail.
-- **Invitation.** An invitation link can be forwarded, so an invitee skips that mail only when the provider hosts the invited address, as Google does for Gmail and Google Workspace accounts: a provider's verified flag alone may date from before the address changed hands. An account accepts an invitation once it holds the invited address, or through a link mailed to that inbox for this account. A magic-link sign-in to the invited address, in the browser that opened the invitation link and on an account without MFA, accepts it at once; an invitation the account claims by its address alone waits for an answer in the app. Accepting grants the membership and never adds the invited address to the accepting account. Accepting tells a signed-in holder of the link whether another account holds the invited address, for that one address only: it refuses when one does and asks to confirm the address when none does.
-- **Who may sign up.** Open registration or a standing invitation, checked at the start and at completion. While registration is closed, a provider sign-up on an address the provider did not verify starts from the invitation link only.
+- **Magic link.** The click on a link to an unknown address.
+- **Provider.** The same provider account signing in again, in the browser that opened a mail to its address.
 
-An account is identified by the proofs it holds (`identities`, `emails`), never by an address.
+Sign-up needs open registration or a standing invitation, checked at the start and at completion. An account is identified by the proofs it holds, never by an address.
 
-A provisional account is the exception to a proven inbox: an identity that an external party asserts proves it, and it holds a placeholder address on a reserved domain with no inbox behind it. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is the first kind; an LTI launch whose address the platform cannot prove is the planned second. `users.email` stays a non-null string for every account, provisional ones included. An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)), never on the party's word alone. A provisional account proves an inbox only from a signed-in session: no link mailed to an unproven address signs it in.
+An invitation link can be forwarded, so holding one proves nothing:
+
+- **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail.
+- **Accepting.** The account holds the invited address, or opens a link mailed to that inbox for this account.
+- **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
+- **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
+
+A provisional account is the exception to a proven inbox. An external party asserts its identity. Its placeholder address on a reserved domain has no inbox. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one. An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). A provisional account proves an inbox only from a signed-in session, so no mailed link signs it in.
 
 ## Tokens
 
-One module, `auth/tokens/`, issues, opens and spends every token, with one policy per type. Only a hash is stored; the raw value exists only in the link, the cookie or the mailed code that carries it.
+The `auth/tokens/` module issues, opens and spends every token, with one policy per kind. Only a hash is stored. The raw value exists only in the link, the cookie or the mailed code that carries it.
 
-| Type | Carrier | Used for | Lives |
+| Kind | Carrier | Used for | Lives |
 | --- | --- | --- | --- |
 | `magic` | link | Signing in or up through the inbox | minutes |
 | `invitation` | link | Joining the channel it invites to | a week |
@@ -51,21 +57,26 @@ One module, `auth/tokens/`, issues, opens and spends every token, with one polic
 | `oauth-connect` | cookie | Connecting a provider account to the signed-in account | minutes |
 | `step-up` | code | Proving presence again with an emailed code | minutes |
 
-Opening a link only holds it in the browser, and a click on the app's page that opening leads to redeems it with a POST, so a link a mail scanner or a link preview fetches is not used up. The first redemption wins, and the token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
+Opening a link only holds it in the browser. A click on the app's page then redeems it with a POST, so a mail scanner or a link preview does not use it up. The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
 
-A magic link is the one link that redeems on opening, and only in the browser that asked for it, which a cookie set at the request proves: a crawler or a prefetch holds no such cookie and changes nothing. Opened anywhere else, the link waits on a page that names the address, so a link planted in someone's browser signs nobody in. A link of another account than the one signed in is refused, and an expired one leads to an error page that offers a new link.
+A magic link is the one link that redeems on opening, and only in the browser that asked for it. A cookie set at the request proves that browser, so a crawler or a prefetch changes nothing. Opened anywhere else, the link waits on a page that names the address, so a planted link signs nobody in. A link of another account than the signed-in one is refused. An expired link leads to a page that offers a new one.
 
 ## Second factors and MFA
 
-A passkey challenge serves one purpose (registration, sign-in, MFA or step-up) and answers at most once. A passkey's user handle is random per registration and not stored: a sign-in finds the account by the passkey's credential id, which no two accounts share. A sign-in answers an unknown passkey apart from a bad signature, which tells nothing about accounts, since it names no address. Passkey ceremonies never run in a frame: the frontend answers `X-Frame-Options: DENY`, so no response the backend verifies comes from a cross-origin frame. A TOTP secret is encrypted at rest under `DATA_ENCRYPTION_KEY`. Failed codes lock the account's TOTP in every process; while the database cannot record them each process counts them alone, and a database crash or failover clears the count.
+- **One-time challenge.** A passkey challenge serves one purpose and answers at most once.
+- **Random, unstored user handle.** A sign-in finds the account by its credential id.
+- **Unknown passkeys.** A distinct refusal for them reveals no account, since a passkey names no address.
+- **No framed ceremony.** The frontend refuses to be framed by another origin.
+- **TOTP secret.** It is encrypted at rest under `DATA_ENCRYPTION_KEY`.
+- **Shared TOTP lockout.** Failed codes lock the account's TOTP in every process.
 
-MFA needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in. A magic-link, provider or institutional sign-in of such an account issues a `confirm-mfa` challenge, which only a passkey or an authenticator code completes. A passkey sign-in needs none: the passkey must verify its user with a PIN or biometric, at registration and at every sign-in, so it proves both factors itself. The session records the sign-in method and the factor, which the tenant's sign-in policy and step-up read. A magic link is an emailed recovery link in NIST SP 800-63B terms, not an authenticator: an account that needs AAL2 turns MFA on, after which a magic link only starts the challenge a passkey or authenticator code completes.
+MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in. A passkey sign-in needs no challenge. Every passkey registration and sign-in requires user verification, so a passkey proves both factors itself. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it. The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
 
 Setting up a factor or connecting a provider sends a security mail to the account's address.
 
 ## Step-up
 
-An account-security action needs more than a session: the session must have proven its user present within the last ten minutes. A step-up also sets a cookie of its own, and only a browser holding it counts as stepped up, so a copy of the session cookie taken before the proof stays unproven. How much proof an action asks depends on what it does:
+An account-security action needs a session that proved its user present within the last ten minutes. A step-up also sets a cookie of its own. Only a browser holding it counts as stepped up, so a session cookie copied before the proof stays unproven. How much proof an action asks depends on what it does:
 
 | Action | Holds a passkey or TOTP | No factor, recent sign-in | No factor, older sign-in |
 | --- | --- | --- | --- |
@@ -75,15 +86,29 @@ An account-security action needs more than a session: the session must have prov
 
 Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
-- **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA, within the window from the moment the institution authenticated the person, which the sign-in asks its token to state; a token that gives no such moment counts as no factor.
-- **Set up a factor**: the dialog offers to add a passkey or an authenticator app. Setting it up proves it on the session, so the action runs right after.
-- **Emailed code**: mailed to the account's address for the session that asked and typed into the same dialog, so it works when the mail is read on a phone or in another browser. It is as strong as the mailbox and no second factor: wrong codes are capped per day, and the count starts again after each block, so the failures are never capped in total.
-- **A lost factor**: with MFA off the mailbox signs the account in anyway, so a user who lost their passkey or authenticator may set up a new one with an emailed code. The code opens nothing else. With MFA on the other factor replaces the lost one.
+- **Factor**: a passkey or TOTP proven on this session within the window, by sign-in, step-up or setup.
+- **SSO factor**: an SSO sign-in counts when the institution asserted MFA within the window.
+- **Set up a factor**: the dialog adds a passkey or authenticator app, and the action runs right after.
+- **Emailed code**: mailed for this session and typed into the same dialog, so any device can read the mail.
+- **Not a factor**: an emailed code is as strong as the mailbox, and its misses are capped per day only.
+- **A lost factor**: with MFA off the mailbox signs in anyway, so an emailed code may set up a new one.
+- **With MFA on**: the other factor replaces the lost one.
 
-On the frontend, wrap the action in `withStepUp(action)`: on a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
+On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
 
 ## Rate limits
 
-Every read is paced per user or service account, or per IP address when anonymous, unless its route declares a limiter of its own; a write declares one in `xRateLimiter`. The OpenAPI docs show each limiter with its budget, read from the limiter itself. An IP or email address enters a limiter's key as a keyed pseudonym, so `rate_limits` holds neither in the clear. Counts are shared across processes, except while the limiter's database statements fail: each process then counts alone in its memory. A refusal is a 429 with `Retry-After`. No response carries `RateLimit` header fields: a client reads each limiter's budget from the OpenAPI document.
+Every read is paced per user or service account, or per IP address when anonymous. A route that declares a limiter of its own skips that pace. A write declares one in `xRateLimiter`. The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The read pace also reports what is left of its budget in `RateLimit` header fields.
 
-Mail routes count their sends per user, or per IP when anonymous. A mail to an address someone else typed is also capped per address: a sign-in link, a request-form reply and, per tenant, an invitation; a tenant's invitations also have a daily total, a tenant restriction a system admin can raise. Security-inbox alerts that any signed-in user can raise are capped per user and in total. Address lookups and passkey challenges count per IP. Failed proofs count per client address, and failed second factors also per account, so changing IP does not help a guesser on the template's load balancer; the per-account count holds anywhere. Every failure budget also has a daily tier, which slows a patient guesser. Failed second factors count over weeks as well, and a correct code does not reset that count, so a guesser runs out of tries long before a code is likely to match. Their block lifts on its own once the weeks pass, where NIST SP 800-63B disables the authenticator until it is set up again.
+- **Keyed pseudonyms.** An IP or email address enters a key as a keyed pseudonym, never in the clear.
+- **Shared counts.** Processes share counts, except while the database is unreachable.
+- **Lost on a crash.** A database crash or failover clears every count.
+
+Mail and failed proofs carry limits of their own:
+
+- **Mail.** Sends count per user, or per IP when anonymous.
+- **Typed addresses.** A mail to an address someone else typed is also capped per address.
+- **Failed proofs.** They count per client address, and failed second factors per account too.
+- **Daily tier.** Every failure budget also has one, which slows a patient guesser.
+- **Weeks for second factors.** Their failures also count over weeks, and a correct code never resets that.
+- **Self-lifting block.** It lifts once the weeks pass, where NIST SP 800-63B disables the authenticator.
