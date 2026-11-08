@@ -108,7 +108,7 @@ Omitted actions and missing role/channel rows deny, so policies only declare gra
 
 Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`. **Self** rows on the same channel say what the entity's own members may do to it. Product entities have only **home** rows, where `create` grants creating inside that channel.
 
-A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null. A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`. A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
 A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync. The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
 
@@ -153,15 +153,21 @@ A row whose `publishedAt` is null is a draft, checked before the engine. A produ
 
 ## Archived channels
 
-A channel below the organization can be archived, which closes it. An archived channel refuses every write to itself, every create inside it and every change to a product homed in it, to everyone, system admins included. It still reads and streams as before, a list shows it when asked to, and a member can still be removed or leave, so nobody is stuck in an archive. The archived channel itself can still be deleted or unarchived with the matching grant, `delete` or `update`. Channels inside it keep their own state: the archive action offers to include them, with a default each app sets. The organization is never archived; its tenant is.
+A channel below the organization can be archived, which closes it. The organization itself is never archived, only its tenant.
 
-Like a draft, an archive is checked before the engine. The check reads the container's own flag: the channel row for a write to a channel, the home channel for a product, and for a create the channel the new row would be homed in. No flag is derived from the channels above, so a live channel inside an archived one works as any live channel.
+- **No writes.** It refuses every write to itself, every create inside it and every change to a product homed in it, system admins included.
+- **Still readable.** It reads and streams as before, and a list shows it when asked.
+- **Nobody stuck.** A member can still be removed or leave.
+- **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
+- **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
+
+Like a draft, an archive is checked before the engine, on the container's own flag: the channel for a write to it, the home channel for a product, and the target channel for a create. Nothing is derived from the channels above, so a live channel inside an archived one works as any live channel.
 
 ## In the interface
 
 The frontend asks the engine. The backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships. A control with no row, such as a create button, asks about a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
-A route gate asks the same question before the page loads. When the memberships cannot be read, as offline with none cached, the gate lets the user through and the server decides.
+A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, as offline with none cached, the gate lets the user through and the server decides.
 
 ## Enforcement paths
 

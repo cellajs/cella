@@ -152,7 +152,7 @@ Every new machine also uploads a **boot account** at the end of its first boot: 
 
 **Show runs**, `pnpm infra runs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
 
-The bucket keeps versions, so the deploy key cannot erase a record. Show runs flags three anomalies:
+Records, boot accounts and archives are kept for 60 days. The bucket keeps versions, so the deploy key cannot erase a record. Show runs flags three anomalies:
 
 - **Rewrite:** a version that does not grow the one before, written by the deploy key or a stolen copy.
 - **Interrupted:** a record that still says running while no deploy holds its lease.

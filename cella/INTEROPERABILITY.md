@@ -62,7 +62,7 @@ Each organization has an MCP endpoint that accepts only access tokens. A client 
 
 Every actor is a row in `actors`, a user or a service account. The writer columns of channel and product rows reference it. A service account is tenant-scoped and holds role bindings like a member does. It is disabled, never deleted, so the rows it wrote keep pointing at it. Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
 
-A user and a service account are the only actor kinds. A person who acts without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a new actor kind, because every writer reference on the wire embeds an `ActorRef` and a third kind would change them all. A row's provenance is its writer actor: a sync or import that a connection runs acts as a service account of its own, so the rows it wrote name it, and no table carries a source or provenance column.
+A user and a service account are the only actor kinds. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`. A row's provenance is its writer actor. A sync or import that a connection runs acts as a service account of its own, so the rows it wrote name it, and no table carries a provenance column.
 
 ### API keys
 

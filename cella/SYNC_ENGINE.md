@@ -127,7 +127,7 @@ A view behind its frontier hands the gap to the fetch prioritizer. A view withou
 
 ### SSE wire
 
-Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval. The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame. No frame carries an event id. A reconnecting client resumes through catchup from its cursors. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval. The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame, never a 204, since a stock EventSource would stop at the 401 its one reconnect gets. No frame carries an event id. A reconnecting client resumes through catchup from its cursors. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 
