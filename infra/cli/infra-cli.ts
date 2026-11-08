@@ -214,7 +214,9 @@ async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof
     if (picked === ESCAPED || picked === QUIT) return QUIT;
     lastRow = picked;
     if (picked === UP_NEXT) {
-      if (state.upNext) return state.upNext.action;
+      const reason = state.upNext ? disabledReason(state.upNext.action, state) : 'nothing is recommended';
+      if (state.upNext && !reason) return state.upNext.action;
+      console.error(`${crossMark} "${state.upNext ? actionLabel(state.upNext.action) : 'Up next'}" cannot run now: ${reason}.`);
       continue;
     }
     const row = menuRow(picked);
