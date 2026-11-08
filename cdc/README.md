@@ -86,7 +86,7 @@ One WebSocket from the worker to the API carries every change, with entity row d
 - it checks a shared secret
 - it accepts one worker at a time
 
-The API sends nothing back. A message the socket took counts as handed over, even when the API dies before it dispatched it. A client learns of that change at its next catchup.
+The API sends nothing back. A message the socket took counts as handed over. When the API dies before it dispatched one, a client learns of that change at its next catchup.
 
 ## Failure and recovery
 
@@ -96,7 +96,7 @@ Failure handling has three levels:
 
 - **Core:** records a change once.
 - **Mid:** whatever fails is read again from the slot after a growing delay, never retried in place.
-- **Lost case:** when the WAL cannot help, or the books turn out wrong, they are rebuilt from the tables.
+- **Lost case:** the books are rebuilt from the tables when the WAL cannot help or they turn out wrong.
 
 The slot is the only durable buffer. It advances only after a flush committed. Delivery is **at least once**, recording is **once**. A change delivered again changes no activity, counter or sequence value. Its message goes out again with the sequence value its row already holds.
 
@@ -104,7 +104,7 @@ A failure reports degraded at first. A deploy that brings a change the worker ca
 
 A worker stuck on a failure for a while reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on.
 
-A fix ends the failure, and so does a dropped slot. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
+A fix or a dropped slot ends the failure. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
 
 Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)).
 
