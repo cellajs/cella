@@ -104,7 +104,7 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 );
 ```
 
-Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
+Policies only declare grants: omitted actions and missing role/channel rows deny. `'own'` is the built-in owner condition.
 
 Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child. Only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
 
@@ -112,7 +112,7 @@ Product entities have only **home** rows, where `create` grants creating inside 
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`.
 
-A role's product grants reach only rows homed at its own channel. A role the hierarchy declares `elevated` there reaches the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+A role's product grants reach only rows homed at its own channel. A role the hierarchy declares `elevated` there reaches the channel's whole subtree. No grant reaches rows homed above its channel. A grant above a channel counts in full for it, since channel subjects are never home-scoped.
 
 A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync.
 
@@ -151,7 +151,7 @@ A missing scope never defaults to unscoped, which would bypass permissions.
 
 Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens only `read` to rows whose `public` flag is set.
 
-The set is **closed** to `own` and `public`. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch. So no cross-row or app-defined condition exists.
+The set is **closed** to `own` and `public`, and no cross-row or app-defined condition exists. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch.
 
 Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The flag is row-local and never cascades. The server copies the home channel's flag onto a new row.
 
@@ -173,7 +173,7 @@ A channel below the organization can be archived, which closes it. The organizat
 - **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
 - **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
 
-Like a draft, an archive is checked before the engine, on the container's own flag: the channel for a write to it, the home channel for a product, and the target channel for a create. Nothing is derived from the channels above, so a live channel inside an archived one works as any live channel.
+Like a draft, an archive is checked before the engine, on the container's own flag: the channel for a write to it, the home channel for a product, and the target channel for a create. A live channel inside an archived one works as any live channel: nothing is derived from the channels above.
 
 ## In the interface
 
@@ -220,11 +220,11 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | `sysAdminGuard` | A system admin from an allowed IP address | 403 |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
-`tenantGuard` and `orgGuard` read the actor's bindings, so a service account passes them as a member does. They turn away only an actor with no foothold at all. What a member may do with a row is the engine's answer, on the paths above. A tenant holds one organization, so an actor bound to nothing in it gets `tenantGuard`'s 403.
+A service account passes `tenantGuard` and `orgGuard` as a member does, since they read the actor's bindings. They turn away only an actor with no foothold at all. What a member may do with a row is the engine's answer, on the paths above. An actor bound to nothing in the organization gets `tenantGuard`'s 403, since a tenant holds one organization.
 
 ## Refusals
 
-One answer per situation, so no route, app or test meets two shapes for one cause.
+No route, app or test meets two shapes for one cause: each situation has one answer.
 
 A refusal the caller's request or state brings about carries severity `warn`: a warning toast and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone.
 
@@ -252,19 +252,19 @@ The members an answer names beside its type, such as `resource`, are top-level m
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing.
+Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. A channel below the organization narrows nothing: the directory is organization-wide.
 
 Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
 
 A member also sees the addresses invited to a channel they read, never the account behind one. Resending an invitation takes `update` on that channel.
 
-The privacy statement tells users the same, so a change here changes that text too.
+A change here must also change the privacy statement, which tells users the same.
 
 ## System admins
 
 A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership.
 
-So a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities.
+A system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities.
 
 A system admin never reaches a user's account security, inbox, menu or preferences. They join a collaborative description with only their own account's access.
 
