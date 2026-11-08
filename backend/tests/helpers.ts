@@ -71,6 +71,12 @@ export const sentMails = () =>
 
 export const mailsTo = (email: string) => sentMails().filter(({ recipient }) => recipient.email === email);
 
+/**
+ * Waits for mail that goes out after the answer, which a loaded runner hands the mailer later than the one second
+ * `vi.waitFor` allows by default.
+ */
+export const waitForMail = (assert: () => void) => vi.waitFor(assert, { timeout: 10_000 });
+
 /** Sends this test's mail through the real Brevo path, whose next request fails as an unreachable Brevo does. */
 export const failNextMailSend = () => {
   vi.stubEnv('BREVO_API_KEY', 'test-brevo-key');

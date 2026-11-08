@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestUser, mailsTo } from '../helpers';
+import { createTestUser, mailsTo, waitForMail } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
 afterEach(async () => await clearDatabase());
@@ -32,6 +32,6 @@ describe('Request form mail caps', async () => {
 
     // The waitlist naming an account's address tells it of its account once.
     expect([await submit(account.email, 'waitlist', null), await submit(account.email, 'waitlist', null)]).toEqual([204, 204]);
-    await vi.waitFor(() => expect(mailsTo(account.email)).toHaveLength(1));
+    await waitForMail(() => expect(mailsTo(account.email)).toHaveLength(1));
   });
 });

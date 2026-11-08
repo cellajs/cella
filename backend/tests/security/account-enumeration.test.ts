@@ -9,7 +9,7 @@ import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, magicLinkEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { adminDb, authCookie, createTestOrganization, createTestUser, insertTestSession, insertTestToken, mailsTo } from '../helpers';
+import { adminDb, authCookie, createTestOrganization, createTestUser, insertTestSession, insertTestToken, mailsTo, waitForMail } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
@@ -190,8 +190,8 @@ describe('Account enumeration', async () => {
 
     // The difference goes to each inbox, after the answer: only the stranger is on the waitlist, confirmed once; the
     // account holder is told the address already has an account.
-    await vi.waitFor(() => expect(mailsTo(stranger).map(({ template }) => template)).toEqual([requestResponseEmail]));
-    await vi.waitFor(() => expect(mailsTo(account.email).map(({ template }) => template)).toEqual([accountExistsEmail]));
+    await waitForMail(() => expect(mailsTo(stranger).map(({ template }) => template)).toEqual([requestResponseEmail]));
+    await waitForMail(() => expect(mailsTo(account.email).map(({ template }) => template)).toEqual([accountExistsEmail]));
     const waitlisted = await db
       .select({ email: requestsTable.email })
       .from(requestsTable)
@@ -207,7 +207,7 @@ describe('Account enumeration', async () => {
     expect(answered).toBe(204);
 
     // Stored once the write gets through (positive control).
-    await vi.waitFor(() => expect(mailsTo(stranger).map(({ template }) => template)).toEqual([requestResponseEmail]));
+    await waitForMail(() => expect(mailsTo(stranger).map(({ template }) => template)).toEqual([requestResponseEmail]));
     expect(await db.select({ email: requestsTable.email }).from(requestsTable).where(eq(requestsTable.email, stranger))).toEqual([
       { email: stranger },
     ]);
@@ -222,7 +222,7 @@ describe('Account enumeration', async () => {
     expect(answered).toBe(204);
 
     // The link goes out once the write gets through (positive control).
-    await vi.waitFor(() => expect(mailsTo(account.email).map(({ template }) => template)).toEqual([magicLinkEmail]));
+    await waitForMail(() => expect(mailsTo(account.email).map(({ template }) => template)).toEqual([magicLinkEmail]));
     expect(await db.select({ userId: tokensTable.userId }).from(tokensTable).where(eq(tokensTable.email, account.email))).toEqual([
       { userId: account.id },
     ]);
