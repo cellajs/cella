@@ -32,8 +32,6 @@ Edits reach peers as soon as they are durable. Now and then the backend writes t
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`.
 
-Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
-
 The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own: a document's seed generation and the confirmation of a saved update. Their numbers stay clear of those y-websocket uses. A stock y-websocket client syncs, but skips the generation check and reports every confirmation as a message it cannot read.
 
 ## Vocabulary
@@ -62,11 +60,11 @@ Editing needs a token. The backend issues one per entity, for five minutes, to a
 
 ### Presence
 
-Nobody moves or removes someone else's cursors, since a socket announces only its own. A socket's cursors leave with it.
-
 Presence is cosmetic. The relay passes on a cursor only when its colour is a hex colour and its name is short text. Every peer's editor turns a cursor's colour into CSS.
 
 Within that, the name and colour prove nothing about who edits: they are whatever the client sends. Every update is logged under the user its token names. A save credits one editor per window: the newest who may still update the entity.
+
+Nobody moves or removes someone else's cursors, since a socket announces only its own. A socket's cursors leave with it.
 
 ## Collab session lifecycle
 
@@ -88,9 +86,9 @@ After a pause in typing, the relay merges base and log and sends the result to t
 
 The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/SYNC_ENGINE.md)).
 
-The log holds every edit the entity has not received yet: the relay compacts a window only once the entity row holds it. A sentence removed from a description does not stay in the stored document. Compaction drops the text of what was deleted and keeps only its length.
-
 The template registers the attachment update operation as its materializer. An app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and only a product with a materializer persists collaborative content.
+
+The log holds every edit the entity has not received yet: the relay compacts a window only once the entity row holds it. A sentence removed from a description does not stay in the stored document. Compaction drops the text of what was deleted and keeps only its length.
 
 ### Outside writes
 
