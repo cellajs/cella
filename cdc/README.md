@@ -50,8 +50,6 @@ The API receives the messages on its internal listener and fans them out to clie
 - `cdc/src/constants.ts`: its limits
 - `backend/src/lib/cdc-websocket.ts`: the API's receiving side
 
-Details are documented there, at their declarations.
-
 ## Normal flow
 
 ### Read
@@ -166,5 +164,3 @@ In a lost case, rows changed between the old slot's last acknowledged position a
 - **Worker role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/MULTI_TENANCY.md#database-roles)).
 - **Missing grant:** while the role lacks either, the worker reads nothing and reports unhealthy.
 - **A hung worker cannot hold API writes for long:** server-side timeouts take back its flush's row locks.
-
-Counter keys in `channel_counters` and how each one merges: `backend/src/modules/entities/counter-keys.ts`.
