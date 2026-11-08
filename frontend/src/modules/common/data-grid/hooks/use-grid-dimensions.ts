@@ -103,7 +103,9 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       if (isWindowScroll) {
         window.removeEventListener('scroll', remeasure);
         window.removeEventListener('resize', remeasure);
-      } else scrollContainer.removeEventListener('scroll', remeasure);
+      } else {
+        scrollContainer.removeEventListener('scroll', remeasure);
+      }
     };
   }, [scrollContainerRef, enableRowVirtualization]);
 

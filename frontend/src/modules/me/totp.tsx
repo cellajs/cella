@@ -36,7 +36,14 @@ export function Totp() {
       <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
         <TotpSetup />
       </Suspense>,
-      { id: 'totp-setup', title: t('c:totp_qr'), description: t('c:totp_qr.text'), triggerRef, className: 'sm:max-w-md', drawerOnMobile: false },
+      {
+        id: 'totp-setup',
+        title: t('c:totp_qr'),
+        description: t('c:totp_qr.text'),
+        triggerRef,
+        className: 'sm:max-w-md',
+        drawerOnMobile: false,
+      },
     );
   };
 

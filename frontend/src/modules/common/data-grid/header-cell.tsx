@@ -129,7 +129,9 @@ export function HeaderCell<R, SR>({
         if (nextSortColumn) nextSortColumns[sortIndex!] = nextSortColumn;
         else nextSortColumns.splice(sortIndex!, 1);
         onSortColumnsChange(nextSortColumns);
-      } else onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
+      } else {
+        onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
+      }
     }
   }
 

@@ -36,7 +36,9 @@ export const uploadedFileKeys = (
       // thumb_image_tiny writes the `thumbnail` variant and must be checked before the generic thumb_ prefix, which writes `preview`.
       if (step === 'thumb_image_tiny') {
         if (url) keys.thumbnail = url;
-      } else if (step.startsWith('thumb_')) if (url) keys.preview = url;
+      } else if (step.startsWith('thumb_')) {
+        if (url) keys.preview = url;
+      }
     }
   }
 

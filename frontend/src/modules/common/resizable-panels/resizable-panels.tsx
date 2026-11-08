@@ -370,7 +370,9 @@ export function ResizablePanelGroup({
       if (!isCollapsed(panel)) {
         chosenRef.current[panel.id] = widthOf(panel);
         autoCollapsedRef.current = autoCollapsedRef.current.filter((id) => id !== panel.id);
-      } else if (!autoCollapsedRef.current.includes(panel.id)) closeChosen(panel);
+      } else if (!autoCollapsedRef.current.includes(panel.id)) {
+        closeChosen(panel);
+      }
     }
   };
 

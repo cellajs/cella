@@ -72,7 +72,9 @@ function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
   } else if (isLocalOnly) {
     Icon = CloudOffIcon;
     tooltip = t('c:local_only');
-  } else return null;
+  } else {
+    return null;
+  }
 
   return (
     <div

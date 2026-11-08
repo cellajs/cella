@@ -105,8 +105,8 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
     const scrollParent = getScrollParent(sentinel);
     const root = scrollParent instanceof HTMLElement ? scrollParent : null;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.rootBounds) setStuck(!entry.isIntersecting && entry.boundingClientRect.top < entry.rootBounds.top);
+      ([{ rootBounds, isIntersecting, boundingClientRect }]) => {
+        if (rootBounds) setStuck(!isIntersecting && boundingClientRect.top < rootBounds.top);
       },
       { root, rootMargin: `${-offsetTop}px 0px 0px 0px`, threshold: [0] },
     );

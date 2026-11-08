@@ -99,8 +99,11 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       if (shouldStick && !isSticky) {
         applyFixed();
         syncHorizontal(rect);
-      } else if (!shouldStick && isSticky) removeFixed();
-      else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) syncHorizontal(rect);
+      } else if (!shouldStick && isSticky) {
+        removeFixed();
+      } else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) {
+        syncHorizontal(rect);
+      }
     }
 
     const onScrollVertical = () => {

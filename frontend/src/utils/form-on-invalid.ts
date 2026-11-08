@@ -45,7 +45,9 @@ const collectMessages = <TFieldValues extends FieldValues>(
 
       const fieldMessages = error.types ? Object.values(error.types) : [error.message];
       for (const message of fieldMessages) messages.push(`${label}: ${resolveErrorMessage(message)}`);
-    } else messages.push(...collectMessages(value as FieldErrors<TFieldValues>, form, fieldName));
+    } else {
+      messages.push(...collectMessages(value as FieldErrors<TFieldValues>, form, fieldName));
+    }
   }
 
   return messages;

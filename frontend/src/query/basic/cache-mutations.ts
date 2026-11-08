@@ -1,4 +1,5 @@
 import type { QueryClient, QueryFilters, QueryKey, SetDataOptions } from '@tanstack/react-query';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { forEachListQuery, getQueryItems, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
@@ -50,8 +51,7 @@ export async function cancelKeepingMark(client: QueryClient, queryKey: QueryKey)
 /** The order new rows enter a paged list in: the createdAt order its key names, else newest first. */
 function getQueryKeySortOrder(queryKey: QueryKey): 'asc' | 'desc' {
   const sortData = queryKey.find(
-    (segment): segment is { sort: string; order?: 'asc' | 'desc' } =>
-      typeof segment === 'object' && segment !== null && 'sort' in segment && 'order' in segment,
+    (segment): segment is { sort: string; order?: 'asc' | 'desc' } => isFilterSegment(segment) && 'sort' in segment && 'order' in segment,
   );
   return sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
 }

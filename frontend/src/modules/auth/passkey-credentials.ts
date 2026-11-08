@@ -58,7 +58,8 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const email = getCurrentUser().email;
   const generatedName = generatePasskeyName();
-  const nameOnDevice = appConfig.mode === 'development' ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
+  const devSuffix = appConfig.mode === 'development' ? ` for ${appConfig.name}` : '';
+  const nameOnDevice = `${email} (${generatedName})${devSuffix}`;
 
   const attestation = await startRegistration({
     optionsJSON: {

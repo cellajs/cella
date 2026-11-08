@@ -162,9 +162,10 @@ const getBlockTypeItems = (
   headingLevels: CustomBlockNoteMenuProps['headingLevels'],
 ): BlockTypeSelectItem[] => {
   const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
+  const isAllowedPlainHeading = (props: BlockTypeSelectItem['props']) =>
+    !props?.isToggleable && headingLevels.some((level) => level === props?.level);
   return [...blockTypeSelectItems(editor), getChecklistTypeItem()].filter(
-    ({ type, props }) =>
-      switchTypes.includes(type) && (type !== 'heading' || (!props?.isToggleable && headingLevels.some((level) => level === props?.level))),
+    ({ type, props }) => switchTypes.includes(type) && (type !== 'heading' || isAllowedPlainHeading(props)),
   );
 };
 

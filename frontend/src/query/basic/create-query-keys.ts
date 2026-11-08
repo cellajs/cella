@@ -20,6 +20,9 @@ type StandardEntityKeys<TFilters extends object> = {
 export const isDefaultListView = (filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean =>
   Object.entries(filters).every(([key, value]) => value === undefined || value === '' || value === defaults[key]);
 
+/** A segment of a list key that holds filters: the type and the `'list'` tag before it are strings, a filter set is an object. */
+export const isFilterSegment = (segment: unknown): segment is Record<string, unknown> => typeof segment === 'object' && segment !== null;
+
 /** Prefix-matchable keys with one canonical list per effective home channel. Live sync splices that list; cross-home and server-filtered lists use filtered keys and invalidate. */
 export const createEntityKeys = <TFilters extends object>(entityType: EntityType): StandardEntityKeys<TFilters> => ({
   all: [entityType],

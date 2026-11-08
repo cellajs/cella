@@ -56,7 +56,9 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
         abortControllerRef.current = abortController;
         // postTask runs the handler outside a React render and before the next paint; the catch ignores abort errors.
         scheduler.postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal }).catch(() => {});
-      } else frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
+      } else {
+        frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
+      }
     }
 
     function onWindowMouseDown(event: MouseEvent) {

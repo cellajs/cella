@@ -43,7 +43,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       const values = form.getValues();
       const cleaned = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined));
       if (Object.keys(cleaned).length > 0) setDraftForm(formId, cleaned);
-    } else resetDraftForm(formId);
+    } else {
+      resetDraftForm(formId);
+    }
     // Past the storage debounce: this hook debounces edits already, and a write still waiting there is lost to a reload
     flushKvWrites();
   });

@@ -143,7 +143,9 @@ export const useMemberUpdateMutation = () =>
         context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.role) {
         context.toastMessage = t('c:success.update_resource', { resource: t('c:role') });
-      } else if (body?.displayOrder !== undefined) context.toastMessage = t('c:success.update_resource', { resource: t('c:order') });
+      } else if (body?.displayOrder !== undefined) {
+        context.toastMessage = t('c:success.update_resource', { resource: t('c:order') });
+      }
 
       updateMyMembershipCache(membershipInfo);
 

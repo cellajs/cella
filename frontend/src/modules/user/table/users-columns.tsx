@@ -15,7 +15,13 @@ import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const openUpdateUserSheet = (user: BaseUser, triggerRef: TriggerRef) =>
-  openEditSheet({ id: 'update-user', resource: 'c:user', triggerRef, className: 'container', children: <UpdateUserForm user={user} sheet /> });
+  openEditSheet({
+    id: 'update-user',
+    resource: 'c:user',
+    triggerRef,
+    className: 'container',
+    children: <UpdateUserForm user={user} sheet />,
+  });
 
 export const useColumns = () => {
   const { t } = useTranslation();

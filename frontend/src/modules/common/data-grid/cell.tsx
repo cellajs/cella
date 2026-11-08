@@ -102,7 +102,14 @@ function Cell<R, SR>({
           tabIndex={childTabIndex}
         />
       ) : (
-        renderCellContent(column, { column, row, rowIdx, isCellEditable: isEditable, tabIndex: childTabIndex, onRowChange: handleRowChange })
+        renderCellContent(column, {
+          column,
+          row,
+          rowIdx,
+          isCellEditable: isEditable,
+          tabIndex: childTabIndex,
+          onRowChange: handleRowChange,
+        })
       )}
       {isEditable && (
         <PencilIcon className="text-muted-foreground pointer-events-none absolute top-2 right-2 hidden size-3 sm:group-hover/cell:block" />
@@ -177,7 +184,9 @@ function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, 
 /** Renders cell content, falling back to placeholderValue when renderCell returns nullish */
 function renderCellContent<R, SR>(column: CellRendererProps<R, SR>['column'], props: Parameters<typeof column.renderCell>[0]) {
   const content = column.renderCell(props);
-  if (content == null && column.placeholderValue != null) return <span className="text-faint-foreground">{column.placeholderValue}</span>;
+  if (content == null && column.placeholderValue != null) {
+    return <span className="text-faint-foreground">{column.placeholderValue}</span>;
+  }
   return content;
 }
 

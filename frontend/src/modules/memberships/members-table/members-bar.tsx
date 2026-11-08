@@ -75,11 +75,10 @@ export function MembersTableBar({
     openInviteDialog({ channel, description, triggerRef, containerRef: inviteContainerRef });
   };
 
-  const fetchExport = (page: PageRequest) =>
-    fetchMembersForExport(
-      { q, sort, order, role, entityId: channel.id, entityType: channel.entityType, tenantId: channel.tenantId, organizationId },
-      page,
-    );
+  const fetchExport = (page: PageRequest) => {
+    const { id: entityId, entityType, tenantId } = channel;
+    return fetchMembersForExport({ q, sort, order, role, entityId, entityType, tenantId, organizationId }, page);
+  };
 
   return (
     <TableBarShell

@@ -63,7 +63,8 @@ function bindLocalUser(userId: string): void {
   // A second evaluation of this module, as on an HMR update, finds the database bound and its cache in memory.
   if (db === previous) return;
   resetPersister();
-  readyPromise = Promise.all([...localUserStores.map((store) => store.persist.rehydrate()), restoreQueryCache(db)]).then(() => {});
+  const rehydrations = localUserStores.map((store) => store.persist.rehydrate());
+  readyPromise = Promise.all([...rehydrations, restoreQueryCache(db)]).then(() => {});
 }
 
 function unbind(): void {

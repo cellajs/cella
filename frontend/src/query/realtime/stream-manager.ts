@@ -417,7 +417,8 @@ class StreamManager {
     this.consecutiveFailures++;
     console.debug(`[${streamName}] ${reason}`);
 
-    if (this.connectedAt && Date.now() - this.connectedAt >= minUptimeMs) this.currentBackoff = initialBackoffMs;
+    const stayedUp = this.connectedAt !== null && Date.now() - this.connectedAt >= minUptimeMs;
+    if (stayedUp) this.currentBackoff = initialBackoffMs;
     this.connectedAt = null;
 
     this.store.getState().setState('error');

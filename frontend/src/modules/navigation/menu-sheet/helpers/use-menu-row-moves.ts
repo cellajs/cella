@@ -49,7 +49,9 @@ export function useMenuRowMoves({ item, siblings, listItems, prepareArchive }: M
         isWaitingToCrossRef.current = false;
         updateMembership(update);
       }, menuListOpenMs);
-    } else updateMembership(update);
+    } else {
+      updateMembership(update);
+    }
   };
 
   const move = (step: -1 | 1) => {

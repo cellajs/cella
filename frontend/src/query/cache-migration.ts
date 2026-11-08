@@ -20,18 +20,19 @@ export function entityTypeOf(key: unknown): LensEntityType | null {
 
 /** Walks single entity, array, `{ results }`, `{ data }`, and infinite `{ pages }` shapes, migrating each entity-like leaf. */
 async function migrateData(entityType: LensEntityType, data: unknown, fromVersion: number): Promise<unknown> {
-  if (Array.isArray(data)) return Promise.all(data.map((item) => migrateData(entityType, item, fromVersion)));
+  const migrateAll = (items: unknown[]) => Promise.all(items.map((item) => migrateData(entityType, item, fromVersion)));
+  if (Array.isArray(data)) return migrateAll(data);
   if (isRecord(data)) {
     if (Array.isArray(data.pages)) {
-      const pages = await Promise.all(data.pages.map((page) => migrateData(entityType, page, fromVersion)));
+      const pages = await migrateAll(data.pages);
       return { ...data, pages };
     }
     if (Array.isArray(data.results)) {
-      const results = await Promise.all(data.results.map((item) => migrateData(entityType, item, fromVersion)));
+      const results = await migrateAll(data.results);
       return { ...data, results };
     }
     if (Array.isArray(data.data)) {
-      const inner = await Promise.all(data.data.map((item) => migrateData(entityType, item, fromVersion)));
+      const inner = await migrateAll(data.data);
       return { ...data, data: inner };
     }
     if ('id' in data) return migrateCachedEntity(entityType, data, fromVersion);

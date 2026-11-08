@@ -763,7 +763,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           updateRow(column, selectedPosition.rowIdx, row);
           closeEditor(shouldFocusCell);
         });
-      } else setSelectedPosition((position) => ({ ...position, row }));
+      } else {
+        setSelectedPosition((position) => ({ ...position, row }));
+      }
     };
 
     // Discard changes if rows are updated from outside. This runs during render, so it skips the focus refs closeEditor writes.

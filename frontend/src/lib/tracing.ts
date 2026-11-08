@@ -44,7 +44,7 @@ export const withSpan = async <T>(name: string, attributes: CleanSpanAttributes,
     }
   });
 
-export function withSpanSync<T>(name: string, attributes: CleanSpanAttributes, fn: (context: TraceContext) => T): T {
+export const withSpanSync = <T>(name: string, attributes: CleanSpanAttributes, fn: (context: TraceContext) => T): T => {
   const span = tracer.startSpan(name);
   applyAttributes(span, attributes);
   try {
@@ -57,24 +57,24 @@ export function withSpanSync<T>(name: string, attributes: CleanSpanAttributes, f
   } finally {
     span.end();
   }
-}
+};
 
 /**
  * Starts a sync engine span, named from `frontendSpanNames`, that the caller ends.
  * @public
  */
-export function startSyncSpan(name: string, attributes: CleanSpanAttributes = {}): Span {
+export const startSyncSpan = (name: string, attributes: CleanSpanAttributes = {}): Span => {
   const span = tracer.startSpan(name);
   applyAttributes(span, attributes);
   return span;
-}
+};
 
 /** Record a swallowed critical failure as an immediate error span for Maple alerting. */
-export function reportCriticalError(name: string, error: unknown, attributes: CleanSpanAttributes = {}): void {
+export const reportCriticalError = (name: string, error: unknown, attributes: CleanSpanAttributes = {}): void => {
   const span = tracer.startSpan(`client.${name}`);
   applyAttributes(span, attributes);
   failSpan(span, error);
   span.end();
-}
+};
 
 if (isDebugMode) console.debug('[tracing] Frontend OTel tracing initialized');

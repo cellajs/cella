@@ -3,6 +3,7 @@ import { asRecord } from 'shared/utils/as-record';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, removeDetailQueriesOnceUnobserved, writeKeepingMark } from '~/query/basic/cache-mutations';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import {
   type EntityQueryKeys,
   getEntityQueryKeys,
@@ -88,7 +89,7 @@ function invalidateFilteredLists(entityType: ProductEntityType, orgListKey: read
   queryClient.invalidateQueries({
     queryKey: orgListKey,
     predicate: (query) => {
-      const filters = query.queryKey.slice(2).filter((segment): segment is object => typeof segment === 'object' && segment !== null);
+      const filters = query.queryKey.slice(2).filter(isFilterSegment);
       if (!filters.length) return false;
       if (!equalityKeys || !newRows.length) return true;
       return !newRows.every((row) => filtersExcludeRow(filters, asRecord(row), equalityKeys));

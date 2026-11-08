@@ -124,7 +124,8 @@ class AttachmentDownloadService {
   private purge(ids: string[]): void {
     if (!ids.length || !getLocalUserDb()) return;
     attachmentStorage.deleteBlobs(ids).catch((error) => console.error('[DownloadService] Failed to delete local blobs:', error));
-    downloadQueue.remove(ids).catch((error) => console.error('[DownloadService] Failed to remove queue entries:', error));
+    // The queue logs its own failure and never rejects
+    void downloadQueue.remove(ids);
   }
 
   /**

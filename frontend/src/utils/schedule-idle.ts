@@ -4,7 +4,7 @@ const hasIdleCallback = typeof requestIdleCallback === 'function';
 export const scheduleIdle = (callback: () => void, timeoutMs: number) =>
   hasIdleCallback ? requestIdleCallback(callback, { timeout: timeoutMs }) : window.setTimeout(callback, timeoutMs);
 
-export function cancelIdle(handle: number) {
+export const cancelIdle = (handle: number) => {
   if (hasIdleCallback) cancelIdleCallback(handle);
   else window.clearTimeout(handle);
-}
+};

@@ -14,6 +14,8 @@ export function useUntrustedMediaWarning(ctx: MediaRefContext) {
     if (hasUntrustedMedia && !hasWarnedRef.current) {
       toaster.warning(i18n.t('error:untrusted_media_url'));
       hasWarnedRef.current = true;
-    } else if (!hasUntrustedMedia) hasWarnedRef.current = false;
+    } else if (!hasUntrustedMedia) {
+      hasWarnedRef.current = false;
+    }
   };
 }

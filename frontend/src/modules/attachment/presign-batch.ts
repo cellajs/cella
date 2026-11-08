@@ -55,13 +55,16 @@ async function sendChunk(requests: PendingRequest[]) {
     const rejected = new Set(response.rejectedIds);
 
     for (const request of requests) {
-      const url = urlByPair.get(pairKey(request.attachmentId, request.variant));
+      const key = pairKey(request.attachmentId, request.variant);
+      const url = urlByPair.get(key);
       if (url) {
-        memo.set(pairKey(request.attachmentId, request.variant), { url, expiresAt: Date.now() + memoTtlMs });
+        memo.set(key, { url, expiresAt: Date.now() + memoTtlMs });
         request.resolve(url);
       } else if (rejected.has(request.attachmentId)) {
         request.reject(new PresignRejectedError(request.attachmentId));
-      } else request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
+      } else {
+        request.reject(new Error(`No presigned URL returned for ${key}`));
+      }
     }
   } catch (error) {
     // Transport failure (offline, 401, rate limit): transient, unlike PresignRejectedError.

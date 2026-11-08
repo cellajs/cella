@@ -73,7 +73,7 @@ export function SelectContent({
   Pick<PositionedContentProps, 'container'>) {
   return (
     <SelectPrimitive.Portal container={container}>
-      <SelectPrimitive.Positioner {...{ align, side, sideOffset, alignOffset, alignItemWithTrigger }} className="z-270">
+      <SelectPrimitive.Positioner {...{ side, sideOffset, align, alignOffset, alignItemWithTrigger }} className="z-270">
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(

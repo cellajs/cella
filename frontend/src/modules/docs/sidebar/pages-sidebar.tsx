@@ -7,11 +7,10 @@ import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 
 /** Build a hierarchical tree of pages; every level keeps the order of `pages`, which `docPages` sorts by display order. */
 function buildPageNodeTree(pages: DocPage[]): PageNode[] {
-  const validIds = new Set(pages.map((page) => page.id));
+  const parentById = effectiveParents(pages);
   const byParent = new Map<string | null, DocPage[]>();
   for (const page of pages) {
-    // Treat parentless pages (parent missing from visible set) as roots
-    const key = page.parentId && validIds.has(page.parentId) ? page.parentId : null;
+    const key = parentById.get(page.id) ?? null;
     const siblings = byParent.get(key);
     if (siblings) siblings.push(page);
     else byParent.set(key, [page]);
@@ -37,7 +36,7 @@ function computeAncestorIds(pages: DocPage[], pageId: string | undefined): Set<s
 
 type ParentById = Map<string, string | null>;
 
-/** Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree). */
+/** Effective parent per page id, for the tree and for sibling lookup: an orphan (parent outside the visible set) counts as a root. */
 function effectiveParents(pages: DocPage[]): ParentById {
   const pageIds = new Set(pages.map((page) => page.id));
   return new Map(pages.map((page) => [page.id, page.parentId && pageIds.has(page.parentId) ? page.parentId : null]));

@@ -202,7 +202,7 @@ export const syncStore = createStore<SyncStoreState>()(
         migrate: () => ({}),
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
-        partialize: (state) => ({ generation: state.generation, caughtUpAt: state.caughtUpAt, refetchDueAt: state.refetchDueAt, orgs: state.orgs }),
+        partialize: ({ generation, caughtUpAt, refetchDueAt, orgs }) => ({ generation, caughtUpAt, refetchDueAt, orgs }),
       },
     ),
     { name: 'SyncStore', enabled: isDebugMode },

@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { type ListChanges, writeKeepingMark, writeListChanges } from '~/query/basic/cache-mutations';
+import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -65,7 +66,7 @@ export function spliceEntitiesIntoListCaches(
   const homed = entities.map((entity) => ({ entity, homeChannelId: resolveHomeChannelId(entityType, entity) }));
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    result.sawFilteredList ||= queryKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null);
+    result.sawFilteredList ||= queryKey.slice(2).some(isFilterSegment);
 
     if (!isQueryData<ItemData>(queryData) && !isInfiniteQueryData<ItemData>(queryData)) continue;
     const cachedItems = new Map(getQueryItems(queryData).map((item) => [item.id, item]));

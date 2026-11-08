@@ -21,9 +21,9 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const containerElement = isMobile ? undefined : dialog.containerElement;
   const inline = !!container;
 
-  const removeDialog = () => dialoger.getState().remove(dialog.id);
+  const removeDialog = () => dialoger.getState().remove(id);
 
-  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().hide(dialog.id), removeDialog);
+  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().hide(id), removeDialog);
 
   // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
   const dismiss = dialog.instantClose ? removeDialog : closeDialog;

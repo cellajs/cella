@@ -249,7 +249,9 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
 
   if (key in pl && typeof pl[key] === 'string') {
     configLabelKey = pl[key] as string;
-  } else if (payloadPayload && key in payloadPayload && typeof payloadPayload[key] === 'string') configLabelKey = payloadPayload[key] as string;
+  } else if (payloadPayload && key in payloadPayload && typeof payloadPayload[key] === 'string') {
+    configLabelKey = payloadPayload[key] as string;
+  }
 
   return configLabelKey in config ? config[configLabelKey] : config[key];
 }

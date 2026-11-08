@@ -126,7 +126,9 @@ export function usePanZoom(onBackdropClick?: () => void) {
       gesture.view = scaled.zoom > 1 ? { ...scaled, offset: { x: scaled.offset.x + shift.x, y: scaled.offset.y + shift.y } } : scaled;
     } else if (startView.zoom > 1) {
       gesture.view = { ...startView, offset: { x: startView.offset.x + shift.x, y: startView.offset.y + shift.y } };
-    } else return; // at fit one pointer swipes the carousel
+    } else {
+      return; // at fit one pointer swipes the carousel
+    }
 
     // Captured, a mouse drag keeps its moves and its release outside the viewport
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);

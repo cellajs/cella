@@ -32,7 +32,7 @@ export function DropdownMenuContent({
   PositionedContentProps) {
   return (
     <MenuPrimitive.Portal container={container}>
-      <MenuPrimitive.Positioner {...{ sideOffset, side, align, alignOffset, anchor, collisionPadding }} className={cn('z-270', positionerClassName)}>
+      <MenuPrimitive.Positioner {...{ side, sideOffset, align, alignOffset, anchor, collisionPadding }} className={cn('z-270', positionerClassName)}>
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
@@ -163,7 +163,7 @@ export function DropdownMenuSubContent({
   return (
     <DropdownMenuContent
       data-slot="dropdown-menu-sub-content"
-      {...{ align, alignOffset, side, sideOffset }}
+      {...{ side, sideOffset, align, alignOffset }}
       className={cn('shadow-lg', className)}
       {...props}
     />

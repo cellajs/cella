@@ -21,7 +21,9 @@ export function usePasskeySignIn(kind: PasskeyVerifyKind) {
     },
     onSuccess: navigateAfterAuth,
     onError: (error) => {
-      if (kind === 'mfa' && error instanceof ApiError) navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+      if (kind === 'mfa' && error instanceof ApiError) {
+        navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+      }
       // A refusal by the server is toasted by the global handler; the browser's own failure (a cancelled prompt) is not
       if (kind === 'authentication' && !(error instanceof ApiError)) toaster.error(t('error:passkey_verification_failed'));
     },

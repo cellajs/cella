@@ -30,7 +30,7 @@ export const organizationUnseenChannelIds = (organization: UserMenuItem, menu: U
 export const useMenuItemUnseenCount = (item: UserMenuItem, submenuShown: boolean) => useUnseenCount(menuUnseenChannelIds(item, !submenuShown));
 
 /** Unseen counts by organization id, read off the menu so the rail and the switcher add up to what each menu sheet shows. */
-export function useOrganizationUnseenCounts(menu: UserMenu) {
+export const useOrganizationUnseenCounts = (menu: UserMenu) => {
   const { data: unseenCounts } = useQuery(unseenCountsQueryOptions());
 
   const counts = new Map<string, number>();
@@ -41,11 +41,11 @@ export function useOrganizationUnseenCounts(menu: UserMenu) {
     if (count) counts.set(organization.id, count);
   }
   return counts;
-}
+};
 
 /** What the active rows of a whole menu count, for the menu button of a menu that holds every organization. */
-export function useTotalUnseenCount() {
+export const useTotalUnseenCount = () => {
   const userId = useUserStore((state) => state.user?.id);
   const { menu } = useMenu(userId);
   return useUnseenCount(Object.values(menu).flatMap((items) => activeUnseenChannelIds(items)));
-}
+};

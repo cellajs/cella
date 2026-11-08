@@ -97,15 +97,13 @@ export function PagesTable() {
   const onRowsChange = (changedRows: PageTreeRow[], { indexes, column }: RowsChangeData<PageTreeRow>) => {
     if (column.key !== 'name' && column.key !== 'renderMode' && column.key !== 'status') return;
     for (const index of indexes) {
-      const row = changedRows[index];
-      const original = pages.find((page) => page.id === row.id);
+      const { id, name, renderMode, draft } = changedRows[index];
+      const original = pages.find((page) => page.id === id);
       if (!original) continue;
 
-      if (column.key === 'name' && row.name !== original.name) applyEdit(row.id, { name: row.name }, { title: row.name });
-      if (column.key === 'renderMode' && row.renderMode !== original.renderMode) {
-        applyEdit(row.id, { renderMode: row.renderMode }, { renderMode: row.renderMode });
-      }
-      if (column.key === 'status' && row.draft !== original.draft) applyEdit(row.id, { draft: row.draft }, { draft: row.draft });
+      if (column.key === 'name' && name !== original.name) applyEdit(id, { name }, { title: name });
+      if (column.key === 'renderMode' && renderMode !== original.renderMode) applyEdit(id, { renderMode }, { renderMode });
+      if (column.key === 'status' && draft !== original.draft) applyEdit(id, { draft }, { draft });
     }
   };
 

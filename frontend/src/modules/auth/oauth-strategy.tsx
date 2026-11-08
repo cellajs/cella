@@ -52,7 +52,9 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
     } else if (tokenId) {
       params.set('tokenId', tokenId);
       params.set('kind', 'invite');
-    } else params.set('kind', 'auth');
+    } else {
+      params.set('kind', 'auth');
+    }
 
     window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params}`);
   };

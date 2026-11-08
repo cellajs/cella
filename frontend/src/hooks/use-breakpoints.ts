@@ -50,10 +50,10 @@ const getSnapshot = () => currentBreakpoint;
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
+export const useCurrentBreakpoint = (enableReactivity = true): BreakpointKey => {
   const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot);
   return breakpointState as BreakpointKey;
-}
+};
 
 const useBreakpointIndex = (enableReactivity = true) => sortedBreakpoints.indexOf(useCurrentBreakpoint(enableReactivity));
 

@@ -113,7 +113,15 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
       }
 
       // Every gap goes through the fetch prioritizer; the viewing org flushes now and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
-      enqueueCatchupRange({ entityType, organizationId, tenantId, channelId: null, afterSeq: clientCursor, untilSeq: frontier, isCreate: false });
+      enqueueCatchupRange({
+        entityType,
+        organizationId,
+        tenantId,
+        channelId: null,
+        afterSeq: clientCursor,
+        untilSeq: frontier,
+        isCreate: false,
+      });
 
       if (getSyncTier(organizationId, null).min > 0) {
         console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → enqueued`);
@@ -166,7 +174,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
   );
   for (const organizationId of orgsWithLostChannel) {
     for (const entityType of appConfig.productEntityTypes) {
-      if (hasEntityQueryKeys(entityType)) queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
+      if (hasEntityQueryKeys(entityType)) {
+        queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
+      }
     }
   }
 

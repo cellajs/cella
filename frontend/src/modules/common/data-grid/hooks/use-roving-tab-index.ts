@@ -15,8 +15,12 @@ export function useRovingTabIndex(isSelected: boolean) {
       if (elementToFocus !== null) {
         elementToFocus.focus({ preventScroll: true });
         setIsChildFocused(true);
-      } else setIsChildFocused(false);
-    } else setIsChildFocused(true);
+      } else {
+        setIsChildFocused(false);
+      }
+    } else {
+      setIsChildFocused(true);
+    }
   }
 
   const isFocusable = isSelected && !isChildFocused;

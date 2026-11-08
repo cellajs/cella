@@ -213,6 +213,7 @@ async function flush() {
     }
 
     const { queries } = client.clientState;
+    const { timestamp, buster } = client;
     // Each queued mutation is stored with the version of its variables, which the restore reads.
     const mutations = client.clientState.mutations.map((mutation) =>
       withVariablesVersion({ ...mutation, meta: storedMeta(mutation.meta), state: storedMutationState(mutation.state) }),
@@ -252,12 +253,12 @@ async function flush() {
         if (removals.length > 0) await db.queries.bulkDelete(removals);
         if (mutationsChanged) {
           if (mutations.length === 0) await db.meta.delete(tabMutationKey);
-          else await db.meta.put({ key: tabMutationKey, timestamp: client.timestamp, buster: client.buster, mutations, bundledQueries: [] });
+          else await db.meta.put({ key: tabMutationKey, timestamp, buster, mutations, bundledQueries: [] });
         }
         await db.meta.put({
           key: cacheKey,
-          timestamp: client.timestamp,
-          buster: client.buster,
+          timestamp,
+          buster,
           clientCacheVersion: appConfig.clientCacheVersion,
           schemaVersion: currentSchemaVersion,
           bundledQueries,

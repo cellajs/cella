@@ -528,7 +528,9 @@ function bindProvider(conn: YjsConnection) {
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(conn);
-    } else if (conn.loaded && !conn.stopped && token) provider.connect();
+    } else if (conn.loaded && !conn.stopped && token) {
+      provider.connect();
+    }
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.

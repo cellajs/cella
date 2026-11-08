@@ -119,7 +119,9 @@ export function getTools<S extends Slot>(slot: S): (ToolFor<S> & { order: number
 }
 
 /** Descriptors for a slot id known only at runtime; render context erased and `order` left raw. */
-export const getSlotDescriptors = (slot: string): (PlacementDescriptor & { slot: string })[] => bySlot.get(slot) ?? [];
+export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
+  return bySlot.get(slot) ?? [];
+}
 
 /** Stored ids first in stored order, unlisted placements appended by declared `order`, unmatched stored ids ignored. */
 function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(items: T[], slotConfig?: SlotToolsConfig): T[] {
