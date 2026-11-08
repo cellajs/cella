@@ -89,7 +89,7 @@ export default defineScenario({
 
 ## Checks
 
-A run fails, and is neither compared nor saved, when one of these fails:
+A failed run is neither compared nor saved. A run fails when one of these fails:
 
 - **Responses.** More non-2xx responses than `maxRejectedShare` allows, also with `--short`.
 - **VU failures.** More VUs did not complete than `maxErrorRate` allows.
@@ -123,7 +123,7 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
 
-A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it: the p95 response time unless the scenario picks another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
+A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
 
 ## Interpreting results
 
