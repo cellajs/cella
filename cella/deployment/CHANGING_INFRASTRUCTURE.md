@@ -4,7 +4,7 @@ This document explains how privileged infrastructure changes are reviewed and ap
 
 ### TL;DR
 
-Everything Pulumi manages, such as the database and the load balancer's pools, is privileged: it changes only through an apply on your operator key, after you have seen its plan. An apply also publishes the engine every deploy runs, and a deploy only makes and deletes machines. Every pull request says which applies merging owes.
+Everything Pulumi manages, such as the database and the load balancer's pools, is privileged: it changes only through an apply on your operator key, after you have seen its plan. An apply also publishes the engine every deploy runs. A deploy only makes and deletes machines. Every pull request says which applies merging owes.
 
 ## Privileged changes
 
@@ -54,7 +54,7 @@ Every pull request gets the keyless `privileged-changes` check. Its summary name
 
 A head that cannot render fails the check and blocks the merge. The check reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
 
-On the release PR, the check also fails while the release describes the app otherwise than the last apply of an environment that follows the releases. Merged, that release would end **apply needed**, so it merges only after its apply.
+On the release PR, the check also fails while the release describes the app otherwise than the last apply of an environment that follows the releases. That release merges only after its apply, since merging it first would end **apply needed**.
 
 GitHub holds no key to read `applied.json`. So each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`. It then runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
 
@@ -62,7 +62,7 @@ GitHub holds no key to read `applied.json`. So each apply sets the repository va
 
 An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets.
 
-No machine and no builder has an identity, as they fetch and write through links the deploy key signs. So toggling `enabled` or `singleVM`, or a runtime secret's consumers, changes no identity.
+No machine and no builder has an identity, as they fetch and write through links the deploy key signs. So no identity changes when you toggle `enabled` or `singleVM` or change a runtime secret's consumers.
 
 Identities are IAM, so only an Owner moment writes them. A deploy does not read identities. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included.
 
