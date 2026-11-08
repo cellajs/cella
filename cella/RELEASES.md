@@ -15,12 +15,12 @@ both. Merging it tags the release for production to deploy. Never set versions o
 
 ## Gating
 
-Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes. So a broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
+Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes. A broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
 
 ## Setup
 
 1. Create a GitHub App with `Contents` and `Pull requests` read and write, and install it on the repo.
-2. Store its Client ID and private key as the `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` secrets. [release.yml](../.github/workflows/release.yml) opens the release PR and tags each release with it, so the PR runs the required checks.
+2. Store its Client ID and private key as the `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` secrets. [release.yml](../.github/workflows/release.yml) opens the release PR and tags each release with it. A PR the App opens runs the required checks.
 3. In the `main` ruleset, require squash merges, linear history and the `ci-passed` and `pr-title` checks.
-4. Add a tag ruleset on every tag that restricts creations, updates and deletions. Its only bypass is the release App. Production deploys the newest tag, so whoever may push one chooses what runs.
-5. Set the repository variable `PRODUCTION_URL` to the app's address, without a trailing slash. [deploy-status.yml](../.github/workflows/deploy-status.yml) then shows each release in the repository's Deployments panel. It reports a success once production answers with the release's commit, and a failure when that takes too long. It reads only the public health endpoint, so a failure does not say why. `pnpm infra runs` does.
+4. Add a tag ruleset on every tag that restricts creations, updates and deletions. Its only bypass is the release App. Whoever may push a tag chooses what runs, since production deploys the newest tag.
+5. Set the repository variable `PRODUCTION_URL` to the app's address, without a trailing slash. [deploy-status.yml](../.github/workflows/deploy-status.yml) then shows each release in the repository's Deployments panel. It reports a success once production answers with the release's commit, and a failure when that takes too long. A failure does not say why: the workflow reads only the public health endpoint. `pnpm infra runs` does.
