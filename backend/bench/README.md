@@ -4,15 +4,14 @@ Load testing for the backend, cdc, and yjs services: the app's scenarios and che
 
 ### TL;DR
 
-Bench load-tests your running development app with repeatable scenarios and reusable seed data,
-its users already signed in. A run passes on what the stack did with the load, not on how fast a laptop is: every response
-accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved
-and compared with the previous run: read them as trends, not absolutes.
+Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: every response accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved and compared with the previous run, as trends.
 
 ## Prerequisites
 
 A run measures the stack this checkout runs: Postgres from `pnpm docker`, seeded by `pnpm seed`, and the
-services of `pnpm dev`. With `--isolated` a run needs neither. It then starts a testbed for the run and stops it after.
+services of `pnpm dev`.
+
+With `--isolated` a run needs neither. It then starts a testbed for the run and stops it after.
 A testbed is a copy of the app on a database and ports of its own, as `pnpm cella testbed` starts it.
 
 ## Commands
@@ -122,7 +121,9 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 ## Baselines and logs
 
-Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it. A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it: the p95 response time unless the scenario picks another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
+Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
+
+A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it: the p95 response time unless the scenario picks another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
 
 ## Interpreting results
 
