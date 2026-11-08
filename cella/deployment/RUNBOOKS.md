@@ -1,6 +1,6 @@
 # Runbooks
 
-This document collects the procedures for a running deployment: a failed or blocked deploy, one that needs an apply, a stale lease, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
+This document collects the procedures for a running deployment, from a failed deploy to tearing a stack down.
 
 ### TL;DR
 

@@ -1,6 +1,6 @@
 # Keys and rotation
 
-This document explains the Scaleway API keys a deployment uses, how to rotate them, and what to do when one is lost. It assumes you know Scaleway IAM: applications, groups, and the policies that give an API key's bearer its rights ([Scaleway IAM docs](https://www.scaleway.com/en/docs/iam/concepts/)).
+This document explains the Scaleway API keys a deployment uses, how to rotate them, and what to do when one is lost. It assumes you know [Scaleway IAM](https://www.scaleway.com/en/docs/iam/concepts/).
 
 ### TL;DR
 

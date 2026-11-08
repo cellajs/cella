@@ -1,7 +1,6 @@
 # Observability
 
-This document explains how traces, metrics, and logs move between Cella's services and how to
-instrument a new worker. It assumes you know OpenTelemetry: traces and spans, metrics and the OTLP export ([opentelemetry.io](https://opentelemetry.io/docs/)).
+This document explains how traces, metrics and logs move between the services, and how to instrument a new worker. It assumes you know [OpenTelemetry](https://opentelemetry.io/docs/).
 
 ### TL;DR
 

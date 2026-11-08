@@ -1,6 +1,6 @@
 # MCP worker
 
-This document covers the MCP worker: the app's **Model Context Protocol endpoint**, one per organization, exposing routes that opted in as MCP tools to AI clients. It assumes you know the Model Context Protocol: a client, its tools and the JSON-RPC calls that list and run them ([modelcontextprotocol.io](https://modelcontextprotocol.io)).
+This document covers the MCP worker: one Model Context Protocol endpoint per organization, exposing opted-in routes as MCP tools. It assumes you know [MCP](https://modelcontextprotocol.io).
 
 ### TL;DR
 

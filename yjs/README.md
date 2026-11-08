@@ -1,6 +1,6 @@
 # Yjs worker
 
-This document covers the Yjs worker: a WebSocket relay for **real-time collaborative editing of BlockNote descriptions**. It assumes you know Yjs: a document, its updates, and the sync and awareness protocols ([docs.yjs.dev](https://docs.yjs.dev)).
+This document covers the Yjs worker: a WebSocket relay for real-time collaborative editing of BlockNote descriptions. It assumes you know [Yjs](https://docs.yjs.dev).
 
 ### TL;DR
 

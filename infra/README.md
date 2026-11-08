@@ -1,6 +1,6 @@
 # Infra CLI
 
-This document describes the Infra CLI: what it does, its commands and status checks, the files it reads and its vocabulary. It assumes you know Pulumi: a program, its stacks and their state ([pulumi.com/docs](https://www.pulumi.com/docs/)).
+This document describes the Infra CLI: its commands, status checks, files and vocabulary. It assumes you know [Pulumi](https://www.pulumi.com/docs/).
 
 ### TL;DR
 

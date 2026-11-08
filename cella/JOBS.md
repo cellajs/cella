@@ -1,6 +1,6 @@
 # Jobs worker
 
-This document covers the jobs worker: the app's **job store on pg-boss**, where periodic sweeps run as cron and per-request work waits on queues. It assumes you know pg-boss: queues, jobs and schedules ([github.com/timgit/pg-boss](https://github.com/timgit/pg-boss)).
+This document covers the jobs worker: the app's job store on pg-boss, with cron sweeps and queues. It assumes you know [pg-boss](https://github.com/timgit/pg-boss).
 
 ### TL;DR
 

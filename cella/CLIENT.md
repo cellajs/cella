@@ -1,7 +1,6 @@
 # Client (React)
 
-This document explains the client's central object: the query client that holds server data in the
-browser, plus the services that read and update it. It assumes you know TanStack Query: queries, mutations and their caches ([tanstack.com/query](https://tanstack.com/query/latest)).
+This document explains the query client that holds server data in the browser, and the services around it. It assumes you know [TanStack Query](https://tanstack.com/query/latest).
 
 ### TL;DR
 

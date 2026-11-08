@@ -1,6 +1,6 @@
 # Multi-tenancy
 
-This document explains how tenant data stays isolated: which layer is responsible for what, and how far the database backstop reaches. It assumes you know Postgres row-level security: policies, the roles they apply to and the table owner's bypass ([PostgreSQL docs](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)).
+This document explains how tenant data stays isolated: which layer does what, and how far the database backstop reaches. It assumes you know Postgres [row-level security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html).
 
 ### TL;DR
 

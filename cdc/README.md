@@ -1,6 +1,6 @@
 # CDC worker
 
-This document covers the CDC worker: the service that turns committed Postgres changes into the server-side outputs used by the sync engine. It assumes you know Postgres logical replication: the WAL, a publication and a replication slot ([postgresql.org](https://www.postgresql.org/docs/current/logical-replication.html)).
+This document covers the CDC worker, which turns committed Postgres changes into what the sync engine serves. It assumes you know [logical replication](https://www.postgresql.org/docs/current/logical-replication.html).
 
 ### TL;DR
 
