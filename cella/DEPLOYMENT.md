@@ -4,12 +4,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 
 ### TL;DR
 
-Publishing a release starts an automatic deployment. It creates new machines for that exact version,
-waits until the load balancer sees them healthy, then drains and removes the old machines.
-[Pulumi](https://www.pulumi.com/) manages the foundation, and a deploy makes and deletes the machines itself.
-A schedule inside the Scaleway organization starts each deploy, so GitHub holds no key.
-Every deploy runs the engine the last apply published, and a release that describes the app otherwise waits for an apply.
-Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys) with only the permissions they need.
+Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. [Pulumi](https://www.pulumi.com/) manages the foundation, and a schedule inside the Scaleway organization starts each deploy, so GitHub holds no key. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys) with only the permissions they need.
 The machines hold none and fetch the release and their secrets through links that end within minutes.
 
 ## Overview
@@ -99,7 +94,9 @@ Merging a line is not publishing a release. The file's rules:
 
 **Pausing staging.** Removing staging's line stops its deploys, not its cost. Its machines keep running. To stop the cost, tear staging down with `pnpm infra teardown --mode staging`.
 
-**Rollback.** No old machine is kept to switch back to. Pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build. An earlier release that describes the app otherwise ends **apply needed** until an apply from its checkout. A release older than the applied engine reports no description and cannot be deployed. Roll forward then.
+**Rollback.** No old machine is kept to switch back to. Pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build.
+
+An earlier release that describes the app otherwise ends **apply needed** until an apply from its checkout. A release older than the applied engine reports no description and cannot be deployed. Roll forward then.
 
 **The live record.** A file in the boot-diag bucket says which slot serves each role, with its machine, commit, retry counter and rotation. A deploy replaces only the roles that do not serve its target that way:
 
@@ -129,13 +126,19 @@ A run ends in one of five outcomes:
 
 `pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`, not the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
-**Releases only.** In an environment that follows the releases, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere. The check thus catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Show runs flags such a run.
+**Releases only.** In an environment that follows the releases, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
+
+The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Show runs flags such a run.
 
 The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. So an app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
 ### The schedule
 
-Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts). A release waits at most that long for its deploy. A scheduled run first takes the lease, so one run looks at a time. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target. The records are the schedule's memory, so each target deploys once. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
+Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts). A release waits at most that long for its deploy.
+
+A scheduled run first takes the lease, so one run looks at a time. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
+
+The records are the schedule's memory, so each target deploys once. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
 
 The schedule is part of the definition, so an apply writes it and nothing else needs setting up. A scheduled run that starts nothing leaves no record. **Show status** names a schedule that stopped, went missing or whose runs fail. Show runs says when the last scheduled run started.
 
@@ -228,7 +231,9 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 ## Runtime secret delivery
 
-Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume. It writes the file to the boot-diag bucket, which no other key reads. The new machine fetches the file once through a link in its user data and keeps it at `0600`. The deploy deletes the bucket's copy once the machine's boot account arrived, or at the end of the run.
+Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume. It writes the file to the boot-diag bucket, which no other key reads.
+
+The new machine fetches the file once through a link in its user data and keeps it at `0600`. The deploy deletes the bucket's copy once the machine's boot account arrived, or at the end of the run.
 
 - **No secret in Pulumi state:** after each apply, operator tasks write generated secrets into Secret Manager.
 - **Kept until rotation:** a value that exists stays until a [rotation](./deployment/KEYS.md#rotation).
