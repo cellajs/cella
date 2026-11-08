@@ -4,7 +4,7 @@ This document covers the jobs worker: the app's **job store on pg-boss**, where 
 
 ### TL;DR
 
-Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. The store is a PostgreSQL schema the migrate companion installs, so no worker ever migrates it and every runtime process connects as the runtime role.
+Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. No worker ever migrates the store, and every runtime process connects as the runtime role. The store is a PostgreSQL schema the migrate companion installs.
 
 ## How it fits
 
@@ -19,7 +19,7 @@ PostgreSQL schema pgboss  ◀─────────────────
         └── a consumer process works its own queues (SERVICE of its own)
 ```
 
-The jobs worker runs from the backend image. Cron and supervision belong to one process, so its own service cuts over stop-first. Nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first. A deploy then runs two jobs workers until the old machine is removed.
+The jobs worker runs from the backend image. Its own service cuts over stop-first, since cron and supervision belong to one process. Nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first. A deploy then runs two jobs workers until the old machine is removed.
 
 ## Declaring jobs and queues
 
@@ -62,8 +62,8 @@ Payloads carry ids, never row bodies. The handler re-reads through the query the
 
 `/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran and how each queue stands. It degrades when the scheduler stalls, a queue backs up or dead letters wait. It never fails, so a switch never blocks on it.
 
-The maintainer runs as the runtime role, so index rebuilds are left to an operator. For those and for recent failures, query the job store schema as the owner role. The health payload names the queues that degrade.
+Index rebuilds are left to an operator, since the maintainer runs as the runtime role. For those and for recent failures, query the job store schema as the owner role. The health payload names the queues that degrade.
 
 ### Connection budget
 
-Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Raising the limit restarts an instance that has no standby, so shrink pools first.
+Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby.
