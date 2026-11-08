@@ -21,7 +21,9 @@ the people it knows through that connection to sign in this way.
 
 At the callback, an active connection must accept the institution the claims assert. The identity is the federation's issuer and subject. A first sign-in creates the account only with the connection's `jitProvisioning` or an invitation.
 
-The institution proves an address only on the connection's domains or their subdomains. It does so only where the federation vouches for its institutions' mailboxes, since the federation passes any address an identity provider releases. A first sign-in with any other address is refused with the offer below. A magic link then proves the inbox before an account holds it. An eduID account, whose address can have any domain, proves none this way.
+The institution proves an address only on the connection's domains or their subdomains. It does so only where the federation vouches for its institutions' mailboxes, since the federation passes any address an identity provider releases.
+
+A first sign-in with any other address is refused with the offer below. A magic link then proves the inbox before an account holds it. An eduID account, whose address can have any domain, proves none this way.
 
 With `jitProvisioning` the account becomes a member of the tenant's organization, unless an invitation there already names the role. The session records the federation and the connection. The tenant's sign-in policy counts it only through the tenant's own connection.
 
@@ -51,7 +53,11 @@ The error page offers to mail a magic link to the asserted address. The link lan
 
 ## Tenant sign-in policy
 
-`tenantGuard` enforces `tenants.authStrategies`, where an empty list allows every enabled method. A person with an identity through the tenant's connection must act with an allowed method. A federation counts only through that connection. An access token carries the method and connection of the session that consented. Otherwise the request is refused with `sso_required`. Externals without such an identity are untouched. System admins are exempt.
+`tenantGuard` enforces `tenants.authStrategies`, where an empty list allows every enabled method.
+
+A person with an identity through the tenant's connection must act with an allowed method. A federation counts only through that connection. An access token carries the method and connection of the session that consented. Otherwise the request is refused with `sso_required`.
+
+Externals without such an identity are untouched. System admins are exempt.
 
 The policy guards tenant routes only. Under a refused method the person still reads:
 
@@ -60,4 +66,6 @@ The policy guards tenant routes only. Under a refused method the person still re
 - `/me/memberships`: their memberships
 - `GET /users/{id}`: the profiles of their co-members
 
-An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address, and the account gets a mail pointing to its institution's sign-in. Only a browser that signed in to that account before gets `sso_required`. The user keeps every other method and address. The recovery link above is the one exception, since it takes the institution account and the mailbox together.
+An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address, and the account gets a mail pointing to its institution's sign-in.
+
+Only a browser that signed in to that account before gets `sso_required`. The user keeps every other method and address. The recovery link above is the one exception, since it takes the institution account and the mailbox together.
