@@ -88,7 +88,9 @@ export const organizationContract = evolutionContract.channel('organization', { 
 
 ### Server write path
 
-No middleware and no body re-parsing. During a lens's expand window the derived schemas accept both field names, so old-shape requests pass validation unchanged. The contract's normalize step then maps `ops` and `stx.fieldTimestamps` to canonical keys, so the merge sees canonical keys only. It also **mirror-writes** the twin column, so a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
+No middleware and no body re-parsing. During a lens's expand window the derived schemas accept both field names, so old-shape requests pass validation unchanged.
+
+The contract's normalize step then maps `ops` and `stx.fieldTimestamps` to canonical keys, so the merge sees canonical keys only. It also **mirror-writes** the twin column, so a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
 
 A later contract PR, made by hand for now, drops the old column. It waits until `X-Client-Version` shows every client past the expand lens for the whole expand window.
 
