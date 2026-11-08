@@ -121,7 +121,7 @@ Boot order, cached data first:
 3. The persister restores the cache scope.
 4. The app reads the memberships, so the first catchup declares every organization.
 5. One tab is elected leader. It performs catchup and owns the live connection.
-6. Paused mutations resume after catchup, and whenever the app comes back online or regains focus.
+6. Paused mutations resume after catchup and whenever the app comes back online or regains focus.
 7. Route loaders fill the current view.
 8. A background fill loads every uncached list and every marked synced list, current organization first.
 9. From then on catchup keeps the synced lists fresh.
