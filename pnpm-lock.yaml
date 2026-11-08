@@ -25,8 +25,8 @@ importers:
         specifier: ^2.6.4
         version: 2.6.4
       '@cellajs/cli':
-        specifier: ^0.6.7
-        version: 0.6.7(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.7.0
+        version: 0.7.0(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
         version: 7.0.0-dev.20260707.2
@@ -1336,8 +1336,8 @@ packages:
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
 
-  '@cellajs/cli@0.6.7':
-    resolution: {integrity: sha512-9It44YPVS4x9tJEOSHaXrcJjly4+QrA8vAB6asxXk1DiNQ9oqK2nbkfviZz6pSUERL0AIl4NYAO0PQiVRQz/iQ==}
+  '@cellajs/cli@0.7.0':
+    resolution: {integrity: sha512-Ad0zXzVBExthB2LNqRpqdRWDI0wYhsOwCaO4Us2c0R7WWYKJLpM6gnE2K2C4er3E+TSFtrmR+5EKIFAGnKaGUQ==}
     engines: {node: 26.x}
     hasBin: true
 
@@ -8338,7 +8338,7 @@ snapshots:
       - y-protocols
       - yjs
 
-  '@cellajs/cli@0.6.7(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@cellajs/cli@0.7.0(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@inquirer/core': 12.0.6(@types/node@26.6.6)
       '@inquirer/prompts': 8.7.5(@types/node@26.6.6)
