@@ -55,7 +55,7 @@ The backend enforces everything:
 - **Offline rows**: linking keys to a row created offline (`linkAttachmentKeys`) is the uploader's alone, under their own `<organizationId>/<userId>` prefix, while the row has no stored file.
 - **Quota**: a create past the tenant quota (default 100 attachments) is refused with 403 `restrict_by_app`.
 
-A presigned URL serves a raster image, audio, video or a PDF inline as the type the row declares and any other file as a download, so an uploaded page never renders on the bucket's host. It works for two hours, so it outlives a member's removal or the file's deletion by two hours at most.
+A presigned URL serves a raster image, audio, video or a PDF inline as the type the row declares and any other file as a download. An uploaded page never renders on the bucket's host. It works for two hours. It outlives a member's removal or the file's deletion by two hours at most.
 
 A deleted attachment keeps its files for the deleted-items period. When the row goes, removed by the retention procedure or with its channel or organization, the deletion queue's job deletes its files, and for an organization everything under its prefix ([Data lifecycle](../../../../cella/ARCHITECTURE.md#data-lifecycle)). The buckets keep deleted objects recoverable until their noncurrent versions expire.
 

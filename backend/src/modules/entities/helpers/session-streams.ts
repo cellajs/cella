@@ -19,7 +19,7 @@ const errorWriteTimeoutMs = 1000;
 
 /**
  * Tells the client why its stream ends, then ends it; without this the stream stays live until the client leaves. A
- * client that stopped reading never takes the error, so the close waits for it at most a second. The stream still
+ * client that stopped reading never takes the error. The close waits for it at most a second. The stream still
  * answers 200, never a 204: a stock EventSource would stop at the 401 its one reconnect gets.
  */
 async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {

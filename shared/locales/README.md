@@ -47,7 +47,7 @@ A key names the concept, so its text can change without a rename. Texts are shor
 
 **One key, one sentence.** A key holds a whole sentence or label. A slot takes a name, a number, a date or a bare noun, never a clause or a verb. Code never builds a sentence from several keys or appends words to a translation.
 
-No article or demonstrative stands before a noun slot (`this {{resource}}`): Dutch writes `deze organisatie` but `dit project`, and the template cannot know the gender of an app's entity names, so the sentence names the thing or says "it".
+No article or demonstrative stands before a noun slot (`this {{resource}}`): Dutch writes `deze organisatie` but `dit project`, and the template cannot know the gender of an app's entity names. The sentence names the thing or says "it".
 
 | Family | Key | Text |
 | --- | --- | --- |

@@ -24,7 +24,7 @@ Headers are translated HTML, like bodies. Add a prop to either component only wh
 
 Per-recipient props leave the render as Brevo placeholders, and Brevo fills them per recipient: `{{params.x}}` comes out HTML-escaped, so pass these values as plain text. A value that is HTML the app built itself, with every user-derived fragment escaped, is declared in the template's `htmlParams` with its `SafeHtml` policy. The mailer sanitizes it by that policy and Brevo prints it through `{{params.x|safe}}`.
 
-Brevo reads the subject and body as templates, so the mailer's `neutralizeBrevoTags` keeps only its own placeholders and writes every other tag opener (`{{`, `{%`, `{#`) as plain text.
+Brevo reads the subject and body as templates. The mailer's `neutralizeBrevoTags` keeps only its own placeholders and writes every other tag opener (`{{`, `{%`, `{#`) as plain text.
 
 ## Rendering
 

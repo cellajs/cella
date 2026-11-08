@@ -39,7 +39,7 @@ The worker is a `SERVICE` of the backend image. The reverse proxy routes `/mcp/*
 
 A client follows the challenge to the OAuth worker and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
 
-Sessions and API keys are refused here on purpose. The MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
+Sessions and API keys are refused here on purpose. The MCP face takes only tokens. Every call traces to a consent or to a service account's `client_credentials` grant.
 
 ## MCP tools are routes
 
@@ -64,7 +64,7 @@ The OpenAPI spec shows it under `x-tool`. The rest of a tool is derived from the
 | Scope, also in `_meta.scope` | `entity` with the method: `GET` needs `<entity>:read`, anything else `<entity>:write` |
 | `annotations` | Read-only, destructive and idempotent hints from the method |
 
-- **Every tool listed.** `tools/list` includes tools the token may not call, so a client sees what to step up to.
+- **Every tool listed.** `tools/list` includes tools the token may not call. A client sees what to step up to.
 - **Route schemas.** `tools/call` validates the arguments against the route's own schemas, then runs the route.
 - **JSON result.** The route's JSON answer is the tool result.
 - **Errors as results.** A permission or domain error from the route is a tool result a model can act on.

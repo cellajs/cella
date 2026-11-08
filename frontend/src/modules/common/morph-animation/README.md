@@ -57,7 +57,7 @@ The component props are the tuning surface per page: `variant`, `grid` (pixel de
 below 1 it magnifies), `stamp`, `palette`, `still` and `fizz`.
 
 A still freezes the clock at a chosen value: the piece condenses in on mount, in view or not,
-then holds that frame and draws again only when the theme or another prop changes, so a page
+then holds that frame and draws again only when the theme or another prop changes. A page
 can show a fixed shape at no ongoing cost.
 
 `fizz` keeps a still's grains alive on a clock of their own while the shape holds: the grid

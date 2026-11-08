@@ -9,7 +9,7 @@ both. Merging it tags the release for production to deploy. Never set versions o
 
 ## How it works
 
-1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch. A breaking change such as `feat!:` bumps the minor, so an upgrading app can tell a breaking release apart.
+1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch. A breaking change such as `feat!:` bumps the minor. An upgrading app can tell a breaking release apart.
 2. On every merge, release-please updates the open **release PR** with the next version and the [Changelog](./CHANGELOG.md).
 3. Merging the release PR tags the version and publishes the GitHub Release. The next scheduled run of the main job deploys it ([Deploys](./DEPLOYMENT.md#deploys)).
 

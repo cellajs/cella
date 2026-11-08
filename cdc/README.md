@@ -108,7 +108,7 @@ Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#fail
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
-| A flush fails, whatever the cause: a connection, a lock or statement timeout, a constraint, a send lost when the API left | | The service stops (`onFailed`) and the subscription loop reads again after a growing delay (`subscribeWithReconnect`) | Still failing at the WAL bound: the slot is dropped (`ensureReplicationSlot`) and the books rebuilt. A restart starts the failure over (`recordFailure`), so a worker that crash-loops never drops it |
+| A flush fails, whatever the cause: a connection, a lock or statement timeout, a constraint, a send lost when the API left | | The service stops (`onFailed`) and the subscription loop reads again after a growing delay (`subscribeWithReconnect`) | Still failing at the WAL bound: the slot is dropped (`ensureReplicationSlot`) and the books rebuilt. A worker that crash-loops never drops it: each restart starts the failure over (`recordFailure`) |
 | A change can never be processed: refused, unparseable, or a source transaction over the limit | | The same read again, held there, and unhealthy after a while (`stalled`) | The same drop at the WAL bound |
 | A subscription attempt fails: another worker holds the slot during a deploy, the connection is refused, the slot cannot be made, or it was made by hand before its publication | | The loop records the failure and tries again after the same delay (`recordFailure`) | The same drop at the WAL bound |
 | The slot lookup or the drop at the WAL bound fails | | The attempt subscribes without the check (`ensureReplicationSlot` answers `unknown`). Open finding, a second answer: a failed subscribe reads again | |

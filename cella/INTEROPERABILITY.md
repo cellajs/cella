@@ -27,7 +27,7 @@ Three behaviors hold across the API, and a client codes against them:
 - **Paging.** A list answers a page with a `nextPageToken` while more follow, passed back as `pageToken`. A token is opaque and bound to its list; an altered one is refused as `invalid_page_token`.
 - **Mirroring.** Range reads with `afterSeq` and `untilSeq` return products in sync order, a chunk at a time, deletions as tombstones. After an absence longer than the activity window, a mirror reads everything again.
 
-Account-security routes take only a session that recently proved its user, so no key or token reaches them.
+No key or token reaches an account-security route. It takes only a session that recently proved its user.
 
 ## Face: OAuth
 

@@ -14,7 +14,7 @@ the people it knows through that connection to sign in this way.
 | --- | --- |
 | **Federation** | Declared in `appConfig.federations` as public metadata. This deployment's client there comes from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. |
 | **Connection** | A tenant's trust in one institution: its federation, domains, IdPs, status and `jitProvisioning`. It stays `pending` until the institution activates the app at the federation. A domain belongs to one connection. |
-| **Entry** | `/auth/sso/:connectionId`, the link an institution shares, pinned to its IdPs. A start from the federation has no pin, so the federation's own picker lists the connected institutions. |
+| **Entry** | `/auth/sso/:connectionId`, the link an institution shares, pinned to its IdPs. A start from the federation has no pin. The federation's own picker then lists the connected institutions. |
 | **Callback** | One redirect URI, registered at every federation. |
 
 ## Signing in

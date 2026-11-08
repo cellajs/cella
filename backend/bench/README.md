@@ -79,7 +79,7 @@ export default defineScenario({
 - **Users.** `benchUser(vu.index)` hands each VU a seeded user.
 - **Names are declared.** `counters` and `histograms` list every name the scenario records.
 - **Names are typed.** Any other name in `vu.counter`, `expect` or `forbid` fails `pnpm check`.
-- **Request names.** Give a request with ids in its path a `name`, so the endpoint table has one row for it.
+- **Request names.** Give a request with ids in its path a `name`. The endpoint table then has one row for it.
 
 ## Files
 
