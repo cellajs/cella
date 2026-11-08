@@ -66,6 +66,23 @@ export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: { ids: st
     .from(attachmentsTable)
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
 
+/** `findAttachmentsByIds` for a read without a request scope, such as a visitor's: the scope comes as arguments. */
+export const findLiveAttachmentsIn = async (
+  ctx: DbContext,
+  { ids, tenantId, organizationId }: { ids: string[]; tenantId: string; organizationId: string },
+) =>
+  ctx.var.db
+    .select()
+    .from(attachmentsTable)
+    .where(
+      and(
+        inArray(attachmentsTable.id, ids),
+        eq(attachmentsTable.tenantId, tenantId),
+        eq(attachmentsTable.organizationId, organizationId),
+        isNull(attachmentsTable.deletedAt),
+      ),
+    );
+
 const attachmentOrderColumns = pick(attachmentsTable, ['name', 'createdAt', 'contentType']);
 
 interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>['orderBy'], 'sort' | 'order'> {

@@ -1,9 +1,9 @@
 import type { z } from '@hono/zod-openapi';
-import { buildSubjectFromEntity, checkAccessBatch } from 'shared';
-import type { ActorContext } from '#/core/context';
-import { tenantRead } from '#/db/tenant-context';
+import { type Access, buildSubjectFromEntity, checkAccessBatch } from 'shared';
+import type { ActorBinding, ActorContext } from '#/core/context';
+import { tenantRead, tenantReadById } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
-import { findAttachmentsByIds } from '#/modules/attachment/attachment-queries';
+import { findAttachmentsByIds, findLiveAttachmentsIn } from '#/modules/attachment/attachment-queries';
 import type {
   attachmentPresignedUrlSchema,
   attachmentPresignedUrlsBodySchema,
@@ -11,6 +11,7 @@ import type {
 } from '#/modules/attachment/attachment-schema';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
+import { loadTenant } from '#/modules/tenants/load-tenant';
 import { accessFrom } from '#/permissions/access';
 
 type PresignedUrlsBody = z.infer<typeof attachmentPresignedUrlsBodySchema>;
@@ -43,23 +44,22 @@ const filenameOf = (attachment: AttachmentModel, variant: AttachmentVariant): st
   return attachment.filename.replace(/(\.[^.]*)?$/, extension);
 };
 
+const idsOf = (items: PresignedUrlsBody['items']) => [...new Set(items.map((item) => item.attachmentId))];
+
 /**
- * Signs private-bucket download URLs for up to 50 attachments the caller may read.
- * Fails closed: rows resolve under tenant RLS and are permission-checked in one batch before
- * anything is signed. Missing and denied ids merge into one `rejectedIds` list, so the response
- * is not an existence oracle. Succeeds even when every item is rejected.
+ * Signs the requested variants of the `rows` that `access` may read, in one permission check before anything is
+ * signed. Missing and denied ids merge into one `rejectedIds` list, so the response is not an existence oracle, and it
+ * succeeds even when every item is rejected.
  */
-export async function getPresignedUrlsOp(ctx: ActorContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
+async function signReadable(access: Access<ActorBinding>, rows: AttachmentModel[], items: PresignedUrlsBody['items']): Promise<PresignedUrlsResult> {
   const pairs = new Map<string, { attachmentId: string; variant: AttachmentVariant }>();
   for (const { attachmentId, variant } of items) pairs.set(`${attachmentId}:${variant}`, { attachmentId, variant });
-  const ids = [...new Set(items.map((item) => item.attachmentId))];
-
-  const rows = await tenantRead(ctx, (readCtx) => findAttachmentsByIds(readCtx, { ids }));
+  const ids = idsOf(items);
   const rowById = new Map(rows.map((row) => [row.id, row]));
 
-  // The actor carries the system-admin bypass, so `allowed` is already the final verdict.
+  // The access carries the system-admin bypass, so `allowed` is already the final verdict.
   const subjects = rows.map((row) => buildSubjectFromEntity('attachment', row));
-  const results = checkAccessBatch(accessFrom(ctx), 'read', subjects);
+  const results = checkAccessBatch(access, 'read', subjects);
 
   // A row naming storage outside its organization is refused like a denied one, whatever wrote it: an id is signed
   // for every requested variant or rejected whole.
@@ -91,4 +91,27 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
   );
 
   return { data, rejectedIds };
+}
+
+/** Signs private-bucket download URLs for up to 50 attachments the caller may read; the rows resolve under tenant RLS. */
+export async function getPresignedUrlsOp(ctx: ActorContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
+  const rows = await tenantRead(ctx, (readCtx) => findAttachmentsByIds(readCtx, { ids: idsOf(items) }));
+  return signReadable(accessFrom(ctx), rows, items);
+}
+
+/**
+ * `getPresignedUrlsOp` for a caller without a sign-in: the rows are read in the organization the URL names, under its
+ * tenant's RLS, and the engine decides as for any anonymous reader, whom the row's own `public` flag and the entity's
+ * `publicRead()` grant alone let in. Without that grant, or in a tenant that is not active, every id is rejected.
+ */
+export async function getPublicPresignedUrlsOp(
+  { tenantId, organizationId }: { tenantId: string; organizationId: string },
+  { items }: PresignedUrlsBody,
+): Promise<PresignedUrlsResult> {
+  const ids = idsOf(items);
+  const tenant = await loadTenant(tenantId);
+  if (tenant?.status !== 'active') return { data: [], rejectedIds: ids };
+
+  const rows = await tenantReadById(tenantId, (tx) => findLiveAttachmentsIn({ var: { db: tx } }, { ids, tenantId, organizationId }));
+  return signReadable({ anonymous: true }, rows, items);
 }

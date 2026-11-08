@@ -45,4 +45,13 @@ describe('parseMessage: updates', () => {
       'updatedAt',
     ]);
   });
+
+  // A reader who had the row through its flag alone loses it, as a reader loses a row that moves out of reach.
+  it('carries the old row as movedFrom when public goes false, and none when it is set', () => {
+    const shown = attachmentRow({ public: true, stx: { mutationId: 'm1', sourceId: 'server', fieldTimestamps: {} } });
+    const hidden = { ...shown, public: false, stx: { mutationId: 'm2', sourceId: 'server', fieldTimestamps: {} } };
+
+    expect(parseMessage(dmlMessage('update', 'attachments', hidden, shown))?.movedFrom).toMatchObject({ id: 'att-1', public: true });
+    expect(parseMessage(dmlMessage('update', 'attachments', shown, hidden))?.movedFrom).toBeNull();
+  });
 });

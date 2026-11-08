@@ -27,8 +27,8 @@ export const inRequestScope = (ctx: ScopeContext, row: { tenantId: string; organ
   return true;
 };
 
-/** How a channel is looked up: by slug in place of its id, and locked until the caller's transaction ends. */
-type ChannelLookup = { bySlug?: boolean; forUpdate?: boolean };
+/** How a channel is looked up: by slug in place of its id, and locked until the caller's transaction ends, `forUpdate` to write it or `forShare` to hold its `public`. */
+type ChannelLookup = { bySlug?: boolean; forUpdate?: boolean; forShare?: boolean };
 
 /**
  * Looks a channel entity up by ID (or slug when `bySlug`) inside the request scope; throws 404 when
@@ -41,9 +41,9 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
   ctx: DbContext & ScopeContext,
   entityId: string,
   entityType: T,
-  { bySlug = false, forUpdate = false }: ChannelLookup = {},
+  { bySlug = false, forUpdate = false, forShare = false }: ChannelLookup = {},
 ): Promise<EntityModel<T>> => {
-  const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug, forUpdate });
+  const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug, forUpdate, forShare });
 
   // Missing and out-of-scope rows read as the same 404.
   if (!entity || !inRequestScope(ctx, entity)) throw new AppError(404, 'not_found', 'warn', { entityType });

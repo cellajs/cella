@@ -23,7 +23,7 @@ export interface ParseMessageResult {
   activity: CdcActivity;
   rowData: CdcRowData;
   oldRowData: CdcRowData | null;
-  /** For a row that moved: the permission fields of the place it left, so dispatch can drop subscribers who lost access. */
+  /** For a row that moved or whose `public` went false: the permission fields it had, so dispatch can drop subscribers who lost access. */
   movedFrom?: PermissionRowData | null;
   tableMeta: TableMeta;
 }

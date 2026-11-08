@@ -1,5 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { assertNoWriteBetween } from '#/core/preconditions';
+import { tenantContextIncludingDeleted } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
@@ -17,13 +18,22 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
 
   const wasDraft = organization.publishedAt === null;
-  const stamped = wasDraft ? await publishOrganization(ctx, { id: organization.id }) : undefined;
+  // The publish and its `organization.updated` handlers commit together.
+  const stamped = wasDraft
+    ? await tenantContextIncludingDeleted(ctx, async (txCtx) => {
+        const userTxCtx: UserContext = { var: { ...ctx.var, db: txCtx.var.db } };
+        const published = await publishOrganization(userTxCtx, { id: organization.id });
+        if (published) {
+          await dispatchMutation(userTxCtx, 'organization.updated', {
+            before: [withOrganizationDefaults(organization)],
+            after: [withOrganizationDefaults(published)],
+          });
+        }
+        return published;
+      })
+    : undefined;
 
   if (stamped) {
-    await dispatchMutation(ctx, 'organization.updated', {
-      before: [withOrganizationDefaults(organization)],
-      after: [withOrganizationDefaults(stamped)],
-    });
     invalidateCache.org(organization.tenantId, organization.id);
     log.info('Organization published', { organizationId: organization.id });
   }

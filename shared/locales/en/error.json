@@ -7,6 +7,8 @@
   "body_too_large.text": "Shorten it or split it up.",
   "channel_archived": "Archived",
   "channel_archived.text": "This channel is archived, so nothing in it can change.",
+  "channel_too_large": "Too many items to change at once",
+  "channel_too_large.text": "This change would rewrite more items than one write may touch.",
   "confirm-mfa_expired": "Verification step expired",
   "confirm-mfa_expired.text": "Your verification token has expired or is invalid. Sign in again to continue.",
   "confirm-mfa_not_found": "Verification failed",

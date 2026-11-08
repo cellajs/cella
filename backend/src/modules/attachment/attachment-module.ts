@@ -1,6 +1,7 @@
 import { defineBackendModule } from '#/lib/module';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
+import { publicAttachmentHandlers } from '#/modules/attachment/public-handlers';
 
 defineBackendModule({
   name: 'attachments',
@@ -13,5 +14,8 @@ defineBackendModule({
   productEntity: 'attachment',
   yjsMaterializer: updateAttachmentOp,
   notifications: true,
-  routes: [{ path: '/tenants/:tenantId/organizations/:organizationId/attachments', app: attachmentHandlers }],
+  routes: [
+    { path: '/tenants/:tenantId/organizations/:organizationId/attachments', app: attachmentHandlers },
+    { path: '/public/tenants/:tenantId/organizations/:organizationId/attachments', app: publicAttachmentHandlers },
+  ],
 });

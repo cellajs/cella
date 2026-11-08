@@ -3,6 +3,8 @@
   "ambiguous_placement.text": "Noem één plek, de diepste: de plekken erboven volgen daaruit.",
   "channel_archived": "Gearchiveerd",
   "channel_archived.text": "Dit kanaal is gearchiveerd, dus er kan niets in veranderen.",
+  "channel_too_large": "Te veel items om in één keer te wijzigen",
+  "channel_too_large.text": "Deze wijziging zou meer items herschrijven dan één bewerking mag raken.",
   "demo_session_restricted": "Niet in een demo",
   "demo_session_restricted.text": "Een demo-account kan dit niet. Maak een eigen account aan om verder te gaan.",
   "demo_signed_in": "Al ingelogd",

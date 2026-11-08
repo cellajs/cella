@@ -84,10 +84,11 @@ and the renderers.
 - `operations/`, one file per operation:
   - **Create** (`create-attachments.ts`): normalize each item with `<name>Contract.normalizeCreateItem`.
     `checkIdempotency(ctx, <name>sTable, ids)` runs first, and only the items it did not return go on:
-    per item `assertBlockFields`, `resolvePlacement` (its `columns` on the row, `public` copied from
-    the home channel) and `canCreateEntity(ctx, buildSubjectFromEntity('<name>', row))`. The insert runs
-    through `insertWithinTenantQuota(txCtx, '<name>', insert)`, which checks the tenant quota under a
-    lock, and shares one `tenantContext` with `dispatchMutation(txCtx, '<name>.created', { after })`.
+    per item `assertBlockFields`, `resolvePlacement` (its `columns` on the row, the home channel's
+    `public` among them) and `canCreateEntity(ctx, buildSubjectFromEntity('<name>', row))`, all inside
+    the `tenantContext` of the insert, which holds the home row against a toggle of its flag. The insert
+    runs through `insertWithinTenantQuota(txCtx, '<name>', insert)`, which checks the tenant quota under
+    a lock, and shares that transaction with `dispatchMutation(txCtx, '<name>.created', { after })`.
     The answer holds the rows and `rejectedIds`, and is 201 only when this request inserted a row.
   - **Update**: `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })` inside the write
     transaction, so the merge starts from a locked row; `assertBlockFields` on the ops. The `/{<name>Id}` routes
@@ -256,7 +257,9 @@ exist need a data migration that gives them the new id column.
   return a published row as it is, store `<name>Contract.resolveServerUpdateOps(row, { publishedAt })`
   and dispatch `<name>.updated`.
 - **Public read**: `publicRead()` in the policy case. A row whose `public` flag is set then reads for
-  anonymous actors too, on reads and on the stream.
+  anonymous actors too, on reads and on the stream, and the flag follows the home channel's at create,
+  on a move and when the channel's flag changes, with nothing to register. Keep `public` out of the
+  update body: the channel decides it.
 - **Notifications**: `notifications: true` in the backend module (or the readers of
   `ModuleNotifications` in `backend/src/lib/module.ts`), and `deepLinkParam` in the frontend
   `product` declaration: the search param that opens one row on the page that lists it.
