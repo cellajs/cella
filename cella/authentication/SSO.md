@@ -1,6 +1,6 @@
 # Institutional sign-in
 
-This document explains how a tenant connects an institution and what a sign-in through its federation does. It assumes you know [OpenID Connect](https://openid.net/developers/how-connect-works/).
+This document explains how a tenant connects an institution and what a sign-in through its [OpenID Connect](https://openid.net/developers/how-connect-works/) federation does.
 
 ### TL;DR
 

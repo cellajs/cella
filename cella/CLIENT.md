@@ -1,6 +1,6 @@
 # Client (React)
 
-This document explains the query client that holds server data in the browser, and the services around it. It assumes you know [TanStack Query](https://tanstack.com/query/latest).
+This document explains the [TanStack Query](https://tanstack.com/query/latest) client that holds server data in the browser, and the services around it.
 
 ### TL;DR
 

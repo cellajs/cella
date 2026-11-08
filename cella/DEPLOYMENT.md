@@ -1,6 +1,6 @@
 # Deployment
 
-This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/) with the [Infra CLI](../infra/README.md). It assumes you know Scaleway's [Instances, Serverless Jobs and Secret Manager](https://www.scaleway.com/en/docs/).
+This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/en/docs/) with the [Infra CLI](../infra/README.md).
 
 ### TL;DR
 

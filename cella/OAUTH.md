@@ -1,6 +1,6 @@
 # OAuth worker
 
-This document covers the OAuth worker: the app's own OAuth 2.1 authorization server, issuing the access tokens the REST API and MCP accept. It assumes you know [OAuth 2.1](https://oauth.net/2.1/).
+This document covers the OAuth worker: the app's own [OAuth 2.1](https://oauth.net/2.1/) authorization server, issuing the access tokens the REST API and MCP accept.
 
 ### TL;DR
 

@@ -1,6 +1,6 @@
 # Infra CLI
 
-This document describes the Infra CLI: its commands, status checks, files and vocabulary. It assumes you know [Pulumi](https://www.pulumi.com/docs/).
+This document describes the Infra CLI, built on [Pulumi](https://www.pulumi.com/docs/): its commands, status checks, files and vocabulary.
 
 ### TL;DR
 

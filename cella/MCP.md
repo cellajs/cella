@@ -1,6 +1,6 @@
 # MCP worker
 
-This document covers the MCP worker: one Model Context Protocol endpoint per organization, exposing opted-in routes as MCP tools. It assumes you know [MCP](https://modelcontextprotocol.io).
+This document covers the MCP worker: one [Model Context Protocol](https://modelcontextprotocol.io) endpoint per organization, exposing opted-in routes as MCP tools.
 
 ### TL;DR
 

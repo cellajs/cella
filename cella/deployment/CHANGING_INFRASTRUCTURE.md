@@ -1,6 +1,6 @@
 # Changing infrastructure
 
-This document explains how privileged infrastructure changes are reviewed and applied, and how pull requests find the ones still owed. It assumes you know [Pulumi](https://www.pulumi.com/docs/iac/concepts/).
+This document explains how privileged [Pulumi](https://www.pulumi.com/docs/iac/concepts/) changes are reviewed and applied, and how pull requests find the ones still owed.
 
 ### TL;DR
 

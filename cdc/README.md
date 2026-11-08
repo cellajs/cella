@@ -1,6 +1,6 @@
 # CDC worker
 
-This document covers the CDC worker, which turns committed Postgres changes into what the sync engine serves. It assumes you know [logical replication](https://www.postgresql.org/docs/current/logical-replication.html).
+This document covers the CDC worker, which reads committed Postgres changes through [logical replication](https://www.postgresql.org/docs/current/logical-replication.html) and turns them into what the sync engine serves.
 
 ### TL;DR
 

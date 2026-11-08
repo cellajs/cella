@@ -1,6 +1,6 @@
 # Sync engine
 
-This document explains how product data and the facts around it stay current across clients, online and offline. It assumes you know [TanStack Query](https://tanstack.com/query/latest).
+This document explains how product data and the facts around it stay current across clients, online and offline, in the [TanStack Query](https://tanstack.com/query/latest) cache.
 
 ### TL;DR
 

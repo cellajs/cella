@@ -1,6 +1,6 @@
 # Authentication
 
-This document explains how people sign in and sign up, and the tokens, second factors and step-up behind it. It assumes you know [WebAuthn](https://www.w3.org/TR/webauthn/).
+This document explains how people sign in and sign up, and the tokens, [passkeys](https://www.w3.org/TR/webauthn/), second factors and step-up behind it.
 
 ### TL;DR
 
