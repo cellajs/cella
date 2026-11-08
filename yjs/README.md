@@ -28,13 +28,13 @@ entity description + derived fields
 Postgres → CDC → SSE → non-editing viewers
 ```
 
-Edits reach peers as soon as they are durable. Now and then the backend writes the merged description, plus whatever the entity's registered materializer derives, through its normal update pipeline ([Save](#save)).
+Edits reach peers as soon as they are durable. Now and then the backend writes the merged description through its normal update pipeline ([Save](#save)). The same write carries whatever the entity's registered materializer derives.
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`.
 
 Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
 
-The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own, a document's seed generation and the confirmation of a saved update, numbered clear of those y-websocket uses. A stock y-websocket client therefore syncs, but skips the generation check and reports every confirmation as a message it cannot read.
+The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own: a document's seed generation and the confirmation of a saved update. Their numbers stay clear of those y-websocket uses. A stock y-websocket client therefore syncs, but skips the generation check and reports every confirmation as a message it cannot read.
 
 ## Vocabulary
 
@@ -52,7 +52,7 @@ The socket speaks the sync and awareness framing of y-protocols plus two message
 
 ## Who may edit
 
-Editing needs a token. The backend issues one per entity, for five minutes, to a user who may update it. A valid token opens the socket, and the relay then asks the permission engine itself whether this user may update this row. A socket lives no longer than its token, so the client refreshes and reconnects.
+Editing needs a token. The backend issues one per entity, for five minutes, to a user who may update it. A valid token opens the socket. The relay then asks the permission engine itself whether this user may update this row. A socket lives no longer than its token, so the client refreshes and reconnects.
 
 - **No minting on the relay.** It holds only the public half of the signing key.
 - **One origin.** A page on another origin than the app's cannot open a socket.
@@ -64,9 +64,9 @@ Editing needs a token. The backend issues one per entity, for five minutes, to a
 
 A socket announces only its own cursors, so nobody moves or removes someone else's, and a socket's cursors leave with it.
 
-Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS, so the relay passes on a cursor only when its colour is a hex colour and its name is short text; any other cursor reaches no peer.
+Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS. So the relay passes on a cursor only when its colour is a hex colour and its name is short text.
 
-Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Every update is logged under the user its token names, and a save credits one editor per window: the newest who may still update the entity.
+Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Every update is logged under the user its token names. A save credits one editor per window: the newest who may still update the entity.
 
 ## Collab session lifecycle
 
@@ -84,7 +84,7 @@ The relay confirms every saved update to its sender, so a client knows when the 
 
 ### Save
 
-After a pause in typing, and periodically while it goes on, the relay merges base and log and sends the result to the backend with the editors of that window.
+After a pause in typing, the relay merges base and log and sends the result to the backend with the editors of that window. It also does so periodically while typing goes on.
 
 The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/SYNC_ENGINE.md)).
 
@@ -102,11 +102,11 @@ A document is retired only together with its entity. It outlives its collab sess
 
 ### Other writers
 
-Outside writes, updates posted over HTTP and, during a rollout, a second relay append to the log too. Each relay listens for Postgres notices of those appends and passes the new rows on to its editors. A notice can be missed, so every collab session also checks the log when a socket connects, before it compacts and periodically.
+Three other writers append to the log: outside writes, updates posted over HTTP and a second relay during a rollout. Each relay listens for Postgres notices of those appends and passes the new rows on to its editors. A notice can be missed, so every collab session also checks the log when a socket connects, before it compacts and periodically.
 
 ### Over HTTP
 
-A client that reaches the API but not the relay keeps working through the API's pull and push routes, which authorize as the token route does. A push is appended to the same log, and live collab sessions receive it like any other append.
+A client that reaches the API but not the relay keeps working through the API's pull and push routes. They authorize as the token route does. A push is appended to the same log, and live collab sessions receive it like any other append.
 
 ### Leave
 
@@ -132,7 +132,7 @@ A sweep, at boot and periodically, saves the logs no collab session holds: those
 
 ## Operational constraints
 
-- **One relay per document is the normal case.** Two relays on one document, as in a rollout, stay correct: they share the log.
+- **One relay per document is the normal case.** During a rollout two relays serve one document. They stay correct because they share the log.
 - **No server-side edit history.** The base is one merged state. Undo, redo and per-edit history live in clients.
 - **Schema must stay aligned.** The shared BlockNote schema must match the frontend binding. The round-trip tests catch a mismatch.
 - **Materialization is eventual.** The entity row lags the live document by at most ten seconds while someone types, plus any retry delay.
