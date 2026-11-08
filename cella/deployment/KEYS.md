@@ -111,9 +111,9 @@ A privileged action runs on a key that ends within a day. It is a key of the `<a
 
 A key of either keeps working, since the policies are written in place. A new environment's setup adds its project to both. Staging and production share one set of operators, since the name is production's slug.
 
-**A sitting.** In the console, go to IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
-
 Add members in IAM → Groups → `<app>-operators`. Each member then holds what the application holds.
+
+**A sitting.** In the console, go to IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 
 **How a session is unlocked.** The first action that changes something or needs the passphrase asks for the key: access key and secret key. With the key itself, the CLI asks IAM who bears it.
 
