@@ -53,6 +53,7 @@ function makeFake(
     leaseLost?: boolean;
     stamp?: EngineStamp | null;
     description?: string | null;
+    describes?: Record<string, unknown>;
   } = {},
 ) {
   const ops: string[] = [];
@@ -69,7 +70,12 @@ function makeFake(
     },
     readFile: async (path) =>
       path.endsWith('manifest.json')
-        ? JSON.stringify({ release: SHA, images: {}, ...(opts.description === null ? {} : { description: opts.description ?? DESCRIPTION }) })
+        ? JSON.stringify({
+            release: SHA,
+            images: {},
+            ...(opts.description === null ? {} : { description: opts.description ?? DESCRIPTION }),
+            ...(opts.describes ? { describes: opts.describes } : {}),
+          })
         : '[]',
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
@@ -85,6 +91,7 @@ function makeFake(
       return { roles: ROLES, record: opts.live ?? { schemaVersion: 1, roles: {} }, rotation: opts.rotation ?? 0 };
     },
     engineStamp: () => (opts.stamp === null ? undefined : (opts.stamp ?? { mode: 'production', descriptionHash: DESCRIPTION })),
+    engineDescription: async () => ({ services: { backend: {} } }),
     switchMachines: async (request) => {
       ops.push(`switch:${request.pending.join(',')}`);
       switches.push(request);
@@ -285,6 +292,11 @@ describe('the run record', () => {
     expect(differs.records.at(-1)?.record.error).toMatch(/^apply needed: /);
     expect(differs.ops).not.toContain('task:compose-env');
     expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
+
+    // A builder that reported the description beside its hash: the error names what the target changes.
+    const named = makeFake({ description: 'e'.repeat(64), describes: { services: { backend: {}, search: {} } } });
+    await runDeploy(baseOpts, named.fx, fakeDeployEnv).catch(() => undefined);
+    expect(named.records.at(-1)?.record.error).toMatch(/changes the infrastructure: services\.search added; an apply from a checkout at it/);
 
     // A commit older than the applied engine reports none, and no apply deploys it.
     const predates = makeFake({ description: null });

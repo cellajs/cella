@@ -5,8 +5,9 @@ import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, star
 import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
-import { bucketRunStore } from '../../lib/deploy/run-store';
-import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
+import { bucketRunStore, commitRecords } from '../../lib/deploy/run-store';
+import { decideScheduledRun } from '../../lib/deploy/scheduled-run';
+import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -122,12 +123,13 @@ async function liveCommit(context: InfraContext, key: KeyPair): Promise<string |
 
 /**
  * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, as the live
- * record names the counter each machine was booted under, then start
- * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and a scheduled run
- * deploys only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
- * becomes of the target. The live run is followed to its end, as the target's run would wait on the lease behind it, and when it does
- * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
- * and when the live record cannot be read there is none known: the target alone is started.
+ * record names the counter each machine was booted under, then start the environment's target when it is another commit with no run under
+ * its retry counter. The running machines hold keys or values the rotation replaced, and a scheduled run deploys only when the target
+ * moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever becomes of the target. The
+ * live run is followed to its end, as the target's run would wait on the lease behind it, and when it does not deploy the target is left
+ * for the action that clears the block or `start-deploy`. A target that ran before is left as a scheduled run leaves it, so a rotation
+ * keeps a rollback in place. Before the first deploy there is no live commit, and when the live record cannot be read there is none known:
+ * the target alone is started.
  */
 export async function redeployAfterRotation(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };
@@ -162,13 +164,41 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
       console.warn(`${warningMark} The machines keep what the rotation replaced until a deploy succeeds; the target is not started.`);
       return;
     }
-    if (!target || target.sha === live) return;
+    if (!target || target.sha === live || (await targetHasRun(context, key, live, target))) return;
   }
   if (!target) return;
   const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
   console.info(
     `${checkMark} Run ${run.id} deploys the target ${target.sha.slice(0, 10)}${live ? '' : ' with the rotated keys and values, replacing every machine'} (\`${actionCommand('runs')}\` shows how it ends).`,
   );
+}
+
+/**
+ * Whether the target has a run under its retry counter, which no scheduled run starts again (`decideScheduledRun`), said in one line: the
+ * environment then stays on the live commit, as a rollback by hand left it. Runs that cannot be read count as one, so a rotation never
+ * undoes a rollback it could not see.
+ */
+async function targetHasRun(context: InfraContext, key: KeyPair, live: string, target: Target): Promise<boolean> {
+  const state = stateKeyOf(key, context.projectId);
+  const [refs, decision] = await Promise.all([
+    listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']).catch(() => undefined),
+    makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey)
+      .then((s3) => commitRecords(bucketRunStore(s3, deriveInfra(context.appConfig).naming.bootDiagBucket), target.sha))
+      .then((records) => decideScheduledRun(target, records))
+      .catch((error: unknown) => errorMessage(error)),
+  ]);
+  const [liveName, targetName] = [commitName(refs, live), commitName(refs, target.sha)];
+  if (typeof decision === 'string') {
+    console.warn(
+      `${warningMark} The runs of ${targetName} could not be read (${decision}): ${context.environment} stays on ${liveName}, and "${actionLabel('start-deploy')}" deploys ${targetName}.`,
+    );
+    return true;
+  }
+  if (decision.action === 'deploy') return false;
+  console.info(
+    `${checkMark} ${context.environment} stays on ${liveName}: ${targetName} has run ${decision.record.run} (${decision.record.outcome}); "${actionLabel('start-deploy')}" deploys it.`,
+  );
+  return true;
 }
 
 /**

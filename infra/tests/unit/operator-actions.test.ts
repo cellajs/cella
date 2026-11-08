@@ -98,8 +98,8 @@ describe('menu rows', () => {
     expect(new Set(listed).size).toBe(listed.length);
   });
 
-  it('keeps the menu to eleven rows: the two DB access rows share one place', () => {
-    expect(rowIds).toHaveLength(12);
+  it('keeps the menu to twelve rows: the two DB access rows share one place', () => {
+    expect(rowIds).toHaveLength(13);
     expect(rowIds).toContain('db-open');
     expect(rowIds).toContain('db-close');
   });

@@ -48,7 +48,16 @@ export const UP_NEXT = 'up-next';
 /** What the main menu resolves to: a row, the recommended step, or the way out. */
 export type MainMenuValue = MenuRowId | typeof UP_NEXT | typeof QUIT;
 
-const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = ['apply', 'preview', 'db-reset', 'db-seed', 'db-open', 'db-close', 'start-deploy'];
+const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = [
+  'apply',
+  'preview',
+  'db-reset',
+  'db-seed',
+  'db-open',
+  'db-close',
+  'start-deploy',
+  'releases',
+];
 
 /** Why an action cannot run now, undefined when it can. Each reason names the action that lifts it, and stays short enough for one 80-column row. */
 export function disabledReason(id: OperatorActionId, state: MenuState): string | undefined {

@@ -214,10 +214,15 @@ export function rewriteNote(rewrite: Rewrite): string {
   return `rewritten: the version at ${rewrite.at.slice(0, 16).replace('T', ' ')} ${rewrite.detail}`;
 }
 
-/** One line per run for a list: when, what, how it ended, and where it stopped. */
-export function runSummaryLine(record: RunRecord): string {
+/** How a run ended, where it stopped and how long it took: `failed at "Switch machines" in 2m46s`. */
+export function runOutcomeText(record: RunRecord): string {
   const seconds = record.endedAt ? Math.round((Date.parse(record.endedAt) - Date.parse(record.startedAt)) / 1000) : undefined;
   const took = seconds === undefined ? '' : ` in ${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
   const where = record.failedStep ? ` at "${record.failedStep}"` : '';
-  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${record.target.slice(0, 10)}  ${record.outcome}${where}${took}`;
+  return `${record.outcome}${where}${took}`;
+}
+
+/** One line per run for a list: when, what, how it ended, and where it stopped. */
+export function runSummaryLine(record: RunRecord): string {
+  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${record.target.slice(0, 10)}  ${runOutcomeText(record)}`;
 }

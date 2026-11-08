@@ -29,10 +29,11 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists eleven rows by task under five groups on a healthy stack, each with its letter, then Quit', () => {
+  it('lists twelve rows by task under five groups on a healthy stack, each with its letter, then Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       'Deploys',
       '  d  Deploy now',
+      '  r  Releases & roll back',
       '  l  Deploy logs',
       '  s  Full status',
       'Configure',
@@ -62,6 +63,7 @@ describe('mainMenuItems', () => {
     expect(render(mainMenuItems(partial))).toEqual([
       'Deploys',
       '- Deploy now (needs a set-up environment: run "Resume setup")',
+      '- Releases & roll back (needs a set-up environment: run "Resume setup")',
       '  l  Deploy logs',
       '  s  Full status',
       'Configure',
