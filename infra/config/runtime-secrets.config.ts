@@ -23,7 +23,7 @@ function yjsTokenPublicKey(material: string): string {
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   cookieSecret: {
     secretName: 'cookie-secret',
-    description: 'Cookie signing secret',
+    description: 'Cookie signing secret. A comma-separated list rotates it: the first signs, any verifies',
     envVar: 'COOKIE_SECRET',
     required: true,
     valueSource: 'engine',
