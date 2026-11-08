@@ -106,11 +106,11 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 
 Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
 
-Channel entities have two row kinds: **elevation** rows on an ancestor channel say what a parent's member may do to the child (where `create` lives). **Self** rows on the same channel say what the entity's own members may do to it (a self-row `create` is inert). Product entities have only **home** rows, where `create` grants creating inside that channel.
+Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`. **Self** rows on the same channel say what the entity's own members may do to it. Product entities have only **home** rows, where `create` grants creating inside that channel.
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
-A channel declares its roles most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, by an invitation, a direct add or a role change, nor demotes or removes a member who holds one; an invitation is refused as well when its accept would bring along a membership above the channel (`organizationRoles`, a menu `carryRole`) at a role above the inviter's own there, since the accept has no inviter to ask. `update` or `delete` that reaches the channel from an ancestor hands out every role of the channel, the least-privileged role is anyone's to give, and a system admin gives any. Service accounts follow the same rule: nobody creates one, issues or rolls its keys or re-enables it at a role above their own.
+A channel declares its roles from most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, nor demotes or removes a member who holds one. An invitation is also checked for the memberships above the channel that its accept brings along, since the accept has no inviter to ask. Anyone may give the least-privileged role. A system admin gives any role, as does anyone whose `update` or `delete` grant reaches the channel from an ancestor. Service accounts follow the same rule when someone creates one, issues or rolls its keys, or re-enables it.
 
 ## The permission returned
 
@@ -152,9 +152,9 @@ A route gate (`requireEntityAction`) asks the same question before the page load
 | SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
 | Catchup views | `resolveViewReadStatus` | May the caller see an organization's frontier of a type | `opaque` or `forbidden` |
 
-Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
+Two rules bind every path. **The system-admin bypass applies to collection reads too**, since a system admin passes `orgGuard` with no membership. **Any grant the single-row path honours must appear in lists and over SSE**.
 
-Aggregates run no row condition: member counts, newest-post times and organization totals count every live row of the organization, which matches what a viewer may list only while no read cell is row-conditional, so an app that adds an `own` or `public` read cell must scope them itself.
+Aggregates such as member counts, newest-post times and organization totals run no row condition. They count every live row of the organization. An app that adds an `own` or `public` read cell must scope them itself, or they count rows a viewer cannot list.
 
 ### Guards
 
@@ -206,9 +206,9 @@ Users who share an organization see each other's `UserBase` fields, email addres
 
 ## System admins
 
-A system admin holds the `admin` system role, counted only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action, and every guard but `serviceGuard` lets them through without a membership, so a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user: a support change runs as the admin, carries the admin's actor in `createdBy` or `updatedBy`, and shows under the admin's name in the organization's activities. A system admin never reaches a user's account security (factors, sessions, connected apps), their inbox, menu or preferences, and joins a collaborative description only with the access of their own account.
+A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership. So a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities. A system admin never reaches a user's account security, inbox, menu or preferences. They join a collaborative description with only their own account's access.
 
-Support reads before it writes: the users table says what role and last-seen a user has, the organization's members page what they hold there. To see a page as a member of a given role sees it, hold that role: invite an account that has no system role at that role for the length of the case and remove it after; both moves are activities the organization's admins can read. Make the change as yourself and tell the user what changed; never hand anyone a session. Account-security trouble (a lost factor, a stuck MFA challenge) is the user's to recover through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
+Support reads before it writes, in the users table and the organization's members page. To see a page as a given role sees it, invite an account with no system role at that role, and remove it after the case. The organization's admins can read both moves as activities. Make the change as yourself and tell the user what changed. Never hand anyone a session. A user recovers from account-security trouble, such as a lost factor, through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
 
 ## Behavior
 
