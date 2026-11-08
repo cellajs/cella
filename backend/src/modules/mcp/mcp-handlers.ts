@@ -20,7 +20,11 @@ const insufficientScopeCode = -31403;
 
 /** The JSON-RPC error of a call outside the token's scopes, naming the scope to ask for. */
 const insufficientScope = ({ id, scope }: InsufficientScopeError) =>
-  ({ jsonrpc: '2.0', id, error: { code: insufficientScopeCode, message: 'insufficient_scope', data: { scope } } }) satisfies JsonRpcResponse;
+  ({
+    jsonrpc: '2.0',
+    id,
+    error: { code: insufficientScopeCode, message: 'insufficient_scope', data: { scope } },
+  }) satisfies JsonRpcResponse;
 
 /** Step-up (RFC 6750 §3.1): the challenge names the missing scopes, so the client re-authorizes with them and retries. */
 const scopeChallenge = ({ tenantId, organizationId }: { tenantId: string; organizationId: string }, scopes: string[]) =>

@@ -122,8 +122,23 @@ export async function updatePreferences(ctx: DbContext, { userId, values }: Upda
   return updated;
 }
 
-/** The columns the fan-out writes; the rest take their defaults. */
-export type NotificationInsert = Required<Omit<InsertNotificationModel, 'id' | 'createdAt' | 'readAt' | 'emailedAt'>>;
+/** The columns the fan-out writes, the same list its insert SQL names; the rest take their defaults. */
+export type NotificationInsert = Required<
+  Pick<
+    InsertNotificationModel,
+    | 'userId'
+    | 'kind'
+    | 'entityType'
+    | 'subjectId'
+    | 'contextId'
+    | 'channelId'
+    | 'channelType'
+    | 'organizationId'
+    | 'tenantId'
+    | 'activityId'
+    | 'actorId'
+  >
+>;
 
 /** A row the fan-out wrote, with its id. */
 export type WrittenNotification = NotificationInsert & { id: string };
@@ -262,7 +277,10 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
 
   return ctx.var.db
     .selectDistinctOn([usersTable.id], {
-      ...pick(usersTable, ['id', 'email', 'name', 'languageCode']),
+      id: usersTable.id,
+      email: usersTable.email,
+      name: usersTable.name,
+      languageCode: usersTable.languageCode,
       mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, ${defaultPreferences.mentionEmail})`,
       commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, ${defaultPreferences.commentEmail})`,
     })
@@ -332,7 +350,14 @@ export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart,
 
   return (
     ctx.var.db
-      .selectDistinctOn([usersTable.id], { userId: usersTable.id, digest, windowStart, ...pick(usersTable, ['email', 'name', 'languageCode']) })
+      .selectDistinctOn([usersTable.id], {
+        userId: usersTable.id,
+        digest,
+        windowStart,
+        email: usersTable.email,
+        name: usersTable.name,
+        languageCode: usersTable.languageCode,
+      })
       .from(usersTable)
       // Verified addresses only.
       .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))

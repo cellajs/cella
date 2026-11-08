@@ -16,7 +16,6 @@ import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import type { MergePatch } from '#/utils/merge-patch';
 import { getOrderColumns } from '#/utils/order-column';
-import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
 /** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
@@ -62,7 +61,14 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
   const orderBy = getOrderColumns({
     sort,
     order,
-    columns: { ...pick(usersTable, ['id', 'name', 'email', 'createdAt']), lastSeenAt: lastSeenOrder, role: systemRolesTable.role },
+    columns: {
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      createdAt: usersTable.createdAt,
+      lastSeenAt: lastSeenOrder,
+      role: systemRolesTable.role,
+    },
     tieBreaker: usersTable.id,
   });
 
@@ -282,7 +288,9 @@ export const findOrphanedProvisionalUserIds = async (ctx: DbContext, { ids }: Us
 };
 
 /** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
-export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
+export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
+  return ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
+};
 
 interface UpdateUserOpts {
   id: string;

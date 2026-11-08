@@ -42,7 +42,10 @@ describe('backend log redaction paths', () => {
   });
 
   it('redacts the auth headers of a logged request', () => {
-    const logged = collectLog({ msg: 'req', req: { headers: { authorization: 'Bearer sk_live', cookie: 'app-session=abc', 'user-agent': 'ua' } } });
+    const logged = collectLog({
+      msg: 'req',
+      req: { headers: { authorization: 'Bearer sk_live', cookie: 'app-session=abc', 'user-agent': 'ua' } },
+    });
     const headers = (logged.req as { headers: Record<string, unknown> }).headers;
 
     expect(headers.authorization).toBe(censor);

@@ -88,7 +88,9 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   }
 
   const status = rollupStatus(components);
-  return { response: { status, uptime: Math.floor(process.uptime()), components }, httpStatus: status === 'unhealthy' ? 503 : 200 };
+  const response: HealthResponse = { status, uptime: Math.floor(process.uptime()), components };
+  const httpStatus = status === 'unhealthy' ? 503 : 200;
+  return { response, httpStatus };
 }
 
 /**

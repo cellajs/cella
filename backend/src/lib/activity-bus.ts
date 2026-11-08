@@ -33,7 +33,11 @@ export const messageRowSchema = z.object({
   movedFrom: permissionRowDataSchema.nullable().optional(),
 });
 
-/** One product row of an event. */
+/**
+ * One product row of an event: the activity it was recorded as (its id, writer, changed fields and stx), the fields
+ * that decide who may read it, its org-sequence position, and for a row whose path changed the same fields of the row
+ * before the move.
+ */
 export type ActivityRow = z.infer<typeof messageRowSchema>;
 
 /** What every event carries: its type, action and place. `trace` stays internal for OTel correlation. */
@@ -76,7 +80,8 @@ export function getEventData<T extends Exclude<TrackedType, ProductEntityType>>(
   event: RowActivityEvent,
   trackedType: T,
 ): TrackedModel<T> | undefined {
-  return event.entityType === trackedType || event.resourceType === trackedType ? (event.rowData as TrackedModel<T>) : undefined;
+  const ofTrackedType = event.entityType === trackedType || event.resourceType === trackedType;
+  return ofTrackedType ? (event.rowData as TrackedModel<T>) : undefined;
 }
 
 type EventHandler<T extends TrackedEventType> = (event: ActivityEventOf<T>) => void | Promise<void>;

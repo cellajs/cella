@@ -34,7 +34,12 @@ describe('security inbox mails', async () => {
 
     expect(response.status).toBe(403);
     expect(inboxMails()).toEqual([
-      { name: 'Security', type: 'sysadmin-fail', lng: appConfig.defaultLanguage, details: { ip: expect.any(String), route: '/requests' } },
+      {
+        name: 'Security',
+        type: 'sysadmin-fail',
+        lng: appConfig.defaultLanguage,
+        details: { ip: expect.any(String), route: '/requests' },
+      },
     ]);
   });
 
@@ -64,7 +69,12 @@ describe('security inbox mails', async () => {
     await createTenant({ var: { db } }, { name: 'Acme', createdBy: user.id, userEmail: user.email });
 
     expect(inboxMails()).toEqual([
-      { name: 'Security', type: 'tenant-created', lng: appConfig.defaultLanguage, details: { tenantName: 'Acme', userEmail: user.email } },
+      {
+        name: 'Security',
+        type: 'tenant-created',
+        lng: appConfig.defaultLanguage,
+        details: { tenantName: 'Acme', userEmail: user.email },
+      },
     ]);
   });
 

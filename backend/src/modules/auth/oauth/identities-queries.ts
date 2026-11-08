@@ -30,7 +30,12 @@ export const findIdentityById = async (ctx: DbContext, { id }: { id: string }) =
 /** The user's verified OAuth identities: the provider, the address it asserted last, when it was linked and last signed in. */
 export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db
-    .select({ provider: identitiesTable.issuer, ...pick(identitiesTable, ['email', 'createdAt', 'lastUsedAt']) })
+    .select({
+      provider: identitiesTable.issuer,
+      email: identitiesTable.email,
+      createdAt: identitiesTable.createdAt,
+      lastUsedAt: identitiesTable.lastUsedAt,
+    })
     .from(identitiesTable)
     .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)));
 

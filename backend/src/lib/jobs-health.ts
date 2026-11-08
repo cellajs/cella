@@ -89,7 +89,13 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
     deadLetterDepth: row.dead_letter ? (queuedByName.get(row.dead_letter) ?? 0) : null,
   }));
   const cronOn = version.cron_on ? new Date(version.cron_on) : null;
-  return { installed: true, schema: jobsSchema, cronOn: cronOn?.toISOString() ?? null, cronAgeMs: cronOn ? now - cronOn.getTime() : null, queues };
+  return {
+    installed: true,
+    schema: jobsSchema,
+    cronOn: cronOn?.toISOString() ?? null,
+    cronAgeMs: cronOn ? now - cronOn.getTime() : null,
+    queues,
+  };
 }
 
 /**
@@ -100,7 +106,12 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
  */
 export function mapJobsComponent(snapshot: JobsHealthSnapshot, expectsCron: boolean): HealthComponent {
   if (!snapshot.installed) {
-    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_not_installed', details: { schema: snapshot.schema, queues: [] } };
+    return {
+      status: 'degraded',
+      checkedVia: 'local',
+      reason: 'jobs_not_installed',
+      details: { schema: snapshot.schema, queues: [] },
+    };
   }
   const reasons: string[] = [];
   if (expectsCron && (snapshot.cronAgeMs === null || snapshot.cronAgeMs > cronStaleMs)) reasons.push('cron_stale');

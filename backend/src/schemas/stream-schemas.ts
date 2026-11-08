@@ -124,7 +124,10 @@ export type StreamSignal = z.infer<typeof streamSignalSchema>;
  * the client reconnects, and its catch-up brings the new generation.
  */
 export const streamErrorSchema = z
-  .object({ code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']), message: z.string() })
+  .object({
+    code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
+    message: z.string(),
+  })
   .openapi('StreamError', {
     description:
       'Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.',

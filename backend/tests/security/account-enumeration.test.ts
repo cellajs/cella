@@ -91,7 +91,11 @@ describe('Account enumeration', async () => {
 
   /** A raw JSON request: the SDK drops body fields its schema lacks, and these tests send them on purpose. */
   const post = (path: string, body: unknown, cookie?: string) =>
-    app.request(path, { method: 'POST', headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body) });
+    app.request(path, {
+      method: 'POST',
+      headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) },
+      body: JSON.stringify(body),
+    });
 
   /** An account holding a passkey, and an address nobody holds. */
   async function accountAndStranger() {

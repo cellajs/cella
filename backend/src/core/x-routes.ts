@@ -218,9 +218,11 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   );
 
   const owners = chainErrors(config, xMiddlewares, !!target);
-  for (const [code, owner] of owners) {
-    if (checksAuthoringRules && config.responses[code] === sharedErrorResponses[code]) {
-      throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
+  if (checksAuthoringRules) {
+    for (const [code, owner] of owners) {
+      if (config.responses[code] === sharedErrorResponses[code]) {
+        throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
+      }
     }
   }
   const responses = { ...pickShared(owners.keys()), ...config.responses, ...(target && preconditionResponses(target, config.responses[200])) };

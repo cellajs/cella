@@ -60,7 +60,8 @@ export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAcco
     // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input) is
     // thrown as it is.
     const pgError = extractPgError(error);
-    if (pgError?.code === '23505' && isAddressConstraint(pgError.constraint)) throw new AppError(409, 'email_exists', 'warn');
+    const addressTaken = pgError?.code === '23505' && isAddressConstraint(pgError.constraint);
+    if (addressTaken) throw new AppError(409, 'email_exists', 'warn');
     throw error;
   }
 };

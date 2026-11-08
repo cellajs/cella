@@ -42,7 +42,9 @@ const oauthProviders = {
         fetch('https://api.github.com/user', init),
         fetch('https://api.github.com/user/emails', init),
       ]);
-      return transformGithubUserData((await userResponse.json()) as GithubUserProps, (await emailsResponse.json()) as GithubUserEmailProps[]);
+      const user = (await userResponse.json()) as GithubUserProps;
+      const emails = (await emailsResponse.json()) as GithubUserEmailProps[];
+      return transformGithubUserData(user, emails);
     },
   },
   google: { client: googleAuth, scopes: ['openid', 'profile', 'email'], fetchUser: verifiedProfile },

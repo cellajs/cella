@@ -15,7 +15,6 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { tenantOfKind } from '#/modules/tenants/tenants-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
-import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
 /** The organization a tenant holds (organizations.tenant_id is unique); undefined before it is created. */
@@ -125,7 +124,12 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   const orderBy = getOrderColumns({
     sort,
     order,
-    columns: { ...pick(organizationsTable, ['id', 'name', 'createdAt']), displayOrder: membershipsTable.displayOrder },
+    columns: {
+      id: organizationsTable.id,
+      name: organizationsTable.name,
+      createdAt: organizationsTable.createdAt,
+      displayOrder: membershipsTable.displayOrder,
+    },
     tieBreaker: organizationsTable.id,
   });
 

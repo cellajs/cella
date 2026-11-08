@@ -13,7 +13,10 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(systemRoutes.inviteUsers, async (ctx) => ctx.json(await createInviteOp(ctx, ctx.req.valid('json').emails), 200));
 
-app.openapi(systemRoutes.countSystemInvitations, async (ctx) => ctx.json({ count: await countLiveSystemInvitations(ctx) }, 200));
+app.openapi(systemRoutes.countSystemInvitations, async (ctx) => {
+  const count = await countLiveSystemInvitations(ctx);
+  return ctx.json({ count }, 200);
+});
 
 app.openapi(systemRoutes.batchDeleteUsers, async (ctx) => ctx.json(await deleteUsersOp(ctx, ctx.req.valid('json').ids), 200));
 

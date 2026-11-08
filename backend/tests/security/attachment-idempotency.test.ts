@@ -37,7 +37,10 @@ describe('Idempotent attachment creates and deletes', async () => {
 
   /** A create body for an upload in `home`, sent as the sync mutation `mutationId`. */
   const bodyFor = (id: string, mutationId: string, home = plan) =>
-    attachmentBody(id, home, { bucketName: appConfig.s3.privateBucket, stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} } });
+    attachmentBody(id, home, {
+      bucketName: appConfig.s3.privateBucket,
+      stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
+    });
 
   const create = async (
     as: { sessionCookie: string },

@@ -17,12 +17,13 @@ export async function getUserOp(ctx: UserContext, relatableUserId: string, opts:
 
   // Skip relatable filtering when the caller requests themself by id or slug.
   const isSelf = relatableUserId === requestingUser.id || (bySlug && relatableUserId === requestingUser.slug);
+  const seesEveryone = isSelf || isSystemAdmin;
 
   // Defense in depth: verify shared org membership at query level (mirrors relatableGuard)
   const myOrgIds = [...new Set(memberships.map((membership) => membership.organizationId))];
-  if (!isSelf && !isSystemAdmin && myOrgIds.length === 0) throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
+  if (!seesEveryone && myOrgIds.length === 0) throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
 
-  const memberOfAny = isSelf || isSystemAdmin ? undefined : myOrgIds;
+  const memberOfAny = seesEveryone ? undefined : myOrgIds;
   const targetUser = await findMemberUser(ctx, { identifier: relatableUserId, bySlug, memberOfAny });
 
   if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
@@ -31,7 +32,6 @@ export async function getUserOp(ctx: UserContext, relatableUserId: string, opts:
 
   // include=mfa: whether an account has MFA on is for the account itself, system admins and the admins of an
   // organization the user is a member of. Shown to any co-member, it lists the accounts without a second factor.
-  const seesEveryone = isSelf || isSystemAdmin;
   const adminOrgIds = seesEveryone ? undefined : administeredOrganizationIds(ctx, myOrgIds);
   if (adminOrgIds?.length === 0) return targetUser;
 

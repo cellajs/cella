@@ -32,7 +32,8 @@ export function getS3Client(): S3Client {
 /** Size in bytes of the object stored under `key`, or null when the bucket holds none. */
 export async function storedObjectSize(bucketName: string, key: string): Promise<number | null> {
   try {
-    return (await getS3Client().send(new HeadObjectCommand({ Bucket: bucketName, Key: key }))).ContentLength ?? 0;
+    const head = await getS3Client().send(new HeadObjectCommand({ Bucket: bucketName, Key: key }));
+    return head.ContentLength ?? 0;
   } catch (error) {
     if (error instanceof NotFound) return null;
     throw error;

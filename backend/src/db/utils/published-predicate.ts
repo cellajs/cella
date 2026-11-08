@@ -5,7 +5,9 @@ import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 export const hasPublishedAt = (table: AnyPgTable): table is AnyPgTable & { publishedAt: PgColumn } => 'publishedAt' in table;
 
 /** For collection, delta and catchup reads: excludes drafts for everyone, the author included. */
-export const publishedRowsPredicate = (table: AnyPgTable): SQL | undefined => (hasPublishedAt(table) ? isNotNull(table.publishedAt) : undefined);
+export function publishedRowsPredicate(table: AnyPgTable): SQL | undefined {
+  return hasPublishedAt(table) ? isNotNull(table.publishedAt) : undefined;
+}
 
 /**
  * SQL twin of `draftVisibleTo` (shared): published rows, plus the actor's own drafts. Undefined for a table without

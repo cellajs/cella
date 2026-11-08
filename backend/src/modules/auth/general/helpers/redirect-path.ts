@@ -17,7 +17,9 @@ export const resolvePostAuthRedirectPath = (
   const explicitRedirect = frontendRedirectPath(redirectPath);
 
   // MFA interrupts the flow; hand the redirect to the MFA page so it survives the challenge.
-  if (mfaPath) return explicitRedirect ? `${mfaPath}?redirect=${encodeURIComponent(explicitRedirect)}` : mfaPath;
+  if (mfaPath) {
+    return explicitRedirect ? `${mfaPath}?redirect=${encodeURIComponent(explicitRedirect)}` : mfaPath;
+  }
 
   if (!explicitRedirect) return getPostAuthRedirectPath(user);
 

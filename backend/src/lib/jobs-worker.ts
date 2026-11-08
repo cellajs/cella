@@ -76,7 +76,9 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   baseLog.info(`Jobs worker: ${scheduled}${queues.length ? `; working queues: ${queues.join(', ')}` : ''}`);
 
   if (!options.inProcess) {
-    const server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => baseLog.info(`Jobs worker listening on port ${port}`));
+    const server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => {
+      baseLog.info(`Jobs worker listening on port ${port}`);
+    });
     setupGracefulShutdown({
       name: 'jobs',
       cleanup: async () => {

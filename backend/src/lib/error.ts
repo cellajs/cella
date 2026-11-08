@@ -130,7 +130,8 @@ export function toClientError(
 
   if (err instanceof HTTPException) {
     log.warn(`HTTPException ${err.status}`, { err, ...fields });
-    return jsonClientError(httpExceptionType(err.status), err.status, hideIfServerError(err.status, err.message || 'Request rejected'), 'warn');
+    const detail = hideIfServerError(err.status, err.message || 'Request rejected');
+    return jsonClientError(httpExceptionType(err.status), err.status, detail, 'warn');
   }
 
   const isAppError = err instanceof AppError;
@@ -184,10 +185,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
 
   // An error status the route does not document is an authoring mistake: a test gets a 500 that names the fix, development a warning.
   const undocumented = checksAuthoringRules ? undocumentedErrorStatus(ctx.var.operationId, answered.status, answered.type) : undefined;
-  if (undocumented && appConfig.mode === 'test') console.error(undocumented);
+  const undocumentedInTest = undocumented && appConfig.mode === 'test';
+  if (undocumentedInTest) console.error(undocumented);
   else if (undocumented) log.warn(undocumented);
-  const clientError =
-    undocumented && appConfig.mode === 'test' ? { ...answered, ...jsonClientError('server_error', 500, undocumented, 'error') } : answered;
+  const clientError = undocumentedInTest ? { ...answered, ...jsonClientError('server_error', 500, undocumented, 'error') } : answered;
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
   ctx.set('errorStatus', clientError.status);

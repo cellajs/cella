@@ -45,11 +45,16 @@ export const tenantGuard = xMiddleware(
 
     // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
     // so a key learns nothing about other tenants.
-    if (actor.kind === 'service' && actor.tenantId !== tenantId) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
+    const serviceOfOtherTenant = actor.kind === 'service' && actor.tenantId !== tenantId;
+    if (serviceOfOtherTenant) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
 
     const tenant = await loadTenant(tenantId);
-    if (!tenant || !(await holdsFoothold(ctx, actor, tenant))) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
-    if (tenant.status !== 'active') throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: tenant.status } });
+    if (!tenant || !(await holdsFoothold(ctx, actor, tenant))) {
+      throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
+    }
+    if (tenant.status !== 'active') {
+      throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: tenant.status } });
+    }
     // A tenant past its expiry is over before the sweep removes it: a demo ends when its time does.
     if (tenant.expiresAt && tenant.expiresAt < getIsoDate()) {
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: 'expired' } });

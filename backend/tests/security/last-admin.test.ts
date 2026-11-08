@@ -127,7 +127,11 @@ describe('last organization admin', async () => {
     });
     expect(steppedDown.response.status).toBe(200);
 
-    const deleted = await call(batchDeleteOrganizations, { path: { tenantId: org.tenantId }, body: { ids: [org.id] }, headers: headers(member) });
+    const deleted = await call(batchDeleteOrganizations, {
+      path: { tenantId: org.tenantId },
+      body: { ids: [org.id] },
+      headers: headers(member),
+    });
     expect(deleted.response.status).toBe(200);
     // Deleting archives the tenant; the archived-tenant sweep removes the organization later.
     const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));

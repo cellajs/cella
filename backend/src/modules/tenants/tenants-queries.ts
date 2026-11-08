@@ -31,10 +31,15 @@ const tenantColumns = pick(tenantsTable, [
   'updatedBy',
 ]);
 
+const tenantOrderColumns = pick(tenantsTable, ['name', 'createdAt']);
+
 /** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
 const selectTenants = (ctx: DbContext) =>
   ctx.var.db
-    .select({ ...tenantColumns, organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']) })
+    .select({
+      ...tenantColumns,
+      organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']),
+    })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
     .$dynamic();
@@ -70,7 +75,7 @@ interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySc
 export const findTenantsPaginated = async (ctx: DbContext, { q, status, kinds, sort, order, limit, offset }: FindTenantsPaginatedOpts) => {
   const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined, inArray(tenantsTable.kind, kinds));
 
-  const orderBy = getOrderColumns({ sort, order, columns: pick(tenantsTable, ['name', 'createdAt']), tieBreaker: tenantsTable.id });
+  const orderBy = getOrderColumns({ sort, order, columns: tenantOrderColumns, tieBreaker: tenantsTable.id });
 
   const itemsQuery = selectTenants(ctx)
     .where(filter)

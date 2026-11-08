@@ -31,7 +31,8 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
   const via = passkeyData ? 'passkey' : totpCode ? 'totp' : emailCode ? 'email' : null;
   // The `enroll` methods are every proof this endpoint takes: the factors held, and the mail where it is offered.
   const { methods } = await readStepUp(ctx, 'enroll');
-  if (!via || !methods.includes(via)) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'proof_not_offered' } });
+  const proofNotOffered = !via || !methods.includes(via);
+  if (proofNotOffered) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'proof_not_offered' } });
 
   if (passkeyData) await verifyPasskeyAssertion(ctx, { assertion: passkeyData, purpose: 'step-up', userId: user.id });
   if (totpCode) await verifyTotp({ user, code: totpCode });

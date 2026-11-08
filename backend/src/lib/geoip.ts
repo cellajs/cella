@@ -82,7 +82,9 @@ export const lookupIp = async (ip: string | null | undefined): Promise<{ country
   if (!target) return { country: null, asn: null };
   try {
     const [countryReader, asnReader] = await Promise.all([loadReader(country), loadReader(asn)]);
-    return { country: countryReader?.get(target)?.country?.iso_code ?? null, asn: asnReader?.get(target)?.autonomous_system_number ?? null };
+    const countryCode = countryReader?.get(target)?.country?.iso_code ?? null;
+    const asnNumber = asnReader?.get(target)?.autonomous_system_number ?? null;
+    return { country: countryCode, asn: asnNumber };
   } catch (err) {
     log.warn('GeoIP lookup failed', { err });
     return { country: null, asn: null };

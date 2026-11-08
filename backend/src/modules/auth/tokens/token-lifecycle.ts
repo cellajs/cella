@@ -62,7 +62,12 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
     ...(tokenPolicies[token.kind].carrier === 'code' ? newHashedCode() : newHashedToken()),
   }));
   const rows = await insertTokens(ctx, {
-    values: issued.map(({ token, id, hash }) => ({ ...token, id, secret: hash, expiresAt: isoDateIn(tokenPolicies[token.kind].ttl) })),
+    values: issued.map(({ token, id, hash }) => ({
+      ...token,
+      id,
+      secret: hash,
+      expiresAt: isoDateIn(tokenPolicies[token.kind].ttl),
+    })),
   });
 
   const rowsById = new Map(rows.map((row) => [row.id, row]));
@@ -192,7 +197,8 @@ export const invokeToken = async (ctx: Context<Env>, { kind, rawToken, claimHold
           const txCtx = { var: { db: tx } };
           const won = await redeem(txCtx);
           if (!won) return won;
-          return updateTokenUser(txCtx, { id: won.id, userId: await claimHolder(tx, won) });
+          const userId = await claimHolder(tx, won);
+          return updateTokenUser(txCtx, { id: won.id, userId });
         });
 
   if (redeemed) {

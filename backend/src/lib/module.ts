@@ -82,8 +82,12 @@ export interface NotificationCandidate {
  * Notification source declaration for a product module (`notifications: true` declares nothing). The notification
  * module reads the subject rows from the product table: live rows are the non-deleted, published ones. Titles in the
  * inbox, the digest and the instant mail are the context names: `loadContextNames` when given, else the rows' `name`.
+ * Apps typically declare only `resolveRecipients` and `resolveContextId`, with `loadContextNames` when the context is
+ * a row of another product.
  *
- * The fan-out runs after commit off the CDC activity stream, so an operation needs no call for it. Deep links need no
+ * The fan-out runs after commit off the CDC activity stream, so an operation needs no call for it. It reads mentions
+ * from the stored `description` of a created row, or of an updated one whose changed fields include it, and notifies
+ * the mentioned users of its organization who may read the row and were not told about it before. Deep links need no
  * declaration: emails and push carry the subject's location.
  */
 export interface ModuleNotifications<TRow extends NotificationSubjectRow = NotificationSubjectRow> {

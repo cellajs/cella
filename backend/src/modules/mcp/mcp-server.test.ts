@@ -162,7 +162,12 @@ describe('mcp-server', () => {
   });
 
   it('errors when calling a tool that is not registered', async () => {
-    const res = await handle(null, { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'missing_tool', arguments: {} } });
+    const res = await handle(null, {
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: { name: 'missing_tool', arguments: {} },
+    });
     expect(res?.error?.code).toBe(-32602);
   });
 });

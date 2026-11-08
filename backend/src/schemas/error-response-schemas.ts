@@ -88,7 +88,7 @@ const errorResponseOptions = [
 
 type ErrorOption = (typeof errorResponseOptions)[number];
 
-/** The error statuses with a documented response. */
+/** The error statuses with a documented response; an `AppError` carries one of these, 410 or a server error. */
 export type ErrorCode = ErrorOption['code'];
 
 const errorBodySchema = ({ code, name, schemaDescription }: ErrorOption) =>

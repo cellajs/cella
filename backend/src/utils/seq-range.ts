@@ -21,7 +21,10 @@ interface SyncedTable {
  */
 export function seqRangeRead(table: SyncedTable, range: SeqRange | undefined): { where: SQL[]; orderBy?: SQL[] } {
   if (!range) return { where: [isNull(table.deletedAt)] };
-  return { where: [gt(table.seq, range.afterSeq), lte(table.seq, range.untilSeq)], orderBy: [asc(table.seq), asc(table.id)] };
+  return {
+    where: [gt(table.seq, range.afterSeq), lte(table.seq, range.untilSeq)],
+    orderBy: [asc(table.seq), asc(table.id)],
+  };
 }
 
 /**

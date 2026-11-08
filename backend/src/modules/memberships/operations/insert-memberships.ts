@@ -48,7 +48,8 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  const maxOrdersByUser = new Map<string, number>((await findMaxDisplayOrders(ctx, { userIds })).map((r) => [r.userId, r.maxOrder]));
+  const maxOrderRows = await findMaxDisplayOrders(ctx, { userIds });
+  const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder]));
 
   // Rows assigned per user in this run, to step the order by orderGap
   const assignedCounts = new Map<string, number>();

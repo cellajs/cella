@@ -42,5 +42,6 @@ export async function getMembersOp(ctx: UserContext, input: GetMembersInput, { o
       ? await tenantRead(ctx, (readCtx) => findMembersPaginated(readCtx, listOpts))
       : await findMembersPaginated(ctx, listOpts);
 
-  return { items: items.map((item) => ({ ...item, membership: membershipAsSeenBy(item.membership, ctx.var.user.id) })), total };
+  const membersAsSeen = items.map((item) => ({ ...item, membership: membershipAsSeenBy(item.membership, ctx.var.user.id) }));
+  return { items: membersAsSeen, total };
 }

@@ -6,7 +6,8 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
 
 /** Drops primitive fields equal to the stored value; arrays and objects pass through without deep comparison. */
 export function filterNoOpFields(entityData: Record<string, unknown>, incomingFields: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(incomingFields).filter(([key, value]) => !(isPrimitive(value) && entityData[key] === value)));
+  const isNoOp = ([key, value]: [string, unknown]) => isPrimitive(value) && entityData[key] === value;
+  return Object.fromEntries(Object.entries(incomingFields).filter((entry) => !isNoOp(entry)));
 }
 
 /**

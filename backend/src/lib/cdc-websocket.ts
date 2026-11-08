@@ -102,7 +102,10 @@ const workerAwayAfterMs = 60_000;
 /** The worker's latest health report and when it arrived; `health` is null when its shape could not be read. */
 type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
 
-/** The API's end of the CDC worker's socket: one live connection, closed after `idleTimeoutMs` without a message. */
+/**
+ * The API's end of the CDC worker's socket: one live connection, closed after `idleTimeoutMs` without a message. The
+ * internal listener routes and authenticates the upgrade before handing it over.
+ */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;
@@ -281,5 +284,5 @@ class CdcWebSocketServer {
   }
 }
 
-/** The process's one CDC socket. */
+/** The process's one CDC socket: the internal listener hands it the worker's upgrade, `/health` reads its state. */
 export const cdcWebSocketServer = new CdcWebSocketServer();

@@ -13,7 +13,10 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 // Member previews list the organization's top role, so the viewer holds it to appear in one.
 const [previewedRole] = hierarchy.getRoles('organization');
 
-type OrgList = { results: { id: string; included: { members?: { id: string }[]; counts?: unknown } }[]; totalSize: number };
+type OrgList = {
+  results: { id: string; included: { members?: { id: string }[]; counts?: unknown } }[];
+  totalSize: number;
+};
 
 /**
  * A profile lists the organizations a user is a member of. Viewing another user's profile shows only the organizations

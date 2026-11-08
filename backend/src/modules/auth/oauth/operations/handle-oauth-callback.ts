@@ -106,10 +106,12 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
   }
 
   // An account holds the address: its holder signs in to it and connects the provider from there.
-  if (await findUserByEmail(dbCtx, { email: providerUser.email })) throw new AppError(409, 'oauth_email_exists', 'warn');
+  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
-  if (!(await maySignUp(dbCtx, { email: providerUser.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
+  const signUpAllowed = await maySignUp(dbCtx, { email: providerUser.email });
+  if (!signUpAllowed) throw new AppError(403, 'sign_up_restricted', 'info');
 
   return pendingSignUp(providerUser, provider);
 };
@@ -183,7 +185,8 @@ const inviteCallbackFlow = async ({
   if (identity) throw new AppError(409, 'oauth_conflict', 'warn', { meta });
 
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
-  if (await findUserByEmail(dbCtx, { email: providerUser.email })) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
+  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
 
   if (!providerUser.provesAddress) return pendingSignUp(providerUser, provider);
 
@@ -192,7 +195,8 @@ const inviteCallbackFlow = async ({
     const txCtx = { var: { db: tx } };
     const user = await createAccount(txCtx, { newUser: providerUser, via: provider });
     const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
-    return { userId: user.id, identity: await insertIdentity(txCtx, { values, verified: true }) };
+    const identity = await insertIdentity(txCtx, { values, verified: true });
+    return { userId: user.id, identity };
   });
 
   const user = await findUserById(dbCtx, { id: created.userId });
@@ -290,7 +294,8 @@ const completeSignUp = async ({
     const { name, slug, givenName, familyName } = signUp;
     const user = await createAccount(txCtx, { newUser: { email, name, slug, givenName, familyName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
-    return { userId: user.id, identity: await insertIdentity(txCtx, { values, verified: true }) };
+    const identity = await insertIdentity(txCtx, { values, verified: true });
+    return { userId: user.id, identity };
   });
   // The spend is committed: the cookie that named the verification goes with it.
   deleteAuthCookie(ctx, 'oauth-verification');
@@ -344,5 +349,6 @@ const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>
   }
 
   const reason = info.type === 'pending' ? 'signup' : 'connect';
-  return ctx.redirect(new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl), 302);
+  const verificationPage = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
+  return ctx.redirect(verificationPage, 302);
 };

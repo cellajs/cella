@@ -153,7 +153,11 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
   const headers = (cookie?: string) => (cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders);
 
   const pull = (cookie: string | undefined, entityId: string, vector = emptyVector, scope = ownScope()) =>
-    call(pullYjsDocument, { path: scope, body: { entityType: 'attachment', entityId, stateVector: toBase64url(vector) }, headers: headers(cookie) });
+    call(pullYjsDocument, {
+      path: scope,
+      body: { entityType: 'attachment', entityId, stateVector: toBase64url(vector) },
+      headers: headers(cookie),
+    });
 
   const push = (cookie: string | undefined, entityId: string, generation: string, update: Uint8Array, scope = ownScope()) =>
     call(pushYjsUpdate, {

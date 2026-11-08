@@ -42,7 +42,9 @@ const channelColumns = appConfig.channelEntityTypes.map((channelType) => appConf
 /** The event as it reads for one row: every channel id column comes from that row, so a reparented row is judged where it is. */
 function rowScopedEvent(event: AppStreamProductEvent, rowData: PermissionRowData): AppStreamProductEvent {
   const overrides: Partial<ChannelIdColumns> = {};
-  for (const columnKey of channelColumns) if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
+  for (const columnKey of channelColumns) {
+    if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
+  }
   return { ...event, ...overrides, organizationId: rowData.organizationId };
 }
 
@@ -144,7 +146,8 @@ export function readerFrames<S extends SubscriberAccess>(
       return getOrCreate(byAuthor, index, () => rowReadDecisions([accesses[index]], event, rowData)[0]);
     };
     const signature = authors.has(subscriber.userId) ? `author:${index}` : classes.map(({ allowed }) => (allowed[index] ? '1' : '0')).join('');
-    getOrCreate(frames, signature, () => ({ rows: event.rows.filter(reads), readers: [] })).readers.push(subscriber);
+    const frame = getOrCreate(frames, signature, () => ({ rows: event.rows.filter(reads), readers: [] }));
+    frame.readers.push(subscriber);
   }
   return [...frames.values()].filter(({ rows }) => rows.length > 0);
 }

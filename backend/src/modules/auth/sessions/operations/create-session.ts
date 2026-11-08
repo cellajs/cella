@@ -52,7 +52,8 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
   try {
     const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
-    return { deviceIdHash, previousSignInAt: (await findLastSignInAt(dbCtx, { userId })) ?? null };
+    const previousSignInAt = (await findLastSignInAt(dbCtx, { userId })) ?? null;
+    return { deviceIdHash, previousSignInAt };
   } catch (err) {
     log.error('Failed to enroll device on sign-in', { userId, err });
     return null;
@@ -65,6 +66,7 @@ export interface SessionExtras {
   steppedUpVia?: StepUpProof | null;
   /** When that proof was made, an ISO timestamp; default now. An institution's MFA dates from its authentication. */
   steppedUpAt?: string;
+  /** The connection (an institution's trust) an SSO sign-in came through. */
   connectionId?: string | null;
 }
 

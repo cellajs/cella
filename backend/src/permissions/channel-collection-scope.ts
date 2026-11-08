@@ -53,7 +53,8 @@ export const resolveChannelCollectionReadScope = (
   const byLevel = new Map<ChannelEntityType, { managedIds: Set<string>; publishedIds: Set<string> }>();
 
   for (const membership of access.memberships) {
-    if (membership.organizationId !== organizationId || !ancestors.includes(membership.channelType)) continue;
+    if (membership.organizationId !== organizationId) continue;
+    if (!ancestors.includes(membership.channelType)) continue;
 
     const grantLevel = membership.channelType;
     const isOrganization = grantLevel === 'organization';
@@ -164,5 +165,7 @@ export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, col
 };
 
 /** `excludeArchived` for the LEFT-join variant: a row the caller archived is hidden, not shown as a discovery row. */
-export const excludeArchivedWhere = (columns: ChannelListReadColumns): SQL | undefined =>
-  columns.membershipArchived ? or(isNull(columns.membershipUserId), eq(columns.membershipArchived, false)) : undefined;
+export const excludeArchivedWhere = (columns: ChannelListReadColumns): SQL | undefined => {
+  if (!columns.membershipArchived) return undefined;
+  return or(isNull(columns.membershipUserId), eq(columns.membershipArchived, false));
+};

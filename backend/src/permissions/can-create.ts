@@ -11,7 +11,8 @@ import { accessFrom } from '#/permissions/access';
  */
 export const canCreateEntity = (ctx: ActorContext, subject: SubjectForPermission) => {
   const { entityType } = subject;
-  if (!checkAccess(accessFrom(ctx), 'create', subject).allowed) throw new AppError(403, 'forbidden', 'warn', { entityType });
+  const { allowed } = checkAccess(accessFrom(ctx), 'create', subject);
+  if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
   // Defense in depth: a subject scoped to an organization must name the organization of the request.
   const { organization } = ctx.var;

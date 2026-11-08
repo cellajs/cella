@@ -19,7 +19,8 @@ const systemUploadSub = (ctx: UserContext) => {
  */
 const organizationUploadSub = (ctx: UserContext, organizationId?: string) => {
   const isMember = ctx.var.memberships.some((membership) => membership.organizationId === organizationId);
-  if (organizationId && !isMember && !ctx.var.isSystemAdmin) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+  const outsideOrganization = organizationId && !isMember && !ctx.var.isSystemAdmin;
+  if (outsideOrganization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
   return [organizationId, ctx.var.user.id].filter((part): part is string => typeof part === 'string').join('/');
 };
 
