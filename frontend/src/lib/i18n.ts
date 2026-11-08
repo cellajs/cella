@@ -23,8 +23,8 @@ const initOptions: InitOptions = {
   },
   react: {
     useSuspense: false,
-    // `Trans` parses its translation as markup, so it escapes interpolated values and unescapes the text after parsing
-    transDefaultProps: { tOptions: { interpolation: { escapeValue: true } }, shouldUnescape: true },
+    // `Trans` parses its translation as markup, so it escapes interpolated values; it decodes entities after parsing
+    transDefaultProps: { tOptions: { interpolation: { escapeValue: true } } },
   },
   defaultNS: 'c',
   // Locale files are flat, and a dot belongs to the key (`docs` and `docs.openapi_specification` are both keys)

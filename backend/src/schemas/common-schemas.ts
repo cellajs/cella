@@ -27,7 +27,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * A zod error param translated when a value fails. Schemas are built while the routes import, before the server
  * initializes i18n, so a message translated at build time would stay zod's default.
  */
-export const translatedError = (key: `error:${TemplateErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
+export const translatedError = (key: `error:${TemplateErrorKey}`, options: TOptions = {}) => ({ error: () => t(key, options) });
 
 /** The error of a field that holds `min` to `maxLength.field` characters. */
 const lengthError = (name: string, min: number) => translatedError('error:invalid_between_num', { name, min, max: maxLength.field });

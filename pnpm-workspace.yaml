@@ -19,7 +19,7 @@ ignoredOptionalDependencies:
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   # Only the CLI version a release needs before its day is up: the entry is removed, or bumped when a release needs another.
-  - '@cellajs/cli@0.6.6'
+  - '@cellajs/cli@0.6.7'
 overrides:
   # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
   '@blocknote/shadcn>lucide-react': ^1.59.0
@@ -30,7 +30,7 @@ overrides:
   '@tailwindcss/node>lightningcss': ^1.33.0
   glob@>=9.0.0 <=14.0.1: ^14.0.2
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
-  minimatch@<11.0.1: ^11.0.1
+  minimatch@>=7.0.0 <11.0.1: ^11.0.1
   # Storybook pins an older oxc-resolver exactly; knip's version serves both.
   oxc-resolver: 11.24.2
   postcss-selector-parser@<6.1.5: ^6.1.5
@@ -50,5 +50,7 @@ updateConfig:
   ignoreDependencies:
     # 2.6 rewrites about 280 files and adds new lint errors, so it waits for an upgrade of its own (cella#1450).
     - '@biomejs/biome'
+    # @vitejs/plugin-react caps its peer at <0.157.0, so a newer transform leaves the compiler without a plugin.
+    - oxc-transform-react
     # This package only hosts the JS compiler API for SDK codegen; 7, the native rewrite, no longer has that API.
     - typescript

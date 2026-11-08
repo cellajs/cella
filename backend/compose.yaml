@@ -14,6 +14,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     command:
+      # Postgres keeps WAL up to this ceiling after a seed: 1GB per local database by default.
+      - -c
+      - max_wal_size=256MB
       - -c
       - wal_level=logical
       - -c
