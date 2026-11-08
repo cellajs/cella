@@ -100,7 +100,7 @@ caller's IP address. A new token route adds its template to `secretPathTemplates
 
 A request is one trace. The frontend sends `traceparent` on API calls, and the backend's auto-instrumentation continues it. A database change is a second trace. CDC starts one per change and sends its context as `_trace` with the message. The backend's `sync.activitybus.receive` span continues it.
 
-The two are not joined. The WAL carries no trace context, so the change a request wrote starts a trace of its own. A stream frame carries none either, so the client's `sync.message.process` span is a third.
+The two are not joined. The change a request wrote starts a trace of its own, since the WAL carries no trace context. The client's `sync.message.process` span is a third, since a stream frame carries none either.
 
 ## Health endpoints
 
