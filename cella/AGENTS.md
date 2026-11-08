@@ -33,7 +33,9 @@ The API is same-origin: it has no CORS middleware. Guards and their usual chains
 
 ## Error handling
 
-Throw `AppError` with an i18n `type` from `shared/locales/en/error` (an app's own in `shared/locales/en/appError`); Postgres errors are mapped to one automatically. The body is RFC 9457 Problem Details: the type's text is its `title`, the error's message its `detail`, and each `meta` entry a top-level member, which a client reads as `error.<member>`. The client's global handler (`frontend/src/query/on-error.ts`) toasts every `ApiError`. A mutation toasts its own error only when it sets `meta.suppressGlobalErrorToast`, as product entities do through `createResourceError`; any other local `onError` toast shows the failure twice.
+Throw `AppError` with an i18n `type` from `shared/locales/en/error` (an app's own in `shared/locales/en/appError`); Postgres errors are mapped to one automatically. The body is RFC 9457 Problem Details: the type's text is its `title`, the error's message its `detail`, and each `meta` entry a top-level member, which a client reads as `error.<member>`.
+
+The client's global handler (`frontend/src/query/on-error.ts`) toasts every `ApiError`. A mutation toasts its own error only when it sets `meta.suppressGlobalErrorToast`, as product entities do through `createResourceError`; any other local `onError` toast shows the failure twice.
 
 ## Auth and permissions
 
@@ -74,7 +76,9 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 
 ## Cross-product references
 
-Relationships between products are data, never permission indirection: permissions and public read flow through the hierarchy's channel columns. Exactly two mechanisms exist ([Embeddings](./SYNC_ENGINE.md#embeddings)): a host id array declared in `appConfig.productEmbeddings`, whose config-driven machinery never needs engine code, and the mutation bus (`onMutation`/`dispatchMutation`) for lifecycle side effects an embedding cannot express. Derive usage counts on the client from synced host rows, and let a host write keep only ids of live rows in its organization (`filterExistingProductIds`). A child-side host FK (a nullable `<host>Id` column pointing at another product) is deprecated: sync views, CDC, propagation hints and counters do not see it ([conversion guide](https://github.com/cellajs/cella/blob/0.23.0/cella/migrations/20260730T1009-owned-host-embedding/README.md)).
+Relationships between products are data, never permission indirection: permissions and public read flow through the hierarchy's channel columns. Exactly two mechanisms exist ([Embeddings](./SYNC_ENGINE.md#embeddings)): a host id array declared in `appConfig.productEmbeddings`, whose config-driven machinery never needs engine code, and the mutation bus (`onMutation`/`dispatchMutation`) for lifecycle side effects an embedding cannot express.
+
+Derive usage counts on the client from synced host rows, and let a host write keep only ids of live rows in its organization (`filterExistingProductIds`). A child-side host FK (a nullable `<host>Id` column pointing at another product) is deprecated: sync views, CDC, propagation hints and counters do not see it ([conversion guide](https://github.com/cellajs/cella/blob/0.23.0/cella/migrations/20260730T1009-owned-host-embedding/README.md)).
 
 ## Coding patterns
 
@@ -114,7 +118,9 @@ Relationships between products are data, never permission indirection: permissio
 
 ## Testing
 
-Verify every change (a run, a measurement or a hand check the PR description reports); committing a test is a separate decision. A committed test earns its place by one of four reasons: it proves an attack fails, reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball. Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test, and the test modes: [Testing](./TESTING.md#goals).
+Verify every change (a run, a measurement or a hand check the PR description reports); committing a test is a separate decision. A committed test earns its place by one of four reasons: it proves an attack fails, reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball.
+
+Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test, and the test modes: [Testing](./TESTING.md#goals).
 
 ## Deploy debugging
 
