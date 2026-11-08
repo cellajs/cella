@@ -25,10 +25,6 @@ The jobs worker runs from the backend image. Its own service cuts over stop-firs
 
 A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job. It belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
-A cron job runs once per period. A missed period sends one catch-up job. A run that throws is logged, and the next period runs again.
-
-Two runs never overlap while each ends within its expiry. Past its expiry, a second jobs worker can start the next run beside the first. A job whose runs must not overlap stops taking work before its expiry.
-
 ```ts
 defineBackendModule({
   name: 'notifications',
@@ -50,6 +46,10 @@ await boss.send('webhook.deliver', { endpointId, activityId }, { singletonKey: `
 ```
 
 Payloads carry ids, never row bodies. The handler re-reads through the query the API uses.
+
+A cron job runs once per period. A missed period sends one catch-up job. A run that throws is logged, and the next period runs again.
+
+Two runs never overlap while each ends within its expiry. Past its expiry, a second jobs worker can start the next run beside the first. A job whose runs must not overlap stops taking work before its expiry.
 
 ## Roles and the store
 
