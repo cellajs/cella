@@ -7,7 +7,7 @@ import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
 import type { StreamSignalDeclaration } from '#/modules/entities/stream/audiences';
 import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
-import type { NotificationType } from '#/modules/notification/notification-types';
+import type { NotificationKind } from '#/modules/notification/notification-kinds';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
@@ -72,10 +72,10 @@ export interface NotificationSubjectRow {
   [key: string]: unknown;
 }
 
-/** One would-be inbox row, typed by the notification vocabulary (template types plus `appNotificationTypes`). */
+/** One would-be inbox row, typed by the notification vocabulary (template kinds plus `appNotificationKinds`). */
 export interface NotificationCandidate {
   userId: string;
-  type: NotificationType;
+  kind: NotificationKind;
 }
 
 /**
@@ -89,7 +89,7 @@ export interface NotificationCandidate {
 export interface ModuleNotifications<TRow extends NotificationSubjectRow = NotificationSubjectRow> {
   // The row readers are methods, so a declaration typed to its module's own row (`TRow`: the subject row plus the
   // columns the module reads) is assignable where the registry holds the base type.
-  /** Recipients beyond mentions (thread participants, assignees, ...) with their notification type. */
+  /** Recipients beyond mentions (thread participants, assignees, ...) with their notification kind. */
   resolveRecipients?(tx: DbOrTx, row: TRow): Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
   resolveContextId?(row: TRow): string | null;

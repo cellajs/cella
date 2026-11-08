@@ -17,13 +17,13 @@ type SsoTarget = { connectionId: string } | { federation: string };
 /** The backend route that starts an SSO round trip: pinned to an institution's connection, or at a federation at large. */
 export const ssoStartUrl = (
   target: SsoTarget,
-  { type = 'auth', redirectAfter }: { type?: 'auth' | 'connect'; redirectAfter?: string | null } = {},
+  { kind = 'auth', redirectAfter }: { kind?: 'auth' | 'connect'; redirectAfter?: string | null } = {},
 ) => {
   const base =
     'connectionId' in target
       ? `${appConfig.backendAuthUrl}/sso/connections/${target.connectionId}/start`
       : `${appConfig.backendAuthUrl}/sso/federations/${target.federation}/start`;
-  const params = new URLSearchParams({ type });
+  const params = new URLSearchParams({ kind });
   if (redirectAfter) params.set('redirectAfter', redirectAfter);
   return `${base}?${params}`;
 };

@@ -7,7 +7,7 @@ type ThreadRow = NotificationSubjectRow & { hostId: string | null };
 describe('ModuleNotifications', () => {
   it('types the row readers to the row of the module, with no cast per field', async () => {
     const declaration: ModuleNotifications<ThreadRow> = {
-      resolveRecipients: async (_tx, row) => (row.hostId ? [{ userId: row.hostId, type: 'mention' }] : []),
+      resolveRecipients: async (_tx, row) => (row.hostId ? [{ userId: row.hostId, kind: 'mention' }] : []),
       resolveContextId: (row) => row.hostId,
     };
     // The registry holds the base type: a declaration typed to its own row fits it.

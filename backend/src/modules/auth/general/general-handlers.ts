@@ -42,18 +42,18 @@ app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
-  const { token, type: tokenType } = ctx.req.valid('param');
-  return openLinkToken(ctx, tokenType, token);
+  const { token, kind } = ctx.req.valid('param');
+  return openLinkToken(ctx, kind, token);
 });
 
-app.openapi(authGeneralRoutes.redeemLinkToken, async (ctx) => ctx.json({ redirectTo: await confirmHeldLink(ctx, ctx.req.valid('param').type) }, 200));
+app.openapi(authGeneralRoutes.redeemLinkToken, async (ctx) => ctx.json({ redirectTo: await confirmHeldLink(ctx, ctx.req.valid('param').kind) }, 200));
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
-  const { type: tokenType, id: tokenId } = ctx.req.valid('param');
+  const { kind, id: tokenId } = ctx.req.valid('param');
 
-  const tokenRecord = await readBoundToken(ctx, tokenType);
-  // The browser holds a token of this type, not the one the URL names: the same answer as holding none.
-  if (tokenRecord.id !== tokenId) throw new AppError(401, `${tokenType}_not_found`, 'warn');
+  const tokenRecord = await readBoundToken(ctx, kind);
+  // The browser holds a token of this kind, not the one the URL names: the same answer as holding none.
+  if (tokenRecord.id !== tokenId) throw new AppError(401, `${kind}_not_found`, 'warn');
 
   return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200, { 'Cache-Control': 'no-store' });
 });

@@ -10,7 +10,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Advisories:** 9 (nanoid predictability and looping on bad sizes).
 - **Files:**
   - `backend/src/modules/auth/tokens/`: `token-lifecycle.ts`, `token-policies.ts`, `tokens-queries.ts` (the compare-and-set), `tokens-db.ts`, `operations/open-link-token.ts`, tests `token-lifecycle.test.ts`, `token-policies.test.ts`.
-  - Token types in `shared/config/config.default.ts` (and `config.template.ts`): six, `oauth-verification, invitation, confirm-mfa, magic, oauth-connect, step-up`; policies are exhaustive through `satisfies Record<TokenType, TokenPolicy>`.
+  - Token kinds in `shared/config/config.default.ts` (and `config.template.ts`): six, `oauth-verification, invitation, confirm-mfa, magic, oauth-connect, step-up`; policies are exhaustive through `satisfies Record<TokenType, TokenPolicy>`.
   - Issuers: `auth/magic/operations/send-magic-link.ts`, `auth/oauth/operations/send-oauth-verification-email.ts`, `auth/oauth/oauth-handlers.ts` (connect pin), `auth/mfa/operations/mfa-challenge.ts`, `auth/step-up/operations/send-step-up-code.ts`.
   - Invitation issuers: `modules/memberships/operations/mail-invitations.ts` (every membership invitation link), `auth/invitations/operations/{resend-invitation,confirm-invitation-address}.ts`, `modules/system/operations/create-invite.ts`.
   - Spenders: `auth/sessions/operations/sign-out.ts`, `auth/mfa/operations/mfa-challenge.ts`, `auth/passkeys/passkeys-handlers.ts`, `auth/oauth/operations/{spend-connect-pin,handle-oauth-callback}.ts`, `auth/general/general-handlers.ts` (invitation), `auth/step-up/step-up-handlers.ts`.
@@ -24,7 +24,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `auth/tokens/token-lifecycle.test.ts`: hash-only storage, replacement rules, browser binding, unknown or expired tokens, two concurrent confirm-mfa spends (exactly one wins), spend through the single-use cookie, rollback keeps the token.
   - `backend/tests/invitations/*`: replay after accept, a token bound to another user, the single-use cookie, expiry, two racing sessions, another invitation's data.
   - Two auth-1 removals re-verified at HEAD in `removed-protections.json`.
-- **Asks:** one table, token type x (issue, open, spend, expire, revoke with its session, race, other account) -> the line that enforces it and the test; where each random value comes from (`crypto` or nanoid) and its length.
+- **Asks:** one table, token kind x (issue, open, spend, expire, revoke with its session, race, other account) -> the line that enforces it and the test; where each random value comes from (`crypto` or nanoid) and its length.
 - **Not this class:** session cookie, MAC and fixation belong to A2. TOTP, passkey and MFA factor verification belong to A3. Provider sign-in and callback state belong to A4. API keys, access tokens and signing keys belong to A5. Invitation-address takeover and cross-site GET per type belong to C7. Secrets at rest and logs belong to D1.
 
 ### A2 Sessions and cookies
@@ -48,7 +48,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/sign-in/session-cap` (oldest beyond the cap evicted) and `tests/sign-in/sign-out` (a forged cookie naming the victim's session id revokes nothing).
   - `auth/tokens/token-policies.test.ts`: SameSite per policy.
 - **Asks:** every `setCookie` call's name and attribute values against the five advisories (does any value come from a request?); a new session id at sign-in; what a stolen cookie does after sign-out.
-- **Not this class:** session cache correctness and the 10 s window belong to C8. Slot caps on the relay and stream belong to C1 and B5. Step-up and MFA proofs belong to A3. Token types, magic links and invitations belong to A1. Device-id PII hashing and log redaction belong to D1. `X-Forwarded-For` for the sign-in address belongs to A6. CSRF and Origin on the cookie routes belong to C7.
+- **Not this class:** session cache correctness and the 10 s window belong to C8. Slot caps on the relay and stream belong to C1 and B5. Step-up and MFA proofs belong to A3. Token kinds, magic links and invitations belong to A1. Device-id PII hashing and log redaction belong to D1. `X-Forwarded-For` for the sign-in address belongs to A6. CSRF and Origin on the cookie routes belong to C7.
 
 ### A3 Second factors and step-up
 - **Gain:** account takeover.

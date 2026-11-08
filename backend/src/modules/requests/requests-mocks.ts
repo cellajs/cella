@@ -6,7 +6,7 @@ const mockRequest = (key = 'request:default'): RequestModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
     email: faker.internet.email().toLowerCase(),
-    type: 'contact' as const,
+    kind: 'contact' as const,
     message: faker.lorem.sentence(),
     createdAt: mockPastIsoDate(),
     invitedAt: null,

@@ -8,6 +8,7 @@ import { commentEmail } from '#/modules/notification/emails/comment-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
 import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
+import { instantEmailKinds } from '#/modules/notification/notification-kinds';
 import {
   findChannelLabels,
   findUsersMinimal,
@@ -16,7 +17,6 @@ import {
   type WrittenNotification,
 } from '#/modules/notification/notification-queries';
 import { findContextNames } from '#/modules/notification/notification-sources';
-import { instantEmailTypes } from '#/modules/notification/notification-types';
 import { log } from '#/utils/logger';
 import { pick } from '#/utils/pick';
 
@@ -28,22 +28,22 @@ const dbCtx = { var: { db: baseDb } };
 
 /**
  * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmail`
- * (`instantEmailTypes`), each to a recipient with a verified address who keeps that category on (comment email is
+ * (`instantEmailKinds`), each to a recipient with a verified address who keeps that category on (comment email is
  * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row is stamped
  * `emailedAt` right after its mail went out, so the digest skips it; any other row, a failed send included, stays for
  * the digest.
  * @param subjects - The subject rows the fan-out read, with their body, keyed by id.
  */
 export async function sendInstantEmails(rows: WrittenNotification[], subjects: Map<string, NotificationSubjectRow>): Promise<void> {
-  const types = instantEmailTypes();
-  const typed = rows.filter((row) => types.includes(row.type));
-  if (typed.length === 0) return;
+  const kinds = instantEmailKinds();
+  const instant = rows.filter((row) => kinds.includes(row.kind));
+  if (instant.length === 0) return;
 
-  const recipients = await findVerifiedRecipients(dbCtx, { userIds: typed.map((row) => row.userId) });
+  const recipients = await findVerifiedRecipients(dbCtx, { userIds: instant.map((row) => row.userId) });
   const byUser = new Map(recipients.map((row) => [row.id, row]));
-  const mailable = typed.filter((row) => {
+  const mailable = instant.filter((row) => {
     const user = byUser.get(row.userId);
-    return row.type === 'mention' ? user?.mentionEmail : user?.commentEmail;
+    return row.kind === 'mention' ? user?.mentionEmail : user?.commentEmail;
   });
   if (mailable.length === 0) return;
 
@@ -76,10 +76,10 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
         }),
       };
 
-      if (notification.type === 'mention') {
+      if (notification.kind === 'mention') {
         await mailer.sendEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
       } else {
-        await mailer.sendEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
+        await mailer.sendEmails(commentEmail, { ...statics, reply: notification.kind === 'reply' }, [
           { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
         ]);
       }

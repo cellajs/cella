@@ -109,7 +109,7 @@ describe('Attachment mentions (template notification source)', async () => {
 
   const notificationsFor = (userId: string) =>
     db
-      .select({ type: notificationsTable.type, emailedAt: notificationsTable.emailedAt })
+      .select({ kind: notificationsTable.kind, emailedAt: notificationsTable.emailedAt })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, attachmentId)));
 
@@ -164,7 +164,7 @@ describe('Attachment mentions (template notification source)', async () => {
 
   const inboxOf = (userId: string, subjectId: string) =>
     db
-      .select({ type: notificationsTable.type })
+      .select({ kind: notificationsTable.kind })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, subjectId)));
 
@@ -252,7 +252,7 @@ describe('Attachment mentions (template notification source)', async () => {
     await fanOutNotifications(updatedEvent(tenant.user.id));
     // Mention email is on by default and the member's address is verified, so the fan-out mails the row it wrote.
     const [told] = await notificationsFor(member.id);
-    expect(told?.type).toBe('mention');
+    expect(told?.kind).toBe('mention');
     expect(told?.emailedAt).not.toBeNull();
     // Titled with the name the inbox shows, quoting the body the fan-out read.
     const [{ name }] = await db.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
@@ -305,7 +305,7 @@ describe('Attachment mentions (template notification source)', async () => {
     // The test client types the body loosely; the SDK response type names the fields under test.
     const items = (result.data as ListNotificationsResponse | undefined)?.results ?? [];
     const row = items.find((item) => item.subjectId === attachmentId);
-    expect(row).toMatchObject({ type: 'mention', subjectId: attachmentId, entityType: 'attachment' });
+    expect(row).toMatchObject({ kind: 'mention', subjectId: attachmentId, entityType: 'attachment' });
     expect(row?.actor?.id).toBe(tenant.user.id);
     expect(row?.channelName).not.toBe('');
     expect(row?.subjectTitle).not.toBe('');
@@ -317,7 +317,7 @@ describe('Attachment mentions (template notification source)', async () => {
       createdAt: createdAt.toISOString(),
       userId: reader.id,
       actorId: tenant.user.id,
-      type: 'mention' as const,
+      kind: 'mention' as const,
       entityType: 'attachment' as const,
       subjectId: attachmentId,
       contextId: attachmentId,
@@ -347,7 +347,7 @@ describe('Attachment mentions (template notification source)', async () => {
           createdAt: anHourAgo,
           userId: member.id,
           actorId: tenant.user.id,
-          type: 'mention' as const,
+          kind: 'mention' as const,
           entityType: 'attachment' as const,
           subjectId: attachmentId,
           contextId: attachmentId,
@@ -398,7 +398,7 @@ describe('Attachment mentions (template notification source)', async () => {
       // Stored without the update op: the fan-out reads whatever body the row holds.
       const subjectId = await newSubject(mentionsOf([member.id]));
       await fanOutNotifications(createdEvent(subjectId));
-      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ kind: 'mention' }]);
 
       expect((await putDescription(mentionsOf([member.id, other.id]), subjectId)).response.status).toBe(200);
       vi.clearAllMocks();
@@ -408,8 +408,8 @@ describe('Attachment mentions (template notification source)', async () => {
       vi.clearAllMocks();
       await fanOutNotifications(updatedEvent(tenant.user.id, { subjectId }));
       expect(heard()).toEqual({ signalled: [], pushed: [], mailed: [] });
-      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
-      expect(await inboxOf(other.id, subjectId)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ kind: 'mention' }]);
+      expect(await inboxOf(other.id, subjectId)).toEqual([{ kind: 'mention' }]);
     });
 
     it('tells nobody again when a change is delivered twice or the row is published again', async () => {
@@ -423,7 +423,7 @@ describe('Attachment mentions (template notification source)', async () => {
       await fanOutNotifications(created);
       await fanOutNotifications(createdEvent(subjectId));
       expect(heard()).toEqual({ signalled: [], pushed: [], mailed: [] });
-      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ kind: 'mention' }]);
     });
 
     it('writes one row per user when two deliveries of one change overlap', async () => {
@@ -435,8 +435,8 @@ describe('Attachment mentions (template notification source)', async () => {
         vi.clearAllMocks();
         await Promise.all([fanOutNotifications(created), fanOutNotifications(created)]);
 
-        expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
-        expect(await inboxOf(other.id, subjectId)).toEqual([{ type: 'mention' }]);
+        expect(await inboxOf(member.id, subjectId)).toEqual([{ kind: 'mention' }]);
+        expect(await inboxOf(other.id, subjectId)).toEqual([{ kind: 'mention' }]);
         expect(heard().signalled.toSorted()).toEqual([member.id, other.id].toSorted());
       }
     });
@@ -472,7 +472,7 @@ describe('Attachment mentions (template notification source)', async () => {
       await fanOutNotifications(event);
 
       expect(await inboxOf(member.id, renamed)).toEqual([]);
-      expect(await inboxOf(other.id, edited)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(other.id, edited)).toEqual([{ kind: 'mention' }]);
     });
 
     it('tells each row of one flush under its own writer and activity, two writers mentioning each other', async () => {
@@ -521,17 +521,17 @@ describe('Attachment mentions (template notification source)', async () => {
       const subjectId = await newSubject(mentionsOf([generateId(), member.id]), { public: true });
 
       await fanOutNotifications(createdEvent(subjectId));
-      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ kind: 'mention' }]);
     });
   });
 
   // The template declares no recipient rule (an app's `resolveRecipients` does), so these tests give the attachment
-  // source one that names `member` with the type under test.
+  // source one that names `member` with the kind under test.
   describe('comment emails', () => {
-    /** Fans out the create of a new subject whose recipient rule names `member` as `type`. */
-    const fanOutAs = async (type: 'comment' | 'reply', description: string | null = null) => {
+    /** Fans out the create of a new subject whose recipient rule names `member` as `kind`. */
+    const fanOutAs = async (kind: 'comment' | 'reply', description: string | null = null) => {
       const source = attachmentSource();
-      source.declaration.resolveRecipients = async () => [{ userId: member.id, type }];
+      source.declaration.resolveRecipients = async () => [{ userId: member.id, kind }];
       onTestFinished(() => void delete source.declaration.resolveRecipients);
       const subjectId = await newSubject(description);
       await fanOutNotifications(createdEvent(subjectId));
@@ -542,10 +542,10 @@ describe('Attachment mentions (template notification source)', async () => {
     const rowsOf = async (subjectId: string) =>
       (
         await db
-          .select({ type: notificationsTable.type, emailedAt: notificationsTable.emailedAt })
+          .select({ kind: notificationsTable.kind, emailedAt: notificationsTable.emailedAt })
           .from(notificationsTable)
           .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, subjectId)))
-      ).map(({ type, emailedAt }) => ({ type, emailed: emailedAt !== null }));
+      ).map(({ kind, emailedAt }) => ({ kind, emailed: emailedAt !== null }));
 
     const setCommentEmail = (commentEmail: boolean) =>
       db
@@ -581,9 +581,9 @@ describe('Attachment mentions (template notification source)', async () => {
         [commentEmail, true],
       ]);
       for (const { recipient } of mails) expect(String(recipient.unsubscribeLink)).toContain('category=comment');
-      expect(await rowsOf(comment)).toEqual([{ type: 'comment', emailed: true }]);
-      expect(await rowsOf(reply)).toEqual([{ type: 'reply', emailed: true }]);
-      expect(await rowsOf(older)).toEqual([{ type: 'comment', emailed: false }]);
+      expect(await rowsOf(comment)).toEqual([{ kind: 'comment', emailed: true }]);
+      expect(await rowsOf(reply)).toEqual([{ kind: 'reply', emailed: true }]);
+      expect(await rowsOf(older)).toEqual([{ kind: 'comment', emailed: false }]);
     });
 
     it('leaves comment rows to the digest when the recipient keeps comment email off', async () => {
@@ -592,7 +592,7 @@ describe('Attachment mentions (template notification source)', async () => {
       const subjectId = await fanOutAs('comment');
 
       expect(mailsTo(member.email)).toEqual([]);
-      expect(await rowsOf(subjectId)).toEqual([{ type: 'comment', emailed: false }]);
+      expect(await rowsOf(subjectId)).toEqual([{ kind: 'comment', emailed: false }]);
     });
 
     it('mails no comment row while the app does not offer comment email', async () => {
@@ -601,7 +601,7 @@ describe('Attachment mentions (template notification source)', async () => {
       const subjectId = await fanOutAs('comment');
 
       expect(mailsTo(member.email)).toEqual([]);
-      expect(await rowsOf(subjectId)).toEqual([{ type: 'comment', emailed: false }]);
+      expect(await rowsOf(subjectId)).toEqual([{ kind: 'comment', emailed: false }]);
     });
 
     it('mails a mention and a comment on the same subject once, as the mention', async () => {
@@ -611,7 +611,7 @@ describe('Attachment mentions (template notification source)', async () => {
       const subjectId = await fanOutAs('comment', mentionsOf([member.id]));
 
       expect(mailsTo(member.email).map(({ template }) => template)).toEqual([mentionEmail]);
-      expect(await rowsOf(subjectId)).toEqual([{ type: 'mention', emailed: true }]);
+      expect(await rowsOf(subjectId)).toEqual([{ kind: 'mention', emailed: true }]);
     });
   });
 });

@@ -5,10 +5,10 @@ import { type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { ApiError } from '~/lib/api';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import { useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
-import type { PasskeyVerifyType } from '~/modules/auth/types';
+import type { PasskeyVerifyKind } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-export function usePasskeySignIn(type: PasskeyVerifyType) {
+export function usePasskeySignIn(kind: PasskeyVerifyKind) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -16,16 +16,16 @@ export function usePasskeySignIn(type: PasskeyVerifyType) {
 
   const { mutate } = useMutation<SignInWithPasskeyResponse, ApiError | Error>({
     mutationFn: async () => {
-      const body = await getPasskeyVerifyCredential({ type });
+      const body = await getPasskeyVerifyCredential({ kind });
       return await signInWithPasskey({ body });
     },
     onSuccess: navigateAfterAuth,
     onError: (error) => {
-      if (type === 'mfa' && error instanceof ApiError) {
+      if (kind === 'mfa' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
       // A refusal by the server is toasted by the global handler; the browser's own failure (a cancelled prompt) is not
-      if (type === 'authentication' && !(error instanceof ApiError)) toaster.error(t('error:passkey_verification_failed'));
+      if (kind === 'authentication' && !(error instanceof ApiError)) toaster.error(t('error:passkey_verification_failed'));
     },
   });
 

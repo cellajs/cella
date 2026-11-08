@@ -47,7 +47,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonSize,
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email: email ?? '', type: 'waitlist', message: null } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email: email ?? '', kind: 'waitlist', message: null } });
   // An address carried over from the sign-in step stays editable until it is a valid one
   const prefilled = formSchema.shape.email.safeParse(email).success;
 

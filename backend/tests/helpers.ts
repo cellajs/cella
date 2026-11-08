@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq, like } from 'drizzle-orm';
 import { invokeToken, redeemLinkToken } from 'sdk';
-import { appConfig, type EntityRole, type TokenType } from 'shared';
+import { appConfig, type EntityRole, type TokenKind } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { expect, onTestFinished, vi } from 'vitest';
@@ -11,8 +11,8 @@ import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
-import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import type { HeldLinkType } from '#/modules/auth/tokens/token-policies';
+import { type AuthStrategy, type SessionKind, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import type { HeldLinkKind } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -227,7 +227,7 @@ export async function createTestOrganization(overrides?: Partial<ReturnType<type
 }
 
 interface TestSessionOpts {
-  type?: SessionType;
+  kind?: SessionKind;
   authStrategy?: AuthStrategy;
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;
@@ -244,7 +244,7 @@ interface TestSessionOpts {
  */
 export async function insertTestSession(
   user: { id: string },
-  { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
+  { kind = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
   const stepUp = steppedUpVia ? newHashedToken() : null;
@@ -255,7 +255,7 @@ export async function insertTestSession(
     id,
     secret,
     userId: user.id,
-    type,
+    kind,
     authStrategy,
     createdAt,
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
@@ -292,7 +292,7 @@ interface TestTokenOpts extends Partial<InsertTokenModel> {
  * names `owner`'s address, and its account too when `owner` has an id. Returns the row and the raw value.
  */
 export async function insertTestToken(
-  type: TokenType,
+  kind: TokenKind,
   owner: { id?: string | null; email: string },
   { expiresInMs = 15 * 60 * 1000, openedWith, ...columns }: TestTokenOpts = {},
 ) {
@@ -300,7 +300,7 @@ export async function insertTestToken(
   const [row] = await db
     .insert(tokensTable)
     .values({
-      type,
+      kind,
       secret: hashToken(raw),
       email: owner.email,
       userId: owner.id ?? null,
@@ -315,13 +315,13 @@ export async function insertTestToken(
 
 export const tokenRow = async (id: string) => (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0];
 
-/** The row of `type` a raw token value names, found by its hash as the server finds it; undefined once it is spent. */
-export const tokenRowOf = async (type: TokenType, raw: string) =>
+/** The row of `kind` a raw token value names, found by its hash as the server finds it; undefined once it is spent. */
+export const tokenRowOf = async (kind: TokenKind, raw: string) =>
   (
     await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.type, type), eq(tokensTable.secret, hashToken(raw))))
+      .where(and(eq(tokensTable.kind, kind), eq(tokensTable.secret, hashToken(raw))))
   )[0];
 
 /** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */
@@ -400,14 +400,14 @@ export const cookiesAfter = (cookieHeader: string, response: Response) => new Co
  * it. `browser` keeps the cookies both answers set. Returns the last answer and where it sends the browser: the POST's
  * `redirectTo`, or the GET's `Location` when the GET held nothing.
  */
-export async function openHeldLink(type: HeldLinkType, token: string, browser = new CookieJar()) {
+export async function openHeldLink(kind: HeldLinkKind, token: string, browser = new CookieJar()) {
   const call = await createAppClient();
   const inBrowser = () => ({ ...defaultHeaders, Cookie: browser.header() });
-  const opened = await call(invokeToken, { path: { type, token }, headers: inBrowser() });
+  const opened = await call(invokeToken, { path: { kind, token }, headers: inBrowser() });
   browser.absorb(opened.response);
-  if (cookieChange(opened.response, `${type}-pending`) !== 'set') return { ...opened, redirectTo: opened.response.headers.get('location') };
+  if (cookieChange(opened.response, `${kind}-pending`) !== 'set') return { ...opened, redirectTo: opened.response.headers.get('location') };
 
-  const redeemed = await call(redeemLinkToken, { path: { type }, headers: inBrowser() });
+  const redeemed = await call(redeemLinkToken, { path: { kind }, headers: inBrowser() });
   browser.absorb(redeemed.response);
   return { ...redeemed, redirectTo: (redeemed.data as { redirectTo?: string } | undefined)?.redirectTo ?? null };
 }

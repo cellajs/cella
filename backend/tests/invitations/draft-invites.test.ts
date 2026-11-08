@@ -175,7 +175,7 @@ describe('Draft context invite deferral', async () => {
 
   it("dispatch mints a held invitation's first link, stamps remindedAt and the waitlist request, and sends it once", async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
-    await insertRequest({ var: { db } }, { email: 'deferred@example.com', type: 'waitlist' });
+    await insertRequest({ var: { db } }, { email: 'deferred@example.com', kind: 'waitlist' });
     const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].invitedAt;
 
     await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);

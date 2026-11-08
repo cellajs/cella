@@ -1,10 +1,10 @@
 import { EmailLayout, EmailText } from '../components';
 import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
-import type { RequestType } from './request-was-sent';
+import type { RequestKind } from './request-was-sent';
 
 interface RequestInfoStatic {
-  type: RequestType;
+  kind: RequestKind;
   email: string;
   message: string | null;
   subject: string;
@@ -12,11 +12,11 @@ interface RequestInfoStatic {
 
 /** Notifies sysadmin of a waitlist signup, newsletter subscription, or contact form submission. */
 export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
-  translate(lng, { type, email, message, subject }) {
+  translate(lng, { kind, email, message, subject }) {
     return {
       subject,
       previewText: subject,
-      headerHtml: i18n.t('backend:email.received_request.title', { type, lng }),
+      headerHtml: i18n.t('backend:email.received_request.title', { kind, lng }),
       email,
       message,
       supportText: i18n.t('backend:email.support_email', { lng }),
@@ -31,5 +31,5 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
     );
   },
   requestDetails: true,
-  preview: { statics: { type: 'contact', email: 'test@example.com', message: 'Hello', subject: 'New contact request' }, recipient: {} },
+  preview: { statics: { kind: 'contact', email: 'test@example.com', message: 'Hello', subject: 'New contact request' }, recipient: {} },
 });

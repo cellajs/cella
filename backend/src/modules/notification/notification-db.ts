@@ -5,8 +5,8 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { isoTimestamp, isoTimestampWithoutZone, timestampColumns } from '#/db/utils/timestamp-columns';
+import { notificationKinds } from '#/modules/notification/notification-kinds';
 import type { preferencesSchema } from '#/modules/notification/notification-schema';
-import { notificationTypes } from '#/modules/notification/notification-types';
 import { usersTable } from '#/modules/user/user-db';
 
 /** Digest cadence options for `notification_preferences.digest`. */
@@ -33,7 +33,7 @@ export const notificationsTable = snakeCase.table(
     userId: uuid().notNull().$type<UserId>(),
     /** Who caused the notification: the event's user, else the row's creator; null when neither is known. */
     actorId: uuid().$type<ActorId>(),
-    type: varchar({ enum: notificationTypes }).notNull(),
+    kind: varchar({ enum: notificationKinds }).notNull(),
     /** Product type of the row the notification is about (`subjectId`). */
     entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     subjectId: uuid().notNull(),

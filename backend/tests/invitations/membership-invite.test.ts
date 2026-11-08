@@ -187,7 +187,7 @@ describe('Membership Invitation', async () => {
 
   it("answers an invited address's waitlist request at once", async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
-    await insertRequest({ var: { db } }, { email: 'waiting@example.com', type: 'waitlist' });
+    await insertRequest({ var: { db } }, { email: 'waiting@example.com', kind: 'waitlist' });
 
     await makeInviteRequest(organization.tenantId, organization.id, { emails: ['waiting@example.com'], role: memberRole }, sessionCookie);
 

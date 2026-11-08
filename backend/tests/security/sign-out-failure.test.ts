@@ -77,7 +77,7 @@ describe('A sign-out that fails', async () => {
     const user = await createTestUser(`spend-fails-${nanoid(6)}@security-test.com`.toLowerCase());
     const { raw, row } = await insertTestToken('magic', user);
     const requestedHere = authCookie('magic-requested', row.id);
-    const opened = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: requestedHere } });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: requestedHere } });
     expect(opened.response.status).toBe(302);
     const browser = cookiesAfter(requestedHere, opened.response);
     const session = await sessionSetBy(opened.response);

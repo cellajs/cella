@@ -53,20 +53,20 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 });
 
 app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
-  const { type } = ctx.req.valid('json');
+  const { kind } = ctx.req.valid('json');
 
   // The second factor of an MFA challenge has a known account, whose passkeys may be offered, and a registration the
   // signed-in one, whose passkeys the browser excludes. A sign-in challenge names none: the passkey the browser picks
   // names its account.
-  const user = type === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : type === 'registration' ? (await findSession(ctx))?.user : undefined;
+  const user = kind === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : kind === 'registration' ? (await findSession(ctx))?.user : undefined;
 
-  return ctx.json(await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id }), 200);
+  return ctx.json(await issuePasskeyChallenge(ctx, { purpose: kind, userId: user?.id }), 200);
 });
 
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
-  const { type, assertion } = ctx.req.valid('json');
+  const { kind, assertion } = ctx.req.valid('json');
 
-  if (type === 'mfa') {
+  if (kind === 'mfa') {
     await completeMfaChallenge(ctx, { strategy: 'passkey', assertion });
     return ctx.body(null, 204);
   }

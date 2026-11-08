@@ -13,8 +13,8 @@ afterEach(async () => await clearDatabase());
 describe('Request form mail caps', async () => {
   const { baseApp: app } = await import('#/routes');
 
-  const submit = async (email: string, type: 'contact' | 'waitlist', message: string | null) =>
-    (await app.request('/requests', { method: 'POST', headers: defaultHeaders, body: JSON.stringify({ email, type, message }) })).status;
+  const submit = async (email: string, kind: 'contact' | 'waitlist', message: string | null) =>
+    (await app.request('/requests', { method: 'POST', headers: defaultHeaders, body: JSON.stringify({ email, kind, message }) })).status;
 
   it('must not mail one address more than once a day through the request form', async () => {
     const victim = `request-victim-${nanoid(8)}@security-test.com`.toLowerCase();
@@ -26,7 +26,7 @@ describe('Request form mail caps', async () => {
     ]);
     // A waitlist request is answered before it is stored.
     await vi.waitFor(async () =>
-      expect(await db.select({ type: requestsTable.type }).from(requestsTable).where(eq(requestsTable.email, victim))).toHaveLength(3),
+      expect(await db.select({ kind: requestsTable.kind }).from(requestsTable).where(eq(requestsTable.email, victim))).toHaveLength(3),
     );
     expect(mailsTo(victim)).toHaveLength(1);
 

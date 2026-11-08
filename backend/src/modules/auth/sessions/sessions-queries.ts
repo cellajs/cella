@@ -5,8 +5,8 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { heldFactorsSql } from '#/modules/auth/mfa/mfa-queries';
 import {
   type InsertSessionModel,
+  type SessionKind,
   type SessionRevocationReason,
-  type SessionType,
   type StepUpProof,
   sessionFactColumns,
   sessionSafeColumns,
@@ -106,8 +106,8 @@ export const insertSession = async (ctx: DbContext, { values }: { values: Insert
 };
 
 interface UpdateSessionsRevokedOpts {
-  /** Which of the user's sessions: optionally only these ids or this type. */
-  match: { userId: string; ids?: string[]; type?: SessionType };
+  /** Which of the user's sessions: optionally only these ids or this kind. */
+  match: { userId: string; ids?: string[]; kind?: SessionKind };
   revokedBy: ActorId | null;
   revocationReason: SessionRevocationReason;
 }
@@ -120,7 +120,7 @@ export const updateSessionsRevoked = async (ctx: DbContext, { match, revokedBy, 
   const matched = and(
     eq(sessionsTable.userId, match.userId),
     match.ids ? inArray(sessionsTable.id, match.ids) : undefined,
-    match.type ? eq(sessionsTable.type, match.type) : undefined,
+    match.kind ? eq(sessionsTable.kind, match.kind) : undefined,
   );
 
   const now = getIsoDate();

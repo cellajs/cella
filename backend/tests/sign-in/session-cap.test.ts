@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { evictExcessSessions } from '#/modules/auth/sessions/operations/create-session';
-import { type SessionType, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type SessionKind, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { overrideConfig } from '../fixtures';
 import { createTestUser, insertTestSession, sessionRow } from '../helpers';
 import { clearDatabase } from '../test-utils';
@@ -14,15 +14,15 @@ overrideConfig(appConfig, { maxSessionsPerUser: TEST_CAP });
 
 afterEach(async () => await clearDatabase());
 
-/** A session row of `type` signed in `ageMs` ago, inserted past setUserSession so no cap applies yet. */
-const insertSession = async (user: { id: string }, type: SessionType, ageMs: number) => (await insertTestSession(user, { type, ageMs })).id;
+/** A session row of `kind` signed in `ageMs` ago, inserted past setUserSession so no cap applies yet. */
+const insertSession = async (user: { id: string }, kind: SessionKind, ageMs: number) => (await insertTestSession(user, { kind, ageMs })).id;
 
 /** Ids of the user's sessions that still authenticate: revoked rows stay in the table but no longer count. */
-const liveIds = (userId: string, type?: SessionType) =>
+const liveIds = (userId: string, kind?: SessionKind) =>
   db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), type ? eq(sessionsTable.type, type) : undefined))
+    .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), kind ? eq(sessionsTable.kind, kind) : undefined))
     .then((rows) => new Set(rows.map((r) => r.id)));
 
 describe('per-user session cap (A1)', () => {

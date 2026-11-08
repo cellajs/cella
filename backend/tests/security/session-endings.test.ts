@@ -111,7 +111,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const current = await insertSteppedUpSession(user);
     const otherRegular = await insertSession(user);
     // Proven with a second factor while MFA was on before: enabling MFA again leaves it standing.
-    const earlierMfa = await insertSession(user, { type: 'mfa' });
+    const earlierMfa = await insertSession(user, { kind: 'mfa' });
     for (const session of [current, otherRegular, earlierMfa]) await warmSession(session);
     const currentStream = await openStream(user.id, current);
     const otherStream = await openStream(user.id, otherRegular);

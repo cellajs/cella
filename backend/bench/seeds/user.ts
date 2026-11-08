@@ -29,7 +29,7 @@ export function loadtestSession(index: number, hashedToken: string, expiresAt: s
   return {
     id: sessionId(index),
     secret: hashedToken,
-    type: 'regular',
+    kind: 'regular',
     userId: userId(index),
     deviceType: 'desktop',
     deviceName: null,

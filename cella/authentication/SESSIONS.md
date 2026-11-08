@@ -40,7 +40,7 @@ Bumping `cookieVersion` renames every cookie and so signs everyone out. Outside 
 | `oauth-state` | The provider round trip; a new start replaces it | Lax |
 | `sso-recovery` | An institution's refused sign-in | Strict |
 | `passkey-challenge`, `totp-challenge` | The WebAuthn challenge; the TOTP secret being set up | Strict |
-| A token type's own cookie | The token, or a redeemed link's single-use value | Its policy |
+| A token kind's own cookie | The token, or a redeemed link's single-use value | Its policy |
 
 Lax cookies are the ones a navigation from another site must carry: the click from a mail, the provider's callback. Every other cookie, the session first of all, is same-origin only.
 

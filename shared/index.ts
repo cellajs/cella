@@ -98,7 +98,7 @@ export type {
   SeqRange,
   Severity,
   Theme,
-  TokenType,
+  TokenKind,
   TrackedEventType,
   UploadTemplateId,
   UserFlags,

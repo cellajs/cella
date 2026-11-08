@@ -40,7 +40,7 @@ const sweepRules: { table: string; aged: string }[] = [
   },
   { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },
   // Newsletter rows are a standing subscription: they go with an unsubscribe, never with age.
-  { table: 'requests', aged: `type IN ('contact', 'waitlist') AND created_at < now() - ${days(retention.requestDays)}` },
+  { table: 'requests', aged: `kind IN ('contact', 'waitlist') AND created_at < now() - ${days(retention.requestDays)}` },
   // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
   {
     table: 'inactive_memberships',

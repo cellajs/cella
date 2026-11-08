@@ -18,7 +18,7 @@ export function SubscribeNewsletterForm() {
     const email = new FormData(form).get('email')?.toString().trim().toLowerCase();
     if (!email) return;
     createRequest(
-      { email, type: 'newsletter', message: null },
+      { email, kind: 'newsletter', message: null },
       {
         onSuccess: () => {
           toaster.success(t('c:success.newsletter_sign_up'));

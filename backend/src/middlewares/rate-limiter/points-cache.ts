@@ -78,6 +78,13 @@ export function adoptDbCount(key: string, consumedPoints: number, msBeforeNext: 
   pointsCache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd });
 }
 
+/** The key's count in process and the milliseconds left in its window; none for a key with no live count. */
+export function localCount(key: string): { consumed: number; msLeft: number } | null {
+  const entry = pointsCache.get(key);
+  const msLeft = entry ? entry.windowEnd - Date.now() : 0;
+  return entry && msLeft > 0 ? { consumed: entry.consumed, msLeft } : null;
+}
+
 /** Drops every in-process count: what a test does to start from an empty window. */
 export function clearPointsCache(): void {
   pointsCache.clear();

@@ -5,7 +5,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { heldLinkTypes, linkTokenTypes } from '#/modules/auth/tokens/token-policies';
+import { heldLinkKinds, linkTokenKinds } from '#/modules/auth/tokens/token-policies';
 import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
@@ -50,26 +50,26 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   }),
   invokeToken: xRoute({
     method: 'get',
-    path: '/invoke-token/{type}/{token}',
+    path: '/invoke-token/{kind}/{token}',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Invoke token session',
     description:
-      'Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.',
-    request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string().max(maxLength.field) }) },
+      'Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.',
+    request: { params: z.object({ kind: z.enum(linkTokenKinds), token: z.string().max(maxLength.field) }) },
     responses: { 302: { description: 'Redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   redeemLinkToken: xRoute({
     method: 'post',
-    path: '/invoke-token/{type}',
+    path: '/invoke-token/{kind}',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Redeem held link',
     description:
       'Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.',
-    request: { params: z.object({ type: z.enum(heldLinkTypes) }) },
+    request: { params: z.object({ kind: z.enum(heldLinkKinds) }) },
     responses: {
       200: json(
         'Link redeemed\n\nWhere the browser goes next: the app with the token session, or the provider for a verification.',
@@ -80,14 +80,14 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   }),
   getTokenData: xRoute({
     method: 'get',
-    path: '/token/{type}/{id}',
+    path: '/token/{kind}/{id}',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Get token data',
     description:
       'Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.',
-    request: { params: z.object({ type: z.enum(linkTokenTypes), id: validIdSchema }) },
+    request: { params: z.object({ kind: z.enum(linkTokenKinds), id: validIdSchema }) },
     responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()), ...errors(401) },
   }),
   acceptInvitationToken: xRoute({

@@ -11,7 +11,7 @@ import { deviceColumns } from '#/modules/auth/sessions/helpers/device-info';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import type { AuthStrategy, SessionType, StepUpProof } from '#/modules/auth/sessions/sessions-db';
+import type { AuthStrategy, SessionKind, StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/sessions/sessions-queries';
 import { stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 import { findSystemRole } from '#/modules/system/system-queries';
@@ -77,7 +77,7 @@ export const createSession = async (
   user: Pick<UserModel, 'id'>,
   context: SignInContext,
   strategy: AuthStrategy,
-  type: SessionType = 'regular',
+  kind: SessionKind = 'regular',
   { steppedUpVia = null, steppedUpAt, connectionId = null }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
@@ -94,7 +94,7 @@ export const createSession = async (
     id: sessionId,
     secret,
     userId: user.id,
-    type,
+    kind,
     ...deviceColumns(device),
     authStrategy: strategy,
     ipHash: rawIp ? hashIpForUser(rawIp, user.id) : null,
@@ -132,7 +132,7 @@ export const setUserSession = async (
   ctx: Context<Env>,
   user: UserModel,
   strategy: AuthStrategy,
-  type: SessionType = 'regular',
+  kind: SessionKind = 'regular',
   extras: SessionExtras = {},
 ): Promise<void> => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));
@@ -141,7 +141,7 @@ export const setUserSession = async (
 
   const context = await collectSignInContext(ctx);
   const presented = await findSession(ctx);
-  const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, type, extras);
+  const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, kind, extras);
   if (presented) {
     await revokeSessions(dbCtx, { userId: presented.session.userId, sessionIds: [presented.session.id], reason: 'replaced', by: null });
   }

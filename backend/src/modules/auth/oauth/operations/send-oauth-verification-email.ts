@@ -35,7 +35,7 @@ const verificationFor = async (props: Props) => {
 
   if ('signUp' in props) {
     const { signUp, email } = props;
-    const token: NewToken = { type: 'oauth-verification', email, pendingSignUp: signUp, redirectPath };
+    const token: NewToken = { kind: 'oauth-verification', email, pendingSignUp: signUp, redirectPath };
     return { token, name: signUp.name, lng: appConfig.defaultLanguage, providerName: readableProviderName(signUp.issuer), isNewUser: true };
   }
 
@@ -50,7 +50,7 @@ const verificationFor = async (props: Props) => {
 
   if (identity.verified && (await findEmail(dbCtx, { email }))) throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
 
-  const token: NewToken = { type: 'oauth-verification', userId: user.id, email, createdBy: user.id, identityId: identity.id, redirectPath };
+  const token: NewToken = { kind: 'oauth-verification', userId: user.id, email, createdBy: user.id, identityId: identity.id, redirectPath };
   return { token, name: user.name, lng: user.languageCode, providerName: readableProviderName(identity.issuer), isNewUser: false };
 };
 

@@ -7,7 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { invokeToken, issueToken, issueTokens, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
-import { isTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { isTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { authCookie, cookieChange, createTestOrganization, createTestUser, setCookiePair } from '../../../../tests/helpers';
@@ -16,35 +16,35 @@ import { clearDatabase } from '../../../../tests/test-utils';
 
 const ctx = { var: { db } };
 
-const isLinkType = (name: string): name is LinkTokenType => isTokenType(name) && tokenPolicies[name].carrier === 'link';
+const isLinkKind = (name: string): name is LinkTokenKind => isTokenKind(name) && tokenPolicies[name].carrier === 'link';
 
 /**
  * One route per lifecycle step, so each call runs with a real request's cookies; a refusal answers its status, type and
  * the token id it names.
  */
 const app = new Hono<Env>()
-  .get('/invoke/:type/:token', async (ctx) => {
-    const type = ctx.req.param('type');
-    if (!isLinkType(type)) return ctx.body(null, 404);
-    return ctx.json(await invokeToken(ctx, { type, rawToken: ctx.req.param('token') }));
+  .get('/invoke/:kind/:token', async (ctx) => {
+    const kind = ctx.req.param('kind');
+    if (!isLinkKind(kind)) return ctx.body(null, 404);
+    return ctx.json(await invokeToken(ctx, { kind, rawToken: ctx.req.param('token') }));
   })
-  .get('/read/:type', async (ctx) => {
-    const type = ctx.req.param('type');
-    if (!isTokenType(type)) return ctx.body(null, 404);
-    return ctx.json(await readBoundToken(ctx, type));
+  .get('/read/:kind', async (ctx) => {
+    const kind = ctx.req.param('kind');
+    if (!isTokenKind(kind)) return ctx.body(null, 404);
+    return ctx.json(await readBoundToken(ctx, kind));
   })
-  .post('/spend/:type', async (ctx) => {
-    const type = ctx.req.param('type');
-    if (!isTokenType(type)) return ctx.body(null, 404);
-    return ctx.json({ spent: await spendCookieToken(ctx, type) });
+  .post('/spend/:kind', async (ctx) => {
+    const kind = ctx.req.param('kind');
+    if (!isTokenKind(kind)) return ctx.body(null, 404);
+    return ctx.json({ spent: await spendCookieToken(ctx, kind) });
   })
   // A completion that spends inside its transaction and fails after it: the spend rolls back with the rest.
-  .post('/spend-then-fail/:type', async (ctx) => {
-    const type = ctx.req.param('type');
-    if (!isTokenType(type)) return ctx.body(null, 404);
+  .post('/spend-then-fail/:kind', async (ctx) => {
+    const kind = ctx.req.param('kind');
+    if (!isTokenKind(kind)) return ctx.body(null, 404);
     const outcome = await db
       .transaction(async (tx) => {
-        await spendCookieToken(ctx, type, { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });
+        await spendCookieToken(ctx, kind, { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });
         throw new Error('the completion failed after the spend');
       })
       .catch((err: Error) => err.message);
@@ -73,8 +73,8 @@ const address = () => `${nanoid(8)}@token-lifecycle.test`.toLowerCase();
 afterEach(async () => await clearDatabase());
 
 describe('issueToken', () => {
-  it("stores only the raw value's hash, expiring after its type's lifetime", async () => {
-    const { token, rawToken } = await issueToken(ctx, { type: 'magic', email: address() });
+  it("stores only the raw value's hash, expiring after its kind's lifetime", async () => {
+    const { token, rawToken } = await issueToken(ctx, { kind: 'magic', email: address() });
 
     const row = await rowOf(token.id);
     expect(row.secret).toBe(hashToken(rawToken));
@@ -87,16 +87,16 @@ describe('issueToken', () => {
 
   it('replaces the earlier magic links of the same address, with or without an account', async () => {
     const email = address();
-    const first = await issueToken(ctx, { type: 'magic', email });
-    const second = await issueToken(ctx, { type: 'magic', email });
+    const first = await issueToken(ctx, { kind: 'magic', email });
+    const second = await issueToken(ctx, { kind: 'magic', email });
 
     expect(await rowOf(first.token.id)).toBeUndefined();
     expect(await rowOf(second.token.id)).toBeDefined();
 
     // An account's link for another of its addresses replaces its earlier link too.
     const user = await createTestUser(address());
-    const primary = await issueToken(ctx, { type: 'magic', email: user.email, userId: user.id });
-    const secondary = await issueToken(ctx, { type: 'magic', email: address(), userId: user.id });
+    const primary = await issueToken(ctx, { kind: 'magic', email: user.email, userId: user.id });
+    const secondary = await issueToken(ctx, { kind: 'magic', email: address(), userId: user.id });
     expect(await rowOf(primary.token.id)).toBeUndefined();
     expect(await rowOf(secondary.token.id)).toBeDefined();
     expect(await rowOf(second.token.id)).toBeDefined();
@@ -109,15 +109,15 @@ describe('issueToken', () => {
     const [first, other] = [await invitationTo(), await invitationTo()];
 
     const [rotated, system] = await issueTokens(ctx, [
-      { type: 'invitation', email, inactiveMembershipId: first.inactiveMembership.id },
-      { type: 'invitation', email },
+      { kind: 'invitation', email, inactiveMembershipId: first.inactiveMembership.id },
+      { kind: 'invitation', email },
     ]);
 
     expect(await rowOf(first.token.id)).toBeUndefined();
     expect(await rowOf(rotated.token.id)).toBeDefined();
     expect(await rowOf(other.token.id)).toBeDefined();
 
-    const reissued = await issueToken(ctx, { type: 'invitation', email });
+    const reissued = await issueToken(ctx, { kind: 'invitation', email });
     expect(await rowOf(system.token.id)).toBeUndefined();
     expect(await rowOf(reissued.token.id)).toBeDefined();
     expect(await rowOf(rotated.token.id)).toBeDefined();
@@ -125,8 +125,8 @@ describe('issueToken', () => {
 
   it('keeps every open second-factor challenge', async () => {
     const user = await createTestUser(address());
-    const first = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
-    const second = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const first = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
+    const second = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
 
     expect(await rowOf(first.token.id)).toBeDefined();
     expect(await rowOf(second.token.id)).toBeDefined();
@@ -167,7 +167,7 @@ const racingOnRow = async <T>(tokenId: string, redeem: () => Promise<T>): Promis
 
 describe('invokeToken', () => {
   it('binds a link to the one browser that redeems it first', async () => {
-    const { token, rawToken } = await issueToken(ctx, { type: 'invitation', email: address() });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'invitation', email: address() });
 
     // Two redemptions at the same moment: the compare-and-set alone decides which browser the link binds.
     const [first, second] = await racingOnRow(token.id, () =>
@@ -184,11 +184,11 @@ describe('invokeToken', () => {
     expect(minutesUntil(opened.expiresAt)).toBeGreaterThan(29);
     expect(minutesUntil(opened.expiresAt)).toBeLessThanOrEqual(30);
 
-    // Re-opened only with its own single-use cookie, never with a cookie from another link of the type.
+    // Re-opened only with its own single-use cookie, never with a cookie from another link of the kind.
     const winnerCookie = setCookiePair(winner, 'invitation');
     expect((await request(`/invoke/invitation/${rawToken}`, [winnerCookie])).status).toBe(200);
 
-    const otherLink = await issueToken(ctx, { type: 'invitation', email: address() });
+    const otherLink = await issueToken(ctx, { kind: 'invitation', email: address() });
     const otherCookie = setCookiePair(await request(`/invoke/invitation/${otherLink.rawToken}`), 'invitation');
     const replay = await request(`/invoke/invitation/${rawToken}`, [otherCookie]);
     expect(replay.status).toBe(401);
@@ -200,7 +200,7 @@ describe('invokeToken', () => {
     expect(unknown.status).toBe(401);
     expect(await unknown.json()).toEqual({ type: 'magic_not_found' });
 
-    const { token, rawToken } = await issueToken(ctx, { type: 'magic', email: address() });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'magic', email: address() });
     await expire(token.id);
     const expired = await request(`/invoke/magic/${rawToken}`);
     expect(expired.status).toBe(401);
@@ -211,7 +211,7 @@ describe('invokeToken', () => {
 
 describe('readBoundToken', () => {
   it('reads the redeemed link its cookie binds, and spends nothing', async () => {
-    const { token, rawToken } = await issueToken(ctx, { type: 'invitation', email: address() });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'invitation', email: address() });
     const cookie = setCookiePair(await request(`/invoke/invitation/${rawToken}`), 'invitation');
 
     const response = await request('/read/invitation', [cookie]);
@@ -220,19 +220,19 @@ describe('readBoundToken', () => {
     expect(await rowOf(token.id)).toBeDefined();
   });
 
-  it('refuses a token this browser does not hold the same way for a link and a cookie-carried type', async () => {
-    for (const type of ['invitation', 'confirm-mfa'] as const) {
-      const noCookie = await request(`/read/${type}`);
-      expect(noCookie.status, type).toBe(401);
-      expect(await noCookie.json()).toEqual({ type: `${type}_not_found` });
+  it('refuses a token this browser does not hold the same way for a link and a cookie-carried kind', async () => {
+    for (const kind of ['invitation', 'confirm-mfa'] as const) {
+      const noCookie = await request(`/read/${kind}`);
+      expect(noCookie.status, kind).toBe(401);
+      expect(await noCookie.json()).toEqual({ type: `${kind}_not_found` });
 
-      const unknown = await request(`/read/${type}`, [authCookie(type, nanoid(40))]);
-      expect(unknown.status, type).toBe(401);
-      expect(await unknown.json()).toEqual({ type: `${type}_not_found` });
+      const unknown = await request(`/read/${kind}`, [authCookie(kind, nanoid(40))]);
+      expect(unknown.status, kind).toBe(401);
+      expect(await unknown.json()).toEqual({ type: `${kind}_not_found` });
     }
 
     const user = await createTestUser(address());
-    const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
     await expire(token.id);
     const expired = await request('/read/confirm-mfa', [authCookie('confirm-mfa', rawToken)]);
     expect(expired.status).toBe(401);
@@ -243,7 +243,7 @@ describe('readBoundToken', () => {
 describe('spendCookieToken', () => {
   it('spends a challenge once: of two concurrent spends exactly one gets it', async () => {
     const user = await createTestUser(address());
-    const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
     const cookie = authCookie('confirm-mfa', rawToken);
 
     const responses = await Promise.all([request('/spend/confirm-mfa', [cookie], 'POST'), request('/spend/confirm-mfa', [cookie], 'POST')]);
@@ -257,8 +257,8 @@ describe('spendCookieToken', () => {
 
   it('spends only the token its cookie names', async () => {
     const user = await createTestUser(address());
-    const mine = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
-    const other = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const mine = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
+    const other = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
 
     await request('/spend/confirm-mfa', [authCookie('confirm-mfa', mine.rawToken)], 'POST');
 
@@ -267,7 +267,7 @@ describe('spendCookieToken', () => {
   });
 
   it('spends a redeemed link through its single-use cookie, never through its raw value', async () => {
-    const { token, rawToken } = await issueToken(ctx, { type: 'invitation', email: address() });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'invitation', email: address() });
 
     const byRawValue = await request('/spend/invitation', [authCookie('invitation', rawToken)], 'POST');
     expect((await byRawValue.json()).spent).toBeNull();
@@ -281,7 +281,7 @@ describe('spendCookieToken', () => {
 
   it('leaves the token and its cookie in place when the transaction that spent it rolls back', async () => {
     const user = await createTestUser(address());
-    const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
     const cookie = authCookie('confirm-mfa', rawToken);
 
     const rolledBack = await request('/spend-then-fail/confirm-mfa', [cookie], 'POST');
@@ -298,7 +298,7 @@ describe('spendCookieToken', () => {
 
   it('grants nothing for an expired challenge, and removes it', async () => {
     const user = await createTestUser(address());
-    const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const { token, rawToken } = await issueToken(ctx, { kind: 'confirm-mfa', email: user.email, userId: user.id });
     await expire(token.id);
 
     const response = await request('/spend/confirm-mfa', [authCookie('confirm-mfa', rawToken)], 'POST');

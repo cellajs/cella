@@ -24,7 +24,7 @@ export const requestRoutes = createXRoutes(['requests', 'cella'], {
     path: '/',
     xGuard: [userGuard, sysAdminGuard],
     summary: 'Get list of requests',
-    description: 'Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.',
+    description: 'Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.',
     request: { query: requestListQuerySchema },
     responses: { 200: json('Requests', paginationSchema(requestSchema), mockPaginatedRequestsResponse()) },
   }),

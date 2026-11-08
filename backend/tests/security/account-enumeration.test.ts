@@ -109,8 +109,8 @@ describe('Account enumeration', async () => {
   it('must not learn whether an address has an account via the passkey challenge', async () => {
     const { account, stranger } = await accountAndStranger();
 
-    const forAccount = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: account.email }));
-    const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: stranger }));
+    const forAccount = await challengeShape(await post('/auth/passkey/generate-challenge', { kind: 'authentication', email: account.email }));
+    const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { kind: 'authentication', email: stranger }));
 
     expect(forAccount).toEqual(forStranger);
     expect(forAccount).toEqual({ status: 200, credentials: [] });
@@ -122,7 +122,7 @@ describe('Account enumeration', async () => {
     /** Answers a fresh challenge with a passkey no account holds, naming `email`. */
     const signInAs = async (email: string) => {
       const { challenge, cookie } = await passkeyChallenge('authentication');
-      const res = await post('/auth/passkey-verification', { type: 'authentication', email, assertion: softwarePasskey().assert(challenge) }, cookie);
+      const res = await post('/auth/passkey-verification', { kind: 'authentication', email, assertion: softwarePasskey().assert(challenge) }, cookie);
       const { type } = (await res.json()) as { type?: string };
       return { status: res.status, type };
     };
@@ -173,7 +173,7 @@ describe('Account enumeration', async () => {
   it('must not learn whether an address has an account via the waitlist form', async () => {
     const { account, stranger } = await accountAndStranger();
     const join = async (email: string) => {
-      const res = await post('/requests', { email, type: 'waitlist', message: null });
+      const res = await post('/requests', { email, kind: 'waitlist', message: null });
       return { status: res.status, body: await res.text() };
     };
 
@@ -199,7 +199,7 @@ describe('Account enumeration', async () => {
     const stranger = `nobody-${nanoid(8)}@security-test.com`.toLowerCase();
 
     // An address with an account stores no row, so an answer that waited for the row would come later for a stranger.
-    const answered = await answerWhileWriteWaits('requests', () => post('/requests', { email: stranger, type: 'waitlist', message: null }));
+    const answered = await answerWhileWriteWaits('requests', () => post('/requests', { email: stranger, kind: 'waitlist', message: null }));
     expect(answered).toBe(204);
 
     // Stored once the write gets through (positive control).
@@ -228,7 +228,7 @@ describe('Account enumeration', async () => {
    * What a GitHub callback answers for a provider account nobody linked, whose profile asserts `email`: verified by
    * GitHub, or (an unverified primary) only typed in by whoever holds the provider account.
    */
-  const providerCallback = async (email: string, { type = 'auth', verified = false, cookie = '' } = {}) => {
+  const providerCallback = async (email: string, { kind = 'auth', verified = false, cookie = '' } = {}) => {
     vi.mocked(transformGithubUserData).mockReturnValueOnce({
       id: nanoid(),
       slug: 'prober',
@@ -239,7 +239,7 @@ describe('Account enumeration', async () => {
       familyName: 'Ber',
     });
     const state = nanoid();
-    const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', type, codeVerifier: 'verifier' }));
+    const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', kind, codeVerifier: 'verifier' }));
     const res = await app.request(`/auth/github/callback?code=provider-code&state=${state}`, {
       headers: { ...defaultHeaders, Cookie: [stateCookie, cookie].filter(Boolean).join('; ') },
     });
@@ -271,8 +271,8 @@ describe('Account enumeration', async () => {
       const { id: sessionId } = await insertTestSession(prober);
       return authCookie('oauth-connect', (await insertTestToken('oauth-connect', prober, { sessionId })).raw);
     };
-    const connect = await providerCallback(account.email, { type: 'connect', cookie: await connectPin() });
-    expect(await providerCallback(stranger, { type: 'connect', cookie: await connectPin() })).toEqual(connect);
+    const connect = await providerCallback(account.email, { kind: 'connect', cookie: await connectPin() });
+    expect(await providerCallback(stranger, { kind: 'connect', cookie: await connectPin() })).toEqual(connect);
     expect(connect).toMatchObject({ status: 302, location: `${appConfig.frontendUrl}/auth/email-verification/connect?provider=github` });
 
     // An address GitHub verified is its holder's: they are told to sign in and connect from there (positive control).

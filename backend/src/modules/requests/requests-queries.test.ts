@@ -14,20 +14,20 @@ describe('request query uniqueness', () => {
     await baseDb.delete(requestsTable).where(sql`lower(${requestsTable.email}) = lower(${email})`);
   });
 
-  it('allows distinct signup types for one address', async () => {
-    await expect(insertRequest(ctx, { email, type: 'waitlist' })).resolves.toMatchObject({ type: 'waitlist' });
-    await expect(insertRequest(ctx, { email, type: 'newsletter' })).resolves.toMatchObject({ type: 'newsletter' });
+  it('allows distinct signup kinds for one address', async () => {
+    await expect(insertRequest(ctx, { email, kind: 'waitlist' })).resolves.toMatchObject({ kind: 'waitlist' });
+    await expect(insertRequest(ctx, { email, kind: 'newsletter' })).resolves.toMatchObject({ kind: 'newsletter' });
   });
 
   it('swallows duplicate signups case-insensitively at the database boundary', async () => {
-    await insertRequest(ctx, { email, type: 'waitlist' });
+    await insertRequest(ctx, { email, kind: 'waitlist' });
 
-    await expect(insertRequest(ctx, { email: email.toUpperCase(), type: 'waitlist' })).resolves.toBeUndefined();
+    await expect(insertRequest(ctx, { email: email.toUpperCase(), kind: 'waitlist' })).resolves.toBeUndefined();
   });
 
   it('allows repeated contact requests', async () => {
-    await insertRequest(ctx, { email, type: 'contact' });
+    await insertRequest(ctx, { email, kind: 'contact' });
 
-    await expect(insertRequest(ctx, { email, type: 'contact' })).resolves.toMatchObject({ type: 'contact' });
+    await expect(insertRequest(ctx, { email, kind: 'contact' })).resolves.toMatchObject({ kind: 'contact' });
   });
 });

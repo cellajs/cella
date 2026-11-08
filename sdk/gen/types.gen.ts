@@ -426,7 +426,7 @@ export type MeAuthData = {
   } | null;
   sessions: Array<{
     id: string;
-    type: 'regular' | 'mfa';
+    kind: 'regular' | 'mfa';
     userId: string;
     deviceName: string | null;
     deviceType: 'desktop' | 'mobile';
@@ -674,7 +674,7 @@ export type Request = {
   id: string;
   message: string | null;
   email: string;
-  type: 'waitlist' | 'newsletter' | 'contact';
+  kind: 'waitlist' | 'newsletter' | 'contact';
   wasInvited: boolean;
 };
 
@@ -1578,11 +1578,11 @@ export type GetPendingMfaResponse = GetPendingMfaResponses[keyof GetPendingMfaRe
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    kind: 'oauth-verification' | 'invitation' | 'magic';
     token: string;
   };
   query?: never;
-  url: '/auth/invoke-token/{type}/{token}';
+  url: '/auth/invoke-token/{kind}/{token}';
 };
 
 export type InvokeTokenErrors = {
@@ -1617,10 +1617,10 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type RedeemLinkTokenData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation';
+    kind: 'oauth-verification' | 'invitation';
   };
   query?: never;
-  url: '/auth/invoke-token/{type}';
+  url: '/auth/invoke-token/{kind}';
 };
 
 export type RedeemLinkTokenErrors = {
@@ -1660,11 +1660,11 @@ export type RedeemLinkTokenResponse = RedeemLinkTokenResponses[keyof RedeemLinkT
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    kind: 'oauth-verification' | 'invitation' | 'magic';
     id: string;
   };
   query?: never;
-  url: '/auth/token/{type}/{id}';
+  url: '/auth/token/{kind}/{id}';
 };
 
 export type GetTokenDataErrors = {
@@ -2259,7 +2259,7 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 
 export type GeneratePasskeyChallengeData = {
   body: {
-    type: 'authentication' | 'mfa' | 'registration';
+    kind: 'authentication' | 'mfa' | 'registration';
   };
   path?: never;
   query?: never;
@@ -2321,7 +2321,7 @@ export type SignInWithPasskeyData = {
       clientExtensionResults?: unknown;
       type: 'public-key';
     };
-    type: 'authentication' | 'mfa';
+    kind: 'authentication' | 'mfa';
   };
   path?: never;
   query?: never;
@@ -2407,7 +2407,7 @@ export type GithubData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/github';
@@ -2434,7 +2434,7 @@ export type GoogleData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/google';
@@ -2461,7 +2461,7 @@ export type MicrosoftData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/microsoft';
@@ -2677,7 +2677,7 @@ export type StartSsoData = {
     connectionId: string;
   };
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/sso/connections/{connectionId}/start';
@@ -2714,7 +2714,7 @@ export type StartSsoFederationData = {
     federation: string;
   };
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/sso/federations/{federation}/start';
@@ -3705,7 +3705,7 @@ export type RevokeMySessionsResponses = {
   200: {
     data: Array<{
       id: string;
-      type: 'regular' | 'mfa';
+      kind: 'regular' | 'mfa';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
@@ -4724,7 +4724,7 @@ export type ListNotificationsResponses = {
       id: string;
       createdAt: string;
       actorId: string | null;
-      type: 'mention' | 'comment' | 'reply';
+      kind: 'mention' | 'comment' | 'reply';
       entityType: 'attachment';
       subjectId: string;
       contextId: string | null;
@@ -5609,9 +5609,9 @@ export type ListRequestsData = {
       | 'email'
       | 'email asc'
       | 'email desc'
-      | 'type'
-      | 'type asc'
-      | 'type desc'
+      | 'kind'
+      | 'kind asc'
+      | 'kind desc'
       | 'createdAt'
       | 'createdAt asc'
       | 'createdAt desc';
@@ -5662,7 +5662,7 @@ export type ListRequestsResponse = ListRequestsResponses[keyof ListRequestsRespo
 export type CreateRequestData = {
   body: {
     email: string;
-    type: 'waitlist' | 'newsletter' | 'contact';
+    kind: 'waitlist' | 'newsletter' | 'contact';
     message: string | null;
   };
   path?: never;

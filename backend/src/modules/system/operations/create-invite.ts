@@ -32,7 +32,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   // One independent random secret per recipient, so one link never authenticates another's invitation.
   const issued = await issueTokens(
     ctx,
-    recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),
+    recipientEmails.map((email) => ({ kind: 'invitation' as const, email, createdBy: user.id })),
   );
 
   await Promise.all(issued.map(({ token }) => stampWaitlistRequestInvited(ctx, { email: token.email })));

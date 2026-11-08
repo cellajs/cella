@@ -250,12 +250,12 @@ describe('Opening a token link while signed in', async () => {
     expect(minutesLeft).toBeLessThanOrEqual(30);
   });
 
-  it('keeps the short window for other token types', async () => {
+  it('keeps the short window for other token kinds', async () => {
     const owner = await createTestUser('owner@example.com');
     const { raw, row: link } = await insertTestToken('magic', owner);
 
     // Opened in the browser that asked for it, so it is redeemed directly.
-    await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) } });
+    await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) } });
 
     const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.email, owner.email));
     const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
@@ -268,7 +268,7 @@ describe('Opening a token link while signed in', async () => {
     const { rawToken: raw } = await freshInvitation({ email: owner.email, boundTo: owner.id });
 
     const { response } = await call(invokeToken, {
-      path: { type: 'invitation', token: raw },
+      path: { kind: 'invitation', token: raw },
       headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
     });
 
@@ -281,7 +281,7 @@ describe('Opening a token link while signed in', async () => {
     const { raw, row: link } = await insertTestToken('magic', owner);
 
     const cookies = [await createTestSession(me), authCookie('magic-requested', link.id)].join('; ');
-    const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
+    const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
 
     expect(response.status).toBe(409);
   });

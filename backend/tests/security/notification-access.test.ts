@@ -44,7 +44,7 @@ describe('Notification access', async () => {
         createdAt: createdAt.toISOString(),
         userId,
         actorId: tenant.user.id,
-        type: 'mention',
+        kind: 'mention',
         entityType: 'attachment',
         subjectId,
         contextId: subjectId,

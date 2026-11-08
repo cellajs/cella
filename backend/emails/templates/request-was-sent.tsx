@@ -1,13 +1,13 @@
-import type { requestTypeEnum } from '#/modules/requests/requests-db';
+import type { requestKinds } from '#/modules/requests/requests-db';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { endingFor } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
 
-export type RequestType = (typeof requestTypeEnum)[number];
+export type RequestKind = (typeof requestKinds)[number];
 
 interface RequestResponseStatic {
-  type: RequestType;
+  kind: RequestKind;
 }
 
 /**
@@ -15,13 +15,13 @@ interface RequestResponseStatic {
  * form, so the mail never repeats what they typed.
  */
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
-  translate(lng, { type }) {
-    const subject = i18n.t('backend:email.request.subject', { lng, requestType: type, ...plainText });
+  translate(lng, { kind }) {
+    const subject = i18n.t('backend:email.request.subject', { lng, requestKind: kind, ...plainText });
     return {
       subject,
       previewText: subject,
-      headerHtml: i18n.t(`backend:email.${type}_request.title`, { lng }),
-      bodyHtml: i18n.t(`backend:email.${type}_request.text`, { lng }),
+      headerHtml: i18n.t(`backend:email.${kind}_request.title`, { lng }),
+      bodyHtml: i18n.t(`backend:email.${kind}_request.text`, { lng }),
       endingHtml: endingFor(lng, 'reply'),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
@@ -39,9 +39,9 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
     );
   },
   requestDetails: true,
-  preview: { statics: { type: 'contact' }, recipient: {} },
+  preview: { statics: { kind: 'contact' }, recipient: {} },
   previewVariants: {
-    waitlist: { statics: { type: 'waitlist' }, recipient: {} },
-    newsletter: { statics: { type: 'newsletter' }, recipient: {} },
+    waitlist: { statics: { kind: 'waitlist' }, recipient: {} },
+    newsletter: { statics: { kind: 'newsletter' }, recipient: {} },
   },
 });

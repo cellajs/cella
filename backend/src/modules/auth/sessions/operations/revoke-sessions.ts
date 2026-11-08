@@ -2,14 +2,14 @@ import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
-import type { SessionEndReason, SessionModel, SessionType } from '#/modules/auth/sessions/sessions-db';
+import type { SessionEndReason, SessionKind, SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
 import { deleteOpenedMagicLink } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteProviderSessionsByUser } from '#/modules/oauth-server/oauth-server-queries';
 import { log } from '#/utils/logger';
 
-/** Which of the user's live sessions are revoked: these ids, or all of them (optionally of one type). */
-type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionType };
+/** Which of the user's live sessions are revoked: these ids, or all of them (optionally of one kind). */
+type SessionSelection = { sessionIds: string[] } | { all: true; kind?: SessionKind };
 
 /**
  * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on): the authorization
@@ -44,12 +44,12 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
   if ('sessionIds' in opts && opts.sessionIds.length === 0) return [];
 
   const ids = 'sessionIds' in opts ? opts.sessionIds : undefined;
-  const type = 'all' in opts ? opts.type : undefined;
+  const kind = 'all' in opts ? opts.kind : undefined;
 
   const ended = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const stamped =
-      reason === 'user_deleted' ? [] : await updateSessionsRevoked(txCtx, { match: { userId, ids, type }, revokedBy: by, revocationReason: reason });
+      reason === 'user_deleted' ? [] : await updateSessionsRevoked(txCtx, { match: { userId, ids, kind }, revokedBy: by, revocationReason: reason });
 
     if (leavingReasons.has(reason)) {
       await deleteProviderSessionsByUser(txCtx, { userId });
@@ -60,7 +60,7 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
 
   dropCachedSessions(userId);
 
-  const everySession = 'all' in opts && !opts.type;
+  const everySession = 'all' in opts && !opts.kind;
   if (everySession || ended.length > 0) {
     const sessionIds = everySession ? 'all' : ended.map((session) => session.id);
     authEvents.emit('session.revoked', { userId, sessionIds, reason });

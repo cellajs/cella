@@ -278,7 +278,7 @@ export interface ConfigStringArrays {
   entityActions: readonly string[];
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
-  tokenTypes: readonly string[];
+  tokenKinds: readonly string[];
   languages: readonly string[];
   uploadTemplateIds: readonly string[];
 }
@@ -339,7 +339,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   systemRoles: T['systemRoles'];
 
-  tokenTypes: T['tokenTypes'];
+  tokenKinds: T['tokenKinds'];
 
   languages: T['languages'];
 

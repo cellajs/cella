@@ -14,7 +14,7 @@ setTestConfig({ enabledAuthStrategies: ['oauth'], enabledOAuthProviders: ['githu
 
 afterEach(async () => await clearSecurityTestData());
 
-const pins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
+const pins = () => db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-connect'));
 
 /** A connect is pinned to the account that starts it, by a token only this browser's Lax cookie carries. */
 describe('starting a provider connect', async () => {
@@ -68,7 +68,7 @@ describe('starting a provider sign-in', async () => {
     // A page on another site navigates one window to the start again and again, each with a long redirect path.
     const states: string[] = [];
     for (let start = 0; start < 8; start++) {
-      const { response } = await call(github, { query: { type: 'auth', redirectAfter: `/${'a'.repeat(2000)}` }, headers: inBrowser() });
+      const { response } = await call(github, { query: { kind: 'auth', redirectAfter: `/${'a'.repeat(2000)}` }, headers: inBrowser() });
       expect(response.status).toBe(302);
       states.push(new URL(response.headers.get('location') ?? '').searchParams.get('state') ?? '');
       browser.absorb(response);

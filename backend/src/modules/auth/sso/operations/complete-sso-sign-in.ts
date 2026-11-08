@@ -52,7 +52,7 @@ export interface SsoSignInFacts {
  *   institution, and what provisioning and connecting throw.
  */
 export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims, payload }: SsoSignIn) => {
-  const { type, redirectAfter, connectionId } = payload;
+  const { kind, redirectAfter, connectionId } = payload;
 
   const claimed = assertedInstitution(federation, claims);
   const connection = connectionId
@@ -78,7 +78,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
   const mfaAt = assertedMfaAt(federation, claims);
 
   const user =
-    type === 'connect'
+    kind === 'connect'
       ? await connectSsoIdentity(ctx, facts)
       : identity
         ? await signInSsoIdentity(identity, facts)

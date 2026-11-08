@@ -117,9 +117,9 @@ describe('apply_retention() row rules', () => {
       removed: [payloads.expired, payloads.usedLongAgo],
     });
 
-    const request = async (type: 'contact' | 'waitlist' | 'newsletter', createdAt: Date) => {
+    const request = async (kind: 'contact' | 'waitlist' | 'newsletter', createdAt: Date) => {
       const id = generateId();
-      await db.insert(requestsTable).values({ id, type, email: `${id}@retention.test`, message: 'hello', createdAt: createdAt.toISOString() });
+      await db.insert(requestsTable).values({ id, kind, email: `${id}@retention.test`, message: 'hello', createdAt: createdAt.toISOString() });
       return id;
     };
     const requests = {
