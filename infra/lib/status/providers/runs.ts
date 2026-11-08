@@ -1,3 +1,4 @@
+import { classifyRun } from '../../deploy/failure-class';
 import { commandOf, isScheduledRun, type JobDefinitionFacts, type JobRun, runEnded } from '../../deploy/job-runs';
 import { mainJobOutcome } from '../../deploy/main-job';
 import { type Growth, type RunRecord, rewriteNote } from '../../deploy/run-record';
@@ -64,8 +65,14 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
   return own;
 }
 
-/** A deploy's end, as its record says it, or a hand start's job run that wrote none. */
-function deployVerdict(runs: CheckBuilder, sha: string, outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>, state: string): Check {
+/** A deploy's end, as its record says it, or a hand start's job run that wrote none: then `record` is undefined. */
+function deployVerdict(
+  runs: CheckBuilder,
+  sha: string,
+  outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>,
+  state: string,
+  record?: RunRecord,
+): Check {
   if (outcome === 'running') return runs.ok(`${sha} is deploying`);
   if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`);
   if (outcome === 'blocked' || outcome === 'apply needed') {
@@ -74,7 +81,10 @@ function deployVerdict(runs: CheckBuilder, sha: string, outcome: RunRecord['outc
       command: actionCommand('runs'),
     });
   }
-  return runs.error(`${sha} failed (${state})`, { description: 'Read how it ended', command: actionCommand('runs') });
+  const failed = record
+    ? `${sha} failed${record.failedStep ? ` at "${record.failedStep}"` : ''}: ${classifyRun(record).sentence}`
+    : `${sha} failed (${state})`;
+  return runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') });
 }
 
 /**
@@ -138,7 +148,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
             command: actionCommand('runs'),
           });
         }
-        return deployVerdict(runs, sha, newest.outcome, newest.outcome);
+        return deployVerdict(runs, sha, newest.outcome, newest.outcome, newest);
       }),
     ];
   },

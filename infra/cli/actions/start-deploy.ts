@@ -1,25 +1,31 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { confirm } from '@inquirer/prompts';
+import { classifyRun } from '../../lib/deploy/failure-class';
 import { listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
-import { bucketRunStore } from '../../lib/deploy/run-store';
-import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
+import { type RunRecord, stepLine, wroteRecord } from '../../lib/deploy/run-record';
+import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
+import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, type RemoteRef, resolveTarget, type Target } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { leaseDeploys, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
-import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, pc, sleep, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
+import { within } from '../../lib/utils/retry';
+import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 
-const POLL_MS = 10_000;
+const POLL_MS = 5_000;
+const REFS_BUDGET_MS = 4_000;
+const MAX_TRIES = 3;
 
 /**
  * Start one run of the environment's main job by hand, on the operator key, for the environment's target as the environments file of this
@@ -53,7 +59,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
     );
     return endAction(1);
   }
-  const outcome = await deployAndFollow(context, auth, definitionId, target, 'started');
+  const outcome = await deployAndFollow(context, operator, definitionId, target, 'started');
   if (outcome !== 'deployed') endAction(1);
 }
 
@@ -67,46 +73,106 @@ async function environmentTarget(context: InfraContext): Promise<Target | undefi
   return resolveTarget({ environment: context.environment, line, listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY) });
 }
 
-/** Follow a run until it ends, printing each state it passes. */
-async function followRun(auth: { secretKey: string }, region: string, started: JobRun): Promise<JobRun> {
-  let run = started;
-  let shown = '';
-  while (!runEnded(run)) {
-    if (run.state !== shown) console.info(`  ${pc.dim(new Date().toISOString().slice(11, 19))} ${run.state}`);
-    shown = run.state;
-    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
-    run = await readJobRun(auth, { region, runId: run.id });
+/** This run's record: the one it names once found, else the newest of the last three that the run wrote. */
+async function recordOf(store: RunStore, run: JobRun, sha: string, found: string | undefined): Promise<RunRecord | undefined> {
+  if (found) return (await store.readRecord(found))?.newest;
+  for (const id of await store.listRuns(3)) {
+    const reading = await store.readRecord(id);
+    if (reading && wroteRecord(run, sha, reading.newest)) return reading.newest;
   }
-  return run;
+  return undefined;
 }
 
 /**
- * Start a run of the main job for one commit and follow it to its end, reporting how it ended: a blocked run names what the operator owes
- * and which action deploys the commit again, a failed one where its log is.
+ * Follow a run until it ends: its job state until its record appears, then each step once it completes. A record that cannot be read
+ * this time is read again at the next poll.
+ */
+async function followRun(
+  auth: { secretKey: string },
+  region: string,
+  store: RunStore,
+  sha: string,
+  started: JobRun,
+): Promise<{ run: JobRun; record?: RunRecord }> {
+  let run = started;
+  let record: RunRecord | undefined;
+  let shownState = '';
+  let shownSteps = 0;
+  for (;;) {
+    if (!record && !runEnded(run) && run.state !== shownState) console.info(`  ${pc.dim(new Date().toISOString().slice(11, 19))} ${run.state}`);
+    shownState = run.state;
+    record = (await recordOf(store, run, sha, record?.run).catch(() => undefined)) ?? record;
+    for (const step of record?.steps.slice(shownSteps) ?? []) console.info(stepLine(step));
+    shownSteps = record?.steps.length ?? 0;
+    if (runEnded(run)) return { run, record };
+    await sleep(POLL_MS);
+    run = await readJobRun(auth, { region, runId: run.id });
+  }
+}
+
+/** The repository's release tags and branch heads, which name a commit, when they answer within the budget. */
+function commitRefs(): Promise<RemoteRef[] | undefined> {
+  return within(
+    REFS_BUDGET_MS,
+    Promise.resolve()
+      .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']))
+      .catch(() => undefined),
+  );
+}
+
+/**
+ * Start a run of the main job for one commit and follow it step by step to its end, reporting how it ended: the version that serves, or
+ * whose side the failure is on and what the users get meanwhile. A failure that a retry usually clears offers to start the same target
+ * and retry counter again, as the deploy replaces only the roles that do not serve it yet, up to three tries; a blocked run names the one
+ * action that deploys it again. Without a record, the job's state says how it ended.
  * @param started what the run does, after "Run <id>".
  */
 export async function deployAndFollow(
   context: InfraContext,
-  auth: { secretKey: string },
+  key: KeyPair,
   definitionId: string,
   commit: { sha: string; retry: number },
   started: string,
 ): Promise<ReturnType<typeof mainJobOutcome>> {
-  const { region } = deriveInfra(context.appConfig);
-  const first = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
-  console.info(`  ${checkMark} Run ${first.id} ${started}.`);
-  const run = await followRun(auth, region, first);
-  const outcome = mainJobOutcome(run);
-  if (outcome === 'deployed') console.info(`${checkMark} ${context.environment} runs ${commit.sha.slice(0, 10)}.`);
-  else if (outcome === 'blocked')
-    console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A runtime value: \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes. "apply needed": \`${actionCommand('apply')}\` from a checkout at this commit. Either deploys this commit again.`,
-    );
-  else
-    console.error(
-      `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
-    );
-  return outcome;
+  const auth = { secretKey: key.secretKey };
+  const { naming, region } = deriveInfra(context.appConfig);
+  const state = stateKeyOf(key, context.projectId);
+  const store = bucketRunStore(await makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey), naming.bootDiagBucket);
+  for (let tries = 1; ; tries++) {
+    const start = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
+    console.info(`  ${checkMark} Run ${start.id} ${started}.`);
+    const { run, record } = await followRun(auth, region, store, commit.sha, start);
+    const outcome = mainJobOutcome(run);
+    const verdict = record && record.outcome !== 'running' ? classifyRun(record) : undefined;
+    if (outcome === 'deployed') {
+      console.info(`${checkMark} ${context.environment} runs ${commitName(await commitRefs(), commit.sha)}`);
+      return outcome;
+    }
+    if (outcome === 'blocked') {
+      if (!verdict) {
+        console.warn(
+          `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A runtime value: \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes. "apply needed": \`${actionCommand('apply')}\` from a checkout at this commit. Either deploys this commit again.`,
+        );
+        return outcome;
+      }
+      console.warn(`${warningMark} ${verdict.sentence}`);
+      console.warn(
+        record?.outcome === 'apply needed'
+          ? `  \`${actionCommand('apply')}\` from a checkout at this commit applies it and deploys the commit again.`
+          : `  \`${actionCommand('secrets')}\` stores it and deploys the commit again.`,
+      );
+      return outcome;
+    }
+    const unended = `The run ended ${run.state} before ${record ? 'its record did' : 'it wrote a record'}${run.error_message ? `: ${run.error_message}` : '.'}`;
+    console.error(`${crossMark} ${verdict?.sentence ?? unended}`);
+    const live = await liveCommit(context, key).catch(() => undefined);
+    if (live) {
+      const still = commit.sha.startsWith(live) ? '' : ' still';
+      console.info(`${pc.green('●')} Your users${still} get ${commitName(await commitRefs(), live)}`);
+    }
+    const offer = verdict?.retryLikely && tries < MAX_TRIES && Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
+    if (!offer || !(await confirm({ message: 'Retry now?', default: true }))) return outcome;
+  }
 }
 
 /** The commit the environment runs: the primary role's in the live record, none before the first deploy. */
@@ -153,7 +219,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
   if (live) {
     const outcome = await deployAndFollow(
       context,
-      auth,
+      key,
       definitionId,
       { sha: live, retry: 0 },
       `deploys the live ${live.slice(0, 10)} again, replacing every machine with the rotated keys and values`,
