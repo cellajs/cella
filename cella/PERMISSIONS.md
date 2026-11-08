@@ -68,7 +68,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds, whatever wrote it.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds.
 
 ## The policy consulted
 
@@ -106,19 +106,19 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 
 Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
 
-Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
+Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child. Only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
 
 Product entities have only **home** rows, where `create` grants creating inside that channel.
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`.
 
-A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+A role's product grants reach only rows homed at its own channel. A role the hierarchy declares `elevated` there reaches the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
 A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync.
 
 The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
 
-A channel declares its roles from most to least privileged, and that order decides who may grant what:
+A channel declares its roles from most to least privileged. That order decides who may grant what:
 
 - **No higher role:** nobody hands out a role above their own on the channel.
 - **No higher member:** nobody demotes or removes a member who holds a role above their own.
@@ -149,7 +149,7 @@ A missing scope never defaults to unscoped, which would bypass permissions.
 
 ## Row conditions
 
-Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set.
+Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens only `read` to rows whose `public` flag is set.
 
 The set is **closed** to `own` and `public`. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch. So no cross-row or app-defined condition exists.
 
@@ -168,7 +168,7 @@ A draft channel's invitations wait for the publish. Those for its `prepareRoles`
 A channel below the organization can be archived, which closes it. The organization itself is never archived, only its tenant.
 
 - **No writes.** It refuses every write to itself, every create inside it and every change to a product homed in it, system admins included.
-- **Still readable.** It reads and streams as before, and a list shows it when asked.
+- **Still readable.** It reads and streams as before. A list shows it when asked.
 - **Nobody stuck.** A member can still be removed or leave.
 - **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
 - **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
@@ -181,7 +181,7 @@ The frontend asks the engine. The backend decides. A control calls `can(action, 
 
 `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
-A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, as offline with none cached, the gate lets the user through and the server decides.
+A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, the gate lets the user through and the server decides.
 
 ## Enforcement paths
 
@@ -205,7 +205,7 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 
 A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
 
-Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `actorGuard` in place of `userGuard` where an API key or access token may call too. The user's own account runs behind `[userGuard]` alone.
+Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an API key or access token may call, `actorGuard` takes the place of `userGuard`. The user's own account runs behind `[userGuard]` alone.
 
 | Guard | Admits | Refuses with |
 | --- | --- | --- |
