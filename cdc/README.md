@@ -86,7 +86,7 @@ Failure handling has three levels. The core records a change once. Whatever fail
 
 The slot is the only durable buffer, and it advances only after a flush committed. Delivery is **at least once**, recording is **once**: a change delivered again changes no activity, counter or sequence value, and its message goes out again with the sequence value its row already holds.
 
-A failure reports degraded at first, so a deploy that brings a change the worker can never process warns in its smoke step and stays deployed, and after a minute clients are told the worker is away. A worker that does not get past a failure for a while reports unhealthy, its log naming the position and the error, while live sync pauses and the REST API goes on. A fix ends it, and so does a dropped slot: by an operator, or by the worker once the WAL behind it reaches its bound, whatever failed, a flush that keeps timing out on a locked database or a send lost while the API was away included. The while is counted per process: a worker that crash-loops starts it over at every start, so it never drops its slot, and only its WAL lag in the health answer shows it.
+A failure reports degraded at first. A deploy that brings a change the worker can never process therefore warns in its smoke step and stays deployed. A worker stuck on a failure for a while reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on. A fix ends the failure, and so does a dropped slot. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
 
 Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)). Two failures hold a second answer at the mid level, both open findings: a failed slot lookup or drop, and a failed read of the sync state at start.
 
@@ -137,10 +137,10 @@ What a lost case costs: rows changed between the old slot's last acknowledged po
 ## Operational constraints
 
 - **Adding a tracked table, or drafts to a product table, takes two steps:** the backend's entity or resource table map (or the table's `publishedAt` column), then rerunning the CDC migration, which builds the publication with its row filters. While the two do not match, the worker reads nothing and reports unhealthy with what is wrong.
-- **`REPLICA IDENTITY FULL` is mandatory:** an update's changed fields and a delete's row come from the old row, so the worker strips large columns itself, and a consumer must tolerate their absence from the row data.
+- **`REPLICA IDENTITY FULL` is mandatory:** an update's changed fields and a delete's row come from the old row. The worker strips large columns from the row data, so a consumer must tolerate their absence.
 - **Only one worker may read the slot.**
 - **A source transaction is held whole, up to a limit.** A larger one is a change the worker can never process. Write a backfill in smaller transactions.
-- **WAL retention is the recovery margin.** A worker that is down, waits for the API or stops on a setup problem keeps WAL until the disk is full unless the database bounds it: [Deployment](../cella/DEPLOYMENT.md#overview).
+- **WAL retention is the recovery margin.** A worker that is down, waits for the API or stops on a setup problem keeps WAL. Unless the database bounds it, that WAL grows until the disk is full ([Deployment](../cella/DEPLOYMENT.md#overview)).
 - **The worker's role needs `REPLICATION` and an effective RLS bypass:** it owns the tables and none forces row-level security, or it holds `BYPASSRLS` ([Database roles](../cella/MULTI_TENANCY.md#database-roles)). While either is missing, the worker reads nothing and reports unhealthy.
 - **A hung worker cannot hold API writes for long:** server-side timeouts take back the row locks of its flush.
 
