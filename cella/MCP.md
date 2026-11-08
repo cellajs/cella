@@ -37,7 +37,9 @@ The code is in `backend/src/modules/mcp/`. `pnpm dev` starts the worker beside t
 | A token for another tenant or another organization's endpoint | 401: the audience must be this endpoint or the tenant's REST API |
 | `tools/call` outside the token's scopes | 403 with a challenge and a JSON-RPC error, both naming the scope to step up to |
 
-A client follows the challenge to the OAuth worker and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again. Sessions and API keys are refused here on purpose. The MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
+A client follows the challenge to the OAuth worker and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
+
+Sessions and API keys are refused here on purpose. The MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
 
 ## MCP tools are routes
 
