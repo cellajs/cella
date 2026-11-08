@@ -117,7 +117,11 @@ Backend modules define Hono routes with Zod schemas. Together they generate an O
 
 ## Scaling
 
-An app runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process. That process holds every stream. Up: a bigger machine for the API and a bigger managed database. Apart: each worker moves to a machine of its own when the API's machine gets busy. Every worker is a singleton. The CDC worker holds the one replication slot, the jobs worker the one scheduler.
+An app runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process. That process holds every stream.
+
+Up: a bigger machine for the API and a bigger managed database. Apart: each worker moves to a machine of its own when the API's machine gets busy.
+
+Every worker is a singleton. The CDC worker holds the one replication slot, the jobs worker the one scheduler.
 
 The client carries work too. It keeps its own cache and fetches what the sync engine announces. The server spreads those fetches over time.
 
