@@ -8,8 +8,8 @@ Every key does one kind of work: an Owner API key for IAM writes, a one-day oper
 
 ## Zones
 
-Whoever chooses the code that runs with an environment's secrets reads them. So every wall stands between two zones,
-and none between two holders of one zone. A wall is a call Scaleway refuses.
+Every wall stands between two zones. None stands between two holders of one zone,
+since whoever chooses the code that runs with an environment's secrets reads them. A wall is a call Scaleway refuses.
 
 | Zone | Holders | Reaches |
 | --- | --- | --- |
@@ -45,11 +45,11 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 
 Each one refuses a key without an expiry or with more than a day left. Such a key would write IAM from every address between the moments. Keep the Owner account for recovery, with MFA.
 
-**The observer** has one key per operator machine. That key serves every environment there. **Update identities** on another machine, with your Owner API key, makes that machine its own. The key works from any address, so it reads nothing that holds a key, a secret value or the app's code. **Rotate keys** leaves it alone.
+**The observer** has one key per operator machine. That key serves every environment there. **Update identities** on another machine, with your Owner API key, makes that machine its own. The key reads nothing that holds a key, a secret value or the app's code, since it works from any address. **Rotate keys** leaves it alone.
 
 **The engine image.** An apply builds it on your machine and pushes it to the environment's registry namespace with your operator key. Your own Docker config never holds that key. The image holds the engine's code and the description of the app, and no key or secret value.
 
-Serverless Jobs pulls the image for each run from the registry of the job's own project, so no key of the engine's pulls it. The deploy key holds no registry right.
+No key of the engine's pulls the image: Serverless Jobs pulls it for each run from the registry of the job's own project. The deploy key holds no registry right.
 
 **What the deploy key cannot do.** It writes none of these, which take the operator key or an Owner moment:
 
@@ -61,7 +61,7 @@ Serverless Jobs pulls the image for each run from the registry of the job's own 
 
 It reads secret values in the runtime folder only, never the passphrase or the database passwords. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good.
 
-It does write private networks and IPAM, which a private NIC at a reserved address needs. So a leaked key can attach a machine of its own to the environment's network, or reserve addresses in it.
+It does write private networks and IPAM, which a private NIC at a reserved address needs. A leaked key can attach a machine of its own to the environment's network, or reserve addresses in it.
 
 Of the buckets, it reaches:
 
@@ -77,20 +77,20 @@ The manifest holds no secret: only the role, the release and the drain order the
 
 Every Pulumi run of the stack needs **the Pulumi passphrase**, the key to the stack's secrets. A first setup shows it once, for your password manager. From then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost.
 
-Only the operator reads the state. The state holds no machine and no secret value. So a leaked passphrase opens nothing.
+A leaked passphrase opens nothing: only the operator reads the state, and it holds no machine and no secret value.
 
-On an operator machine, `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key and no passphrase from a file or the environment. So nothing on the machine changes infrastructure with nobody at the prompt.
+Nothing on an operator machine changes infrastructure with nobody at the prompt. Its `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key and no passphrase from a file or the environment.
 
 ### Secret folders
 
-Each environment has a Scaleway project of its own, so its secret folders sit at the project's root. Each key's policy names the folders it reads in that project:
+An environment's secret folders sit at the root of its own Scaleway project. Each key's policy names the folders it reads in that project:
 
 - `/runtime/`: one container per value, read by the deploy key
 - `/engine/`: the deploy key's copy, the passphrase and the database passwords, read only by the operator
 
-`/runtime/` holds every runtime secret, the uploads key's two halves, the repository read key and the telemetry ingest key. A deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)). So a change of consumers writes no IAM.
+`/runtime/` holds every runtime secret, the uploads key's two halves, the repository read key and the telemetry ingest key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)).
 
-On a shared host the services read one env file, so they share their secrets.
+On a shared host the services share their secrets: they read one env file.
 
 ### If a key is lost
 
@@ -109,7 +109,7 @@ A privileged action runs on a key that ends within a day. It is a key of the `<a
 
 `pnpm infra` → **Rotate keys & secrets** → **Set up operators** (`pnpm infra operator-key`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy for each with the same rules. It makes no key.
 
-The policies are written in place, so a key of either keeps working. A new environment's setup adds its project to both. The name is production's slug, so staging and production share one set of operators.
+A key of either keeps working, since the policies are written in place. A new environment's setup adds its project to both. Staging and production share one set of operators, since the name is production's slug.
 
 **A sitting.** In the console, go to IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 
@@ -121,7 +121,7 @@ It accepts the operator application or a user the operators group lists. It refu
 
 The key stays in memory until you quit. Every action of the run uses it.
 
-**Buckets.** A bucket policy refuses every principal it does not name, your Owner API key included. Each policy names the operator application and every member of the group, as the apply finds them in IAM. So a member reaches the buckets only after the first apply since they joined. That apply runs on the application's key or an admitted member's.
+**Buckets.** A bucket policy refuses every principal it does not name, your Owner API key included. Each policy names the operator application and every member of the group, as the apply finds them in IAM. A member reaches the buckets only after the first apply since they joined. That apply runs on the application's key or an admitted member's.
 
 The inventory in **Show status** names a key of the operator application that outlives a day. Delete it in the console.
 
@@ -138,7 +138,7 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 `pnpm infra` opens with the last rotation of each kind, and `status` lists every key's age. No age is a deadline. After a compromise, rotate keys first.
 
-A rotation ends by deploying the live release again on new machines, so none keeps a key or a value from before. Then it starts the environment's target when that is another commit. The live release deployed once already, so a target that fails never leaves the machines on what the rotation replaced.
+No machine keeps a key or a value from before a rotation: it ends by deploying the live release again on new machines. Then it starts the environment's target when that is another commit. A target that fails never leaves the machines on what the rotation replaced, since the live release deployed once already.
 
 ### Rotate secrets
 
@@ -146,7 +146,7 @@ A rotation ends by deploying the live release again on new machines, so none kee
 
 `data-encryption-key` and `pii-hash-secret` encrypt or hash stored data. Neither rotates here or in the app, which holds one value of each.
 
-A new encryption key leaves every stored TOTP secret and OAuth signing key unreadable. A new hashing secret leaves every stored IP, device and rate-limit hash unmatched, so each browser signs in as a new device.
+A new encryption key leaves every stored TOTP secret and OAuth signing key unreadable. A new hashing secret leaves every stored IP, device and rate-limit hash unmatched. Each browser then signs in as a new device.
 
 After a leak of either, the recovery is a new value and re-enrolment. Users set up their authenticator again, and the signing keys are replaced. Data copied before the change stays readable to whoever holds the old value.
 
