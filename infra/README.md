@@ -81,7 +81,7 @@ With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace. E
 
 The sink and the key's name live in [config/telemetry.config.ts](config/telemetry.config.ts). Storing the key in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)). `OTEL_EXPORTER_OTLP_*` variables reach no deploy.
 
-The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+The agent replaces every secret value it handled and any URL userinfo in its output, its telemetry and every upload.
 
 ## Key files
 
