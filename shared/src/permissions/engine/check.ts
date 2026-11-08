@@ -42,9 +42,7 @@ export const getMembershipIndex = <T extends AccessMembership>(memberships: T[])
 export const buildPolicyIndex = (policies: PolicyMatrix, entityType: ChannelEntityType | ProductEntityType): PolicyIndex => {
   const index: PolicyIndex = new Map();
   const entityPolicies = policies[entityType] ?? [];
-  for (const policy of entityPolicies) {
-    index.set(`${policy.channelType}:${policy.role}`, policy.permissions);
-  }
+  for (const policy of entityPolicies) index.set(`${policy.channelType}:${policy.role}`, policy.permissions);
   return index;
 };
 
