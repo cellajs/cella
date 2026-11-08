@@ -3,25 +3,35 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { MenuItemDragData } from '~/modules/navigation/types';
 
-/** The hidden or the active items, in display order. */
-export const sortAndFilterMenu = (items: UserMenuItem[], hidden: boolean): UserMenuItem[] =>
-  items.filter((item) => item.membership.hidden === hidden).sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
+/** The list a menu row shows in: the active rows, or behind the Hidden or the Archived toggle below them. */
+export type MenuGroup = 'active' | 'hidden' | 'archived';
 
-/** Whether a menu row's submenu shows below it: the row is active and has sub-rows. */
+/** An archived channel's row is under Archived whether its member hid it or not; else a hidden row is under Hidden. */
+export const menuGroup = (item: UserMenuItem): MenuGroup => {
+  if (item.archived) return 'archived';
+  return item.membership.hidden ? 'hidden' : 'active';
+};
+
+/** The items of one group, in display order. */
+export const sortAndFilterMenu = (items: UserMenuItem[], group: MenuGroup): UserMenuItem[] =>
+  items.filter((item) => menuGroup(item) === group).sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
+
+/** Whether a menu row's submenu shows below it: the row is not hidden and has sub-rows. */
 export const isSubmenuShown = (item: UserMenuItem): item is UserMenuItem & { submenu: UserMenuItem[] } =>
   !item.membership.hidden && !!item.submenu?.length;
 
-/** Whether a row's hidden sub-rows show, closed until opened and remembered per row across edit mode and sheet openings. */
-export function useSubmenuHiddenOpen(itemId: string) {
-  const sectionKey = `${itemId}-hidden`;
+/** Whether a row's hidden or archived sub-rows show, closed until opened and remembered per row across edit mode and sheet openings. */
+export function useSubmenuGroupOpen(itemId: string, group: Exclude<MenuGroup, 'active'>) {
+  const sectionKey = `${itemId}-${group}`;
   const isOpen = useNavigationStore((state) => state.activeSections?.[sectionKey] ?? false);
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
   return [isOpen, (open: boolean) => setSectionOpen(sectionKey, open)] as const;
 }
 
-/** A row moves when it has a sibling to pass or the Hidden row to cross. */
-export const canMove = (item: UserMenuItem, siblings: UserMenuItem[]) => siblings.length > 1 || isChannelHideable(item.entityType);
+/** A row moves when it has a sibling to pass or the Hidden row to cross; an archived row stays where it is. */
+export const canMove = (item: UserMenuItem, siblings: UserMenuItem[]) =>
+  !item.archived && (siblings.length > 1 || isChannelHideable(item.entityType));
 
 const productHomeChannelTypes = new Set(hierarchy.productTypes.flatMap((type) => hierarchy.possibleHomeChannels(type)));
 

@@ -29,7 +29,7 @@ export function pickMenuOrganization(organizations: UserMenuItem[], hasOrganizat
     const organization = id && organizations.find((item) => item.id === id);
     if (organization) return organization;
   }
-  return hasOrganizationButtons ? undefined : sortAndFilterMenu(organizations, false)[0];
+  return hasOrganizationButtons ? undefined : sortAndFilterMenu(organizations, 'active')[0];
 }
 
 /** The menu sections of one organization: its submenu, and the items of every other section that belong to it. */

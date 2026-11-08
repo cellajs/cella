@@ -12,10 +12,10 @@ type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?
 
 /** What a channel's page tabs resolve with, on its page bar and in the menu alike: the update grant, the context roles held over it, its stored arrangement. */
 export function useChannelTabOptions(channel: TabsChannel): ResolvePlacementOptions {
-  const can = useCan();
+  const can = useCan({ ignoreArchive: true });
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
-  // Tabs declaring `requires: 'update'` (settings) hide without it
+  // Tabs declaring `requires: 'update'` (settings) hide without it; an archived channel keeps its settings, where it unarchives
   const canUpdate = can('update', channel.entityType, channel);
 
   return {

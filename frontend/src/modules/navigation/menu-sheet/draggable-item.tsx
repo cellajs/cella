@@ -11,7 +11,7 @@ import { EntityChip } from '~/modules/common/entity-chip';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuListMotion, menuRowLandSeconds } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { canMove, isMenuItemDragData, isSubmenuShown, useSubmenuHiddenOpen } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { canMove, isMenuItemDragData, isSubmenuShown, menuGroup, useSubmenuGroupOpen } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenuRowMoves } from '~/modules/navigation/menu-sheet/helpers/use-menu-row-moves';
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
@@ -23,7 +23,7 @@ import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 interface MenuSheetDraggableItemProps {
   item: UserMenuItem;
   siblings: UserMenuItem[];
-  /** Every row of its list, active and hidden: a row can drop on any of them. */
+  /** Every row of its list, active, hidden and archived: a row can drop on any but an archived one. */
   listItems: UserMenuItem[];
   isSubitem: boolean;
   /** Its list is already on screen; read at mount, when it tells a shown row from one the list opened with. */
@@ -39,10 +39,12 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
 
   // Mounted into a list already on screen: it arrived by a show, so it travels in and unfolds its submenu as it lands
   const [hasArrived] = useState(isArriving);
-  const [isSubmenuHiddenVisible, setSubmenuHiddenVisible] = useSubmenuHiddenOpen(item.id);
+  const [isSubmenuHiddenVisible, setSubmenuHiddenVisible] = useSubmenuGroupOpen(item.id, 'hidden');
+  const [isSubmenuArchivedVisible, setSubmenuArchivedVisible] = useSubmenuGroupOpen(item.id, 'archived');
   const [isFolding, setIsFolding] = useState(false);
 
-  const hiddenSubitemCount = item.submenu?.filter((sub) => sub.membership.hidden).length ?? 0;
+  const hiddenSubitemCount = item.submenu?.filter((sub) => menuGroup(sub) === 'hidden').length ?? 0;
+  const archivedSubitemCount = item.submenu?.filter((sub) => menuGroup(sub) === 'archived').length ?? 0;
   const hasSubmenu = isSubmenuShown(item);
 
   const moves = useMenuRowMoves({
@@ -97,7 +99,10 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
       dropTargetForElements({
         element,
         canDrop: ({ source: { data: dragged } }) =>
-          isMenuItemDragData(dragged) && dragged.item.id !== item.id && listItems.some((listItem) => listItem.id === dragged.item.id),
+          !item.archived &&
+          isMenuItemDragData(dragged) &&
+          dragged.item.id !== item.id &&
+          listItems.some((listItem) => listItem.id === dragged.item.id),
         getIsSticky: () => true,
         getData: ({ input }) => attachClosestEdge(data, { element, input, allowedEdges: ['top', 'bottom'] }),
         onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
@@ -123,18 +128,30 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
             >
               <div className={cn('min-h-0 min-w-0 transition-opacity duration-200', isFolding && 'overflow-hidden opacity-0')}>
                 <ul>
-                  <MenuSheetItemsListEdit items={item.submenu ?? []} isHidden={false} prepareHide={prepareSubitemHide} isSubmenu />
+                  <MenuSheetItemsListEdit items={item.submenu ?? []} group="active" prepareHide={prepareSubitemHide} isSubmenu />
                 </ul>
                 <MenuSheetHiddenGroup
                   isSubmenu
                   isOpen={isSubmenuHiddenVisible}
                   onToggle={() => setSubmenuHiddenVisible(!isSubmenuHiddenVisible)}
-                  hiddenCount={hiddenSubitemCount}
+                  count={hiddenSubitemCount}
                   dropItems={item.submenu}
                   movesWithRow
                 >
-                  <MenuSheetItemsListEdit items={item.submenu ?? []} isHidden={true} isSubmenu />
+                  <MenuSheetItemsListEdit items={item.submenu ?? []} group="hidden" isSubmenu />
                 </MenuSheetHiddenGroup>
+                {!!archivedSubitemCount && (
+                  <MenuSheetHiddenGroup
+                    variant="archived"
+                    isSubmenu
+                    isOpen={isSubmenuArchivedVisible}
+                    onToggle={() => setSubmenuArchivedVisible(!isSubmenuArchivedVisible)}
+                    count={archivedSubitemCount}
+                    movesWithRow
+                  >
+                    <MenuSheetItemsListEdit items={item.submenu ?? []} group="archived" isSubmenu />
+                  </MenuSheetHiddenGroup>
+                )}
               </div>
             </motion.div>
           )}

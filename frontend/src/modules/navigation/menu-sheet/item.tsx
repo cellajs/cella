@@ -7,7 +7,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { canMute, isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { canMute, isSubmenuShown, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
@@ -30,6 +30,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
   const isOnline = useOnlineManager();
 
   const canAccess = isOnline || !item.membership.hidden;
+  const isActive = menuGroup(item) === 'active';
 
   const hasSubmenu = isSubmenuShown(item);
   const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
@@ -45,8 +46,8 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       data-subitem={isSubitem}
       aria-label={item.name}
       draggable={false}
-      // A parent's page holds no place for a hidden sub-row, so it opens its own
-      {...getChannelRoute(item, isSubitem && !item.membership.hidden)}
+      // A parent's page holds no place for a hidden or archived sub-row, so it opens its own
+      {...getChannelRoute(item, isSubitem && isActive)}
       {...pageTopHashNav}
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
@@ -55,7 +56,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
     >
       <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
-      {isSubitem && !item.membership.hidden && <SubmenuConnector className="-top-2 h-4" />}
+      {isSubitem && isActive && <SubmenuConnector className="-top-2 h-4" />}
       <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(

@@ -1,5 +1,5 @@
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { ChevronDownIcon, EyeOffIcon } from 'lucide-react';
+import { ArchiveIcon, ChevronDownIcon, EyeOffIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,23 +15,29 @@ import { cn } from '~/utils/cn';
 
 interface MenuSheetHiddenToggleProps {
   onToggle: () => void;
-  hiddenCount: number;
-  hiddenChannelIds?: string[];
+  /** Which rows it folds: the hidden ones, or the archived ones, which nothing drops on. */
+  variant?: 'hidden' | 'archived';
+  count: number;
+  /** The channels its unseen count adds up. */
+  channelIds?: string[];
   /** The rows that may drop on it to cross, active and hidden; none outside edit mode. */
   dropItems?: UserMenuItem[];
 }
 
 const emptyChannelIds: string[] = [];
 
-function MenuSheetHiddenToggle({ onToggle, hiddenCount, hiddenChannelIds = emptyChannelIds, dropItems }: MenuSheetHiddenToggleProps) {
+function MenuSheetHiddenToggle({ onToggle, variant = 'hidden', count, channelIds = emptyChannelIds, dropItems }: MenuSheetHiddenToggleProps) {
   const { t } = useTranslation();
-  const hiddenUnseenCount = useUnseenCount(hiddenChannelIds);
+  const unseenCount = useUnseenCount(channelIds);
   const dropRef = useRef<HTMLDivElement>(null);
   const [dropAction, setDropAction] = useState<'hide' | 'show' | null>(null);
 
+  const isArchived = variant === 'archived';
+  const Icon = isArchived ? ArchiveIcon : EyeOffIcon;
+
   useEffect(() => {
     const element = dropRef.current;
-    if (!element || !dropItems) return;
+    if (!element || !dropItems || isArchived) return;
     return dropTargetForElements({
       element,
       canDrop: ({ source: { data } }) =>
@@ -43,13 +49,13 @@ function MenuSheetHiddenToggle({ onToggle, hiddenCount, hiddenChannelIds = empty
       onDragLeave: () => setDropAction(null),
       onDrop: () => setDropAction(null),
     });
-  }, [dropItems]);
+  }, [dropItems, isArchived]);
 
   return (
     <div ref={dropRef} className="relative">
       <Button
         onClick={onToggle}
-        disabled={hiddenCount < 1 && !dropAction}
+        disabled={count < 1 && !dropAction}
         variant="ghost"
         // Borderless, so the icon centers on the avatars and dots above it
         className={cn(
@@ -58,15 +64,15 @@ function MenuSheetHiddenToggle({ onToggle, hiddenCount, hiddenChannelIds = empty
         )}
       >
         <div className="flex w-12 items-center justify-center py-2">
-          <EyeOffIcon className="ml-2 size-5 opacity-75 group-data-[submenu=true]/hidden:size-3.5" />
+          <Icon className="ml-2 size-5 opacity-75 group-data-[submenu=true]/hidden:size-3.5" />
         </div>
         {/* A flex row, so hiding the taller count leaves the label where it is */}
         <div className="text-muted-foreground flex min-w-0 grow items-center p-2 text-left">
           <span className="truncate text-sm group-data-[submenu=true]/hidden:text-xs">
-            {dropAction ? t(`c:drop_to_${dropAction}`) : t('c:hidden')}
+            {dropAction ? t(`c:drop_to_${dropAction}`) : t(isArchived ? 'c:archived' : 'c:hidden')}
           </span>
           <span className="text-faint-foreground inline-block px-2 py-1 text-xs group-data-[hidden-visible=true]/hidden:hidden">
-            {hiddenUnseenCount > 0 ? <CountBadge count={hiddenUnseenCount} className="inline-flex" /> : hiddenCount}
+            {unseenCount > 0 ? <CountBadge count={unseenCount} className="inline-flex" /> : count}
           </span>
         </div>
         <div className="px-3">
@@ -87,20 +93,20 @@ interface MenuSheetHiddenGroupProps extends MenuSheetHiddenToggleProps {
   children: ReactNode;
 }
 
-/** The Hidden row with the hidden rows behind it, for a section or a row's submenu. */
+/** The Hidden row with the hidden rows behind it, or the Archived row with the archived ones, for a section or a row's submenu. */
 export function MenuSheetHiddenGroup({ isSubmenu = false, isOpen, movesWithRow = false, children, ...toggleProps }: MenuSheetHiddenGroupProps) {
-  const { hiddenCount } = toggleProps;
+  const { count } = toggleProps;
 
   return (
-    <div className="group/hidden" data-has-hidden={!!hiddenCount} data-submenu={isSubmenu} data-hidden-visible={isOpen}>
+    <div className="group/hidden" data-has-hidden={!!count} data-submenu={isSubmenu} data-hidden-visible={isOpen}>
       {/* Not a row with a layoutId, so it gets its own layout animation to travel with the rows a hide or show
           shifts; only then, so other changes of place stay instant */}
-      <motion.div layout="position" layoutDependency={movesWithRow ? undefined : hiddenCount}>
+      <motion.div layout="position" layoutDependency={movesWithRow ? undefined : count}>
         <MenuSheetHiddenToggle {...toggleProps} />
       </motion.div>
       <AnimatePresence initial={false}>
         {/* Empty, it has nothing to fold: kept open, a first hidden row moves in without waiting for it to unfold */}
-        {(isOpen || !hiddenCount) && (
+        {(isOpen || !count) && (
           <motion.ul key="hidden" {...menuListMotion}>
             {children}
           </motion.ul>

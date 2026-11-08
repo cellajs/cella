@@ -1,5 +1,7 @@
 import type { ListMyMembershipsResponse } from 'sdk';
+import { hierarchy } from 'shared';
 import { meKeys } from '~/modules/me/query';
+import { findInCache } from '~/query/basic/find-in-list-cache';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { getRouter } from '~/routes/-router-instance';
@@ -56,18 +58,21 @@ export function isViewingChannel(organizationId: string, channelId: string | nul
   return isObservedChannel(channelId);
 }
 
-/** Membership `muted`/`hidden` = the user declared "not urgent" for this scope. */
-function isMutedOrHidden(organizationId: string, channelId: string | null): boolean {
-  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
-  if (!data?.results) return false;
+/**
+ * Membership `muted`/`hidden` = the user declared "not urgent" for this scope; an archived channel changes no more. The
+ * archived flag is read from the cache alone: a channel not in it counts as live.
+ */
+function isMutedHiddenOrArchived(organizationId: string, channelId: string | null): boolean {
   const targetId = channelId ?? organizationId;
-  const membership = data.results.find((item) => item.channelId === targetId);
-  return membership ? membership.muted || membership.hidden : false;
+  const membership = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.results.find((item) => item.channelId === targetId);
+  if (membership && (membership.muted || membership.hidden)) return true;
+  if (targetId === organizationId) return false;
+  return hierarchy.channelTypes.some((type) => type !== 'organization' && findInCache<{ id: string; archived: boolean }>(type, targetId)?.archived);
 }
 
-/** The one sync priority: viewed scopes live, muted scopes on open, the others in the background. */
+/** The one sync priority: viewed scopes live, muted, hidden and archived scopes on open, the others in the background. */
 export function getSyncTier(organizationId: string, channelId: string | null): SyncTier {
   if (isViewingChannel(organizationId, channelId)) return tierViewing;
-  if (isMutedOrHidden(organizationId, channelId)) return tierOnOpen;
+  if (isMutedHiddenOrArchived(organizationId, channelId)) return tierOnOpen;
   return tierBackground;
 }

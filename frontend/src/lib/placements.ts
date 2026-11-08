@@ -9,6 +9,9 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import type { MeUser } from '~/modules/me/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 
+/** A grant a consumer passes: an entity action, or `archive`, the update grant on a channel whatever its archived state. */
+export type PlacementGrant = EntityActionType | 'archive';
+
 /** Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via `staticData.navTab`. */
 export interface PlacementDescriptor {
   /** Stable id: anchors, tab ids, stored config references, and React keys derive from it. */
@@ -18,10 +21,10 @@ export interface PlacementDescriptor {
   resource?: TKey;
   /** Single-sentence explanation of the placement's content, shown where placements are arranged. */
   description?: TKey;
-  /** Sort position, lower first. Settings slots use 10/20 for built-ins, 90 for the danger zone, 50 by default. */
+  /** Sort position, lower first. Settings slots use 10/20 for built-ins, 85 for archive, 90 for the danger zone, 50 by default. */
   order?: number;
   /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */
-  requires?: EntityActionType;
+  requires?: PlacementGrant;
   /** Context-role pairs (e.g. 'course.staff') that may see this placement. A UI condition, never data authorization. */
   visibleTo?: ContextRole[];
   /** Channel-stored config cannot hide a locked placement (reorder still works); leaving it out of the app's `surfaces` list still can. */
@@ -141,7 +144,7 @@ function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(it
 /** Resolution inputs a consumer passes for a slot (all optional; absent means unconditioned). */
 export interface ResolvePlacementOptions {
   /** Grants the actor holds; placements declaring `requires` hide without a match. */
-  grants?: readonly EntityActionType[];
+  grants?: readonly PlacementGrant[];
   /** Context-role pairs the actor holds; placements declaring `visibleTo` hide without a match. */
   pairs?: readonly ContextRole[];
   /** Channel-stored arrangement for this slot (order + hidden), reconciled fail-closed. */

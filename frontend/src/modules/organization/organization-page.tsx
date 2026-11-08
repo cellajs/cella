@@ -11,6 +11,7 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { ArchivedBanner } from '~/modules/entities/archived-banner';
 import { DraftBanner } from '~/modules/entities/draft-banner';
 import { useCan } from '~/modules/entities/use-can';
 import { useChannelTabOptions } from '~/modules/entities/use-channel-tab-options';
@@ -84,6 +85,7 @@ export function OrganizationPage({ organizationId, tenantId }: { organizationId:
           )
         }
       />
+      {organization.archived && <ArchivedBanner channel={organization} />}
       {isUnpublishedDraft(organization) && canUpdate && (
         <DraftBanner channel={organization} publishForm={(close) => <PublishOrganizationForm organization={organization} close={close} />} />
       )}

@@ -12,6 +12,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
+import { menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
@@ -92,7 +93,7 @@ function MenuSheetSectionButton({
               {sectionUnseenCount > 0 ? (
                 <CountBadge count={sectionUnseenCount} className="inline-flex" />
               ) : (
-                items.filter((item) => !item.membership.hidden).length
+                items.filter((item) => menuGroup(item) === 'active').length
               )}
             </motion.span>
           </div>
@@ -151,13 +152,15 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   // Own entries only: toggling one section re-renders that section alone
   const hiddenSectionKey = `${options.entityType}-hidden`;
   const isHiddenVisible = useNavigationStore((state) => state.activeSections?.[hiddenSectionKey] ?? true);
+  const archivedSectionKey = `${options.entityType}-archived`;
+  const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? false);
   // Beside other sections the organization one starts collapsed: users seldom navigate there
   const isOpenByDefault = options.entityType !== 'organization';
   const isSectionVisible = useNavigationStore((state) => !isCollapsible || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
-  const hiddenItems = items.filter((item) => item.membership.hidden);
+  const hiddenItems = items.filter((item) => menuGroup(item) === 'hidden');
   const hiddenCount = hiddenItems.length;
+  const archivedItems = items.filter((item) => menuGroup(item) === 'archived');
   const activeChannelIds = activeUnseenChannelIds(items);
-  const hiddenChannelIds = hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true));
 
   const handleCreate = options.createAction
     ? (ref: RefObject<HTMLButtonElement | null>) => {
@@ -204,23 +207,40 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
         {isSectionVisible && (
           <motion.ul key={options.entityType} {...menuListMotion}>
             {isEditing ? (
-              <MenuSheetItemsListEdit items={items} isHidden={false} options={options} prepareHide={prepareHide} />
+              <MenuSheetItemsListEdit items={items} group="active" options={options} prepareHide={prepareHide} />
             ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} isHidden={false} options={options} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} group="active" options={options} />
             )}
             {hasHiddenGroup && (
               <li>
                 <MenuSheetHiddenGroup
                   isOpen={isHiddenVisible}
                   onToggle={handleToggleHidden}
-                  hiddenCount={hiddenCount}
-                  hiddenChannelIds={hiddenChannelIds}
+                  count={hiddenCount}
+                  channelIds={hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true))}
                   dropItems={isEditing ? items : undefined}
                 >
                   {isEditing ? (
-                    <MenuSheetItemsListEdit items={items} isHidden={true} options={options} />
+                    <MenuSheetItemsListEdit items={items} group="hidden" options={options} />
                   ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} isHidden={true} />
+                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} group="hidden" />
+                  )}
+                </MenuSheetHiddenGroup>
+              </li>
+            )}
+            {!!archivedItems.length && (
+              <li>
+                <MenuSheetHiddenGroup
+                  variant="archived"
+                  isOpen={isArchivedVisible}
+                  onToggle={() => setSectionOpen(archivedSectionKey, !isArchivedVisible)}
+                  count={archivedItems.length}
+                  channelIds={archivedItems.flatMap((item) => menuUnseenChannelIds(item, true))}
+                >
+                  {isEditing ? (
+                    <MenuSheetItemsListEdit items={items} group="archived" options={options} />
+                  ) : (
+                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} group="archived" />
                   )}
                 </MenuSheetHiddenGroup>
               </li>

@@ -28,8 +28,8 @@ function useSwitcherOrganizations() {
   const { menu } = useMenu(user?.id);
   const organizations = menuOrganizations(menu);
   return {
-    active: sortAndFilterMenu(organizations, false),
-    hidden: sortAndFilterMenu(organizations, true),
+    active: sortAndFilterMenu(organizations, 'active'),
+    hidden: sortAndFilterMenu(organizations, 'hidden'),
     unseenCounts: useOrganizationUnseenCounts(menu),
   };
 }

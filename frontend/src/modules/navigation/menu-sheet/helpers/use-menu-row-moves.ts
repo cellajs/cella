@@ -7,7 +7,7 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { buildMembershipUpdate } from '~/modules/memberships/build-membership-update';
 import { canShowNow, useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { isHiddenDropData, isMenuItemDragData, sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { isHiddenDropData, isMenuItemDragData, menuGroup, sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 
 /** The display order `item` takes placed at `edge` of `target`, among the siblings its list orders it in. */
 const menuItemOrder = (siblings: UserMenuItem[], item: UserMenuItem, target: UserMenuItem, edge: 'top' | 'bottom') =>
@@ -68,8 +68,9 @@ export function useMenuRowMoves({ item, siblings, listItems, prepareHide }: Menu
   const dropOn = (target: Record<string | symbol, unknown>) => {
     if (isHiddenDropData(target)) return cross();
     if (!isMenuItemDragData(target)) return;
-    const isSameList = target.item.membership.hidden === isHidden;
-    const list = isSameList ? siblings : sortAndFilterMenu(listItems, target.item.membership.hidden);
+    const targetGroup = menuGroup(target.item);
+    const isSameList = targetGroup === menuGroup(item);
+    const list = isSameList ? siblings : sortAndFilterMenu(listItems, targetGroup);
     const displayOrder = menuItemOrder(list, item, target.item, extractClosestEdge(target) === 'top' ? 'top' : 'bottom');
     if (!isSameList) cross(displayOrder);
     else if (displayOrder !== currentOrder) updateMembership(buildMembershipUpdate(item, { displayOrder }));

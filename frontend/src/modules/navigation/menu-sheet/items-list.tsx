@@ -5,7 +5,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
-import { isSubmenuShown, sortAndFilterMenu, useSubmenuHiddenOpen } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { isSubmenuShown, type MenuGroup, menuGroup, sortAndFilterMenu, useSubmenuGroupOpen } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
@@ -21,21 +21,29 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
   return <MenuSheetChannelTabs channel={channel} className="py-1 pl-12" />;
 }
 
-/** The hidden sub-rows of a row behind a toggle, for a row that has any. Their unseen count stays on the toggle. */
-function HiddenSubmenu({ submenu, itemId, isResting }: { submenu: UserMenuItem[]; itemId: string; isResting: boolean }) {
-  const [isOpen, setIsOpen] = useSubmenuHiddenOpen(itemId);
-  const hiddenItems = submenu.filter((sub) => sub.membership.hidden);
-  if (!hiddenItems.length) return null;
+interface SubmenuGroupProps {
+  submenu: UserMenuItem[];
+  itemId: string;
+  isResting: boolean;
+  group: Exclude<MenuGroup, 'active'>;
+}
+
+/** The hidden or the archived sub-rows of a row behind a toggle, for a row that has any. Their unseen count stays on the toggle. */
+function SubmenuGroup({ submenu, itemId, isResting, group }: SubmenuGroupProps) {
+  const [isOpen, setIsOpen] = useSubmenuGroupOpen(itemId, group);
+  const groupItems = submenu.filter((sub) => menuGroup(sub) === group);
+  if (!groupItems.length) return null;
 
   return (
     <MenuSheetHiddenGroup
+      variant={group}
       isSubmenu
       isOpen={isOpen}
       onToggle={() => setIsOpen(!isOpen)}
-      hiddenCount={hiddenItems.length}
-      hiddenChannelIds={hiddenItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
+      count={groupItems.length}
+      channelIds={groupItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
     >
-      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} isHidden isSubmenu isResting={isResting} />
+      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} group={group} isSubmenu isResting={isResting} />
     </MenuSheetHiddenGroup>
   );
 }
@@ -54,7 +62,7 @@ export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType
 interface MenuSheetItemsListProps {
   items: UserMenuItem[];
   entityType: ChannelEntityType;
-  isHidden: boolean;
+  group: MenuGroup;
   options?: MenuSectionOptions;
   /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
@@ -62,11 +70,11 @@ interface MenuSheetItemsListProps {
   isResting?: boolean;
 }
 
-export function MenuSheetItemsList({ items, entityType, isHidden, options, isSubmenu = false, isResting = false }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, group, options, isSubmenu = false, isResting = false }: MenuSheetItemsListProps) {
   const matchRoute = useMatchRoute();
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 
-  // Searched in all rows, hidden too, as the active and hidden lists render apart
+  // Searched in all rows, hidden and archived too, as each group's list renders apart
   const openItem = isSubmenu
     ? undefined
     : items.find((item) => {
@@ -74,7 +82,7 @@ export function MenuSheetItemsList({ items, entityType, isHidden, options, isSub
         return matchRoute({ to, params, fuzzy: true, includeSearch: false });
       });
 
-  return sortAndFilterMenu(items, isHidden).map((item) => {
+  return sortAndFilterMenu(items, group).map((item) => {
     const hasSubmenu = isSubmenuShown(item);
     const isSubmenuResting = !!openItem && openItem.id !== item.id;
     return (
@@ -87,12 +95,13 @@ export function MenuSheetItemsList({ items, entityType, isHidden, options, isSub
               <MenuSheetItemsList
                 entityType={item.submenu[0].entityType}
                 items={item.submenu}
-                isHidden={false}
+                group="active"
                 isSubmenu
                 isResting={isSubmenuResting}
               />
             </ul>
-            <HiddenSubmenu submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} />
+            <SubmenuGroup submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} group="hidden" />
+            <SubmenuGroup submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} group="archived" />
           </>
         )}
       </li>

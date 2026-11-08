@@ -16,13 +16,21 @@ type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor &
   render: (entity: ChannelEntityContext<C>) => ReactNode;
 };
 
-/** The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and context-role pairs. */
+/**
+ * The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and
+ * context-role pairs. On an archived channel `update` is no grant: the tools that need it hide, and those that need
+ * `archive` or `delete` stay.
+ */
 function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
   const slot: `${C}.settings` = `${channelType}.settings`;
 
   const can = useCan();
-  const grants = appConfig.entityActions.filter((action) => can(action, channelType, entity));
+  const canIgnoringArchive = useCan({ ignoreArchive: true });
+  const grants = [
+    ...appConfig.entityActions.filter((action) => can(action, channelType, entity)),
+    ...(canIgnoringArchive('update', channelType, entity) ? (['archive'] as const) : []),
+  ];
 
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const pairs = heldContextRoles(entity, myMemberships?.results ?? []);

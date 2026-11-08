@@ -2,20 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 import { seenGroupingChannelTypes } from 'shared';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations, organizationSections } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { sumUnseenCounts, useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUserStore } from '~/modules/user/user-store';
 
-/** The channels a menu row counts unseen content in: its own as a grouping channel unless muted, plus, with `includeSubmenu`, its non-muted, non-hidden sub-rows. */
+/** The channels a menu row counts unseen content in: its own as a grouping channel unless muted, plus, with `includeSubmenu`, its non-muted active sub-rows. */
 export const menuUnseenChannelIds = (item: UserMenuItem, includeSubmenu: boolean) => [
   ...(seenGroupingChannelTypes.has(item.entityType) && !item.membership.muted ? [item.id] : []),
-  ...(includeSubmenu ? (item.submenu ?? []).filter((sub) => !sub.membership.muted && !sub.membership.hidden).map((sub) => sub.id) : []),
+  ...(includeSubmenu ? (item.submenu ?? []).filter((sub) => !sub.membership.muted && menuGroup(sub) === 'active').map((sub) => sub.id) : []),
 ];
 
-/** The channels a list of rows counts past its own section: a hidden row's stay on its Hidden toggle. */
+/** The channels a list of rows counts past its own section: a hidden or archived row's stay on its toggle. */
 export const activeUnseenChannelIds = (items: UserMenuItem[]) =>
-  items.filter((item) => !item.membership.hidden).flatMap((item) => menuUnseenChannelIds(item, true));
+  items.filter((item) => menuGroup(item) === 'active').flatMap((item) => menuUnseenChannelIds(item, true));
 
 /**
  * The channels an organization counts in: its own, and what the active rows of its menu sheet count.
