@@ -21,7 +21,7 @@ let server: ServerType | undefined;
  * wait for the API and the shutdown handler are its own, and its cleanup calls `shutdownMcpWorker`.
  */
 export async function startMcpWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
-  const port = options.port ?? env.PORT;
+  const port = options.port ?? appConfig.services.mcp.port;
   if (appConfig.services.mcp.enabled === false) {
     baseLog.info('MCP server disabled by appConfig');
     return;
@@ -31,7 +31,7 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
     otel.start();
     otel.verifyConnection();
     // Wait for the API to be ready (it owns migrations)
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
+    if (env.NODE_ENV === 'development') await waitForBackend();
   }
 
   // An app of its own: folded into the API process, the API's app takes no routes once it has answered a request.

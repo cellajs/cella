@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # knip loads the vitest configs, and the backend env loader wants the secrets of backend/.env
+      # knip loads the vitest configs, and the backend env module wants the secrets of .env
       - name: Install the workspace
         uses: ./.github/actions/install-workspace
         with:

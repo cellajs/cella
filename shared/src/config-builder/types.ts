@@ -393,7 +393,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   gleapToken: string;
   mapStyleUrls: { light: string; dark: string };
-  matrixURL: string;
   maplePublicIngestKey: string;
   /** Hosts a Web Push subscription endpoint may name; `*.` matches any subdomain. */
   pushServiceHosts: readonly string[];

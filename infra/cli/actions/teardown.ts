@@ -211,7 +211,7 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
   // State history remains in the versioned state bucket; removing the stack deletes its file, so the project id goes to the env file.
   const removed = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
   if (removed.status === 0) console.info(`${checkMark} Pulumi stack '${stack}' removed from the backend.`);
-  writeEnvValues(resolve(infraDir, `.env.${context.environment}`), { SCW_PROJECT_ID: projectId });
+  writeEnvValues(resolve(infraDir, `.env.${context.environment}`), { SCW_DEFAULT_PROJECT_ID: projectId });
 
   try {
     const secrets = createSecretManagerClient({ secretKey: owner.secretKey, region, projectId });

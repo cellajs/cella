@@ -46,8 +46,8 @@ async function beforeAll({ skipSeed }: { skipSeed: boolean }): Promise<void> {
       `bench user 0 could not sign in: ${BASE_URL}/me answered ${status ?? 'nothing'}`,
       `  The cookie is named ${SESSION_COOKIE_NAME}, after config mode "${appConfig.mode}" (APP_MODE or NODE_ENV): the stack must run in that mode.`,
       COOKIE_SECRET
-        ? '  It is signed with COOKIE_SECRET from backend/.env: the stack must use the same one.'
-        : '  COOKIE_SECRET is not set: bench reads it from backend/.env.',
+        ? '  It is signed with COOKIE_SECRET from .env: the stack must use the same one.'
+        : '  COOKIE_SECRET is not set: bench reads it from .env.',
       ...(skipSeed ? ['  With --skip-seed the bench users must be seeded already: run once without it.'] : []),
     ].join('\n'),
   );

@@ -49,7 +49,7 @@ export const ACTION_RUNNERS: ActionRunners = {
 
 /**
  * Run one action to its end and resolve to the exit code of a single-action run. An action that ended itself after printing its failure
- * gives its own code. A failure the action did not expect is printed here in one line (the stack trace with INFRA_DEBUG=1) and gives 1, so
+ * gives its own code. A failure the action did not expect is printed here in one line (the stack trace with INFRA_DEBUG=true) and gives 1, so
  * the menu can list its rows again. Only the operator's Ctrl-C at a prompt propagates, to the handler that ends the run.
  * A stack lease the action left held is released on every way out: under the menu it would renew for as long as the CLI stays open.
  */
@@ -66,8 +66,8 @@ export async function runAction(
     if (error instanceof ActionEnded) return error.exitCode;
     if (isPromptAbort(error)) throw error;
     log(`\n${crossMark} ${actionLabel(id)} failed: ${errorMessage(error)}`);
-    if (process.env.INFRA_DEBUG === '1' && error instanceof Error && error.stack) log(pc.dim(error.stack));
-    else log(pc.dim('  Set INFRA_DEBUG=1 for the stack trace.'));
+    if (process.env.INFRA_DEBUG === 'true' && error instanceof Error && error.stack) log(pc.dim(error.stack));
+    else log(pc.dim('  Set INFRA_DEBUG=true for the stack trace.'));
     return 1;
   } finally {
     const leftover = await releaseHeldLocks();

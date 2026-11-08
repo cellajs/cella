@@ -60,12 +60,12 @@ describe('runAction', () => {
     });
     await expect(runAction('unlock', context, broken, (line) => lines.push(stripVTControlCharacters(line)))).resolves.toBe(1);
     expect(lines[0]).toContain('Unlock stack failed: AccessDenied: the state bucket refused this key');
-    expect(lines[1]).toContain('INFRA_DEBUG=1');
+    expect(lines[1]).toContain('INFRA_DEBUG=true');
     expect(lines).toHaveLength(2);
   });
 
-  it('prints the stack trace of an unexpected failure with INFRA_DEBUG=1', async () => {
-    vi.stubEnv('INFRA_DEBUG', '1');
+  it('prints the stack trace of an unexpected failure with INFRA_DEBUG=true', async () => {
+    vi.stubEnv('INFRA_DEBUG', 'true');
     const lines: string[] = [];
     const broken = runnersOf(async () => {
       throw new Error('boom');

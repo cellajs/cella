@@ -13,7 +13,7 @@ export type LocalDatabase = 'dev' | 'test' | 'testbed';
 const basePorts: Record<LocalDatabase, number> = { dev: 5432, test: 5434, testbed: 5470 };
 
 /** The env variable that points a purpose at another server, such as a throwaway test database on a port of its own. */
-const portEnvNames: Record<LocalDatabase, string> = { dev: 'DB_PORT', test: 'DB_TEST_PORT', testbed: 'DB_TESTBED_PORT' };
+const portEnvNames: Record<LocalDatabase, string> = { dev: 'DATABASE_PORT', test: 'DATABASE_TEST_PORT', testbed: 'DATABASE_TESTBED_PORT' };
 
 /** The roles `backend/compose.yaml` and the backend's role setup create, with their passwords. */
 const passwords = { postgres: 'postgres', runtime_role: 'dev_password', admin_role: 'dev_password' } as const;

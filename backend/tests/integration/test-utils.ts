@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import type { TrackedEventType } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
+import { defaultCdcSlotName } from 'shared/utils/worker-env';
 import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { serveInternal } from '#/lib/listeners';
@@ -115,7 +116,7 @@ export async function startInProcessCdcWorker(): Promise<CdcTestHarness> {
 /** The migration creates the publication and slot in CI; this only verifies they exist. */
 export async function ensureCdcSetup() {
   const CDC_PUBLICATION_NAME = 'cdc_pub';
-  const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
+  const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? defaultCdcSlotName;
 
   const pubResult = await db.execute<{ pubname: string }>(sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
 

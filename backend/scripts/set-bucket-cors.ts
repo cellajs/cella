@@ -21,13 +21,16 @@ const corsRule = (origins: string[]) => ({
   MaxAgeSeconds: 3600,
 });
 
+const { S3_ACCESS_KEY_ID: accessKeyId, S3_ACCESS_KEY_SECRET: secretAccessKey } = env;
+if (!accessKeyId || !secretAccessKey) {
+  console.error(`${crossMark} S3_ACCESS_KEY_ID / S3_ACCESS_KEY_SECRET are not set in .env`);
+  process.exit(1);
+}
+
 const s3Client = new S3Client({
   region: appConfig.s3.region,
   endpoint: `https://${appConfig.s3.host}`,
-  credentials: {
-    accessKeyId: env.S3_ACCESS_KEY_ID,
-    secretAccessKey: env.S3_ACCESS_KEY_SECRET,
-  },
+  credentials: { accessKeyId, secretAccessKey },
 });
 
 /** Origins the bucket allows now; a bucket without a CORS configuration allows none. */
@@ -60,11 +63,6 @@ async function addOrigins(bucket: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  if (!env.S3_ACCESS_KEY_ID || !env.S3_ACCESS_KEY_SECRET) {
-    console.error(`${crossMark} S3_ACCESS_KEY_ID / S3_ACCESS_KEY_SECRET are not set in backend/.env`);
-    process.exit(1);
-  }
-
   console.info(`Adding origin(s) ${requestedOrigins.join(', ')} to CORS on ${buckets.length} bucket(s)`);
 
   for (const bucket of buckets) {

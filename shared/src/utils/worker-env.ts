@@ -2,22 +2,24 @@ import { existsSync } from 'node:fs';
 import process from 'node:process';
 import { z } from 'zod';
 import { severityLevels } from '../../types.ts';
+import { envFlag } from './parse-env.ts';
 
 /** The values `NODE_ENV` takes in every service. */
 export const nodeEnvs = ['development', 'production', 'test'] as const;
 
-/** The one env file for the monorepo, `backend/.env`, resolved from this file. Variables already in the environment win. */
-export function loadBackendDotenv(): void {
-  const envFile = new URL('../../../backend/.env', import.meta.url);
-  if (existsSync(envFile)) process.loadEnvFile(envFile);
-}
+/** The replication slot the CDC worker reads unless `CDC_SLOT_NAME` names another. */
+export const defaultCdcSlotName = 'cdc_slot';
 
-/** A flag that only the string `true` turns on; unset, it reads as `fallback`. */
-export function envFlag(fallback: 'true' | 'false') {
-  return z
-    .string()
-    .default(fallback)
-    .transform((value) => value === 'true');
+/**
+ * Loads the monorepo's one env file for a module two folders below the root: `<package>/src` or the bundle in
+ * `<package>/dist`, which is why the caller passes its own `import.meta.url`. Variables already in the environment win.
+ * A test process loads nothing, so a developer's keys never reach a test.
+ */
+export function loadRootEnv(moduleUrl: string): void {
+  // biome-ignore lint/style/noProcessEnv: runs before any env module exists.
+  if (process.env.VITEST) return;
+  const envFile = new URL('../../.env', moduleUrl);
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
 }
 
 /** Shared by cdc and yjs. Extend with service-specific fields. */

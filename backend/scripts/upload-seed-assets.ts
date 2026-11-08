@@ -101,7 +101,7 @@ async function verifyPublished(files: LocalFile[]): Promise<string[]> {
 
 async function upload(files: LocalFile[]): Promise<void> {
   if (!env.S3_ACCESS_KEY_ID || !env.S3_ACCESS_KEY_SECRET) {
-    console.error(`${crossMark} S3_ACCESS_KEY_ID / S3_ACCESS_KEY_SECRET are not set in backend/.env`);
+    console.error(`${crossMark} S3_ACCESS_KEY_ID / S3_ACCESS_KEY_SECRET are not set in .env`);
     process.exit(1);
   }
 

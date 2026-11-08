@@ -6,7 +6,7 @@
     "cli": "tsx cli/infra-cli.ts",
     "builder-script": "tsx tasks/print-builder-script.ts",
     "test": "vitest run",
-    "test:integration": "INTEGRATION=1 vitest run tests/integration",
+    "test:integration": "INTEGRATION=true vitest run tests/integration",
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
     "deploy": "tsx tasks/deploy.ts",
     "main-job": "tsx tasks/main-job.ts",

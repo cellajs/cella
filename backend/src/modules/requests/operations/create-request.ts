@@ -3,7 +3,6 @@ import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { getRateLimiterInstance, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { sendMatrixMessage } from '#/modules/requests/helpers/send-matrix-message';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import type { requestCreateBodySchema } from '#/modules/requests/requests-schema';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -46,35 +45,28 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   // The unique index drops a repeat of a waitlist or newsletter request, concurrent ones included.
   if (!(await insertRequest(ctx, { email: normalizedEmail, kind, message }))) return;
 
-  let textMessage: string;
   let title: string;
 
   switch (kind) {
     case 'waitlist':
-      textMessage = `New Waitlist Request\nEmail: ${normalizedEmail}`;
       title = 'Join waitlist request';
       break;
     case 'newsletter':
-      textMessage = `Newsletter Signup Request\nEmail: ${normalizedEmail}`;
       title = 'Join newsletter request';
       break;
     case 'contact':
-      textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
       title = `Request for contact with message: "${message}"`;
       break;
   }
 
-  sendMatrixMessage(textMessage)
-    .then((sent) => {
-      if (sent) return;
-      // Replies go to the requester, who typed this address: answering means writing back.
-      return mailer.sendEmails(
-        requestInfoEmail,
-        { kind, message, email: normalizedEmail, subject: title },
-        [{ email: appConfig.company.email, lng }],
-        normalizedEmail,
-      );
-    })
+  // Replies go to the requester, who typed this address: answering means writing back.
+  mailer
+    .sendEmails(
+      requestInfoEmail,
+      { kind, message, email: normalizedEmail, subject: title },
+      [{ email: appConfig.company.email, lng }],
+      normalizedEmail,
+    )
     .catch((err) => log.error('Failed to notify the team of a request', { err }));
 
   if (!confirms) return;

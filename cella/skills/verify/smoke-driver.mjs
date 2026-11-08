@@ -26,9 +26,9 @@ function mintSession(email) {
 const OUT = process.env.OUT_DIR ?? join(tmpdir(), 'cella-smoke');
 mkdirSync(join(OUT, 'shots'), { recursive: true });
 const START = process.env.START ?? 'pnpm dev';
-const fileEnv = parseEnv(readFileSync('backend/.env', 'utf8'));
+const fileEnv = parseEnv(readFileSync('.env', 'utf8'));
 const EMAIL = process.env.EMAIL ?? fileEnv.ADMIN_EMAIL;
-if (!EMAIL) throw new Error('No admin email: set EMAIL, or ADMIN_EMAIL in backend/.env.');
+if (!EMAIL) throw new Error('No admin email: set EMAIL, or ADMIN_EMAIL in .env.');
 const BOOT_MS = 5 * 60_000;
 // The first signed-in page of a dev server compiles most of the app on demand
 const PAGE_MS = 120_000;

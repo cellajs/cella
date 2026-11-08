@@ -51,7 +51,6 @@ export default defineConfig({
       MICROSOFT_CLIENT_ID: 'test-microsoft-client-id',
       MICROSOFT_CLIENT_SECRET: 'test-microsoft-client-secret',
       // Presigning is pure local computation, so dummy credentials produce a signable URL.
-      // Set here so tests never depend on the S3 keys a developer happens to have in .env.
       S3_ACCESS_KEY_ID: 'test-s3-access-key-id',
       S3_ACCESS_KEY_SECRET: 'test-s3-access-key-secret',
       DATABASE_URL: dbRole === 'runtime' ? testRuntimeDatabaseUrl : testDatabaseUrl,

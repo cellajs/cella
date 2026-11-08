@@ -115,17 +115,11 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   return meta;
 }
 
-/**
- * Expand one app service entry into a full Compose service block.
- * `extraEnv` is the service's release-step `appEnv`, applied to the app block whenever a release companion exists.
- */
-function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record<string, string> } = {}): ComposeService {
+/** Expand one app service entry into a full Compose service block. */
+function appBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const environment = {
     ...(cfg.includeStandardEnv === false ? {} : STANDARD_ENV),
-    // The registry entry declares the internal listener's port once; the process reads it from INTERNAL_PORT.
-    ...(cfg.internalPort === undefined ? {} : { INTERNAL_PORT: String(cfg.internalPort) }),
     ...(cfg.env ?? {}),
-    ...(opts.extraEnv ?? {}),
   };
   const block: ComposeService = {
     image: cfg.image,
@@ -200,14 +194,14 @@ function agentBlock(): ComposeService {
  * Assemble the full `ComposeFile` from the app's service registry. Each service is one app block binding the host
  * port directly; zero-downtime overlap happens at the load balancer between two machines, not inside one.
  * A `release` step additionally emits a one-shot companion run at the new machine's boot before the app starts.
- * `processIdentityEnv` names the env keys selecting a container's process identity (which service, which port);
+ * `processIdentityEnv` names the env keys selecting a container's process identity (which service);
  * they are never folded from a co-hosted worker into the singleVM host.
  */
 export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {
   const processIdentityEnv = new Set(options.processIdentityEnv ?? []);
   const services: Record<string, ComposeService> = {};
   for (const [slug, cfg] of Object.entries(appServices)) {
-    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv });
+    services[slug] = appBlock(slug, cfg);
     if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg);
   }
   if (AGENT_SERVICE in services) throw new Error(`services config: '${AGENT_SERVICE}' is the engine's agent and no app service name.`);

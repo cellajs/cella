@@ -7,7 +7,6 @@ import {
   PutBucketVersioningCommand,
   type S3Client,
 } from '@aws-sdk/client-s3';
-import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { runIfMain } from '../lib/utils/is-main';
 
@@ -159,8 +158,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   // The key names the app's project, so the bucket lands there whatever the key's preferred project is: with a project per environment, a
   // key made for one environment sets up another. Without a project id the bucket follows the key's preferred project.
-  const expectedProjectId = resolveProjectId();
-  if (!expectedProjectId) console.warn("⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: the state bucket follows the key's preferred project.");
+  const expectedProjectId = process.env.SCW_DEFAULT_PROJECT_ID;
+  if (!expectedProjectId) console.warn("⚠ SCW_DEFAULT_PROJECT_ID not set: the state bucket follows the key's preferred project.");
 
   const s3 = await makeS3Client(region, expectedProjectId ? projectAccessKey(accessKey, expectedProjectId) : accessKey, secretKey);
   if (argv.includes('--check')) {

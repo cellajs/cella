@@ -24,7 +24,7 @@ pnpm seed       # seed test data
 pnpm dev
 ```
 
-The app opens at http://localhost:3000 (a git worktree gets ports of its own: [Dev ports](../shared/README.md#dev-ports)). Sign in as the seeded admin (`ADMIN_EMAIL` in `backend/.env`) with a magic link, which the backend prints in its console in development. Commit the migrations `pnpm generate` wrote and the SDK files the first `pnpm check` regenerates: they carry your app's name and port.
+The app opens at http://localhost:3000 (a git worktree gets ports of its own: [Dev ports](../shared/README.md#dev-ports)). Sign in as the seeded admin (`ADMIN_EMAIL` in `.env` at the repo root) with a magic link, which the backend prints in its console in development. Commit the migrations `pnpm generate` wrote and the SDK files the first `pnpm check` regenerates: they carry your app's name and port.
 
 Seeded attachments render from a shared public development bucket: S3 and Transloadit keys are only needed to upload your own files. `pnpm dev` starts every service `appConfig.services` enables, the OAuth and MCP workers included.
 

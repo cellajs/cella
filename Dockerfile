@@ -134,11 +134,10 @@ USER app
 
 EXPOSE 4000
 
-# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts); this baked one covers standalone
-# runs. The process listens on its SERVICE's configured port unless PORT says otherwise, so a standalone run on
-# another SERVICE passes PORT too.
+# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts); this baked one covers a standalone
+# run of the API, on its configured port.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4000}/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
 
 WORKDIR /app/backend
 # The passkey library asks Web Crypto which algorithms it supports at load, which Node 26 answers with experimental warnings.

@@ -60,7 +60,6 @@
     "@hono/zod-openapi": "^1.6.3",
     "@isaacs/ttlcache": "^2.1.5",
     "@simplewebauthn/server": "^14.1.0",
-    "@t3-oss/env-core": "^0.13.11",
     "@types/node": "^26.6.6",
     "@types/oidc-provider": "^9.13.1",
     "@types/pg": "^8.23.1",

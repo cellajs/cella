@@ -32,7 +32,7 @@ services:
       - -c
       - cron.database_name=postgres
     ports:
-      - 127.0.0.1:${DB_PORT}:5432
+      - 127.0.0.1:${DATABASE_PORT}:5432
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data
@@ -69,7 +69,7 @@ services:
       - -c
       - cron.database_name=postgres
     ports:
-      - 127.0.0.1:${DB_TEST_PORT}:5432
+      - 127.0.0.1:${DATABASE_TEST_PORT}:5432
     profiles:
       - test
     volumes:
@@ -81,7 +81,7 @@ services:
     <<: *db
     container_name: ${PROJECT_SLUG}_db_testbed
     ports:
-      - 127.0.0.1:${DB_TESTBED_PORT:-5470}:5432
+      - 127.0.0.1:${DATABASE_TESTBED_PORT:-5470}:5432
     restart: "no"
     profiles:
       - testbed

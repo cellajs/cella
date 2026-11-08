@@ -19,12 +19,12 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
     baseLog.info('OAuth server disabled by appConfig');
     return;
   }
-  const port = options.port ?? env.PORT;
+  const port = options.port ?? appConfig.services.oauth.port;
 
   if (!options.inProcess) {
     otel.start();
     otel.verifyConnection();
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
+    if (env.NODE_ENV === 'development') await waitForBackend();
   }
 
   // Loaded here so an app with the server off never loads oidc-provider, which warns about the Node version on import.

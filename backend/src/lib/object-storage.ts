@@ -15,16 +15,13 @@ export const isObjectStorageConfigured = (): boolean => !!env.S3_ACCESS_KEY_ID &
 export function getS3Client(): S3Client {
   if (s3Client) return s3Client;
 
+  const { S3_ACCESS_KEY_ID: accessKeyId, S3_ACCESS_KEY_SECRET: secretAccessKey } = env;
   // Blank keys reach the signer as invalid credentials and return an opaque 500.
-  if (!isObjectStorageConfigured()) {
+  if (!accessKeyId || !secretAccessKey) {
     throw new AppError(503, 'server_error', 'error', { message: 'S3 credentials are not configured, cannot reach stored objects' });
   }
 
-  s3Client = new S3Client({
-    region: appConfig.s3.region,
-    endpoint: `https://${appConfig.s3.host}`,
-    credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_ACCESS_KEY_SECRET },
-  });
+  s3Client = new S3Client({ region: appConfig.s3.region, endpoint: `https://${appConfig.s3.host}`, credentials: { accessKeyId, secretAccessKey } });
 
   return s3Client;
 }

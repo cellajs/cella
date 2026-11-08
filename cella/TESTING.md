@@ -79,7 +79,7 @@ On a fresh test database, run the backend suite first: it creates and migrates t
 
 ## Conventions
 
-A branch that adds migrations tests on a throwaway database: a fresh container from the same image, on a port of its own passed as `DB_TEST_PORT`. The shared test database belongs to every worktree.
+A branch that adds migrations tests on a throwaway database: a fresh container from the same image, on a port of its own passed as `DATABASE_TEST_PORT`. The shared test database belongs to every worktree.
 
 **Placement.** Pick by scope:
 

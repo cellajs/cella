@@ -1,7 +1,7 @@
 import process from 'node:process';
 import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { servicePaths } from 'shared';
+import { appConfig, servicePaths } from 'shared';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { listenHost } from 'shared/utils/listen-host';
@@ -52,10 +52,11 @@ export function buildHttpApp(): Hono {
   return app;
 }
 
-/** Listens on YJS_PORT: the health app over HTTP, and editor sockets through the upgrade and connection handlers. */
+/** Listens on the relay's configured port: the health app over HTTP, and editor sockets through the upgrade and connection handlers. */
 export function startWsServer(): void {
-  const server = serve({ fetch: buildHttpApp().fetch, hostname: listenHost(), port: env.YJS_PORT }, () => {
-    log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
+  const { port } = appConfig.services.yjs;
+  const server = serve({ fetch: buildHttpApp().fetch, hostname: listenHost(), port }, () => {
+    log.info('Yjs WebSocket server listening', { port });
   });
   httpServer = server;
 

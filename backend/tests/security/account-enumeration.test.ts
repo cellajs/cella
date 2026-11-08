@@ -15,10 +15,6 @@ import { softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge } from './helpers';
 
-// The team notification a stored request sends never answers here: the form must not wait for it, or its latency would
-// tell a stored request from the one an account's address gets.
-vi.mock('#/modules/requests/helpers/send-matrix-message', () => ({ sendMatrixMessage: () => new Promise(() => {}) }));
-
 // GitHub's code exchange succeeds, and its profile is the one each test hands `transformGithubUserData`.
 vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>()),

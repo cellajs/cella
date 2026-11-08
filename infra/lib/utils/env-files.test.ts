@@ -19,10 +19,10 @@ describe('dropPromptOnlyEnv', () => {
 describe('modeEnvValues', () => {
   it('must not read the retired admin application key, under its own names or the superseded ones, and says to remove them', () => {
     const { values, warnings } = modeEnvValues(
-      { SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's', SCW_ACCESS_KEY: 'OLD', SCW_SECRET_KEY: 'o', SCW_PROJECT_ID: 'p' },
+      { SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's', SCW_ACCESS_KEY: 'OLD', SCW_SECRET_KEY: 'o', SCW_DEFAULT_PROJECT_ID: 'p' },
       'production',
     );
-    expect(values).toEqual({ SCW_PROJECT_ID: 'p' });
+    expect(values).toEqual({ SCW_DEFAULT_PROJECT_ID: 'p' });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toMatch(/infra\/\.env\.production: SCW_ADMIN_ACCESS_KEY, SCW_ADMIN_SECRET_KEY, SCW_ACCESS_KEY, SCW_SECRET_KEY are not read/);
   });

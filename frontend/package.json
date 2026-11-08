@@ -39,7 +39,6 @@
     "@shikijs/engine-javascript": "^4.6.0",
     "@shikijs/langs-precompiled": "^4.6.0",
     "@simplewebauthn/browser": "^14.0.0",
-    "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/typography": "^0.5.20",
     "@tanstack/react-query": "^5.107.1",
     "@tanstack/react-query-devtools": "^5.107.1",

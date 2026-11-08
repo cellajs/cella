@@ -38,7 +38,7 @@ A run ends **apply needed** when its target describes the app otherwise than the
 1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`), which publishes that checkout's engine and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition from before the applied engine: the apply in step 1 rewrites it.
 3. "reports no description" means the target is older than the applied engine, which cannot deploy it: pin a newer release, or roll forward.
-4. "The image describes … the apply as …" during the apply's build: the shell the apply ran in overrides the config (`APP_ORIGIN`, `SINGLE_VM`), or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
+4. "The image describes … the apply as …" during the apply's build: the shell the apply ran in overrides the config (`APP_ORIGIN`), or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
 
 **Show status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
 
@@ -163,7 +163,7 @@ To leave nothing of a torn-down environment, delete in the console what the tear
 
 1. Object Storage: the two upload buckets, the boot-diag bucket and `<slug>-pulumi-state`, emptied first. Bucket names stay reserved for several hours.
 2. Secret Manager, the environment's project: `data-encryption-key` and `pii-hash-secret` in `/runtime/`. With them goes every encrypted field of the final dump.
-3. The `SCW_PROJECT_ID` line of `infra/.env.<mode>`, and the project itself if nothing else lives in it.
+3. The `SCW_DEFAULT_PROJECT_ID` line of `infra/.env.<mode>`, and the project itself if nothing else lives in it.
 4. Revoke the Owner API key you pasted.
 
 The next `pnpm infra --mode <mode>` then sets the environment up from nothing.

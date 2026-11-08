@@ -25,8 +25,8 @@ importers:
         specifier: ^2.6.4
         version: 2.6.4
       '@cellajs/cli':
-        specifier: ^0.6.6
-        version: 0.6.6(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.6.7
+        version: 0.6.7(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
         version: 7.0.0-dev.20260707.2
@@ -139,9 +139,6 @@ importers:
       '@simplewebauthn/server':
         specifier: ^14.1.0
         version: 14.1.0
-      '@t3-oss/env-core':
-        specifier: ^0.13.11
-        version: 0.13.11(typescript@6.0.3)(zod@4.6.7)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -452,9 +449,6 @@ importers:
       '@simplewebauthn/browser':
         specifier: ^14.0.0
         version: 14.0.0
-      '@t3-oss/env-core':
-        specifier: ^0.13.11
-        version: 0.13.11(typescript@6.0.3)(zod@4.6.7)
       '@tailwindcss/typography':
         specifier: ^0.5.20
         version: 0.5.20(tailwindcss@4.3.5)
@@ -1342,8 +1336,8 @@ packages:
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
 
-  '@cellajs/cli@0.6.6':
-    resolution: {integrity: sha512-JoyX/wGTVYoAn8uc2dR9vyw0PJmJyg44xxPCqL1dAQdWI+UBh4LuKhYCWYNOhRrqgzCc4GsXcoPq2TcDHcLh2w==}
+  '@cellajs/cli@0.6.7':
+    resolution: {integrity: sha512-9It44YPVS4x9tJEOSHaXrcJjly4+QrA8vAB6asxXk1DiNQ9oqK2nbkfviZz6pSUERL0AIl4NYAO0PQiVRQz/iQ==}
     engines: {node: 26.x}
     hasBin: true
 
@@ -3671,23 +3665,6 @@ packages:
 
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
-
-  '@t3-oss/env-core@0.13.11':
-    resolution: {integrity: sha512-sM7GYY+KL7H/Hl0BE0inWfk3nRHZOLhmVn7sHGxaZt9FAR6KqREXAE+6TqKfiavfXmpRxO/OZ2QgKRd+oiBYRQ==}
-    peerDependencies:
-      arktype: ^2.1.0
-      typescript: '>=5.0.0'
-      valibot: ^1.0.0-beta.7 || ^1.0.0
-      zod: ^4.6.6
-    peerDependenciesMeta:
-      arktype:
-        optional: true
-      typescript:
-        optional: true
-      valibot:
-        optional: true
-      zod:
-        optional: true
 
   '@tailwindcss/node@4.3.5':
     resolution: {integrity: sha512-yT53FzV4ke0cr/BguDxhWMpm5MJu1O2muzk+tKw6lKHjODAsYArBbWwFbJiaksfzFv1tpkO9QHGzmfs1hJT66g==}
@@ -8361,11 +8338,11 @@ snapshots:
       - y-protocols
       - yjs
 
-  '@cellajs/cli@0.6.6(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@cellajs/cli@0.6.7(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@inquirer/core': 12.0.6(@types/node@26.6.6)
       '@inquirer/prompts': 8.7.5(@types/node@26.6.6)
-      '@pierre/diffs': 1.6.1(@shikijs/themes@4.5.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@pierre/diffs': 1.6.1(@shikijs/themes@4.6.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       axe-core: 4.14.0
       commander: 15.0.0
       ts-morph: 28.0.0
@@ -9684,11 +9661,11 @@ snapshots:
       tslib: 2.8.1
       tsyringe: 4.10.0
 
-  '@pierre/diffs@1.6.1(@shikijs/themes@4.5.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@pierre/diffs@1.6.1(@shikijs/themes@4.6.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@pierre/highlights': 0.2.0
       '@pierre/theme': 2.0.0
-      '@pierre/theming': 1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.5.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(shiki@4.5.0)
+      '@pierre/theming': 1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.6.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(shiki@4.5.0)
       diff: 9.0.0
       hast-util-to-html: 9.0.5
       lru_map: 0.4.1
@@ -9703,10 +9680,10 @@ snapshots:
 
   '@pierre/theme@2.0.0': {}
 
-  '@pierre/theming@1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.5.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(shiki@4.5.0)':
+  '@pierre/theming@1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.6.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(shiki@4.5.0)':
     optionalDependencies:
       '@pierre/theme': 2.0.0
-      '@shikijs/themes': 4.5.0
+      '@shikijs/themes': 4.6.0
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       shiki: 4.5.0
@@ -10428,11 +10405,6 @@ snapshots:
   '@swc/helpers@0.5.23':
     dependencies:
       tslib: 2.8.1
-
-  '@t3-oss/env-core@0.13.11(typescript@6.0.3)(zod@4.6.7)':
-    optionalDependencies:
-      typescript: 6.0.3
-      zod: 4.6.7
 
   '@tailwindcss/node@4.3.5':
     dependencies:

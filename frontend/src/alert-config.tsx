@@ -16,7 +16,7 @@ if (appConfig.mode === 'development') {
     children: (
       <>
         <strong className="mr-2">Sign in as the seeded admin</strong>
-        <p>Use the ADMIN_EMAIL address in backend/.env. The magic link is printed in the terminal running pnpm dev.</p>
+        <p>Use the ADMIN_EMAIL address in .env at the repo root. The magic link is printed in the terminal running pnpm dev.</p>
       </>
     ),
   });

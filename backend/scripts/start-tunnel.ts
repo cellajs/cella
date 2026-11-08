@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import pc from 'picocolors';
+import { appConfig } from 'shared';
 import { frontendDevPort } from 'shared/utils/tool-ports';
 import { env } from '../src/env';
 
@@ -11,12 +12,12 @@ const startTimeoutMs = 20_000;
  * the Vite dev server, which proxies /api, /yjs and /mcp to the service ports, so the
  * whole stack shares one public origin: cookies stay first-party and OAuth provider
  * callbacks (`<tunnel>/api/auth/...`) reach the backend through the proxy.
- * Runs the ngrok CLI (`brew install ngrok`), and only when `TUNNEL_URL` and `TUNNEL_AUTH_TOKEN` are configured.
+ * Runs the ngrok CLI (`brew install ngrok`) on the origin of the tunnel config, and only when `TUNNEL_AUTH_TOKEN` is set.
  *
  * @returns The public URL, or `null` if the tunnel is unconfigured, the CLI is missing or it fails to connect.
  */
 const startTunnel = async (): Promise<string | null> => {
-  if (!env.TUNNEL_URL || !env.TUNNEL_AUTH_TOKEN) return null;
+  if (!env.TUNNEL_AUTH_TOKEN) return null;
   if (spawnSync('ngrok', ['version'], { stdio: 'ignore' }).error) {
     console.warn(pc.yellow('Tunnel skipped: the ngrok CLI is not installed (brew install ngrok, or https://ngrok.com/download)'));
     return null;
@@ -24,7 +25,7 @@ const startTunnel = async (): Promise<string | null> => {
 
   // The Vite dev server is the app origin (the public tunnel domain carries no port).
   const port = frontendDevPort();
-  const domain = new URL(env.TUNNEL_URL).hostname;
+  const domain = new URL(appConfig.frontendUrl).hostname;
   // The token goes in as a flag: older CLIs prefer the one in their own config over NGROK_AUTHTOKEN.
   const args = ['http', String(port), `--domain=${domain}`, `--authtoken=${env.TUNNEL_AUTH_TOKEN}`, '--log=stdout', '--log-format=json'];
   const tunnel = spawn('ngrok', args, { stdio: ['ignore', 'pipe', 'inherit'] });

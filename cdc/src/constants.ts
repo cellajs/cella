@@ -1,11 +1,12 @@
 import process from 'node:process';
+import { defaultCdcSlotName } from 'shared/utils/worker-env';
 
 /** The publication the worker reads: the CDC migration builds it over the tracked tables. */
 export const cdcPublicationName = 'cdc_pub';
 
 /** The worker's replication slot; tests set `CDC_SLOT_NAME` to read a slot of their own. */
 // biome-ignore lint/style/noProcessEnv: constants must stay import-safe; pulling in the env module here would run its validation on every import
-export const cdcSlotName = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
+export const cdcSlotName = process.env.CDC_SLOT_NAME ?? defaultCdcSlotName;
 
 /** The limits and timings of reading, recording, the books and health. */
 export const resourceLimits = {

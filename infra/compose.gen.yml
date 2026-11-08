@@ -28,9 +28,7 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      INTERNAL_PORT: '4005'
       APP_ORIGIN: ${APP_ORIGIN}
-      RUN_MIGRATIONS_ON_BOOT: 'false'
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']

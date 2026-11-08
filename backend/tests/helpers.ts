@@ -6,6 +6,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { expect, onTestFinished, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
+import { env } from '#/env';
 import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -29,7 +30,7 @@ import { insertUsers } from '#/modules/user/user-queries';
 import { apiErrorSchema } from '#/schemas';
 import { decodeBase32 } from '#/utils/base32';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
-import { adminRole, defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders, overrideConfig } from './fixtures';
 import { createAppClient } from './test-client';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
@@ -79,11 +80,7 @@ export const waitForMail = (assert: () => void) => vi.waitFor(assert, { timeout:
 
 /** Sends this test's mail through the real Brevo path, whose next request fails as an unreachable Brevo does. */
 export const failNextMailSend = () => {
-  vi.stubEnv('BREVO_API_KEY', 'test-brevo-key');
-  vi.stubEnv('TEST_SEND_EMAILS', 'true');
-  onTestFinished(() => {
-    vi.unstubAllEnvs();
-  });
+  onTestFinished(overrideConfig(env, { BREVO_API_KEY: 'test-brevo-key' }));
   vi.mocked(fetch).mockRejectedValueOnce(new TypeError('fetch failed'));
 };
 

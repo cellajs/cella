@@ -11,8 +11,8 @@ const STUDIO_PORT = drizzleStudioPort();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '../..');
 
-// Load backend/.env so drizzle.config.ts, run in the child process, sees DATABASE_URL.
-const envFile = resolve(parentDir, '.env');
+// Load the repo's .env so drizzle.config.ts, run in the child process, sees DATABASE_URL.
+const envFile = resolve(parentDir, '../.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 /**

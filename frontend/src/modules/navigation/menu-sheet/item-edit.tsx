@@ -112,7 +112,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       )}
 
       <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
-        {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
+        {item.name} {env.VITE_DEBUG && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (
         <TooltipButton toolTipContent={muted ? t('c:unmute') : t('c:mute')} side="top">

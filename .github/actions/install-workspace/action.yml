@@ -1,10 +1,10 @@
 name: Install the workspace
 description: >-
   pnpm and Node at the versions the root package.json pins, the dependencies from the lockfile, and the example env
-  files when a step boots a service or loads the backend env. Run it after the checkout.
+  files when a step boots a service or loads the env file. Run it after the checkout.
 inputs:
   env-files:
-    description: Copy backend/.env.example and frontend/.env.example to .env
+    description: Copy .env.example to .env and frontend/.env.example to frontend/.env
     default: 'false'
   filter:
     description: pnpm --filter arguments that install a part of the workspace; empty installs all of it
@@ -25,7 +25,7 @@ runs:
       if: inputs.env-files == 'true'
       shell: bash
       run: |
-        cp ./backend/.env.example ./backend/.env
+        cp ./.env.example ./.env
         cp ./frontend/.env.example ./frontend/.env
 
     - name: Install dependencies

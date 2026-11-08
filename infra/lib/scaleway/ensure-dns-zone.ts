@@ -2,7 +2,6 @@ import { confirm } from '@inquirer/prompts';
 import { checkMark, pc, tildeMark, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { isMain } from '../utils/is-main';
-import { resolveProjectId } from './provider-env';
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1';
 // The TXT record Scaleway's email names: a registration whose challenge has not resolved within 48 hours is dropped.
@@ -103,20 +102,20 @@ export async function ensureDnsZone(opts: {
       return { status: 'active' };
     }
     console.info(`  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? `: ${fresh.message}` : ''}`);
-    if (process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1') {
+    if (process.env.SCW_DEBUG === '1') {
       console.info(`  ${tildeMark} Raw zones matching ${domain}:`);
       console.info(`     ${pc.dim(JSON.stringify(freshZones, null, 2))}`);
     }
   }
 }
 
-// Standalone CLI usage: SCW_SECRET_KEY + SCW_PROJECT_ID + DOMAIN required.
+// Standalone CLI usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID + DOMAIN required.
 if (isMain(import.meta.url)) {
   const secretKey = process.env.SCW_SECRET_KEY;
-  const projectId = resolveProjectId();
+  const projectId = process.env.SCW_DEFAULT_PROJECT_ID;
   const domain = process.env.DOMAIN ?? process.argv[2];
   if (!secretKey || !projectId || !domain) {
-    console.error('SCW_SECRET_KEY, SCW_PROJECT_ID and DOMAIN (env or argv[2]) required');
+    console.error('SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID and DOMAIN (env or argv[2]) required');
     process.exit(1);
   }
   ensureDnsZone({ secretKey, projectId, domain }).catch((err) => {

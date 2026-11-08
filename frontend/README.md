@@ -1,6 +1,6 @@
 # frontend
 
-React SPA on Vite: TanStack Router for routing, Zustand for state, TanStack Query for data fetching. Runs as part of `pnpm dev`. With `VITE_DEBUG_MODE=true` in `frontend/.env`, the Zustand stores show in the browser's Redux devtools.
+React SPA on Vite: TanStack Router for routing, Zustand for state, TanStack Query for data fetching. Runs as part of `pnpm dev`. With `VITE_DEBUG=true` in `frontend/.env`, the Zustand stores show in the browser's Redux devtools.
 
 ## Source style
 

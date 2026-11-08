@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { env } from '#/env';
 import { mailer, neutralizeBrevoTags } from '#/lib/mailer';
 import { digestEmail } from '#/modules/notification/emails/digest-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
@@ -9,7 +10,7 @@ import { render } from '../../emails/renderer/render';
 import { memberInviteEmail } from '../../emails/templates/member-invite';
 import { oauthVerificationEmail } from '../../emails/templates/oauth-verification';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
-import { memberRole } from '../fixtures';
+import { memberRole, overrideConfig } from '../fixtures';
 
 type SentBody = {
   subject: string;
@@ -52,9 +53,6 @@ const send = async <TStatic, TRecipient extends EmailRecipient>(
 ) => {
   const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(null, { status: 201 }));
   vi.stubGlobal('fetch', fetchMock);
-  // Under Vitest `env` reads process.env directly.
-  process.env.BREVO_API_KEY = 'test-brevo-key';
-  process.env.TEST_SEND_EMAILS = 'true';
   await mailer.sendEmails(template, statics, [recipient]);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as SentBody;
@@ -62,9 +60,9 @@ const send = async <TStatic, TRecipient extends EmailRecipient>(
   return { body, params, html: fillAsBrevo(body.htmlContent, params) };
 };
 
+overrideConfig(env, { BREVO_API_KEY: 'test-brevo-key' });
+
 afterEach(() => {
-  delete process.env.BREVO_API_KEY;
-  delete process.env.TEST_SEND_EMAILS;
   vi.unstubAllGlobals();
 });
 
