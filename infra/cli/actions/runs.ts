@@ -8,6 +8,7 @@ import {
   serviceAccountKeys,
 } from '../../lib/deploy/boot-accounts';
 import { classifyRun, scalewayStatus } from '../../lib/deploy/failure-class';
+import { listRemoteRefs } from '../../lib/deploy/git-remote';
 import {
   findJobDefinition,
   isScheduledRun,
@@ -18,8 +19,10 @@ import {
   readJobDefinition,
   runEnded,
 } from '../../lib/deploy/job-runs';
+import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { type Growth, type RunRecord, rewriteNote, runSummaryLine, stepLine, wroteRecord } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
+import { commitName, type RemoteRef } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
@@ -65,12 +68,12 @@ function rewriteLines(what: string, growth: Growth<unknown> | undefined): string
  * One run in full: how it ended and, for a run that did not deploy, whose side that is on, its steps with their durations, a failed
  * machine's boot account, and the end of its log, each read by its first version.
  */
-async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Promise<string[]> {
+async function runDetailLines(reading: Growth<RunRecord>, store: RunStore, refs?: readonly RemoteRef[]): Promise<string[]> {
   const record = reading.newest;
   const log = await store.readLog(record.run);
   const sentence = ['running', 'deployed', 'unchanged'].includes(record.outcome) ? undefined : classifyRun(record).sentence;
   return [
-    `${pc.bold(record.run)}: ${record.target} to ${record.environment}, ${record.outcome}${record.failedStep ? ` at "${record.failedStep}"` : ''}`,
+    `${pc.bold(refs ? commitName(refs, record.target) : record.target.slice(0, 10))} ${pc.dim(`(${record.target.slice(0, 10)}, run ${record.run})`)} to ${record.environment}, ${record.outcome}${record.failedStep ? ` at "${record.failedStep}"` : ''}`,
     ...(sentence ? [`  ${sentence}`] : []),
     ...rewriteLines('the record was', reading),
     ...record.steps.map(stepLine),
@@ -141,6 +144,8 @@ export async function showRuns(
     /** The environment's lease, which tells a record that runs from one that was interrupted. */
     lock?: LockInfo;
     now?: number;
+    /** The repository's tags and heads, which name each run's target. */
+    refs?: readonly RemoteRef[];
   },
 ): Promise<void> {
   const print = opts.print ?? ((line: string) => console.info(line));
@@ -162,7 +167,7 @@ export async function showRuns(
   const rows = [
     ...readings.map(({ newest: record, rewrite }) => {
       const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
-      return { at: record.startedAt, line: `${runSummaryLine(record)}${rewritten}${interrupted(record, opts.lock)}` };
+      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}` };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
@@ -174,10 +179,13 @@ export async function showRuns(
   const [newest] = readings;
   if (!newest) return;
   const chosen = opts.pick
-    ? await select({ message: 'Show which run?', choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest), value: reading })) })
+    ? await select({
+        message: 'Show which run?',
+        choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest, opts.refs), value: reading })),
+      })
     : newest;
   print('');
-  for (const line of await runDetailLines(chosen, store)) print(line);
+  for (const line of await runDetailLines(chosen, store, opts.refs)) print(line);
 }
 
 /**
@@ -252,10 +260,15 @@ export async function runRuns(context: InfraContext): Promise<void> {
     ]);
     return { jobRuns, definition };
   };
-  const { jobRuns, definition } = await read().catch((error): Awaited<ReturnType<typeof read>> => {
-    console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
-    return { jobRuns: [] };
-  });
+  const [{ jobRuns, definition }, refs] = await Promise.all([
+    read().catch((error): Awaited<ReturnType<typeof read>> => {
+      console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
+      return { jobRuns: [] };
+    }),
+    Promise.resolve()
+      .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: 4_000 })(['refs/tags/*', 'refs/heads/*']))
+      .catch(() => undefined),
+  ]);
   const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
   console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
@@ -265,5 +278,6 @@ export async function runRuns(context: InfraContext): Promise<void> {
     definition,
     environment: context.environment,
     lock,
+    refs,
   });
 }

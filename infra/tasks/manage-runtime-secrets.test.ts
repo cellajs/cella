@@ -15,7 +15,7 @@ const writeKey = vi.fn();
 const log = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ listSecretsUnder, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
+  createSecretManagerClient: () => ({ listSecretsUnder, listSecretVersions: async () => [], getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
 }));
 
 vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
@@ -63,7 +63,7 @@ describe('secretsTable', () => {
   it.each([
     { state: 'missing · required', mark: '✖', secret: { required: true }, container: undefined },
     { state: 'empty · optional', mark: '○', secret: {}, container: { version_count: 0 } },
-    { state: 'set Nov 8', mark: '●', secret: {}, container: { version_count: 2, updated_at: '2026-11-08T12:00:00Z' } },
+    { state: 'set Nov 8', mark: '●', secret: {}, container: { version_count: 2, setAt: '2026-11-08T12:00:00Z' } },
     { state: 'made by infra', mark: '◇', secret: { valueSource: 'engine', generation: 'random', rotatable: true }, container: undefined },
     { state: 'made by infra · kept', mark: '◇', secret: { valueSource: 'engine', generation: 'random' }, container: undefined },
   ] as const)('reads $state', ({ state, mark, secret, container }) => {
@@ -73,7 +73,7 @@ describe('secretsTable', () => {
     expect(stripVTControlCharacters(formatSecretsTable(rows)[1] ?? '')).toMatch(new RegExp(`^${mark} X +backend +${state}$`));
   });
 
-  it('puts required values without a version first, then optional ones, then set ones, then the ones infra makes, in registry order', () => {
+  it('puts required values without a version first, then set ones, then optional ones, then the ones infra makes, in registry order', () => {
     const rows = secretsTable(
       [
         definition({ envVar: 'ENGINE', secretName: 'engine', valueSource: 'engine' }),
@@ -85,7 +85,7 @@ describe('secretsTable', () => {
       new Map([['set', { version_count: 1 }]]),
     );
 
-    expect(rows.map((row) => row.envVar)).toEqual(['REQUIRED_A', 'REQUIRED_B', 'OPTIONAL', 'SET', 'ENGINE']);
+    expect(rows.map((row) => row.envVar)).toEqual(['REQUIRED_A', 'REQUIRED_B', 'SET', 'OPTIONAL', 'ENGINE']);
   });
 
   it('aligns the state column under its header', () => {

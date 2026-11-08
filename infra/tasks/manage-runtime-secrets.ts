@@ -58,7 +58,7 @@ export interface SecretRow {
   definition: RuntimeSecretDefinition;
 }
 
-const kindOrder: SecretRow['kind'][] = ['missing', 'empty', 'set', 'infra'];
+const kindOrder: SecretRow['kind'][] = ['missing', 'set', 'empty', 'infra'];
 const kindMarks: Record<SecretRow['kind'], string> = { missing: crossMark, empty: pc.dim('○'), set: pc.green('●'), infra: pc.dim('◇') };
 
 const takesEffect = "A value is written at once; running machines keep what they booted with, the next deploy's machines get the new one.";
@@ -75,7 +75,7 @@ function shortDate(iso: string | undefined): string {
  */
 export function secretsTable(
   definitions: readonly RuntimeSecretDefinition[],
-  containers: ReadonlyMap<string, { version_count?: number; updated_at?: string }>,
+  containers: ReadonlyMap<string, { version_count?: number; setAt?: string }>,
 ): SecretRow[] {
   const rows = definitions.map((definition): SecretRow => {
     const row = { envVar: definition.envVar, usedBy: definition.services.join(', '), definition };
@@ -83,7 +83,7 @@ export function secretsTable(
       return { ...row, kind: 'infra', state: protectsStoredData(definition) ? 'made by infra · kept' : 'made by infra' };
     }
     const container = containers.get(definition.secretName);
-    if (container && (container.version_count ?? 0) > 0) return { ...row, kind: 'set', state: `set ${shortDate(container.updated_at)}`.trimEnd() };
+    if (container && (container.version_count ?? 0) > 0) return { ...row, kind: 'set', state: `set ${shortDate(container.setAt)}`.trimEnd() };
     return definition.required ? { ...row, kind: 'missing', state: 'missing · required' } : { ...row, kind: 'empty', state: 'empty · optional' };
   });
   return rows.sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind));
@@ -297,7 +297,18 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     mode: options.mode,
     log: options.log ?? defaultLog,
   };
-  const readContainers = async () => new Map((await reader.listSecretsUnder(RUNTIME_FOLDER)).map((secret) => [secret.name, secret]));
+  // The secret's own `updated_at` moves with its container (a move, a description), so the date a value was set is its newest version's.
+  const readContainers = async () => {
+    const secrets = await reader.listSecretsUnder(RUNTIME_FOLDER);
+    const setAt = await Promise.all(
+      secrets.map(async (secret) => {
+        if ((secret.version_count ?? 0) === 0) return undefined;
+        const [newest] = await reader.listSecretVersions(secret.id).catch(() => []);
+        return newest?.created_at ?? undefined;
+      }),
+    );
+    return new Map(secrets.map((secret, index) => [secret.name, { ...secret, setAt: setAt[index] }]));
+  };
 
   let containers = await readContainers();
   let changed = false;

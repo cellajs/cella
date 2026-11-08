@@ -1,6 +1,7 @@
 import { scrubSecretLines } from '../../agent/src/diagnostics';
 import { checkMark, crossMark } from '../utils/cli-output';
 import type { JobRun } from './job-runs';
+import { commitName, type RemoteRef } from './target';
 
 /** Where runs are kept in the environment's diagnostics bucket: one folder per run, `runs/<run>/`. */
 export const RUNS_PREFIX = 'runs/';
@@ -231,9 +232,10 @@ export function wroteRecord(run: Pick<JobRun, 'created_at' | 'terminated_at'>, t
 }
 
 /** One line per run for a list: when, what, how it ended, and where it stopped. */
-export function runSummaryLine(record: RunRecord): string {
+export function runSummaryLine(record: RunRecord, refs?: readonly RemoteRef[]): string {
   const seconds = record.endedAt ? Math.round((Date.parse(record.endedAt) - Date.parse(record.startedAt)) / 1000) : undefined;
   const took = seconds === undefined ? '' : ` in ${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
   const where = record.failedStep ? ` at "${record.failedStep}"` : '';
-  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${record.target.slice(0, 10)}  ${record.outcome}${where}${took}`;
+  const target = refs ? commitName(refs, record.target).padEnd(12) : record.target.slice(0, 10);
+  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${target}  ${record.outcome}${where}${took}`;
 }

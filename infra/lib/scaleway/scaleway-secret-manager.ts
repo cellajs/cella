@@ -95,6 +95,16 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       });
     },
 
+    /** A secret's versions, newest first: when each value was written. */
+    async listSecretVersions(secretId: string): Promise<SecretManagerSecretVersion[]> {
+      const response = await scwFetch<{ versions?: SecretManagerSecretVersion[] }>(
+        auth,
+        'GET',
+        `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions?page_size=100&order_by=revision_desc`,
+      );
+      return response.versions ?? [];
+    },
+
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {
       const wantPath = normalizeSecretPath(path);
       const secrets = await this.listSecrets(path);
