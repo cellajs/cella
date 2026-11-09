@@ -24,6 +24,13 @@ const formSchema = zUpdateTenantBody.pick({ name: true, kind: true, status: true
 
 type FormValues = z.infer<typeof formSchema>;
 
+const toFormValues = (tenant: Tenant): FormValues => ({
+  name: tenant.name,
+  kind: tenant.kind,
+  status: tenant.status,
+  authStrategies: tenant.authStrategies,
+});
+
 export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 /** The kinds an admin moves a tenant between; a demo is made by its own route and stays one. */
@@ -43,10 +50,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
     ...(isStrategyEnabled('sso') ? Object.entries(appConfig.federations).map(([key, { label }]) => ({ value: key as SignInMethod, label })) : []),
   ];
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: formResolver(formSchema),
-    defaultValues: { name: tenant.name, kind: tenant.kind, status: tenant.status, authStrategies: tenant.authStrategies },
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(tenant) };
 
   // The sheet is `update-tenant`; this form is its General section, which carries the unsaved badge.
   const sheetId = 'update-tenant';
@@ -55,13 +59,13 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
 
   useBeforeUnload(form.isDirty);
 
-  const onSubmit = (body: FormValues) =>
+  const onSubmit = (changes: Partial<FormValues>) =>
     mutate(
-      { path: { tenantId: tenant.id }, body },
+      { path: { tenantId: tenant.id }, body: changes },
       {
-        onSuccess: () => {
+        onSuccess: (updatedTenant) => {
           if (isSheet) sheeter.getState().remove(sheetId);
-          form.reset(body);
+          form.reset(toFormValues(updatedTenant));
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
         },
       },
@@ -69,7 +73,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex flex-col gap-6">
         <InputFormField control={form.control} name="name" label={t('c:name')} required />
         {tenant.kind !== 'demo' && (
           <SelectFormField

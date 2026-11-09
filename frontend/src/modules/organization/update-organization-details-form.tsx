@@ -27,6 +27,8 @@ const formSchema = zUpdateOrganizationBody;
 
 type FormValues = z.infer<typeof formSchema>;
 
+const toFormValues = (organization: Organization): FormValues => ({ welcomeText: organization.welcomeText ?? '' });
+
 interface UpdateOrganizationDetailsFormProps {
   organization: EnrichedOrganization;
   callback?: (args: CallbackArgs<Organization>) => void;
@@ -37,10 +39,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const canUpload = useCanUploadAttachments(organization);
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: formResolver(formSchema),
-    defaultValues: { welcomeText: organization.welcomeText || '' },
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(organization) };
 
   const formContainerId = 'update-organization-details';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
@@ -50,12 +49,12 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   // The editor reads its content once, at creation, so a reset remounts it to show the saved text again.
   const [editorKey, setEditorKey] = useState(0);
 
-  const onSubmit = (body: FormValues) =>
+  const onSubmit = (changes: Partial<FormValues>) =>
     mutate(
-      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: changes },
       {
         onSuccess: (updatedOrganization) => {
-          form.reset(body);
+          form.reset(toFormValues(updatedOrganization));
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
         },
@@ -83,7 +82,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex flex-col gap-6">
         {/* The loaded field's height with one paragraph: a taller fallback would shrink and pull a section a hash jumped to under the page tabs */}
         <Suspense
           fallback={

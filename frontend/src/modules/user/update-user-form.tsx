@@ -31,6 +31,15 @@ type FormValues = z.infer<typeof formSchema>;
 /** Accepts both User (self-update) and BaseUser (admin table). Only `id` is required; other fields pre-fill the form. */
 type FormUser = Pick<User, 'id'> & Partial<FormValues>;
 
+const toFormValues = (user: FormUser): FormValues => ({
+  thumbnailUrl: user.thumbnailUrl,
+  givenName: user.givenName,
+  familyName: user.familyName,
+  slug: user.slug,
+  languageCode: user.languageCode,
+  newsletter: user.newsletter,
+});
+
 interface UpdateUserFormProps {
   user: FormUser;
   sheet?: boolean;
@@ -47,20 +56,22 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
 
   const { mutate: updateUser, isPending } = useUpdateUser(user.id);
 
-  const formOptions = { resolver: formResolver(formSchema), defaultValues: user };
+  const formOptions = { resolver: formResolver(formSchema), defaultValues: toFormValues(user) };
 
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
 
   useBeforeUnload(form.isDirty);
 
-  const onSubmit = (values: FormValues) => {
-    updateUser(values, {
+  const onSubmit = (changes: Partial<FormValues>) => {
+    if (Object.keys(changes).length === 0) return nextStep();
+
+    updateUser(changes, {
       onSuccess: (updatedUser) => {
         const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_resource', { resource: t('c:user') });
         toaster.success(message);
 
-        form.reset(updatedUser);
+        form.reset(toFormValues(updatedUser));
         if (isSheet) sheeter.getState().remove(formContainerId);
 
         nextStep();
@@ -70,7 +81,7 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-6">
+      <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex w-full flex-col gap-6">
         <AvatarFormField form={form} label={children ? '' : t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
