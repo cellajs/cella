@@ -48,6 +48,7 @@ const RETIRED_LABELS = [
   'Tear down stack',
   'Unlock stack',
   'Start a deploy',
+  'Keys & operators',
 ];
 
 const DOCS = [
@@ -130,6 +131,7 @@ describe('menu rows', () => {
     expect(menuPath('preview')).toBe('Infrastructure changes → Preview changes');
     expect(menuPath('unlock')).toBe('Repair → Unlock');
     expect(menuPath('start-deploy')).toBe('Deploy now');
+    expect(menuPath('rotate-keys')).toBe('Operators & keys → Rotate keys');
   });
 });
 

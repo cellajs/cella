@@ -34,27 +34,35 @@ function addEnvironmentsLine(environment: string, branch: string): boolean {
 
 /**
  * Offer to commit the stack file, with the environments line of an environment that deploys a branch, and push it: every checkout and the
- * scheduled runs, which read the default branch, then see the environment set up. Off the default branch the commit reaches it through a
- * pull request, so nothing is pushed.
+ * scheduled runs, which read the default branch, then see the environment set up. A stack file an earlier run committed is pushed as it is.
+ * Off the default branch the commit reaches it through a pull request, so nothing is pushed.
  */
 export async function connectRepository(environment: string): Promise<void> {
   const stackFile = `infra/Pulumi.${environment}.yaml`;
   const state = gitFileState(stackFile);
-  if (state !== 'untracked' && state !== 'modified') return;
-  const message = `Commit ${stackFile} and push, so every checkout and the scheduled runs see ${environment} set up?`;
-  if (!(await confirmOrDefault({ message, default: true }))) return;
+  if (state === 'pushed' || state === 'missing') return;
   const base = defaultBranch();
+  const pullRequest = `The scheduled runs read ${base}: open a pull request, so this commit reaches it.`;
+  const onBase = gitOutput(['branch', '--show-current']) === base;
+  const reach = `so every checkout and the scheduled runs see ${environment} set up`;
+  if (state === 'committed') {
+    if (!onBase) console.info(`  ${pullRequest}`);
+    else if (await confirmOrDefault({ message: `Push the commit of ${stackFile}, ${reach}?`, default: true })) pushToBase(base, pullRequest);
+    return;
+  }
+  if (!(await confirmOrDefault({ message: `Commit ${stackFile} and push, ${reach}?`, default: true }))) return;
   const files = addEnvironmentsLine(environment, base) ? [stackFile, ENVIRONMENTS_FILE] : [stackFile];
   // The pathspec commits these files only, whatever else is staged.
   if (!runGit(['add', ...files]) || !runGit(['commit', '-m', `chore(infra): connect ${environment}`, '--', ...files])) {
     console.warn(`${warningMark} Not committed: commit ${files.join(' and ')} yourself.`);
     return;
   }
-  const pullRequest = `The scheduled runs read ${base}: open a pull request, so this commit reaches it.`;
-  if (gitOutput(['branch', '--show-current']) !== base) {
-    console.info(`  ${pullRequest}`);
-    return;
-  }
+  if (onBase) pushToBase(base, pullRequest);
+  else console.info(`  ${pullRequest}`);
+}
+
+/** Push the default branch, and say in a line when the remote refuses it. */
+function pushToBase(base: string, pullRequest: string): void {
   console.info(pc.dim('  git push'));
   const push = spawnSync('git', ['push'], { cwd: repoRoot, encoding: 'utf8', stdio: ['inherit', 'pipe', 'pipe'] });
   if (push.status === 0) {
@@ -71,8 +79,8 @@ export async function connectRepository(environment: string): Promise<void> {
 }
 
 /**
- * The end of a first setup. Production deploys releases, so without one it waits for the first; with one, or for an environment that deploys
- * a branch, the setup offers the first deploy and follows it. The checklist closes it.
+ * The end of a setup of an environment that never deployed. Production deploys releases, so without one it waits for the first; with one,
+ * or for an environment that deploys a branch, the setup offers the first deploy and follows it. The checklist closes it.
  */
 export async function offerFirstDeploy(context: InfraContext): Promise<void> {
   const { environment } = context;

@@ -230,9 +230,10 @@ export const MENU_ROWS = {
   },
   keys: {
     group: 'account',
-    label: 'Keys & operators',
+    label: 'Operators & keys',
     actions: ['rotate-keys', 'rotate-secrets', 'operator-key', 'repository-key'],
-    hotkey: 'k',
+    // `k` is the menu's vim-style up.
+    hotkey: 'o',
     description:
       'Replace every Scaleway key or every secret the engine makes, set up the operator application and operators group, or store the read key of a private repository.',
   },

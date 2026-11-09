@@ -16,12 +16,13 @@ import { actionCommand, actionLabel, menuRow } from '../../lib/operator-actions'
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/control-store';
+import { accessDenied } from '../../lib/status/providers/runs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { deployAndFollow } from './deploy-follow';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { environmentTarget } from './start-deploy';
 
 const LISTED_RELEASES = 10;
@@ -182,10 +183,15 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const picked = earlier.find((row) => row.tag === tag);
   if (!picked) return;
 
-  // The observer reads no release's manifest: the operator key the deploy runs on reads it.
-  console.info(pc.dim(`\n${picked.tag} to ${environment}: its build and its description are read with your operator key.`));
-  const operator = await acquireOperatorKey(context);
-  if (!deployable(picked.tag, await readManifest(await bootDiagOn(context, operator), picked.sha), applied)) return;
+  let operator: OperatorKey | undefined;
+  const manifest = await readManifest(diag, picked.sha).catch(async (error: unknown) => {
+    // A bucket policy that refuses the observer the manifest leaves it to the operator key.
+    if (!accessDenied(error)) throw error;
+    operator = await acquireOperatorKey(context);
+    return readManifest(await bootDiagOn(context, operator), picked.sha);
+  });
+  console.info('');
+  if (!deployable(picked.tag, manifest, applied)) return;
   const name = environment.charAt(0).toUpperCase() + environment.slice(1);
   const until = environment === 'production' ? 'the next release' : 'its target moves';
   console.info(
@@ -193,6 +199,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
   );
   if (!(await confirmOrDefault({ message: `Deploy ${picked.tag} to ${environment} now?`, default: false }))) return;
 
+  operator ??= await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });

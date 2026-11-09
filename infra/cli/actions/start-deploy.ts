@@ -86,6 +86,28 @@ export async function environmentTarget(context: InfraContext): Promise<Target |
 }
 
 /**
+ * Whether the environment never deployed: no run record and no live record, read on the operator key.
+ * @returns False when either read fails, said in a line, so no first deploy is offered on a guess.
+ */
+export async function awaitsFirstDeploy(context: InfraContext, key: KeyPair): Promise<boolean> {
+  const { appConfig } = context;
+  const state = stateKeyOf(key, context.projectId);
+  const bucket = deriveInfra(appConfig).naming.bootDiagBucket;
+  try {
+    const [runs, live] = await Promise.all([
+      makeS3Client(appConfig.s3.region, state.accessKey, state.secretKey).then((s3) => bucketRunStore(s3, bucket).listRuns(1)),
+      makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey).then((s3) => readLiveRecord(s3, bucket, stackNameFor(context))),
+    ]);
+    return runs.length === 0 && Object.keys(live.record.roles).length === 0;
+  } catch (error) {
+    console.warn(
+      `${warningMark} The deploy history could not be read (${errorMessage(error)}): "${actionLabel('start-deploy')}" deploys ${context.environment}.`,
+    );
+    return false;
+  }
+}
+
+/**
  * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, as the live
  * record names the counter each machine was booted under, then start the environment's target when it is another commit with no run under
  * its retry counter. The running machines hold keys or values the rotation replaced, and a scheduled run deploys only when the target
