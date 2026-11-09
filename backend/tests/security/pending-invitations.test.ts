@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { checkMembershipInvite, deleteInvitation, resendInvitation } from 'sdk';
+import { checkMemberInvite, deleteInvitation, resendInvitation } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
@@ -44,7 +44,7 @@ describe('Pending invitations list', async () => {
   const invite = (emails: string[]) => inviteToOrganization(organization, emails, memberRole, inviter.sessionCookie);
 
   const check = (emails: string[]) =>
-    call(checkMembershipInvite, {
+    call(checkMemberInvite, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails },

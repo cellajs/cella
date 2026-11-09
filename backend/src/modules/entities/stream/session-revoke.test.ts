@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { authEvents } from '#/modules/auth/auth-events';
 import '#/modules/entities/entities-listeners';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from './subscriber-manager';
 
 const user = 'user-revoke';
@@ -14,7 +14,7 @@ const register = (sessionId: string) => {
     abort: () => (stream.aborted = true),
     close: async () => (stream.closed = true),
   });
-  const subscriber = { id: sessionId, stream, userId: user, sessionId, memberships: [] } as unknown as AppStreamSubscriber;
+  const subscriber = { id: sessionId, stream, userId: user, sessionId, memberships: [] } as unknown as StreamSubscriber;
   streamSubscriberManager.register(subscriber, [`user:${user}`]);
   return stream;
 };

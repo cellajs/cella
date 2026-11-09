@@ -81,7 +81,7 @@ export const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   resubscribeNotifications: xRoute({
     method: 'post',
-    path: '/notifications/resubscribe',
+    path: '/notifications/~resubscribe',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Turn a notification category back on',

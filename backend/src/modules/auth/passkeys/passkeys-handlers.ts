@@ -35,16 +35,16 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   await stampStepUp(ctx, 'passkey');
   sendAccountSecurityEmail(user, 'passkey-added', { passkeyName: newPasskey.nameOnDevice });
 
-  return ctx.json(newPasskey, 201, { Location: `${appConfig.backendAuthUrl}/passkey/${newPasskey.id}` });
+  return ctx.json(newPasskey, 201, { Location: `${appConfig.backendAuthUrl}/passkeys/${newPasskey.id}` });
 });
 
 app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
   const user = ctx.var.user;
 
-  const { id } = ctx.req.valid('param');
+  const { passkeyId } = ctx.req.valid('param');
 
   // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
-  const deleted = await mfaFactorRules.removeFactor(user.id, (txCtx) => deletePasskey(txCtx, { userId: user.id, id }));
+  const deleted = await mfaFactorRules.removeFactor(user.id, (txCtx) => deletePasskey(txCtx, { userId: user.id, id: passkeyId }));
 
   // An id the user holds no passkey by answers 204 as well, but only a deletion mails the user.
   if (deleted) sendAccountSecurityEmail(user, 'passkey-deleted', { passkeyName: deleted.nameOnDevice });

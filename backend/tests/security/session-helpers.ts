@@ -105,7 +105,7 @@ const openStreams: OpenStream[] = [];
 
 const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic(`user:${userId}`);
 
-/** Reads an app stream response as the browser's EventSource does; `cancelOpenStreams` ends it. */
+/** Reads a stream response as the browser's EventSource does; `cancelOpenStreams` ends it. */
 export function readStream(response: Response, sessionId: string): OpenStream {
   const reader = (response.body as ReadableStream<Uint8Array>).getReader();
   const decoder = new TextDecoder();
@@ -134,10 +134,10 @@ export function readStream(response: Response, sessionId: string): OpenStream {
   return stream;
 }
 
-/** Opens the app stream with a session, as the browser's EventSource does, and waits until the server registered it. */
+/** Opens the stream with a session, as the browser's EventSource does, and waits until the server registered it. */
 export async function openStream(userId: string, session: TestSession): Promise<OpenStream> {
   const { baseApp } = await import('#/routes');
-  const response = await baseApp.request('http://localhost/entities/app/stream', { headers: session.headers });
+  const response = await baseApp.request('http://localhost/me/stream', { headers: session.headers });
   expect(response.status).toBe(200);
 
   const stream = readStream(response, session.id);
@@ -152,12 +152,12 @@ export interface UnreadStream {
 }
 
 /**
- * Opens the app stream as a client that stopped reading: the server's first event is buffered, and every later write
+ * Opens the stream as a client that stopped reading: the server's first event is buffered, and every later write
  * waits for a reader that never comes, as it does once a real client's socket buffers are full.
  */
 export async function openUnreadStream(userId: string, session: TestSession): Promise<UnreadStream> {
   const { baseApp } = await import('#/routes');
-  const response = await baseApp.request('http://localhost/entities/app/stream', { headers: session.headers });
+  const response = await baseApp.request('http://localhost/me/stream', { headers: session.headers });
   expect(response.status).toBe(200);
   const body = response.body as ReadableStream<Uint8Array>;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;

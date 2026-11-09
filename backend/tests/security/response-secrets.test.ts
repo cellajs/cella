@@ -183,9 +183,9 @@ describe('Secret columns in responses', async () => {
       shows: () => [invitee.inactiveMembershipId],
     },
     {
-      route: 'POST /auth/passkey/generate-challenge',
+      route: 'POST /auth/generate-passkey-challenge',
       tables: ['passkey_challenges'],
-      send: () => rawJsonRequest('/auth/passkey/generate-challenge', '', { method: 'POST', body: { kind: 'authentication' } }),
+      send: () => rawJsonRequest('/auth/generate-passkey-challenge', '', { method: 'POST', body: { kind: 'authentication' } }),
       status: 200,
       shows: () => [],
     },

@@ -48,7 +48,7 @@ export function ConfirmSignInPage() {
   return (
     <>
       <AuthHeader title={t('c:confirm_sign_in')} description={<NamedText i18nKey="c:confirm_sign_in.text" values={{ email: data.email }} />} />
-      <form method="post" action={`${appConfig.backendAuthUrl}/magic/confirm`}>
+      <form method="post" action={`${appConfig.backendAuthUrl}/confirm-magic-link`}>
         <Button type="submit" size="block">
           <LogInIcon />
           <MiddleCut text={t('c:continue_as', { email: data.email })} />

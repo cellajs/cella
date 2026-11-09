@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import {
   type ChannelBase,
-  checkMembershipInvite,
+  checkMemberInvite,
   type InviteOutcome,
   type ListInvitationsData,
   type ListMembersData,
@@ -73,9 +73,7 @@ export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined,
       if (!channel) return [];
       const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
       const query = { entityId: channel.id, entityType: channel.entityType };
-      const results = await Promise.all(
-        inviteBatches(emails).map((batch) => checkMembershipInvite({ path, query, body: { emails: batch }, signal })),
-      );
+      const results = await Promise.all(inviteBatches(emails).map((batch) => checkMemberInvite({ path, query, body: { emails: batch }, signal })));
       return results.flatMap(({ outcomes }) => outcomes);
     },
     enabled: !!channel && emails.length > 0,

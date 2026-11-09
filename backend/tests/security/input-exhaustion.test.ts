@@ -180,7 +180,7 @@ describe('Input exhaustion', async () => {
   });
 
   it('must not open more streams than the per-user cap via parallel connects', async () => {
-    const connect = () => app.request('/entities/app/stream', { headers: headers() });
+    const connect = () => app.request('/me/stream', { headers: headers() });
     // Cancelling a body is the client leaving: the stream ends and frees its slot.
     const leave = (responses: Response[]) => Promise.all(responses.map((response) => response.body?.cancel()));
 

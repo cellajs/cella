@@ -9,7 +9,7 @@ import { locationSchema } from '#/schemas';
 export const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   sendMagicLink: xRoute({
     method: 'post',
-    path: '/magic/send',
+    path: '/send-magic-link',
     xEnabledBy: { strategy: 'magic' },
     xGuard: [publicGuard],
     xRateLimiter: [magicLinkLimiter, recognizedMagicLinkLimiter, spamLimiter],
@@ -28,7 +28,7 @@ export const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   }),
   getPendingMagicLink: xRoute({
     method: 'get',
-    path: '/magic/pending',
+    path: '/pending-magic-link',
     xEnabledBy: { strategy: 'magic' },
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('magic')],
@@ -45,7 +45,7 @@ export const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   }),
   confirmMagicLink: xRoute({
     method: 'post',
-    path: '/magic/confirm',
+    path: '/confirm-magic-link',
     xEnabledBy: { strategy: 'magic' },
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('magic')],

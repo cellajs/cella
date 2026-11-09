@@ -145,7 +145,7 @@ export interface BackendModule extends ModuleConfig {
   queues?: BackendQueue[];
   /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides. */
   notifications?: true | ModuleNotifications;
-  /** Signals this module sends on the app stream. */
+  /** Signals this module sends on the stream. */
   signals?: StreamSignalDeclaration[];
   /** Handler apps the API entrypoint mounts (see {@link BackendRoute}); the composition root is the mount list. */
   routes?: BackendRoute[];

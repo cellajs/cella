@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { postAppCatchup } from 'sdk';
+import { catchUpMyStream } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,7 +8,7 @@ import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { maxHintRows } from '#/modules/entities/operations/propagation-hints';
-import type { AppCatchupResponse } from '#/schemas';
+import type { StreamCatchupResponse } from '#/schemas';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { adminDb, createTestOrganization } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, joinAttachmentHome, seedAttachmentHome } from './hierarchy-helpers';
@@ -61,9 +61,9 @@ describe('Catchup propagation hints', async () => {
 
   const hintsOf = async (as: { sessionCookie: string }, organizationId = organization.id) => {
     const view = { organizationId, entityType: 'attachment' as const, cursor };
-    const { data, response } = await call(postAppCatchup, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+    const { data, response } = await call(catchUpMyStream, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
-    return (data as AppCatchupResponse).organizations[organizationId]?.propagation;
+    return (data as StreamCatchupResponse).organizations[organizationId]?.propagation;
   };
 
   beforeAll(async () => {

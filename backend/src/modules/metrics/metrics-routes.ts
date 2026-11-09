@@ -7,7 +7,7 @@ import { publicCountsSchema } from '#/modules/metrics/metrics-schema';
 export const metricRoutes = createXRoutes(['metrics', 'cella'], {
   getPublicCounts: xRoute({
     method: 'get',
-    path: '/public',
+    path: '/',
     xGuard: [publicGuard],
     middleware: isNoBot,
     summary: 'Get public counts',

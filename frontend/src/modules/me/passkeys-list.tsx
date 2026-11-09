@@ -58,7 +58,7 @@ export function PasskeysList() {
 
   const handleDeletePasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    deletePasskey({ path: { id } });
+    deletePasskey({ path: { passkeyId: id } });
   };
 
   return (
@@ -86,7 +86,7 @@ export function PasskeysList() {
                 <PasskeyTile
                   passkey={passkey}
                   onDelete={handleDeletePasskey}
-                  loading={isPending && variables?.path.id === passkey.id}
+                  loading={isPending && variables?.path.passkeyId === passkey.id}
                   onlyPasskeyLeft={passkeys.length === 1}
                 />
               )}

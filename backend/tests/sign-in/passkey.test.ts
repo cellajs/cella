@@ -95,7 +95,7 @@ describe('Passkey Authentication', async () => {
       const sessionCookie = await createTestSession(user);
       const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('registration', sessionCookie);
 
-      const created = await rawJsonRequest('/auth/passkey', `${sessionCookie}; ${challengeCookie}`, {
+      const created = await rawJsonRequest('/auth/passkeys', `${sessionCookie}; ${challengeCookie}`, {
         method: 'POST',
         body: { attestation: softwarePasskey().attest(value), nameOnDevice: 'Test device' },
       });
@@ -115,8 +115,8 @@ describe('Passkey Authentication', async () => {
       const deletionMails = () => mailsTo(user.email).filter(({ statics }) => statics.type === 'passkey-deleted');
 
       // A second click on delete finds no passkey by that id: still 204, and no second mail.
-      expect((await call(deletePasskey, { path: { id: passkey.id }, headers })).response.status).toBe(204);
-      expect((await call(deletePasskey, { path: { id: passkey.id }, headers })).response.status).toBe(204);
+      expect((await call(deletePasskey, { path: { passkeyId: passkey.id }, headers })).response.status).toBe(204);
+      expect((await call(deletePasskey, { path: { passkeyId: passkey.id }, headers })).response.status).toBe(204);
       expect(deletionMails()).toHaveLength(1);
     });
   });
@@ -131,7 +131,7 @@ describe('Passkey Authentication', async () => {
       const victimPasskey = await insertPasskey(victim);
       const stored = () => db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       const remove = async (cookie: string) =>
-        (await call(deletePasskey, { path: { id: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } })).response.status;
+        (await call(deletePasskey, { path: { passkeyId: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } })).response.status;
 
       // The delete is scoped to the caller, so it is a no-op for the attacker.
       expect(await remove(await createTestSession(attacker))).toBe(204);

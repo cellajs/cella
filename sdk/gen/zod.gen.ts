@@ -205,7 +205,7 @@ export const zChannelBase = z.object({
 });
 
 /**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
  */
 export const zStreamChange = z.object({
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
@@ -239,7 +239,7 @@ export const zStreamChange = z.object({
 });
 
 /**
- * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.
  */
 export const zStreamSignal = z.object({
   type: z.string(),
@@ -249,7 +249,7 @@ export const zStreamSignal = z.object({
 });
 
 /**
- * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ * Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
  */
 export const zStreamError = z.object({
   code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
@@ -1242,7 +1242,7 @@ export const zCreatePasskeyResponse = z.object({
 });
 
 export const zDeletePasskeyPath = z.object({
-  id: z.string().max(50),
+  passkeyId: z.string().max(50),
 });
 
 /**
@@ -1294,17 +1294,17 @@ export const zSignInWithPasskeyResponse = z.void();
  */
 export const zStartOAuthConnectResponse = z.void();
 
-export const zGithubQuery = z.object({
+export const zStartGithubOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
-export const zGoogleQuery = z.object({
+export const zStartGoogleOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
-export const zMicrosoftQuery = z.object({
+export const zStartMicrosoftOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
@@ -1448,7 +1448,7 @@ export const zStepUpResponse = z.void();
 /**
  * Challenge issued
  */
-export const zGetStepUpPasskeyChallengeResponse = z.object({
+export const zGenerateStepUpPasskeyChallengeResponse = z.object({
   challenge: z.string(),
   credentials: z.array(
     z.object({
@@ -1530,9 +1530,9 @@ export const zUnarchiveChannelResponse = z.object({
  *
  * Each `change`, `signal` or `error` event carries one of these frames as its data.
  */
-export const zGetAppStreamResponse = z.union([zStreamChange, zStreamSignal, zStreamError]);
+export const zGetMyStreamResponse = z.union([zStreamChange, zStreamSignal, zStreamError]);
 
-export const zPostAppCatchupBody = z.object({
+export const zCatchUpMyStreamBody = z.object({
   views: z
     .array(
       z.object({
@@ -1548,7 +1548,7 @@ export const zPostAppCatchupBody = z.object({
 /**
  * Catchup summary
  */
-export const zPostAppCatchupResponse = z.object({
+export const zCatchUpMyStreamResponse = z.object({
   organizations: z.record(
     z.string(),
     z.object({
@@ -1860,16 +1860,16 @@ export const zInviteMembersResponse = z.object({
   held: z.boolean(),
 });
 
-export const zCheckMembershipInviteBody = z.object({
+export const zCheckMemberInviteBody = z.object({
   emails: z.array(z.email().min(4).max(255)).min(1).max(50),
 });
 
-export const zCheckMembershipInvitePath = z.object({
+export const zCheckMemberInvitePath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });
 
-export const zCheckMembershipInviteQuery = z.object({
+export const zCheckMemberInviteQuery = z.object({
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
 });
@@ -1879,20 +1879,20 @@ export const zCheckMembershipInviteQuery = z.object({
  *
  * One outcome per address, judged from the members and invitations the caller can see.
  */
-export const zCheckMembershipInviteResponse = z.object({
+export const zCheckMemberInviteResponse = z.object({
   outcomes: z.array(zInviteOutcome),
 });
 
-export const zBatchDeleteMembershipsBody = z.object({
+export const zBatchDeleteMembersBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
 });
 
-export const zBatchDeleteMembershipsPath = z.object({
+export const zBatchDeleteMembersPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });
 
-export const zBatchDeleteMembershipsQuery = z.object({
+export const zBatchDeleteMembersQuery = z.object({
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
 });
@@ -1900,7 +1900,7 @@ export const zBatchDeleteMembershipsQuery = z.object({
 /**
  * Success
  */
-export const zBatchDeleteMembershipsResponse = z.object({
+export const zBatchDeleteMembersResponse = z.object({
   data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),

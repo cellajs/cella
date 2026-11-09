@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import {
   batchCreateAttachments,
   batchDeleteAttachments,
-  batchDeleteMemberships,
+  batchDeleteMembers,
   batchDeleteOrganizations,
   inviteMembers,
   resendInvitation,
@@ -126,7 +126,7 @@ describe('Member escalation over HTTP', async () => {
     {
       act: 'remove another member',
       attempt: (fixture, actor) =>
-        call(batchDeleteMemberships, {
+        call(batchDeleteMembers, {
           path: { tenantId: fixture.org.tenantId, organizationId: fixture.org.id },
           query: { entityId: fixture.org.id, entityType: 'organization' },
           body: { ids: [counterpart(fixture, actor).id] },

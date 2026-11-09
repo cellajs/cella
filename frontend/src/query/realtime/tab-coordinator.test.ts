@@ -1,4 +1,4 @@
-import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
+import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LeaderMessage } from '~/query/realtime/tab-coordinator';
 
@@ -152,7 +152,7 @@ describe('what the leader tells the other tabs', () => {
       propagation: null,
     };
     const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
-    const answer: PostAppCatchupResponse = { organizations: {}, views: [], generation: 7 };
+    const answer: CatchUpMyStreamResponse = { organizations: {}, views: [], generation: 7 };
     const messages: LeaderMessage[] = [
       { type: 'stream-change', change },
       { type: 'stream-signal', signal },

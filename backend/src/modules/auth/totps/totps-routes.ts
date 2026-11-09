@@ -9,7 +9,7 @@ import { cookieSchema } from '#/schemas';
 export const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   generateTotpKey: xRoute({
     method: 'post',
-    path: '/totp/generate-key',
+    path: '/generate-totp-key',
     xEnabledBy: { strategy: 'totp' },
     xGuard: [userGuard, stepUpEnrollGuard],
     xRateLimiter: [singlePointsLimiter],
@@ -40,7 +40,7 @@ export const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   }),
   signInWithTotp: xRoute({
     method: 'post',
-    path: '/totp-verification',
+    path: '/sign-in-with-totp',
     xEnabledBy: { strategy: 'totp' },
     xGuard: [publicGuard],
     xRateLimiter: [totpVerificationLimiter],

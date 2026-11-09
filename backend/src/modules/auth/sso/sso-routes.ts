@@ -55,7 +55,7 @@ export const authSsoRoutes = createXRoutes(['auth', 'cella'], {
   }),
   sendSsoRecoveryLink: xRoute({
     method: 'post',
-    path: '/sso/recovery-link',
+    path: '/send-sso-recovery-link',
     xEnabledBy: { strategy: 'sso' },
     xGuard: [publicGuard],
     xRateLimiter: [spamLimiter],

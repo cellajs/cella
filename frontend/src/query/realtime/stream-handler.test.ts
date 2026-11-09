@@ -27,7 +27,7 @@ vi.mock('~/query/offline/hlc', () => ({ sourceId: 'tab-a' }));
 const session = { user: { id: 'user-a' } };
 vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => session } }));
 
-const { handleStreamChange } = await import('~/query/realtime/app-stream-handler');
+const { handleStreamChange } = await import('~/query/realtime/stream-handler');
 const { onChangeEvent } = await import('~/query/realtime/sync-events');
 
 type ChangeRow = StreamChange['rows'][number];

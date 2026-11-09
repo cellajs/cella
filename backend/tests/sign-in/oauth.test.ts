@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
+import { githubCallback, googleCallback, microsoftCallback, startGithubOAuth, startGoogleOAuth, startMicrosoftOAuth } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -100,9 +100,9 @@ describe('OAuth Authentication', async () => {
     // The state cookie must hold what the provider URL was built with: the callback presents that verifier and
     // nonce, so a mismatch would let a code minted for another challenge through, or fail every sign-in.
     it.each([
-      { provider: 'github', fn: github, client: githubAuth, oidc: false },
-      { provider: 'google', fn: google, client: googleAuth, oidc: true },
-      { provider: 'microsoft', fn: microsoft, client: microsoftAuth, oidc: true },
+      { provider: 'github', fn: startGithubOAuth, client: githubAuth, oidc: false },
+      { provider: 'google', fn: startGoogleOAuth, client: googleAuth, oidc: true },
+      { provider: 'microsoft', fn: startMicrosoftOAuth, client: microsoftAuth, oidc: true },
     ])('starts a $provider round trip whose state cookie matches the provider URL', async ({ fn, client, oidc }) => {
       const { response: res } = await call(fn, { query: { kind: 'auth' }, headers: defaultHeaders });
 
@@ -119,7 +119,7 @@ describe('OAuth Authentication', async () => {
 
     it('should handle OAuth flow with redirect parameter', async () => {
       const redirectAfter = '/dashboard';
-      const { response: res } = await call(github, { query: { kind: 'auth', redirectAfter }, headers: defaultHeaders });
+      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectAfter }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       expect(setCookieOf(res, 'oauth-state').line).toContain(`"redirectAfter":"${redirectAfter}"`);
@@ -289,7 +289,7 @@ describe('OAuth Authentication', async () => {
   describe('Security & Input Validation', () => {
     it('should handle very long redirect URL', async () => {
       const longRedirect = `/${'a'.repeat(2000)}`;
-      const { response: res } = await call(github, { query: { kind: 'auth', redirectAfter: longRedirect }, headers: defaultHeaders });
+      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectAfter: longRedirect }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       // A path the last hop would refuse is dropped at the start, so it never grows the state cookie past what a browser keeps.
@@ -447,22 +447,22 @@ describe('OAuth Authentication', async () => {
         vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id }, session: { id: sessionId } } as never);
 
       signedInAs(user.id);
-      const unpinned = await call(github, { query: { kind: 'connect' }, headers: defaultHeaders });
+      const unpinned = await call(startGithubOAuth, { query: { kind: 'connect' }, headers: defaultHeaders });
       expect(unpinned.response.status).toBe(401);
 
       const othersSession = await pinConnect(other);
       signedInAs(user.id, othersSession);
-      const othersPin = await call(github, { query: { kind: 'connect' }, headers: defaultHeaders });
+      const othersPin = await call(startGithubOAuth, { query: { kind: 'connect' }, headers: defaultHeaders });
       expect(othersPin.response.status).toBe(401);
 
       // The user's own pin, but from another of their sessions: refused too.
       const ownSession = await pinConnect(user);
       signedInAs(user.id);
-      const otherSessionsPin = await call(github, { query: { kind: 'connect' }, headers: defaultHeaders });
+      const otherSessionsPin = await call(startGithubOAuth, { query: { kind: 'connect' }, headers: defaultHeaders });
       expect(otherSessionsPin.response.status).toBe(401);
 
       signedInAs(user.id, ownSession);
-      const started = await call(github, { query: { kind: 'connect' }, headers: defaultHeaders });
+      const started = await call(startGithubOAuth, { query: { kind: 'connect' }, headers: defaultHeaders });
       expect(started.response.status).toBe(302);
       expect(JSON.parse(mockCookieStore.get('oauth-state') ?? '{}')).toEqual({
         state: expect.any(String),
@@ -634,9 +634,9 @@ describe('OAuth Authentication', async () => {
 
     // A state belongs to the provider whose start minted it, whatever else its cookie holds.
     it.each([
-      { from: 'google', start: google, minter: googleAuth, to: 'github', fn: githubCallback, client: githubAuth },
-      { from: 'microsoft', start: microsoft, minter: microsoftAuth, to: 'google', fn: googleCallback, client: googleAuth },
-      { from: 'github', start: github, minter: githubAuth, to: 'microsoft', fn: microsoftCallback, client: microsoftAuth },
+      { from: 'google', start: startGoogleOAuth, minter: googleAuth, to: 'github', fn: githubCallback, client: githubAuth },
+      { from: 'microsoft', start: startMicrosoftOAuth, minter: microsoftAuth, to: 'google', fn: googleCallback, client: googleAuth },
+      { from: 'github', start: startGithubOAuth, minter: githubAuth, to: 'microsoft', fn: microsoftCallback, client: microsoftAuth },
     ])('must not accept a $from-minted state at the $to callback', async ({ start, minter, fn, client }) => {
       const { response: started } = await call(start, { query: { kind: 'auth' }, headers: defaultHeaders });
       expect(started.status).toBe(302);
@@ -900,7 +900,7 @@ describe('OAuth Authentication', async () => {
       expect(await accountsFor(providerEmail)).toHaveLength(0);
 
       // The verify round trip starts where the link redirected, which pins its state in this browser.
-      const started = await call(github, { query: { kind: 'verify' }, headers: defaultHeaders });
+      const started = await call(startGithubOAuth, { query: { kind: 'verify' }, headers: defaultHeaders });
       expect(started.response.status).toBe(302);
       const { state } = JSON.parse(mockCookieStore.get('oauth-state') ?? '{}');
 

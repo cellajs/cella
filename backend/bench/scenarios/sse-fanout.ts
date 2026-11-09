@@ -94,7 +94,7 @@ export default defineScenario({
 
         try {
           const status = await vu.sse(
-            '/entities/app/stream',
+            '/me/stream',
             ({ event, data }) => {
               if (event !== 'change') return;
               try {
@@ -103,7 +103,7 @@ export default defineScenario({
                 vu.counter('sse.errors');
               }
             },
-            { headers: { cookie }, signal: AbortSignal.timeout(SSE_HOLD_MS), name: 'SSE /entities/app/stream' },
+            { headers: { cookie }, signal: AbortSignal.timeout(SSE_HOLD_MS), name: 'SSE /me/stream' },
           );
           if (status !== 200) vu.counter('sse.errors');
         } catch {

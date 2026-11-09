@@ -35,7 +35,7 @@ registerTag({ tag: 'app', kind: 'owner', description: 'Application-specific modu
 
 /**
  * The schema buckets of the docs schemas page, which a component joins through `x-tags`: returned whole (`data`), inside
- * other shapes (`embedded`), an app stream frame (`stream`), an error body (`errors`). An untagged component joins `data`.
+ * other shapes (`embedded`), a stream frame (`stream`), an error body (`errors`). An untagged component joins `data`.
  */
 const schemaKinds = ['data', 'embedded', 'stream', 'errors'] as const;
 
@@ -46,7 +46,7 @@ const schemaKindDescriptions: Record<SchemaKind, string> = {
   embedded:
     'Shapes that appear only inside other shapes, in a response or a request: a writer reference, a user or a channel as another entity carries it, a membership, and the sync envelope of a write. An embedded schema holds the fields every embedding shows; the entity in full is under data.',
   stream:
-    'The frames of the app stream: a change of product rows, a signal that something else changed, and the error that ends the stream. The stream operation sends one of them per event.',
+    'The frames of the stream: a change of product rows, a signal that something else changed, and the error that ends the stream. The stream operation sends one of them per event.',
   errors: 'The error body every operation answers with, and the form it takes per status.',
 };
 for (const kind of schemaKinds) registerTag({ tag: kind, kind: 'schema', default: kind === 'data', description: schemaKindDescriptions[kind] });

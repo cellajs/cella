@@ -66,7 +66,7 @@ const meta = {
 
       const known: Record<string, 'member' | 'remind'> = parameters.known;
       const outcomes = body.emails.map((email: string) => ({ email, outcome: known[email] ?? 'invite' }));
-      if (url.pathname.endsWith('/memberships:check-invite')) return json({ outcomes });
+      if (url.pathname.endsWith('/members:check-invite')) return json({ outcomes });
 
       requests.push({ path: url.pathname, search: url.search, body });
       if (url.pathname.endsWith('/users:invite')) return json({ data: [], rejectedIds: [], invitesSentCount: body.emails.length });
@@ -210,7 +210,7 @@ export const ShouldSendMembershipInvite: Story = {
     await expect(toaster.success).not.toHaveBeenCalled();
     await expect(requests).toEqual([
       {
-        path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/memberships:invite$/),
+        path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/members:invite$/),
         search: '?entityId=org-1&entityType=organization',
         body: { emails: ['a@x.com', 'b@x.com'], role: hierarchy.getLeastPrivilegedRole('organization') },
       },
@@ -293,7 +293,7 @@ export const ShouldSendBulkInvite: Story = {
       await expect(canvas.getByText('and not-an-address')).toBeVisible();
       await expect(requests).toEqual([
         expect.objectContaining({
-          path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/memberships:invite$/),
+          path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/members:invite$/),
           body: { emails: ['a@x.com', 'b@x.com'], role: hierarchy.getLeastPrivilegedRole('organization') },
         }),
       ]);

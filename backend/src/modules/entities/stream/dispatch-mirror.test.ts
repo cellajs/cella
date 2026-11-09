@@ -9,7 +9,7 @@ import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
 import { streamSubscriber } from './tests/stream-subscriber';
-import type { AppStreamProductEvent } from './types';
+import type { StreamProductEvent } from './types';
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
 const orgA = 'org-dispatch-a';
@@ -53,7 +53,7 @@ const attachmentEvent = (
   organizationId: string,
   rows: (Partial<ActivityRow> & Pick<ActivityRow, 'rowData'>)[],
   overrides: Record<string, unknown> = {},
-): AppStreamProductEvent =>
+): StreamProductEvent =>
   ({
     type: 'attachment.created',
     action: 'create',
@@ -67,7 +67,7 @@ const attachmentEvent = (
     rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
     trace: null,
     ...overrides,
-  }) as unknown as AppStreamProductEvent;
+  }) as unknown as StreamProductEvent;
 
 afterEach(() => {
   // Fake subscribers are registered per test; drop them so tests stay isolated.

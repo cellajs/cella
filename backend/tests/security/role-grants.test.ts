@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { batchDeleteMemberships, createApiKey, createServiceAccount, updateMembership, updateServiceAccount } from 'sdk';
+import { batchDeleteMembers, createApiKey, createServiceAccount, updateMembership, updateServiceAccount } from 'sdk';
 import { type EntityRole, getEntityPolicies, getPolicyPermissions, type OrganizationRole, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -128,7 +128,7 @@ describe('Role grants above the actor', async () => {
       {
         act: 'remove a holder of the top role',
         attempt: ({ org, otherAdmin }, actor) =>
-          call(batchDeleteMemberships, {
+          call(batchDeleteMembers, {
             path: { tenantId: org.tenantId, organizationId: org.id },
             query: { entityId: org.id, entityType: 'organization' },
             body: { ids: [otherAdmin.id] },

@@ -5,9 +5,9 @@ import { type CdcWorkerHealth, cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { mockActivity } from '#/modules/activities/activities-mocks';
 import { log } from '#/utils/logger';
 
-// A generation move ends every app stream: the case counts the calls.
-const { resyncAppStreams } = vi.hoisted(() => ({ resyncAppStreams: vi.fn(() => Promise.resolve()) }));
-vi.mock('#/modules/entities/helpers/session-streams', () => ({ resyncAppStreams }));
+// A generation move ends every stream: the case counts the calls.
+const { resyncStreams } = vi.hoisted(() => ({ resyncStreams: vi.fn(() => Promise.resolve()) }));
+vi.mock('#/modules/entities/helpers/session-streams', () => ({ resyncStreams }));
 
 /** A worker socket as the socket server uses one: it registers handlers and may be closed. The test fires the handlers. */
 const fakeSocket = () => {
@@ -191,19 +191,19 @@ describe('CDC socket: a message as the bus receives it', () => {
 });
 
 describe('CDC socket: control messages', () => {
-  it('holds the report of a worker of another release as unreadable, and still follows its generation: a move ends every app stream once', () => {
+  it('holds the report of a worker of another release as unreadable, and still follows its generation: a move ends every stream once', () => {
     const worker = connect();
     const olderReport = (generation: number) => ({ _control: 'health', payload: { replicationStatus: 'active', lastLsn: null, generation } });
 
     worker.send(olderReport(41));
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    resyncAppStreams.mockClear();
+    resyncStreams.mockClear();
     worker.send(olderReport(42));
     worker.send({ _control: 'health' });
     worker.send({ _control: 'health', payload: { status: 'fine', reasons: [], details: {}, generation: 42 } });
 
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    expect(resyncAppStreams).toHaveBeenCalledOnce();
+    expect(resyncStreams).toHaveBeenCalledOnce();
   });
 
   it('ignores a control message it does not know, without a warning or an error in the log', () => {
@@ -224,7 +224,7 @@ describe('CDC socket: control messages', () => {
   });
 });
 
-describe('CDC socket: whether a worker reads, for the app stream to tell its clients', () => {
+describe('CDC socket: whether a worker reads, for the stream to tell its clients', () => {
   const MINUTE = 60_000;
 
   beforeEach(() => {

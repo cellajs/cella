@@ -4,7 +4,7 @@ import { actorGuard, orgGuard, tenantGuard, userGuard } from '#/middlewares/guar
 import { bulkPointsLimiter, singlePointsLimiter, streamConnectLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockCatchupResponse } from '#/modules/entities/entities-mocks';
 import { channelArchiveBodySchema, checkSlugBodySchema } from '#/modules/entities/entities-schema';
-import { appCatchupResponseSchema, batchResponseSchema, streamCatchupBodySchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
+import { batchResponseSchema, streamCatchupBodySchema, streamCatchupResponseSchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
 import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
 
 export const entityRoutes = createXRoutes(['entities', 'cella'], {
@@ -54,13 +54,12 @@ export const entityRoutes = createXRoutes(['entities', 'cella'], {
     },
   }),
 
-  appStream: xRoute({
-    operationId: 'getAppStream',
+  getMyStream: xRoute({
     method: 'get',
-    path: '/entities/app/stream',
+    path: '/me/stream',
     xGuard: [userGuard],
     xRateLimiter: [streamConnectLimiter],
-    summary: 'App SSE stream',
+    summary: 'SSE stream',
     description:
       'SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.',
     responses: {
@@ -71,16 +70,15 @@ export const entityRoutes = createXRoutes(['entities', 'cella'], {
     },
   }),
 
-  appCatchup: xRoute({
-    operationId: 'postAppCatchup',
+  catchUpMyStream: xRoute({
     method: 'post',
-    path: '/entities/app/stream',
+    path: '/me/stream/~catch-up',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: 'App stream catchup',
+    summary: 'Stream catchup',
     description:
       'Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.',
     request: { body: jsonBody(streamCatchupBodySchema) },
-    responses: { 200: json('Catchup summary', appCatchupResponseSchema, mockCatchupResponse()) },
+    responses: { 200: json('Catchup summary', streamCatchupResponseSchema, mockCatchupResponse()) },
   }),
 });

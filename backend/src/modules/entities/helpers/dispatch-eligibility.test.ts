@@ -1,7 +1,7 @@
 import { type Access, appConfig, type EntityActionType, type EntityRole, type SubjectForPermission } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import { canReceiveProductEvent, readerFrames, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../../tests/fixtures';
 
@@ -60,7 +60,7 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
 });
 
 /** A product event as the bus delivers it: its rows, each with the activity of its write and its permission fields. */
-const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]): AppStreamProductEvent =>
+const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]): StreamProductEvent =>
   // A fixture: the cast covers the widened `type` string and the untyped channel columns `nullAncestorScopes` spreads.
   ({
     type: 'attachment.created',
@@ -74,21 +74,21 @@ const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]
     rowData: null,
     rows: rows.map((rowData, index) => ({ activityId: `act-${index}`, userId: null, changedFields: null, stx: null, seq: index + 1, rowData })),
     trace: null,
-  }) as unknown as AppStreamProductEvent;
+  }) as unknown as StreamProductEvent;
 
 /** The rows the dispatch names to each subscriber, in their order; none for a subscriber in no frame. */
-const batchRows = (subscribers: SubscriberAccess[], event: AppStreamProductEvent) => {
-  const named = new Map<SubscriberAccess, AppStreamProductEvent['rows']>();
+const batchRows = (subscribers: SubscriberAccess[], event: StreamProductEvent) => {
+  const named = new Map<SubscriberAccess, StreamProductEvent['rows']>();
   for (const { rows, readers } of readerFrames(subscribers, event)) for (const reader of readers) named.set(reader, rows);
   return subscribers.map((subscriber) => named.get(subscriber) ?? []);
 };
 
 /** Whether the dispatch names any row of the event to each subscriber. */
-const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProductEvent): boolean[] =>
+const batchDecisions = (subscribers: SubscriberAccess[], event: StreamProductEvent): boolean[] =>
   batchRows(subscribers, event).map((rows) => rows.length > 0);
 
 /** The per-subscriber evaluation: independent batch-of-1 checks, no cross-subscriber sharing. */
-const singleRows = (subscriber: SubscriberAccess, event: AppStreamProductEvent) =>
+const singleRows = (subscriber: SubscriberAccess, event: StreamProductEvent) =>
   event.rows.filter(({ rowData }) => canReceiveProductEvent(subscriber, event, rowData));
 
 describe('dispatch batch eligibility: deterministic splits', () => {

@@ -86,7 +86,7 @@ Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts)
 
 A log record carries the trace and span it was written in. The fields of its log line become its attributes.
 
-No service serves a Prometheus scrape target. Metrics leave over OTLP. `/metrics/public` holds only the public counts the website shows.
+No service serves a Prometheus scrape target. Metrics leave over OTLP. `/public/metrics` holds only the public counts the website shows.
 
 ## Redaction
 

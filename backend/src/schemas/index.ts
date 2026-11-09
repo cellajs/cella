@@ -44,14 +44,14 @@ export { membershipCountSchema } from '#/schemas/count-schemas';
 export { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
 export { minimalBaseSchema } from '#/schemas/minimal-base';
 export {
-  type AppCatchupResponse,
-  appCatchupResponseSchema,
   type CatchupOrganizationSummary,
   type CatchupView,
+  type StreamCatchupResponse,
   type StreamChange,
   type StreamErrorPayload,
   type StreamSignal,
   streamCatchupBodySchema,
+  streamCatchupResponseSchema,
 } from '#/schemas/stream-schemas';
 export { type BatchResponseEmpty, batchResponseSchema, paginationSchema, productListResponseSchema } from '#/schemas/success-response-schemas';
 export {

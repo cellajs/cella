@@ -7,12 +7,12 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { readMemberships } from '#/middlewares/guard/membership-cache';
 import '#/modules/entities/entities-listeners';
 import { entityRoutes } from '#/modules/entities/entities-routes';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams } from '#/modules/entities/helpers/session-streams';
-import { appCatchupOp } from '#/modules/entities/operations/app-catchup';
+import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import { closeStreams } from '#/modules/entities/helpers/session-streams';
 import { archiveChannelOp } from '#/modules/entities/operations/archive-channel';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
-import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
+import { streamCatchupOp } from '#/modules/entities/operations/stream-catchup';
+import { ensureStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
 import { keepAlive, writeOffset } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -79,7 +79,7 @@ async function membershipsChangedSince(userId: string, registered: readonly Memb
   }
 }
 
-app.openapi(entityRoutes.appStream, async (ctx) => {
+app.openapi(entityRoutes.getMyStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, session } = ctx.var;
 
   const admitted = admittedStreams.get(user.id) ?? 0;
@@ -101,7 +101,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       releaseAdmission(user.id);
     }
 
-    const subscriber: AppStreamSubscriber = {
+    const subscriber: StreamSubscriber = {
       id: crypto.randomUUID(),
       topic: userTopic(user.id),
       stream,
@@ -116,17 +116,17 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
     // The user topic carries self-membership events whatever organizations it registered on, so a membership in a new
     // organization reaches the user here and the client reconnects to register on it.
     streamSubscriberManager.register(subscriber, [...organizationIds].map(organizationTopic));
-    ensureAppStreamSessionSweep();
-    log.debug('App stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
+    ensureStreamSessionSweep();
+    log.debug('Stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
     stream.onAbort(() => {
       streamSubscriberManager.unregister(subscriber.id);
-      log.debug('App stream subscriber disconnected', { subscriberId: subscriber.id });
+      log.debug('Stream subscriber disconnected', { subscriberId: subscriber.id });
     });
 
     if (await membershipsChangedSince(user.id, memberships)) {
       const payload = { code: 'access_changed', message: 'Memberships changed while the stream connected' } as const;
-      return closeAppStreams([{ subscriber, payload }], 'Failed to close a stream that connected across a membership change');
+      return closeStreams([{ subscriber, payload }], 'Failed to close a stream that connected across a membership change');
     }
 
     // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
@@ -135,6 +135,6 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
   }) as any;
 });
 
-app.openapi(entityRoutes.appCatchup, async (ctx) => ctx.json(await appCatchupOp(ctx, ctx.req.valid('json')), 200));
+app.openapi(entityRoutes.catchUpMyStream, async (ctx) => ctx.json(await streamCatchupOp(ctx, ctx.req.valid('json')), 200));
 
 export const entityHandlers = app;

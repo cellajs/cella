@@ -6,5 +6,5 @@ defineBackendModule({
   owner: 'cella',
   scope: ['backend'],
   description: 'Endpoints for retrieving high-level counts for entities such as users and organizations.',
-  routes: [{ path: '/metrics', app: metricHandlers }],
+  routes: [{ path: '/public/metrics', app: metricHandlers }],
 });
