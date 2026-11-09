@@ -3,6 +3,7 @@ import type { UserContext } from '#/core/context';
 import { findChannelCountersByKeys, findSyncGeneration } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
+import { computeSpreadWindow } from '#/modules/entities/stream/subscriber-manager';
 import { accessFrom } from '#/permissions/access';
 import { resolveViewReadStatus } from '#/permissions/view-read-status';
 import type { StreamCatchupResponse, streamCatchupBodySchema } from '#/schemas';
@@ -33,7 +34,10 @@ export async function streamCatchupOp(ctx: UserContext, { views = [] }: z.infer<
   const organizations: StreamCatchupResponse['organizations'] = {};
   for (const organizationId of organizationIds) {
     const signals = counters.get(organizationId)?.signals ?? {};
-    organizations[organizationId] = { signals: Object.keys(signals).length > 0 ? signals : undefined };
+    organizations[organizationId] = {
+      signals: Object.keys(signals).length > 0 ? signals : undefined,
+      spreadWindow: computeSpreadWindow(organizationId),
+    };
   }
 
   await buildPropagationHints(ctx, organizations, views, counters);

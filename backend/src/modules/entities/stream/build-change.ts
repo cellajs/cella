@@ -1,27 +1,10 @@
 import { appConfig, hierarchy, pathHomeId } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { dbPoolPressure } from '#/db/db';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { maxStreamChangeIds, maxStreamChangeRows } from '#/modules/entities/stream/helpers';
-import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import { computeSpreadWindow } from '#/modules/entities/stream/subscriber-manager';
 import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { StreamChange } from '#/schemas';
-
-/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
-const spreadMsPerSubscriber = 20;
-/** The client's background tier waits at most this long, so a wider window would pile the slots past it at its end. */
-const maxSpreadWindowMs = 30_000;
-
-/**
- * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for
- * every subscriber, so it rides in the serialize-once body and each client picks a slot in it.
- */
-function computeSpreadWindow(organizationId: string): number {
-  const audience = streamSubscriberManager.getByTopic(organizationTopic(organizationId)).length;
-  if (audience <= 1) return 0;
-  const pressure = Math.min(dbPoolPressure(), 2);
-  return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
-}
 
 /**
  * What a frame over the row cap names: the sequence range of a create's or update's rows, none of a delete's, and the

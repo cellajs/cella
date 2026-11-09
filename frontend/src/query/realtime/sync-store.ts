@@ -29,10 +29,11 @@ interface SyncStoreState {
   /**
    * Takes the generation a catchup answered with. Another one than the client held means the server corrected or
    * rebuilt its books: every cursor goes back to 0, so the catchup that follows stores the frontiers as baselines, and the
-   * refetch is due at this client's share of the spread. The signal versions go too: books rebuilt from lost counters
-   * count them again from 0, and a stored version the new count reaches would hide its runs, so each runs once now.
+   * refetch is due at this client's random share of `spreadWindowMs`, the window the server sized for the audience that
+   * hears of the generation at the same moment. The signal versions go too: books rebuilt from lost counters count them
+   * again from 0, and a stored version the new count reaches would hide its runs, so each runs once now.
    */
-  adoptGeneration: (generation: number) => void;
+  adoptGeneration: (generation: number, spreadWindowMs: number) => void;
   /**
    * Starts over when this device last caught up longer than `awayMs` ago: the server may have removed tombstones it
    * never read, so every cursor goes back to 0, as for a new generation, and the refetch is due at once.
@@ -70,9 +71,6 @@ const initStore: Pick<SyncStoreState, 'generation' | 'caughtUpAt' | 'refetchDueA
   orgs: {},
 };
 
-/** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
-const generationRefetchSpreadMs = 10_000;
-
 /** The server's cap on catchup views (`streamCatchupBodySchema`): a longer body fails the SDK's validation, and with it the whole catchup. */
 const maxCatchupViews = 256;
 
@@ -100,13 +98,13 @@ export const syncStore = createStore<SyncStoreState>()(
       immer((set, get) => ({
         ...initStore,
 
-        adoptGeneration: (generation) => {
+        adoptGeneration: (generation, spreadWindowMs) => {
           const held = get().generation;
           if (generation === held) return;
           set((state) => {
             state.generation = generation;
             if (held === null) return;
-            resetCursors(state, Date.now() + Math.random() * generationRefetchSpreadMs);
+            resetCursors(state, Date.now() + Math.random() * spreadWindowMs);
             for (const org of Object.values(state.orgs)) org.signals = {};
           });
         },

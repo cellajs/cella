@@ -171,8 +171,8 @@ describe('channel.deleted', () => {
   it('missed while away, must not refetch a list when a start-over refetch is due, also one that ran before the cascade settled', () => {
     seedCache();
     // A new generation: every client runs its versioned signals once, and refetches its synced cache at its share of the spread.
-    syncStore.getState().adoptGeneration(1);
-    syncStore.getState().adoptGeneration(2);
+    syncStore.getState().adoptGeneration(1, 0);
+    syncStore.getState().adoptGeneration(2, 10_000);
 
     handleChannelDeleted(signal({ subjectId: null }));
     syncStore.getState().markRefetched();

@@ -1,3 +1,4 @@
+import { dbPoolPressure } from '#/db/db';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 
 /** The topic of a user's own stream events: its membership changes and the end of its sessions. */
@@ -62,3 +63,20 @@ class StreamSubscriberManager {
 
 /** The open SSE streams of this process, by topic. */
 export const streamSubscriberManager = new StreamSubscriberManager();
+
+/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
+const spreadMsPerSubscriber = 20;
+/** The client's background tier waits at most this long, so a wider window would pile the slots past it at its end. */
+const maxSpreadWindowMs = 30_000;
+
+/**
+ * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for every
+ * subscriber, so it rides in a change frame's serialize-once body and in the catchup answer, and each client picks a
+ * slot in it: for the rows a frame announces, and for the refetch a new generation owes.
+ */
+export function computeSpreadWindow(organizationId: string): number {
+  const audience = streamSubscriberManager.getByTopic(organizationTopic(organizationId)).length;
+  if (audience <= 1) return 0;
+  const pressure = Math.min(dbPoolPressure(), 2);
+  return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
+}
