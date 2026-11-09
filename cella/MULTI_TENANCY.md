@@ -1,17 +1,16 @@
 # Multi-tenancy
 
-This document explains how tenant data stays isolated: which layer is responsible for what, and how far the database backstop reaches.
+This document explains how tenant data stays isolated: which layer does what, and how far the [row-level security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) backstop reaches.
 
 ### TL;DR
 
-The application is responsible for keeping each tenant's data separate: it checks who is making a
-request, limits every query to the current tenant, and applies [permissions](./PERMISSIONS.md).
-PostgreSQL adds a second safety net for reads of tenant-owned content. It catches application
-mistakes but is not the main access-control layer.
+The application keeps each tenant's data separate. It checks who makes a request, limits every query to the current
+tenant and applies [permissions](./PERMISSIONS.md). PostgreSQL adds a second safety net for reads of tenant-owned
+content. It catches application mistakes but is not the main access-control layer.
 
 ## Security contract
 
-Authorization must stay correct with RLS absent or misconfigured. Every entity lookup compares the row's tenant and organization with the request scope, and every organization-bound product query carries a tenant and organization predicate, so removing RLS broadens no application query.
+Authorization must stay correct with RLS absent or misconfigured. Removing RLS broadens no application query. Every entity lookup compares the row's tenant and organization with the request scope. Every organization-bound product query carries a tenant and organization predicate.
 
 The backend suite proves it by running twice with identical expectations: once with RLS bypassed, once as the RLS-bound runtime role ([Verification](#verification)).
 
@@ -24,7 +23,7 @@ The backend suite proves it by running twice with identical expectations: once w
 
 ## What RLS covers
 
-Cella enables row-level security on product tables and on resources that hold tenant data, and never forces it, so the owning `admin_role` bypasses it ([Database roles](#database-roles)). The template protects `attachments`, `yjs_documents` and `yjs_updates`.
+RLS is enabled on product tables and on resources that hold tenant data. The owning `admin_role` bypasses it, since it is never forced ([Database roles](#database-roles)). The template protects `attachments`, `yjs_documents` and `yjs_updates`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
@@ -33,35 +32,31 @@ Cella enables row-level security on product tables and on resources that hold te
 | Memberships | No RLS | Membership operations and permissions |
 | Resources | RLS only when they hold tenant data and the migration lists them | Owning module and guards |
 
-Every product entity has a tenant and a home channel by construction (the hierarchy rejects a
-product without a channel parent), so the RLS migration protects every registered product table
-without per-table opt-in. Channel-entity and membership queries use `baseDb`. Product reads must
-enter a tenant helper.
+The RLS migration protects every registered product table without per-table opt-in. Every product entity has a tenant and a home channel: the hierarchy rejects a product without a channel parent. Channel-entity and membership queries use `baseDb`. Product reads must enter a tenant helper.
 
 ## Product reads
 
-The helpers in `backend/src/db/tenant-context.ts` open a transaction that names the tenant to the RLS policies; a protected read without one returns nothing. Pick by what the work does:
+The helpers in `backend/src/db/tenant-context.ts` open a transaction that names the tenant to the RLS policies. A protected read without one returns nothing. Pick by what the work does:
 
 - `tenantRead` for a request's product reads.
 - `tenantContext` for a request's creates and updates.
 - `tenantReadById` for work with no request behind it, such as notification fan-out.
+- `tenantReadAs` for a route without `tenantGuard`, which names the tenant explicitly.
 
-Variants read tombstones too (for delta reads, recovery, soft-delete and restore) or take the tenant explicitly on a route without `tenantGuard` (`tenantReadAs`). Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint, so a module hook can call an operation that opens its own transaction; one for another tenant is refused.
+Variants also read tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
 
 ## Write-through policies
 
-Cella installs INSERT, UPDATE, and DELETE policies whose expressions are `true`, since RLS denies
-operations without a policy. **The write policy supplies no authorization**: permissions stay in
-the shared engine, and a contextless insert passes RLS.
+The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions are `true`. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
 
 | Concern | Mechanism | Limit |
 | --- | --- | --- |
 | Actor may perform the action | Guards and the permission engine | Every mutation path must call them |
 | Initial tenant and organization | The server derives them from the guarded context | A contextless SQL insert is outside this protection |
 | Update or delete targets | The operation's query uses guarded ids and channel scope | RLS write policies add no predicates |
-| Tenant and organization agree | A composite `(tenant_id, organization_id)` foreign key on every organization-bound table; tenant and organization are 1:1 | Does not authorize the actor |
+| Tenant and organization agree | A composite `(tenant_id, organization_id)` foreign key on every organization-bound table. Tenant and organization are 1:1. | Does not authorize the actor |
 | Product identity cannot move | A trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor ids are not covered. |
-| Membership identity, activities | Immutability triggers on membership identity columns; activity rows are append-only for the runtime role | Same limits. `admin_role` can delete activities. |
+| Membership identity, activities | Immutability triggers on membership identity columns. Activity rows are append-only for the runtime role. | Same limits. `admin_role` can delete activities. |
 
 ## Database roles
 
@@ -70,26 +65,42 @@ the shared engine, and a contextless insert passes RLS.
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
 | `admin_role` | Bypassed as table owner | Migrations, seeds, the pg_cron partition job, and CDC replication or stamping |
 
-`admin_role` owns the RLS-protected tables and the activities, so it bypasses their policies as the owner. The bypass never depends on the `BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, and the dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs, and refuse to run when either role is missing. The CDC worker needs the same bypass.
+`admin_role` also owns the activities. Its bypass never depends on the `BYPASSRLS` attribute, which managed providers such as Scaleway cannot grant. The dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs. They refuse to run when either role is missing.
 
-Only the admin connection can write `system_roles`. An application system administrator is not `admin_role`: their requests use the runtime connection and normal request scope. The admin credential serves migrations, seeds and job setup, and an API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
+Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
+
+The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it. Its request handlers then cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
 ## Tenant kinds
 
-A tenant's `kind` says what it is for, and `appConfig.tenantKinds` says what each kind takes part in. A `live` tenant serves customers. A `test` tenant serves staff and automated runs: the showcase seed, e2e and pentest runs, a flow tried in production. It stays out of the public counts and behind a kind filter in the admin lists of tenants and organizations, and its creation and removal raise no operator notice. A system admin moves a tenant between `live` and `test`.
+A tenant's `kind` says what it is for, and `appConfig.tenantKinds` says what each kind takes part in:
 
-A `demo` tenant is a visitor's throwaway, which only `createDemo` makes while `has.demos` is on. It holds one account under a placeholder address with no proven inbox, signed in by a `demo` session and by nothing else, as admin of the tenant's organization; the app's `onDemoCreated` hooks fill it with content. A demo invites no one, since that mails third parties, and its session creates no tenant, adds no sign-in method, proves no address and hands out no lasting access: the step-up every such action asks for refuses a demo session. It starts with the kind's restrictions laid over the defaults and expires after `retention.demoTenantDays`. The public user count counts an account with a proven address that belongs to no tenant or to a counted one, so demo accounts and staff who belong to test tenants alone stay out, and the admin users list shows provisional accounts only when asked.
+- **`live`.** It serves customers.
+- **`test`.** Staff and automated runs, kept out of public counts and behind a filter in admin lists.
+- **`demo`.** A visitor's throwaway, which only `createDemo` makes while `has.demos` is on.
+
+A system admin moves a tenant between `live` and `test`.
+
+A demo holds one account, admin of the tenant's organization, under a placeholder address with no proven inbox. Only a `demo` session signs it in. The app's `onDemoCreated` hooks fill it with content. It expires after `retention.demoTenantDays`. A demo invites no one, since that mails third parties. Its session is refused when it would:
+
+- create a tenant
+- add a sign-in method
+- prove an address
+- hand out lasting access
 
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active, or past its `expiresAt`: at once in the process that changed the status, within seconds in any other. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists, and their open streams end, so their apps drop it.
+A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
 
-A system admin restores it by setting the tenant active again. After the archived period, or past its expiry, an hourly sweep removes the tenant with everything in it, then the provisional accounts left with no membership, and for a kind with operator notices mails the operator what it removed.
+Deleting its organization archives a tenant. A system admin also archives one when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
+
+A system admin restores a tenant by setting it active again. Once its archived period or its expiry passes, an hourly sweep removes the tenant with everything in it. The provisional accounts it leaves with no membership go too.
 
 ## Verification
 
 - Builders: `backend/src/db/rls-helpers.ts`.
-- Migrations: `10-rls` sets classification, ownership, RLS and grants; `99-verify` asserts that end state, and a failed assertion rolls the migration back.
-- Tests: `backend/tests/integration/rls-security.test.ts` and `schema-verification.test.ts` inspect
-  the migrated catalog and never repair it. `backend/tests/security/cross-tenant.test.ts` and
-  `cross-org.test.ts` attack the boundary; `pnpm test:core:runtime` is the runtime-role run.
+- Migration `10-rls`: sets classification, ownership, RLS and grants.
+- Migration `99-verify`: asserts that end state, and a failed assertion rolls the migration back.
+- `rls-security.test.ts` and `schema-verification.test.ts`: inspect the migrated catalog, never repair it.
+- `backend/tests/security/cross-tenant.test.ts` and `cross-org.test.ts`: attack the boundary.
+- `pnpm test:core:runtime`: the runtime-role run.

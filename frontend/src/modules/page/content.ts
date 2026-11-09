@@ -14,11 +14,16 @@ const contentRoot = '/src/content/docs/';
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
 
+/** Page layouts: `default` a reading column with the heading aside, `wide` the full frame and no aside, for a table appendix. */
+const docLayouts = ['default', 'wide'] as const;
+type DocLayout = (typeof docLayouts)[number];
+
 const frontmatterSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   order: z.number().default(0),
   renderMode: z.enum(docRenderModes).default('default'),
+  layout: z.enum(docLayouts).default('default'),
   keywords: z.string().optional(),
   draft: z.boolean().default(false),
   hidden: z.boolean().default(false),
@@ -73,6 +78,7 @@ export type DocPage = {
   keywords?: string;
   displayOrder: number;
   renderMode: DocRenderMode;
+  layout: DocLayout;
   draft: boolean;
   /** Routable but excluded from the sidebar tree and child-page lists. */
   hidden: boolean;

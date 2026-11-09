@@ -17,11 +17,13 @@ shaping, notifications, and cache invalidation stay outside query modules.
 
 A module's `helpers/` holds database-free code only: key formats, crypto, cookies, URL or HTML
 building, column selections. A function that reads or writes is a query. One that combines queries
-with rules, permission checks or side effects is an operation, also when only other operations call
-it. Biome enforces this by import: a file under `helpers/` cannot import `#/db/db`, a `*-queries`
-file, a file under `operations/`, or the context types that carry the connection (`DbContext`,
-`ActorContext`, `OrgContext`, `UserContext`). `Env`, for a helper that reads headers or cookies,
-stays allowed.
+with rules, permission checks or side effects is an operation, also when only other operations
+call it.
+
+Biome enforces the `helpers/` rule by import: a file under `helpers/` cannot import `#/db/db`, a
+`*-queries` file, a file under `operations/`, or the context types that carry the connection
+(`DbContext`, `ActorContext`, `OrgContext`, `UserContext`). `Env`, for a helper that reads headers
+or cookies, stays allowed.
 
 When adding or changing a query:
 

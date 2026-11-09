@@ -9,6 +9,7 @@ import { DocsTileCard } from '~/modules/docs/docs-landing-page';
 import { getDocPageComponent, pageSectionId, useChildDocPages, useDocPage } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
+import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
@@ -24,12 +25,13 @@ export function ViewPage({ slug }: { slug: string }) {
   // The page section comes first, so the intro above the first heading counts as the page itself
   const spyIds = [pageSectionId, ...tocHeadings.map((heading) => heading.id)];
   const renderMode = page.renderMode;
-  const showToc = renderMode !== 'nodeOnly' && tocHeadings.length >= 2;
+  const wide = page.layout === 'wide';
+  const showToc = !wide && renderMode !== 'nodeOnly' && tocHeadings.length >= 2;
 
   return (
     <div className="container">
       <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
-        <div className="max-w-208 min-w-0 flex-1">
+        <div className={cn('min-w-0 flex-1', wide ? 'max-w-292' : 'max-w-208')}>
           <div id={`${spyPrefix}${pageSectionId}`} className="prose dark:prose-invert max-w-none">
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && (
@@ -50,13 +52,15 @@ export function ViewPage({ slug }: { slug: string }) {
           </div>
         </div>
 
-        <aside className="w-52 shrink-0 max-lg:hidden print:hidden">
-          {showToc && (
-            <div className="sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
-              <TocAside headings={tocHeadings} />
-            </div>
-          )}
-        </aside>
+        {!wide && (
+          <aside className="w-52 shrink-0 max-lg:hidden print:hidden">
+            {showToc && (
+              <div className="sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
+                <TocAside headings={tocHeadings} />
+              </div>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );

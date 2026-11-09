@@ -4,7 +4,16 @@
 
 ### Checks and renames
 
-`pnpm cella i18n` reports, per namespace and language, the keys a translation misses, the keys English lacks, translations equal to English, interpolations and tags that differ from English, plural forms a language lacks or never uses, and the `common.json` keys `app.json` overrides. `pnpm cella i18n unused` lists the keys no code names, here and in the local checkouts of the apps that `cella/cella.config.ts` names. `pnpm cella i18n rename c:old_key c:new_key` renames a key in every language and in the code, and lists the places that build the old key from a value, which it cannot rewrite.
+`pnpm cella i18n` reports, per namespace and language:
+
+- the keys a translation misses
+- the keys English lacks
+- translations equal to English
+- interpolations and tags that differ from English
+- plural forms a language lacks or never uses
+- the `common.json` keys `app.json` overrides
+
+`pnpm cella i18n unused` lists the keys no code names, here and in the local checkouts of the apps that `cella/cella.config.ts` names. `pnpm cella i18n rename c:old_key c:new_key` renames a key in every language and in the code, and lists the places that build the old key from a value, which it cannot rewrite.
 
 ### Editor hover
 
@@ -36,7 +45,9 @@ Settings for `.vscode/settings.json` (gitignored, once per contributor):
 
 A key names the concept, so its text can change without a rename. Texts are short, and only the first letter of the first word is uppercase.
 
-**One key, one sentence.** A key holds a whole sentence or label. A slot takes a name, a number, a date or a bare noun, never a clause or a verb. No article or demonstrative stands before a noun slot (`this {{resource}}`): Dutch writes `deze organisatie` but `dit project`, and the template cannot know the gender of an app's entity names, so the sentence names the thing or says "it". Code never builds a sentence from several keys or appends words to a translation.
+**One key, one sentence.** A key holds a whole sentence or label. A slot takes a name, a number, a date or a bare noun, never a clause or a verb. Code never builds a sentence from several keys or appends words to a translation.
+
+No article or demonstrative stands before a noun slot (`this {{resource}}`): Dutch writes `deze organisatie` but `dit project`, and the template cannot know the gender of an app's entity names. The sentence names the thing or says "it".
 
 | Family | Key | Text |
 | --- | --- | --- |
