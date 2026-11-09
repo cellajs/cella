@@ -75,7 +75,7 @@ A link names one object. A machine's link ends within minutes, the builder's wit
 
 The manifest holds no secret: only the role, the release and the drain order the agent reads. The builder writes its archives, the manifest and its reports through signed links too.
 
-Every Pulumi run of the stack needs **the Pulumi passphrase**, the key to the stack's secrets. A first setup shows it once, for your password manager. From then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost.
+Every Pulumi run of the stack needs **the recovery passphrase** (Pulumi's passphrase), the key to the stack's secrets. A first setup shows it once, for your password manager. From then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost.
 
 A leaked passphrase opens nothing: only the operator reads the state, and it holds no machine and no secret value.
 
