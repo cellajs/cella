@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.42.0](https://github.com/cellajs/cella/compare/0.41.0...0.42.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* the stream moves to /me/stream, auth actions go flat, members name people ([#1773](https://github.com/cellajs/cella/issues/1773))
+
+### 🎉 New features
+
+* a testbed starts with pnpm testbed, beside pnpm dev ([#1771](https://github.com/cellajs/cella/issues/1771)) ([39f25ad](https://github.com/cellajs/cella/commit/39f25ad77533a74ea2681485f00354be98592466))
+* **auth:** one email step mails an unrecognized browser a link that signs in or signs up ([#1779](https://github.com/cellajs/cella/issues/1779)) ([c59ef03](https://github.com/cellajs/cella/commit/c59ef030e266717a8edf9684767ba480c18f2c09))
+* **blocknote:** pasting or dropping a file uploads it as an attachment ([#1776](https://github.com/cellajs/cella/issues/1776)) ([1e42e47](https://github.com/cellajs/cella/commit/1e42e47b0dd14c36336064ba7a117219469bb0ff))
+* **sync:** a migration of any size bypasses the stream, and a new generation refetches through the tiers ([#1774](https://github.com/cellajs/cella/issues/1774)) ([55c1011](https://github.com/cellajs/cella/commit/55c1011b2695a9b5289668e26eb8d0344a2a0c05))
+* the about hero says built and hosted in Europe, and the marketing shots are re-shot ([#1777](https://github.com/cellajs/cella/issues/1777)) ([9d56e1a](https://github.com/cellajs/cella/commit/9d56e1aac2105cb05a16638bb96a759416e9c0a0))
+
+
+### 🐞 Bug fixes
+
+* update forms send only the fields a person changed ([#1775](https://github.com/cellajs/cella/issues/1775)) ([d4fd39c](https://github.com/cellajs/cella/commit/d4fd39ccbcf3789030aa4d11aaff96982c68a536))
+
+
+### 🔧 Small improvements
+
+* the stream moves to /me/stream, auth actions go flat, members name people ([#1773](https://github.com/cellajs/cella/issues/1773)) ([bc7762c](https://github.com/cellajs/cella/commit/bc7762c54b6a0a143d7995a6731cf7c748dba32e))
+
+
+### 🧪 Tests
+
+* the magic link budget test opens the account's own link ([#1770](https://github.com/cellajs/cella/issues/1770)) ([1e70ccb](https://github.com/cellajs/cella/commit/1e70ccbe30cd718da1190b6221754544cc94e331))
+* the unsubscribe test posts resubscribe at its custom method path ([#1778](https://github.com/cellajs/cella/issues/1778)) ([8e8499e](https://github.com/cellajs/cella/commit/8e8499e9ea1484c64df6cfe3928f58b299762b1d))
+
 ## [0.41.0](https://github.com/cellajs/cella/compare/0.40.0...0.41.0) (2026-11-09)
 
 
