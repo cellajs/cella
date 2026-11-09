@@ -26,7 +26,8 @@ const orgRow = { id: orgId, tenantId: tenantId, entityType: 'organization', name
 const membership = (channelType: string, organizationId: string) =>
   ({ channelType, organizationId, channelId: 'channel-1', role: 'member', userId: 'user-1' }) as never;
 
-const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
+// `execute` is the archived-channel lookup, which runs only in an app with a channel type below the organization.
+const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }), execute: () => Promise.resolve({ rows: [] }) };
 
 const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organizationId?: string; tenantId?: string; db?: unknown }) => ({
   req: { param: () => opts.organizationId ?? orgId },
