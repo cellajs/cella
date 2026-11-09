@@ -652,7 +652,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
-  - `pnpm cella testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DATABASE_TESTBED_PORT`), `backend/bench/config.ts` (default admin URL).
+  - `pnpm testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DATABASE_TESTBED_PORT`), `backend/bench/config.ts` (default admin URL).
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.

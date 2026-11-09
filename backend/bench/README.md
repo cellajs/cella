@@ -12,7 +12,7 @@ A run measures the stack this checkout runs: Postgres from `pnpm docker`, seeded
 services of `pnpm dev`.
 
 With `--isolated` a run needs neither. It then starts a testbed for the run and stops it after.
-A testbed is a copy of the app on a database and ports of its own, as `pnpm cella testbed` starts it.
+A testbed is a copy of the app on a database and ports of its own, as `pnpm testbed` starts it.
 
 ## Commands
 

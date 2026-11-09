@@ -16,7 +16,7 @@ and the command cannot do it: run it, then **look at every image**.
 
 - `pnpm cella shoot` shoots on a testbed seeded with the app's showcase: this checkout's running one, else one it
   starts and stops after. It signs in as the showcase's admin, writes both modes of every shot over the files the app
-  ships, and prints each one's pixel and file size. Hold one (`pnpm cella testbed --showcase`) through a review loop, so
+  ships, and prints each one's pixel and file size. Hold one (`pnpm testbed --showcase`) through a review loop, so
   a re-shoot skips its start.
 - A trial run that leaves the working tree alone: `pnpm cella shoot --out <dir>`.
 - One shot at a time, which is what the review loop uses: `pnpm cella shoot settings`.

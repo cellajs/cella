@@ -76,7 +76,7 @@ services:
       - pg_test_data:/var/lib/postgresql/data
     healthcheck: *db_ready
 
-  # Seeded database of `pnpm cella testbed`, apart from the dev database so a testbed never touches it.
+  # Seeded database of `pnpm testbed`, apart from the dev database so a testbed never touches it.
   db_testbed:
     <<: *db
     container_name: ${PROJECT_SLUG}_db_testbed
