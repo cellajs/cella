@@ -1,6 +1,7 @@
 import { type DefaultSuggestionItem, filterSuggestionItems } from '@blocknote/core/extensions';
 import { type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems, SuggestionMenuController, type SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
+import { appTypeToKeys } from '~/blocknote-config';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { getNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
@@ -30,6 +31,7 @@ const baseBlockNoteTypeToKeys = {
   audio: ['audio'],
   toggleListItem: ['toggle_list'],
   divider: ['divider'],
+  ...appTypeToKeys,
 } satisfies Record<CustomBlockTypes, SlashItemKeys[]>;
 
 /** The slash items a digit key picks, in order. */

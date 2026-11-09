@@ -1,6 +1,7 @@
 import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import i18n from 'i18next';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
+import { appBlockSpecs } from '~/blocknote-config';
 import {
   getBlockPendingUpload,
   type PendingUpload,
@@ -202,6 +203,7 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     video: withPendingUpload(withAttachmentRef(defaultBlockSpecs.video)),
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(),
+    ...appBlockSpecs,
     codeBlock: withLanguageFallback(createCodeBlockSpec(codeBlockConfig)),
   },
   inlineContentSpecs: { mention: mentionInlineContent },

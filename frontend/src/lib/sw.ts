@@ -3,6 +3,7 @@ import type { ListNotificationsResponse } from 'sdk';
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 import type { NotificationPushPayload } from 'shared/push-payload';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
+import { registerAppRoutes } from '~/sw-config';
 
 declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry | string)[] };
 
@@ -103,5 +104,7 @@ async function resubscribe(oldSubscription: PushSubscription | null): Promise<vo
     // Re-subscribe failed (offline, permission revoked); the settings toggle recovers it.
   }
 }
+
+registerAppRoutes(serwist);
 
 serwist.addEventListeners();

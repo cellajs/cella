@@ -368,6 +368,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   securityEmail: string;
 
   has: HasFlagsConfig;
+  /** The installed PWA's `share_target`, posted as multipart form data; unset, the app takes no shares. */
+  shareTarget?: { action: string; params: { title?: string; text?: string; url?: string; files?: { name: string; accept: string[] }[] } };
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];

@@ -3,7 +3,7 @@ import type { CarouselItemData } from '~/modules/attachment/attachments-carousel
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
-import { type CustomBlockNoteEditor, isMediaBlock } from '~/modules/common/blocknote/types';
+import { type CustomBlockNoteEditor, isMediaBlock, mediaContentType } from '~/modules/common/blocknote/types';
 
 /** Opens the carousel at the item of block `blockId`, else at the first. */
 export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
@@ -21,9 +21,9 @@ export const openAttachment = async (editor: CustomBlockNoteEditor, blockId?: st
   editor.forEachBlock((block) => {
     if (!isMediaBlock(block) || !block.props.url) return true;
 
-    const { id, type: contentType, props } = block;
+    const { id, type, props } = block;
     const attachmentId = 'attachmentId' in props && typeof props.attachmentId === 'string' ? props.attachmentId : undefined;
-    slides.push({ id, url: props.url, filename: props.name, name: props.name, contentType, attachmentId });
+    slides.push({ id, url: props.url, filename: props.name, name: props.name, contentType: mediaContentType(type), attachmentId });
 
     return true;
   });

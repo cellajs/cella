@@ -9,22 +9,17 @@ import { uploadTemplates } from 'shared/transloadit-config';
 import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
+import { uploadAttachmentFile } from '~/modules/attachment/helpers/upload-file';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
-import {
-  type BaseUppyFilePanelProps,
-  type BlockNoteMediaMode,
-  type CustomBlockMediaTypes,
-  type CustomBlockNoteEditor,
-  isMediaBlock,
-} from '~/modules/common/blocknote/types';
+import type { BaseMediaBlockTypes, BaseUppyFilePanelProps, BlockNoteMediaMode, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
 import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
 import { type CustomUppy, type Plugins, type UploadResults, uploadResultsOf } from '~/modules/common/uploader/types';
 import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
-const basicBlockTypes: Record<CustomBlockMediaTypes, { allowedFileTypes: string[]; plugins: Plugins }> = {
+const basicBlockTypes: Record<BaseMediaBlockTypes, { allowedFileTypes: string[]; plugins: Plugins }> = {
   image: { allowedFileTypes: ['image/*'], plugins: ['image-editor', 'screen-capture', 'webcam', 'url'] },
   video: { allowedFileTypes: ['video/*'], plugins: ['screen-capture', 'webcam', 'url'] },
   audio: { allowedFileTypes: ['audio/*'], plugins: ['audio', 'screen-capture', 'webcam', 'url'] },
@@ -37,8 +32,9 @@ type FileBlockProps = { name: string; url: string; attachmentId?: string; measur
 /**
  * An attachment as a block: referenced by id, or by cloud key in a public mode whose upload is in the public bucket
  * (images the mid-size preview, other types the converted variant, never the full-size file).
+ * @public
  */
-const attachmentBlockProps = (attachment: Attachment, isImage: boolean, mediaMode: BlockNoteMediaMode): FileBlockProps => {
+export const attachmentBlockProps = (attachment: Attachment, isImage: boolean, mediaMode: BlockNoteMediaMode): FileBlockProps => {
   const publicKey = isImage
     ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
     : attachment.keys.converted || attachment.keys.original;
@@ -55,6 +51,8 @@ const storedFileBlockProps = (results: Partial<UploadResults<UploadTemplateId>>,
     measuredId: file.user_meta.attachmentId,
   }));
 };
+
+const isBaseMediaBlockType = (type: string): type is BaseMediaBlockTypes => Object.hasOwn(basicBlockTypes, type);
 
 /** Read an image blob's intrinsic pixel size by decoding it locally; returns null when it cannot decode. */
 const measureImageBlobSize = (blob: Blob): Promise<{ width: number; height: number } | null> =>
@@ -73,6 +71,23 @@ const measureImageBlobSize = (blob: Blob): Promise<{ width: number; height: numb
     image.src = url;
   });
 
+type AttachmentPanelProps = Extract<BaseUppyFilePanelProps, { mediaMode: 'public-attachment' | 'private-attachment' }>;
+
+/** A pasted or dropped file's block props once it is uploaded; the host persists its row, as it does a file panel upload. */
+export const uploadEditorFile = async (file: File, { organizationId, mediaMode, onComplete, onError }: AttachmentPanelProps) => {
+  // BlockNote makes an image block of any image/* file.
+  const isImage = file.type.startsWith('image/');
+  try {
+    const [attachment, size] = await Promise.all([uploadAttachmentFile(file, organizationId), isImage ? measureImageBlobSize(file) : null]);
+    await onComplete?.([attachment]);
+    const { measuredId: _measuredId, ...props } = attachmentBlockProps(attachment, isImage, mediaMode);
+    return { props: { ...props, ...size } };
+  } catch (error) {
+    onError?.(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+};
+
 type UppyFilePanelProps = BaseUppyFilePanelProps & {
   blockId: string;
   editor: CustomBlockNoteEditor;
@@ -81,9 +96,9 @@ type UppyFilePanelProps = BaseUppyFilePanelProps & {
 };
 
 /** The block's media kind, which fixes the upload restrictions: `file` for a block of another kind or one gone. */
-const mediaKindOf = (editor: CustomBlockNoteEditor, blockId: string): CustomBlockMediaTypes => {
+const mediaKindOf = (editor: CustomBlockNoteEditor, blockId: string): BaseMediaBlockTypes => {
   const block = editor.getBlock(blockId);
-  return block && isMediaBlock(block) ? block.type : 'file';
+  return block && isBaseMediaBlockType(block.type) ? block.type : 'file';
 };
 
 export function UppyFilePanel({
