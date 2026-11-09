@@ -91,11 +91,11 @@ export const failNextMailSend = () => {
 export const endRateLimitWindows = (keyPrefix: string) => adminDb.delete(rateLimitsTable).where(like(rateLimitsTable.key, `${keyPrefix}:%`));
 
 /**
- * The link `key` names in the last mail, a static prop (`magicLinkUrl`) or a recipient field (`inviteLink`), and the raw
- * token at its end.
+ * The link `key` names in the last mail, or the last one to `email`, as a static prop (`magicLinkUrl`) or a recipient
+ * field (`inviteLink`), and the raw token at its end.
  */
-export function mailedLink(key: string) {
-  const last = sentMails().at(-1);
+export function mailedLink(key: string, email?: string) {
+  const last = (email ? mailsTo(email) : sentMails()).at(-1);
   const url = last?.statics[key] ?? last?.recipient[key];
   if (typeof url !== 'string') throw new Error(`The last mail carries no ${key}`);
   const token = url.split('/').at(-1) ?? '';
