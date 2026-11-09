@@ -27,6 +27,12 @@ function shortageWords(error: string): string {
   return (error.split(/[;\n]|: /).find((clause) => SHORTAGE.test(clause)) ?? error).trim().slice(0, 80);
 }
 
+/** The env vars a blocked run's error says hold no value, without their secret names; none for another error. */
+export function blockedValues(error: string | undefined): string[] {
+  const list = /required runtime values are not set: ([^;\n]+?)(?:\.(?:\s|$)|;|$)/m.exec(error ?? '')?.[1];
+  return list ? list.split(',').flatMap((name) => name.replace(/\[[^\]]*\]/, '').trim() || []) : [];
+}
+
 /**
  * Whose side a run's end is on, by its outcome, failed step, error and boot accounts, the first rule that matches deciding: a value or
  * an apply the operator owes, Scaleway failing under the deploy, the release's build or boot, or not known.
@@ -35,8 +41,8 @@ export function classifyRun(record: RunRecord): FailureClass {
   const { outcome, failedStep, error = '' } = record;
   const theRun = `${actionLabel('runs')} → the run`;
   if (outcome === 'blocked') {
-    const names = /required runtime values are not set: ([^\n]+)/.exec(error)?.[1];
-    const what = names ? `Waiting for ${names.replace(/ \[[^\]]+\]/g, '')}` : 'A value is missing: the record names it';
+    const names = blockedValues(error);
+    const what = names.length > 0 ? `Waiting for ${names.join(', ')}` : 'A value is missing: the record names it';
     return { side: 'settings', sentence: `${what}: "${actionLabel('secrets')}" stores it and deploys again.`, retryLikely: false };
   }
   if (outcome === 'apply needed') {

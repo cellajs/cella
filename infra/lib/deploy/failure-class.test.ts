@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyRun, type FailureClass } from './failure-class';
+import { blockedValues, classifyRun, type FailureClass } from './failure-class';
 import type { RunRecord } from './run-record';
 
 const failed = (over: Partial<RunRecord>): RunRecord => ({
@@ -95,6 +95,28 @@ const cases: [string, RunRecord, Pick<FailureClass, 'side' | 'retryLikely'>, str
     'the lease is held by run',
   ],
 ];
+
+const advice = 'Store an operator value with `pnpm infra secrets`, which starts this target again; a generated value is made by `pnpm infra apply`.';
+
+describe('blockedValues', () => {
+  it.each([
+    ['one name without its secret', 'Blocked: required runtime values are not set: RESEND_API_KEY', ['RESEND_API_KEY']],
+    [
+      "compose-env's message, the advice after it left out",
+      `Blocked: required runtime values are not set: ADMIN_EMAIL [admin-email], BREVO_API_KEY [brevo-api-key]. ${advice}`,
+      ['ADMIN_EMAIL', 'BREVO_API_KEY'],
+    ],
+    [
+      'a missing value beside a malformed one',
+      `Blocked: required runtime values are not set: ADMIN_EMAIL [admin-email]; values are not one line: X [x]. ${advice}`,
+      ['ADMIN_EMAIL'],
+    ],
+    ['a malformed value alone', `Blocked: values are not one line: X [x]. ${advice}`, []],
+    ['no error', undefined, []],
+  ])('%s', (_, error, names) => {
+    expect(blockedValues(error)).toEqual(names);
+  });
+});
 
 describe('a run that did not deploy', () => {
   it.each(cases)('is classed by its first matching rule: %s', (_, record, expected, words) => {
