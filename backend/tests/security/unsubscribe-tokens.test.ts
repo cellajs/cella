@@ -52,7 +52,8 @@ const openLink = async (link: string) => {
  */
 const postLink = async (link: string, action: 'unsubscribe' | 'resubscribe' = 'unsubscribe', ip = defaultHeaders['x-forwarded-for']) => {
   const { baseApp } = await import('#/routes');
-  const target = link.replace(appConfig.backendUrl, '').replace('/notifications/unsubscribe', `/notifications/${action}`);
+  const path = link.replace(appConfig.backendUrl, '');
+  const target = action === 'unsubscribe' ? path : path.replace('/notifications/unsubscribe', '/notifications:resubscribe');
   const oneClick = { 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': ip };
   const init = action === 'unsubscribe' ? { headers: oneClick, body: 'List-Unsubscribe=One-Click' } : { headers: defaultHeaders };
   const response = await baseApp.request(target, { method: 'POST', ...init });
