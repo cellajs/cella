@@ -163,6 +163,10 @@ const catchupOrganizationSummarySchema = z.object({
     .openapi({ description: 'Versions by signal type: bump-only counters a client compares with the ones it stored' }),
   /** Embedded-product changes that require patching the host's cache: one hint per embedded product. */
   propagation: z.array(catchupPropagationHintSchema).optional(),
+  spreadWindow: z.number().int().optional().openapi({
+    description:
+      "The window, in ms, over which this organization's online audience spreads the reads a catchup gap or a new generation owes; the same a change frame carries. Absent or 0: read at once",
+  }),
 });
 
 export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSummarySchema>;
@@ -180,9 +184,10 @@ const catchupViewAnswerSchema = z.object({
 
 /** `views` answers the client-declared views; `organizations` holds per organization its signal versions and propagation hints. */
 export const streamCatchupResponseSchema = z.object({
-  organizations: z
-    .record(z.string(), catchupOrganizationSummarySchema)
-    .openapi({ description: 'Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }' }),
+  organizations: z.record(z.string(), catchupOrganizationSummarySchema).openapi({
+    description:
+      'Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }',
+  }),
   views: z.array(catchupViewAnswerSchema).openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
   generation: z.number().int().openapi({
     description: 'Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines',

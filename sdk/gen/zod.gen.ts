@@ -1564,6 +1564,7 @@ export const zCatchUpMyStreamResponse = z.object({
           }),
         )
         .optional(),
+      spreadWindow: z.int().optional(),
     }),
   ),
   views: z.array(

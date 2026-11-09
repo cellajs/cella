@@ -141,6 +141,8 @@ An announced range is queued, not fetched at once. Its channel's tier decides wh
 - **Muted or hidden:** when it is opened.
 - **Any other:** in the background, spread over a window that grows with the online audience.
 
+A new generation refetches through the same tiers: every synced list is marked, the viewed organization's lists read in the client's slot of that window once the tab is visible, and the rest when opened or by the background fill.
+
 Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces each id a change frame names, before any tier decision. It then delivers the rows of each fetched range.
 
 ### Freshness
@@ -223,6 +225,7 @@ The client's own catchup repairs missed frames. Clients refetch everything only 
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot. Then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile. With a restore, everything after the backup |
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
+| A bulk transaction: a migration's writes, or one transaction past the worker's size limit | Every client refetches once, the lists on screen first | The worker discards it and rebuilds the books at its commit | Its activities and notifications |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
 A rebuild starts a new sync generation. The API then ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).

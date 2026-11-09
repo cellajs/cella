@@ -53,6 +53,7 @@ vi.mock('~/query/realtime/membership-ops', () => ({
 
 vi.mock('~/query/realtime/sync-priority', () => ({
   getTenantIdForOrg: () => 'tenant-1',
+  getRouteOrganizationId: () => 'org-1',
   // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
   getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
   isViewingChannel: () => true,
@@ -248,7 +249,7 @@ describe('catchup after the server rebuilt its sync books', () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
-    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().adoptGeneration(1, 0);
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], totalSize: 1 });
@@ -259,7 +260,7 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not fetch a range from a cursor of the old books: it refetches what is cached once, at its share of the spread, and takes the frontier as its baseline', async () => {
     const { keys, rangeFetch, listFetch, unsubscribe } = startOnOldBooks();
 
-    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
     // Every client hears of the rebuild at once: none refetches before its share of the spread.
     await vi.advanceTimersByTimeAsync(4_999);
     expect(listFetch).not.toHaveBeenCalled();
@@ -276,14 +277,14 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not lose the refetch to a reload before its share of the spread: the next catchup arms it again, the one after does not repeat it', async () => {
     const { listFetch, unsubscribe } = startOnOldBooks();
 
-    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
     // The tab reloads: its timer is gone, the store it persisted with the cursor reset is not.
     vi.clearAllTimers();
-    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
 
-    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
     unsubscribe();
@@ -304,7 +305,7 @@ describe('catchup after the device was away longer than the activity window', ()
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
-    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().adoptGeneration(1, 0);
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     syncStore.getState().markCaughtUp();
     queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], totalSize: 1 });
@@ -430,12 +431,95 @@ describe('a versioned signal heard live', () => {
 
   it('must not hide one after the books were rebuilt, whose new count reaches the stored version by coincidence', async () => {
     vi.useFakeTimers();
-    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().adoptGeneration(1, 0);
     syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 5);
 
     await processStreamCatchup({ ...signalsAnswer(5), generation: 2 });
     vi.useRealTimers();
 
     expect(channelDeleted).toHaveBeenCalledExactlyOnceWith({ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true });
+  });
+});
+
+describe('catchup processor: a new generation', () => {
+  /** A tab's visibility, as `document.hidden` reports it; the node environment has no document, so one is stood in. */
+  const tab = (() => {
+    const listeners = new Set<() => void>();
+    const doc = {
+      hidden: false,
+      addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+    };
+    return {
+      doc,
+      hide: () => {
+        doc.hidden = true;
+      },
+      show: () => {
+        doc.hidden = false;
+        for (const listener of [...listeners]) listener();
+      },
+    };
+  })();
+
+  beforeEach(() => {
+    vi.stubGlobal('document', tab.doc);
+    tab.doc.hidden = false;
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    queryClient.clear();
+    syncStore.getState().reset();
+  });
+
+  /** A catchup answer that names another generation than the client holds, with the window the API sized. */
+  const generationAnswer = (generation: number, spreadWindow: number): CatchUpMyStreamResponse => ({
+    organizations: { 'org-1': { spreadWindow }, 'org-2': { spreadWindow } },
+    views: [],
+    generation,
+  });
+
+  it('in a hidden tab marks every synced list and fetches nothing until the tab is shown, and then the viewed organization alone', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys(
+      'attachment',
+      keys,
+      vi.fn(async () => ({ results: [], totalSize: 0 })),
+    );
+    const viewed = observeList(keys.list.org('org-1'));
+    const other = observeList(keys.list.org('org-2'));
+    await vi.waitFor(() => expect(viewed.listFetch).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(other.listFetch).toHaveBeenCalledOnce());
+    syncStore.getState().adoptGeneration(1, 0);
+    tab.hide();
+
+    await processStreamCatchup(generationAnswer(2, 0));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(keys.list.org('org-2'))?.isInvalidated).toBe(true);
+    expect(viewed.listFetch).toHaveBeenCalledOnce();
+    expect(other.listFetch).toHaveBeenCalledOnce();
+
+    tab.show();
+    await vi.waitFor(() => expect(viewed.listFetch).toHaveBeenCalledTimes(2));
+    expect(other.listFetch).toHaveBeenCalledOnce();
+    expect(syncStore.getState().refetchDueAt).toBeNull();
+    viewed.unsubscribe();
+    other.unsubscribe();
+  });
+
+  it('is due within the window the answer carries, never the moment it arrives', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    syncStore.getState().adoptGeneration(1, 0);
+    const before = Date.now();
+
+    await processStreamCatchup(generationAnswer(2, 20_000));
+
+    const { refetchDueAt } = syncStore.getState();
+    expect(refetchDueAt).not.toBeNull();
+    expect((refetchDueAt ?? 0) - before).toBeGreaterThanOrEqual(10_000);
+    vi.restoreAllMocks();
   });
 });

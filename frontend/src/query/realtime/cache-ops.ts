@@ -51,12 +51,6 @@ export function removeEntityDetailsBelow(entityType: ProductEntityType, channelI
   removeDetailQueriesOnceUnobserved(queryClient, keys.detail.base, below);
 }
 
-/** Marks every cached list and detail of an entity type stale and refetches the ones on screen. */
-export function invalidateEntityQueries(keys: EntityQueryKeys): void {
-  queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
-  queryClient.invalidateQueries({ queryKey: keys.detail.base, refetchType: 'active' });
-}
-
 /** Matches on the org tier of the key hierarchy as a direct prefix. */
 export function invalidateEntityListForOrg(keys: EntityQueryKeys, organizationId: string, refetchType: 'active' | 'none' | 'all' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.list.org(organizationId), refetchType });

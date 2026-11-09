@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks must precede the import of the module under test.
 vi.mock('../pipeline/process-flush', () => ({ processFlush: vi.fn() }));
+vi.mock('../pipeline/verify', () => ({ rebuildBooks: vi.fn(async () => {}) }));
 
 vi.mock('../pipeline/parse-message', () => ({
   parseMessage: vi.fn(() => ({
@@ -34,6 +35,7 @@ import { dmlMessage } from './factories';
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);
 const { processFlush } = await import('../pipeline/process-flush');
+const { rebuildBooks } = await import('../pipeline/verify');
 
 const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 
@@ -312,5 +314,64 @@ describe('handleDataMessage: a message it cannot handle', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('handleDataMessage: a bulk transaction', () => {
+  const marker = (label: string, transactional = true) =>
+    handleDataMessage('0/C0', { tag: 'message', prefix: 'sync-bulk', transactional, content: new TextEncoder().encode(label) } as never);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('records none of its changes: the pending flush goes first, then one rebuild, then its commit is acknowledged', async () => {
+    const { acknowledge } = serviceWith();
+
+    // A committed transaction waits in the flush buffer for the window to end.
+    await begin('0/B0');
+    await handleDataMessage('0/A0', mockDmlMessage('update', 'usr-1'));
+    await commit('0/B8');
+
+    await begin('0/D0');
+    await marker('migrate:20261109_backfill');
+    mocked.mockClear();
+    for (const id of ['usr-2', 'usr-3', 'usr-4']) await handleDataMessage('0/D1', mockDmlMessage('update', id));
+    await commit('0/D8');
+
+    expect(mocked).not.toHaveBeenCalled();
+    expect(processFlush).toHaveBeenCalledOnce();
+    expect(rebuildBooks).toHaveBeenCalledExactlyOnceWith('bulk_write', { error: 'migrate:20261109_backfill' });
+    expect(vi.mocked(processFlush).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(rebuildBooks).mock.invocationCallOrder[0]);
+    expect(acknowledge.mock.calls).toEqual([['0/B8'], ['0/D8']]);
+    expect(replicationState.lastAckedLsn).toBe('0/D8');
+  });
+
+  it('rebuilds nothing for a declared transaction without a tracked change, and still acknowledges it', async () => {
+    const { acknowledge } = serviceWith();
+
+    await begin('0/D0');
+    await marker('migrate:20261109_schema_only');
+    await commit('0/D8');
+
+    expect(rebuildBooks).not.toHaveBeenCalled();
+    expect(acknowledge.mock.calls).toEqual([['0/D8']]);
+  });
+
+  it('ignores a marker outside a transaction: the changes that follow are recorded as any other', async () => {
+    serviceWith();
+
+    await marker('migrate:stray', false);
+    await begin('0/D0');
+    await handleDataMessage('0/D1', mockDmlMessage('update', 'usr-2'));
+    await commit('0/D8');
+    await vi.runAllTimersAsync();
+
+    expect(rebuildBooks).not.toHaveBeenCalled();
+    expect(processFlush).toHaveBeenCalledOnce();
   });
 });

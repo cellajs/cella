@@ -8449,10 +8449,14 @@
                               },
                               "required": ["embeddedProduct", "update", "remove"]
                             }
+                          },
+                          "spreadWindow": {
+                            "type": "integer",
+                            "description": "The window, in ms, over which this organization's online audience spreads the reads a catchup gap or a new generation owes; the same a change frame carries. Absent or 0: read at once"
                           }
                         }
                       },
-                      "description": "Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }"
+                      "description": "Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }"
                     },
                     "views": {
                       "type": "array",

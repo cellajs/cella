@@ -3348,7 +3348,7 @@ export type CatchUpMyStreamResponses = {
    */
   200: {
     /**
-     * Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }
+     * Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }
      */
     organizations: {
       [key: string]: {
@@ -3380,6 +3380,10 @@ export type CatchUpMyStreamResponses = {
            */
           untilSeq?: number;
         }>;
+        /**
+         * The window, in ms, over which this organization's online audience spreads the reads a catchup gap or a new generation owes; the same a change frame carries. Absent or 0: read at once
+         */
+        spreadWindow?: number;
       };
     };
     /**

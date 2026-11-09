@@ -7,7 +7,8 @@ import { productTypeOf } from '~/query/cache-migration';
 import { queryClient } from '~/query/query-client';
 import { isOpaqueScope } from '~/query/realtime/catchup-processor';
 import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
-import { waitFor } from '~/utils/wait-for';
+import { syncStore } from '~/query/realtime/sync-store';
+import { waitFor, whenVisible } from '~/utils/wait-for';
 
 type SyncInfiniteCall = FetchInfiniteQueryOptions<unknown, ApiError, unknown, QueryKey, unknown>;
 type SyncSingleCall = FetchQueryOptions<unknown, ApiError, unknown, QueryKey>;
@@ -21,8 +22,12 @@ const isRateLimited = (error: unknown): error is ApiError => error instanceof Ap
 
 /** Seeds offline caches once the stream is live: the current organization first, then the rest. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(signal: AbortSignal): Promise<void> {
-  // Starts a second after the stream went live, behind the requests of the page itself.
-  await waitFor(1000);
+  // Starts a second after the stream went live, behind the requests of the page itself. After a start over it waits for
+  // the refetch's moment, this client's slot in the audience's window, and for the tab to be visible: a hidden tab's
+  // fill reads nothing until the tab is shown.
+  const { refetchDueAt } = syncStore.getState();
+  await waitFor(Math.max(1000, (refetchDueAt ?? 0) - Date.now()));
+  await whenVisible();
   if (signal.aborted) return;
 
   // Menu comes from already-cached entity lists; imported dynamically to avoid HMR coupling.

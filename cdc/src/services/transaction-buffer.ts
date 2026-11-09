@@ -10,6 +10,13 @@ import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
 
+/** What the COMMIT of a discarded transaction reports: why it was discarded and how many tracked changes it had. */
+export interface DiscardedTransaction {
+  /** The marker's label, or `oversized` for a transaction past the limit. */
+  label: string;
+  changeCount: number;
+}
+
 /** What a BEGIN tells of its source transaction, and so of each of its changes. */
 interface OpenTransaction {
   xid: number;
@@ -25,8 +32,10 @@ interface OpenTransaction {
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
  * deleted channel ids bounds memory to surviving changes regardless of cascade size. A transaction leaves the buffer
- * whole, at its COMMIT, however long it takes to arrive: a part of one is never emitted. Past `maxTransactionEvents`
- * kept changes `onEvent` throws, and so does a change outside a transaction, which the stream never sends.
+ * whole, at its COMMIT, however long it takes to arrive: a part of one is never emitted. A transaction declared bulk
+ * by its marker, or one past `maxTransactionEvents` kept changes, is discarded: what it held is dropped, the rest
+ * only counted, and its COMMIT reports the count for the rebuild that replaces its changes. A change outside a
+ * transaction throws, which the stream never sends.
  *
  * A suppressed delete is no activity, and it still counted: its row leaves the counts of every channel above the one
  * that was deleted. Those counts are summed per channel as the deletes arrive and leave with the channel's own delete.
@@ -45,6 +54,9 @@ export class TransactionBuffer {
 
   /** What the suppressed deletes of the current transaction take off the row counts, per channel key. */
   private cascadeCounts = new Map<string, Record<string, number>>();
+
+  /** Set while the current transaction is discarded: its label, and the tracked changes it had so far. */
+  private discarded: DiscardedTransaction | null = null;
 
   private onSurvivingEvents: (events: PendingEvent[]) => Promise<void>;
 
@@ -74,6 +86,7 @@ export class TransactionBuffer {
   async onEvent(lsn: string, result: ParseMessageResult, index: number): Promise<void> {
     const { transaction } = this;
     if (!transaction) throw new Error(`The change at ${lsn} arrived outside a transaction`);
+    if (this.discarded) return this.onDiscardedChange();
 
     const { activity } = result;
     activity.createdAt = transaction.commitTime;
@@ -92,19 +105,51 @@ export class TransactionBuffer {
 
     // The transaction is held whole until its commit: past the limit it would take the process's memory with it.
     if (this.pendingEvents.length > this.maxEvents) {
-      this.reset();
-      throw new Error(
-        `Transaction ${transaction.xid} holds more than ${this.maxEvents} changes: the worker buffers a transaction whole and stops here`,
-      );
+      log.error('Transaction holds more changes than the worker buffers: it is discarded and the books rebuilt at its commit', {
+        xid: transaction.xid,
+        maxEvents: this.maxEvents,
+      });
+      this.discard('oversized');
     }
+  }
+
+  /**
+   * Discards the open transaction: what it held is dropped, and every change until its COMMIT is only counted. The
+   * marker of a bulk transaction calls it ahead of the changes, the limit from within them.
+   */
+  discard(label: string): void {
+    if (!this.transaction) throw new Error(`A ${label} marker arrived outside a transaction`);
+    if (this.discarded) return;
+    this.discarded = { label, changeCount: this.pendingEvents.length + this.suppressedCount };
+    this.pendingEvents = [];
+    this.deletedChannelIds.clear();
+    this.cascadeCounts = new Map();
+  }
+
+  /** Whether the open transaction is discarded: its changes are counted, not parsed or kept. */
+  get isDiscarding(): boolean {
+    return this.discarded !== null;
+  }
+
+  /** Counts a tracked change of a discarded transaction. */
+  onDiscardedChange(): void {
+    if (!this.discarded) throw new Error('No transaction is being discarded');
+    this.discarded.changeCount += 1;
   }
 
   /**
    * Emits the surviving buffered changes; a second pass catches child deletes that preceded their parent.
    * @param commitEndLsn - End of the commit record, from the COMMIT: the position a flush of these changes acknowledges.
+   * @returns What a discarded transaction had, for the rebuild and the acknowledgement that replace its flush; null
+   *   for a transaction that was emitted.
    */
-  async onCommit(commitEndLsn: string | null): Promise<void> {
+  async onCommit(commitEndLsn: string | null): Promise<DiscardedTransaction | null> {
     if (commitEndLsn === null) throw new Error('COMMIT carries no end position');
+    const { discarded } = this;
+    if (discarded) {
+      this.reset();
+      return discarded;
+    }
     // Children that preceded their parent delete in WAL order; the parent-first case is already gone.
     const kept: PendingEvent[] = [];
     for (const event of this.pendingEvents) {
@@ -119,6 +164,7 @@ export class TransactionBuffer {
     this.reset();
 
     if (kept.length > 0) await this.onSurvivingEvents(kept);
+    return null;
   }
 
   /** Whether a transaction is currently being buffered. */
@@ -133,6 +179,7 @@ export class TransactionBuffer {
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
     this.cascadeCounts = new Map();
+    this.discarded = null;
   }
 
   /** Sums what a suppressed delete takes off the row counts. The row is dropped; only numbers per channel are kept. */

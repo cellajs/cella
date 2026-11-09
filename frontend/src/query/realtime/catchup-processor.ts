@@ -9,29 +9,47 @@ import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, res
 import * as membershipOps from '~/query/realtime/membership-ops';
 import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/propagation';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
-import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
+import { getRouteOrganizationId, getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
 import { dayMs } from '~/utils/date-mini';
+import { whenVisible } from '~/utils/wait-for';
 
 type PropagationHint = NonNullable<CatchUpMyStreamResponse['organizations'][string]['propagation']>[number];
 
 let refetchTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
- * Arms the start over's refetch for the moment the store holds, at once when it has passed: it refetches what is on screen
- * of every synced type and marks the rest stale. The moment stays stored until the refetch ran, so the catchup after a
- * reload, a closed tab or a suspended phone arms it again.
+ * Arms the start over's refetch for the moment the store holds, at once when it has passed. The moment stays stored
+ * until the refetch ran, so the catchup after a reload, a closed tab or a suspended phone arms it again.
  * @returns whether a refetch waits.
  */
 function armPendingRefetch(): boolean {
   clearTimeout(refetchTimer);
   const { refetchDueAt } = syncStore.getState();
   if (refetchDueAt === null) return false;
-  refetchTimer = setTimeout(() => {
-    for (const entityType of getRegisteredProductEntityTypes()) cacheOps.invalidateEntityQueries(getEntityQueryKeys(entityType));
-    syncStore.getState().markRefetched();
-  }, refetchDueAt - Date.now());
+  refetchTimer = setTimeout(() => void refetchSyncedCache(), refetchDueAt - Date.now());
   return true;
+}
+
+/**
+ * The start over's refetch through the sync tiers: every synced list and detail is marked, so one opened later reads
+ * then, and the route organization's lists and the details on screen read now, in a visible tab, or once a hidden tab
+ * is shown. Other organizations' lists wait for the background fill or their opening.
+ */
+async function refetchSyncedCache(): Promise<void> {
+  const synced = getRegisteredProductEntityTypes().map(getEntityQueryKeys);
+  for (const keys of synced) {
+    queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'none' });
+    queryClient.invalidateQueries({ queryKey: keys.detail.base, refetchType: 'none' });
+  }
+  syncStore.getState().markRefetched();
+
+  await whenVisible();
+  const routeOrganizationId = getRouteOrganizationId();
+  for (const keys of synced) {
+    if (routeOrganizationId) cacheOps.invalidateEntityListForOrg(keys, routeOrganizationId, 'active');
+    queryClient.invalidateQueries({ queryKey: keys.detail.base, refetchType: 'active' });
+  }
 }
 
 /** The `${organizationId}:${entityType}` scopes the last catchup answered `opaque`: every connection marks their lists again. */
@@ -50,7 +68,9 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
   // Before this device's first catchup its cache holds only what route loaders read: that catchup stores the frontiers as baselines.
   const baselineOnly = syncState.caughtUpAt === null;
 
-  syncState.adoptGeneration(response.generation);
+  // The widest window of the organizations the answer names: the one audience this client's refetch joins.
+  const spreadWindowMs = Math.max(0, ...Object.values(organizations).map((summary) => summary.spreadWindow ?? 0));
+  syncState.adoptGeneration(response.generation, spreadWindowMs);
   // Away longer than the activity window, this device may hold rows whose tombstones the server has since removed.
   if (syncState.startOverIfAway(appConfig.retention.activityDays * dayMs)) {
     console.debug('[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched');
@@ -121,6 +141,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
         afterSeq: clientCursor,
         untilSeq: frontier,
         isCreate: false,
+        spreadWindowMs: organizations[organizationId]?.spreadWindow,
       });
 
       if (getSyncTier(organizationId, null).min > 0) {

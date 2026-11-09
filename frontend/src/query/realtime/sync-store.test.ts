@@ -27,12 +27,12 @@ describe('sync-store adoptGeneration', () => {
     withCursors();
 
     // Nothing to distrust: the first generation it hears, then the same one again.
-    for (const generation of [3, 3]) syncStore.getState().adoptGeneration(generation);
+    for (const generation of [3, 3]) syncStore.getState().adoptGeneration(generation, 10_000);
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(40);
     expect(syncStore.getState().refetchDueAt).toBeNull();
 
     // Another generation: the books were rebuilt, and no cursor of before says anything about them.
-    syncStore.getState().adoptGeneration(4);
+    syncStore.getState().adoptGeneration(4, 10_000);
 
     const store = syncStore.getState();
     expect(store.generation).toBe(4);

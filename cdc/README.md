@@ -109,7 +109,8 @@ Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
 | A flush fails, whatever the cause: a connection, a lock or statement timeout, a constraint, a send lost when the API left | | The service stops (`onFailed`) and the subscription loop reads again after a growing delay (`subscribeWithReconnect`) | Still failing at the WAL bound: the slot is dropped (`ensureReplicationSlot`) and the books rebuilt. A worker that crash-loops never drops it: each restart starts the failure over (`recordFailure`) |
-| A change can never be processed: refused, unparseable, or a source transaction over the limit | | The same read again, held there, and unhealthy after a while (`stalled`) | The same drop at the WAL bound |
+| A change can never be processed: refused or unparseable | | The same read again, held there, and unhealthy after a while (`stalled`) | The same drop at the WAL bound |
+| A source transaction over the limit, or one declared bulk by the marker a migration opens with | | | Discarded as it arrives, nothing of it recorded; at its commit the books are rebuilt and every client refetches (`TransactionBuffer`, `rebuildBooks`) |
 | A subscription attempt fails: another worker holds the slot during a deploy, the connection is refused, the slot cannot be made, or it was made by hand before its publication | | The loop records the failure and tries again after the same delay (`recordFailure`) | The same drop at the WAL bound |
 | The slot lookup or the drop at the WAL bound fails | | The attempt subscribes without the check (`ensureReplicationSlot` answers `unknown`). Open finding, a second answer: a failed subscribe reads again | |
 | The setup does not match: the publication, its row filters, replica identity, `wal_level` or the role | The check before every subscription refuses to read (`checkReplicationSetup`) | Read again until a person reruns the CDC migration. The WAL bound is not checked meanwhile | |
@@ -158,7 +159,7 @@ In a lost case, rows changed between the old slot's last acknowledged position a
 - **`REPLICA IDENTITY FULL` is mandatory:** changed fields and a deleted row come from the old row.
 - **Large columns:** a consumer must tolerate their absence, since the worker strips them from the row data.
 - **Only one worker may read the slot.**
-- **Transaction size:** write a backfill in smaller transactions, since one past the limit can never be processed.
+- **Transaction size:** a migration's writes are bulk by the companion's declaration, whatever their number; a backfill run by hand opens its transaction with the same marker statement (`SELECT pg_logical_emit_message(true, 'sync-bulk', '<label>')`), or stays under the limit.
 - **WAL retention is the recovery margin:** a worker that is down, waits for the API or is stuck on setup keeps WAL.
 - **Unbounded WAL** grows until the disk is full ([Deployment](../cella/DEPLOYMENT.md#overview)).
 - **Worker role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/MULTI_TENANCY.md#database-roles)).

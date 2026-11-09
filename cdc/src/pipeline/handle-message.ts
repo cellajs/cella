@@ -1,13 +1,15 @@
 import type { Pgoutput } from 'pg-logical-replication';
+import { syncBulkMarkerPrefix } from 'shared/utils/worker-env';
 import { resourceLimits } from '../constants';
 import { log } from '../lib/pino';
 import { fence, fenceMarkerPrefix } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
-import { TransactionBuffer } from '../services/transaction-buffer';
+import { type DiscardedTransaction, TransactionBuffer } from '../services/transaction-buffer';
 import { lsnToBigInt } from '../utils/lsn';
 import { type DmlMessage, parseMessage } from './parse-message';
 import { processFlush } from './process-flush';
+import { rebuildBooks } from './verify';
 
 function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
@@ -48,6 +50,19 @@ flushBuffer.onFailed = (error, position) => {
 
 /** Holds a source transaction until its commit and suppresses what a cascade wrote. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
+
+/**
+ * Stands in for the flush of a discarded transaction. What came before it is recorded first; when it changed tracked
+ * rows the books are rebuilt, which makes every client refetch them; then its commit is acknowledged. A rebuild that
+ * fails fails the subscription as a flush does: the transaction is read again, discarded again, and the rebuild tried
+ * again.
+ */
+async function replaceDiscardedTransaction({ label, changeCount }: DiscardedTransaction, commitEndLsn: string): Promise<void> {
+  await flushBuffer.flush();
+  if (flushBuffer.failed) return;
+  if (changeCount > 0) await rebuildBooks('bulk_write', { error: label === 'oversized' ? `oversized:${changeCount}` : label });
+  if (await acknowledgeLsn(commitEndLsn)) replicationState.clearFailure();
+}
 
 /** Data messages whose handler has not returned yet. */
 let inFlightMessages = 0;
@@ -122,10 +137,21 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
       replicationState.lagMs = Date.now() - committedAt;
       return;
     }
-    case 'commit':
-      await txBuffer.onCommit(msg.commitEndLsn);
+    case 'commit': {
+      const { commitEndLsn } = msg;
+      const discarded = await txBuffer.onCommit(commitEndLsn);
+      if (discarded && commitEndLsn) await replaceDiscardedTransaction(discarded, commitEndLsn);
       return;
+    }
     case 'message': {
+      if (msg.prefix === syncBulkMarkerPrefix) {
+        const label = new TextDecoder().decode(msg.content);
+        // The marker is emitted inside its transaction, ahead of the changes; outside one it declares nothing.
+        if (!msg.transactional || !txBuffer.isBuffering) return log.warn('A bulk marker arrived outside a transaction: ignored', { label });
+        log.info('A bulk transaction is declared: its changes are discarded and the books rebuilt at its commit', { label });
+        txBuffer.discard(label);
+        return;
+      }
       if (msg.prefix !== fenceMarkerPrefix) return;
       // The marker was written right after a recount's snapshot. Once everything before it is recorded, the stream has
       // passed that snapshot. A subscription that ended meanwhile dropped what was pending: its marker is read again.
@@ -142,6 +168,9 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   // Counted for every change, kept or not, so a change has the same index on every delivery.
   const index = changesInTransaction;
   changesInTransaction += 1;
+
+  // The publication carries tracked tables alone, so every change of a discarded transaction counts, unparsed.
+  if (txBuffer.isDiscarding) return txBuffer.onDiscardedChange();
 
   log.trace('CDC message received', { lsn, tag: msg.tag, table: msg.relation.name });
 
