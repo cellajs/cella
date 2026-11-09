@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.41.0](https://github.com/cellajs/cella/compare/0.40.0...0.41.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* a product's public flag follows its home channel ([#1767](https://github.com/cellajs/cella/issues/1767))
+* phone dialogs rise and fade on the drawer's curve, and a table search grows out of its field ([#1766](https://github.com/cellajs/cella/issues/1766))
+* a channel can be archived, and a member hides a channel ([#1765](https://github.com/cellajs/cella/issues/1765))
+* dependency updates, with the code following i18next 27 and web-push 4 ([#1761](https://github.com/cellajs/cella/issues/1761))
+* one validated env module per process, one env file at the repo root ([#1760](https://github.com/cellajs/cella/issues/1760))
+* the frontend loses 2,650 lines without losing a feature: line-count levers, single-use folds, inline small Props, and a readability pass ([#1752](https://github.com/cellajs/cella/issues/1752))
+* the release PR waits for the apply its release owes ([#1749](https://github.com/cellajs/cella/issues/1749))
+* sessions, tokens, notifications, requests, the OAuth flow and the passkey challenge name their classifier kind ([#1748](https://github.com/cellajs/cella/issues/1748))
+* a tenant has a kind and an expiry, and a visitor takes a demo ([#1745](https://github.com/cellajs/cella/issues/1745))
+
+### 🎉 New features
+
+* a channel can be archived, and a member hides a channel ([#1765](https://github.com/cellajs/cella/issues/1765)) ([02a7a28](https://github.com/cellajs/cella/commit/02a7a28afcf3ed36a7fd05a05b0a2137d47b0339))
+* a nested tenant request joins the open transaction, and a held demo follows the account's membership ([#1758](https://github.com/cellajs/cella/issues/1758)) ([a56f9ae](https://github.com/cellajs/cella/commit/a56f9aee7fdbc1ce05507cb0131bdd7467713e2c))
+* a product's public flag follows its home channel ([#1767](https://github.com/cellajs/cella/issues/1767)) ([98a46c5](https://github.com/cellajs/cella/commit/98a46c5bb856ccefcfb543cd765505b43cf1ed44))
+* a tenant has a kind and an expiry, and a visitor takes a demo ([#1745](https://github.com/cellajs/cella/issues/1745)) ([d7f28d9](https://github.com/cellajs/cella/commit/d7f28d92006d2e9b246fa71b84ea8dfae9f04181))
+* phone dialogs rise and fade on the drawer's curve, and a table search grows out of its field ([#1766](https://github.com/cellajs/cella/issues/1766)) ([7f5714a](https://github.com/cellajs/cella/commit/7f5714ab16cde3726e91434ba7ec61ec9a7aab86))
+* reads report what is left of their budget and the warm-up keeps a share for the user, agents sign in as their own seeded user, and menu sub-rows center their names ([#1750](https://github.com/cellajs/cella/issues/1750)) ([e91b330](https://github.com/cellajs/cella/commit/e91b33071126eca61dffbf5e98e33e4ae052c400))
+* the release PR waits for the apply its release owes ([#1749](https://github.com/cellajs/cella/issues/1749)) ([ddb4958](https://github.com/cellajs/cella/commit/ddb495819f3d4818a7dbf9e972bfad07e999001d))
+
+
+### 🐞 Bug fixes
+
+* a lost session on the home page signs in without a redirect ([#1769](https://github.com/cellajs/cella/issues/1769)) ([c26a7cb](https://github.com/cellajs/cella/commit/c26a7cb06898d4424cd71b398e28e6342115c3c4))
+* an empty list filter leaves a table unfiltered, and mail waits fit a loaded runner ([#1759](https://github.com/cellajs/cella/issues/1759)) ([ab90104](https://github.com/cellajs/cella/commit/ab90104fc8af8dc971177c7afc045f3c2d5cceb5))
+* the persisted cache stores a query or a queued write whose meta holds a toast rule, and the persister tests save through the provider's path ([#1746](https://github.com/cellajs/cella/issues/1746)) ([4a8bd7c](https://github.com/cellajs/cella/commit/4a8bd7cda7f68860f0d6846abb1e39c06237858d))
+
+
+### 🔧 Small improvements
+
+* **backend:** line-count experiment with a readability pass, 4.1% off backend/src ([#1751](https://github.com/cellajs/cella/issues/1751)) ([c067c2f](https://github.com/cellajs/cella/commit/c067c2f2c5ed932cd70145666a967d0e9b757994))
+* one validated env module per process, one env file at the repo root ([#1760](https://github.com/cellajs/cella/issues/1760)) ([fb6d4ba](https://github.com/cellajs/cella/commit/fb6d4ba2f06b197ab4d4cfd4cc7b22b48ce3799e))
+* sessions, tokens, notifications, requests, the OAuth flow and the passkey challenge name their classifier kind ([#1748](https://github.com/cellajs/cella/issues/1748)) ([90790cc](https://github.com/cellajs/cella/commit/90790ccd4caf89abd2d8130271a517e8eaa0ec3d))
+* **shared:** readability-first line pass over shared/src, 41 lines fewer ([#1757](https://github.com/cellajs/cella/issues/1757)) ([01ba539](https://github.com/cellajs/cella/commit/01ba539d2a16764959629c3ba3d3b6ff497db0ae))
+* the frontend loses 2,650 lines without losing a feature: line-count levers, single-use folds, inline small Props, and a readability pass ([#1752](https://github.com/cellajs/cella/issues/1752)) ([3a053cb](https://github.com/cellajs/cella/commit/3a053cbcaedd1583067540d4682fdb0f95d9ff13))
+
+
+### 📖 Documentation
+
+* leaner docs for newcomers: shorter sentences, prerequisites named once, dense lists ([#1764](https://github.com/cellajs/cella/issues/1764)) ([475e3df](https://github.com/cellajs/cella/commit/475e3df34527df7447dc48d546d58d2f810dcedd))
+
+
+### 🧹 Chores
+
+* @cellajs/cli 0.7, with the skills and alignments following shoot and adopt ([#1763](https://github.com/cellajs/cella/issues/1763)) ([f1fe67f](https://github.com/cellajs/cella/commit/f1fe67ffc6910431976bf08a8e58a2df8319fafb))
+* dependency updates, with the code following i18next 27 and web-push 4 ([#1761](https://github.com/cellajs/cella/issues/1761)) ([9d90a19](https://github.com/cellajs/cella/commit/9d90a19d161e92e8c2a9bcf757dd217bbed26c34))
+
+
+### 🧪 Tests
+
+* a new app passes the secrets check and the smoke ignores aborted requests ([#1762](https://github.com/cellajs/cella/issues/1762)) ([6caf944](https://github.com/cellajs/cella/commit/6caf94452a909f310bdfa056109f94a78ec1ad69))
+
 ## [0.40.0](https://github.com/cellajs/cella/compare/0.39.0...0.40.0) (2026-11-07)
 
 
