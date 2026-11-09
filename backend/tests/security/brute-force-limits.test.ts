@@ -74,13 +74,13 @@ describe('brute-force budgets', async () => {
 
     for (let attempt = 0; attempt < 3; attempt++) {
       await request(account);
-      // Each link goes out after its answer and deletes the one before, so the newest is the last one mailed.
+      // Each link goes out after its answer and deletes the address's one before, so the newest is the last one mailed to it.
       await waitForMail(() => expect(magicLinkMailsTo(account)).toHaveLength(attempt + 1));
       await request(nobody);
     }
 
     // The owner opens the newest link in another browser and confirms it there, as the refusal's text suggests.
-    const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: defaultHeaders });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl', account).token }, headers: defaultHeaders });
     const held = setCookiePair(opened.response, 'magic-pending') ?? '';
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
     expect(cookieChange(confirmed.response, 'session')).toBe('set');
