@@ -115,7 +115,7 @@ Add members in IAM → Groups → `<app>-operators`. Each member then holds what
 
 **The first key.** An environment's setup makes it in its Owner moment, once the operators are written. It is a key of `<app>-operator` that ends within the day, kept in memory for the rest of that run. The CLI prints only its access key. The operator part runs on it, so a setup asks for no operator key unless that key could not be made.
 
-**A sitting.** Later keys are made in the console at the start of a sitting. Go to IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
+**A sitting.** Later keys are made in the console at the start of a sitting. Go to [IAM → API keys](https://console.scaleway.com/iam/api-keys) → Generate API key, with `<app>-operator` as its bearer and an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 
 **How a session is unlocked.** The first action that changes something or needs the passphrase asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCWXXXXXXXXXXXXXXXXX` until you type. As you type, it is checked for that form: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. With the key itself, the CLI asks IAM who bears it.
 

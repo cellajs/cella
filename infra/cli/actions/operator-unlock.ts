@@ -16,12 +16,9 @@ import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
 type StackRef = Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>;
 
-/** The console page where a person makes an application's key. */
-const OPERATOR_KEYS_URL = 'https://console.scaleway.com/iam/applications';
-
 /** Where a person makes the key a session takes, for every refusal that sends them there. */
 export function oneDayKeyHowto(names: AppPrincipalNames): string {
-  return `Make one in the console: IAM → Applications → '${names.operator}' → API keys → Generate, expiring within a day; or your own key as a member of '${names.operators}', with the same expiration.`;
+  return `Make one in the console: IAM → API keys → Generate, with '${names.operator}' as its bearer, expiring within a day; or your own key as a member of '${names.operators}', with the same expiration.`;
 }
 
 /**
@@ -122,7 +119,6 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
     pair = await keyPairPrompt({
       label: 'Operator key',
       howto: `Paste a key of '${names.operator}' that expires today, or your own as a member of '${names.operators}'.`,
-      url: OPERATOR_KEYS_URL,
       optional: opts.optional,
     });
     if (!pair) return undefined;
@@ -170,8 +166,6 @@ async function unprefixSecrets(stack: StackRef, secretKey: string): Promise<void
   unprefixedProjects.add(stack.projectId);
 }
 
-let operatorNoticeShown = false;
-
 /** The operator key a run holds: it ends within the day, writes no IAM, and is kept in memory for the session. */
 export interface OperatorKey extends KeyPair {
   organizationId: string;
@@ -186,10 +180,6 @@ export interface OperatorKey extends KeyPair {
 export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
   const unlocked = await unlock(stack);
   if (!unlocked) return endAction(1);
-  if (!operatorNoticeShown) {
-    operatorNoticeShown = true;
-    console.info(`${pc.dim('Operator key:')} ${unlocked.accessKey}`);
-  }
   return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
 }
 

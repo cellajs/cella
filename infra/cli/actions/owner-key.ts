@@ -14,9 +14,6 @@ import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
 import { endAction } from '../shared';
 
-/** Where a person makes an Owner API key: their own user's keys. */
-const OWNER_KEYS_URL = 'https://console.scaleway.com/iam/api-keys';
-
 export interface OwnerKey extends KeyPair {
   organizationId: string;
   /** Who bears the key, as IAM described it when the key was checked. */
@@ -48,7 +45,6 @@ export async function acquireOwnerKey(opts: {
     (await keyPairPrompt({
       label: 'Owner key',
       howto: 'Paste a key of your own as an organization Owner, made for this and expiring within hours (any key holding IAMManager works).',
-      url: OWNER_KEYS_URL,
     }));
   if (!pair) return endAction(1);
 
