@@ -17,6 +17,8 @@
   "contact_mistake": "If you believe this to be a mistake, please contact support.",
   "create_resource": "{{resource}} could not be created",
   "create_resource.text": "Try again in a moment.",
+  "default_language_not_offered": "Default language not offered",
+  "default_language_not_offered.text": "Pick the default from the languages, or add it to them.",
   "delete_resource": "{{resource}} could not be deleted",
   "demo_session_restricted": "Not in a demo",
   "demo_session_restricted.text": "A demo account cannot do this. Sign up for an account of your own to go on.",

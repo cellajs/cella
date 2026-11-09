@@ -34,6 +34,19 @@ const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const toFormValues = (organization: Organization): FormValues => ({
+  thumbnailUrl: organization.thumbnailUrl,
+  name: organization.name,
+  shortName: organization.shortName,
+  slug: organization.slug,
+  notificationEmail: organization.notificationEmail,
+  websiteUrl: organization.websiteUrl,
+  languageCodes: organization.languageCodes,
+  defaultLanguageCode: organization.defaultLanguageCode,
+  regionCode: organization.regionCode,
+  timeZone: organization.timeZone,
+});
+
 interface UpdateOrganizationFormProps {
   organization: Organization;
   sheet?: boolean;
@@ -45,7 +58,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const languagesId = useId();
 
-  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: organization };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(organization) };
 
   const formContainerId = 'update-organization';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
@@ -59,13 +72,13 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
     if (zone) form.setValue('timeZone', zone, { shouldDirty: true });
   };
 
-  const onSubmit = (body: FormValues) =>
+  const onSubmit = (changes: Partial<FormValues>) =>
     mutate(
-      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: changes },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) sheeter.getState().remove(formContainerId);
-          form.reset(body);
+          form.reset(toFormValues(updatedOrganization));
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
         },
@@ -74,7 +87,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex flex-col gap-6">
         <AvatarFormField
           form={form}
           label={t('c:resource_logo', { resource: t('c:organization') })}
@@ -122,7 +135,17 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
               <FormLabel htmlFor={languagesId} required>
                 {t('c:language_codes')}
               </FormLabel>
-              <SelectLanguages id={languagesId} value={field.value ?? []} onChange={field.onChange} />
+              <SelectLanguages
+                id={languagesId}
+                value={field.value ?? []}
+                onChange={(codes) => {
+                  field.onChange(codes);
+                  const defaultLanguageCode = form.getValues('defaultLanguageCode');
+                  if (!defaultLanguageCode || !codes.includes(defaultLanguageCode)) {
+                    form.setValue('defaultLanguageCode', codes[0] ?? appConfig.defaultLanguage, { shouldDirty: true });
+                  }
+                }}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -154,14 +177,12 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
       render={({ field }) => {
         if (form.loading) return <Spinner />;
 
-        const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
-
         return (
           <FormItem name="defaultLanguageCode">
             <FormLabel help={t('c:default_language_code.text')} required>
               {t('c:default_language_code')}
             </FormLabel>
-            <SelectLanguage options={languages} value={correctValue} onChange={field.onChange} />
+            <SelectLanguage options={languages} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
             <FormMessage />
           </FormItem>
         );
