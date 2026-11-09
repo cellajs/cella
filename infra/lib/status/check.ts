@@ -1,3 +1,4 @@
+import { commitName, type RemoteRef } from '../deploy/target';
 import { actionCommand, menuPath } from '../operator-actions';
 import type { Check, CheckStatus, KeyTier, NextAction } from './types';
 
@@ -29,7 +30,14 @@ export function diagAction(mode: string): NextAction {
   };
 }
 
-export type Verdict = (detail: string, nextAction?: NextAction) => Check;
+/** A check's detail with its subject named by its release: `deployed c19588d491` reads `deployed 0.34.0`. Only the subject's own forms change. */
+export function nameSubject(check: Pick<Check, 'detail' | 'subject'>, refs: readonly RemoteRef[] | undefined): string {
+  if (!check.subject) return check.detail;
+  const name = commitName(refs, check.subject);
+  return check.detail.replace(new RegExp(`\\b${check.subject.slice(0, 7)}[0-9a-f]*\\b`, 'g'), name);
+}
+
+export type Verdict = (detail: string, nextAction?: NextAction, subject?: string) => Check;
 export interface CheckBuilder {
   ok: Verdict;
   warn: Verdict;
@@ -43,7 +51,7 @@ export interface CheckBuilder {
 export function check(id: string, title: string, key: KeyTier = 'none'): CheckBuilder {
   const verdict =
     (status: CheckStatus): Verdict =>
-    (detail, nextAction) => ({ id, title, status, detail, key, ...(nextAction ? { nextAction } : {}) });
+    (detail, nextAction, subject) => ({ id, title, status, detail, key, ...(nextAction ? { nextAction } : {}), ...(subject ? { subject } : {}) });
   return { ok: verdict('ok'), warn: verdict('warn'), missing: verdict('missing'), error: verdict('error'), unknown: verdict('unknown') };
 }
 

@@ -4,6 +4,7 @@ import type { LiveRecord } from '../lib/deploy/live-record';
 import { commitName, type RemoteRef } from '../lib/deploy/target';
 import { actionCommand, isOperatorActionId, menuPath } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
+import { nameSubject } from '../lib/status/check';
 import type { Check, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, pc, warningMark } from '../lib/utils/cli-output';
 import { buildSession, rememberReport } from '../tasks/status';
@@ -99,25 +100,22 @@ function securityFindings(report: StatusReport): Check[] {
 }
 
 /**
- * The step the report recommends, as the menu runs it: a next action whose command names one action of the CLI, else the full status
- * when the security checks found something, which name no command of their own (the console deletes what they find).
+ * The step the report recommends, as the menu runs it: a next action whose command names one action of the CLI; else following the
+ * deploy under way (Deploy now follows it); else the full status when the security checks found something, which name no command of
+ * their own (the console deletes what they find).
  */
-export function upNextOf(report: StatusReport): UpNext | undefined {
+export function upNextOf(report: StatusReport, refs?: readonly RemoteRef[]): UpNext | undefined {
   const next = report.nextAction;
   const word = next ? /^pnpm infra ([a-z][a-z-]*)/.exec(next.command)?.[1] : undefined;
   if (next && word && isOperatorActionId(word)) return { action: word, description: next.description };
   if (next) return undefined;
+  const last = report.checks.find((entry) => entry.id === 'runs.last');
+  if (last?.subject && / is deploying$/.test(last.detail)) {
+    return { action: 'start-deploy', description: `Follow the deploy of ${commitName(refs, last.subject)}` };
+  }
   const findings = securityFindings(report);
   if (findings.length === 0) return undefined;
   return { action: 'status', description: `Read the ${findings.length === 1 ? 'security finding' : `${findings.length} security findings`}` };
-}
-
-/** A check's detail with the commit it leads with named: `deployed c19588d491` reads `deployed 0.34.0`; free text after it stays. */
-function nameCommits(detail: string, refs: RemoteRef[] | undefined): string {
-  return detail.replace(
-    /^(deployed )?([0-9a-f]{7,40})\b/,
-    (_match, lead: string | undefined, sha: string) => `${lead ?? ''}${commitName(refs, sha)}`,
-  );
 }
 
 /** One home line: mark, label padded, detail. */
@@ -143,7 +141,7 @@ export function formatHome(facts: HomeFacts, opts: { now?: number } = {}): strin
   const components = check('live.components');
   lines.push(row(components && components.status !== 'ok' ? components.status : 'ok', 'Serving', servingLine(facts)));
   const last = check('runs.last');
-  if (last) lines.push(row(last.status, 'Last deploy', `${nameCommits(last.detail, facts.refs)}${failedToday(facts, now)}`));
+  if (last) lines.push(row(last.status, 'Last deploy', `${nameSubject(last, facts.refs)}${failedToday(facts, now)}`));
   const db = check('db.publicEndpoint');
   if (db) lines.push(row(db.status, 'Database', db.detail === 'private only' ? 'private' : db.detail));
   const security = report.checks.filter((entry) => SECURITY_IDS.test(entry.id));
@@ -166,7 +164,7 @@ export function formatHome(facts: HomeFacts, opts: { now?: number } = {}): strin
     if (entry.status === 'ok' || entry.status === 'unknown') continue;
     lines.push(row(entry.status, entry.title, entry.detail));
   }
-  const upNext = upNextOf(report);
+  const upNext = upNextOf(report, facts.refs);
   if (report.nextAction || upNext) {
     lines.push('');
     lines.push(`${pc.bold('Up next')}      ${report.nextAction?.description ?? upNext?.description}`);

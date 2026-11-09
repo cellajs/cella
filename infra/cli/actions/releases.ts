@@ -20,8 +20,9 @@ import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-outpu
 import { infraDir } from '../../lib/utils/paths';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
+import { deployAndFollow } from './deploy-follow';
 import { acquireOperatorKey } from './operator-unlock';
-import { deployAndFollow, environmentTarget } from './start-deploy';
+import { environmentTarget } from './start-deploy';
 
 const LISTED_RELEASES = 10;
 /** How many of the newest runs are searched for a release's deploys. */

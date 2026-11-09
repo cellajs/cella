@@ -129,7 +129,7 @@ function menuState(context: InfraContext, home?: HomeFacts): MenuState {
     environment: context.environment,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints: home?.liveEndpoints,
-    upNext: home ? upNextOf(home.report) : undefined,
+    upNext: home ? upNextOf(home.report, home.refs) : undefined,
   };
 }
 

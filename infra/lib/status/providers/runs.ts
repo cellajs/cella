@@ -68,23 +68,28 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
 /** A deploy's end, as its record says it, or a hand start's job run that wrote none: then `record` is undefined. */
 function deployVerdict(
   runs: CheckBuilder,
-  sha: string,
+  target: string,
   outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>,
   state: string,
   record?: RunRecord,
 ): Check {
-  if (outcome === 'running') return runs.ok(`${sha} is deploying`);
-  if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`);
+  const sha = target.slice(0, 10);
+  if (outcome === 'running') return runs.ok(`${sha} is deploying`, undefined, target);
+  if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`, undefined, target);
   if (outcome === 'blocked' || outcome === 'apply needed') {
-    return runs.warn(`${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`, {
-      description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
-      command: actionCommand('runs'),
-    });
+    return runs.warn(
+      `${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`,
+      {
+        description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
+        command: actionCommand('runs'),
+      },
+      target,
+    );
   }
   const failed = record
     ? `${sha} failed${record.failedStep ? ` at "${record.failedStep}"` : ''}: ${classifyRun(record).sentence}`
     : `${sha} failed (${state})`;
-  return runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') });
+  return runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') }, target);
 }
 
 /**
@@ -108,11 +113,11 @@ export const runsProvider: StatusProvider<RunsFacts> = {
     const runs = check('runs.last', 'Last deploy', 'scaleway');
     return [
       probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ runs: jobRuns, definition, record, lock }) => {
-        const label = (run: JobRun) => run.environment_variables?.TARGET_SHA?.slice(0, 10) ?? `scheduled run ${run.id}`;
+        const label = (run: JobRun) => run.environment_variables?.TARGET_SHA ?? `scheduled run ${run.id}`;
         const started = jobRuns.find((run) => definition && runOverrides(run, definition).length > 0);
         if (started && definition) {
           return runs.error(
-            `${label(started)} was started with its own values (${runOverrides(started, definition).join(', ')}): no start of the engine does that`,
+            `${label(started).slice(0, 10)} was started with its own values (${runOverrides(started, definition).join(', ')}): no start of the engine does that`,
             { description: 'Read the run, then rotate the keys that may start one', command: actionCommand('runs') },
           );
         }
@@ -148,7 +153,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
             command: actionCommand('runs'),
           });
         }
-        return deployVerdict(runs, sha, newest.outcome, newest.outcome, newest);
+        return deployVerdict(runs, newest.target, newest.outcome, newest.outcome, newest);
       }),
     ];
   },

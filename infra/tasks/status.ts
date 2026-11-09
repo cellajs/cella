@@ -3,14 +3,17 @@ import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { readAppliedEngine } from '../lib/deploy/applied-engine';
+import { commitRefs } from '../lib/deploy/git-remote';
 import { findJobDefinition, listJobRuns, readJobDefinition } from '../lib/deploy/job-runs';
 import { readLiveRecord } from '../lib/deploy/live-record';
+import type { RemoteRef } from '../lib/deploy/target';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { type KeyPair, resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import { lockKey, makeControlClient, peekLock, stateBucket } from '../lib/stack/control-store';
 import { loadStackContext } from '../lib/stack/stack-context';
+import { nameSubject } from '../lib/status/check';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
@@ -146,7 +149,7 @@ export async function buildReport(ctx: StatusContext): Promise<StatusReport> {
 
 const MARKS: Record<CheckStatus, string> = { ok: checkMark, warn: warningMark, missing: crossMark, error: crossMark, unknown: pc.dim('?') };
 
-export function formatReport(report: StatusReport): string {
+export function formatReport(report: StatusReport, refs?: readonly RemoteRef[]): string {
   const lines: string[] = [];
   const s = report.summary;
   lines.push(pc.dim(DIVIDER));
@@ -157,7 +160,7 @@ export function formatReport(report: StatusReport): string {
   const width = report.checks.reduce((max, check) => Math.max(max, check.title.length), 0);
   for (const check of report.checks) {
     const label = pc.bold(pc.gray(check.title.padEnd(width)));
-    lines.push(`${MARKS[check.status]} ${label}  ${check.detail}`);
+    lines.push(`${MARKS[check.status]} ${label}  ${nameSubject(check, refs)}`);
   }
   if (report.nextAction) {
     lines.push(pc.dim(DIVIDER));
@@ -168,8 +171,8 @@ export function formatReport(report: StatusReport): string {
 }
 
 /** Print the report as JSON or human text. */
-export function printReport(report: StatusReport, opts: { json?: boolean }): void {
-  console.info(opts.json ? JSON.stringify(report, null, 2) : formatReport(report));
+export function printReport(report: StatusReport, opts: { json?: boolean; refs?: readonly RemoteRef[] }): void {
+  console.info(opts.json ? JSON.stringify(report, null, 2) : formatReport(report, opts.refs));
 }
 
 /**
@@ -197,7 +200,7 @@ export async function runStatus(context: {
         operatorKey: context.operatorKey,
       }),
     ));
-  printReport(report, { json: false });
+  printReport(report, { json: false, refs: await commitRefs() });
   if (recent) console.info(pc.dim(`As read ${Math.round((Date.now() - Date.parse(recent.generatedAt)) / 1000)} s ago, for the home screen.`));
 }
 
@@ -245,7 +248,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const report = await withSpinner(`Checking ${mode}`, () =>
     buildReport({ mode, appConfig, stackState, stackYaml, projectId: projectId || undefined }),
   );
-  printReport(report, { json });
+  printReport(report, { json, refs: json ? undefined : await commitRefs() });
 }
 
 runIfMain(import.meta.url, main);

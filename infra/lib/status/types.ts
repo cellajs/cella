@@ -24,6 +24,8 @@ export interface Check {
   detail: string;
   key: KeyTier;
   nextAction?: NextAction;
+  /** The commit the detail is about, in full, so a screen can name it by its release. */
+  subject?: string;
 }
 
 /** The full report emitted by `infra status` (the `--json` envelope). */

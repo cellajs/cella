@@ -5,7 +5,14 @@ import { formatHome, type HomeFacts, upNextOf } from './home';
 
 const plain = (lines: string[]) => lines.map((line) => stripVTControlCharacters(line).replace(/\s+$/, ''));
 
-const ok = (id: string, title: string, detail: string): Check => ({ id, title, status: 'ok', detail, key: 'scaleway' });
+const ok = (id: string, title: string, detail: string, subject?: string): Check => ({
+  id,
+  title,
+  status: 'ok',
+  detail,
+  key: 'scaleway',
+  ...(subject ? { subject } : {}),
+});
 
 function report(checks: Check[], nextAction?: StatusReport['nextAction']): StatusReport {
   return {
@@ -35,7 +42,7 @@ const healthy: HomeFacts = {
   report: report([
     ok('inventory.applications', 'Applications', 'only the declared ones'),
     ok('identity.keyAges', 'Key ages', 'fine'),
-    ok('runs.last', 'Last deploy', 'deployed c19588d491'),
+    ok('runs.last', 'Last deploy', 'deployed c19588d491', 'c19588d491aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
     ok('live.backend', 'Service backend', 'serving c19588d'),
     ok('live.frontend', 'Service frontend', 'serving c19588d'),
     ok('live.components', 'Primary components', 'all healthy'),
@@ -68,7 +75,7 @@ describe('formatHome', () => {
         [
           { ...ok('inventory.keys', 'API keys', ''), status: 'error', detail: 'a durable key' },
           { ...ok('identity.keyAges', 'Key ages', ''), status: 'warn', detail: 'old' },
-          { ...ok('runs.last', 'Last deploy', ''), status: 'error', detail: 'a6696b654e failed' },
+          { ...ok('runs.last', 'Last deploy', '', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'), status: 'error', detail: 'a6696b654e failed' },
           { ...ok('live.backend', 'Service backend', ''), status: 'missing', detail: 'unreachable' },
           ok('live.frontend', 'Service frontend', 'serving c19588d'),
           ok('db.publicEndpoint', 'DB public endpoint', 'private only'),
@@ -118,6 +125,11 @@ describe('upNextOf', () => {
     });
     expect(upNextOf(report([], { description: 'Do it by hand', command: 'scw rdb ...' }))).toBeUndefined();
     expect(upNextOf(report([]))).toBeUndefined();
+  });
+
+  it('offers to follow the deploy under way, named by its release', () => {
+    const deploying = report([ok('runs.last', 'Last deploy', 'a6696b654e is deploying', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')]);
+    expect(upNextOf(deploying, refs)).toEqual({ action: 'start-deploy', description: 'Follow the deploy of 0.35.0' });
   });
 
   it('sends a person to the full status when only the security checks found something', () => {
