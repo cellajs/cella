@@ -27,7 +27,7 @@ import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, paginationSch
 export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
   inviteMembers: xRoute({
     method: 'post',
-    path: '/memberships/~invite',
+    path: '/members/~invite',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     summary: 'Invite members',
@@ -36,9 +36,9 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     request: { params: tenantOrgParamSchema, query: entityWithTypeSchema, body: jsonBody(membershipCreateBodySchema) },
     responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()), ...errors(409) },
   }),
-  checkMembershipInvite: xRoute({
+  checkMemberInvite: xRoute({
     method: 'post',
-    path: '/memberships/~check-invite',
+    path: '/members/~check-invite',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Check addresses before inviting',
@@ -53,12 +53,12 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
       ),
     },
   }),
-  batchDeleteMemberships: xRoute({
+  batchDeleteMembers: xRoute({
     method: 'post',
-    path: '/memberships/~batch-delete',
+    path: '/members/~batch-delete',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
-    summary: 'Delete memberships',
+    summary: 'Remove members',
     description:
       'Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.',
     request: { params: tenantOrgParamSchema, query: entityWithTypeSchema, body: jsonBody(idsBodySchema()) },

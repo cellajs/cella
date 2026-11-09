@@ -19,7 +19,7 @@ app.openapi(authStepUpRoutes.getStepUp, async (ctx) => {
   return ctx.json({ steppedUp, methods }, 200);
 });
 
-app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
+app.openapi(authStepUpRoutes.generateStepUpPasskeyChallenge, async (ctx) => {
   // Issued for this account and for a step-up only: a sign-in or MFA challenge never answers as a step-up proof.
   return ctx.json(await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: ctx.var.user.id }), 200);
 });

@@ -1,7 +1,7 @@
 import { generateId } from 'shared/utils/entity-id';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 
 // The template declares no embedding: this one lets a change of its product carry a hint.
 vi.mock('shared', async (importOriginal) => {
@@ -40,7 +40,7 @@ const event = (action: 'create' | 'update' | 'delete', rows: ActivityRow[]) =>
     rowData: null,
     rows,
     trace: null,
-  }) as unknown as AppStreamProductEvent;
+  }) as unknown as StreamProductEvent;
 
 /**
  * A host keeps a copy of the rows embedded in it, and the worker drops the host updates that would say so: the hint is

@@ -47,7 +47,7 @@ describe('brute-force budgets', async () => {
 
   afterEach(async () => await clearSecurityTestData());
 
-  it('must not keep mailing an address magic links via /auth/magic/send from ever new client addresses', async () => {
+  it('must not keep mailing an address magic links via /auth/send-magic-link from ever new client addresses', async () => {
     const owner = await createTestUser(`magic-limit-${nanoid(8)}@security-test.com`.toLowerCase());
     const other = await createTestUser(`magic-other-${nanoid(8)}@security-test.com`.toLowerCase());
     /** A request for a link to `email`, each from a client address of its own: the budget is the mailbox's. */

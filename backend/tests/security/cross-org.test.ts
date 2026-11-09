@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import {
   batchCreateAttachments,
   batchDeleteAttachments,
-  batchDeleteMemberships,
+  batchDeleteMembers,
   batchDeleteOrganizations,
   getAttachment,
   getOrganization,
@@ -205,9 +205,9 @@ describe('Cross-organization API isolation', async () => {
       unchanged: async () => expect((await membershipRow(membershipB.id)).role).toBe(adminRole),
     },
     {
-      route: 'batchDeleteMemberships',
+      route: 'batchDeleteMembers',
       attempt: (as) =>
-        call(batchDeleteMemberships, {
+        call(batchDeleteMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           query: { entityId: orgB.id, entityType: 'organization' },
           body: { ids: [userB.id] },

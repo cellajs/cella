@@ -1,8 +1,8 @@
 import { baseDb } from '#/db/db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import { closeStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
 import type { StreamErrorPayload } from '#/schemas';
@@ -22,7 +22,7 @@ type SessionState = Pick<SessionModel, 'userId' | 'revokedAt' | 'revocationReaso
 
 /** Why a stream must close now, or null while its session still holds what the stream was opened with. */
 function staleStreamError(
-  subscriber: AppStreamSubscriber,
+  subscriber: StreamSubscriber,
   sessionsById: Map<string, SessionState>,
   systemAdmins: Set<string>,
 ): StreamErrorPayload | null {
@@ -38,12 +38,12 @@ function staleStreamError(
 }
 
 /**
- * Re-checks the session behind every open app stream and closes each stream that must end: its session expired, was
+ * Re-checks the session behind every open stream and closes each stream that must end: its session expired, was
  * revoked between its session check and its registration (the revoke closes only the streams registered by then) or
  * went with its user, or the system role was removed or granted since the stream connected (the client reconnects on
  * `access_changed`).
  */
-async function sweepAppStreamSessions(): Promise<void> {
+async function sweepStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all();
   if (subscribers.length === 0) return;
 
@@ -63,12 +63,12 @@ async function sweepAppStreamSessions(): Promise<void> {
   });
   if (stale.length === 0) return;
 
-  await closeAppStreams(stale, 'Failed to close a stale stream');
+  await closeStreams(stale, 'Failed to close a stale stream');
   log.info('Closed streams whose session no longer holds', { closed: stale.length });
 }
 
 /** Starts the sweep with the first open stream; it stops once no stream is open. Idempotent. */
-export function ensureAppStreamSessionSweep(): void {
+export function ensureStreamSessionSweep(): void {
   if (sweepTimer) return;
   sweepTimer = setInterval(() => {
     if (streamSubscriberManager.size === 0) {
@@ -78,7 +78,7 @@ export function ensureAppStreamSessionSweep(): void {
     }
     if (sweeping) return;
     sweeping = true;
-    sweepAppStreamSessions()
+    sweepStreamSessions()
       .catch((error) => log.error('Stream session sweep failed', { error }))
       .finally(() => {
         sweeping = false;

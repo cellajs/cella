@@ -103,11 +103,11 @@ describe('account-security routes need a step-up', async () => {
     const passkey = await insertPasskey(user);
     const session = await insertStaleSession(user);
 
-    await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
+    await expectStepUpRequired(await call(deletePasskey, { path: { passkeyId: passkey.id }, headers: session.headers }));
     expect(await passkeysOf(user.id)).toHaveLength(1);
 
     await stepUpWithTotp(session);
-    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(204);
+    expect((await call(deletePasskey, { path: { passkeyId: passkey.id }, headers: session.headers })).response.status).toBe(204);
     expect(await passkeysOf(user.id)).toHaveLength(0);
   });
 
@@ -136,7 +136,7 @@ describe('account-security routes need a step-up', async () => {
 
     await stepUpByEmail(session);
     // The code replaces a lost factor: it sets up a new one, and the new one, proven here, opens everything else.
-    await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
+    await expectStepUpRequired(await call(deletePasskey, { path: { passkeyId: passkey.id }, headers: session.headers }));
     const issued = await passkeyChallenge('registration');
     const created = await call(createPasskey, {
       body: { attestation: authenticator.attest(issued.challenge), nameOnDevice: 'New phone' },
@@ -144,7 +144,7 @@ describe('account-security routes need a step-up', async () => {
     });
     expect(created.response.status).toBe(201);
     keepCookiesOf(session, created.response);
-    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(204);
+    expect((await call(deletePasskey, { path: { passkeyId: passkey.id }, headers: session.headers })).response.status).toBe(204);
   });
 
   it('steps the session up with the authenticator it sets up, so a factor-tier action passes next', async () => {

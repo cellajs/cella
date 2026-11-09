@@ -9,7 +9,7 @@ let syncStreamHealthy = true;
 /** True while the server says no CDC worker reads: the stream is open and brings nothing, so changes of others arrive only when the worker reads on. */
 let syncWorkerAway = false;
 
-/** Called by the realtime stream store on every app-stream state transition. */
+/** Called by the realtime stream store on every stream state transition. */
 export function setSyncStreamHealthy(healthy: boolean): void {
   syncStreamHealthy = healthy;
 }

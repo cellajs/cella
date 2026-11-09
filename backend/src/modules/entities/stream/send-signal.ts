@@ -1,5 +1,5 @@
 import type { StreamSignalType } from 'shared/stream-signal-types';
-import { type AppStreamSubscriber, accessDecisions } from '#/modules/entities/helpers/dispatch-to-stream';
+import { accessDecisions, type StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { Audience } from '#/modules/entities/stream/audiences';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { isDeclaredSignal } from '#/modules/entities/stream/signal-registry';
@@ -8,7 +8,7 @@ import type { StreamSignal } from '#/schemas';
 import { log } from '#/utils/logger';
 
 /** The open streams an audience names. */
-function audienceSubscribers(audience: Audience): AppStreamSubscriber[] {
+function audienceSubscribers(audience: Audience): StreamSubscriber[] {
   if (audience.kind === 'user') return streamSubscriberManager.getByTopic(userTopic(audience.userId));
   const { subject, action } = audience;
   const organizationId = subject.entityType === 'organization' ? subject.id : subject.channelIds.organization;

@@ -303,7 +303,7 @@
     },
     {
       "name": "stream",
-      "description": "The frames of the app stream: a change of product rows, a signal that something else changed, and the error that ends the stream. The stream operation sends one of them per event.",
+      "description": "The frames of the stream: a change of product rows, a signal that something else changed, and the error that ends the stream. The stream operation sends one of them per event.",
       "x-kind": "schema"
     },
     {
@@ -352,7 +352,7 @@
     },
     {
       "name": "entities",
-      "description": "Endpoints that operate across multiple entity types, such as users and organizations. Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like. These routes check slug availability and serve the app stream and its catchup, which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
+      "description": "Endpoints that operate across multiple entity types, such as users and organizations. Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like. These routes check slug availability and serve the stream and its catchup, which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -376,7 +376,7 @@
     },
     {
       "name": "memberships",
-      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as hidden or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
+      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as hidden or muted. Memberships can also reference parent entities to easily have a hierarchical context available. Routes under members address people by their user ID; routes under memberships address the row that holds a role and preferences by its own ID.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1662,7 +1662,7 @@
           }
         },
         "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
-        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
+        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
           "action": "update",
           "productType": "attachment",
@@ -1707,7 +1707,7 @@
           }
         },
         "required": ["type", "organizationId", "subjectId"],
-        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.",
+        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.",
         "example": {
           "type": "membership.changed",
           "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
@@ -1727,7 +1727,7 @@
           }
         },
         "required": ["code", "message"],
-        "description": "Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
+        "description": "Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
         "example": {
           "code": "session_replaced",
           "message": "Session replaced"
@@ -5613,7 +5613,7 @@
         }
       }
     },
-    "/auth/mfa/pending": {
+    "/auth/pending-mfa": {
       "get": {
         "security": [],
         "operationId": "getPendingMfa",
@@ -5865,7 +5865,7 @@
         }
       }
     },
-    "/auth/invitation-token/accept": {
+    "/auth/accept-invitation-token": {
       "post": {
         "security": [
           {
@@ -5910,7 +5910,7 @@
         }
       }
     },
-    "/auth/invitation-token/confirm-address": {
+    "/auth/confirm-invitation-address": {
       "post": {
         "security": [
           {
@@ -6006,7 +6006,7 @@
         }
       }
     },
-    "/auth/magic/send": {
+    "/auth/send-magic-link": {
       "post": {
         "security": [],
         "operationId": "sendMagicLink",
@@ -6060,7 +6060,7 @@
         }
       }
     },
-    "/auth/magic/pending": {
+    "/auth/pending-magic-link": {
       "get": {
         "security": [],
         "operationId": "getPendingMagicLink",
@@ -6101,7 +6101,7 @@
         }
       }
     },
-    "/auth/magic/confirm": {
+    "/auth/confirm-magic-link": {
       "post": {
         "security": [],
         "operationId": "confirmMagicLink",
@@ -6146,7 +6146,7 @@
         }
       }
     },
-    "/auth/totp/generate-key": {
+    "/auth/generate-totp-key": {
       "post": {
         "security": [
           {
@@ -6293,7 +6293,7 @@
         }
       }
     },
-    "/auth/totp-verification": {
+    "/auth/sign-in-with-totp": {
       "post": {
         "security": [],
         "operationId": "signInWithTotp",
@@ -6357,7 +6357,7 @@
         }
       }
     },
-    "/auth/passkey": {
+    "/auth/passkeys": {
       "post": {
         "security": [
           {
@@ -6530,7 +6530,7 @@
         }
       }
     },
-    "/auth/passkey/{id}": {
+    "/auth/passkeys/{passkeyId}": {
       "delete": {
         "security": [
           {
@@ -6550,7 +6550,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "id",
+            "name": "passkeyId",
             "in": "path"
           }
         ],
@@ -6573,7 +6573,7 @@
         }
       }
     },
-    "/auth/passkey/generate-challenge": {
+    "/auth/generate-passkey-challenge": {
       "post": {
         "security": [],
         "operationId": "generatePasskeyChallenge",
@@ -6665,7 +6665,7 @@
         }
       }
     },
-    "/auth/passkey-verification": {
+    "/auth/sign-in-with-passkey": {
       "post": {
         "security": [],
         "operationId": "signInWithPasskey",
@@ -6773,7 +6773,7 @@
         }
       }
     },
-    "/auth/oauth-connect": {
+    "/auth/start-oauth-connect": {
       "post": {
         "security": [
           {
@@ -6820,7 +6820,7 @@
     "/auth/github": {
       "get": {
         "security": [],
-        "operationId": "github",
+        "operationId": "startGithubOAuth",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -6878,7 +6878,7 @@
     "/auth/google": {
       "get": {
         "security": [],
-        "operationId": "google",
+        "operationId": "startGoogleOAuth",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -6936,7 +6936,7 @@
     "/auth/microsoft": {
       "get": {
         "security": [],
-        "operationId": "microsoft",
+        "operationId": "startMicrosoftOAuth",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -7660,7 +7660,7 @@
         }
       }
     },
-    "/auth/sso/recovery-link": {
+    "/auth/send-sso-recovery-link": {
       "post": {
         "security": [],
         "operationId": "sendSsoRecoveryLink",
@@ -7872,14 +7872,14 @@
         }
       }
     },
-    "/auth/step-up/passkey-challenge": {
+    "/auth/generate-step-up-passkey-challenge": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "getStepUpPasskeyChallenge",
+        "operationId": "generateStepUpPasskeyChallenge",
         "tags": ["auth", "cella"],
         "summary": "Get a step-up passkey challenge",
         "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.",
@@ -7939,7 +7939,7 @@
         }
       }
     },
-    "/auth/step-up/code": {
+    "/auth/send-step-up-code": {
       "post": {
         "security": [
           {
@@ -8288,16 +8288,16 @@
         }
       }
     },
-    "/entities/app/stream": {
+    "/me/stream": {
       "get": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "getAppStream",
+        "operationId": "getMyStream",
         "tags": ["entities", "cella"],
-        "summary": "App SSE stream",
+        "summary": "SSE stream",
         "description": "SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["streamConnectLimiter"],
@@ -8332,16 +8332,18 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
-      },
+      }
+    },
+    "/me/stream:catch-up": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "postAppCatchup",
+        "operationId": "catchUpMyStream",
         "tags": ["entities", "cella"],
-        "summary": "App stream catchup",
+        "summary": "Stream catchup",
         "description": "Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
@@ -10026,7 +10028,7 @@
         }
       }
     },
-    "/tenants/{tenantId}/organizations/{organizationId}/memberships:invite": {
+    "/tenants/{tenantId}/organizations/{organizationId}/members:invite": {
       "post": {
         "security": [
           {
@@ -10220,14 +10222,14 @@
         }
       }
     },
-    "/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite": {
+    "/tenants/{tenantId}/organizations/{organizationId}/members:check-invite": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "checkMembershipInvite",
+        "operationId": "checkMemberInvite",
         "tags": ["memberships", "cella"],
         "summary": "Check addresses before inviting",
         "description": "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
@@ -10354,16 +10356,16 @@
         }
       }
     },
-    "/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete": {
+    "/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "batchDeleteMemberships",
+        "operationId": "batchDeleteMembers",
         "tags": ["memberships", "cella"],
-        "summary": "Delete memberships",
+        "summary": "Remove members",
         "description": "Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
@@ -11499,7 +11501,7 @@
         }
       }
     },
-    "/metrics/public": {
+    "/public/metrics": {
       "get": {
         "security": [],
         "operationId": "getPublicCounts",
@@ -12087,7 +12089,7 @@
         }
       }
     },
-    "/notifications/resubscribe": {
+    "/notifications:resubscribe": {
       "post": {
         "security": [],
         "operationId": "resubscribeNotifications",
@@ -15264,7 +15266,7 @@
         }
       }
     },
-    "/system-invitations:count": {
+    "/system:count-invitations": {
       "get": {
         "security": [
           {

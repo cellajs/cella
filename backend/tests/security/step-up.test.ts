@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { getStepUp, getStepUpPasskeyChallenge, revokeMySessions, sendStepUpCode, stepUp } from 'sdk';
+import { generateStepUpPasskeyChallenge, getStepUp, revokeMySessions, sendStepUpCode, stepUp } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -60,7 +60,7 @@ describe('step-up', async () => {
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
     // Positive control: a step-up challenge issued to this session's user.
-    const issued = issuedChallenge(await call(getStepUpPasskeyChallenge, { headers: session.headers }));
+    const issued = issuedChallenge(await call(generateStepUpPasskeyChallenge, { headers: session.headers }));
     const { response } = await call(stepUp, {
       body: { passkeyData: passkey.assert(issued.challenge) },
       headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },

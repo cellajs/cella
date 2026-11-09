@@ -1,4 +1,4 @@
-import type { PostAppCatchupData } from 'sdk';
+import type { CatchUpMyStreamData } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -15,7 +15,7 @@ interface OrgSyncState {
   channels: Record<string, Record<string, number>>;
 }
 
-type CatchupView = NonNullable<PostAppCatchupData['body']['views']>[number];
+type CatchupView = NonNullable<CatchUpMyStreamData['body']['views']>[number];
 
 interface SyncStoreState {
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */

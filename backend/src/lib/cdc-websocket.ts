@@ -10,7 +10,7 @@ import { serviceSecret } from '#/env';
 import { type ActivityEvent, activityBus, messageRowSchema, ownActivityColumns } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { activitySchema } from '#/modules/activities/activities-schema';
-import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
+import { resyncStreams } from '#/modules/entities/helpers/session-streams';
 import { log } from '#/utils/logger';
 
 const rowDataSchema = z.record(z.string(), z.unknown());
@@ -208,7 +208,7 @@ class CdcWebSocketServer {
     this.generation = generation;
     if (!moved) return;
     log.warn('The sync books moved to another generation: clients reconnect and refetch', { generation });
-    void resyncAppStreams();
+    void resyncStreams();
   }
 
   /**
@@ -237,7 +237,7 @@ class CdcWebSocketServer {
   }
 
   /**
-   * Whether no CDC worker has been reading for a minute. Live changes then reach clients late, so the app stream tells
+   * Whether no CDC worker has been reading for a minute. Live changes then reach clients late, so the stream tells
    * them and they fall back to a stale time. An app that runs no worker has nothing to wait for and is never away.
    */
   isWorkerAway(): boolean {

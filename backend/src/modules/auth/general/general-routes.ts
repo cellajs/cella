@@ -38,7 +38,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   }),
   getPendingMfa: xRoute({
     method: 'get',
-    path: '/mfa/pending',
+    path: '/pending-mfa',
     xGuard: [publicGuard],
     summary: 'Get pending MFA challenge',
     description:
@@ -92,7 +92,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   }),
   acceptInvitationToken: xRoute({
     method: 'post',
-    path: '/invitation-token/accept',
+    path: '/accept-invitation-token',
     xGuard: [userGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
@@ -103,7 +103,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   }),
   confirmInvitationAddress: xRoute({
     method: 'post',
-    path: '/invitation-token/confirm-address',
+    path: '/confirm-invitation-address',
     xGuard: [userGuard],
     xRateLimiter: [spamLimiter],
     middleware: isNoBot,

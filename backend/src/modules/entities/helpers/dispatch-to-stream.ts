@@ -14,12 +14,12 @@ import type { ActivityRow } from '#/lib/activity-bus';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 
 /** A signed-in user's stream: its own signals on its user topic, changes and reader signals on each of its organizations' topics. */
-export interface AppStreamSubscriber {
+export interface StreamSubscriber {
   id: string;
   stream: SSEStreamingApi;
   /** The topic the subscriber is routed by, such as `user:123`; `register` takes more. */
@@ -35,12 +35,12 @@ export interface AppStreamSubscriber {
 }
 
 /** The subscriber fields a read decision takes. */
-export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
+export type SubscriberAccess = Pick<StreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
 
 const channelColumns = appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]);
 
 /** The event as it reads for one row: every channel id column comes from that row, so a reparented row is judged where it is. */
-function rowScopedEvent(event: AppStreamProductEvent, rowData: PermissionRowData): AppStreamProductEvent {
+function rowScopedEvent(event: StreamProductEvent, rowData: PermissionRowData): StreamProductEvent {
   const overrides: Partial<ChannelIdColumns> = {};
   for (const columnKey of channelColumns) {
     if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
@@ -55,7 +55,7 @@ function decisionKey(rowData: PermissionRowData): string {
 }
 
 /** The subject a reader of one row needs access to. Returns `null`, fail-closed, on an unpublished draft or a malformed ancestor scope. */
-function rowReadSubject(event: AppStreamProductEvent, row: PermissionRowData): SubjectForPermission | null {
+function rowReadSubject(event: StreamProductEvent, row: PermissionRowData): SubjectForPermission | null {
   if (isUnpublishedDraft(row)) return null;
 
   const scoped = rowScopedEvent(event, row);
@@ -97,7 +97,7 @@ export function accessDecisions(subscribers: readonly SubscriberAccess[], action
  * @param row - The row's permission fields, or those it had before a move.
  * @returns One decision per access, in their order.
  */
-function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row: PermissionRowData): boolean[] {
+function rowReadDecisions(accesses: Access[], event: StreamProductEvent, row: PermissionRowData): boolean[] {
   const subject = rowReadSubject(event, row);
   if (!subject) return accesses.map(() => false);
   return decide(accesses, 'read', subject);
@@ -106,7 +106,7 @@ function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row:
 /**
  * Whether one subscriber may read one row of a product event: a fan-out of one, so this and `readerFrames` cannot drift.
  */
-export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent, row: PermissionRowData): boolean {
+export function canReceiveProductEvent(subscriber: SubscriberAccess, event: StreamProductEvent, row: PermissionRowData): boolean {
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
 }
 
@@ -125,7 +125,7 @@ function getOrCreate<K, V>(map: Map<K, V>, key: K, create: () => V): V {
  */
 export function readerFrames<S extends SubscriberAccess>(
   subscribers: readonly S[],
-  event: AppStreamProductEvent,
+  event: StreamProductEvent,
 ): { rows: ActivityRow[]; readers: S[] }[] {
   const accesses = accessesOf(subscribers);
   const byKey = new Map<string, { allowed: boolean[]; byAuthor: Map<number, boolean> }>();
@@ -153,9 +153,9 @@ export function readerFrames<S extends SubscriberAccess>(
 }
 
 /**
- * Tells the app streams of a product event's organization the rows each may read.
+ * Tells the streams of a product event's organization the rows each may read.
  */
-export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
+export async function dispatchChange(event: StreamProductEvent): Promise<void> {
   const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));
   if (subscribers.length === 0) return;
 
@@ -175,7 +175,7 @@ export async function dispatchChange(event: AppStreamProductEvent): Promise<void
  * else receives the normal update.
  * @param event - A product update; each of its rows that moved carries `movedFrom`.
  */
-export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
+export async function dispatchMoveOuts(event: StreamProductEvent): Promise<void> {
   const moved = event.rows.filter((row): row is ActivityRow & { movedFrom: PermissionRowData } => !!row.movedFrom);
   if (moved.length === 0) return;
 

@@ -252,7 +252,7 @@ export type ChannelBase = {
 };
 
 /**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
   /**
@@ -316,7 +316,7 @@ export type StreamChange = {
 };
 
 /**
- * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.
  */
 export type StreamSignal = {
   /**
@@ -335,7 +335,7 @@ export type StreamSignal = {
 };
 
 /**
- * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ * Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
  */
 export type StreamError = {
   code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
@@ -1604,7 +1604,7 @@ export type GetPendingMfaData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/mfa/pending';
+  url: '/auth/pending-mfa';
 };
 
 export type GetPendingMfaErrors = {
@@ -1775,7 +1775,7 @@ export type AcceptInvitationTokenData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/invitation-token/accept';
+  url: '/auth/accept-invitation-token';
 };
 
 export type AcceptInvitationTokenErrors = {
@@ -1820,7 +1820,7 @@ export type ConfirmInvitationAddressData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/invitation-token/confirm-address';
+  url: '/auth/confirm-invitation-address';
 };
 
 export type ConfirmInvitationAddressErrors = {
@@ -1928,7 +1928,7 @@ export type SendMagicLinkData = {
   };
   path?: never;
   query?: never;
-  url: '/auth/magic/send';
+  url: '/auth/send-magic-link';
 };
 
 export type SendMagicLinkErrors = {
@@ -1967,7 +1967,7 @@ export type GetPendingMagicLinkData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/magic/pending';
+  url: '/auth/pending-magic-link';
 };
 
 export type GetPendingMagicLinkErrors = {
@@ -2004,7 +2004,7 @@ export type ConfirmMagicLinkData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/magic/confirm';
+  url: '/auth/confirm-magic-link';
 };
 
 export type ConfirmMagicLinkErrors = {
@@ -2040,7 +2040,7 @@ export type GenerateTotpKeyData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/totp/generate-key';
+  url: '/auth/generate-totp-key';
 };
 
 export type GenerateTotpKeyErrors = {
@@ -2168,7 +2168,7 @@ export type SignInWithTotpData = {
   };
   path?: never;
   query?: never;
-  url: '/auth/totp-verification';
+  url: '/auth/sign-in-with-totp';
 };
 
 export type SignInWithTotpErrors = {
@@ -2230,7 +2230,7 @@ export type CreatePasskeyData = {
   };
   path?: never;
   query?: never;
-  url: '/auth/passkey';
+  url: '/auth/passkeys';
 };
 
 export type CreatePasskeyErrors = {
@@ -2283,10 +2283,10 @@ export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyRe
 export type DeletePasskeyData = {
   body?: never;
   path: {
-    id: string;
+    passkeyId: string;
   };
   query?: never;
-  url: '/auth/passkey/{id}';
+  url: '/auth/passkeys/{passkeyId}';
 };
 
 export type DeletePasskeyErrors = {
@@ -2325,7 +2325,7 @@ export type GeneratePasskeyChallengeData = {
   };
   path?: never;
   query?: never;
-  url: '/auth/passkey/generate-challenge';
+  url: '/auth/generate-passkey-challenge';
 };
 
 export type GeneratePasskeyChallengeErrors = {
@@ -2387,7 +2387,7 @@ export type SignInWithPasskeyData = {
   };
   path?: never;
   query?: never;
-  url: '/auth/passkey-verification';
+  url: '/auth/sign-in-with-passkey';
 };
 
 export type SignInWithPasskeyErrors = {
@@ -2432,7 +2432,7 @@ export type StartOAuthConnectData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/oauth-connect';
+  url: '/auth/start-oauth-connect';
 };
 
 export type StartOAuthConnectErrors = {
@@ -2465,7 +2465,7 @@ export type StartOAuthConnectResponses = {
 
 export type StartOAuthConnectResponse = StartOAuthConnectResponses[keyof StartOAuthConnectResponses];
 
-export type GithubData = {
+export type StartGithubOAuthData = {
   body?: never;
   path?: never;
   query?: {
@@ -2475,7 +2475,7 @@ export type GithubData = {
   url: '/auth/github';
 };
 
-export type GithubErrors = {
+export type StartGithubOAuthErrors = {
   /**
    * Bad request
    */
@@ -2490,9 +2490,9 @@ export type GithubErrors = {
   429: TooManyRequestsError;
 };
 
-export type GithubError = GithubErrors[keyof GithubErrors];
+export type StartGithubOAuthError = StartGithubOAuthErrors[keyof StartGithubOAuthErrors];
 
-export type GoogleData = {
+export type StartGoogleOAuthData = {
   body?: never;
   path?: never;
   query?: {
@@ -2502,7 +2502,7 @@ export type GoogleData = {
   url: '/auth/google';
 };
 
-export type GoogleErrors = {
+export type StartGoogleOAuthErrors = {
   /**
    * Bad request
    */
@@ -2517,9 +2517,9 @@ export type GoogleErrors = {
   429: TooManyRequestsError;
 };
 
-export type GoogleError = GoogleErrors[keyof GoogleErrors];
+export type StartGoogleOAuthError = StartGoogleOAuthErrors[keyof StartGoogleOAuthErrors];
 
-export type MicrosoftData = {
+export type StartMicrosoftOAuthData = {
   body?: never;
   path?: never;
   query?: {
@@ -2529,7 +2529,7 @@ export type MicrosoftData = {
   url: '/auth/microsoft';
 };
 
-export type MicrosoftErrors = {
+export type StartMicrosoftOAuthErrors = {
   /**
    * Bad request
    */
@@ -2544,7 +2544,7 @@ export type MicrosoftErrors = {
   429: TooManyRequestsError;
 };
 
-export type MicrosoftError = MicrosoftErrors[keyof MicrosoftErrors];
+export type StartMicrosoftOAuthError = StartMicrosoftOAuthErrors[keyof StartMicrosoftOAuthErrors];
 
 export type GithubCallbackData = {
   body?: never;
@@ -2850,7 +2850,7 @@ export type SendSsoRecoveryLinkData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/sso/recovery-link';
+  url: '/auth/send-sso-recovery-link';
 };
 
 export type SendSsoRecoveryLinkErrors = {
@@ -2995,14 +2995,14 @@ export type StepUpResponses = {
 
 export type StepUpResponse = StepUpResponses[keyof StepUpResponses];
 
-export type GetStepUpPasskeyChallengeData = {
+export type GenerateStepUpPasskeyChallengeData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/step-up/passkey-challenge';
+  url: '/auth/generate-step-up-passkey-challenge';
 };
 
-export type GetStepUpPasskeyChallengeErrors = {
+export type GenerateStepUpPasskeyChallengeErrors = {
   /**
    * Bad request
    */
@@ -3021,9 +3021,9 @@ export type GetStepUpPasskeyChallengeErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetStepUpPasskeyChallengeError = GetStepUpPasskeyChallengeErrors[keyof GetStepUpPasskeyChallengeErrors];
+export type GenerateStepUpPasskeyChallengeError = GenerateStepUpPasskeyChallengeErrors[keyof GenerateStepUpPasskeyChallengeErrors];
 
-export type GetStepUpPasskeyChallengeResponses = {
+export type GenerateStepUpPasskeyChallengeResponses = {
   /**
    * Challenge issued
    */
@@ -3036,13 +3036,13 @@ export type GetStepUpPasskeyChallengeResponses = {
   };
 };
 
-export type GetStepUpPasskeyChallengeResponse = GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
+export type GenerateStepUpPasskeyChallengeResponse = GenerateStepUpPasskeyChallengeResponses[keyof GenerateStepUpPasskeyChallengeResponses];
 
 export type SendStepUpCodeData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/step-up/code';
+  url: '/auth/send-step-up-code';
 };
 
 export type SendStepUpCodeErrors = {
@@ -3267,14 +3267,14 @@ export type UnarchiveChannelResponses = {
 
 export type UnarchiveChannelResponse = UnarchiveChannelResponses[keyof UnarchiveChannelResponses];
 
-export type GetAppStreamData = {
+export type GetMyStreamData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/entities/app/stream';
+  url: '/me/stream';
 };
 
-export type GetAppStreamErrors = {
+export type GetMyStreamErrors = {
   /**
    * Bad request
    */
@@ -3289,9 +3289,9 @@ export type GetAppStreamErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
+export type GetMyStreamError = GetMyStreamErrors[keyof GetMyStreamErrors];
 
-export type GetAppStreamResponses = {
+export type GetMyStreamResponses = {
   /**
    * SSE stream started
    *
@@ -3300,9 +3300,9 @@ export type GetAppStreamResponses = {
   200: StreamChange | StreamSignal | StreamError;
 };
 
-export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
+export type GetMyStreamResponse = GetMyStreamResponses[keyof GetMyStreamResponses];
 
-export type PostAppCatchupData = {
+export type CatchUpMyStreamData = {
   body: {
     /**
      * Client-declared views: an organization, a product type and its org-sequence cursor per view
@@ -3318,10 +3318,10 @@ export type PostAppCatchupData = {
   };
   path?: never;
   query?: never;
-  url: '/entities/app/stream';
+  url: '/me/stream:catch-up';
 };
 
-export type PostAppCatchupErrors = {
+export type CatchUpMyStreamErrors = {
   /**
    * Bad request
    */
@@ -3340,9 +3340,9 @@ export type PostAppCatchupErrors = {
   429: TooManyRequestsError;
 };
 
-export type PostAppCatchupError = PostAppCatchupErrors[keyof PostAppCatchupErrors];
+export type CatchUpMyStreamError = CatchUpMyStreamErrors[keyof CatchUpMyStreamErrors];
 
-export type PostAppCatchupResponses = {
+export type CatchUpMyStreamResponses = {
   /**
    * Catchup summary
    */
@@ -3401,7 +3401,7 @@ export type PostAppCatchupResponses = {
   };
 };
 
-export type PostAppCatchupResponse = PostAppCatchupResponses[keyof PostAppCatchupResponses];
+export type CatchUpMyStreamResponse = CatchUpMyStreamResponses[keyof CatchUpMyStreamResponses];
 
 export type GetMcpProtectedResourceMetadataData = {
   body?: never;
@@ -4241,7 +4241,7 @@ export type InviteMembersData = {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:invite';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/members:invite';
 };
 
 export type InviteMembersErrors = {
@@ -4301,7 +4301,7 @@ export type InviteMembersResponses = {
 
 export type InviteMembersResponse = InviteMembersResponses[keyof InviteMembersResponses];
 
-export type CheckMembershipInviteData = {
+export type CheckMemberInviteData = {
   body: {
     emails: Array<string>;
   };
@@ -4313,10 +4313,10 @@ export type CheckMembershipInviteData = {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/members:check-invite';
 };
 
-export type CheckMembershipInviteErrors = {
+export type CheckMemberInviteErrors = {
   /**
    * Bad request
    */
@@ -4343,9 +4343,9 @@ export type CheckMembershipInviteErrors = {
   429: TooManyRequestsError;
 };
 
-export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof CheckMembershipInviteErrors];
+export type CheckMemberInviteError = CheckMemberInviteErrors[keyof CheckMemberInviteErrors];
 
-export type CheckMembershipInviteResponses = {
+export type CheckMemberInviteResponses = {
   /**
    * Invite outcomes
    *
@@ -4356,9 +4356,9 @@ export type CheckMembershipInviteResponses = {
   };
 };
 
-export type CheckMembershipInviteResponse = CheckMembershipInviteResponses[keyof CheckMembershipInviteResponses];
+export type CheckMemberInviteResponse = CheckMemberInviteResponses[keyof CheckMemberInviteResponses];
 
-export type BatchDeleteMembershipsData = {
+export type BatchDeleteMembersData = {
   body: {
     ids: Array<string>;
   };
@@ -4370,10 +4370,10 @@ export type BatchDeleteMembershipsData = {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete';
 };
 
-export type BatchDeleteMembershipsErrors = {
+export type BatchDeleteMembersErrors = {
   /**
    * Bad request
    */
@@ -4404,9 +4404,9 @@ export type BatchDeleteMembershipsErrors = {
   429: TooManyRequestsError;
 };
 
-export type BatchDeleteMembershipsError = BatchDeleteMembershipsErrors[keyof BatchDeleteMembershipsErrors];
+export type BatchDeleteMembersError = BatchDeleteMembersErrors[keyof BatchDeleteMembersErrors];
 
-export type BatchDeleteMembershipsResponses = {
+export type BatchDeleteMembersResponses = {
   /**
    * Success
    */
@@ -4425,7 +4425,7 @@ export type BatchDeleteMembershipsResponses = {
   };
 };
 
-export type BatchDeleteMembershipsResponse = BatchDeleteMembershipsResponses[keyof BatchDeleteMembershipsResponses];
+export type BatchDeleteMembersResponse = BatchDeleteMembersResponses[keyof BatchDeleteMembersResponses];
 
 export type UpdateMembershipData = {
   body: {
@@ -4846,7 +4846,7 @@ export type GetPublicCountsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/metrics/public';
+  url: '/public/metrics';
 };
 
 export type GetPublicCountsErrors = {
@@ -5152,7 +5152,7 @@ export type ResubscribeNotificationsData = {
     category: 'digest' | 'mention' | 'comment' | 'newsletter';
     token: string;
   };
-  url: '/notifications/resubscribe';
+  url: '/notifications:resubscribe';
 };
 
 export type ResubscribeNotificationsErrors = {
@@ -6476,7 +6476,7 @@ export type CountSystemInvitationsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/system-invitations:count';
+  url: '/system:count-invitations';
 };
 
 export type CountSystemInvitationsErrors = {

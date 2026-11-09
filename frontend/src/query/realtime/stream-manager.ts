@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { postAppCatchup, type StreamChange, type StreamError } from 'sdk';
+import { catchUpMyStream, type StreamChange, type StreamError } from 'sdk';
 import { zStreamChange, zStreamError, zStreamSignal } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
@@ -13,9 +13,9 @@ import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stal
 import { subscribeLocalUserChange } from '~/query/local-user-db';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
 import { queryClient } from '~/query/query-client';
-import { handleStreamChange } from '~/query/realtime/app-stream-handler';
-import { processAppCatchup } from '~/query/realtime/catchup-processor';
+import { processStreamCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
+import { handleStreamChange } from '~/query/realtime/stream-handler';
 import { syncStore } from '~/query/realtime/sync-store';
 import {
   initTabCoordinator,
@@ -28,8 +28,8 @@ import {
 } from '~/query/realtime/tab-coordinator';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
-const streamName = 'AppStream';
-const streamUrl = `${appConfig.backendUrl}/entities/app/stream`;
+const streamName = 'Stream';
+const streamUrl = `${appConfig.backendUrl}/me/stream`;
 const maxFailures = 3;
 const circuitCooldownMs = 60_000;
 const initialBackoffMs = 5_000;
@@ -102,12 +102,12 @@ function resolveInitialCatchupGate() {
 async function fetchAndProcessCatchup(signal: AbortSignal): Promise<void> {
   declareViewsFromMemberships();
   const views = syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes());
-  const response = await postAppCatchup({ body: { views: views.length > 0 ? views : undefined }, signal });
+  const response = await catchUpMyStream({ body: { views: views.length > 0 ? views : undefined }, signal });
   signal.throwIfAborted();
   // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing
   // fails. A tab that gave leadership up while the request was in flight (a public page) posts nothing.
   if (isLeader()) postToFollowers({ type: 'catchup', response });
-  await processAppCatchup(response);
+  await processStreamCatchup(response);
 }
 
 /** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
@@ -211,7 +211,7 @@ class StreamManager {
     // A tab that left the app, or has not connected yet, takes no frames and no answers.
     if (this.store.getState().state === 'disconnected') return;
     if (message.type === 'catchup') {
-      processAppCatchup(message.response).catch((error) => console.warn(`[${streamName}] Could not process the leader's catchup answer:`, error));
+      processStreamCatchup(message.response).catch((error) => console.warn(`[${streamName}] Could not process the leader's catchup answer:`, error));
     } else if (message.type === 'stream-change') {
       const change = readFrame(zStreamChange, message.change, 'change');
       if (change) handleStreamChange(change);
@@ -648,7 +648,7 @@ class StreamManager {
   }
 }
 
-export const appStreamManager = new StreamManager();
+export const streamManager = new StreamManager();
 
 /**
  * Resolves once a leader's catchup completes after page load or a sign-in, or fails; at once in a follower tab; and when
@@ -665,5 +665,5 @@ export function resumeRestoredMutations(): void {
 subscribeLocalUserChange((userId) => {
   if (!userId) return;
   closeInitialCatchupGate();
-  appStreamManager.resetCircuitBreaker();
+  streamManager.resetCircuitBreaker();
 });

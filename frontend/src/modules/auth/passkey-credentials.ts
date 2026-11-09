@@ -7,7 +7,7 @@ import {
   startRegistration,
   WebAuthnAbortService,
 } from '@simplewebauthn/browser';
-import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
+import { generatePasskeyChallenge, generateStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
 import { passkeyAlgorithms } from 'shared/passkeys';
 import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyKind } from '~/modules/auth/types';
@@ -92,7 +92,7 @@ export const getPasskeyVerifyCredential = async ({ kind }: { kind: PasskeyVerify
 
 /** A passkey assertion for a step-up of the signed-in session: its challenge is bound to the account. */
 export const getPasskeyStepUpCredential = async () => {
-  const { challenge, credentials } = await getStepUpPasskeyChallenge();
+  const { challenge, credentials } = await generateStepUpPasskeyChallenge();
 
   return startAuthentication({ optionsJSON: requestOptions(challenge, credentials) });
 };

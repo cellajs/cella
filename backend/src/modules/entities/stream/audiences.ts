@@ -4,7 +4,7 @@ import type { StreamSignalType } from 'shared/stream-signal-types';
 /** Who a signal goes to. The server decides, as it does for a change: a client subscribes to no signal. */
 export type Audience = { kind: 'user'; userId: string } | { kind: 'readers'; subject: SubjectForPermission; action: EntityActionType };
 
-/** A signal a module sends on the app stream, and the audiences it may go to; `sendSignal` refuses any other. */
+/** A signal a module sends on the stream, and the audiences it may go to; `sendSignal` refuses any other. */
 export interface StreamSignalDeclaration {
   /** `<module>.<past tense>`, such as `membership.changed`. */
   type: StreamSignalType;

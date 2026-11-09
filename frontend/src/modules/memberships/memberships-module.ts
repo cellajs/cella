@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { defineFrontendModule } from '~/lib/module';
 import * as membershipOps from '~/query/realtime/membership-ops';
-import { appStreamManager } from '~/query/realtime/stream-manager';
+import { streamManager } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
 
 defineFrontendModule({
@@ -21,7 +21,7 @@ defineFrontendModule({
       membershipOps.invalidateMemberships();
 
       // A membership in an organization the stream never registered on: reconnect to register there.
-      if (organizationId && !syncStore.getState().orgs[organizationId]) appStreamManager.reconnect();
+      if (organizationId && !syncStore.getState().orgs[organizationId]) streamManager.reconnect();
     },
   },
 });

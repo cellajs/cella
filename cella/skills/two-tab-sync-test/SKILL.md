@@ -53,7 +53,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 
 | Evidence | Meaning |
 |---|---|
-| `[TabCoordinator] Acquired leader lock` in one tab, `[AppStream] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
+| `[TabCoordinator] Acquired leader lock` in one tab, `[StreamSync] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
 | `[handleProductChange] attachment:<action> viewing=<bool>` in tab B console | the change crossed SSE + BroadcastChannel |
 | `Echo: skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |

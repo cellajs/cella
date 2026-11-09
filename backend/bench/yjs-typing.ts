@@ -314,7 +314,7 @@ function typeOnce(run: RunState, typer: Typer): void {
  */
 async function watchStream(run: RunState, userIndex: number, signal: AbortSignal): Promise<void> {
   try {
-    const res = await fetch(`${BASE_URL}/entities/app/stream`, { headers: { cookie: benchCookie(userIndex), accept: 'text/event-stream' }, signal });
+    const res = await fetch(`${BASE_URL}/me/stream`, { headers: { cookie: benchCookie(userIndex), accept: 'text/event-stream' }, signal });
     if (!res.ok || !res.body) return bump(run, `sse.error.${res.status}`);
     const reader = res.body.getReader();
     const decoder = new TextDecoder();

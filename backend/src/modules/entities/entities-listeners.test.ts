@@ -154,7 +154,7 @@ describe('entities listeners: a product change on open streams', () => {
 });
 
 describe('entities listeners: the worker rebuilt its books', () => {
-  it('ends every app stream with resync when the generation moves, and leaves them alone while it stays', async () => {
+  it('ends every stream with resync when the generation moves, and leaves them alone while it stays', async () => {
     workerReports(4);
     const first = fakeSubscriber('first-user');
     const second = fakeSubscriber('second-user');

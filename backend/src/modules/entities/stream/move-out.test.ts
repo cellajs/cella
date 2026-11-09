@@ -8,7 +8,7 @@ import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
 import { streamSubscriber } from './tests/stream-subscriber';
-import type { AppStreamProductEvent } from './types';
+import type { StreamProductEvent } from './types';
 
 /**
  * Only subscribers losing read access receive `moveOut`, under the old home channel. The draft veto creates
@@ -52,7 +52,7 @@ const row = (id: string, extra: Record<string, unknown> = {}) => ({
 });
 
 /** A product update as the bus delivers it: its rows, each with the activity of its write, a moved one with where it was. */
-const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): AppStreamProductEvent =>
+const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): StreamProductEvent =>
   ({
     type: 'attachment.updated',
     action: 'update',
@@ -71,7 +71,7 @@ const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[])
       ...row,
     })),
     trace: null,
-  }) as unknown as AppStreamProductEvent;
+  }) as unknown as StreamProductEvent;
 
 afterEach(() => {
   for (const subscriber of streamSubscriberManager.getByTopic(`org:${org}`)) {

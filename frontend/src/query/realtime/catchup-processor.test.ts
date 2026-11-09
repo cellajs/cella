@@ -1,5 +1,5 @@
 import { QueryObserver } from '@tanstack/react-query';
-import type { PostAppCatchupResponse } from 'sdk';
+import type { CatchUpMyStreamResponse } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
@@ -70,7 +70,7 @@ const { registerEntityQueryKeys, syncChunkSize } = await import('~/query/basic/e
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
-const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
+const { processStreamCatchup } = await import('~/query/realtime/catchup-processor');
 const { fetchMemberships } = await import('~/query/realtime/membership-ops');
 const { handleStreamSignal } = await import('~/query/realtime/signal-handlers');
 const { defineFrontendModule } = await import('~/lib/module');
@@ -98,7 +98,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 });
 
 /** Views-contract response with one org view answer for attachment. */
-const okViewResponse = (frontier: number): PostAppCatchupResponse => ({
+const okViewResponse = (frontier: number): CatchUpMyStreamResponse => ({
   organizations: {},
   views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'ok', frontier }],
   generation: 1,
@@ -131,13 +131,13 @@ describe('catchup processor (view-driven)', () => {
     // The leader was at 5 when it sent the request this answers.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
-    await processAppCatchup(answer);
+    await processStreamCatchup(answer);
     expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(5, 6));
 
     // A follower's store and cache: it missed more than the leader did, and the same answer is all it gets.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 2);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
-    await processAppCatchup(answer);
+    await processStreamCatchup(answer);
 
     expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(2, 6));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
@@ -152,8 +152,8 @@ describe('catchup processor (view-driven)', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
-    await processAppCatchup(okViewResponse(9));
-    await processAppCatchup(okViewResponse(9));
+    await processStreamCatchup(okViewResponse(9));
+    await processStreamCatchup(okViewResponse(9));
 
     expect(rangeFetch).toHaveBeenCalledExactlyOnceWith(rangeRequest(4, 9));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
@@ -168,7 +168,7 @@ describe('catchup processor (view-driven)', () => {
     syncStore.getState().reset();
     queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], totalSize: 1 });
 
-    await processAppCatchup(okViewResponse(42));
+    await processStreamCatchup(okViewResponse(42));
 
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(fetchMemberships).not.toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('catchup processor (view-driven)', () => {
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
 
     // The reload's catchup.
-    await processAppCatchup(okViewResponse(43));
+    await processStreamCatchup(okViewResponse(43));
 
     expect(rangeFetch).toHaveBeenCalledExactlyOnceWith(rangeRequest(42, 43));
     expect(fetchMemberships).toHaveBeenCalledOnce();
@@ -192,7 +192,11 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup({ organizations: {}, views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }], generation: 1 });
+    await processStreamCatchup({
+      organizations: {},
+      views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }],
+      generation: 1,
+    });
 
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
@@ -215,7 +219,7 @@ describe('catchup processor (view-driven)', () => {
     });
     queryClient.setQueryData(labelKeys.detail.byId('label-1'), { id: 'label-1', name: 'old' });
 
-    await processAppCatchup({
+    await processStreamCatchup({
       organizations: { 'org-1': { propagation: [{ embeddedProduct: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
       views: [{ organizationId: 'org-1', entityType: label, status: 'opaque' }],
       generation: 1,
@@ -255,7 +259,7 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not fetch a range from a cursor of the old books: it refetches what is cached once, at its share of the spread, and takes the frontier as its baseline', async () => {
     const { keys, rangeFetch, listFetch, unsubscribe } = startOnOldBooks();
 
-    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
     // Every client hears of the rebuild at once: none refetches before its share of the spread.
     await vi.advanceTimersByTimeAsync(4_999);
     expect(listFetch).not.toHaveBeenCalled();
@@ -272,14 +276,14 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not lose the refetch to a reload before its share of the spread: the next catchup arms it again, the one after does not repeat it', async () => {
     const { listFetch, unsubscribe } = startOnOldBooks();
 
-    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
     // The tab reloads: its timer is gone, the store it persisted with the cursor reset is not.
     vi.clearAllTimers();
-    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
 
-    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
     unsubscribe();
@@ -307,7 +311,7 @@ describe('catchup after the device was away longer than the activity window', ()
     const { listFetch, unsubscribe } = observeList(keys.list.org('org-1'));
 
     vi.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000);
-    await processAppCatchup({ ...okViewResponse(52), generation: 1 });
+    await processStreamCatchup({ ...okViewResponse(52), generation: 1 });
     await vi.advanceTimersByTimeAsync(0);
     expect(listFetch).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(10_000);
@@ -338,8 +342,8 @@ describe('catchup → fetch prioritizer fold', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
     const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
-    await processAppCatchup(response);
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
+    await processStreamCatchup(response);
 
     // The hint waits for the range that carries the fresh embedded rows, and the cursor for their ingestion.
     expect(rangeFetch).not.toHaveBeenCalled();
@@ -364,8 +368,8 @@ describe('catchup → fetch prioritizer fold', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
     const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
-    await processAppCatchup(response);
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
+    await processStreamCatchup(response);
 
     expect(rangeFetch).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
@@ -380,7 +384,7 @@ describe('a versioned signal heard live', () => {
   });
 
   /** A catchup answer that holds only the organization's version of `channel.deleted`. */
-  const signalsAnswer = (version: number): PostAppCatchupResponse => ({
+  const signalsAnswer = (version: number): CatchUpMyStreamResponse => ({
     organizations: { 'org-1': { signals: { 'channel.deleted': version } } },
     views: [],
     generation: 1,
@@ -391,7 +395,7 @@ describe('a versioned signal heard live', () => {
     syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 3);
 
     handleStreamSignal(deleted(4));
-    await processAppCatchup(signalsAnswer(4));
+    await processStreamCatchup(signalsAnswer(4));
 
     expect(channelDeleted).toHaveBeenCalledExactlyOnceWith(deleted(4), { missed: false });
   });
@@ -401,7 +405,7 @@ describe('a versioned signal heard live', () => {
 
     // Version 4 went out while the stream was down; 5 arrives on the new stream.
     handleStreamSignal(deleted(5));
-    await processAppCatchup(signalsAnswer(5));
+    await processStreamCatchup(signalsAnswer(5));
 
     expect(channelDeleted.mock.calls).toEqual([
       [deleted(5), { missed: false }],
@@ -418,7 +422,7 @@ describe('a versioned signal heard live', () => {
     });
 
     handleStreamSignal(deleted(4));
-    await processAppCatchup(signalsAnswer(4));
+    await processStreamCatchup(signalsAnswer(4));
 
     expect(channelDeleted).toHaveBeenLastCalledWith({ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true });
     vi.mocked(console.error).mockRestore();
@@ -429,7 +433,7 @@ describe('a versioned signal heard live', () => {
     syncStore.getState().adoptGeneration(1);
     syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 5);
 
-    await processAppCatchup({ ...signalsAnswer(5), generation: 2 });
+    await processStreamCatchup({ ...signalsAnswer(5), generation: 2 });
     vi.useRealTimers();
 
     expect(channelDeleted).toHaveBeenCalledExactlyOnceWith({ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true });

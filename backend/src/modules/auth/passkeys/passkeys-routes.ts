@@ -15,7 +15,7 @@ import { cookieSchema, locationSchema, validIdSchema } from '#/schemas';
 export const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   generatePasskeyChallenge: xRoute({
     method: 'post',
-    path: '/passkey/generate-challenge',
+    path: '/generate-passkey-challenge',
     xEnabledBy: { strategy: 'passkey' },
     xGuard: [publicGuard],
     xRateLimiter: [passkeyChallengeLimiter],
@@ -26,7 +26,7 @@ export const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   }),
   createPasskey: xRoute({
     method: 'post',
-    path: '/passkey',
+    path: '/passkeys',
     xEnabledBy: { strategy: 'passkey' },
     xGuard: [userGuard, stepUpEnrollGuard],
     xRateLimiter: [singlePointsLimiter],
@@ -38,17 +38,17 @@ export const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   }),
   deletePasskey: xRoute({
     method: 'delete',
-    path: '/passkey/{id}',
+    path: '/passkeys/{passkeyId}',
     xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the current user.',
-    request: { params: z.object({ id: validIdSchema }) },
+    request: { params: z.object({ passkeyId: validIdSchema }) },
     responses: { 204: { description: 'Passkey deleted' } },
   }),
   signInWithPasskey: xRoute({
     method: 'post',
-    path: '/passkey-verification',
+    path: '/sign-in-with-passkey',
     xEnabledBy: { strategy: 'passkey' },
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('passkey')],

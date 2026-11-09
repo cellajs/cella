@@ -37,8 +37,8 @@ function instrument(page, tab) {
   page.on('pageerror', (err) => log(tab, 'pageerror', { message: String(err).slice(0, 500) }));
   page.on('request', (req) => {
     const u = req.url();
-    // GET opens the SSE stream, POST on the same path is the catchup request
-    if (u.includes('/entities/app/stream')) log(tab, 'sse-connect', { method: req.method(), url: u });
+    // GET opens the SSE stream, POST :catch-up is the catchup request
+    if (u.includes('/me/stream')) log(tab, 'sse-connect', { method: req.method(), url: u });
   });
   // The description editor syncs over the relay socket; pull and push over HTTP mean the socket is out of reach.
   page.on('websocket', (ws) => {

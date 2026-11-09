@@ -11,11 +11,11 @@ import {
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { authEvents } from '#/modules/auth/auth-events';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
@@ -25,7 +25,7 @@ for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated', 'deleted'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {
       try {
-        const productEvent: AppStreamProductEvent = event;
+        const productEvent: StreamProductEvent = event;
         // Reparented rows also tell old-path readers who lost visibility, side by side so a stalled reader delays neither.
         await Promise.all([dispatchChange(productEvent), action === 'updated' && dispatchMoveOuts(productEvent)]);
       } catch (error) {
@@ -42,7 +42,7 @@ authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
     .getByTopic(userTopic(userId))
     .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
     .map((subscriber) => ({ subscriber, payload }));
-  await closeAppStreams(ended, 'Failed to close the stream of an ended session');
+  await closeStreams(ended, 'Failed to close the stream of an ended session');
 });
 
 for (const action of ['created', 'updated', 'deleted'] as const) {

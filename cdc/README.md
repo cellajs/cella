@@ -122,7 +122,7 @@ Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE
 | The counters are emptied | | | Found before the stream is read, then rebuilt (`settleLostCases`) |
 | Rows were written before a slot existed, as by a seed while the worker starts | | | The seed asks for a rebuild (`requestBooks`) |
 | The worker stops inside a rebuild | | | The fence it stored makes the next start rebuild (`rebuildWasInterrupted`) |
-| Clients hold cursors from before a rebuild | | | A new generation: the API ends every app stream and clients refetch once (`noteGeneration`) |
+| Clients hold cursors from before a rebuild | | | A new generation: the API ends every stream and clients refetch once (`noteGeneration`) |
 | A stream state protocol 1 never sends: a change outside a transaction, a BEGIN or COMMIT without its position, an update without its old row | | Refused (`TransactionBuffer`, `parseUpdate`), then read again | |
 | A BEGIN carries no commit time | Its activities take the time the worker read them (`onBegin`) | | |
 | A product row names no organization | A delete is counted under its home channel (`resolveChannelKey`) | A create or update fails its flush (`organizationOf`) | |
@@ -146,7 +146,7 @@ There is one repair, the rebuild. A verify only detects. Both start with a recou
 
 The worker settles the lost cases by itself before it reads the stream. It makes a new slot for one that is missing, invalidated or dropped at the WAL bound. The incident of that rebuild records the failure it could not get past.
 
-Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup. The API then ends every app stream, and clients refetch ([Sync engine](../cella/SYNC_ENGINE.md#what-happens-when)).
+Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup. The API then ends every stream, and clients refetch ([Sync engine](../cella/SYNC_ENGINE.md#what-happens-when)).
 
 In a lost case, rows changed between the old slot's last acknowledged position and the new slot get no activity and no change frame. They keep the `seq` they had. Counts, sequence values and every client's data are right again afterwards.
 

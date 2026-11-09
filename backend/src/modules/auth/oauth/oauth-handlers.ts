@@ -17,9 +17,9 @@ app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-app.openapi(authOAuthRoutes.github, (ctx) => startOAuth(ctx, 'github'));
-app.openapi(authOAuthRoutes.google, (ctx) => startOAuth(ctx, 'google'));
-app.openapi(authOAuthRoutes.microsoft, (ctx) => startOAuth(ctx, 'microsoft'));
+app.openapi(authOAuthRoutes.startGithubOAuth, (ctx) => startOAuth(ctx, 'github'));
+app.openapi(authOAuthRoutes.startGoogleOAuth, (ctx) => startOAuth(ctx, 'google'));
+app.openapi(authOAuthRoutes.startMicrosoftOAuth, (ctx) => startOAuth(ctx, 'microsoft'));
 
 app.openapi(authOAuthRoutes.githubCallback, (ctx) => finishOAuth(ctx, 'github'));
 app.openapi(authOAuthRoutes.googleCallback, (ctx) => finishOAuth(ctx, 'google'));

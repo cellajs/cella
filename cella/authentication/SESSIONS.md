@@ -28,7 +28,7 @@ An ended session keeps its row for the sessions list, stamped with who ended it 
 - a newer sign-in in the same browser
 - the session cap
 
-Its app streams close at once. Its collaborative editor sockets and the editor tokens minted before the end lapse within five minutes.
+Its streams close at once. Its collaborative editor sockets and the editor tokens minted before the end lapse within five minutes.
 
 A copied cookie cannot end each new sign-in of the owner: ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-up). Signing out asks nothing.
 

@@ -8,7 +8,7 @@ import { cookieSchema, locationSchema } from '#/schemas';
 export const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   startOAuthConnect: xRoute({
     method: 'post',
-    path: '/oauth-connect',
+    path: '/start-oauth-connect',
     xEnabledBy: { strategy: 'oauth' },
     xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
@@ -17,7 +17,7 @@ export const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
       "Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
     responses: { 204: { description: 'Connect pinned', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
   }),
-  github: xRoute({
+  startGithubOAuth: xRoute({
     method: 'get',
     path: '/github',
     xEnabledBy: { strategy: 'oauth', provider: 'github' },
@@ -39,7 +39,7 @@ export const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     request: { query: oauthCallbackQuerySchema },
     responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
-  google: xRoute({
+  startGoogleOAuth: xRoute({
     method: 'get',
     path: '/google',
     xEnabledBy: { strategy: 'oauth', provider: 'google' },
@@ -61,7 +61,7 @@ export const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     request: { query: oauthCallbackQuerySchema },
     responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
-  microsoft: xRoute({
+  startMicrosoftOAuth: xRoute({
     method: 'get',
     path: '/microsoft',
     xEnabledBy: { strategy: 'oauth', provider: 'microsoft' },

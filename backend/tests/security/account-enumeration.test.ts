@@ -109,8 +109,8 @@ describe('Account enumeration', async () => {
   it('must not learn whether an address has an account via the passkey challenge', async () => {
     const { account, stranger } = await accountAndStranger();
 
-    const forAccount = await challengeShape(await post('/auth/passkey/generate-challenge', { kind: 'authentication', email: account.email }));
-    const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { kind: 'authentication', email: stranger }));
+    const forAccount = await challengeShape(await post('/auth/generate-passkey-challenge', { kind: 'authentication', email: account.email }));
+    const forStranger = await challengeShape(await post('/auth/generate-passkey-challenge', { kind: 'authentication', email: stranger }));
 
     expect(forAccount).toEqual(forStranger);
     expect(forAccount).toEqual({ status: 200, credentials: [] });
@@ -122,7 +122,7 @@ describe('Account enumeration', async () => {
     /** Answers a fresh challenge with a passkey no account holds, naming `email`. */
     const signInAs = async (email: string) => {
       const { challenge, cookie } = await passkeyChallenge('authentication');
-      const res = await post('/auth/passkey-verification', { kind: 'authentication', email, assertion: softwarePasskey().assert(challenge) }, cookie);
+      const res = await post('/auth/sign-in-with-passkey', { kind: 'authentication', email, assertion: softwarePasskey().assert(challenge) }, cookie);
       const { type } = (await res.json()) as { type?: string };
       return { status: res.status, type };
     };
@@ -214,7 +214,7 @@ describe('Account enumeration', async () => {
     setSelfRegistration(false);
     const { account } = await accountAndStranger();
 
-    const answered = await answerWhileWriteWaits('tokens', () => post('/auth/magic/send', { email: account.email }));
+    const answered = await answerWhileWriteWaits('tokens', () => post('/auth/send-magic-link', { email: account.email }));
     expect(answered).toBe(204);
 
     // The link goes out once the write gets through (positive control).

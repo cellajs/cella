@@ -5,14 +5,14 @@ import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-cou
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
 import { accessFrom } from '#/permissions/access';
 import { resolveViewReadStatus } from '#/permissions/view-read-status';
-import type { AppCatchupResponse, streamCatchupBodySchema } from '#/schemas';
+import type { StreamCatchupResponse, streamCatchupBodySchema } from '#/schemas';
 
 /**
  * Answers each declared view from its organization's counter row: authorization runs first, `ok` carries the
  * organization's frontier of the type, `opaque` and `forbidden` no number. The per-org `organizations` block carries
  * the versions of the versioned signals and embedding propagation hints.
  */
-export async function appCatchupOp(ctx: UserContext, { views = [] }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
+export async function streamCatchupOp(ctx: UserContext, { views = [] }: z.infer<typeof streamCatchupBodySchema>): Promise<StreamCatchupResponse> {
   const { memberships } = ctx.var;
   const access = accessFrom(ctx);
   const organizationIds = [...new Set(memberships.map((membership) => membership.organizationId))];
@@ -30,7 +30,7 @@ export async function appCatchupOp(ctx: UserContext, { views = [] }: z.infer<typ
 
   const generation = await findSyncGeneration(ctx);
 
-  const organizations: AppCatchupResponse['organizations'] = {};
+  const organizations: StreamCatchupResponse['organizations'] = {};
   for (const organizationId of organizationIds) {
     const signals = counters.get(organizationId)?.signals ?? {};
     organizations[organizationId] = { signals: Object.keys(signals).length > 0 ? signals : undefined };

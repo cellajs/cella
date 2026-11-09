@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { batchDeleteMemberships, batchDeleteOrganizations, deleteMe, leaveMembership, updateMembership } from 'sdk';
+import { batchDeleteMembers, batchDeleteOrganizations, deleteMe, leaveMembership, updateMembership } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db, openDedicatedConnection } from '#/db/db';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
@@ -52,7 +52,7 @@ describe('last organization admin', async () => {
 
     // This route names members by user id.
     await expectLastAdmin(
-      await call(batchDeleteMemberships, {
+      await call(batchDeleteMembers, {
         path: { tenantId: org.tenantId, organizationId: org.id },
         query: { entityId: org.id, entityType: 'organization' },
         body: { ids: [admin.id] },

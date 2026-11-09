@@ -5,7 +5,7 @@ import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
-import type { AppCatchupResponse, CatchupOrganizationSummary, CatchupView } from '#/schemas';
+import type { CatchupOrganizationSummary, CatchupView, StreamCatchupResponse } from '#/schemas';
 import { getEntityTable } from '#/tables';
 
 /** The product types productEmbeddings config embeds in a host, each once however many hosts embed it. */
@@ -22,7 +22,7 @@ export const maxHintRows = 1000;
  */
 export async function buildPropagationHints(
   ctx: UserContext,
-  organizations: AppCatchupResponse['organizations'],
+  organizations: StreamCatchupResponse['organizations'],
   views: CatchupView[],
   orgCounters: Map<string, { frontiers: Record<string, number> }>,
 ): Promise<void> {

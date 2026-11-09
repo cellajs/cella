@@ -1,7 +1,7 @@
 import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { InviteMembersResponse, MembershipBase, UpdateMembershipResponse } from 'sdk';
-import { batchDeleteMemberships, deleteInvitation, inviteMembers, updateMembership } from 'sdk';
+import { batchDeleteMembers, deleteInvitation, inviteMembers, updateMembership } from 'sdk';
 import { getHideMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
@@ -185,7 +185,7 @@ export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembershipsVariables, MemberListSnapshot[]>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
-      await batchDeleteMemberships({ path, body, query });
+      await batchDeleteMembers({ path, body, query });
     },
     onMutate: async (variables) => {
       const {

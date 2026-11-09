@@ -21,9 +21,9 @@ import type {
   BatchDeleteAttachmentsData,
   BatchDeleteAttachmentsErrors,
   BatchDeleteAttachmentsResponses,
-  BatchDeleteMembershipsData,
-  BatchDeleteMembershipsErrors,
-  BatchDeleteMembershipsResponses,
+  BatchDeleteMembersData,
+  BatchDeleteMembersErrors,
+  BatchDeleteMembersResponses,
   BatchDeleteOrganizationsData,
   BatchDeleteOrganizationsErrors,
   BatchDeleteOrganizationsResponses,
@@ -33,12 +33,15 @@ import type {
   BatchDeleteUsersData,
   BatchDeleteUsersErrors,
   BatchDeleteUsersResponses,
+  CatchUpMyStreamData,
+  CatchUpMyStreamErrors,
+  CatchUpMyStreamResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
-  CheckMembershipInviteData,
-  CheckMembershipInviteErrors,
-  CheckMembershipInviteResponses,
+  CheckMemberInviteData,
+  CheckMemberInviteErrors,
+  CheckMemberInviteResponses,
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
@@ -98,16 +101,15 @@ import type {
   GeneratePasskeyChallengeData,
   GeneratePasskeyChallengeErrors,
   GeneratePasskeyChallengeResponses,
+  GenerateStepUpPasskeyChallengeData,
+  GenerateStepUpPasskeyChallengeErrors,
+  GenerateStepUpPasskeyChallengeResponses,
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
   GetApiProtectedResourceMetadataData,
   GetApiProtectedResourceMetadataErrors,
   GetApiProtectedResourceMetadataResponses,
-  GetAppStreamData,
-  GetAppStreamErrors,
-  GetAppStreamResponse,
-  GetAppStreamResponses,
   GetAttachmentData,
   GetAttachmentErrors,
   GetAttachmentResponses,
@@ -123,6 +125,10 @@ import type {
   GetMyAuthData,
   GetMyAuthErrors,
   GetMyAuthResponses,
+  GetMyStreamData,
+  GetMyStreamErrors,
+  GetMyStreamResponse,
+  GetMyStreamResponses,
   GetNotificationPreferencesData,
   GetNotificationPreferencesErrors,
   GetNotificationPreferencesResponses,
@@ -146,9 +152,6 @@ import type {
   GetSsoEntryResponses,
   GetStepUpData,
   GetStepUpErrors,
-  GetStepUpPasskeyChallengeData,
-  GetStepUpPasskeyChallengeErrors,
-  GetStepUpPasskeyChallengeResponses,
   GetStepUpResponses,
   GetTokenDataData,
   GetTokenDataErrors,
@@ -167,12 +170,8 @@ import type {
   GetYjsTokenResponses,
   GithubCallbackData,
   GithubCallbackErrors,
-  GithubData,
-  GithubErrors,
   GoogleCallbackData,
   GoogleCallbackErrors,
-  GoogleData,
-  GoogleErrors,
   HandleMcpData,
   HandleMcpErrors,
   HandleMcpResponses,
@@ -240,13 +239,8 @@ import type {
   MarkSeenResponses,
   MicrosoftCallbackData,
   MicrosoftCallbackErrors,
-  MicrosoftData,
-  MicrosoftErrors,
   OpenUnsubscribeLinkData,
   OpenUnsubscribeLinkErrors,
-  PostAppCatchupData,
-  PostAppCatchupErrors,
-  PostAppCatchupResponses,
   PresignAttachmentUrlsData,
   PresignAttachmentUrlsErrors,
   PresignAttachmentUrlsResponses,
@@ -309,6 +303,12 @@ import type {
   SignOutResponses,
   SsoCallbackData,
   SsoCallbackErrors,
+  StartGithubOAuthData,
+  StartGithubOAuthErrors,
+  StartGoogleOAuthData,
+  StartGoogleOAuthErrors,
+  StartMicrosoftOAuthData,
+  StartMicrosoftOAuthErrors,
   StartOAuthConnectData,
   StartOAuthConnectErrors,
   StartOAuthConnectResponses,
@@ -363,12 +363,13 @@ import {
   zBatchCreateAttachmentsResponse,
   zBatchCreateOrganizationsResponse,
   zBatchDeleteAttachmentsResponse,
-  zBatchDeleteMembershipsResponse,
+  zBatchDeleteMembersResponse,
   zBatchDeleteOrganizationsResponse,
   zBatchDeleteRequestsResponse,
   zBatchDeleteUsersResponse,
+  zCatchUpMyStreamResponse,
   zCheckEmailResponse,
-  zCheckMembershipInviteResponse,
+  zCheckMemberInviteResponse,
   zCheckSlugResponse,
   zConfirmInvitationAddressResponse,
   zCountSystemInvitationsResponse,
@@ -387,14 +388,15 @@ import {
   zDeletePasskeyResponse,
   zDeleteTotpResponse,
   zGeneratePasskeyChallengeResponse,
+  zGenerateStepUpPasskeyChallengeResponse,
   zGenerateTotpKeyResponse,
   zGetApiProtectedResourceMetadataResponse,
-  zGetAppStreamResponse,
   zGetAttachmentResponse,
   zGetAuthHealthResponse,
   zGetMcpProtectedResourceMetadataResponse,
   zGetMeResponse,
   zGetMyAuthResponse,
+  zGetMyStreamResponse,
   zGetNotificationPreferencesResponse,
   zGetOrganizationResponse,
   zGetPendingMagicLinkResponse,
@@ -402,7 +404,6 @@ import {
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
   zGetSsoEntryResponse,
-  zGetStepUpPasskeyChallengeResponse,
   zGetStepUpResponse,
   zGetTokenDataResponse,
   zGetUnseenCountsResponse,
@@ -429,7 +430,6 @@ import {
   zListUsersResponse,
   zMarkNotificationsReadResponse,
   zMarkSeenResponse,
-  zPostAppCatchupResponse,
   zPresignAttachmentUrlsResponse,
   zPresignPublicAttachmentUrlsResponse,
   zPublishOrganizationResponse,
@@ -753,7 +753,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
  *
  * For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.
  *
- * **GET /auth/mfa/pending** ·· [getPendingMfa](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/mfa/pending) ·· _auth · cella_
+ * **GET /auth/pending-mfa** ·· [getPendingMfa](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/pending-mfa) ·· _auth · cella_
  *
  * @param {getPendingMfaData} options
  * @returns Possible status codes: 200, 400, 401, 429
@@ -764,7 +764,7 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPendingMfaResponses, GetPendingMfaErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetPendingMfaResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/mfa/pending',
+    url: '/auth/pending-mfa',
     ...options,
   });
 
@@ -837,7 +837,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
  *
  * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.
  *
- * **POST /auth/invitation-token/accept** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/accept) ·· _auth · cella_
+ * **POST /auth/accept-invitation-token** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/accept-invitation-token) ·· _auth · cella_
  *
  * @param {acceptInvitationTokenData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -848,7 +848,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<AcceptInvitationTokenResponses, AcceptInvitationTokenErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zAcceptInvitationTokenResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/invitation-token/accept',
+    url: '/auth/accept-invitation-token',
     ...options,
   });
 
@@ -857,7 +857,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
  *
  * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.
  *
- * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
+ * **POST /auth/confirm-invitation-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/confirm-invitation-address) ·· _auth · cella_
  *
  * @param {confirmInvitationAddressData} options
  * @returns Possible status codes: 204, 400, 401, 404, 409, 429
@@ -868,7 +868,7 @@ export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<ConfirmInvitationAddressResponses, ConfirmInvitationAddressErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zConfirmInvitationAddressResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/invitation-token/confirm-address',
+    url: '/auth/confirm-invitation-address',
     ...options,
   });
 
@@ -922,7 +922,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  *
  * Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.
  *
- * **POST /auth/magic/send** ·· [sendMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/send) ·· _auth · cella_
+ * **POST /auth/send-magic-link** ·· [sendMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/send-magic-link) ·· _auth · cella_
  *
  * @param {sendMagicLinkData} options
  * @param {string} options.body.email - `string`
@@ -935,7 +935,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<SendMagicLinkResponses, SendMagicLinkErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSendMagicLinkResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/magic/send',
+    url: '/auth/send-magic-link',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -948,7 +948,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
  *
  * For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.
  *
- * **GET /auth/magic/pending** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/magic/pending) ·· _auth · cella_
+ * **GET /auth/pending-magic-link** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/pending-magic-link) ·· _auth · cella_
  *
  * @param {getPendingMagicLinkData} options
  * @returns Possible status codes: 200, 400, 401, 429
@@ -959,7 +959,7 @@ export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPendingMagicLinkResponses, GetPendingMagicLinkErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetPendingMagicLinkResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/magic/pending',
+    url: '/auth/pending-magic-link',
     ...options,
   });
 
@@ -968,7 +968,7 @@ export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
  *
  * Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.
  *
- * **POST /auth/magic/confirm** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/confirm) ·· _auth · cella_
+ * **POST /auth/confirm-magic-link** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/confirm-magic-link) ·· _auth · cella_
  *
  * @param {confirmMagicLinkData} options
  * @returns Possible status codes: 303, 400, 401, 403, 404, 409, 429
@@ -978,7 +978,7 @@ export const confirmMagicLink = <ThrowOnError extends boolean = true>(
 ): RequestResult<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'> =>
   (options?.client ?? client).post<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/magic/confirm',
+    url: '/auth/confirm-magic-link',
     ...options,
   });
 
@@ -987,7 +987,7 @@ export const confirmMagicLink = <ThrowOnError extends boolean = true>(
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp/generate-key) ·· _auth · cella_
+ * **POST /auth/generate-totp-key** ·· [generateTotpKey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/generate-totp-key) ·· _auth · cella_
  *
  * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 409, 429
@@ -998,7 +998,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGenerateTotpKeyResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/totp/generate-key',
+    url: '/auth/generate-totp-key',
     ...options,
   });
 
@@ -1051,7 +1051,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
- * **POST /auth/totp-verification** ·· [signInWithTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp-verification) ·· _auth · cella_
+ * **POST /auth/sign-in-with-totp** ·· [signInWithTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-in-with-totp) ·· _auth · cella_
  *
  * @param {signInWithTotpData} options
  * @param {string} options.body.code - `string`
@@ -1063,7 +1063,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSignInWithTotpResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/totp-verification',
+    url: '/auth/sign-in-with-totp',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1076,7 +1076,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.
  *
- * **POST /auth/passkey** ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey) ·· _auth · cella_
+ * **POST /auth/passkeys** ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkeys) ·· _auth · cella_
  *
  * @param {createPasskeyData} options
  * @param {object} options.body.attestation - `object`
@@ -1089,7 +1089,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zCreatePasskeyResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/passkey',
+    url: '/auth/passkeys',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1102,10 +1102,10 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
  *
  * Delete a passkey by id from the current user.
  *
- * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/passkey/{id}) ·· _auth · cella_
+ * **DELETE /auth/passkeys/{passkeyId}** ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/passkeys/{passkeyId}) ·· _auth · cella_
  *
  * @param {deletePasskeyData} options
- * @param {string} options.path.id - `string`
+ * @param {string} options.path.passkeyId - `string`
  * @returns Possible status codes: 204, 400, 401, 403, 429
  */
 export const deletePasskey = <ThrowOnError extends boolean = true>(
@@ -1114,7 +1114,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
   (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zDeletePasskeyResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/passkey/{id}',
+    url: '/auth/passkeys/{passkeyId}',
     ...options,
   });
 
@@ -1123,7 +1123,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
- * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey/generate-challenge) ·· _auth · cella_
+ * **POST /auth/generate-passkey-challenge** ·· [generatePasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/generate-passkey-challenge) ·· _auth · cella_
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum} options.body.kind - `enum`
@@ -1135,7 +1135,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<GeneratePasskeyChallengeResponses, GeneratePasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGeneratePasskeyChallengeResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/passkey/generate-challenge',
+    url: '/auth/generate-passkey-challenge',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1148,7 +1148,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
- * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey-verification) ·· _auth · cella_
+ * **POST /auth/sign-in-with-passkey** ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-in-with-passkey) ·· _auth · cella_
  *
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
@@ -1161,7 +1161,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSignInWithPasskeyResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/passkey-verification',
+    url: '/auth/sign-in-with-passkey',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1174,7 +1174,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
  *
  * Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.
  *
- * **POST /auth/oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/oauth-connect) ·· _auth · cella_
+ * **POST /auth/start-oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/start-oauth-connect) ·· _auth · cella_
  *
  * @param {startOAuthConnectData} options
  * @returns Possible status codes: 204, 400, 401, 403, 429
@@ -1185,7 +1185,7 @@ export const startOAuthConnect = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<StartOAuthConnectResponses, StartOAuthConnectErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zStartOAuthConnectResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/oauth-connect',
+    url: '/auth/start-oauth-connect',
     ...options,
   });
 
@@ -1194,17 +1194,17 @@ export const startOAuthConnect = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/github** ·· [github](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github) ·· _auth · cella_
+ * **GET /auth/github** ·· [startGithubOAuth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github) ·· _auth · cella_
  *
- * @param {githubData} options
+ * @param {startGithubOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
-export const github = <ThrowOnError extends boolean = true>(
-  options?: Options<GithubData, ThrowOnError>,
-): RequestResult<unknown, GithubErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
+export const startGithubOAuth = <ThrowOnError extends boolean = true>(
+  options?: Options<StartGithubOAuthData, ThrowOnError>,
+): RequestResult<unknown, StartGithubOAuthErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<unknown, StartGithubOAuthErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github',
     ...options,
@@ -1215,17 +1215,17 @@ export const github = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/google** ·· [google](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google) ·· _auth · cella_
+ * **GET /auth/google** ·· [startGoogleOAuth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google) ·· _auth · cella_
  *
- * @param {googleData} options
+ * @param {startGoogleOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
-export const google = <ThrowOnError extends boolean = true>(
-  options?: Options<GoogleData, ThrowOnError>,
-): RequestResult<unknown, GoogleErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
+export const startGoogleOAuth = <ThrowOnError extends boolean = true>(
+  options?: Options<StartGoogleOAuthData, ThrowOnError>,
+): RequestResult<unknown, StartGoogleOAuthErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<unknown, StartGoogleOAuthErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google',
     ...options,
@@ -1236,17 +1236,17 @@ export const google = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/microsoft** ·· [microsoft](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft) ·· _auth · cella_
+ * **GET /auth/microsoft** ·· [startMicrosoftOAuth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft) ·· _auth · cella_
  *
- * @param {microsoftData} options
+ * @param {startMicrosoftOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
-export const microsoft = <ThrowOnError extends boolean = true>(
-  options?: Options<MicrosoftData, ThrowOnError>,
-): RequestResult<unknown, MicrosoftErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
+export const startMicrosoftOAuth = <ThrowOnError extends boolean = true>(
+  options?: Options<StartMicrosoftOAuthData, ThrowOnError>,
+): RequestResult<unknown, StartMicrosoftOAuthErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<unknown, StartMicrosoftOAuthErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft',
     ...options,
@@ -1422,7 +1422,7 @@ export const ssoCallback = <ThrowOnError extends boolean = true>(
  *
  * For a browser whose institution sign-in was refused because an account already holds the asserted address or the institution does not prove it: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
  *
- * **POST /auth/sso/recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sso/recovery-link) ·· _auth · cella_
+ * **POST /auth/send-sso-recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/send-sso-recovery-link) ·· _auth · cella_
  *
  * @param {sendSsoRecoveryLinkData} options
  * @returns Possible status codes: 200, 400, 401, 403, 429
@@ -1433,7 +1433,7 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<SendSsoRecoveryLinkResponses, SendSsoRecoveryLinkErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSendSsoRecoveryLinkResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/sso/recovery-link',
+    url: '/auth/send-sso-recovery-link',
     ...options,
   });
 
@@ -1490,18 +1490,18 @@ export const stepUp = <ThrowOnError extends boolean = true>(
  *
  * Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.
  *
- * **POST /auth/step-up/passkey-challenge** ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/passkey-challenge) ·· _auth · cella_
+ * **POST /auth/generate-step-up-passkey-challenge** ·· [generateStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/generate-step-up-passkey-challenge) ·· _auth · cella_
  *
- * @param {getStepUpPasskeyChallengeData} options
+ * @param {generateStepUpPasskeyChallengeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
-  options?: Options<GetStepUpPasskeyChallengeData, ThrowOnError>,
-): RequestResult<GetStepUpPasskeyChallengeResponses, GetStepUpPasskeyChallengeErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).post<GetStepUpPasskeyChallengeResponses, GetStepUpPasskeyChallengeErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetStepUpPasskeyChallengeResponse.parseAsync(data),
+export const generateStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
+  options?: Options<GenerateStepUpPasskeyChallengeData, ThrowOnError>,
+): RequestResult<GenerateStepUpPasskeyChallengeResponses, GenerateStepUpPasskeyChallengeErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<GenerateStepUpPasskeyChallengeResponses, GenerateStepUpPasskeyChallengeErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGenerateStepUpPasskeyChallengeResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/step-up/passkey-challenge',
+    url: '/auth/generate-step-up-passkey-challenge',
     ...options,
   });
 
@@ -1510,7 +1510,7 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
  *
  * For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.
  *
- * **POST /auth/step-up/code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/code) ·· _auth · cella_
+ * **POST /auth/send-step-up-code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/send-step-up-code) ·· _auth · cella_
  *
  * @param {sendStepUpCodeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 409, 429
@@ -1521,7 +1521,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).post<SendStepUpCodeResponses, SendStepUpCodeErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSendStepUpCodeResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/step-up/code',
+    url: '/auth/send-step-up-code',
     ...options,
   });
 
@@ -1611,43 +1611,43 @@ export const unarchiveChannel = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * App SSE stream
+ * SSE stream
  *
  * SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.
  *
- * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· _entities · cella_
+ * **GET /me/stream** ·· [getMyStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/me/stream) ·· _entities · cella_
  *
- * @param {getAppStreamData} options
+ * @param {getMyStreamData} options
  * @returns Possible status codes: 200, 400, 401, 429
  */
-export const getAppStream = <ThrowOnError extends boolean = true>(
-  options?: Options<GetAppStreamData, ThrowOnError, GetAppStreamResponse>,
-): Promise<ServerSentEventsResult<GetAppStreamResponses>> =>
-  (options?.client ?? client).sse.get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetAppStreamResponse.parseAsync(data),
+export const getMyStream = <ThrowOnError extends boolean = true>(
+  options?: Options<GetMyStreamData, ThrowOnError, GetMyStreamResponse>,
+): Promise<ServerSentEventsResult<GetMyStreamResponses>> =>
+  (options?.client ?? client).sse.get<GetMyStreamResponses, GetMyStreamErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetMyStreamResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/entities/app/stream',
+    url: '/me/stream',
     ...options,
   });
 
 /**
- * App stream catchup
+ * Stream catchup
  *
  * Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.
  *
- * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· _entities · cella_
+ * **POST /me/stream:catch-up** ·· [catchUpMyStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/me/stream:catch-up) ·· _entities · cella_
  *
- * @param {postAppCatchupData} options
+ * @param {catchUpMyStreamData} options
  * @param {object[]=} options.body.views - `object[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 413, 429
  */
-export const postAppCatchup = <ThrowOnError extends boolean = true>(
-  options: Options<PostAppCatchupData, ThrowOnError>,
-): RequestResult<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zPostAppCatchupResponse.parseAsync(data),
+export const catchUpMyStream = <ThrowOnError extends boolean = true>(
+  options: Options<CatchUpMyStreamData, ThrowOnError>,
+): RequestResult<CatchUpMyStreamResponses, CatchUpMyStreamErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CatchUpMyStreamResponses, CatchUpMyStreamErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCatchUpMyStreamResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/entities/app/stream',
+    url: '/me/stream:catch-up',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2052,7 +2052,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
  *
  * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
  *
- * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:invite) ·· _memberships · cella_
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/members:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/members:invite) ·· _memberships · cella_
  *
  * @param {inviteMembersData} options
  * @param {string} options.path.tenantId - `string`
@@ -2069,7 +2069,7 @@ export const inviteMembers = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<InviteMembersResponses, InviteMembersErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zInviteMembersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:invite',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/members:invite',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2082,9 +2082,9 @@ export const inviteMembers = <ThrowOnError extends boolean = true>(
  *
  * Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.
  *
- * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite** ·· [checkMembershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite) ·· _memberships · cella_
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/members:check-invite** ·· [checkMemberInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/members:check-invite) ·· _memberships · cella_
  *
- * @param {checkMembershipInviteData} options
+ * @param {checkMemberInviteData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.query.entityId - `string`
@@ -2092,13 +2092,13 @@ export const inviteMembers = <ThrowOnError extends boolean = true>(
  * @param {string[]} options.body.emails - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
-export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
-  options: Options<CheckMembershipInviteData, ThrowOnError>,
-): RequestResult<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCheckMembershipInviteResponse.parseAsync(data),
+export const checkMemberInvite = <ThrowOnError extends boolean = true>(
+  options: Options<CheckMemberInviteData, ThrowOnError>,
+): RequestResult<CheckMemberInviteResponses, CheckMemberInviteErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CheckMemberInviteResponses, CheckMemberInviteErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCheckMemberInviteResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/members:check-invite',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2107,13 +2107,13 @@ export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Delete memberships
+ * Remove members
  *
  * Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.
  *
- * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete** ·· [batchDeleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete) ·· _memberships · cella_
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/members:batch-delete** ·· [batchDeleteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete) ·· _memberships · cella_
  *
- * @param {batchDeleteMembershipsData} options
+ * @param {batchDeleteMembersData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.query.entityId - `string`
@@ -2121,13 +2121,13 @@ export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
  * @param {string[]} options.body.ids - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
-export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
-  options: Options<BatchDeleteMembershipsData, ThrowOnError>,
-): RequestResult<BatchDeleteMembershipsResponses, BatchDeleteMembershipsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<BatchDeleteMembershipsResponses, BatchDeleteMembershipsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zBatchDeleteMembershipsResponse.parseAsync(data),
+export const batchDeleteMembers = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteMembersData, ThrowOnError>,
+): RequestResult<BatchDeleteMembersResponses, BatchDeleteMembersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteMembersResponses, BatchDeleteMembersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteMembersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2277,7 +2277,7 @@ export const deleteInvitation = <ThrowOnError extends boolean = true>(
  *
  * Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.
  *
- * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· _metrics · cella_
+ * **GET /public/metrics** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/public/metrics) ·· _metrics · cella_
  *
  * @param {getPublicCountsData} options
  * @returns Possible status codes: 200, 400, 429
@@ -2288,7 +2288,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetPublicCountsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/metrics/public',
+    url: '/public/metrics',
     ...options,
   });
 
@@ -2439,7 +2439,7 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
  *
  * Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.
  *
- * **POST /notifications/resubscribe** ·· [resubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/resubscribe) ·· _notifications · cella_
+ * **POST /notifications:resubscribe** ·· [resubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications:resubscribe) ·· _notifications · cella_
  *
  * @param {resubscribeNotificationsData} options
  * @param {string} options.query.user - `string`
@@ -2453,7 +2453,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<ResubscribeNotificationsResponses, ResubscribeNotificationsErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zResubscribeNotificationsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/notifications/resubscribe',
+    url: '/notifications:resubscribe',
     ...options,
   });
 
@@ -3021,7 +3021,7 @@ export const inviteUsers = <ThrowOnError extends boolean = true>(
  *
  * Returns how many addresses hold an unexpired system invitation, one sent outside any organization.
  *
- * **GET /system-invitations:count** ·· [countSystemInvitations](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system-invitations:count) ·· _system · cella_
+ * **GET /system:count-invitations** ·· [countSystemInvitations](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system:count-invitations) ·· _system · cella_
  *
  * @param {countSystemInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 429
@@ -3032,7 +3032,7 @@ export const countSystemInvitations = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<CountSystemInvitationsResponses, CountSystemInvitationsErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zCountSystemInvitationsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system-invitations:count',
+    url: '/system:count-invitations',
     ...options,
   });
 

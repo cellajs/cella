@@ -1,4 +1,4 @@
-import type { BatchDeleteMembershipsData, InviteMembersData, ListInvitationsResponse, ListMembersResponse, UpdateMembershipData } from 'sdk';
+import type { BatchDeleteMembersData, InviteMembersData, ListInvitationsResponse, ListMembersResponse, UpdateMembershipData } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import type { z } from 'zod';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -18,4 +18,4 @@ export type MembershipInviteVariables = MutationData<InviteMembersData> & { chan
 
 export type UpdateMembershipVariables = MutationData<UpdateMembershipData> & { channelId: string; channelType: ChannelEntityType };
 
-export type DeleteMembershipsVariables = MutationData<BatchDeleteMembershipsData> & { members: Member[] };
+export type DeleteMembershipsVariables = MutationData<BatchDeleteMembersData> & { members: Member[] };

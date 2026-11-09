@@ -6,7 +6,7 @@ import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { userStore } from '~/modules/user/user-store';
 import { localUserStorageReady } from '~/query/local-user-storage';
 import { queryClient } from '~/query/query-client';
-import { appStreamManager } from '~/query/realtime/stream-manager';
+import { streamManager } from '~/query/realtime/stream-manager';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -42,11 +42,11 @@ export const Route = createFileRoute('/_app')({
     // Catchup declares a view per organization of the cached memberships, so a fresh profile reads them first; the loader reports a failure.
     await queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 'static' }).catch(() => {});
     // Start stream early so catchup runs in parallel with route loaders
-    appStreamManager.connect();
+    streamManager.connect();
     // Only a 401 ends the session. A network failure or 5xx keeps the stream: disconnect() also drops its visibility and
     // leader reconnect handlers, so nothing would bring it back for the rest of the session.
     queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch((error) => {
-      if (error instanceof ApiError && error.status === 401) appStreamManager.disconnect();
+      if (error instanceof ApiError && error.status === 401) streamManager.disconnect();
     });
   },
 

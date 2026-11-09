@@ -24,7 +24,7 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), e
 const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } =
   await import('~/modules/attachment/query');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
-const { handleStreamChange } = await import('~/query/realtime/app-stream-handler');
+const { handleStreamChange } = await import('~/query/realtime/stream-handler');
 const { sourceId } = await import('~/query/offline/hlc');
 const { userStore } = await import('~/modules/user/user-store');
 

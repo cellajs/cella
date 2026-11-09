@@ -1,4 +1,4 @@
-import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
+import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LeaderMessage } from '~/query/realtime/tab-coordinator';
 
@@ -11,16 +11,16 @@ vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEnti
 
 // Each case imports a fresh page, so the modules it mocks hand out these same functions every time.
 const sink = vi.hoisted(() => ({
-  postAppCatchup: vi.fn(),
-  processAppCatchup: vi.fn((_response: PostAppCatchupResponse) => Promise.resolve()),
+  catchUpMyStream: vi.fn(),
+  processStreamCatchup: vi.fn((_response: CatchUpMyStreamResponse) => Promise.resolve()),
   handleStreamChange: vi.fn(),
   handleStreamSignal: vi.fn(),
   setSyncStreamHealthy: vi.fn(),
   setSyncWorkerAway: vi.fn(),
 }));
-vi.mock('sdk', () => ({ postAppCatchup: sink.postAppCatchup }));
-vi.mock('~/query/realtime/catchup-processor', () => ({ processAppCatchup: sink.processAppCatchup }));
-vi.mock('~/query/realtime/app-stream-handler', () => ({ handleStreamChange: sink.handleStreamChange }));
+vi.mock('sdk', () => ({ catchUpMyStream: sink.catchUpMyStream }));
+vi.mock('~/query/realtime/catchup-processor', () => ({ processStreamCatchup: sink.processStreamCatchup }));
+vi.mock('~/query/realtime/stream-handler', () => ({ handleStreamChange: sink.handleStreamChange }));
 vi.mock('~/query/realtime/signal-handlers', () => ({ handleStreamSignal: sink.handleStreamSignal }));
 vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: sink.setSyncStreamHealthy, setSyncWorkerAway: sink.setSyncWorkerAway }));
 
@@ -109,7 +109,7 @@ vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.f
 /** Flush pending microtasks so awaited catchup continuations run. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-const answer: PostAppCatchupResponse = { organizations: {}, views: [], generation: 3 };
+const answer: CatchUpMyStreamResponse = { organizations: {}, views: [], generation: 3 };
 const answered = () => Promise.resolve(answer);
 
 /** What this tab posted to the follower tabs, of one kind. */
@@ -135,17 +135,17 @@ let current: { disconnect: () => void } | undefined;
  * the start and the end of each catchup request and each change it applies; a request waits for `resolveCatchup`
  * unless `catchup` answers it.
  */
-async function createHarness(catchup?: () => Promise<PostAppCatchupResponse>) {
+async function createHarness(catchup?: () => Promise<CatchUpMyStreamResponse>) {
   vi.resetModules();
-  const { appStreamManager: manager, waitForActiveCatchup } = await import('~/query/realtime/stream-manager');
+  const { streamManager: manager, waitForActiveCatchup } = await import('~/query/realtime/stream-manager');
   current = manager;
   const order: string[] = [];
   let resolveCatchup: (() => void) | undefined;
 
-  sink.postAppCatchup.mockImplementation(
+  sink.catchUpMyStream.mockImplementation(
     catchup ??
       (() =>
-        new Promise<PostAppCatchupResponse>((resolve) => {
+        new Promise<CatchUpMyStreamResponse>((resolve) => {
           order.push('catchup-start');
           resolveCatchup = () => {
             order.push('catchup-done');
@@ -408,9 +408,9 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     await tick();
 
     expect(posted('catchup')).toEqual([{ type: 'catchup', response: answer }]);
-    expect(sink.processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer);
+    expect(sink.processStreamCatchup).toHaveBeenCalledExactlyOnceWith(answer);
     const postedAt = tabs.postToFollowers.mock.calls.findIndex(([message]) => message.type === 'catchup');
-    expect(tabs.postToFollowers.mock.invocationCallOrder[postedAt]).toBeLessThan(sink.processAppCatchup.mock.invocationCallOrder[0]);
+    expect(tabs.postToFollowers.mock.invocationCallOrder[postedAt]).toBeLessThan(sink.processStreamCatchup.mock.invocationCallOrder[0]);
     expect(h.manager.store.getState().state).toBe('live');
   });
 
@@ -422,8 +422,8 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     tabs.receive({ type: 'catchup', response: answer });
     await tick();
 
-    expect(sink.processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer);
-    expect(sink.postAppCatchup).not.toHaveBeenCalled();
+    expect(sink.processStreamCatchup).toHaveBeenCalledExactlyOnceWith(answer);
+    expect(sink.catchUpMyStream).not.toHaveBeenCalled();
     expect(FakeEventSource.instances).toHaveLength(0);
     // A follower passes nothing on: the leader told every tab.
     expect(posted('catchup')).toEqual([]);
@@ -472,12 +472,12 @@ describe('StreamManager changes and signals in follower tabs', () => {
 
     expect(sink.handleStreamChange).toHaveBeenCalledOnce();
     expect(sink.handleStreamSignal).toHaveBeenCalledOnce();
-    expect(sink.processAppCatchup).not.toHaveBeenCalled();
+    expect(sink.processStreamCatchup).not.toHaveBeenCalled();
   });
 });
 
 describe('the health of live delivery', () => {
-  /** The app stream of a leader tab, open and past its catchup. */
+  /** The stream of a leader tab, open and past its catchup. */
   const connectLive = async () => {
     const h = await createHarness(answered);
     await h.manager.connect();

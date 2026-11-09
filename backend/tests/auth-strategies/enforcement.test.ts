@@ -1,4 +1,14 @@
-import { createTotp, generatePasskeyChallenge, generateTotpKey, github, google, invokeToken, microsoft, signInWithTotp, toggleMfa } from 'sdk';
+import {
+  createTotp,
+  generatePasskeyChallenge,
+  generateTotpKey,
+  invokeToken,
+  signInWithTotp,
+  startGithubOAuth,
+  startGoogleOAuth,
+  startMicrosoftOAuth,
+  toggleMfa,
+} from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, type ErrorResponse, expectRefusal } from '../helpers';
@@ -18,9 +28,9 @@ describe('oauth strategy disabled', async () => {
   const call = await createAppClient();
 
   it.each([
-    { provider: 'github', fn: github },
-    { provider: 'google', fn: google },
-    { provider: 'microsoft', fn: microsoft },
+    { provider: 'github', fn: startGithubOAuth },
+    { provider: 'google', fn: startGoogleOAuth },
+    { provider: 'microsoft', fn: startMicrosoftOAuth },
   ])('should reject $provider OAuth initiation', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
@@ -36,7 +46,7 @@ describe('oauth provider configuration', async () => {
   const call = await createAppClient();
 
   it('sends the browser to the enabled GitHub provider (positive control)', async () => {
-    const { response: res } = await call(github, { query: {}, headers: defaultHeaders });
+    const { response: res } = await call(startGithubOAuth, { query: {}, headers: defaultHeaders });
     expect(res.status).toBe(302);
     const location = new URL(res.headers.get('location') ?? '');
     expect(location.origin).toBe('https://github.com');
@@ -44,8 +54,8 @@ describe('oauth provider configuration', async () => {
   });
 
   it.each([
-    { provider: 'google', fn: google },
-    { provider: 'microsoft', fn: microsoft },
+    { provider: 'google', fn: startGoogleOAuth },
+    { provider: 'microsoft', fn: startMicrosoftOAuth },
   ])('should reject disabled $provider provider', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
@@ -108,7 +118,7 @@ describe('all strategies disabled', async () => {
   const call = await createAppClient();
 
   it('should reject OAuth attempts', async () => {
-    const { response: res, error } = await call(github, { query: {}, headers: defaultHeaders });
+    const { response: res, error } = await call(startGithubOAuth, { query: {}, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
   });
 

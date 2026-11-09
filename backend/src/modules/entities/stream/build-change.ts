@@ -4,7 +4,7 @@ import { dbPoolPressure } from '#/db/db';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { maxStreamChangeIds, maxStreamChangeRows } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { StreamChange } from '#/schemas';
 
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
@@ -47,7 +47,7 @@ function overflowOf(action: StreamChange['action'], entries: StreamChange['rows'
  * @param rows - The rows to name: those of the event its receivers may read, a create's or update's each with its seq.
  * @returns What every receiver of these rows gets.
  */
-export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {
+export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {
   const { entityType } = event;
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
@@ -91,7 +91,7 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
  * @param rows - The moved rows its receivers lost, each with `movedFrom`, its permission fields where it was.
  * @returns One frame of the rows, under their old home channel (unseen grouping) when they share one, else under none.
  */
-export function buildMoveOut(event: AppStreamProductEvent, rows: ActivityRow[]): StreamChange {
+export function buildMoveOut(event: StreamProductEvent, rows: ActivityRow[]): StreamChange {
   const base = buildStreamChange(event, rows);
   const homes = new Set(
     rows.map(({ movedFrom }) => {

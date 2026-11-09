@@ -234,11 +234,11 @@ One class is one review iteration. The scout verifies every path below at the re
   - `sync-events.ts` is the frontend prioritizer file; the backend equivalents are `modules/entities/entities-listeners.ts` and `stream/send-signal.ts`.
   - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
-  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every app stream on a new generation).
-  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStreams`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
+  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every stream on a new generation).
+  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `endOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
-  - Catchup: `modules/entities/operations/{app-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
+  - Catchup: `modules/entities/operations/{stream-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
 - **Holds:**
   - `session-endings`: a signed-out, revoked, evicted, replaced, MFA-superseded or deleted-account session keeps streaming.
   - `session-sweep`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the sweep.

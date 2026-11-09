@@ -28,7 +28,7 @@ import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getSeedDb } from '#/db/db';
 import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-stream';
-import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import { resolveCollectionReadFilter } from './collection-scope';
@@ -581,8 +581,8 @@ const dispatchRow = (row: ParityRow): PermissionRowData => ({
   organizationId: rootId,
 });
 
-const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
-  ({ entityType: 'attachment', ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
+const dispatchEvent = (row: ParityRow): StreamProductEvent =>
+  ({ entityType: 'attachment', ...rowChannelColumns(row) }) as unknown as StreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
   it('agrees on every row for random membership sets and actors', async () => {

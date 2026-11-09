@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { batchDeleteMemberships } from 'sdk';
+import { batchDeleteMembers } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -58,7 +58,7 @@ const changesOf = (stream: { events: { event: string }[] }) => stream.events.fil
  * A stream holds what its client may read while the client reads it. A client that stops reading, or a connect that
  * crosses its user's removal, must not keep the server's memory or the organization's frames.
  */
-describe('The app stream lets go of what its client cannot hold', async () => {
+describe('The stream lets go of what its client cannot hold', async () => {
   const call = await createAppClient();
 
   it('must not let a stalled stream hold more than the pending-bytes ceiling', async () => {
@@ -92,7 +92,7 @@ describe('The app stream lets go of what its client cannot hold', async () => {
     const entered = gate.entered;
     const removedSession = await insertSession(removed);
     const { baseApp } = await import('#/routes');
-    const connecting = baseApp.request('http://localhost/entities/app/stream', { headers: removedSession.headers });
+    const connecting = baseApp.request('http://localhost/me/stream', { headers: removedSession.headers });
     await vi.waitFor(() => expect(gate.entered).toBe(entered + 1));
 
     // The admin removes the member, and CDC delivers the delete while the connect holds.
@@ -100,7 +100,7 @@ describe('The app stream lets go of what its client cannot hold', async () => {
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, removed.id), eq(membershipsTable.organizationId, org.id)));
-    const deleted = await call(batchDeleteMemberships, {
+    const deleted = await call(batchDeleteMembers, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       query: { entityId: org.id, entityType: 'organization' },
       body: { ids: [removed.id] },

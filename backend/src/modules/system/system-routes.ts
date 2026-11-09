@@ -20,7 +20,7 @@ export const systemRoutes = createXRoutes(['system', 'cella'], {
   }),
   countSystemInvitations: xRoute({
     method: 'get',
-    path: '/system-invitations/~count',
+    path: '/system/~count-invitations',
     xGuard: [userGuard, sysAdminGuard],
     summary: 'Count pending system invitations',
     description: 'Returns how many addresses hold an unexpired system invitation, one sent outside any organization.',

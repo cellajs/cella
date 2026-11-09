@@ -87,7 +87,7 @@ export const streamChangeSchema = z
   })
   .openapi('StreamChange', {
     description:
-      'A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
+      'A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.',
     example: mockStreamChange(),
     'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
@@ -110,7 +110,7 @@ export const streamSignalSchema = z
   })
   .openapi('StreamSignal', {
     description:
-      'A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.',
+      'A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.',
     example: mockStreamSignal(),
     'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
@@ -130,7 +130,7 @@ export const streamErrorSchema = z
   })
   .openapi('StreamError', {
     description:
-      'Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.',
+      'Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.',
     example: mockStreamError(),
     'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
@@ -179,7 +179,7 @@ const catchupViewAnswerSchema = z.object({
 });
 
 /** `views` answers the client-declared views; `organizations` holds per organization its signal versions and propagation hints. */
-export const appCatchupResponseSchema = z.object({
+export const streamCatchupResponseSchema = z.object({
   organizations: z
     .record(z.string(), catchupOrganizationSummarySchema)
     .openapi({ description: 'Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }' }),
@@ -189,4 +189,4 @@ export const appCatchupResponseSchema = z.object({
   }),
 });
 
-export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;
+export type StreamCatchupResponse = z.infer<typeof streamCatchupResponseSchema>;

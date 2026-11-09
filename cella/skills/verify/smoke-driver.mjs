@@ -97,7 +97,7 @@ const signInWithPrintedLink = async () => {
   await sendLink.waitFor({ timeout: PAGE_MS });
 
   const logStart = statSync(logPath).size;
-  const [sent] = await Promise.all([page.waitForResponse((response) => response.url().endsWith('/auth/magic/send')), sendLink.click()]);
+  const [sent] = await Promise.all([page.waitForResponse((response) => response.url().endsWith('/auth/send-magic-link')), sendLink.click()]);
   // Repeated runs on one database reach the limit on links per address, which says nothing about the sign-in
   if (sent.status() === 429) {
     log('skipped', 'the magic link sign-in: this address reached its limit on links');
@@ -111,7 +111,7 @@ const signInWithPrintedLink = async () => {
     link = /\[magic-link\] \S+ (\S+)/.exec(readFileSync(logPath).subarray(logStart).toString())?.[1];
     if (!link) await sleep(500);
   }
-  if (!link) fail(`The backend printed no magic link after ${sent.status()} from /auth/magic/send: see ${logPath}`);
+  if (!link) fail(`The backend printed no magic link after ${sent.status()} from /auth/send-magic-link: see ${logPath}`);
 
   await page.goto(link, { waitUntil: 'domcontentloaded' });
   const landed = new URL(page.url());
@@ -196,7 +196,7 @@ try {
   page.on('pageerror', (error) => pageErrors.push(String(error)));
   page.on('requestfailed', (request) => {
     const failure = request.failure()?.errorText;
-    // A navigation cancels what the page it leaves had open, such as the app stream
+    // A navigation cancels what the page it leaves had open, such as the stream
     if (request.url().startsWith(api) && failure !== 'net::ERR_ABORTED') apiFailures.push({ url: request.url(), failure });
   });
   page.on('response', (response) => {

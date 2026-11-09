@@ -165,10 +165,10 @@ export const useDeletePasskeyMutation = () =>
   useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
     mutationFn: ({ path }) => withStepUp(() => deletePasskey({ path })),
-    onSuccess: (_data, { path: { id } }) => {
+    onSuccess: (_data, { path: { passkeyId } }) => {
       queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
-        return { ...oldData, passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id) };
+        return { ...oldData, passkeys: oldData.passkeys.filter((passkey) => passkeyId !== passkey.id) };
       });
       toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },

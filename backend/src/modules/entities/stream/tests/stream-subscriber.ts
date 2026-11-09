@@ -1,5 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
@@ -12,7 +12,7 @@ export const streamSubscriber = (
   memberships: MembershipBaseModel[],
   topicOrg: string,
   organizationIds = [topicOrg],
-): AppStreamSubscriber => ({
+): StreamSubscriber => ({
   id: crypto.randomUUID(),
   topic: `org:${topicOrg}`,
   stream,

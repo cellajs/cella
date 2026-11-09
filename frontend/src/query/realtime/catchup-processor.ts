@@ -1,4 +1,4 @@
-import type { ListMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
+import type { CatchUpMyStreamResponse, ListMyMembershipsResponse } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
@@ -13,7 +13,7 @@ import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
 import { dayMs } from '~/utils/date-mini';
 
-type PropagationHint = NonNullable<PostAppCatchupResponse['organizations'][string]['propagation']>[number];
+type PropagationHint = NonNullable<CatchUpMyStreamResponse['organizations'][string]['propagation']>[number];
 
 let refetchTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -44,7 +44,7 @@ export const isOpaqueScope = (organizationId: string, entityType: ProductEntityT
  * Readable views fetch their gap when their frontier advances; other statuses expose no frontier.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
-export async function processAppCatchup(response: PostAppCatchupResponse): Promise<void> {
+export async function processStreamCatchup(response: CatchUpMyStreamResponse): Promise<void> {
   const { organizations, views } = response;
   const syncState = syncStore.getState();
   // Before this device's first catchup its cache holds only what route loaders read: that catchup stores the frontiers as baselines.

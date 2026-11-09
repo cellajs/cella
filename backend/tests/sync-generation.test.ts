@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb, getSeedDb } from '#/db/db';
-import { appCatchupOp } from '#/modules/entities/operations/app-catchup';
+import { streamCatchupOp } from '#/modules/entities/operations/stream-catchup';
 
 const seedDb = getSeedDb();
 // A stand-in for the guards' context: a user in no organization, on the API's connection.
@@ -17,13 +17,13 @@ describe('catchup: the generation of the sync books', () => {
   it('answers 1 on a database whose books the worker never had to rebuild', async () => {
     await seedDb.execute(sql`DELETE FROM sync_state`);
 
-    expect(await appCatchupOp(ctx, {})).toMatchObject({ organizations: {}, generation: 1 });
+    expect(await streamCatchupOp(ctx, {})).toMatchObject({ organizations: {}, generation: 1 });
   });
 
   it('answers the generation the worker wrote, read with the API role', async () => {
     // The CDC worker owns the row; the API only reads it.
     await seedDb.execute(sql`INSERT INTO sync_state (id, generation) VALUES ('sync', 7) ON CONFLICT (id) DO UPDATE SET generation = 7`);
 
-    expect((await appCatchupOp(ctx, {})).generation).toBe(7);
+    expect((await streamCatchupOp(ctx, {})).generation).toBe(7);
   });
 });

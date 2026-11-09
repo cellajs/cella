@@ -1,10 +1,10 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { StreamChange, StreamErrorPayload, StreamSignal } from '#/schemas';
 import { log } from '#/utils/logger';
 
-/** One frame of the app stream. */
+/** One frame of the stream. */
 export type StreamFrame = { event: 'change'; data: StreamChange } | { event: 'signal'; data: StreamSignal };
 
 /** Frame bytes a stream may hold unsent, counted as each frame's JSON without its SSE envelope: the next frame closes it, and its client's reconnect catches up. */
@@ -45,7 +45,7 @@ async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi,
  * other and is closed at `maxPendingStreamBytes`, and a write that fails is logged for its subscriber alone.
  * @param failure - The log message of a failed write.
  */
-export async function sendToSubscribers(subscribers: readonly AppStreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
+export async function sendToSubscribers(subscribers: readonly StreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
   const data = JSON.stringify(frame.data);
   const bytes = Buffer.byteLength(data);
   await Promise.all(

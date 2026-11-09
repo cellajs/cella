@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
+import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
 import { markBundleStale } from '~/query/schema-version-guard';
@@ -19,7 +19,7 @@ export interface SyncHealth {
 export type LeaderMessage =
   | { type: 'stream-change'; change: StreamChange }
   | { type: 'stream-signal'; signal: StreamSignal }
-  | { type: 'catchup'; response: PostAppCatchupResponse }
+  | { type: 'catchup'; response: CatchUpMyStreamResponse }
   | { type: 'sync-health'; health: SyncHealth };
 
 type BroadcastMessage = LeaderMessage | { type: 'schema-version'; version: number };

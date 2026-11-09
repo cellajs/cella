@@ -68,7 +68,7 @@ describe('MFA toggle step-up', async () => {
 
   it('must not turn MFA off by deleting the last passkey via deletePasskey', async () => {
     const { user, passkey, headers } = await totpUserWithSession(true);
-    const { error, response } = await call(deletePasskey, { path: { id: passkey!.id }, headers });
+    const { error, response } = await call(deletePasskey, { path: { passkeyId: passkey!.id }, headers });
     await expectRefusal({ response, error }, 400, 'mfa_factor_in_use');
     expect(await mfaRequiredOf(user.id)).toBe(true);
     expect(await passkeysOf(user.id)).toHaveLength(1);
@@ -97,6 +97,6 @@ describe('MFA toggle step-up', async () => {
     // Stepped up with the passkey: a step-up counts while its factor is held, and the authenticator app goes first.
     const off = await totpUserWithSession(false, { via: 'passkey' });
     expect((await call(deleteTotp, { headers: off.headers })).response.status).toBe(204);
-    expect((await call(deletePasskey, { path: { id: off.passkey!.id }, headers: off.headers })).response.status).toBe(204);
+    expect((await call(deletePasskey, { path: { passkeyId: off.passkey!.id }, headers: off.headers })).response.status).toBe(204);
   });
 });

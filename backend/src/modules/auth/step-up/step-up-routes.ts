@@ -15,9 +15,9 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     request: { query: stepUpQuerySchema },
     responses: { 200: json('Step-up state', stepUpStateSchema) },
   }),
-  getStepUpPasskeyChallenge: xRoute({
+  generateStepUpPasskeyChallenge: xRoute({
     method: 'post',
-    path: '/step-up/passkey-challenge',
+    path: '/generate-step-up-passkey-challenge',
     xEnabledBy: { strategy: 'passkey' },
     xGuard: [userGuard],
     xRateLimiter: [passkeyChallengeLimiter],
@@ -39,7 +39,7 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   }),
   sendStepUpCode: xRoute({
     method: 'post',
-    path: '/step-up/code',
+    path: '/send-step-up-code',
     xGuard: [userGuard],
     xRateLimiter: [spamLimiter],
     summary: 'Email a step-up code',

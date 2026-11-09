@@ -15,7 +15,7 @@ import { BackToStart, focusTargets, SkipLink } from '~/modules/navigation/focus-
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
-import { AppStream } from '~/query/realtime/app-stream';
+import { StreamSync } from '~/query/realtime/stream-sync';
 import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 import { channelRouteConfig } from '~/routes-config';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -68,7 +68,7 @@ export function AppLayout() {
         </SidebarWrapper>
         <TabCoordinator />
         <ParkedNoticesOnBoot />
-        <AppStream />
+        <StreamSync />
         <SeenTracker />
         <Suspense fallback={null}>
           <Uploader />
