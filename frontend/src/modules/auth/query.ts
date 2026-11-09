@@ -1,4 +1,5 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   type GetTokenDataData,
   getAuthHealth,
@@ -8,9 +9,12 @@ import {
   getTokenData,
   type RedeemLinkTokenData,
   redeemLinkToken,
+  sendMagicLink,
 } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
+import { type MagicLinkMode, useAuthStore } from '~/modules/auth/auth-store';
+import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { withStepUp } from '~/modules/auth/step-up';
 
 type TokenKind = GetTokenDataData['path']['kind'];
@@ -88,6 +92,26 @@ export const useDecideConsentMutation = (uid: string) =>
     mutationFn: (accept: boolean) => (accept ? withStepUp(() => decideConsent(uid, true)) : decideConsent(uid, false)),
     onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
   });
+
+/** Mails the address a link from a step of the authenticate page; the server decides whether it signs in or signs up. */
+export const useSendMagicLinkMutation = () => {
+  const navigate = useNavigate();
+  const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
+  const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
+
+  return useMutation({
+    // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
+    mutationFn: ({ email }: { email: string; mode: MagicLinkMode }) =>
+      sendMagicLink({ body: { email, redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
+    onSuccess: (_, { email, mode }) => setMagicLinkSent(email, mode),
+    // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
+    onError: (error) => {
+      const connectionId = error.type === 'sso_required' ? error.connectionId : undefined;
+      if (typeof connectionId !== 'string') return;
+      navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
+    },
+  });
+};
 
 /** Redeems the link this browser holds; the server answers where the browser goes next, which a full navigation follows. */
 export const useRedeemHeldLinkMutation = () =>

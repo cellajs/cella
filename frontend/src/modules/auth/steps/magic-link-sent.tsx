@@ -16,6 +16,13 @@ export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) 
   const magicLinkMode = useAuthStore((state) => state.magicLinkMode);
 
   const isSignup = magicLinkMode === 'signup';
+  // With sign-up closed the line only promises a sign-in.
+  const isNeutral = magicLinkMode === 'neutral' && appConfig.has.selfRegistration;
+  const textKey = isSignup
+    ? 'c:magic_link_check_email.signup.text'
+    : isNeutral
+      ? 'c:magic_link_check_email.neutral.text'
+      : 'c:magic_link_check_email.text';
 
   return (
     <>
@@ -27,7 +34,7 @@ export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) 
           </div>
         }
         title={t('c:magic_link_check_email')}
-        description={<NamedText i18nKey={isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text'} values={{ email }} />}
+        description={<NamedText i18nKey={textKey} values={{ email }} />}
       />
       {appConfig.mode === 'development' && emailEnabled === false && (
         <Alert variant="info" className="mt-2">

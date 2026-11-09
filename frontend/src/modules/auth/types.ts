@@ -11,4 +11,4 @@ export type TokenData = GetTokenDataResponse;
 
 export type TokenInvitation = NonNullable<TokenData['invitation']>;
 
-export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'invitation' | 'waitlist' | 'magicLinkSent';
+export type AuthStep = 'checkEmail' | 'signIn' | 'invitation' | 'waitlist' | 'magicLinkSent';

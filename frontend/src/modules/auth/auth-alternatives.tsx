@@ -32,7 +32,7 @@ export function AuthAlternatives({ items, authStep }: AuthAlternativesProps) {
   if (!items.length) return null;
 
   const single = items.length === 1 ? items[0] : undefined;
-  const caption = authStep === 'signIn' ? 'c:or_sign_in_with' : authStep === 'signUp' ? 'c:or_sign_up_with' : 'c:or_continue_with';
+  const caption = authStep === 'signIn' ? 'c:or_sign_in_with' : 'c:or_continue_with';
 
   return (
     <>

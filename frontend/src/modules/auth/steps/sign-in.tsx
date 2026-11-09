@@ -1,22 +1,22 @@
-import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { sendMagicLink, signInWithPasskey } from 'sdk';
+import { signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthEmailButton, AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { LegalNotice } from '~/modules/auth/legal-notice';
 import { type ConditionalMediationResult, isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
-import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
+import { useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
+import { useSendMagicLinkMutation } from '~/modules/auth/query';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
 import type { TokenInvitation } from '~/modules/auth/types';
 import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
@@ -28,12 +28,11 @@ const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
   const { t } = useTranslation();
-  const { email, resetAuthStore, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
+  const { email, resetAuthStore, setStep, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       email: state.email,
       resetAuthStore: state.reset,
       setStep: state.setStep,
-      setMagicLinkSent: state.setMagicLinkSent,
       inviteOtherAccount: state.inviteOtherAccount,
     })),
   );
@@ -41,9 +40,8 @@ export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
 
   const lastUser = useUserStore((state) => state.lastUser);
   const clearUserStore = useUserStore((state) => state.reset);
-  const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
+  const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
   const navigateAfterAuth = useNavigateAfterAuth();
-  const navigate = useNavigate();
 
   const abortRef = useRef<AbortController | null>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -79,21 +77,11 @@ export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const { mutate: sendMagic, isPending: isSending } = useMutation({
-    // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
-    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
-    onSuccess: () => setMagicLinkSent(form.getValues('email'), 'signin'),
-    // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
-    onError: (error) => {
-      const connectionId = error.type === 'sso_required' ? error.connectionId : undefined;
-      if (typeof connectionId !== 'string') return;
-      navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
-    },
-  });
+  const { mutate: sendLink, isPending: isSending } = useSendMagicLinkMutation();
 
   // Without magic links a passkey signs in: the one the browser offers names the account.
   const onSubmit = () => {
-    if (magicLinkEnabled) return sendMagic();
+    if (magicLinkEnabled) return sendLink({ email: form.getValues('email'), mode: restrictedMode ? 'neutral' : 'signin' });
     startMediation();
     setTimeout(() => submitButtonRef.current?.focus(), 0);
   };
@@ -118,18 +106,13 @@ export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
         image={invitation && <InvitationAvatar invitation={invitation} />}
         title={getTitle()}
         description={
-          restrictedMode &&
-          (appConfig.has.selfRegistration ? (
-            <>
-              {t('c:new_here')} <InlineLinkButton onClick={() => setStep('signUp', form.getValues('email'))}>{t('c:sign_up')}</InlineLinkButton>
-            </>
-          ) : (
-            <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />
-          ))
+          restrictedMode && !appConfig.has.selfRegistration && <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />
         }
       >
         {!restrictedMode && <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />}
       </AuthHeader>
+
+      {restrictedMode && appConfig.has.selfRegistration && <LegalNotice mode="continue" />}
 
       {/* Built at submit time: a handler that reads a ref, handed over during render, keeps the compiler off this step */}
       {(passkeyEnabled || magicLinkEnabled) && (
