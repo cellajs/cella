@@ -2,19 +2,28 @@ import { chmodSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } 
 import { resolve } from 'node:path';
 import { infraDir } from './paths';
 
-/** Parse a dotenv-style file into key/value pairs (no interpolation). */
+/**
+ * The `KEY=VALUE` lines of a dotenv text in order, a repeated key included. A blank line, a `#` comment and any other line are skipped, an
+ * `export ` prefix is allowed, one pair of matching quotes around a value is stripped, and an unquoted value ends where a `#` starts a word.
+ * No interpolation, escape or multi-line value.
+ */
+export function parseEnvText(text: string): Array<{ key: string; value: string }> {
+  return text.split(/\r?\n/).flatMap((line) => {
+    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/.exec(line);
+    if (!match?.[1]) return [];
+    const raw = (match[2] ?? '').trim();
+    const quoted = /^(['"])(.*)\1(?:\s+#.*)?$/.exec(raw);
+    return [{ key: match[1], value: quoted ? (quoted[2] ?? '') : raw.replace(/(^|\s+)#.*$/, '') }];
+  });
+}
+
+/** Parse a dotenv-style file into key/value pairs, a repeated key taking its last value. */
 export function parseEnvFile(path: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-    if (!match) continue;
-    out[match[1]!] = (match[2] ?? '').replace(/^['"]|['"]$/g, '');
-  }
-  return out;
+  return Object.fromEntries(parseEnvText(readFileSync(path, 'utf8')).map(({ key, value }) => [key, value]));
 }
 
 /** The env file every mode reads. */
-const rootEnvFile = (): string => resolve(infraDir, '..', '.env');
+export const rootEnvFile = (): string => resolve(infraDir, '..', '.env');
 
 /** Load the repo-root `.env` so infra tasks share the app's local config. Existing environment variables keep precedence over the file. */
 export function loadRootEnvFile(): void {

@@ -2,7 +2,39 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { dropPromptOnlyEnv, modeEnvValues, parseEnvFile, RETIRED_KEY_NAMES, writeEnvValues } from './env-files';
+import { dropPromptOnlyEnv, modeEnvValues, parseEnvFile, parseEnvText, RETIRED_KEY_NAMES, writeEnvValues } from './env-files';
+
+describe('parseEnvText', () => {
+  it.each([
+    ['KEY=value', 'value'],
+    ['export KEY=value', 'value'],
+    ['  KEY = spaced  ', 'spaced'],
+    ['KEY="double quoted"', 'double quoted'],
+    ["KEY='single quoted'", 'single quoted'],
+    ['KEY="  kept inside quotes "', '  kept inside quotes '],
+    [`KEY="mismatched'`, `"mismatched'`],
+    ['KEY=a=b==', 'a=b=='],
+    ['KEY=value # a note', 'value'],
+    ['KEY="a # b" # a note', 'a # b'],
+    ['KEY=pass#word', 'pass#word'],
+    ['KEY= # only a note', ''],
+    ['KEY=', ''],
+  ])('reads %s as %j', (line, value) => {
+    expect(parseEnvText(line)).toEqual([{ key: 'KEY', value }]);
+  });
+
+  it.each([['# KEY=commented out'], [''], ['   '], ['not an assignment'], ['1KEY=starts with a digit']])('skips %j', (line) => {
+    expect(parseEnvText(line)).toEqual([]);
+  });
+
+  it('keeps every assignment in file order, a repeated key and CRLF line ends included', () => {
+    expect(parseEnvText('A=1\r\n\r\nB=2\r\nA=3\r\n')).toEqual([
+      { key: 'A', value: '1' },
+      { key: 'B', value: '2' },
+      { key: 'A', value: '3' },
+    ]);
+  });
+});
 
 describe('dropPromptOnlyEnv', () => {
   it('takes a privileged key and the passphrase out of the environment and names what it found', () => {
