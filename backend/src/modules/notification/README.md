@@ -14,7 +14,7 @@ A recipient must belong to the row's organization, or be a system admin, and may
 
 ## Failure modes
 
-Each row names its answers per level ([Sync engine](../../../../cella/SYNC_ENGINE.md#failure-modes)): here the mid level is the inbox's next read or the digest's next run, the lost case the digest mailing what the instant path lost, which a recipient with the digest off goes without. A mark read holds a second answer at the core, an open finding: the tab that marked refetches the inbox when the mutation settles and again on its own signal.
+Each row names its answers per level ([Sync engine](../../../../cella/sync-engine/FAILURE_MODES.md)): here the mid level is the inbox's next read or the digest's next run, the lost case the digest mailing what the instant path lost, which a recipient with the digest off goes without. A mark read holds a second answer at the core, an open finding: the tab that marked refetches the inbox when the mutation settles and again on its own signal.
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |

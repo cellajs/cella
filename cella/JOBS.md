@@ -1,10 +1,10 @@
 # Jobs worker
 
-This document covers the jobs worker: the app's **job store on pg-boss**, where periodic sweeps run as cron and per-request work waits on queues.
+This document covers the jobs worker: the app's job store on [pg-boss](https://github.com/timgit/pg-boss), with cron sweeps and queues.
 
 ### TL;DR
 
-Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. The store is a PostgreSQL schema the migrate companion installs, so no worker ever migrates it and every runtime process connects as the runtime role.
+Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. No worker ever migrates the store, and every runtime process connects as the runtime role. The store is a PostgreSQL schema the migrate companion installs.
 
 ## How it fits
 
@@ -19,13 +19,11 @@ PostgreSQL schema pgboss  ◀─────────────────
         └── a consumer process works its own queues (SERVICE of its own)
 ```
 
-The jobs worker runs from the backend image. Cron and supervision belong to one process, so its own service cuts over stop-first, and nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first: a deploy runs two jobs workers until the old machine is removed.
+The jobs worker runs from the backend image. Its own service cuts over stop-first, since cron and supervision belong to one process. Nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first. A deploy then runs two jobs workers until the old machine is removed.
 
 ## Declaring jobs and queues
 
-A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job: it belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
-
-A cron job runs once per period, and a period missed while no maintainer ran sends one catch-up job. Two runs never overlap while each ends within its expiry. Past it the store fails the run while its handler goes on, and a second jobs worker, such as a `singleVM` deploy runs, can start the next run beside it: a job whose runs must not overlap stops taking work before its expiry. A run that throws is logged, and the next period runs again.
+A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job. It belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
 ```ts
 defineBackendModule({
@@ -38,7 +36,7 @@ defineBackendModule({
 });
 ```
 
-A queue takes pg-boss's queue options plus a `handler` and its `work` options. The jobs worker runs the handler of every queue that has one; a queue without one belongs to a consumer process. Policy and partitioning are fixed at creation; the other options converge on every start.
+A queue takes pg-boss's queue options plus a `handler` and its `work` options. The jobs worker runs the handler of every queue that has one. A queue without one belongs to a consumer process. Policy and partitioning are fixed at creation. The other options converge on every start.
 
 Producers call `send` on the process instance:
 
@@ -47,21 +45,25 @@ const boss = await getPgBoss('producer');
 await boss.send('webhook.deliver', { endpointId, activityId }, { singletonKey: `${endpointId}:${activityId}` });
 ```
 
-Payloads carry ids, never row bodies: the handler re-reads through the query the API uses. `singletonKey` collapses identical work, at the point the queue's pg-boss policy decides.
+Payloads carry ids, never row bodies. The handler re-reads through the query the API uses.
+
+A cron job runs once per period. A missed period sends one catch-up job. A run that throws is logged, and the next period runs again.
+
+Two runs never overlap while each ends within its expiry. Past its expiry, a second jobs worker can start the next run beside the first. A job whose runs must not overlap stops taking work before its expiry.
 
 ## Roles and the store
 
-- **Installer**: the migrate companion installs or upgrades the schema as the table owner, grants the runtime role and creates every declared queue.
+- **Installer**: the migrate companion. It installs or upgrades the schema as owner and creates the queues.
 - **Producer**: the API. It only enqueues.
 - **Consumer**: a process that works the queues it owns.
-- **Maintainer**: the jobs worker, one per deployment: supervision, cron, queue creation and the template's handlers. It runs as the runtime role too, so index rebuilds, which need the owner, are left to an operator.
+- **Maintainer**: the jobs worker, one per deployment: supervision, cron, queue creation and the template's handlers.
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when the scheduler stalls, a queue grows past its warning size or dead letters wait, so a switch never blocks on it.
+`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran and how each queue stands. It degrades when the scheduler stalls, a queue backs up or dead letters wait. It never fails, so a switch never blocks on it.
 
-For recent failures and the index rebuild statements pg-boss asks for, query the job store schema with SQL as the owner role; the health payload names the queues that degrade.
+Index rebuilds are left to an operator, since the maintainer runs as the runtime role. For those and for recent failures, query the job store schema as the owner role. The health payload names the queues that degrade.
 
 ### Connection budget
 
-Every pool of every process, the job store's included, draws on the database's one `max_connections`. Pool maxima are ceilings, not footprints: the managed database's metrics show the real count. Raising the limit restarts an instance that has no standby, so shrink pools first.
+Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby.

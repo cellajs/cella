@@ -56,19 +56,19 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | Term | Meaning |
 | --- | --- |
 | **Channel** | Owns roles and memberships. `organization` is the fixed spine every channel nests under. |
-| **Product** | Owns no roles and inherits from the channels above it (`attachment`). Must have a channel parent. |
+| **Product** | Owns no roles and inherits from the channels above it. Must have a channel parent. |
 | **Home** | A product row's deepest non-null channel ancestor: the channel the row lives in. |
 | **Membership** | A user's role on one channel. |
 | **Actor** | Who acts: a user or a service account. |
 | **Binding** | A role on a channel, whoever holds it: a membership for a user, a stored binding for a service account. |
 | **Subject** | What is acted on: entity type, optional id, its ancestor channel ids, optionally the row. |
-| **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'`: allow on qualifying rows). |
+| **Policy cell** | `0` denies, `1` allows, and a row-condition name such as `'own'` allows on qualifying rows. |
 | **Action** | `create`, `read`, `update`, `delete`. |
 | **Access scope** | The mask an API key or access token puts over its actor's bindings. |
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked; an API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds, whatever wrote it.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds.
 
 ## The policy consulted
 
@@ -104,15 +104,30 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 );
 ```
 
-Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
+Policies only declare grants: omitted actions and missing role/channel rows deny. `'own'` is the built-in owner condition.
 
-Channel entities have two row kinds: **elevation** rows on an ancestor channel say what a parent's member may do to the child (where `create` lives). **Self** rows on the same channel say what the entity's own members may do to it (a self-row `create` is inert). Product entities have only **home** rows, where `create` grants creating inside that channel.
+Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child. Only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
 
-A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+Product entities have only **home** rows, where `create` grants creating inside that channel.
 
-A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync. The only derived memberships are those a membership brings along above its channel: the organization's (`organizationRoles`), and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
+A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`.
 
-A channel declares its roles most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, by an invitation, a direct add or a role change, nor demotes or removes a member who holds one; an invitation is refused as well when its accept would bring along a membership above the channel (`organizationRoles`, a menu `carryRole`) at a role above the inviter's own there, since the accept has no inviter to ask. `update` or `delete` that reaches the channel from an ancestor hands out every role of the channel, the least-privileged role is anyone's to give, and a system admin gives any. Service accounts follow the same rule: nobody creates one, issues or rolls its keys or re-enables it at a role above their own.
+A role's product grants reach only rows homed at its own channel. A role the hierarchy declares `elevated` there reaches the channel's whole subtree. No grant reaches rows homed above its channel. A grant above a channel counts in full for it, since channel subjects are never home-scoped.
+
+A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync.
+
+The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
+
+A channel declares its roles from most to least privileged. That order decides who may grant what:
+
+- **No higher role:** nobody hands out a role above their own on the channel.
+- **No higher member:** nobody demotes or removes a member who holds a role above their own.
+- **Invitations:** refused when the accept brings a membership above the channel, at a role above the inviter's.
+- **Least role:** anyone may give the least-privileged role.
+- **Any role:** a system admin, or anyone whose `update` or `delete` grant reaches the channel from an ancestor.
+- **Service accounts:** the same rules hold for creating one, issuing or rolling its keys and re-enabling it.
+
+An invitation is checked when it is sent, since its accept has no inviter to ask.
 
 ## The permission returned
 
@@ -124,29 +139,53 @@ checkAccessBatch(access, action, subjects); // → Map of PermissionResult by su
 checkAccessFanout(accesses, action, subject); // → boolean[]: many actors, one row (stream fan-out)
 ```
 
-A subject's ancestor scope is **tri-state**: a channel id, `null` for explicitly not scoped to that ancestor, or `undefined` for a required scope left out, which throws. A missing scope never defaults to unscoped, which would bypass permissions.
+A subject's ancestor scope is **tri-state**:
+
+- a channel id
+- `null`: explicitly not scoped to that ancestor
+- `undefined`: a required scope left out, which throws
+
+A missing scope never defaults to unscoped, which would bypass permissions.
 
 ## Row conditions
 
-Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set. The set is **closed** to `own` and `public` (`shared/src/permissions/row-conditions.ts`): every rule must be evaluable in JS, compiled SQL, the frontend, and by dispatch from the row alone, so no cross-row or app-defined conditions.
+Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens only `read` to rows whose `public` flag is set.
 
-Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The engine reads the flag on the row alone, so the server keeps each row's flag equal to its home channel's: a new or moved row takes the home's flag, and a change of the channel's flag rewrites the rows homed there in the same transaction, soft-deleted ones included, up to a row cap. Readers who had a row through its flag alone lose it when the channel goes private, as they lose a row that moves. The file of a public row signs for a visitor on the anonymous presign route, which the same grant decides, so an app that declares no public read on attachments signs nothing there.
+The set is **closed** to `own` and `public`, and no cross-row or app-defined condition exists. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch.
+
+Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The engine reads the flag on the row alone.
+
+The server keeps each row's flag equal to its home channel's. A new or moved row takes the home's flag. A change of the channel's flag rewrites the rows homed there in the same transaction, soft-deleted ones included, up to a row cap.
+
+Readers who had a row through its flag alone lose it when the channel goes private, as they lose a row that moves. The file of a public row signs for a visitor on the anonymous presign route, which the same grant decides. An app that declares no public read on attachments signs nothing there.
 
 ### Drafts
 
-A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone. A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish, except those for its `prepareRoles`, which go out at once so those people can set it up.
+A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone.
+
+A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type.
+
+A draft channel's invitations wait for the publish. Those for its `prepareRoles` go out at once, so those people can set it up.
 
 ## Archived channels
 
-A channel below the organization can be archived, which closes it. An archived channel refuses every write to itself, every create inside it and every change to a product homed in it, to everyone, system admins included. It still reads and streams as before, a list shows it when asked to, and a member can still be removed or leave, so nobody is stuck in an archive. The archived channel itself can still be deleted or unarchived with the matching grant, `delete` or `update`. Channels inside it keep their own state: the archive action offers to include them, with a default each app sets. The organization is never archived; its tenant is.
+A channel below the organization can be archived, which closes it. The organization itself is never archived, only its tenant.
 
-Like a draft, an archive is checked before the engine. The check reads the container's own flag: the channel row for a write to a channel, the home channel for a product, and for a create the channel the new row would be homed in. No flag is derived from the channels above, so a live channel inside an archived one works as any live channel.
+- **No writes.** It refuses every write to itself, every create inside it and every change to a product homed in it, system admins included.
+- **Still readable.** It reads and streams as before. A list shows it when asked.
+- **Nobody stuck.** A member can still be removed or leave.
+- **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
+- **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
+
+Like a draft, an archive is checked before the engine, on the container's own flag: the channel for a write to it, the home channel for a product, and the target channel for a create. A live channel inside an archived one works as any live channel: nothing is derived from the channels above.
 
 ## In the interface
 
-The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone. `useCan` also applies the archive veto from the cached channel rows; `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
+The frontend asks the engine. The backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships. A control with no row, such as a create button, asks about a new row of that type homed at the channel.
 
-A route gate (`requireEntityAction`) asks the same question before the page loads. Where the memberships cannot be read (offline with none cached), the gate lets the user through, and the server decides.
+`useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
+
+A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, the gate lets the user through and the server decides.
 
 ## Enforcement paths
 
@@ -155,20 +194,20 @@ A route gate (`requireEntityAction`) asks the same question before the page load
 | Guard chain | [Guards](#guards) | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 401 or 403 before the handler ([Refusals](#refusals)) |
 | Single row | `getValidProduct`, `getValidChannel` | Loads the row, checks it is in the request's tenant and organization, runs the engine | 404 for a row the caller may not read, 403 for a denied action on one it reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
-| Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed; 403 only when nothing is allowed |
+| Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed. 403 only when nothing is allowed |
 | Collection read | `buildCollectionReadWhere` | Compiles readable scope, row conditions, and public read into one SQL predicate. Never loads rows to reject them. | An empty list |
 | SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
 | Catchup views | `resolveViewReadStatus` | May the caller see an organization's frontier of a type | `opaque` or `forbidden` |
 
-Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
+Two rules bind every path. **The system-admin bypass applies to collection reads too**, since a system admin passes `orgGuard` with no membership. **Any grant the single-row path honours must appear in lists and over SSE**.
 
-Aggregates run no row condition: member counts, newest-post times and organization totals count every live row of the organization, which matches what a viewer may list only while no read cell is row-conditional, so an app that adds an `own` or `public` read cell must scope them itself.
+Aggregates such as member counts, newest-post times and organization totals run no row condition. They count every live row of the organization. An app that adds an `own` or `public` read cell must scope them itself, or they count rows a viewer cannot list.
 
 ### Guards
 
-Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. A guard declares what it reads of an earlier one, so a route that lists them out of order fails when its module loads.
+Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts. The next ones check that the actor is in the tenant and the organization the URL names.
 
-Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `actorGuard` in place of `userGuard` where an API key or access token may call too. The user's own account runs behind `[userGuard]` alone.
+Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an API key or access token may call, `actorGuard` takes the place of `userGuard`. The user's own account runs behind `[userGuard]` alone.
 
 | Guard | Admits | Refuses with |
 | --- | --- | --- |
@@ -183,41 +222,61 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `act
 | `sysAdminGuard` | A system admin from an allowed IP address | 403 |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
-`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above. A tenant holds one organization, so an actor bound to nothing in it gets `tenantGuard`'s 403; `orgGuard`'s 404 remains for the tenant's creator racing the first organization.
+A service account passes `tenantGuard` and `orgGuard` as a member does, since they read the actor's bindings. They turn away only an actor with no foothold at all. What a member may do with a row is the engine's answer, on the paths above. An actor bound to nothing in the organization gets `tenantGuard`'s 403, since a tenant holds one organization.
+
+A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
 
 ## Refusals
 
-One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn` (a warning toast, no log id); `error` is kept for the app's own faults, such as a row that must exist and is gone. The members an answer names beside its type, such as `resource`, are top-level members of the error body.
+No route, app or test meets two shapes for one cause: each situation has one answer.
+
+A refusal the caller's request or state brings about carries severity `warn`: a warning toast and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone.
+
+The members an answer names beside its type, such as `resource`, are top-level members of the error body.
 
 | Situation | Answer | Why |
 | --- | --- | --- |
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
-| An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `action` | The caller already knows the row |
+| An action denied on a row the caller reads, a create the placement denies, or a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `action` | The caller already knows the row |
 | A write in an archived channel, or into one | 403 `channel_archived` with `entityType` | The caller reads the channel, so the answer names the state that refuses, not the id |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `reason: 'role_exceeds_actor'`, `role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
-| An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename; the slug check answers 409 taken, 204 free | A slug is the organization's public URL path and unique across tenants, and every route gives the same answer, so availability is the policy and no leak |
+| An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename. The slug check answers 409 taken, 204 free | A slug is the organization's public URL path, unique across tenants. Every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<kind>_not_found` or `<kind>_expired` | The token was the proof, so without it the request is not authenticated |
 | A passkey the server does not hold for the account | 404 `passkey_not_found` | The credential id comes from the caller's own authenticator, so the answer reveals no account |
 | A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
 | An address the provider verified, or a provider account, that another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app. An unverified address answers as a free one, so the answer tells nobody whether an account holds it |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend sends a person to sign-in on these four alone |
-| A tenant quota that is full | 403 `restrict_by_app` with `resource` and `quota`; `restrict_by_org` for member seats | The tenant's policy, not a rate: waiting does not lift it, so never a 429 |
+| A tenant quota that is full | 403 `restrict_by_app` with `resource` and `quota`, or `restrict_by_org` for member seats | The tenant's policy, not a rate. Waiting does not lift it, so never a 429 |
 | A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationMailsPerDay` |
 | An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | `withStepUp` opens the proof dialog on it and runs the action again |
 | A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | The tenant decides how the people it knows through a connection sign in |
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `listUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. It is stamped on the user's own GET requests. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. A channel below the organization narrows nothing: the directory is organization-wide.
+
+Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
+
+A member also sees the addresses invited to a channel they read, never the account behind one. Resending an invitation takes `update` on that channel.
+
+A change here must also change the privacy statement, which tells users the same.
 
 ## System admins
 
-A system admin holds the `admin` system role, counted only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action, and every guard but `serviceGuard` lets them through without a membership, so a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user: a support change runs as the admin, carries the admin's actor in `createdBy` or `updatedBy`, and shows under the admin's name in the organization's activities. A system admin never reaches a user's account security (factors, sessions, connected apps), their inbox, menu or preferences, and joins a collaborative description only with the access of their own account.
+A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership.
 
-Support reads before it writes: the users table says what role and last-seen a user has, the organization's members page what they hold there. To see a page as a member of a given role sees it, hold that role: invite an account that has no system role at that role for the length of the case and remove it after; both moves are activities the organization's admins can read. Make the change as yourself and tell the user what changed; never hand anyone a session. Account-security trouble (a lost factor, a stuck MFA challenge) is the user's to recover through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
+A system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities.
+
+A system admin never reaches a user's account security, inbox, menu or preferences. They join a collaborative description with only their own account's access.
+
+Support reads before it writes, in the users table and the organization's members page. To see a page as a given role sees it, invite an account with no system role at that role, and remove it after the case. The organization's admins can read both moves as activities.
+
+Make the change as yourself and tell the user what changed. Never hand anyone a session.
+
+A user recovers from account-security trouble, such as a lost factor, through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
 
 ## Behavior
 

@@ -23,7 +23,7 @@ function yjsTokenPublicKey(material: string): string {
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   cookieSecret: {
     secretName: 'cookie-secret',
-    description: 'Cookie signing secret',
+    description: 'Cookie signing secret. A comma-separated list rotates it: the first signs, any verifies',
     envVar: 'COOKIE_SECRET',
     required: true,
     valueSource: 'engine',
@@ -178,7 +178,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
   },
   microsoftTenantId: {
     secretName: 'microsoft-tenant-id',
-    description: 'Microsoft Entra tenant the sign-in narrows to, or none for every tenant',
+    description:
+      'Microsoft Entra tenant the sign-in narrows to: organizations, consumers or a tenant GUID, never its domain name. None means every tenant',
     envVar: 'MICROSOFT_TENANT_ID',
     required: false,
     valueSource: 'operator',

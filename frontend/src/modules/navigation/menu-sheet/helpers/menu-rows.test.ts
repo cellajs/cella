@@ -25,7 +25,7 @@ const row = (id: string, displayOrder: number, hidden: boolean, archived: boolea
     hidden,
     muted: false,
     displayOrder,
-  },
+  } as UserMenuItem['membership'],
 });
 
 // Every combination of the member's hide and the channel's archive, in an order apart from the display order.

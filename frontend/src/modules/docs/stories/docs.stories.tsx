@@ -254,6 +254,7 @@ const docPage = (id: string, name: string, parentId: string | null = null): DocP
   name,
   displayOrder: 0,
   renderMode: 'default',
+  layout: 'default',
   draft: false,
   hidden: false,
   depth: parentId ? 1 : 0,
