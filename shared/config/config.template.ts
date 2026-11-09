@@ -210,8 +210,6 @@ export const config = {
     demos: false,
   },
 
-  shareTarget: undefined as RequiredConfig['shareTarget'],
-
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
   // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
   // Bump the relevant token with its change; CI requires cache bumps not covered by an evolution lens.

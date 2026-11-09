@@ -119,12 +119,6 @@ export const attachmentListQuerySchema = productListQuerySchema({
 export const attachmentVariantSchema = attachmentKeysSchema.keyof();
 
 /**
- * The most attachments one `presignAttachmentUrls` request names.
- * @public
- */
-export const presignedUrlsCap = 50;
-
-/**
  * Callers name private attachments by `attachmentId` plus `variant`; clients never submit storage keys. Public media is
  * served from the CDN and never reaches this endpoint.
  */
@@ -132,7 +126,7 @@ export const attachmentPresignedUrlsBodySchema = z.object({
   items: z
     .array(z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema.default('original') }))
     .min(1)
-    .max(presignedUrlsCap),
+    .max(50),
 });
 
 export const attachmentPresignedUrlSchema = z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema, url: z.string() });

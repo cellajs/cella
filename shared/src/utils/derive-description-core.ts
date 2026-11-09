@@ -1,4 +1,3 @@
-import { appBlockAttachmentIds } from '../app/blocknote.ts';
 import { isRecord } from './as-record.ts';
 import { isUuid } from './entity-id.ts';
 import { type DescriptionBlock, getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
@@ -9,7 +8,7 @@ export type DescriptionCounts = {
   checkboxCount: number;
   checkedCount: number;
   attachmentCount: number;
-  /** Attachment entity ids referenced by media blocks and `appBlockAttachmentIds` (unique, document order). */
+  /** Attachment entity ids referenced by media blocks (unique, document order). */
   attachments: string[];
 };
 
@@ -30,11 +29,6 @@ export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionC
   const counts = emptyDescriptionCounts();
   counts.expandable = blocks.length > 1;
   const seen = new Set<string>();
-  const collect = (attachmentId: unknown) => {
-    if (typeof attachmentId !== 'string' || attachmentId.length === 0 || seen.has(attachmentId)) return;
-    seen.add(attachmentId);
-    counts.attachments.push(attachmentId);
-  };
 
   const walk = (items: DescriptionBlock[]) => {
     for (const block of items) {
@@ -45,9 +39,12 @@ export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionC
       if (mediaBlockTypes.has(block.type) && block.props) {
         const url = block.props.url;
         if (typeof url === 'string' && url.trim().length > 0) counts.attachmentCount++;
-        collect(block.props.attachmentId);
+        const attachmentId = block.props.attachmentId;
+        if (typeof attachmentId === 'string' && attachmentId.length > 0 && !seen.has(attachmentId)) {
+          seen.add(attachmentId);
+          counts.attachments.push(attachmentId);
+        }
       }
-      for (const attachmentId of appBlockAttachmentIds(block)) collect(attachmentId);
       if (block.children?.length) walk(block.children);
     }
   };

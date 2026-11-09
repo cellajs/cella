@@ -4,7 +4,6 @@ import type { FilePanelProps } from '@blocknote/react';
 import type { ReactElement } from 'react';
 import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
-import { type appMediaBlockTypes, appMediaContentType } from 'shared/app/blocknote';
 import { mediaBlockTypes } from 'shared/blocknote';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { Member } from '~/modules/memberships/types';
@@ -17,19 +16,12 @@ export type CustomBlock = typeof customSchema.Block;
 export type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
 export type CustomBlockTypes = CustomBlock['type'];
-/** The template's media blocks, which the file panel uploads into. */
-export type BaseMediaBlockTypes = 'file' | 'image' | 'audio' | 'video';
-export type CustomBlockMediaTypes = Extract<CustomBlockTypes, BaseMediaBlockTypes | (typeof appMediaBlockTypes)[number]>;
+export type CustomBlockMediaTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
 export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockMediaTypes>;
 
 export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockMediaTypes => mediaBlockTypes.has(type);
 
 export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, { type: CustomBlockMediaTypes }> => mediaBlockTypes.has(block.type);
-
-const isAppMediaType = (type: string): type is keyof typeof appMediaContentType => Object.hasOwn(appMediaContentType, type);
-
-/** The carousel renderer of a media block's file. */
-export const mediaContentType = (type: CustomBlockMediaTypes): BaseMediaBlockTypes => (isAppMediaType(type) ? appMediaContentType[type] : type);
 
 export type SlashItemKeys = DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 

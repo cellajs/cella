@@ -7,7 +7,6 @@ import {
   defaultBlockSpecs,
   type StyleSchema,
 } from '@blocknote/core';
-import { appBlockConfigs } from '../app/blocknote.ts';
 import { checklistItemConfig, codeBlockConfig, mentionConfig, notifyConfig, withAttachmentRef } from './blocknote-schema-configs.ts';
 
 type MentionImplementation = CustomInlineContentImplementation<typeof mentionConfig, StyleSchema>;
@@ -36,17 +35,6 @@ const renderInlineBlock = () => {
   return { dom, contentDOM: dom };
 };
 
-/** An app block as an empty `div` naming its type; its data stays in props. */
-const renderAppBlock = (type: string) => () => {
-  const dom = serverDocument().createElement('div');
-  dom.setAttribute('data-type', type);
-  return { dom };
-};
-
-const appBlockSpecs = Object.fromEntries(
-  Object.entries(appBlockConfigs).map(([name, config]) => [name, createBlockSpec(config, { render: renderAppBlock(config.type) })()]),
-);
-
 /**
  * Mention as the `data-mention-id` span the frontend renders, so server-side HTML keeps the id
  * mention derivation reads.
@@ -71,7 +59,6 @@ export const serverBlockNoteSchema = BlockNoteSchema.create().extend({
     video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: createBlockSpec(checklistItemConfig, { render: renderInlineBlock })(),
     notify: createBlockSpec(notifyConfig, { render: renderInlineBlock })(),
-    ...appBlockSpecs,
     // No highlighter server-side: only the node spec matters.
     codeBlock: createCodeBlockSpec(codeBlockConfig),
   },

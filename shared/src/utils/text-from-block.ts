@@ -1,8 +1,7 @@
-import { appMediaBlockTypes } from '../app/blocknote.ts';
 import { isRecord } from './as-record.ts';
 
 /** Block types that hold one file: its reference in the `url` prop, its file name in `name`. */
-export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file', ...appMediaBlockTypes]);
+export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
 /** One inline item of a stored block: styled text, a link with its words in `content`, or a custom node such as a mention. */
 export type DescriptionInline = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: Record<string, unknown> };

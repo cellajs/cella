@@ -3,11 +3,8 @@ import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AppError } from '#/core/error';
 import { getS3Client } from '#/lib/object-storage';
 
-/**
- * Covers the client's 60-minute URL memo plus a media session's range requests; an issued URL outlives a removal by at most this.
- * @public
- */
-export const urlLifetimeSeconds = 2 * 60 * 60;
+/** Covers the client's 60-minute URL memo plus a media session's range requests; an issued URL outlives a removal by at most this. */
+const urlLifetimeSeconds = 2 * 60 * 60;
 
 /**
  * Types a browser shows without running a page: raster images (no SVG), audio, video and PDF. No `+` subtype: a `+xml`

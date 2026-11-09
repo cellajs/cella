@@ -501,7 +501,6 @@ if (appConfig.has.pwa && !isStorybook) {
             { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
             { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
-          ...(appConfig.shareTarget && { share_target: { ...appConfig.shareTarget, method: 'POST', enctype: 'multipart/form-data' } }),
         };
         this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: `${JSON.stringify(manifest)}\n` });
       },

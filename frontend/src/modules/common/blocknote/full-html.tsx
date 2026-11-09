@@ -13,7 +13,7 @@ import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-ur
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
-import { type CommonBlockNoteProps, type CustomBlock, isMediaBlock, mediaContentType } from '~/modules/common/blocknote/types';
+import { type CommonBlockNoteProps, type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
 import { useMentionLinks } from '~/modules/user/use-mention-links';
 import { cn } from '~/utils/cn';
 
@@ -127,7 +127,7 @@ async function resolveMediaBlocks(
 
           if (resolvedUrl) {
             props = { ...props, url: resolvedUrl };
-            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: mediaContentType(block.type) });
+            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
           } else if (!getBlockPendingUpload(props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
             return children;
@@ -220,14 +220,6 @@ export function BlockNoteFullHtml({
   }, [defaultValue, tenantId, organizationId, uploadsArrived]);
 
   const handleClick: MouseEventHandler = (event) => {
-    // The sanitizer drops `target`, so a link to another site opens its own tab here
-    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
-    if (link && URL.canParse(link.href) && new URL(link.href).origin !== location.origin) {
-      event.preventDefault();
-      window.open(link.href, '_blank', 'noopener');
-      return;
-    }
-
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
     const blockId = findClickedMediaBlockId(event.target);
