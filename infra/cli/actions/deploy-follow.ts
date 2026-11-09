@@ -1,4 +1,5 @@
 import { confirm } from '@inquirer/prompts';
+import { accountExcerpt } from '../../lib/deploy/boot-accounts';
 import { classifyRun } from '../../lib/deploy/failure-class';
 import { commitRefs } from '../../lib/deploy/git-remote';
 import { type JobRun, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
@@ -18,6 +19,8 @@ import { autoAcceptDefaults, type InfraContext, stackNameFor } from '../shared';
 
 const POLL_MS = 5_000;
 const MAX_TRIES = 3;
+/** How much of a crashed machine's boot account a failed deploy prints in place: its error, then the end of its log. */
+const BOOT_EXCERPT_LINES = 20;
 
 /** How a followed deploy ended, for the caller: as the main job reports it. */
 export type FollowOutcome = ReturnType<typeof mainJobOutcome>;
@@ -104,6 +107,7 @@ function recordOutcome(outcome: RunOutcome): FollowOutcome {
 async function reportEnd(
   context: InfraContext,
   key: KeyPair,
+  store: RunStore,
   outcome: FollowOutcome,
   sha: string,
   record: RunRecord | undefined,
@@ -130,6 +134,13 @@ async function reportEnd(
     return undefined;
   }
   console.error(`${crossMark} ${verdict?.sentence ?? fallback}`);
+  // A crash of the release is read here, without a second screen: the failed machine's own account, as Deploy logs prints it.
+  const crashed = verdict?.side === 'release' ? record?.boot?.find((entry) => entry.failed && entry.key) : undefined;
+  if (crashed?.key) {
+    const body = await store.readBootAccount(crashed.key).catch(() => undefined);
+    console.info(pc.dim(`  ${crashed.service}: boot failed (boot-diag/${crashed.key})`));
+    for (const line of body ? accountExcerpt(body, BOOT_EXCERPT_LINES) : ['(the account has expired or cannot be read)']) console.info(`  ${line}`);
+  }
   const live = await liveCommit(context, key).catch(() => undefined);
   if (live) {
     const still = sha.startsWith(live) ? '' : ' still';
@@ -161,7 +172,7 @@ export async function deployAndFollow(
     const { run, record } = await followRun(auth, region, store, commit.sha, start);
     const outcome = mainJobOutcome(run);
     const unended = `The run ended ${run.state} before ${record ? 'its record did' : 'it wrote a record'}${run.error_message ? `: ${run.error_message}` : '.'}`;
-    const verdict = await reportEnd(context, key, outcome, commit.sha, record, unended);
+    const verdict = await reportEnd(context, key, store, outcome, commit.sha, record, unended);
     const offer = verdict?.retryLikely && tries < MAX_TRIES && Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
     if (!offer || !(await confirm({ message: 'Retry now?', default: true }))) return outcome;
   }
@@ -209,6 +220,6 @@ export async function followLiveDeploy(context: InfraContext, key: KeyPair, live
     }
   }
   const outcome = recordOutcome(record.outcome);
-  await reportEnd(context, key, outcome, record.target, record, `The run ended ${record.outcome}.`);
+  await reportEnd(context, key, store, outcome, record.target, record, `The run ended ${record.outcome}.`);
   return outcome;
 }

@@ -15,6 +15,19 @@ export function decideScheduledRun(target: Pick<Target, 'sha' | 'retry'>, record
   return record ? { action: 'none', record } : { action: 'deploy' };
 }
 
+/** What a rotation does with the target once the live commit is deployed again: start it, as a scheduled run would, or stay and say why. */
+export type RotationTarget = { action: 'start' } | { action: 'stay'; record: RunRecord } | { action: 'stay'; unread: string };
+
+/**
+ * The rotation's rule for the target, the schedule's own: a target with a run under its retry counter is not started again, so a rollback
+ * by hand holds through a rotation. Records that could not be read count as a run: a rotation never undoes a rollback it could not see.
+ */
+export function rotationTarget(target: Pick<Target, 'sha' | 'retry'>, records: readonly RunRecord[] | { error: string }): RotationTarget {
+  if ('error' in records) return { action: 'stay', unread: records.error };
+  const decision = decideScheduledRun(target, records);
+  return decision.action === 'deploy' ? { action: 'start' } : { action: 'stay', record: decision.record };
+}
+
 /** The lease and the reads a scheduled run makes, each on the deploy key or the repository read key. */
 export interface ScheduledEffects {
   /** Take the environment's lease under `owner` and `operation`; the holder when another holds it. */

@@ -358,7 +358,10 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     default: firstSetup,
   });
   if (!runNow) {
-    console.info(`  ${pc.dim(`Recommended: run \`${actionCommand('resume')}\` to retry.`)}`);
+    console.info(
+      `  ${pc.dim(`"${actionLabel('resume')}" creates it later; the stack file is connected now, so every checkout sees ${environment} set up.`)}`,
+    );
+    await connectRepository(environment);
     return;
   }
   await provisionBaseInfra(ctx, operatorSecrets);

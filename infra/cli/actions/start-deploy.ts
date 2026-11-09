@@ -6,7 +6,7 @@ import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { bucketRunStore, commitRecords } from '../../lib/deploy/run-store';
-import { decideScheduledRun } from '../../lib/deploy/scheduled-run';
+import { rotationTarget } from '../../lib/deploy/scheduled-run';
 import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -167,23 +167,23 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
  */
 async function targetHasRun(context: InfraContext, key: KeyPair, live: string, target: Target): Promise<boolean> {
   const state = stateKeyOf(key, context.projectId);
-  const [refs, decision] = await Promise.all([
+  const [refs, records] = await Promise.all([
     commitRefs(),
     makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey)
       .then((s3) => commitRecords(bucketRunStore(s3, deriveInfra(context.appConfig).naming.bootDiagBucket), target.sha))
-      .then((records) => decideScheduledRun(target, records))
-      .catch((error: unknown) => errorMessage(error)),
+      .catch((error: unknown) => ({ error: errorMessage(error) })),
   ]);
   const [liveName, targetName] = [commitName(refs, live), commitName(refs, target.sha)];
-  if (typeof decision === 'string') {
+  const verdict = rotationTarget(target, records);
+  if (verdict.action === 'start') return false;
+  if ('unread' in verdict) {
     console.warn(
-      `${warningMark} The runs of ${targetName} could not be read (${decision}): ${context.environment} stays on ${liveName}, and "${actionLabel('start-deploy')}" deploys ${targetName}.`,
+      `${warningMark} The runs of ${targetName} could not be read (${verdict.unread}): ${context.environment} stays on ${liveName}, and "${actionLabel('start-deploy')}" deploys ${targetName}.`,
     );
     return true;
   }
-  if (decision.action === 'deploy') return false;
   console.info(
-    `${checkMark} ${context.environment} stays on ${liveName}: ${targetName} has run ${decision.record.run} (${decision.record.outcome}); "${actionLabel('start-deploy')}" deploys it.`,
+    `${checkMark} ${context.environment} stays on ${liveName}: ${targetName} has run ${verdict.record.run} (${verdict.record.outcome}); "${actionLabel('start-deploy')}" deploys it.`,
   );
   return true;
 }
