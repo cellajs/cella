@@ -20,7 +20,7 @@ import { headingLevelsExtension } from '~/modules/common/blocknote/custom-elemen
 import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
 import { FilePanelBridge, useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
-import { InlineUppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
+import { InlineUppyFilePanel, uploadEditorFile } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
@@ -134,6 +134,10 @@ export function BlockNote({
     isMediaBlockType(type) ? canUpload && !excludeMediaBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
   );
 
+  // A pasted or dropped file becomes an attachment row; a mode without rows leaves files to the panel.
+  const attachmentUploads = uppyPanelProps?.mediaMode === 'public-no-attachment' ? undefined : uppyPanelProps;
+  const uploadFile = useLatestCallback((file: File) => (attachmentUploads ? uploadEditorFile(file, attachmentUploads) : Promise.resolve({})));
+
   // Parse initial content once at creation time so the undo history starts clean
   const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
@@ -156,6 +160,7 @@ export function BlockNote({
     // The org context is the fallback for a reference whose attachment is not cached.
     resolveFileUrl: (ref: string) =>
       resolveBlockNoteFileRef(ref, { tenantId: baseFilePanelProps?.tenantId, organizationId: baseFilePanelProps?.organizationId }),
+    ...(attachmentUploads && { uploadFile }),
     ...(ariaLabel && { domAttributes: { editor: { 'aria-label': ariaLabel } } }),
   };
 

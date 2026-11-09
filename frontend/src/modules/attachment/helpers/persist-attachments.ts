@@ -1,12 +1,10 @@
+import { onlineManager } from '@tanstack/react-query';
 import type { Attachment } from 'sdk';
 import { attachmentCreateOptions } from '~/modules/attachment/query';
 import { createStxForCreate } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Persists BlockNote attachments through the queued create mutation, the one the upload table uses: optimistic rows now,
- * and offline a paused create that replays on reconnect or after a reload, so the block's id never points at no row.
- */
+/** Persists attachments through the upload table's queued create, so a block's id never points at no row; resolves once created, or at once while offline. */
 export function persistAttachments(
   attachments: Attachment[],
   {
@@ -19,10 +17,13 @@ export function persistAttachments(
     /** The deepest home channel id only (ancestors are server-derived); omitted = org-homed. The fields a create accepts follow the hierarchy (`placementFieldsSchema`). */
     placement?: Record<string, string | null | undefined>;
   },
-): void {
-  if (!attachments.length) return;
+): Promise<void> {
+  if (!attachments.length) return Promise.resolve();
   const data = placement ? attachments.map((attachment) => ({ ...attachment, ...placement })) : attachments;
   const mutation = queryClient.getMutationCache().build(queryClient, attachmentCreateOptions(queryClient));
+  const created = mutation.execute({ tenantId, organizationId, data, stx: createStxForCreate() }).then(() => {});
   // The mutation's onError already reports a failed create.
-  mutation.execute({ tenantId, organizationId, data, stx: createStxForCreate() }).catch(() => {});
+  created.catch(() => {});
+  // Offline the create waits paused for its replay: queued is as far as a caller waits
+  return onlineManager.isOnline() ? created : Promise.resolve();
 }

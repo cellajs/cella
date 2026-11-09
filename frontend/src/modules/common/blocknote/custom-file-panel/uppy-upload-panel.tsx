@@ -9,6 +9,7 @@ import { uploadTemplates } from 'shared/transloadit-config';
 import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
+import { uploadAttachmentFile } from '~/modules/attachment/helpers/upload-file';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import {
@@ -72,6 +73,23 @@ const measureImageBlobSize = (blob: Blob): Promise<{ width: number; height: numb
     };
     image.src = url;
   });
+
+type AttachmentPanelProps = Extract<BaseUppyFilePanelProps, { mediaMode: 'public-attachment' | 'private-attachment' }>;
+
+/** A pasted or dropped file's block props once it is uploaded; the host persists its row, as it does a file panel upload. */
+export const uploadEditorFile = async (file: File, { organizationId, mediaMode, onComplete, onError }: AttachmentPanelProps) => {
+  // BlockNote makes an image block of any image/* file.
+  const isImage = file.type.startsWith('image/');
+  try {
+    const [attachment, size] = await Promise.all([uploadAttachmentFile(file, organizationId), isImage ? measureImageBlobSize(file) : null]);
+    await onComplete?.([attachment]);
+    const { measuredId: _measuredId, ...props } = attachmentBlockProps(attachment, isImage, mediaMode);
+    return { props: { ...props, ...size } };
+  } catch (error) {
+    onError?.(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+};
 
 type UppyFilePanelProps = BaseUppyFilePanelProps & {
   blockId: string;
