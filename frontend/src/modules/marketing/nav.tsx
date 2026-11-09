@@ -76,24 +76,10 @@ export function MarketingNav() {
               hash=""
               replace={isAboutPage}
               draggable={false}
-              className="focus-effect active:press relative rounded-md p-0.5 transition-transform sm:hover:scale-105 md:pr-4"
+              className="focus-effect active:press rounded-md p-0.5 transition-transform sm:hover:scale-105"
               aria-label={t('c:go_to_about')}
             >
               <Logo size="md" title={t('c:go_to_about')} />
-
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0.5 right-0.5 max-md:hidden">
-                <title>{t('about:support_ukraine')}</title>
-                <g fill="none">
-                  <path
-                    fill="#FFD500"
-                    d="M0 6s1 .5 3.2.5c2 0 3.5-1 5.6-1 1.7 0 3.2.5 3.2.5v4c0 .4-.3.7-.7.6-.6-.1-1.5-.3-2.5-.3-2 0-3.5 1-5.6 1-1.3 0-2.2-.2-2.7-.4a.7.7 0 0 1-.5-.6V6Z"
-                  />
-                  <path
-                    fill="#0974E5"
-                    d="M0 2c0-.4.4-.6.7-.5l2.5.2c2 0 3.5-1 5.6-1 1 0 2 .2 2.6.4.4 0 .6.4.6.7V6s-1.5-.5-3.2-.5c-2 0-3.5 1-5.6 1C1.1 6.5 0 6 0 6V2Z"
-                  />
-                </g>
-              </svg>
             </Link>
 
             {marketingNavConfig.length > 0 && (

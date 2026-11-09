@@ -174,6 +174,7 @@
   "features.yjs_collaboration.text": "Real-time co-editing with live presence, powered by Yjs. While connected, concurrent edits merge cleanly with no conflicts.",
   "features.zero_downtime": "Zero-downtime deploys",
   "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.",
+  "hero.built_in_europe": "Built & hosted in Europe",
   "hero.menu_toggle": "Open or close the menu in the app preview",
   "hero.text": "Cella is a <strong>TypeScript template</strong> to build & deploy web apps with offline and real-time sync features on day one.",
   "hero.title": "Ship modern web apps. Use a classic REST API.",
@@ -236,7 +237,6 @@
   "stack.vite.text": "A straightforward and fast monorepo setup. PWA support with Serwist.",
   "stack.yjs": "yjs & blocknote",
   "stack.yjs.text": "Real-time collaboration with presence in the BlockNote rich-text editor.",
-  "support_ukraine": "We support Ukraine",
   "sync_diagram.one_vm": "Single VM",
   "sync_diagram.part_1.label": "Part 1",
   "sync_diagram.part_1.text": "Every change to your data passes through a <strong>REST API</strong> (OpenAPI 3.1). Permissions are checked on every request. 3rd party services can use it. When the sync engine is down, your API still works.",
@@ -250,8 +250,8 @@
   "try_me": "Try me",
   "why.text_1": "Auth, permissions, UI components, automated SDK & docs, CLI to pull template changes, <featuresLink>and more</featuresLink>.",
   "why.text_2": "Some data is <syncEngineLink>synced in real-time</syncEngineLink> to clients, some is just fetched. All data passes through Postgres, API & React Query.",
-  "why.text_3": "Automated handling of data retention policies. A simple CLI to setup and deploy on EU infra.",
+  "why.text_3": "A simple CLI to setup and deploy using only EU-based hosting & vendors. GDPR compliant.",
   "why.title_1": "Batteries included template",
   "why.title_2": "Selective sync engine",
-  "why.title_3": "GDPR-ready & EU-hosted"
+  "why.title_3": "100% EU-hosted"
 }

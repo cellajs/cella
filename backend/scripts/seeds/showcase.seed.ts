@@ -257,8 +257,8 @@ export const showcaseSeed = async () => {
     const planned = planOrganization(org, 1 + index * 10);
     const { organization, channel, adminMembership, members } = planned;
 
-    // Marketing shots and screenshots, never customers: out of the public counts and behind the admin lists' kind filter.
-    await db.insert(tenantsTable).values({ id: channel.tenantId, name: org.name, kind: 'test', createdBy: adminId });
+    // A listed kind: the system panel's organization list, which a shot frames, shows only those. This seed reaches only a testbed.
+    await db.insert(tenantsTable).values({ id: channel.tenantId, name: org.name, kind: 'live', createdBy: adminId });
     await db.insert(organizationsTable).values(organization);
     await insertUsers(ctx, { users: members.map(({ user }) => user) });
     await db.insert(emailsTable).values(members.map(({ user }) => mockEmail(user)));
