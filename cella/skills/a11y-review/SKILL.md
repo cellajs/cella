@@ -11,7 +11,7 @@ Passing automated checks shows that no failure was found, not that a criterion i
 
 ## Run
 
-Hold a testbed for the fix loop (`pnpm cella testbed`, attached to your session), so partial runs (`pnpm cella a11y --states <ids>`) skip its start. Every run prints its results folder: `.git/cella-a11y/` in the main checkout, the worktree's own git directory in a linked one. The files below are named from there.
+Hold a testbed for the fix loop (`pnpm testbed`, attached to your session), so partial runs (`pnpm cella a11y --states <ids>`) skip its start. Every run prints its results folder: `.git/cella-a11y/` in the main checkout, the worktree's own git directory in a linked one. The files below are named from there.
 
 - A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. Read the visit's `failure-<mode>.png` and `.json` first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
 - A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
@@ -35,7 +35,7 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 
 1. Read the failures in `manual-pass.md` and `axe.json` (every failing element per rule and state).
 2. Fix the cause in the component, not the instance: a token, a primitive in `frontend/src/modules/ui`, a shared form field.
-3. Check the fix in the running app before trusting it. A short script in `.scratch/` opens a state of the scope signed in: `const { page, close } = await openState('<id>', { context })` from `@cellajs/cli/a11y`, also as a phone, a zoomed desktop or with motion allowed (`context` takes Playwright's context options). Run it through `pnpm cella testbed -- node .scratch/<script>.mjs`, which hands it the testbed's ports and database. Check the state the fix is about and one neighbor that shares the component.
+3. Check the fix in the running app before trusting it. A short script in `.scratch/` opens a state of the scope signed in: `const { page, close } = await openState('<id>', { context })` from `@cellajs/cli/a11y`, also as a phone, a zoomed desktop or with motion allowed (`context` takes Playwright's context options). Run it through `pnpm testbed -- node .scratch/<script>.mjs`, which hands it the testbed's ports and database. Check the state the fix is about and one neighbor that shares the component.
 4. Changes that alter data (a reorder, a mute) are put back before the next run: the audit opens the first organization the audit user administers, and a changed order changes which one that is.
 5. Rerun the full audit. Rows the audit decides move by themselves.
 6. A row a reviewer decided keeps its decision and its remark, which now describes the old code: decide it again once step 3 showed the fix holds.

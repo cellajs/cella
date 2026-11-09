@@ -3,7 +3,7 @@ import { config } from '../config/config.default.ts';
 
 /**
  * The PostgreSQL containers of `backend/compose.yaml`, by purpose: `dev` for `pnpm dev`, `test` for the suites and
- * `testbed` for `pnpm cella testbed`. Their ports follow the app's number, as the service ports do, so two apps run
+ * `testbed` for `pnpm testbed`. Their ports follow the app's number, as the service ports do, so two apps run
  * their databases side by side; a linked worktree shares the main checkout's. Every checkout of the app mounts them
  * under the default config's slug.
  */

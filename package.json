@@ -56,6 +56,7 @@
     "test:full": "pnpm docker:test && cross-env TEST_MODE=full COVERAGE_REPORTERS=summary vitest run --coverage.enabled --silent=passed-only",
     "test:storybook": "pnpm --filter frontend exec vitest run --project=storybook",
     "cella": "cella",
+    "testbed": "cella testbed",
     "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc-worker dev & pnpm --filter frontend offline",
     "story": "pnpm --filter frontend storybook",
     "studio": "pnpm --filter backend studio",
