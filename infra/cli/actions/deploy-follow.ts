@@ -183,7 +183,7 @@ export async function liveDeploy(context: InfraContext, key: KeyPair): Promise<L
   if (!lock || !leaseDeploys(lock) || Date.parse(lock.expiresAt) <= Date.now()) return undefined;
   const [newest] = await store.listRuns(1);
   const record = newest ? (await store.readRecord(newest))?.newest : undefined;
-  if (!record || record.outcome !== 'running' || !leaseHeldByRun(lock, record.run)) return undefined;
+  if (record?.outcome !== 'running' || !leaseHeldByRun(lock, record.run)) return undefined;
   return { record, lock };
 }
 
