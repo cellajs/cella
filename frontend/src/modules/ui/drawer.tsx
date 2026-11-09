@@ -173,7 +173,8 @@ export const DrawerLeadContext = createContext(false);
 export function DrawerLead({ className, ...props }: ComponentProps<'p'>) {
   return (
     <DrawerLeadContext.Provider value={true}>
-      <p data-slot="drawer-lead" className={cn('py-3 text-center text-sm text-balance', className)} {...props} />
+      {/* A margin, not padding: line-clamp clips at the padding box, so padding would show a sliver of the next line */}
+      <p data-slot="drawer-lead" className={cn('my-3 text-center text-sm text-balance', className)} {...props} />
     </DrawerLeadContext.Provider>
   );
 }

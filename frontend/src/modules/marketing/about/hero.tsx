@@ -64,7 +64,7 @@ export function Hero({ title, text, children }: HeroProps) {
         </header>
         <div
           className={cn(
-            'relative h-[calc(376px*var(--hero-stack-scale))] w-full transition-[opacity,translate,scale] delay-150 duration-500 ease-out max-sm:-mt-10 lg:col-start-1 lg:row-start-1 lg:h-auto',
+            'relative h-[calc(376px*var(--hero-stack-scale))] w-full transition-[opacity,translate,scale] delay-150 duration-500 ease-out lg:col-start-1 lg:row-start-1 lg:h-auto',
             !inView && 'translate-y-4 scale-95 opacity-0',
           )}
         >

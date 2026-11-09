@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { CopiedIcon } from '~/modules/common/copied-icon';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
 // import { Counters } from '~/modules/marketing/about/counters';
 // import { FAQ } from '~/modules/marketing/about/faq';
@@ -37,29 +38,46 @@ export function AboutPage() {
 
       <main className="focus:outline-hidden">
         <Hero title="about:hero.title" text="about:hero.text">
-          <div className="glow-button relative max-sm:hidden">
-            <Input
-              readOnly
-              id="install-command"
-              aria-label={t('c:install_command')}
-              value={installCommand}
-              className="bg-background ring-primary/10 focus-visible:ring-primary/20 focus:border-input-hover block h-14 w-96 rounded-full border border-transparent px-8 py-6 font-mono text-sm font-light ring-4 transition focus:outline-hidden"
-            />
-            {copied && (
-              <div className="bg-background absolute top-2.5 right-2 left-8 rounded-full py-2 text-left font-mono text-sm">
-                {t('about:install_copied')}
-              </div>
-            )}
+          <div className="flex flex-col items-center gap-5 lg:flex-row lg:gap-6">
+            <div className="glow-button relative max-sm:hidden">
+              <Input
+                readOnly
+                id="install-command"
+                aria-label={t('c:install_command')}
+                value={installCommand}
+                className="bg-background ring-primary/10 focus-visible:ring-primary/20 focus:border-input-hover block h-14 w-96 rounded-full border border-transparent px-8 py-6 font-mono text-sm font-light ring-4 transition focus:outline-hidden lg:w-80"
+              />
+              {copied && (
+                <div className="bg-background absolute top-2.5 right-2 left-8 rounded-full py-2 text-left font-mono text-sm">
+                  {t('about:install_copied')}
+                </div>
+              )}
 
-            <Button
-              onClick={() => copyToClipboard(installCommand)}
-              aria-label={t('c:copy')}
-              size="icon"
-              variant="ghost"
-              className="absolute top-2 right-2 rounded-full"
-            >
-              <CopiedIcon copied={copied} icon={CopyIcon} />
-            </Button>
+              <Button
+                onClick={() => copyToClipboard(installCommand)}
+                aria-label={t('c:copy')}
+                size="icon"
+                variant="ghost"
+                className="absolute top-2 right-2 rounded-full"
+              >
+                <CopiedIcon copied={copied} icon={CopyIcon} />
+              </Button>
+            </div>
+
+            <p className="text-foreground flex items-center gap-2.5 text-sm font-medium whitespace-nowrap">
+              <span className="flex">
+                {/* The mask's center is the EU flag's: 20px width - 6px overlap + 10px radius */}
+                <CountryFlag
+                  countryCode="ua"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="rounded-full mask-[radial-gradient(circle_at_24px_50%,transparent_11.5px,black_12px)] object-cover shadow-none"
+                />
+                <CountryFlag countryCode="eu" alt="" width={20} height={20} className="-ml-[6px] rounded-full object-cover shadow-none" />
+              </span>
+              {t('about:hero.built_in_europe')}
+            </p>
           </div>
         </Hero>
 
