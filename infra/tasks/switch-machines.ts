@@ -23,7 +23,6 @@ import type { Foundation } from '../lib/scaleway/foundation';
 import { createMachine, deleteMachine, getUserData, listMachines, readMachine, setUserData } from '../lib/scaleway/machines';
 import type { Presigner } from '../lib/scaleway/presign';
 import type { Environment } from '../lib/stack/bootstrap-stack-state';
-import { deployEvents, emitDeployEvent } from '../lib/telemetry/deploy-telemetry';
 import { errorMessage } from '../lib/utils/errors';
 import type { MachineEnv } from './compose-env';
 import { lbServerStats, waitForPools } from './wait-for-version';
@@ -216,8 +215,6 @@ export interface LiveSwitchContext {
   suppliers: Readonly<Record<string, EnvSupplier>>;
   supplierContext: EnvSupplierContext;
   composeContent: string;
-  traceparent?: string;
-  telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
   log(message: string): void;
 }
 
@@ -285,8 +282,6 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
           port: service.healthPort,
         })),
         drainSeconds: role.drainSeconds,
-        ...(ctx.traceparent ? { traceparent: ctx.traceparent } : {}),
-        ...(ctx.telemetry ? { telemetry: ctx.telemetry } : {}),
       });
       const securityGroupId = ctx.foundation.securityGroups[role.role];
       if (!securityGroupId) throw new Error(`switch: no security group for ${role.role}; an apply makes it`);
@@ -348,10 +343,7 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
       return outcome === 'done';
     },
     remove: (machine) => deleteMachine(auth, ctx.zone, machine),
-    async record(role, entry) {
-      await ctx.record(role, entry);
-      if (entry) emitDeployEvent(deployEvents.roleSwitched, { role, sha: entry.commit, slot: entry.slot });
-    },
+    record: ctx.record,
     sleep: (ms) => new Promise((done) => setTimeout(done, ms)),
     log: ctx.log,
   };

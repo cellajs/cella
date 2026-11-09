@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: pnpm infra:compose && pnpm --filter infra cli, Show status, Show runs, Start a deploy, Manage runtime secrets, Open public DB access, Close public DB access, Rotate keys & secrets, Repair stack, Unlock stack, Tear down stack, INFRA_ADMIN_EMAIL, --defaults
+grep: pnpm infra:compose && pnpm --filter infra cli, Show status, Show runs, Start a deploy, Manage runtime secrets, Open public DB access, Close public DB access, Rotate keys & secrets, Repair stack, Unlock stack, Tear down stack, INFRA_ADMIN_EMAIL, --defaults, telemetry.config, telemetrySink
 ---
 
 # The infra CLI opens on a home screen and guides setup, deploys and rollbacks
@@ -12,6 +12,8 @@ Set the root `package.json` script to `"infra": "pnpm --silent --filter infra cl
 ## What & why
 
 `pnpm infra` opens on a home screen (`infra/cli/home.ts`) above a menu by task, one letter per row: labels changed, action ids did not, and `releases` is new. A first setup follows a launch checklist, mints its operator key and requires the admin email. Deploy now says whose side a failure is on. `applied.json` and release manifests gain `describes`, so apply needed names the changed fields. The aim: a Heroku user reaches a URL and a rollback unaided.
+
+A deploy exports no OpenTelemetry trace and a machine's boot no spans: the run record and the CLI cover the deploy's steps, and `maple-secret-ingest-key` feeds only the services' own telemetry. `infra/config/telemetry.config.ts` is gone, and the description loses its `telemetry` member, so the apply of step 5 records the new description.
 
 ## Blast radius
 

@@ -47,7 +47,6 @@ export async function appDescription(root = join(infraDir, '..')): Promise<Recor
     { generalConfig },
     { healthContract },
     { appEnvSuppliers },
-    { telemetrySink },
   ] = await Promise.all([
     import('../../config/engine-config'),
     import('../runtime-secrets'),
@@ -57,7 +56,6 @@ export async function appDescription(root = join(infraDir, '..')): Promise<Recor
     import('../../config/general.config'),
     import('../../config/health.config'),
     import('../../config/env-suppliers.config'),
-    import('../../config/telemetry.config'),
   ]);
   const context = supplierContext(config);
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
@@ -78,7 +76,6 @@ export async function appDescription(root = join(infraDir, '..')): Promise<Recor
     stores: Object.fromEntries(Object.entries(appStores).map(([id, store]) => [id, { kind: store.kind, settings: store.settings }])),
     managedKeys,
     env: Object.fromEntries(Object.entries(appEnvSuppliers).map(([name, supply]) => [name, supply(context)])),
-    telemetry: telemetrySink,
   };
 }
 

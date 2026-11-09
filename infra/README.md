@@ -60,10 +60,6 @@ Stable check `id`s:
 - `secrets.required`, `environments.lines`, `schedule.last`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`
 
-## Deploy telemetry
-
-With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Storing the key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Env vars & secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
-
 ## Key files
 
 `infra/.env.<mode>` holds this machine's observer key (`SCW_OBSERVER_*`); the environment's Scaleway project is committed in `infra/Pulumi.<mode>.yaml`, as `infra:projectId`. The file overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A bare `infra/.env` is never read.
@@ -78,7 +74,7 @@ A service is an entry in [config/services.config.ts](config/services.config.ts) 
 
 | Path | Holds |
 | --- | --- |
-| [config/](config/) | The registries: services, general settings (machine image, database size, asset retention, the schedule's cadence), runtime secrets, managed keys, stores, env suppliers, health, the frontend CSP and telemetry; and engine-config.ts, where the engine reads the app's config |
+| [config/](config/) | The registries: services, general settings (machine image, database size, asset retention, the schedule's cadence), runtime secrets, managed keys, stores, env suppliers, health and the frontend CSP; and engine-config.ts, where the engine reads the app's config |
 | [cli/](cli/) | The menu and its actions |
 | [resources/](resources/) | The Pulumi program: the foundation, no machine |
 | [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
@@ -117,7 +113,7 @@ One name per concept across code and docs:
 | **slot** | `a` or `b`: one of a routed role's two reserved addresses, which its pools list for good. A deploy boots on the slot that does not serve. |
 | **switch** | Moving a role to its new machine: boot on the idle slot, wait until its pools serve it, record it, drain the old one, delete it. |
 | **drain** | The order in a machine's manifest that makes its agent fail the load balancer's check, keeps its connections for the role's drain seconds, and stops its containers. |
-| **agent** | `infra-agent`, the Compose service every machine runs ([agent/](agent/)): boots the release, answers the load balancer's check per service, drains. |
+| **agent** | `infra-agent`, the Compose service every machine runs ([agent/](agent/)): boots the release, answers the load balancer's check per service, drains. It replaces every secret value it handled, and any URL userinfo, in its output and its boot account. |
 | **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not a machine's boot. |
@@ -129,7 +125,7 @@ One name per concept across code and docs:
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |
 | **privileged** | A resource only an apply on the operator key changes. |
-| **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports, trace context; no key and no secret value. |
+| **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports; no key and no secret value. |
 | **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |
 | **boot account** | The boot log a machine uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |

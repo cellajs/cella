@@ -32,10 +32,6 @@ export interface BootPlan {
   /** Compose services to start, named explicitly; the one-shot release companion starts as their dependency. */
   services: [string, ...string[]];
   releaseSha: string;
-  /** W3C traceparent of the deploy that made this machine; boot telemetry joins that trace. */
-  traceparent?: string;
-  /** App-declared telemetry sink: boot events export here once the env file delivers the key under `keyEnvVar`. Absent = black box only; the agent bakes in no vendor endpoint. */
-  telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
   imageContract: typeof supportedImageContract;
   /**
    * The links the deploy signed for the first boot, which end within minutes and which the deploy strips from the user data once the boot
@@ -54,8 +50,6 @@ export interface BootPlan {
 const topLevelKeys = new Set([
   'schemaVersion',
   'service',
-  'traceparent',
-  'telemetry',
   'profile',
   'services',
   'releaseSha',
@@ -175,22 +169,12 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   const composeFile = stringField(docker, 'composeFile');
   for (const path of [logFile, composeFile]) assertAllowedPath(path, configDir);
 
-  const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
-
-  let telemetry: BootPlan['telemetry'];
-  if (parsed.telemetry !== undefined) {
-    const sink = objectField(parsed, 'telemetry');
-    telemetry = { endpoint: stringField(sink, 'endpoint'), keyHeader: stringField(sink, 'keyHeader'), keyEnvVar: stringField(sink, 'keyEnvVar') };
-  }
-
   return {
     schemaVersion,
     service: stringField(parsed, 'service'),
     profile: stringField(parsed, 'profile'),
     services: servicesField(parsed),
     releaseSha: stringField(parsed, 'releaseSha'),
-    ...(traceparent ? { traceparent } : {}),
-    ...(telemetry ? { telemetry } : {}),
     imageContract,
     links: { env: linkField(links, 'env'), bootAccount: linkField(links, 'bootAccount'), archives: archivesField(links) },
     bootDiagnostics: { logFile },

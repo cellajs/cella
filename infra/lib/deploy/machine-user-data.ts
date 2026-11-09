@@ -28,10 +28,6 @@ export interface MachineUserDataParams {
   agentPorts: AgentPort[];
   /** Seconds a draining machine keeps its connections after its check turned red, before its containers stop. */
   drainSeconds: number;
-  /** Deploy trace context baked into the boot plan. */
-  traceparent?: string;
-  /** App-declared telemetry sink for boot events (config/telemetry.config.ts). */
-  telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
 }
 
 /**
@@ -103,8 +99,6 @@ function bootPlan(p: MachineUserDataParams): string {
       profile: p.role,
       services: p.startServices,
       releaseSha: p.releaseSha,
-      ...(p.traceparent ? { traceparent: p.traceparent } : {}),
-      ...(p.telemetry ? { telemetry: p.telemetry } : {}),
       imageContract: supportedImageContract,
       links: p.links,
       bootDiagnostics: { logFile: bootLogPath },

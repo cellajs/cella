@@ -61,9 +61,6 @@ function makeFake(
   const switches: SwitchRequest[] = [];
   const records: Array<{ bucket: string; record: RunRecord; log: string }> = [];
   const fx: DeployEffects = {
-    initTelemetry: async () => {
-      ops.push('telemetry:init');
-    },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}${argv.includes('--check') ? ':check' : ''}`);
       taskArgs[name] = [...argv];

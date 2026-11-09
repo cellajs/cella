@@ -11,8 +11,6 @@ import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, run
 import type { MachineRole } from '../lib/machine-roles';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
-import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
-import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
@@ -55,8 +53,6 @@ export interface SwitchRequest {
 
 /** One executed step. Steps run in-process via `task`. */
 export interface DeployEffects {
-  /** Create the deploy emitter (OTLP config resolution may hit Secret Manager). */
-  initTelemetry(init: { mode: string; sha: string }): Promise<void>;
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** A file a task wrote for the steps after it. */
@@ -154,24 +150,15 @@ export async function runDeploy(
     });
   say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode} (retry ${opts.retry})`);
   await persist();
-  await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
-  const telemetry = deployTelemetry();
-  const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
-  // New machines bake this context into their boot plans, so their boot spans join the deploy trace.
-  if (deploySpan) process.env.TRACEPARENT = deploySpan.traceparent();
-  telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha });
 
   const step = async (title: string, run: () => void | Promise<void>): Promise<void> => {
     // A run whose lease another took must change nothing more: the other run holds the environment now.
     if (lease?.lost) throw new Error(`the lease was taken by another run before "${title}": this run stops`);
     fx.group(title);
-    const span = telemetry?.startSpan(title, { step: title }, deploySpan?.ctx);
     const startedAt = Date.now();
     try {
       await run();
       const seconds = Math.round((Date.now() - startedAt) / 1000);
-      span?.end('ok');
-      telemetry?.event(deployEvents.stepCompleted, { step: title, duration_s: seconds }, { ctx: span?.ctx });
       recorder.step(title, seconds, 'ok');
       say(`[deploy] ${title}: ok (${seconds}s)`);
       await persist();
@@ -179,10 +166,6 @@ export async function runDeploy(
       const seconds = Math.round((Date.now() - startedAt) / 1000);
       recorder.step(title, seconds, 'error');
       recorder.line(`[deploy] ${title}: failed (${seconds}s): ${errorMessage(err)}`);
-      span?.end('error', { message: errorMessage(err) });
-      const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
-      if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
-      telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx });
       if (err instanceof Error) Object.assign(err, { deployStep: (err as { deployStep?: string }).deployStep ?? title });
       throw err;
     } finally {
@@ -309,7 +292,6 @@ export async function runDeploy(
           await fx.switchMachines({ stack, roles: live.roles, pending, record: live.record, target, manifest, envs, switched, kept });
         });
       } catch (err) {
-        telemetry?.event(deployEvents.switchFailed, { error: errorMessage(err) }, { severity: 'error' });
         say("[deploy] a switch failed; reading the release's boot accounts");
         // This run's own keys: an account an earlier attempt at the same commit uploaded names another boot.
         const envs = JSON.parse(await fx.readFile(envsFile).catch(() => '[]')) as MachineEnv[];
@@ -375,13 +357,6 @@ export async function runDeploy(
     const run = recorder.record().run;
     await persist();
     if (!recordUnwritable) fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`);
-    deploySpan?.end(outcome);
-    telemetry?.event(
-      outcome === 'ok' ? deployEvents.completed : deployEvents.failed,
-      { mode: opts.mode, sha: opts.sha },
-      outcome === 'ok' ? {} : { severity: 'error' },
-    );
-    await telemetry?.flush();
   }
 }
 const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
@@ -451,32 +426,6 @@ async function controlClient(region: string) {
 
 function createRealEffects(): DeployEffects {
   return {
-    async initTelemetry({ mode, sha }) {
-      let config = otlpConfigFromEnv();
-      if (!config) {
-        const [{ sinkIngestKeyFromSecretManager }, { telemetrySink }] = await Promise.all([
-          import('../lib/telemetry/sink-key'),
-          import('../config/telemetry.config'),
-        ]);
-        const lookup = await sinkIngestKeyFromSecretManager().catch((err: unknown) => ({ missing: `lookup failed: ${errorMessage(err)}` }));
-        if ('key' in lookup) {
-          config = { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: lookup.key } };
-          // In-process consumers (black-box replay on failure) resolve via env.
-          process.env[telemetrySink.keyEnvVar] ??= lookup.key;
-        } else {
-          // A deploy whose telemetry goes nowhere says so in its log, which its run record keeps.
-          console.warn(`[deploy] telemetry ingest key unavailable: ${lookup.missing}`);
-        }
-      }
-      if (!config) console.info('[deploy] telemetry export disabled (no ingest key); black box only');
-      initDeployTelemetry({
-        mode,
-        sha,
-        endpoint: config?.endpoint,
-        headers: config?.headers,
-        onError: (message) => console.warn(`[deploy] ${message}`),
-      });
-    },
     task: (name, argv = []) => taskRunners[name](argv),
     readFile: (path) => readFile(path, 'utf8'),
     async lease(stack, operation, run) {
@@ -550,7 +499,6 @@ function createRealEffects(): DeployEffects {
         { controlActor },
         { liveSwitchEffects, switchMachines },
         { appEnvSuppliers },
-        { telemetrySink },
         { supplierContext },
         { projectAccessKey },
       ] = await Promise.all([
@@ -562,7 +510,6 @@ function createRealEffects(): DeployEffects {
         import('../lib/stack/control-store'),
         import('./switch-machines'),
         import('../config/env-suppliers.config'),
-        import('../config/telemetry.config'),
         import('../lib/deploy/static-env'),
         import('../lib/scaleway/s3-client'),
       ]);
@@ -596,8 +543,6 @@ function createRealEffects(): DeployEffects {
         suppliers: appEnvSuppliers,
         supplierContext: supplierContext(appConfig),
         composeContent,
-        traceparent: process.env.TRACEPARENT,
-        telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },
         log: (message) => console.info(message),
       });
       await switchMachines(
