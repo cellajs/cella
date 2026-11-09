@@ -43,9 +43,11 @@ export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   /**
    * `requested`: somebody asked for it. `lost_slot`: the replication slot was gone, or dropped at the WAL bound.
    * `lost_counters`: `channel_counters` was empty. `wrong_books`: a verify found the differences in `corrections`.
-   * `interrupted`: the worker restarted before the stream had passed a rebuild.
+   * `interrupted`: the worker restarted before the stream had passed a rebuild. `bulk_write`: a transaction the worker
+   * discarded, declared by its marker (`error` holds the label, `migrate:<name>` for a migration) or past its size
+   * limit (`oversized:<count>`).
    */
-  reason: varchar({ enum: ['requested', 'lost_slot', 'lost_counters', 'wrong_books', 'interrupted'] }).notNull(),
+  reason: varchar({ enum: ['requested', 'lost_slot', 'lost_counters', 'wrong_books', 'interrupted', 'bulk_write'] }).notNull(),
   /** For a lost slot, the failure the worker read again from: its position (null for a subscription that failed) and its error. */
   positionFrom: varchar({ length: maxLength.field }),
   error: text(),

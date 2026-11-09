@@ -19,9 +19,9 @@ import type { MutationHandler } from '#/lib/mutation-bus';
 import { getEntityTable } from '#/tables';
 
 /**
- * Rows one channel toggle may rewrite. The CDC worker holds a source transaction whole and stops past 100,000 changes
- * (its `maxTransactionEvents`), for every tenant; half of that leaves room for the channel's own change and for the
- * write the handler joined.
+ * Rows one channel toggle may rewrite. Past 100,000 changes (the CDC worker's `maxTransactionEvents`) a transaction is
+ * discarded and every client refetches, the wrong price for one toggle; half of that leaves room for the channel's own
+ * change and for the write the handler joined.
  */
 const maxPublicCascadeRows = 50_000;
 

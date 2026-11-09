@@ -1,11 +1,13 @@
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, gt, inArray, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
+import { syncBulkMarkerPrefix } from 'shared/utils/worker-env';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { recalculateCounters } from '#/modules/entities/counters-queries';
+import { syncIncidentsTable } from '#/modules/entities/sync-state-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { cdcPublicationName, cdcSlotName } from '../../constants';
@@ -208,6 +210,28 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
     await waitFor(() => slotReached(target), 5000, 'the slot moved past the commit of the dropped transaction');
     expect(await recordedOf([id])).toBe(1);
     expect(received.length).toBe(messages);
+  }, 30_000);
+
+  it('records none of a declared bulk transaction: one incident, a new generation, and the slot past its commit', async () => {
+    const generation = replicationState.generation;
+    const rows = [attachmentRow(), attachmentRow(), attachmentRow()];
+
+    // As the migrate companion writes: the marker first, then the rows, in one transaction.
+    const { target } = await cdcDb.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_logical_emit_message(true, ${syncBulkMarkerPrefix}, 'migrate:backpressure-test')`);
+      await tx.insert(attachmentsTable).values(rows);
+      return (await tx.execute<{ target: string }>(sql`SELECT pg_current_wal_insert_lsn()::text AS target`)).rows[0];
+    });
+
+    await waitFor(() => slotReached(target), 15_000, 'the slot moved past the bulk transaction');
+    expect(await recordedOf(rows.map((row) => row.id))).toBe(0);
+    const incidents = await cdcDb
+      .select({ reason: syncIncidentsTable.reason, error: syncIncidentsTable.error })
+      .from(syncIncidentsTable)
+      .where(gt(syncIncidentsTable.createdAt, startedAt));
+    expect(incidents).toEqual([{ reason: 'bulk_write', error: 'migrate:backpressure-test' }]);
+    expect(replicationState.generation).toBeGreaterThan(generation);
+    expect(replicationState.failure).toBeNull();
   }, 30_000);
 
   it('records nothing while the API is away: the changes stay in the WAL', async () => {

@@ -94,14 +94,18 @@ async function writeIncident(tx: Tx, reason: IncidentReason, details: IncidentDe
   return state.generation;
 }
 
+/** A rebuild somebody asked for, or one a declared bulk transaction owed: no failure. An oversized transaction is one. */
+const isExpectedRebuild = (reason: IncidentReason, details: IncidentDetails): boolean =>
+  reason === 'requested' || (reason === 'bulk_write' && !details.error?.startsWith('oversized:'));
+
 /**
  * After that transaction committed: health carries the generation to the API at once, and the log gets its line. An
- * error, so a rare failure is not missed; a rebuild somebody asked for is no failure.
+ * error, so a rare failure is not missed; an expected rebuild is no failure.
  */
 function announceIncident(reason: IncidentReason, generation: number, details: IncidentDetails): void {
   replicationState.generation = generation;
   pushHealth();
-  log[reason === 'requested' ? 'info' : 'error']('Sync books rebuilt from the tables: clients refetch', {
+  log[isExpectedRebuild(reason, details) ? 'info' : 'error']('Sync books rebuilt from the tables: clients refetch', {
     reason,
     generation,
     ...details,
