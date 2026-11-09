@@ -35,7 +35,7 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
-  const labelKey = authStep === 'signIn' ? 'c:sign_in_with' : authStep === 'signUp' ? 'c:sign_up_with' : 'c:continue_with';
+  const labelKey = authStep === 'signIn' ? 'c:sign_in_with' : 'c:continue_with';
 
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
     setLoadingProvider(provider);

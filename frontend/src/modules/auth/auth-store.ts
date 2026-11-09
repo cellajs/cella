@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 import type { AuthStep } from '~/modules/auth/types';
 
-type MagicLinkMode = 'signin' | 'signup';
+export type MagicLinkMode = 'signin' | 'signup' | 'neutral';
 
 interface AuthStoreState {
   step: AuthStep;
   /** The address the step is for; empty until the visitor gives one. */
   email: string;
-  /** The neutral step for an address this browser is not recognized for; `useRestrictedMode` adds the limited-IP case from health. */
+  /** The neutral sign-in step, for an address this browser is not recognized for where magic links are off; `useRestrictedMode` adds the limited-IP case from health. */
   restrictedMode: boolean;
   /** Set by an in-page sign-in: the auth pages show a spinner until the route changes. */
   signedIn: boolean;
-  /** The flow that sent the link, for the wording of the link-sent step. */
+  /** The flow that sent the link, for the wording of the link-sent step; `neutral` when the page cannot tell an account from none. */
   magicLinkMode: MagicLinkMode;
   /** An invitation in hand, which the visitor answers with another account than the invited address. */
   inviteOtherAccount: boolean;

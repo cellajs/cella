@@ -10,7 +10,7 @@ Changing how an account is protected first asks the session to prove its user ag
 
 ## Sign-in methods
 
-The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
+The sign-in page first asks for the address. A browser that signed in to that account before goes on to sign in. Every other browser is mailed a link that signs in or signs up, and sees the same page, account or not.
 
 | Method | What proves the person |
 | --- | --- |

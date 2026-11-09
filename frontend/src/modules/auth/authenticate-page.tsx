@@ -18,9 +18,7 @@ import { CheckEmailStep } from '~/modules/auth/steps/check-email';
 import { InvitationStep } from '~/modules/auth/steps/invitation';
 import { MagicLinkSentStep } from '~/modules/auth/steps/magic-link-sent';
 import { SignInStep } from '~/modules/auth/steps/sign-in';
-import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
-import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meQueryOptions } from '~/modules/me/query';
@@ -47,7 +45,6 @@ export function AuthenticatePage() {
       setInviteOtherAccount: state.setInviteOtherAccount,
     })),
   );
-  const restrictedMode = useRestrictedMode();
 
   // Cache-only: the route guard probes the session whenever a tokenId is present.
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
@@ -77,12 +74,9 @@ export function AuthenticatePage() {
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
     // An invitation pins the flow to its own step, unless the visitor chose to answer it with another account.
-    if (!tokenData?.email || inviteOtherAccount) {
-      if (restrictedMode && step === 'checkEmail') setStep('signIn', '');
-      return;
-    }
+    if (!tokenData?.email || inviteOtherAccount) return;
     setStep('invitation', tokenData.email);
-  }, [tokenData, lastUser, restrictedMode, step, inviteOtherAccount]);
+  }, [tokenData, lastUser, step, inviteOtherAccount]);
 
   // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
   const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.inactiveMembershipId;
@@ -111,11 +105,12 @@ export function AuthenticatePage() {
   if (signedInUser && tokenData?.inactiveMembershipId) return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
 
   // The steps that sign in or up; the invitation step lays out its own ways in.
-  const isSigningIn = ['checkEmail', 'signIn', 'signUp'].includes(step);
+  const isSigningIn = ['checkEmail', 'signIn'].includes(step);
   const invitation = inviteOtherAccount ? tokenData?.invitation : undefined;
 
+  // On the email step too: a synced passkey works in a browser that never signed in here.
   const passkeyWays: AuthAlternative[] =
-    step === 'signIn' && isStrategyEnabled('passkey')
+    isSigningIn && isStrategyEnabled('passkey')
       ? [{ id: 'passkey', icon: FingerprintPatternIcon, label: t('c:passkey.sign_in'), shortLabel: t('c:passkey'), onClick: passkeySignIn }]
       : [];
   const ssoWays = sso.institution ? [sso.institution, ...sso.federations] : sso.federations;
@@ -124,10 +119,9 @@ export function AuthenticatePage() {
     <>
       {step === 'invitation' && tokenData && <InvitationStep tokenData={tokenData} federations={healthData?.federations} />}
 
-      {step === 'checkEmail' && !restrictedMode && <CheckEmailStep invitation={invitation} />}
+      {step === 'checkEmail' && <CheckEmailStep invitation={invitation} />}
 
       {step === 'signIn' && <SignInStep invitation={invitation} />}
-      {step === 'signUp' && <SignUpStep tokenData={tokenData} invitation={invitation} />}
 
       {step === 'waitlist' && <WaitlistStep />}
       {step === 'magicLinkSent' && <MagicLinkSentStep emailEnabled={healthData?.emailEnabled} />}

@@ -57,19 +57,17 @@ function LegalNoticeLink({ subject, children }: { subject: LegalSubject; childre
 const linkedTexts = [legalConfig.terms.component, legalConfig.privacy.component];
 
 const noticeKeys = {
-  signup: 'c:legal_notice.text',
   continue: 'c:legal_notice_continue.text',
   waitlist: 'c:legal_notice_waitlist.text',
   verify: 'c:legal_notice_verify.text',
 } as const;
 
 interface LegalNoticeProps {
-  email?: string;
   mode: keyof typeof noticeKeys;
   className?: string;
 }
 
-export function LegalNotice({ email, mode, className }: LegalNoticeProps) {
+export function LegalNotice({ mode, className }: LegalNoticeProps) {
   const { t } = useTranslation();
   usePreloadLazyComponents(linkedTexts);
 
@@ -77,8 +75,7 @@ export function LegalNotice({ email, mode, className }: LegalNoticeProps) {
     <p className={cn('text-center', className)}>
       <Trans
         t={t}
-        i18nKey={mode === 'signup' && email ? 'c:legal_notice_email.text' : noticeKeys[mode]}
-        values={{ email }}
+        i18nKey={noticeKeys[mode]}
         components={{ terms: <LegalNoticeLink subject="terms" />, privacy: <LegalNoticeLink subject="privacy" /> }}
       />
     </p>
