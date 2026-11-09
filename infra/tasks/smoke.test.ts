@@ -232,25 +232,25 @@ describe('runSmoke', () => {
       if (url === 'https://apex/sw.js') return Promise.resolve(res({ headers: new Headers({ 'content-type': 'text/javascript; charset=utf-8' }) }));
       return Promise.resolve(redirectTo(url));
     };
-    const pass = await runSmoke({
+    const apexOptions = {
       defaultRouteUrl: 'https://app',
       apexUrl: 'https://apex',
+      workerScriptPath: '/sw.js',
       primaryUrl: 'https://api',
       expectedSha: SHA,
-      get: apexGet,
-    });
+    };
+    const pass = await runSmoke({ ...apexOptions, get: apexGet });
     expect(pass).toHaveLength(8);
     expect(pass.every((r) => r.status === 'ok')).toBe(true);
 
+    // A build that ships no worker asks nothing of the apex's script answer.
+    const noWorker = await runSmoke({ ...apexOptions, workerScriptPath: undefined, get: apexGet });
+    expect(noWorker.map((r) => r.name)).not.toContain('apex answers the worker script');
+    expect(noWorker).toHaveLength(7);
+
     // An apex that redirects the worker script as well fails the second check: a browser refuses a redirected worker script.
     const redirectingAll = (url: string) => (url.startsWith('https://apex/') ? Promise.resolve(redirectTo(url)) : healthyGet(url));
-    const fail = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      apexUrl: 'https://apex',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get: redirectingAll,
-    });
+    const fail = await runSmoke({ ...apexOptions, get: redirectingAll });
     expect(fail.find((r) => r.name === 'apex redirects to the app host')?.status).toBe('ok');
     expect(fail.find((r) => r.name === 'apex answers the worker script')).toMatchObject({
       status: 'fail',

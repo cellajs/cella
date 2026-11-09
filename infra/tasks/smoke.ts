@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { healthContract } from '../config/health.config';
 import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
 import { sleep as defaultSleep } from '../lib/utils/cli-output';
@@ -84,6 +85,8 @@ export interface SmokeOptions {
   defaultRouteUrl?: string;
   /** Origin of the zone apex the load balancer redirects to the default route's host; absent when that host is no `www.<zone>`. */
   apexUrl?: string;
+  /** Path of the worker script the built bundle ships, which the apex must answer itself; absent when the build ships none. */
+  workerScriptPath?: string;
   /** Public URL of the primary service, which serves the aggregate /health?depth=full and /openapi.json. */
   primaryUrl: string;
   expectedSha: string;
@@ -197,11 +200,12 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       const redirected = res.status >= 300 && res.status < 400 && location === `${defaultRouteUrl}${path}`;
       return verdict(redirected, `status=${res.status} location=${location ?? '<missing>'}`);
     });
-    await check('apex answers the worker script', async () => {
-      const res = await get(`${apexUrl}/sw.js`, { redirect: 'manual' });
-      const type = res.headers.get('content-type') ?? '';
-      return verdict(res.ok && /javascript/.test(type), `status=${res.status} content-type=${type || '<missing>'}`);
-    });
+    if (opts.workerScriptPath)
+      await check('apex answers the worker script', async () => {
+        const res = await get(`${apexUrl}${opts.workerScriptPath}`, { redirect: 'manual' });
+        const type = res.headers.get('content-type') ?? '';
+        return verdict(res.ok && /javascript/.test(type), `status=${res.status} content-type=${type || '<missing>'}`);
+      });
   }
 
   // Retry aggregate health across one worker reconnect interval after the switches: the first clean read passes and the
@@ -302,12 +306,18 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   return expectedAsset;
 }
 
+/** The worker script the freshly built bundle ships beside `dist`, as its public path; undefined when the build ships none. */
+export function resolveWorkerScriptPath(dist: string | undefined): string | undefined {
+  return dist && existsSync(join(dirname(dist), 'sw.js')) ? '/sw.js' : undefined;
+}
+
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv);
   const expectedAsset = resolveExpectedAsset(args.dist);
   const results = await runSmoke({
     defaultRouteUrl: args.defaultRouteUrl,
     apexUrl: args.apexUrl,
+    workerScriptPath: resolveWorkerScriptPath(args.dist),
     primaryUrl: args.primaryUrl,
     expectedSha: args.sha,
     services: args.services,
