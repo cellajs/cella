@@ -32,7 +32,7 @@ A switch that times out waiting for the new machine to serve means its agent nev
 
 A blocked run booted no machine of the release, and the running release stays. **Deploy now**, **Deploy logs** and the home's **Last deploy** line name the value it waits for:
 
-- **An empty required secret:** **Env vars & secrets** (`pnpm infra secrets`) lists it first, as `missing · required`. Pick its row and set it: storing it starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
+- **An empty required secret:** **Env vars & secrets** (`pnpm infra secrets`) says above its table which deploy waits for which values, and lists each first, as `missing · required`. Pick its row and set it: storing it starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
 No scheduled run starts a blocked target again: storing the value, or the apply, does.
 

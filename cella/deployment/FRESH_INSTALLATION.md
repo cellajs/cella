@@ -77,6 +77,6 @@ A step you declined is done by hand: commit and push the stack file (and staging
 Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. The setup stores the email you gave it; a deploy that finds the secret empty ends blocked at "Check runtime secrets", before it makes any machine, and setting it in **Env vars & secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
-2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Env vars & secrets**.
+2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Env vars & secrets**; its last entry imports a local `.env` file, for several values at once.
 
 GitHub sign-in takes a GitHub OAuth app whose callback is exactly `<backendAuthUrl>/github/callback`, with wildcard matching turned off in its settings: an app whose single callback dates from before 3 August 2026 also accepts every path below it, which lets GitHub send a code to another path of the API host.
