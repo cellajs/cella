@@ -23,7 +23,7 @@ export type RunsFacts = {
 };
 
 /** True for the bucket refusing the key: the policy an apply writes admits the observer's version reads. */
-function accessDenied(error: unknown): boolean {
+export function accessDenied(error: unknown): boolean {
   const { name, $metadata } = error as { name?: string; $metadata?: { httpStatusCode?: number } };
   return name === 'AccessDenied' || $metadata?.httpStatusCode === 403;
 }

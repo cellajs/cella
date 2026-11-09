@@ -76,7 +76,7 @@ On a shared host the services read one env file, so they share their secrets.
 
 A privileged action runs on a key that ends within a day: one of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. It dies by itself: nothing is stored, and nothing is revoked after.
 
-`pnpm infra` → **Keys & operators** → **Set up operators** (`pnpm infra operator-key`) runs once per app with your Owner API key (a first setup runs it for you). It makes the `<app>-operator` application and the `<app>-operators` group, and writes a policy for each with the same rules: every product of the app's projects, DNS in the serving zone's project, IAM read; no condition. The policies are written in place, so a key of either keeps working, and a new environment's setup adds its project to both. It makes no key. The name is production's slug, so staging and production share one set of operators.
+`pnpm infra` → **Operators & keys** → **Set up operators** (`pnpm infra operator-key`) runs once per app with your Owner API key (a first setup runs it for you). It makes the `<app>-operator` application and the `<app>-operators` group, and writes a policy for each with the same rules: every product of the app's projects, DNS in the serving zone's project, IAM read; no condition. The policies are written in place, so a key of either keeps working, and a new environment's setup adds its project to both. It makes no key. The name is production's slug, so staging and production share one set of operators.
 
 **The first key.** An environment's setup makes it in its Owner moment, once the operators are written: a key of `<app>-operator` that ends within the day, kept in memory for the rest of that run, of which the CLI prints only the access key. The operator part runs on it, so a setup asks for no operator key unless that key could not be made.
 
@@ -109,7 +109,7 @@ A key that encrypts or hashes stored data (`data-encryption-key`, `pii-hash-secr
 
 ### Rotate keys
 
-With an Owner API key and your operator key at hand, `pnpm infra` → **Keys & operators** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones.
+With an Owner API key and your operator key at hand, `pnpm infra` → **Operators & keys** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones.
 
 After a compromise, one **Rotate keys** per environment covers every Scaleway key but the observer's, which reads no key, and the operators', which end within the day; the inventory names a key an intruder added, which you delete in the console.
 

@@ -43,6 +43,7 @@ import type { OperatorKey } from './operator-unlock';
 import { printLaunchChecklist } from './setup-checklist';
 import { connectRepository, offerFirstDeploy } from './setup-connect';
 import type { OwnerMomentResult } from './setup-owner-moment';
+import { awaitsFirstDeploy } from './start-deploy';
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
 async function optionalSecret(message: string): Promise<string> {
@@ -270,7 +271,8 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 
 /**
  * The operator part of a setup, on the operator key: the passphrase and its custody, the state bucket and the stack, the first `pulumi up`
- * and the operator's secret values. It writes no IAM. A first setup ends by connecting the repository and at the first deploy.
+ * and the operator's secret values. It writes no IAM. It ends by connecting the repository while the stack file is not pushed, and at the
+ * first deploy while the environment never deployed.
  */
 export async function runOperatorPart(context: InfraContext, operatorKey: OperatorKey, moment: OwnerMomentResult | undefined): Promise<void> {
   const { appConfig } = context;
@@ -360,11 +362,10 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     return;
   }
   await provisionBaseInfra(ctx, operatorSecrets);
-  if (!firstSetup) return;
   const setUp = { ...context, projectId };
-  await printLaunchChecklist(setUp);
+  if (firstSetup) await printLaunchChecklist(setUp);
   await connectRepository(environment);
-  await offerFirstDeploy(setUp);
+  if (firstSetup || (await awaitsFirstDeploy(setUp, operatorKey))) await offerFirstDeploy(setUp);
 }
 
 /**

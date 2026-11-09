@@ -33,7 +33,7 @@ It builds a release not built yet, switches every role to a machine of the relea
 | Deploys | `d` Deploy now, `r` Releases & roll back, `l` Deploy logs, `s` Full status |
 | Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `i` Update identities |
 | Database | `p` Open DB access (and Seed database) or Close DB access, whichever applies; `x` Reset database |
-| Account | `k` Keys & operators (Rotate keys, Rotate secrets, Set up operators, Set repository read key) |
+| Account | `o` Operators & keys (Rotate keys, Rotate secrets, Set up operators, Set repository read key) |
 | More | `u` Repair (Unlock, Resume setup, Remove from state), `t` Tear down |
 
 Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`, and `pnpm infra help` lists them. An action that changes something asks a person at the prompt: there is no unattended mode. Only the actions that run Pulumi need its CLI installed; the others, `status` and `runs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry, and says so when it rewrote the file.

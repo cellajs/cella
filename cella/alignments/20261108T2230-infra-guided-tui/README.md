@@ -24,7 +24,7 @@ No script: manual.
 ## Manual steps
 
 1. In the root `package.json`, set `"infra": "pnpm --silent --filter infra cli"`: the CLI writes `infra/compose.gen.yml` itself and says so when it changed. `infra:compose` may stay for CI.
-2. In the app's own docs and scripts, rename: Show status to Full status, Show runs to Deploy logs, Start a deploy to Deploy now, Manage runtime secrets to Env vars & secrets, Open public DB access to Open DB access, Close public DB access to Close DB access, Rotate keys & secrets to Keys & operators, Repair stack to Repair, Unlock stack to Unlock, Tear down stack to Tear down.
+2. In the app's own docs and scripts, rename: Show status to Full status, Show runs to Deploy logs, Start a deploy to Deploy now, Manage runtime secrets to Env vars & secrets, Open public DB access to Open DB access, Close public DB access to Close DB access, Rotate keys & secrets to Operators & keys, Repair stack to Repair, Unlock stack to Unlock, Tear down stack to Tear down.
 3. A menu path that named **Review & apply changes** as a row reads **Infrastructure changes** → **Review & apply changes**; a script that runs `pnpm infra <id>` needs no change.
 4. A script or CI job that runs a first setup under `--defaults` sets `INFRA_ADMIN_EMAIL`: the setup now stops without it.
 5. Run `pnpm infra apply --mode <env>` once per environment. Until then `applied.json` holds the hash alone, and a release that waits for an apply shows the two hashes without naming its fields.
