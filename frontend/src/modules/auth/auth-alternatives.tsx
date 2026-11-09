@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from 'lucide-react';
+import { ChevronRightIcon, LoaderCircleIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AuthStep } from '~/modules/auth/types';
@@ -60,15 +60,23 @@ export function AuthAlternatives({ items, authStep }: AuthAlternativesProps) {
               key={item.id}
               variant="ghost"
               press={false}
-              loading={item.loading}
-              onClick={item.onClick}
+              aria-busy={item.loading || undefined}
+              // Stays enabled while busy: a disabled button loses keyboard focus
+              onClick={item.loading ? undefined : item.onClick}
               render={item.href ? (props) => <a {...props} href={item.href} /> : undefined}
-              className={cn('group/row h-13 justify-start gap-3 rounded-none border-0 px-4', index > 0 && 'border-foreground/10 border-t')}
+              className={cn(
+                'group/row focus-inner h-13 justify-start gap-3 rounded-none border-0 px-4 aria-busy:pointer-events-none',
+                index > 0 && 'border-foreground/10 border-t',
+              )}
             >
               <item.icon />
               <span className="flex-1 truncate text-left">{item.shortLabel ?? item.label}</span>
               {item.meta && <span className="text-muted-foreground text-xs font-normal">{item.meta}</span>}
-              <ChevronRightIcon className="text-muted-foreground transition-transform group-hover/row:translate-x-0.5" />
+              {item.loading ? (
+                <LoaderCircleIcon className="animate-spin" />
+              ) : (
+                <ChevronRightIcon className="text-muted-foreground transition-transform group-hover/row:translate-x-0.5" />
+              )}
             </Button>
           ))}
         </div>

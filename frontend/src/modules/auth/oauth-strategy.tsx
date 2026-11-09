@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
+import { useEventListener } from '~/hooks/use-event-listener';
 import type { AuthAlternative } from '~/modules/auth/auth-alternatives';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
@@ -34,6 +35,11 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
+
+  // Back from the provider can restore this page from the back/forward cache, still loading.
+  useEventListener('pageshow', (event) => {
+    if (event.persisted) setLoadingProvider(null);
+  });
 
   const labelKey = authStep === 'signIn' ? 'c:sign_in_with' : 'c:continue_with';
 

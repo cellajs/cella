@@ -35,7 +35,7 @@ export function AuthErrorPage() {
   const hasPrimaryAction = !!resendTokenId || offersRecoveryLink;
 
   return (
-    <ErrorNotice boundary="public">
+    <ErrorNotice boundary="auth">
       {resendTokenId && <ResendInvitationButton send={() => resendInvitationWithToken({ body: { tokenId: resendTokenId } })} />}
 
       {offersRecoveryLink && (

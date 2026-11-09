@@ -1,7 +1,7 @@
 import type { PlacementDescriptor, Slot } from '~/lib/placements';
 import type { NavItemId } from '~/modules/navigation/types';
 
-export type BoundaryType = 'root' | 'app' | 'public';
+export type BoundaryType = 'root' | 'app' | 'public' | 'auth';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {

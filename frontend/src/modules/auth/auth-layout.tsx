@@ -19,7 +19,7 @@ export function AuthLayout() {
   if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
   return (
-    <div className="group/auth-layout rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
+    <div className="group/auth-layout rich-gradient focus-gap container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
       <Suspense fallback={null}>
         {/* Overscan below 1 zooms in, a phone further, so the window always crops the colony; the zoom magnifies motion, hence the lower speed */}
         <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={isMobile ? 0.26 : 0.31} speed={0.4} />
@@ -34,7 +34,7 @@ export function AuthLayout() {
         </div>
 
         <div className="xs:w-80 flex w-[90vw] translate-y-4 flex-col gap-4 transition-[opacity,scale] duration-500 ease-out has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200 starting:scale-95 starting:opacity-0">
-          <main className="flex flex-col gap-4 focus:outline-hidden">
+          <main className="choice-set flex flex-col gap-4 focus:outline-hidden">
             <Outlet />
           </main>
 

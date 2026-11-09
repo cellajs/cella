@@ -44,7 +44,7 @@ export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) 
         </Alert>
       )}
       {!isSignup && (
-        <Button variant="ghost" onClick={resetAuthStore} className="mt-2 self-center">
+        <Button variant="glass" onClick={resetAuthStore} className="mt-2 self-center">
           <ArrowLeftIcon />
           {t('c:try_another_way')}
         </Button>

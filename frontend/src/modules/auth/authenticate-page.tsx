@@ -130,7 +130,7 @@ export function AuthenticatePage() {
         <>
           <AuthAlternatives authStep={alternativesStep} items={[...passkeyWays, ...ssoWays, ...oauth]} />
           {inviteOtherAccount && (
-            <Button variant="ghost" className="self-center" onClick={() => setInviteOtherAccount(false)}>
+            <Button variant="glass" className="self-center" onClick={() => setInviteOtherAccount(false)}>
               <ArrowLeftIcon />
               {t('c:invite_back')}
             </Button>
