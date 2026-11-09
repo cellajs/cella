@@ -42,7 +42,7 @@ interface AccessKeyConfig {
  * mark once it has the form of one. Enter with another form says what is wrong and keeps the value; Enter on nothing resolves to '' when
  * the prompt is optional.
  */
-export const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => {
+const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => {
   const theme = makeTheme();
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setError] = useState<string>();

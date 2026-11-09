@@ -16,16 +16,6 @@ export const tildeMark = pc.bold(pc.yellowBright('~'));
 
 export const DIVIDER = '─'.repeat(60);
 
-export function printHeader(name: string, version?: string, right = ''): void {
-  const visibleLeft = version ? `⧈ ${name} · v${version}` : `⧈ ${name}`;
-  const padding = Math.max(1, 60 - visibleLeft.length - right.length);
-  const left = version ? `${pc.cyan(`⧈ ${name}`)}${pc.dim(` · v${version}`)}` : pc.cyan(`⧈ ${name}`);
-  console.info();
-  console.info(`${left}${' '.repeat(padding)}${pc.cyan(right)}`);
-  console.info(DIVIDER);
-  console.info();
-}
-
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** True when stderr is a TTY and the run is not automated; automation and piped output get a single static line. */

@@ -17,7 +17,7 @@ import { acquireOwnerKey, type OwnerKey } from './owner-key';
 type StackRef = Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>;
 
 /** The console page where a person makes an application's key. */
-export const OPERATOR_KEYS_URL = 'https://console.scaleway.com/iam/applications';
+const OPERATOR_KEYS_URL = 'https://console.scaleway.com/iam/applications';
 
 /** Where a person makes the key a session takes, for every refusal that sends them there. */
 export function oneDayKeyHowto(names: AppPrincipalNames): string {

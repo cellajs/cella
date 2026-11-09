@@ -109,7 +109,7 @@ export function checklistRows(facts: ChecklistFacts): ChecklistRow[] {
 const NOW = '← now';
 
 /** The checklist as printed lines: a heading with the app, the environment and the count, then a row per step. */
-export function formatChecklist(rows: ChecklistRow[], opts: { appSlug: string; mode: string }): string[] {
+function formatChecklist(rows: ChecklistRow[], opts: { appSlug: string; mode: string }): string[] {
   const detailWidth = Math.max(...rows.map((row) => row.detail.length));
   const rowWidth = 20 + detailWidth + 3 + NOW.length;
   const where = `${opts.appSlug} · ${opts.mode}`;
@@ -176,7 +176,7 @@ async function readAdminEmailSet(context: InfraContext, stackState: StackState):
 }
 
 /** Read the checklist's facts. The stack file is read again, as a setup earlier in this run changes it. */
-export async function collectChecklistFacts(context: InfraContext): Promise<ChecklistFacts> {
+async function collectChecklistFacts(context: InfraContext): Promise<ChecklistFacts> {
   const mode = context.environment;
   const stackYaml = existsSync(context.stackPath) ? readFileSync(context.stackPath, 'utf8') : undefined;
   const stackState = detectStackState({ yamlText: stackYaml });
