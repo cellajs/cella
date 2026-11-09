@@ -223,6 +223,41 @@ describe('runSmoke', () => {
     expect(sec?.detail).toContain('X-Frame-Options');
   });
 
+  it('requires the apex to redirect every path to the app host and to answer the worker script itself', async () => {
+    const redirectTo = (url: string) =>
+      res({ status: 301, ok: false, headers: new Headers({ location: url.replace('https://apex/', 'https://app/') }) });
+    const apexGet = (url: string, init?: { redirect: 'manual' }) => {
+      if (!url.startsWith('https://apex/')) return healthyGet(url);
+      expect(init).toEqual({ redirect: 'manual' });
+      if (url === 'https://apex/sw.js') return Promise.resolve(res({ headers: new Headers({ 'content-type': 'text/javascript; charset=utf-8' }) }));
+      return Promise.resolve(redirectTo(url));
+    };
+    const pass = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      apexUrl: 'https://apex',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get: apexGet,
+    });
+    expect(pass).toHaveLength(8);
+    expect(pass.every((r) => r.status === 'ok')).toBe(true);
+
+    // An apex that redirects the worker script as well fails the second check: a browser refuses a redirected worker script.
+    const redirectingAll = (url: string) => (url.startsWith('https://apex/') ? Promise.resolve(redirectTo(url)) : healthyGet(url));
+    const fail = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      apexUrl: 'https://apex',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get: redirectingAll,
+    });
+    expect(fail.find((r) => r.name === 'apex redirects to the app host')?.status).toBe('ok');
+    expect(fail.find((r) => r.name === 'apex answers the worker script')).toMatchObject({
+      status: 'fail',
+      detail: 'status=301 content-type=<missing>',
+    });
+  });
+
   it('captures a thrown fetch error as a failed check', async () => {
     const get = (url: string) => (url.endsWith('/openapi.json') ? Promise.reject(new Error('ECONNREFUSED')) : healthyGet(url));
     const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get });

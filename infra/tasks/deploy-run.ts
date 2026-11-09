@@ -341,6 +341,7 @@ export async function runDeploy(
           ...(env.primary_role ? ['--primary', env.primary_role] : []),
           // A provided-but-unreadable --dist is a hard failure in smoke, so a frontend-less registry omits the flag.
           ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
+          ...(env.apex_url ? ['--apex', env.apex_url] : []),
         ]),
       );
     }

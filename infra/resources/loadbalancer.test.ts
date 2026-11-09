@@ -65,6 +65,22 @@ describe('load balancer', () => {
     });
   });
 
+  it('redirects the zone apex to the app host, except the worker script, which the app answers so a worker kept on the apex is replaced', () => {
+    const https = named('https-frontend');
+    const acls = h
+      .byType('scaleway:loadbalancers/acl:Acl')
+      .filter((acl) => acl.inputs.frontendId === id(https.name))
+      .sort((a, b) => Number(a.inputs.index) - Number(b.inputs.index))
+      .map((acl) => [acl.inputs.action, acl.inputs.match]);
+    expect(acls).toEqual([
+      [{ type: 'allow' }, { httpFilter: 'path_begin', httpFilterValues: ['/sw.js'] }],
+      [
+        { type: 'redirect', redirects: [{ type: 'location', target: 'https://www.cellajs.com/{{path}}?{{query}}', code: 301 }] },
+        { httpFilter: 'http_header_match', httpFilterOption: 'host', httpFilterValues: ['cellajs.com'] },
+      ],
+    ]);
+  });
+
   it('publishes the public hosts at the LB and restricts certificate issuance to the LB certificate authority', () => {
     const records = h.byType('scaleway:domain/record:Record');
     expect(records.filter((r) => r.inputs.type === 'A').map((r) => [r.name, r.inputs.name, r.inputs.data])).toEqual([
