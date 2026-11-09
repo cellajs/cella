@@ -19,6 +19,11 @@ export function apexHostIssue(host: string, zone: string): string | undefined {
   );
 }
 
+/** The origin of the zone apex the load balancer redirects to the app host, when that host is `www.<zone>`; undefined for any other host. */
+export function redirectedApexOrigin(appHost: string, zone: string): string | undefined {
+  return appHost === `www.${zone}` ? `https://${zone}` : undefined;
+}
+
 /** {@link apexHostIssue} for the frontend's public URL; undefined without a domain or an enabled frontend. */
 export function frontendApexIssue(appConfig: Cfg): string | undefined {
   const frontend = appConfig.services.frontend;

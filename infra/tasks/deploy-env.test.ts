@@ -65,6 +65,7 @@ describe('buildDeployEnv', () => {
         { service: 'frontend', dockerfile: 'infra/caddy/Dockerfile', target: '' },
       ]),
       primary_role: 'backend',
+      apex_url: 'https://cella.example',
     });
   });
 

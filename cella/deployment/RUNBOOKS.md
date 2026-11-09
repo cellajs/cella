@@ -58,6 +58,12 @@ A deploy or an operator action that dies holds its lease until it lapses within 
 4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key and the passphrase from the environment's `/engine/` secret folder.
 5. An apply may fail to delete a resource the program no longer declares, as its live object is gone already. **Remove from state** (`pnpm infra state-prune`) takes its URN out of the state.
 
+## A page stuck on the apex
+
+A visitor who opens the bare domain sees an old release that loads nothing, while a fresh browser on the same address lands on `www`. Their browser keeps a worker from a deploy that served the apex, and that worker answers every visit from its cache without asking the server.
+
+The apex answers the worker script itself: that script replaces the kept worker on the visitor's next visit and moves the page to `www`. The smoke checks of every deploy fail when the apex stops redirecting or stops answering the script. A visitor still stuck clears the site data of the bare domain.
+
 ## GeoIP data
 
 Sign-ins resolve the client IP to a country and network with DB-IP Lite data, under CC BY 4.0. The sessions list and the new sign-in notice show them. The image ships no data, and a refresh needs no release. Each API process downloads the data from the `geoip/` prefix of the public bucket at boot and checks for newer data.

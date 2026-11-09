@@ -28,6 +28,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     ]),
     build_images_matrix: JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]),
     primary_role: 'backend',
+    apex_url: 'https://cellajs.com',
   };
 }
 
@@ -203,6 +204,7 @@ describe('runDeploy sequencing', () => {
     const smoke = taskArgs.smoke ?? [];
     expect(smoke[smoke.indexOf('--dist') + 1]).toBe(`${distDir}/index.html`);
     expect(smoke[smoke.indexOf('--primary') + 1]).toBe('backend');
+    expect(smoke[smoke.indexOf('--apex') + 1]).toBe('https://cellajs.com');
   });
 
   it('must not change anything once another run took its lease: the next step stops the run', async () => {

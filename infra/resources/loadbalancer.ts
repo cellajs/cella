@@ -4,7 +4,7 @@ import type { ServiceName } from '../compose/compose';
 import { engineConfig as appConfig } from '../config/engine-config';
 import { healthContract } from '../config/health.config';
 import { agentHealthPath, agentPort, internalLbPort } from '../lib/machine-roles';
-import { apexHostIssue, routedHostIssue } from '../lib/naming';
+import { apexHostIssue, redirectedApexOrigin, routedHostIssue } from '../lib/naming';
 import { enabledServices, type ServiceDefinition } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
@@ -62,7 +62,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const hostIssue = apexHostIssue(appHost, dnsZone) ?? routedHostIssue(appConfig);
   if (hostIssue) throw new Error(`loadbalancer: ${hostIssue}`);
   // Zone-apex resources belong to exactly one stack per zone, the one serving `www.<zone>`: a second stack's apex A record would round-robin production traffic to it.
-  const managesApex = appHost === `www.${dnsZone}`;
+  const managesApex = redirectedApexOrigin(appHost, dnsZone) !== undefined;
   const appBase = baseName(defaultService.slug);
 
   const lbIp = new scaleway.loadbalancers.Ip('lb-ip', { zone });
@@ -234,10 +234,10 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   if (managesApex) {
-    new scaleway.loadbalancers.Acl('apex-redirect-https', {
+    const apexRedirect = new scaleway.loadbalancers.Acl('apex-redirect-https', {
       frontendId: httpsFrontend.id,
       name: naming.resource('apex-redirect'),
-      index: 0,
+      index: 1,
       action: {
         type: 'redirect',
         redirects: [
@@ -251,6 +251,22 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       },
       match: { httpFilter: 'http_header_match', httpFilterOption: 'host', httpFilterValues: [dnsZone] },
     });
+    // The worker script passes to the app ahead of the redirect (ACLs run by index, a matching `allow` ends the chain): a
+    // worker a visitor keeps from a deploy that served the apex answers their visits from its cache, and a browser refuses
+    // a redirected worker script, so only a script the apex answers replaces it. This build's worker then leaves the host
+    // (frontend/src/lib/sw.ts). The path is the build's `swDest` (frontend/vite.config.ts).
+    new scaleway.loadbalancers.Acl(
+      'apex-sw-allow',
+      {
+        frontendId: httpsFrontend.id,
+        name: naming.resource('apex-sw-allow'),
+        index: 0,
+        action: { type: 'allow' },
+        match: { httpFilter: 'path_begin', httpFilterValues: ['/sw.js'] },
+      },
+      // Made once the redirect holds index 1, so the frontend never carries two ACLs on one index.
+      { dependsOn: [apexRedirect] },
+    );
   }
 
   const httpFrontend = new scaleway.loadbalancers.Frontend(

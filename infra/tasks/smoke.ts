@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { healthContract } from '../config/health.config';
 import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
 import { sleep as defaultSleep } from '../lib/utils/cli-output';
@@ -48,8 +49,8 @@ export interface HttpResponse {
   body: string;
 }
 
-/** Performs a single HTTP GET. Injectable so the smoke checks can be unit-tested. */
-export type HttpGet = (url: string) => Promise<HttpResponse>;
+/** Performs a single HTTP GET; `redirect: 'manual'` answers a redirect as the response it is. Injectable so the smoke checks can be unit-tested. */
+export type HttpGet = (url: string, init?: { redirect: 'manual' }) => Promise<HttpResponse>;
 
 /** One enabled service as deploy-env's enabled_services_json lists it. */
 export interface SmokeService {
@@ -62,12 +63,16 @@ export interface SmokeService {
  * ws(s):// URLs are probed over plain HTTP on the same host, because a WebSocket worker's /health speaks HTTP and fetch rejects the ws scheme.
  */
 export function createFetchGet(timeoutMs: number): HttpGet {
-  return async (rawUrl) => {
+  return async (rawUrl, init) => {
     const url = rawUrl.replace(/^ws(s?):/, 'http$1:');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { signal: controller.signal, redirect: 'follow', headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } });
+      const res = await fetch(url, {
+        signal: controller.signal,
+        redirect: init?.redirect ?? 'follow',
+        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+      });
       return { status: res.status, ok: res.ok, headers: res.headers, body: await res.text() };
     } finally {
       clearTimeout(timer);
@@ -78,6 +83,10 @@ export function createFetchGet(timeoutMs: number): HttpGet {
 export interface SmokeOptions {
   /** Public URL of the default-route (browser) service; absent for a frontend-less registry, which skips the SPA and security-header checks. */
   defaultRouteUrl?: string;
+  /** Origin of the zone apex the load balancer redirects to the default route's host; absent when that host is no `www.<zone>`. */
+  apexUrl?: string;
+  /** Path of the worker script the built bundle ships, which the apex must answer itself; absent when the build ships none. */
+  workerScriptPath?: string;
   /** Public URL of the primary service, which serves the aggregate /health?depth=full and /openapi.json. */
   primaryUrl: string;
   expectedSha: string;
@@ -180,6 +189,25 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       return verdict(missing.length === 0, `missing: ${missing.join(', ')}`);
     });
 
+  // A visitor on the apex is served by the redirect, or by a worker kept from a deploy that served the apex, which only
+  // the apex's own answer to the worker script replaces (frontend/src/lib/sw.ts).
+  if (defaultRouteUrl && opts.apexUrl) {
+    const apexUrl = opts.apexUrl;
+    await check('apex redirects to the app host', async () => {
+      const path = `/__smoke_${Date.now()}?q=1`;
+      const res = await get(`${apexUrl}${path}`, { redirect: 'manual' });
+      const location = res.headers.get('location');
+      const redirected = res.status >= 300 && res.status < 400 && location === `${defaultRouteUrl}${path}`;
+      return verdict(redirected, `status=${res.status} location=${location ?? '<missing>'}`);
+    });
+    if (opts.workerScriptPath)
+      await check('apex answers the worker script', async () => {
+        const res = await get(`${apexUrl}${opts.workerScriptPath}`, { redirect: 'manual' });
+        const type = res.headers.get('content-type') ?? '';
+        return verdict(res.ok && /javascript/.test(type), `status=${res.status} content-type=${type || '<missing>'}`);
+      });
+  }
+
   // Retry aggregate health across one worker reconnect interval after the switches: the first clean read passes and the
   // budget absorbs transient issues. What is still wrong when it runs out decides the verdict through
   // componentSeverity: only-degraded warns (slow, not down), anything unhealthy fails.
@@ -213,6 +241,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
 
 interface CliArgs {
   defaultRouteUrl?: string;
+  apexUrl?: string;
   primaryUrl: string;
   sha: string;
   services?: SmokeService[];
@@ -237,14 +266,18 @@ export function parseArgs(argv: string[]): CliArgs {
     ? services?.find((service) => service.service === primarySlug)
     : services?.find((service) => service.health_url && service.lb_route !== 'default');
   const defaultRouteUrl = getFlag(argv, '--frontend') ?? defaultRouteRow?.public_url;
+  const apexUrl = getFlag(argv, '--apex');
   const primaryUrl = getFlag(argv, '--backend') ?? primaryRow?.public_url;
   const sha = getFlag(argv, '--sha');
   if (!primaryUrl || !sha) {
-    throw new Error('Usage: smoke.ts [--frontend <url>] --backend <url> | --primary <slug> --sha <git-sha> [--services-json <json>] [--timeout ms]');
+    throw new Error(
+      'Usage: smoke.ts [--frontend <url>] [--apex <url>] --backend <url> | --primary <slug> --sha <git-sha> [--services-json <json>] [--timeout ms]',
+    );
   }
   const timeoutRaw = getFlag(argv, '--timeout');
   return {
     ...(defaultRouteUrl ? { defaultRouteUrl } : {}),
+    ...(apexUrl ? { apexUrl } : {}),
     primaryUrl,
     sha,
     services,
@@ -273,11 +306,18 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   return expectedAsset;
 }
 
+/** The worker script the freshly built bundle ships beside `dist`, as its public path; undefined when the build ships none. */
+export function resolveWorkerScriptPath(dist: string | undefined): string | undefined {
+  return dist && existsSync(join(dirname(dist), 'sw.js')) ? '/sw.js' : undefined;
+}
+
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv);
   const expectedAsset = resolveExpectedAsset(args.dist);
   const results = await runSmoke({
     defaultRouteUrl: args.defaultRouteUrl,
+    apexUrl: args.apexUrl,
+    workerScriptPath: resolveWorkerScriptPath(args.dist),
     primaryUrl: args.primaryUrl,
     expectedSha: args.sha,
     services: args.services,

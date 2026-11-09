@@ -1,6 +1,6 @@
 import type { EngineConfig } from '../config/engine-config';
 import { machineRoles } from '../lib/machine-roles';
-import { deriveInfra } from '../lib/naming';
+import { deriveInfra, redirectedApexOrigin } from '../lib/naming';
 import { appStorageNeeds, enabledServices, serviceEndpoints } from '../lib/services';
 
 type Cfg = EngineConfig;
@@ -17,12 +17,13 @@ export const ALLOWED_KEYS = [
   'enabled_services_json',
   'build_images_matrix',
   'primary_role',
+  'apex_url',
 ] as const;
 export type AllowedKey = (typeof ALLOWED_KEYS)[number];
 
 /** Pure builder that produces the deploy env table from an appConfig. */
 export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
-  const { naming } = deriveInfra(appConfig);
+  const { naming, dnsZone } = deriveInfra(appConfig);
   const enabled = enabledServices(appConfig.services);
   const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
   const serviceUrl = (slug: string): string => serviceUrls[slug]?.publicUrl ?? '';
@@ -36,6 +37,8 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     reuses_image_of: service.reusesImageOf ?? '',
     primary_rollout: service.primaryRollout === true,
   }));
+  const defaultRoute = enabled.find((service) => service.lbRoute === 'default');
+  const defaultRouteUrl = defaultRoute ? serviceUrl(defaultRoute.slug) : '';
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
@@ -55,5 +58,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_role: machineRoles(appConfig).find((role) => role.primary)?.role ?? '',
+    // The zone apex the load balancer redirects to the app host, for smoke's apex checks; empty when that host is no `www.<zone>`.
+    apex_url: defaultRouteUrl ? (redirectedApexOrigin(new URL(defaultRouteUrl).hostname, dnsZone) ?? '') : '',
   };
 }

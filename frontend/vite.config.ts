@@ -466,6 +466,9 @@ const viteConfig = {
     },
     // Injected into lib/sw.ts for the push badge recount and API path exclusions
     __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
+    // Injected into lib/sw.ts, which serves frontendUrl alone and leaves any other host it finds itself on
+    __FRONTEND_URL__: JSON.stringify(appConfig.frontendUrl),
+    __APP_MODE__: JSON.stringify(appConfig.mode),
     // Release identifier for observability (lib/maple.ts serviceVersion)
     __APP_VERSION__: JSON.stringify(gitSha),
     // Root release version, shown on the docs landing page and in the info panel
