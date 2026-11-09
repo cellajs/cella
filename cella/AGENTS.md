@@ -56,6 +56,7 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [In
 - **Validation**: Zod schemas in `<module>-schema.ts`, shared ones in `backend/src/schemas/`. A request string takes `.max()` (a `maxLength` constant or its column's length) before any refinement; a request array takes `.max()` before any refinement; a request record is a `boundedRecord` or a `z.partialRecord` over an enum, and a list in a query string is a `csvQuerySchema`.
 - **Types**: infer them from Zod. Avoid `as`; prefer `Object.assign`, `satisfies` or `as const`. **Never use `as unknown as`** without explicit permission: try `isNull()`, a generic type parameter or a dedicated type, and where nothing fits (a library type gap, a test mock) comment why.
 - **Query modules**: keys, cache writes, optimistic placeholders, invalidation and slug resolution use the helpers in `frontend/src/query/basic/`, and mutation defaults are set with `setMutationDefaults` at the top level of a `query.ts` that the module's `<name>-module.ts` imports ([add-entity](./skills/add-entity/SKILL.md)). Read a queued mutation through the `mutation-variables.ts` shapes, never a cast, and register a version (`registerVariablesVersion`) when its shape changes ([Paused writes](./SYNC_ENGINE.md#paused-writes)).
+- **Update forms**: an update form submits through `handleChanges` of `useFormWithDraft`, which sends the fields that differ from the defaults. Its `defaultValues` hold the rendered fields alone, and after a save it resets from the response.
 
 ## OpenAPI & mocks
 
