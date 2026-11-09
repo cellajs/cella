@@ -216,7 +216,7 @@ A **switch** moves one role to its new machine:
 
 A new machine that does not serve within the wait is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
 
-The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy.
+The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC worker](../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
 
 ## Replacement strategies
 
