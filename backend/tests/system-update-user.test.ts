@@ -13,7 +13,7 @@ describe('System user update', async () => {
 
   afterEach(async () => await clearSecurityTestData());
 
-  it('keeps the name when the body changes neither the first nor the last name', async () => {
+  it('keeps the name of a user with given and family name when the body changes the slug alone', async () => {
     const admin = await createSystemAdminUser('system-update-admin@example.test');
     const user = await createTestUser('system-update-target@example.test');
     const slug = `${user.slug}-renamed`;
@@ -27,5 +27,22 @@ describe('System user update', async () => {
 
     const [stored] = await db.select({ name: usersTable.name, slug: usersTable.slug }).from(usersTable).where(eq(usersTable.id, user.id));
     expect(stored).toEqual({ name: user.name, slug });
+  });
+
+  it('names a user without given or family name after a new slug', async () => {
+    const admin = await createSystemAdminUser('system-update-admin@example.test');
+    const user = await createTestUser('system-update-target@example.test');
+    await db.update(usersTable).set({ givenName: null, familyName: null }).where(eq(usersTable.id, user.id));
+    const slug = `${user.slug}-renamed`;
+
+    const { response } = await call(updateUser, {
+      path: { userId: user.id },
+      body: { slug },
+      headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
+    });
+    expect(response.status).toBe(200);
+
+    const [stored] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, user.id));
+    expect(stored.name).toBe(slug);
   });
 });
