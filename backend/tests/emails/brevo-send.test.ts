@@ -66,6 +66,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it('sends nothing to a placeholder address under a reserved domain', async () => {
+  const fetchMock = vi.fn(async () => new Response(null, { status: 201 }));
+  vi.stubGlobal('fetch', fetchMock);
+  const statics = { senderName: 'John', entityName: 'Acme', role: memberRole };
+  await mailer.sendEmails(memberInviteEmail, statics, [{ email: 'guest@demo.invalid', lng: 'en', name: 'Guest', memberInviteLink: link }]);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
 /**
  * The mailer renders each mail once per language and leaves per-recipient values as Brevo placeholders. Brevo fills
  * `{{params.x}}` escaped, and a param declared as app-built HTML through `{{params.x|safe}}`.

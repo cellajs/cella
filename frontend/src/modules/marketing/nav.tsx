@@ -15,6 +15,8 @@ import { useFloatingNavItems } from '~/modules/navigation/floating-nav/use-float
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
 
+const hasDrawer = marketingNavConfig.length > 0 || !!appConfig.company.githubUrl;
+
 interface MarketingNavLinksProps {
   onNavigate: () => void;
 }
@@ -59,7 +61,7 @@ export function MarketingNav() {
     idPrefix: 'marketing',
     hintKey: 'floating-menu-marketing',
     enabled: isMobile,
-    onToggleMenu: () => setDrawerOpen((prev) => !prev),
+    onToggleMenu: hasDrawer ? () => setDrawerOpen((prev) => !prev) : undefined,
   });
 
   const closeDrawer = () => setDrawerOpen(false);
@@ -92,7 +94,7 @@ export function MarketingNav() {
           <div className="flex items-center gap-2 px-2">
             {/* <UserLanguage /> */}
 
-            <UserTheme buttonClassName="max-xs:hidden mr-2" />
+            <UserTheme buttonClassName={hasDrawer ? 'max-xs:hidden mr-2' : 'mr-2'} />
 
             {appConfig.company.githubUrl && (
               <Button
@@ -113,24 +115,26 @@ export function MarketingNav() {
         </div>
       </header>
 
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="pb-8 sm:hidden">
-          <DrawerTitle className="sr-only">{t('c:menu')}</DrawerTitle>
-          <div className="flex flex-col gap-2 px-4">
-            <UserTheme buttonClassName="xs:hidden m-1 self-end" />
-            <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} onClick={closeDrawer} />}>
-              {t('c:about')}
-            </Button>
-            <MarketingNavLinks onNavigate={closeDrawer} />
-            {appConfig.company.githubUrl && (
-              <Button size="lg" render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
-                <GithubIcon className="size-6" />
-                {t('c:github')}
+      {hasDrawer && (
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerContent className="pb-8 sm:hidden">
+            <DrawerTitle className="sr-only">{t('c:menu')}</DrawerTitle>
+            <div className="flex flex-col gap-2 px-4">
+              <UserTheme buttonClassName="xs:hidden m-1 self-end" />
+              <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} onClick={closeDrawer} />}>
+                {t('c:about')}
               </Button>
-            )}
-          </div>
-        </DrawerContent>
-      </Drawer>
+              <MarketingNavLinks onNavigate={closeDrawer} />
+              {appConfig.company.githubUrl && (
+                <Button size="lg" render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
+                  <GithubIcon className="size-6" />
+                  {t('c:github')}
+                </Button>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </>
   );
 }

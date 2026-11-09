@@ -109,6 +109,8 @@ export interface TenantKindConfig<Q extends string = string> {
   counted: boolean;
   /** May invite, which mails third parties. */
   invitations: boolean;
+  /** May share with the public: a public channel or product, a link preview of its content. */
+  publicSharing: boolean;
   /** The operator hears of a tenant of this kind being created or removed. */
   operatorNotices: boolean;
   /** Laid over `defaultRestrictions` when a tenant of this kind is created. */
@@ -404,6 +406,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultLanguage: string;
   /** ISO 3166-1 alpha-2 codes a country field suggests after the one the device's timezone points to. */
   commonCountries: readonly string[];
+  listDatePrecision: 'day' | 'minute';
 
   company: CompanyConfig;
 

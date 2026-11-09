@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRightIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CountBadge } from '~/modules/common/count-badge';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
@@ -50,13 +50,13 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
                   <span className="truncate transition [grid-area:1/1] group-hover/organization-link:-translate-y-2 group-hover/organization-link:opacity-0 group-hover/organization-link:delay-300 group-focus-visible/organization-link:-translate-y-2 group-focus-visible/organization-link:opacity-0">
                     {t(organization.membership.role)}
                   </span>
-                  <span className="flex translate-y-2 items-center gap-1 overflow-hidden opacity-0 transition [grid-area:1/1] group-hover/organization-link:translate-y-0 group-hover/organization-link:opacity-100 group-hover/organization-link:delay-300 group-focus-visible/organization-link:translate-y-0 group-focus-visible/organization-link:opacity-100">
-                    <span className="truncate">{t('c:go_to_organization_page')}</span>
-                    <ArrowRightIcon className="size-3 shrink-0" />
+                  <span className="translate-y-2 truncate opacity-0 transition [grid-area:1/1] group-hover/organization-link:translate-y-0 group-hover/organization-link:opacity-100 group-hover/organization-link:delay-300 group-focus-visible/organization-link:translate-y-0 group-focus-visible/organization-link:opacity-100">
+                    {t('c:go_to_organization_page')}
                   </span>
                 </span>
               </span>
               {badge}
+              <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
             </Link>
           </div>
         ))}

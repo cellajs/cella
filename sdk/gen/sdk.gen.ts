@@ -835,7 +835,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
 /**
  * Accept invitation token as current user
  *
- * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.
+ * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. An account without a proven address accepts none (403 `provisional_account`). Only an invitation not yet bound to another user can be accepted this way.
  *
  * **POST /auth/accept-invitation-token** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/accept-invitation-token) ·· _auth · cella_
  *
@@ -855,12 +855,12 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
 /**
  * Confirm the invited address
  *
- * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account. An account without a proven address binds none (403 `provisional_account`).
  *
  * **POST /auth/confirm-invitation-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/confirm-invitation-address) ·· _auth · cella_
  *
  * @param {confirmInvitationAddressData} options
- * @returns Possible status codes: 204, 400, 401, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
   options?: Options<ConfirmInvitationAddressData, ThrowOnError>,
@@ -1508,7 +1508,7 @@ export const generateStepUpPasskeyChallenge = <ThrowOnError extends boolean = tr
 /**
  * Email a step-up code
  *
- * For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.
+ * For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes. An account without a proven address is offered no code.
  *
  * **POST /auth/send-step-up-code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/send-step-up-code) ·· _auth · cella_
  *
@@ -1940,7 +1940,7 @@ export const leaveMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in. Only a system admin gets a newsletter image token.
+ * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in, and is refused at its tenant's attachment quota before any file is stored. Only a system admin gets a newsletter image token.
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· _me · cella_
  *
@@ -3234,7 +3234,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
 /**
  * Take a demo
  *
- * Gives this browser a demo: a throwaway account signed in by a demo session, with a tenant of kind `demo` and the organization it administers, filled by the app. The tenant goes after the demo period with everything in it and the account. A demo session invites no one, creates no tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back.
+ * Gives this browser a demo: a throwaway account signed in by a demo session, with a tenant of kind `demo` and the organization it administers, filled by the app. The tenant goes after the demo period with everything in it and the account. A demo session invites no one, creates no tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back; one whose demo ended gets a new one.
  *
  * **POST /demos** ·· [createDemo](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/demos) ·· _tenants · cella_
  *

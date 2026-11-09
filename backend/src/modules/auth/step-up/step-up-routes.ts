@@ -44,7 +44,7 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [spamLimiter],
     summary: 'Email a step-up code',
     description:
-      'For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.',
+      'For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes. An account without a proven address is offered no code.',
     responses: { 204: { description: 'Code sent' }, ...errors(403, 409) },
   }),
 });

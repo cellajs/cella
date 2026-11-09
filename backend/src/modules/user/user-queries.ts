@@ -31,6 +31,15 @@ const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) =>
 export const hasProvenEmail = (userId: typeof usersTable.id): SQL =>
   sql`EXISTS (SELECT 1 FROM ${emailsTable} WHERE ${emailsTable.userId} = ${userId})`;
 
+/** Whether the account holds a proven address; false for a provisional one, which binds nothing lasting to itself. */
+export const isProvenAccount = async (ctx: DbContext, { userId }: { userId: string }) => {
+  const [row] = await ctx.var.db
+    .select({ proven: hasProvenEmail(usersTable.id) })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  return row?.proven === true;
+};
+
 interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches name and email. */
   q?: string;

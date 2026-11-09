@@ -41,6 +41,8 @@ app.openapi(entityRoutes.unarchiveChannel, async (ctx) => {
 const maxStreamsPerUser = 10;
 // One actor's accounts can fill this cap for every tenant: a stream belongs to a user, memberless or not, so no per-tenant share binds.
 const maxStreamSubscribers = 5000;
+/** The share of that cap demo sessions may hold together: throwaway accounts never crowd out a member's stream. */
+const maxDemoStreamSubscribers = maxStreamSubscribers / 10;
 /** The wait a capped connect is told, in seconds: the client's first reconnect delay, since a cap frees no slot at a known time. */
 const streamCapRetryAfter = 5;
 
@@ -49,6 +51,8 @@ const streamCapRetryAfter = 5;
  * registration, so the per-user cap counts them too, and parallel connects cannot all pass it.
  */
 const admittedStreams = new Map<string, number>();
+/** Streams of demo sessions, admitted or registered, against {@link maxDemoStreamSubscribers}. */
+let demoStreams = 0;
 
 /** Gives back one admitted stream of `userId`, at its registration or when it fails before one. */
 function releaseAdmission(userId: string): void {
@@ -81,15 +85,18 @@ async function membershipsChangedSince(userId: string, registered: readonly Memb
 
 app.openapi(entityRoutes.getMyStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, session } = ctx.var;
+  const isDemo = session.authStrategy === 'demo';
 
   const admitted = admittedStreams.get(user.id) ?? 0;
   if (
     streamSubscriberManager.size >= maxStreamSubscribers ||
-    streamSubscriberManager.getByTopic(userTopic(user.id)).length + admitted >= maxStreamsPerUser
+    streamSubscriberManager.getByTopic(userTopic(user.id)).length + admitted >= maxStreamsPerUser ||
+    (isDemo && demoStreams >= maxDemoStreamSubscribers)
   ) {
     throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap', retryAfter: streamCapRetryAfter } });
   }
   admittedStreams.set(user.id, admitted + 1);
+  if (isDemo) demoStreams += 1;
 
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
 
@@ -97,6 +104,9 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
     // The registration below follows in the same tick, so the stream is counted throughout.
     try {
       await writeOffset(stream);
+    } catch (error) {
+      if (isDemo) demoStreams -= 1;
+      throw error;
     } finally {
       releaseAdmission(user.id);
     }
@@ -120,6 +130,7 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
     log.debug('Stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
     stream.onAbort(() => {
+      if (isDemo) demoStreams -= 1;
       streamSubscriberManager.unregister(subscriber.id);
       log.debug('Stream subscriber disconnected', { subscriberId: subscriber.id });
     });

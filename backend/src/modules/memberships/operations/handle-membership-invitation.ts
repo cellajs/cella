@@ -12,6 +12,7 @@ import {
   stampInactiveMembershipRejected,
 } from '#/modules/memberships/inactive-memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { isProvenAccount } from '#/modules/user/user-queries';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { log } from '#/utils/logger';
 import { pick } from '#/utils/pick';
@@ -31,7 +32,8 @@ interface HandleMembershipInvitationOpts {
  * Answers an invitation for the signed-in user. Accepting makes them a member of its channel, or spends it when they
  * are one already; rejecting declines it. Either way its links go, and the answer is its organization as `ChannelBase`.
  * @throws AppError 404 `not_found` for a missing, rejected or another user's invitation alike, 409 `user_mismatch` when
- * a token accept loses the bind to another account, 403 `channel_archived` for an accept into an archived channel.
+ * a token accept loses the bind to another account, 403 `channel_archived` for an accept into an archived channel, 403
+ * `provisional_account` for an accept by an account without a proven address.
  */
 export async function handleMembershipInvitationOp(
   ctx: InvitationAnswerContext,
@@ -40,6 +42,9 @@ export async function handleMembershipInvitationOp(
   { viaToken = false }: HandleMembershipInvitationOpts = {},
 ) {
   const userId = ctx.var.user.id;
+  if (acceptOrReject === 'accept' && !(await isProvenAccount(ctx, { userId }))) {
+    throw new AppError(403, 'provisional_account', 'warn', { meta: { resource: 'invitation' } });
+  }
 
   const inactiveMembership = viaToken
     ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId, userId })

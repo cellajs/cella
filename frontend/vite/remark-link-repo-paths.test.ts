@@ -123,3 +123,29 @@ describe('relative markdown links in repo docs', () => {
     expect(runLink('/docs/operations', repoDocFile).url).toBe('/docs/operations');
   });
 });
+
+describe('an app without a repo URL', () => {
+  const noRepoTransform = remarkLinkRepoPaths({ repoRoot, repoUrl: '', docRoutes: { 'cella/ARCHITECTURE.md': '/docs/page/architecture' } });
+  const repoDocFile = { path: path.join(repoRoot, 'cella', 'AGENTS.md') };
+  const text = (value: string): Node => ({ type: 'text', value });
+
+  it('leaves repo paths as plain code', () => {
+    const tree = para(code('frontend/vite.config.ts'), code('frontend/vite/'));
+    noRepoTransform(tree as never, repoDocFile);
+    expect(tree.children?.[0].children).toEqual([code('frontend/vite.config.ts'), code('frontend/vite/')]);
+  });
+
+  it('keeps links to docs pages and reduces the others to their text', () => {
+    const tree = para(
+      { type: 'link', url: './ARCHITECTURE.md', children: [text('page')] },
+      { type: 'link', url: './SECURITY.md', children: [text('file')] },
+      { type: 'link', url: './does-not-exist.md', children: [text('missing')] },
+    );
+    noRepoTransform(tree as never, repoDocFile);
+    expect(tree.children?.[0].children).toEqual([
+      { type: 'link', url: '/docs/page/architecture', children: [text('page')] },
+      text('file'),
+      text('missing'),
+    ]);
+  });
+});

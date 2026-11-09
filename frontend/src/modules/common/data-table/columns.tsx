@@ -1,10 +1,12 @@
 import { BoxIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { exportDate } from '~/lib/export';
 import type { TKey } from '~/lib/i18n-locales';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, type EllipsisRow, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { DateTooltip } from '~/modules/common/date-tooltip';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { dateShort } from '~/utils/date-short';
@@ -27,7 +29,7 @@ interface DateColumnOptions<T> {
   get?: (row: T) => DateValue;
 }
 
-/** A short relative date, hidden below md unless told otherwise; exports write the full date. */
+/** A short relative date at the app's list precision with the exact moment on hover, hidden below md unless told otherwise; exports write the full date. */
 export const dateColumn = <T,>(
   key: string,
   {
@@ -46,7 +48,11 @@ export const dateColumn = <T,>(
   ...(minBreakpoint && { minBreakpoint }),
   minWidth: 120,
   placeholderValue: '-',
-  renderCell: ({ row }) => dateShort(get(row)),
+  renderCell: ({ row }) => {
+    const date = get(row);
+    const text = dateShort(date, appConfig.listDatePrecision);
+    return text && <DateTooltip date={date}>{text}</DateTooltip>;
+  },
   exportValue: (row) => exportDate(get(row)),
 });
 

@@ -1833,6 +1833,10 @@ export type ConfirmInvitationAddressErrors = {
    */
   401: UnauthorizedError;
   /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
    * Not found
    */
   404: NotFoundError;

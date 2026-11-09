@@ -13,6 +13,7 @@ import {
   sessionsTable,
 } from '#/modules/auth/sessions/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -158,6 +159,7 @@ export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since,
       hasPasskey: held.passkey,
       hasTotp: held.totp,
       mfaRequired: sql<boolean>`exists (select 1 from ${usersTable} where ${usersTable.id} = ${userId} and ${usersTable.mfaRequired})`,
+      hasProvenEmail: sql<boolean>`exists (select 1 from ${emailsTable} where ${emailsTable.userId} = ${userId})`,
     })
     .from(sessionsTable)
     .where(eq(sessionsTable.id, sessionId));

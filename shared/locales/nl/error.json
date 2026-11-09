@@ -35,7 +35,7 @@
   "home_required.text": "Noem de plek waar dit bij hoort.",
   "invalid_email": "Vul een e-mailadres in zoals naam@voorbeeld.nl",
   "restrict_by_tenant_kind": "Hier niet beschikbaar",
-  "restrict_by_tenant_kind.text": "Een demo nodigt niemand uit en blijft een demo.",
+  "restrict_by_tenant_kind.text": "Een demo nodigt niemand uit, deelt niets met het publiek en blijft een demo.",
   "sso_email_exists": "Dit adres heeft al een account",
   "sso_email_exists.text": "Het e-mailadres dat je instelling heeft gedeeld, hoort al bij een account. Is dat van jou, log dan eerst in op dat account en koppel daarna je instellingsaccount via je accountinstellingen.",
   "sso_email_missing": "Geen e-mailadres gedeeld",

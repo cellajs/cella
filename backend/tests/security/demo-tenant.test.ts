@@ -1,5 +1,7 @@
-import { count, eq } from 'drizzle-orm';
+import { and, count, eq, isNull } from 'drizzle-orm';
 import {
+  acceptInvitationToken,
+  confirmInvitationAddress,
   createDemo,
   createTenant,
   createTotp,
@@ -9,19 +11,32 @@ import {
   listOrganizations,
   listTenants,
   listUsers,
+  sendStepUpCode,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { removeDueTenants } from '#/modules/tenants/operations/remove-due-tenants';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from '../fixtures';
-import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal, sentMails, setCookiePair } from '../helpers';
+import {
+  CookieJar,
+  createOrganizationAdminUser,
+  createSystemAdminUser,
+  createTestSession,
+  expectRefusal,
+  openHeldLink,
+  sentMails,
+  setCookiePair,
+} from '../helpers';
+import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createTestTenant } from './helpers';
 
@@ -33,6 +48,9 @@ type TenantAnswer = { id: string; kind: string; expiresAt: string | null; organi
 
 /** A page of ids as a list answers it. */
 const idsOf = ({ data }: { data: unknown }) => (data as { results: { id: string }[] }).results.map(({ id }) => id);
+
+/** A session not revoked: a replaced one keeps its row. */
+const isLive = () => isNull(sessionsTable.revokedAt);
 
 const rows = async (table: typeof usersTable | typeof actorsTable | typeof tenantsTable, id: string) =>
   (await db.select({ total: count() }).from(table).where(eq(table.id, id)))[0].total;
@@ -89,6 +107,51 @@ describe('Demo tenants', async () => {
     });
     expect(liveInvite.response.status).toBe(200);
     expect(sentMails().map(({ recipient }) => recipient.email)).toEqual(['third-party@security-test.com']);
+  });
+
+  it('signs a demo in for no longer than its tenant, and gives a browser whose demo ended a new one', async () => {
+    const demo = await takeDemo();
+    const [session] = await db.select({ expiresAt: sessionsTable.expiresAt }).from(sessionsTable).where(eq(sessionsTable.userId, demo.user.id));
+    expect(session.expiresAt <= String(demo.tenant.expiresAt)).toBe(true);
+
+    await db
+      .update(tenantsTable)
+      .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
+      .where(eq(tenantsTable.id, demo.tenant.id));
+    const next = await call(createDemo, { headers: { ...demo.headers, 'x-forwarded-for': '10.200.0.1' } });
+    expect(next.response.status).toBe(201);
+    expect((next.data as TenantAnswer).id).not.toBe(demo.tenant.id);
+    expect(
+      (
+        await db
+          .select()
+          .from(sessionsTable)
+          .where(and(eq(sessionsTable.userId, demo.user.id), isLive()))
+      ).length,
+    ).toBe(0);
+  });
+
+  it('must not let a demo account bind or accept an invitation, nor be mailed a step-up code', async () => {
+    const demo = await takeDemo();
+    const live = await createTestTenant(call, 'demo-invited');
+    const { rawToken } = await createInvitation({
+      organization: { id: live.organization.id, tenantId: live.tenantId },
+      email: `invited-${nanoid(6)}@security-test.com`,
+      createdBy: live.user.id,
+    });
+    const browser = new CookieJar([demo.headers.Cookie]);
+    await openHeldLink('invitation', rawToken, browser);
+    const asDemo = () => ({ headers: { ...defaultHeaders, Cookie: browser.header() } });
+
+    await expectRefusal(await call(confirmInvitationAddress, asDemo()), 403, 'provisional_account');
+    await expectRefusal(await call(acceptInvitationToken, asDemo()), 403, 'provisional_account');
+    await expectRefusal(await call(sendStepUpCode, { headers: demo.headers }), 400, 'invalid_request');
+    expect(sentMails()).toHaveLength(0);
+    const elsewhere = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, demo.user.id), eq(membershipsTable.tenantId, live.tenantId)));
+    expect(elsewhere).toEqual([]);
   });
 
   it('gives a browser its demo back, refuses a signed-in account and is gone while the feature is off', async () => {

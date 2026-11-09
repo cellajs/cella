@@ -11,7 +11,8 @@ interface FloatingNavItemsOptions {
   hintKey: string;
   /** True while the page shows the floating nav; the scroll listeners run only then. */
   enabled: boolean;
-  onToggleMenu: () => void;
+  /** Absent on a page without a menu, which then only gets the scroll-to-top button. */
+  onToggleMenu?: () => void;
 }
 
 /** A page's floating menu toggle, labelled "menu" at the top of a first visit, and its scroll-to-top button once scrolled down. */
@@ -21,18 +22,22 @@ export function useFloatingNavItems({ idPrefix, hintKey, enabled, onToggleMenu }
   const showScrollTop = useScrolledPast(300, enabled);
   // iOS overscroll keeps the scroll offset at or below 0, so it counts as the top
   const isAtTop = !useScrolledPast(8, enabled);
-  const showMenuLabel = useFirstTimeHint(hintKey, enabled && isAtTop);
+  const showMenuLabel = useFirstTimeHint(hintKey, enabled && isAtTop && !!onToggleMenu);
 
   return [
-    {
-      id: `${idPrefix}-menu`,
-      icon: MenuIcon,
-      onClick: onToggleMenu,
-      ariaLabel: t('c:toggle_menu'),
-      direction: 'left',
-      label: t('c:menu'),
-      labelVisible: showMenuLabel,
-    },
+    ...(onToggleMenu
+      ? [
+          {
+            id: `${idPrefix}-menu`,
+            icon: MenuIcon,
+            onClick: onToggleMenu,
+            ariaLabel: t('c:toggle_menu'),
+            direction: 'left' as const,
+            label: t('c:menu'),
+            labelVisible: showMenuLabel,
+          },
+        ]
+      : []),
     {
       id: `${idPrefix}-scroll-top`,
       icon: ArrowUpIcon,

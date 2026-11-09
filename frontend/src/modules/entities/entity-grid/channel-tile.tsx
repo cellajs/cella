@@ -175,7 +175,7 @@ export function ChannelTileStats() {
       {postTypes.length > 0 && <span aria-hidden="true">·</span>}
       <TooltipButton toolTipContent={dateLabel}>
         <span>
-          <span aria-hidden="true">{dateShort(shownDate)}</span>
+          <span aria-hidden="true">{dateShort(shownDate, appConfig.listDatePrecision)}</span>
           <span className="sr-only">{dateLabel}</span>
         </span>
       </TooltipButton>

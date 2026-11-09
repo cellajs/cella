@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
-import { findUserByEmail } from '#/modules/user/user-queries';
+import { findUserByEmail, isProvenAccount } from '#/modules/user/user-queries';
 
 /**
  * Accepts the membership invitation behind a validated single-use token as the signed-in user. The account must hold the
@@ -10,7 +10,8 @@ import { findUserByEmail } from '#/modules/user/user-queries';
  * opened link alone proves nothing: it can be forwarded. Accepting grants the membership and never adds the address to
  * the account: the link shows only that its holder handed it to this browser, and every address an account holds signs
  * in to it.
- * @throws AppError 409 `user_mismatch` for a token linked to another account or an address another account holds, 403
+ * @throws AppError 403 `provisional_account` for an account without a proven address, which accepts no invitation; 409
+ *   `user_mismatch` for a token linked to another account or an address another account holds; 403
  *   `invitation_address_unproven` for an account that neither holds the invited address nor opened such a link.
  */
 export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: TokenRecord) {
@@ -21,6 +22,8 @@ export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: Tok
 
   // A token already linked to a user is that user's alone; possession of the link changes nothing.
   if (userId && userId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
+  if (!(await isProvenAccount(ctx, { userId: user.id })))
+    throw new AppError(403, 'provisional_account', 'warn', { meta: { resource: 'invitation' } });
 
   const holder = await findUserByEmail(ctx, { email });
   if (holder && holder.id !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
