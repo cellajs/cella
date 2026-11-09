@@ -11,6 +11,12 @@ export const nodeEnvs = ['development', 'production', 'test'] as const;
 export const defaultCdcSlotName = 'cdc_slot';
 
 /**
+ * Prefix of the transactional logical message a writer emits as the first statement of a bulk transaction. The CDC
+ * worker records none of that transaction's changes and rebuilds its books at the commit, whatever the size.
+ */
+export const syncBulkMarkerPrefix = 'sync-bulk';
+
+/**
  * Loads the monorepo's one env file for a module two folders below the root: `<package>/src` or the bundle in
  * `<package>/dist`, which is why the caller passes its own `import.meta.url`. Variables already in the environment win.
  * A test process loads nothing, so a developer's keys never reach a test.

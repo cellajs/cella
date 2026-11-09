@@ -50,8 +50,8 @@ export const resourceLimits = {
     flushBatchSize: 100,
     /**
      * The largest source transaction the worker holds: it buffers a transaction whole until its commit, at about 2 KB
-     * a change (measured: 225 MB for 100,000 attachment rows). A larger one fails where it passes this, like any change
-     * the worker cannot process.
+     * a change (measured: 225 MB for 100,000 attachment rows). A larger one is discarded where it passes this, and the
+     * books are rebuilt at its commit.
      */
     maxTransactionEvents: 100_000,
   },

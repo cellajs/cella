@@ -55,19 +55,36 @@ describe('TransactionBuffer', () => {
     }
   });
 
-  it('must not hold a transaction past its limit: it fails there and frees what it held', async () => {
+  it('discards a transaction past its limit: it holds nothing more, stays in it, and its commit reports the count', async () => {
     const small = new TransactionBuffer(onSurvivingEvents, { maxEvents: 3 });
     small.onBegin({ tag: 'begin', xid: 9, commitLsn: '0/90', commitTime: BigInt(0) });
-    for (let index = 0; index < 3; index++) await small.onEvent(`0/${index}`, mockParseResult({ action: 'create', entityType: 'attachment' }), index);
+    for (let index = 0; index < 4; index++) await small.onEvent(`0/${index}`, mockParseResult({ action: 'create', entityType: 'attachment' }), index);
 
-    await expect(small.onEvent('0/3', mockParseResult({ action: 'create', entityType: 'attachment' }), 3)).rejects.toThrow(
-      'holds more than 3 changes',
-    );
+    // The changes that follow are only counted: a migration of any size passes through here.
+    expect(small.isDiscarding).toBe(true);
+    expect(small.isBuffering).toBe(true);
+    for (let index = 4; index < 10; index++) small.onDiscardedChange();
 
-    // Nothing of it is left: a commit that still came would emit nothing.
-    expect(small.isBuffering).toBe(false);
-    await small.onCommit('0/98');
+    expect(await small.onCommit('0/98')).toEqual({ label: 'oversized', changeCount: 10 });
     expect(onSurvivingEvents).not.toHaveBeenCalled();
+    expect(small.isBuffering).toBe(false);
+  });
+
+  it('discards a transaction its marker declares bulk, counting what it held and what follows', async () => {
+    buffer.onBegin({ tag: 'begin', xid: 10, commitLsn: '0/90', commitTime: BigInt(0) });
+    await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }), 0);
+    buffer.discard('migrate:20261109_backfill');
+    buffer.onDiscardedChange();
+    buffer.onDiscardedChange();
+
+    expect(await buffer.onCommit('0/98')).toEqual({ label: 'migrate:20261109_backfill', changeCount: 3 });
+    expect(onSurvivingEvents).not.toHaveBeenCalled();
+
+    // The next transaction is held and emitted as any other.
+    buffer.onBegin({ tag: 'begin', xid: 11, commitLsn: '0/A0', commitTime: BigInt(0) });
+    await buffer.onEvent('0/A1', mockParseResult({ action: 'create', entityType: 'attachment' }), 0);
+    expect(await buffer.onCommit('0/A8')).toBeNull();
+    expect(processedEvents).toHaveLength(1);
   });
 
   it('gives each event its transaction commit time, the same on every delivery', async () => {
