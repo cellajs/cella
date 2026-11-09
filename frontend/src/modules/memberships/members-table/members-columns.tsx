@@ -2,7 +2,6 @@ import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { getMemberStatIcon, isMemberCountHidden } from '~/lib/entity-modules';
-import { exportDate } from '~/lib/export';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { countColumn, dateColumn, emailColumn } from '~/modules/common/data-table/columns';
@@ -10,7 +9,6 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import type { Member } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
-import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
@@ -74,31 +72,15 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
         ]
       : []),
     dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
-    {
-      key: 'lastSeenAt',
-      name: t('c:last_seen_at'),
-      sortable: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.lastSeenAt),
-      exportValue: (row) => exportDate(row.lastSeenAt),
-    },
+    dateColumn('lastSeenAt', { name: t('c:last_seen_at') }),
     // From include=counts: the member's last post in this channel, their authored counts and their sub-channel memberships
-    {
-      key: 'lastPostedAt',
+    dateColumn('lastPostedAt', {
       name: t('c:last_post'),
-      sortable: true,
-      sortDescendingFirst: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => {
+      get: (row) => {
         const lastPostedAt = row.counts?.activity[appConfig.memberStatProductTypes[0]];
-        return lastPostedAt ? dateShort(new Date(lastPostedAt)) : null;
+        return lastPostedAt ? new Date(lastPostedAt) : null;
       },
-      exportValue: (row) => exportDate(row.counts?.activity[appConfig.memberStatProductTypes[0]]),
-    },
+    }),
     // The response counts these product types only; each one's icon and hidden default come from the module that owns it
     ...appConfig.memberStatProductTypes.map((type) =>
       countColumn<Member>(`${type}Count`, {

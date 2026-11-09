@@ -1,14 +1,15 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, gte, inArray, lt, notInArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, gt, gte, inArray, lt, notInArray, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { normalizeRestrictions, publicSharingTenantKinds } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
@@ -118,7 +119,22 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: TenantCrea
  */
 export const findDemoTenant = async (ctx: DbContext, { userId }: { userId: string }) => {
   const memberOf = ctx.var.db.select({ tenantId: membershipsTable.tenantId }).from(membershipsTable).where(eq(membershipsTable.userId, userId));
-  return findTenant(ctx, { where: and(inArray(tenantsTable.id, memberOf), eq(tenantsTable.kind, 'demo')) });
+  // A demo past its end or archived is over before the sweep removes it
+  const running = and(eq(tenantsTable.kind, 'demo'), eq(tenantsTable.status, 'active'), gt(tenantsTable.expiresAt, getIsoDate()));
+  return findTenant(ctx, { where: and(inArray(tenantsTable.id, memberOf), running) });
+};
+
+/**
+ * Admits a row to a public read by the tenant `tenantId` names, as `servesPublicly` decides for a loaded tenant: active,
+ * not past its end and of a kind that shares with the public.
+ * @public
+ */
+export const publiclyServedTenant = (tenantId: AnyPgColumn): SQL =>
+  sql`EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'active' AND (${tenantsTable.expiresAt} IS NULL OR ${tenantsTable.expiresAt} > ${getIsoDate()}) AND ${tenantsTable.kind} IN ${publicSharingTenantKinds()})`;
+
+/** Makes demo builds wait for each other until the transaction ends, so a burst at the day's cap counts one at a time. */
+export const lockDemoCreation = async (ctx: DbContext) => {
+  await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended('demo_creation', 0))`);
 };
 
 /**

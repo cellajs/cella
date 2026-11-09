@@ -66,7 +66,7 @@ app.openapi(meRoutes.leaveMembership, async (ctx) => {
 
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
   // Signed upload params are a secret for minutes: no cache keeps them (RFC 9111 §5.2.2.5).
-  return ctx.json(getUploadTokenOp(ctx, ctx.req.valid('query')), 200, { 'Cache-Control': 'no-store' });
+  return ctx.json(await getUploadTokenOp(ctx, ctx.req.valid('query')), 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(meRoutes.listMyMemberships, async (ctx) => {

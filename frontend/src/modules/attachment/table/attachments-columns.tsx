@@ -16,7 +16,6 @@ import { useCan } from '~/modules/entities/use-can';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { ActorCell } from '~/modules/user/actor-cell';
 import { cn } from '~/utils/cn';
-import { dateShort } from '~/utils/date-short';
 import { formatBytes } from '~/utils/format-bytes';
 
 /** Views are only counted inside the unseen-count retention window; older rows read 0. */
@@ -148,14 +147,7 @@ export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attach
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
     },
-    {
-      key: 'updatedAt',
-      name: t('c:updated'),
-      hidden: true,
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.updatedAt),
-    },
+    dateColumn('updatedAt', { name: t('c:updated'), hidden: true, sortable: false, minBreakpoint: null }),
     {
       key: 'updatedBy',
       name: t('c:updated_by'),

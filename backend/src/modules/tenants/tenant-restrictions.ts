@@ -1,7 +1,9 @@
 import { appConfig, type EntityType, recordFromKeys, type TenantKind, type TenantKindConfig, tenantKindValues } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
+import { getIsoDate } from '#/utils/iso-date';
 import { applyMergePatch, type MergePatch } from '#/utils/merge-patch';
 
 /** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
@@ -59,6 +61,28 @@ export const assertTenantInvites = ({ kind }: { kind: TenantKind }): void => {
   if (appConfig.tenantKinds[kind].invitations) return;
   throw new AppError(403, 'restrict_by_tenant_kind', 'warn', { meta: { resource: 'invitation', kind } });
 };
+
+/**
+ * Rejects sharing with the public in a tenant whose kind shares nothing (`appConfig.tenantKinds`): a demo hosts no page
+ * for anyone. Binds system admins too. A public read filters on {@link publicSharingTenantKinds}.
+ * @throws AppError 403 `restrict_by_tenant_kind` with the kind in `meta.kind`.
+ * @public
+ */
+export const assertTenantPublicSharing = ({ kind }: { kind: TenantKind }): void => {
+  if (appConfig.tenantKinds[kind].publicSharing) return;
+  throw new AppError(403, 'restrict_by_tenant_kind', 'warn', { meta: { resource: 'public', kind } });
+};
+
+/** The kinds whose tenants share with the public: what a public read or a link preview serves content of. */
+export const publicSharingTenantKinds = (): TenantKind[] => tenantKindValues.filter((kind) => appConfig.tenantKinds[kind].publicSharing);
+
+/**
+ * Whether a public read may serve the tenant's rows: active, not past its end and of a kind that shares with the
+ * public. `publicGuard` runs no tenantGuard, so every public read decides this itself; {@link publiclyServedTenant} is
+ * the same test in SQL.
+ */
+export const servesPublicly = (tenant: Pick<TenantModel, 'kind' | 'status' | 'expiresAt'>): boolean =>
+  tenant.status === 'active' && (!tenant.expiresAt || tenant.expiresAt > getIsoDate()) && appConfig.tenantKinds[tenant.kind].publicSharing;
 
 /** Stored restrictions laid over the current defaults, so a row gains the fields it predates or a patch removed. */
 export const normalizeRestrictions = (stored?: MergePatch<Restrictions> | null): Restrictions => applyMergePatch(defaultRestrictions(), stored ?? {});

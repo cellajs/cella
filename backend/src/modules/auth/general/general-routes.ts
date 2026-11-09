@@ -98,7 +98,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Accept invitation token as current user',
     description:
-      'Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.',
+      'Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. An account without a proven address accepts none (403 `provisional_account`). Only an invitation not yet bound to another user can be accepted this way.',
     responses: { 200: json('Invitation was accepted', channelBaseSchema), ...errors(403, 404, 409) },
   }),
   confirmInvitationAddress: xRoute({
@@ -109,13 +109,13 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Confirm the invited address',
     description:
-      'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.',
+      'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account. An account without a proven address binds none (403 `provisional_account`).',
     responses: {
       204: {
         description:
           'Confirmation link sent\n\nA new link, bound to the signed-in account, went to the invited address. Every older link stops working.',
       },
-      ...errors(404, 409),
+      ...errors(403, 404, 409),
     },
   }),
   resendInvitationWithToken: xRoute({

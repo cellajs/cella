@@ -24,20 +24,22 @@ const transloaditExpiry = (ms: number) =>
 
 /**
  * Signed assembly params for one upload; where the files are stored follows the template's own visibility. The file
- * count and total size cap what one assembly may carry, whatever the client's own restrictions say.
+ * count (`maxFiles`, at most `maxFilesPerUpload`) and total size cap what one assembly may carry, whatever the client's
+ * own restrictions say.
  * @returns The params and their signature, or null when Transloadit is not configured.
  */
-export const signedUploadParams = (templateId: UploadTemplateId, sub: string) => {
+export const signedUploadParams = (templateId: UploadTemplateId, sub: string, maxFiles = maxFilesPerUpload) => {
   const { TRANSLOADIT_KEY: authKey, TRANSLOADIT_SECRET: authSecret } = env;
   if (!authKey || !authSecret) return null;
 
   const expires = transloaditExpiry(Date.now() + signedParamsLifetimeMs);
   const template = uploadTemplates[templateId];
   const { publicBucket, bucketName } = uploadStorage(templateId);
-  const maxSize = maxFilesPerUpload * appConfig.uppy.defaultRestrictions.maxFileSize + uploadOverheadBytes;
+  const files = Math.min(maxFiles, maxFilesPerUpload);
+  const maxSize = files * appConfig.uppy.defaultRestrictions.maxFileSize + uploadOverheadBytes;
 
   const params = {
-    auth: { key: authKey, expires, max_size: maxSize, max_number_of_files: maxFilesPerUpload },
+    auth: { key: authKey, expires, max_size: maxSize, max_number_of_files: files },
     // Keeps each signature distinct; it does not make the params single-use.
     nonce: nanoid(16),
     steps: {

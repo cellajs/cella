@@ -19,8 +19,9 @@ const factorMethods = ['passkey', 'totp'] as const;
  * A factor the user holds (for a method the app has on) counts when proven within the window: by a step-up, by setting
  * it up, by the MFA completion that minted the session or by a passkey sign-in. So does an SSO sign-in stamped `sso`.
  * A user without a factor proves a fresh first factor for `account` and `enroll`: a sign-in within the window or an
- * emailed code. An app with no factor method on reads `factor` as `account`, since nobody could set one up. Read fresh
- * from the database, so a stamp set in another process counts at once.
+ * emailed code. An account without a proven address is offered nothing by mail, and so cannot enroll either. An app
+ * with no factor method on reads `factor` as `account`, since nobody could set one up. Read fresh from the database,
+ * so a stamp set in another process counts at once.
  */
 export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
   const { session, stepUpCookie } = ctx.var;
@@ -40,8 +41,8 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   const factors = factorMethods.filter((method) => held[method] && isStrategyEnabled(method));
 
   if (factors.length === 0) {
-    if (effectiveTier === 'factor') return { steppedUp: row.stampedVia === 'sso', methods: ['enroll'], factor: null };
-    return { steppedUp: !!row.stampedVia || row.signedInRecently, methods: ['email'], factor: null };
+    if (effectiveTier === 'factor') return { steppedUp: row.stampedVia === 'sso', methods: row.hasProvenEmail ? ['enroll'] : [], factor: null };
+    return { steppedUp: !!row.stampedVia || row.signedInRecently, methods: row.hasProvenEmail ? ['email'] : [], factor: null };
   }
 
   // Only a factor the user holds counts: an emailed code stands in for one only while setting up a new factor.
@@ -50,7 +51,7 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   const factor = stampedWith ?? signedInWith ?? null;
 
   // With MFA off the mailbox signs the account in, so it may also replace a lost factor without weakening anything.
-  const recovery: StepUpMethod[] = row.mfaRequired || !canEnroll ? [] : [effectiveTier === 'enroll' ? 'email' : 'enroll'];
+  const recovery: StepUpMethod[] = row.mfaRequired || !canEnroll || !row.hasProvenEmail ? [] : [effectiveTier === 'enroll' ? 'email' : 'enroll'];
   const recovered = recovery.includes('email') && row.stampedVia === 'email';
 
   return { steppedUp: !!factor || row.stampedVia === 'sso' || recovered, methods: [...factors, ...recovery], factor };

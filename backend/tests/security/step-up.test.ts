@@ -1,9 +1,12 @@
 import { and, eq } from 'drizzle-orm';
 import { generateStepUpPasskeyChallenge, getStepUp, revokeMySessions, sendStepUpCode, stepUp } from 'sdk';
+import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { mockUser } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
 import { stepUpEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -44,6 +47,15 @@ describe('step-up', async () => {
     const user = await createTestUser(`${label}@security-test.com`);
     return { user, passkey: await insertPasskey(user), session: await insertStaleSession(user) };
   };
+
+  it('offers an account without a proven address nothing by mail, so it can neither step up nor enroll', async () => {
+    const [user] = await insertUsers({ var: { db } }, { users: [mockUser({ email: `provisional-${nanoid(6)}@security-test.com` })] });
+    const session = await insertStaleSession(user);
+
+    for (const tier of ['account', 'enroll', 'factor'] as const) expect((await stateOf(session, tier)).methods).toEqual([]);
+    await expectRefusal(await call(sendStepUpCode, { headers: session.headers }), 400, 'invalid_request');
+    expect(sentMails()).toHaveLength(0);
+  });
 
   it('must not step up a session via a passkey response to a sign-in or MFA challenge', async () => {
     const { user, passkey, session } = await passkeyHolder('passkey-step-up');

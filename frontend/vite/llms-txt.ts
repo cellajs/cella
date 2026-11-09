@@ -24,7 +24,7 @@ export interface LlmsPage {
 type PageMeta = { title?: string; description?: string; order?: number; hidden?: boolean; draft?: boolean };
 type Entry = { slug: string; parent: string | null; meta: PageMeta & { title: string }; page: LlmsPage };
 
-const RELATIVE_LINK = /\]\((\.{1,2}\/[^)\s]+)\)/g;
+const RELATIVE_LINK = /\[([^[\]]*)\]\((\.{1,2}\/[^)\s]+)\)/g;
 const PAGE_LINK = /\]\((\/docs\/page\/[^)#\s]+)(#[^)\s]*)?\)/g;
 
 /**
@@ -50,11 +50,12 @@ export function llmsFiles(pages: LlmsPage[], options: LlmsOptions): Map<string, 
 
   const files = new Map<string, string>();
   for (const { slug, meta, page } of entries) {
-    // Repo docs link each other relatively: point those links at the Markdown copies, or at GitHub.
+    // Repo docs link each other relatively: point those links at the Markdown copies, or at GitHub. With no repo URL the text stays.
     const imported = page.imported.map(({ file, source }) =>
-      source.replace(RELATIVE_LINK, (match, url: string) => {
+      source.replace(RELATIVE_LINK, (match, text: string, url: string) => {
         const link = relativeRepoLink(options, path.dirname(file), url, markdownUrl);
-        return link ? `](${link})` : match;
+        if (link) return `[${text}](${link})`;
+        return options.repoUrl ? match : text;
       }),
     );
     // Content pages link other pages by route: point those at the Markdown copies too.

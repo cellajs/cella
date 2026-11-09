@@ -98,9 +98,16 @@ export const config = {
    * `retention.demoTenantDays`.
    */
   tenantKinds: {
-    live: { listed: true, counted: true, invitations: true, operatorNotices: true },
-    test: { listed: false, counted: false, invitations: true, operatorNotices: false },
-    demo: { listed: false, counted: false, invitations: false, operatorNotices: false, restrictions: { quotas: { attachment: 1 } } },
+    live: { listed: true, counted: true, invitations: true, publicSharing: true, operatorNotices: true },
+    test: { listed: false, counted: false, invitations: true, publicSharing: true, operatorNotices: false },
+    demo: {
+      listed: false,
+      counted: false,
+      invitations: false,
+      publicSharing: false,
+      operatorNotices: false,
+      restrictions: { quotas: { attachment: 1 } },
+    },
   },
 
   /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
@@ -369,6 +376,8 @@ export const config = {
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
   commonCountries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
+  /** How a date reads in tables and tiles: 'day' as "Today" or "Sep 23" with the time on hover, 'minute' with the time shown. */
+  listDatePrecision: 'day' as const,
 
   // Company details
 

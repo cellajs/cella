@@ -133,6 +133,12 @@ async function sendBatch({ subject, html, versions, replyTo, htmlParams, headers
   });
 }
 
+/** RFC 2606 reserves `.invalid` for names that resolve nowhere: a placeholder account (a demo's, a sample's) lives under it. */
+const isUndeliverable = (email: string) => {
+  const address = email.toLowerCase();
+  return address.endsWith('.invalid') || address.endsWith(`@${appConfig.demo.addressDomain}`);
+};
+
 /** Sends the app's mail through Brevo's transactional API. */
 export const mailer = {
   /** False without a Brevo key: every send is then a no-op. */
@@ -148,13 +154,15 @@ export const mailer = {
     recipients: TRecipient[],
     replyTo?: string,
   ): Promise<void> {
-    if (!recipients.length) return;
+    // A send to a placeholder address only bounces
+    const deliverable = recipients.filter(({ email }) => !isUndeliverable(email));
+    if (!deliverable.length) return;
 
     const details = template.requestDetails ? await currentRequestDetails() : null;
     const requestId = ambientRequest()?.var.requestId;
     const failures: unknown[] = [];
 
-    for (const [lng, lngRecipients] of Map.groupBy(recipients, (recipient) => recipient.lng)) {
+    for (const [lng, lngRecipients] of Map.groupBy(deliverable, (recipient) => recipient.lng)) {
       // Every param key carries a nonce drawn for this send, so text a user typed into the mail can never name one:
       // only the mailer's own placeholders survive `neutralizeBrevoTags`.
       const nonce = randomBytes(8).toString('hex');

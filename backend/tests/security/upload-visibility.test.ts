@@ -1,9 +1,15 @@
+import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { env } from '#/env';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders, overrideConfig } from '../fixtures';
-import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
+import { adminDb, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
+import { insertAttachmentIn, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -23,7 +29,7 @@ interface AssemblyStep {
 interface UploadTokenBody {
   publicBucket: boolean;
   sub: string;
-  params: { steps: Record<string, AssemblyStep> } | null;
+  params: { auth: { max_number_of_files: number }; steps: Record<string, AssemblyStep> } | null;
   /** Error type, on a refusal. */
   type?: string;
 }
@@ -54,6 +60,31 @@ describe('Upload visibility', async () => {
 
   afterAll(async () => {
     await clearSecurityTestData();
+  });
+
+  it('signs no more files than the tenant has attachments left, and none at its quota, before any file is stored', async () => {
+    const capped = await createTestTenant(call, 'upload-quota');
+    const restrictions = defaultRestrictions();
+    restrictions.quotas.attachment = 2;
+    await adminDb.update(tenantsTable).set({ restrictions }).where(eq(tenantsTable.id, capped.tenantId));
+    invalidateCache.tenant(capped.tenantId);
+    const organization = { id: capped.organization.id, tenantId: capped.tenantId };
+    const plan = await seedAttachmentHome(organization, capped.user.id);
+    const insertOne = () => insertAttachmentIn(plan, { id: generateId(), tenantId: capped.tenantId, createdBy: capped.user.id });
+    const token = (templateId: string) => requestToken({ templateId, organizationId: organization.id }, capped.sessionCookie);
+
+    await insertOne();
+    const oneLeft = await token('attachment');
+    expect(oneLeft.status).toBe(200);
+    expect(oneLeft.body.params?.auth.max_number_of_files).toBe(1);
+
+    await insertOne();
+    const full = await token('attachment');
+    expect(full.status).toBe(403);
+    expect(full.body.type).toBe('restrict_by_app');
+
+    // The quota binds attachments alone: an avatar still uploads.
+    expect((await token('avatar')).status).toBe(200);
   });
 
   it('must not store a public file via choosing the public bucket for an attachment', async () => {

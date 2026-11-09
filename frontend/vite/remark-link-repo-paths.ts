@@ -4,7 +4,7 @@ import path from 'node:path';
 export interface RepoLinkOptions {
   /** Absolute path to the repo root; candidate paths are resolved against it. */
   repoRoot: string;
-  /** Repo URL without trailing slash, e.g. https://github.com/cellajs/cella. */
+  /** Repo URL without trailing slash, e.g. https://github.com/cellajs/cella. Empty renders repo paths without a link. */
   repoUrl: string;
   /** Branch the blob URLs point at. */
   branch?: string;
@@ -14,7 +14,7 @@ export interface RepoLinkOptions {
 
 /**
  * A repo doc's relative link: a target with a docs route maps to `routeUrl(route)`, any other repo file to its GitHub
- * blob URL. Returns null for a target outside the repo or missing, so no dead link is introduced.
+ * blob URL. Returns null for a target outside the repo or missing, or with no repo URL, so no dead link is introduced.
  */
 export function relativeRepoLink(
   { repoRoot, repoUrl, branch = 'main', docRoutes = {} }: RepoLinkOptions,
@@ -29,6 +29,7 @@ export function relativeRepoLink(
   const suffix = hash ? `#${hash}` : '';
   const docsRoute = docRoutes[rel];
   if (docsRoute) return `${routeUrl(docsRoute)}${suffix}`;
+  if (!repoUrl) return null;
   return `${repoUrl.replace(/\/+$/, '')}/blob/${branch}/${rel}${suffix}`;
 }
 
@@ -49,6 +50,7 @@ export function remarkLinkRepoPaths(options: RepoLinkOptions) {
   const escapesRepo = (p: string) => p.startsWith('/') || p.split('/').includes('..');
 
   const linkFor = (value: string): string | null => {
+    if (!root) return null;
     const match = PATH_RE.exec(value);
     if (match) {
       const [, filePath, startLine, endLine] = match;
@@ -76,7 +78,14 @@ export function remarkLinkRepoPaths(options: RepoLinkOptions) {
         const child = children[i];
         if (docDir && child.type === 'link' && child.url?.startsWith('.')) {
           const url = relativeRepoLink(options, docDir, child.url);
-          if (url) child.url = url;
+          if (url) {
+            child.url = url;
+          } else if (!root) {
+            // No repo to point at, and a relative link would render as a broken SPA route: only its text stays.
+            children.splice(i, 1, ...(child.children ?? []));
+            i--;
+            continue;
+          }
         }
         // Don't re-link code that already sits inside a link.
         if (!insideLink && child.type === 'inlineCode' && typeof child.value === 'string') {

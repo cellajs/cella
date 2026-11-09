@@ -54,7 +54,7 @@ const demoRoutes = createXRoutes(['tenants', 'cella'], {
     description:
       'Gives this browser a demo: a throwaway account signed in by a demo session, with a tenant of kind `demo` and the organization it administers, ' +
       'filled by the app. The tenant goes after the demo period with everything in it and the account. A demo session invites no one, creates no ' +
-      'tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back.',
+      'tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back; one whose demo ended gets a new one.',
     responses: {
       201: json('Created demo', tenantSchema, mockTenantResponse('tenant:demo')),
       200: json('Your demo', tenantSchema, mockTenantResponse('tenant:demo')),

@@ -68,6 +68,8 @@ export interface SessionExtras {
   steppedUpAt?: string;
   /** The connection (an institution's trust) an SSO sign-in came through. */
   connectionId?: string | null;
+  /** When the session ends, within `sessionLifetime`: a demo session ends with its tenant. */
+  expiresAt?: string;
 }
 
 /**
@@ -80,7 +82,7 @@ export const createSession = async (
   context: SignInContext,
   strategy: AuthStrategy,
   kind: SessionKind = 'regular',
-  { steppedUpVia = null, steppedUpAt, connectionId = null }: SessionExtras = {},
+  { steppedUpVia = null, steppedUpAt, connectionId = null, expiresAt: endsAt }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
 
@@ -92,6 +94,9 @@ export const createSession = async (
 
   const sessionId = generateId();
   const now = getIsoDate();
+  const lifetimeEnd = isoDateIn(sessionLifetime);
+  const expiresAt = endsAt && endsAt < lifetimeEnd ? endsAt : lifetimeEnd;
+  const timeSpan = new TimeSpan(Date.parse(expiresAt) - Date.now(), 'ms');
   const session = {
     id: sessionId,
     secret,
@@ -105,7 +110,7 @@ export const createSession = async (
     ipAsn: asn,
     deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
     createdAt: now,
-    expiresAt: isoDateIn(sessionLifetime),
+    expiresAt,
     steppedUpAt: steppedUpVia ? (steppedUpAt ?? now) : null,
     steppedUpVia,
     steppedUpSecret: stepUp?.hash ?? null,
@@ -123,7 +128,7 @@ export const createSession = async (
 
   await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
-  return { sessionId, sessionToken, stepUpCookie: stepUp?.raw, timeSpan: sessionLifetime, newDevice };
+  return { sessionId, sessionToken, stepUpCookie: stepUp?.raw, timeSpan, newDevice };
 };
 
 /**

@@ -12,6 +12,7 @@ import type {
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
 import { loadTenant } from '#/modules/tenants/load-tenant';
+import { servesPublicly } from '#/modules/tenants/tenant-restrictions';
 import { accessFrom } from '#/permissions/access';
 
 type PresignedUrlsBody = z.infer<typeof attachmentPresignedUrlsBodySchema>;
@@ -102,7 +103,8 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
 /**
  * `getPresignedUrlsOp` for a caller without a sign-in: the rows are read in the organization the URL names, under its
  * tenant's RLS, and the engine decides as for any anonymous reader, whom the row's own `public` flag and the entity's
- * `publicRead()` grant alone let in. Without that grant, or in a tenant that is not active, every id is rejected.
+ * `publicRead()` grant alone let in. Without that grant, or in a tenant no public read serves (`servesPublicly`), every
+ * id is rejected.
  */
 export async function getPublicPresignedUrlsOp(
   { tenantId, organizationId }: { tenantId: string; organizationId: string },
@@ -110,7 +112,7 @@ export async function getPublicPresignedUrlsOp(
 ): Promise<PresignedUrlsResult> {
   const ids = idsOf(items);
   const tenant = await loadTenant(tenantId);
-  if (tenant?.status !== 'active') return { data: [], rejectedIds: ids };
+  if (!tenant || !servesPublicly(tenant)) return { data: [], rejectedIds: ids };
 
   const rows = await tenantReadById(tenantId, (tx) => findLiveAttachmentsIn({ var: { db: tx } }, { ids, tenantId, organizationId }));
   return signReadable({ anonymous: true }, rows, items);

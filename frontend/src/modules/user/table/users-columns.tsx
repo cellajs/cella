@@ -12,7 +12,6 @@ import { DeleteUsers } from '~/modules/user/delete-users';
 import type { BaseUser } from '~/modules/user/types';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { UserCell } from '~/modules/user/user-cell';
-import { dateShort } from '~/utils/date-short';
 
 export const openUpdateUserSheet = (user: BaseUser, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -63,15 +62,7 @@ export const useColumns = () => {
       renderCell: ({ row }) => (row.role ? t(`c:${row.role}`) : t('c:user')),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
-    {
-      key: 'lastSeenAt',
-      name: t('c:last_seen_at'),
-      sortable: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.lastSeenAt),
-    },
+    dateColumn('lastSeenAt', { name: t('c:last_seen_at') }),
   ];
 
   return useColumnVisibility(columns);
