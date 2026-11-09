@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commitRefs, listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, listJobRuns, runEnded, startJobRun } from '../../lib/deploy/job-runs';
+import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { bucketRunStore, commitRecords } from '../../lib/deploy/run-store';
@@ -15,7 +16,7 @@ import { leaseDeploys, lockKey, makeControlClient, peekLock } from '../../lib/st
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { confirmOrDefault, endAction, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { deployAndFollow, type FollowOutcome, followLiveDeploy, liveCommit, liveDeploy } from './deploy-follow';
 import { acquireOperatorKey } from './operator-unlock';
 
