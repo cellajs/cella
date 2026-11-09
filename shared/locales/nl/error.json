@@ -5,6 +5,8 @@
   "channel_archived.text": "Dit kanaal is gearchiveerd, dus er kan niets in veranderen.",
   "channel_too_large": "Te veel items om in één keer te wijzigen",
   "channel_too_large.text": "Deze wijziging zou meer items herschrijven dan één bewerking mag raken.",
+  "default_language_not_offered": "Standaardtaal niet aangeboden",
+  "default_language_not_offered.text": "Kies de standaardtaal uit de talen, of voeg die eraan toe.",
   "demo_session_restricted": "Niet in een demo",
   "demo_session_restricted.text": "Een demo-account kan dit niet. Maak een eigen account aan om verder te gaan.",
   "demo_signed_in": "Al ingelogd",

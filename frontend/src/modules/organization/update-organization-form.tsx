@@ -135,7 +135,17 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
               <FormLabel htmlFor={languagesId} required>
                 {t('c:language_codes')}
               </FormLabel>
-              <SelectLanguages id={languagesId} value={field.value ?? []} onChange={field.onChange} />
+              <SelectLanguages
+                id={languagesId}
+                value={field.value ?? []}
+                onChange={(codes) => {
+                  field.onChange(codes);
+                  const defaultLanguageCode = form.getValues('defaultLanguageCode');
+                  if (!defaultLanguageCode || !codes.includes(defaultLanguageCode)) {
+                    form.setValue('defaultLanguageCode', codes[0] ?? appConfig.defaultLanguage, { shouldDirty: true });
+                  }
+                }}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -167,14 +177,12 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
       render={({ field }) => {
         if (form.loading) return <Spinner />;
 
-        const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
-
         return (
           <FormItem name="defaultLanguageCode">
             <FormLabel help={t('c:default_language_code.text')} required>
               {t('c:default_language_code')}
             </FormLabel>
-            <SelectLanguage options={languages} value={correctValue} onChange={field.onChange} />
+            <SelectLanguage options={languages} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
             <FormMessage />
           </FormItem>
         );

@@ -21,7 +21,8 @@ import { assertBlockMediaUrls } from '#/utils/validate-block-media';
  * Updates an organization and returns it with its counts and the caller's membership. `organizationFlags`,
  * `setupConfig` and `toolsConfig` are merge patches (RFC 7396) of the stored values. `organization.updated` handlers
  * run in the write's transaction, which reads soft-deleted rows.
- * @throws The refusals of `getValidChannel` for `update`; 409 `slug_exists` when another row holds the new slug.
+ * @throws The refusals of `getValidChannel` for `update`; 409 `slug_exists` when another row holds the new slug; 400
+ * `default_language_not_offered` when a sent language field leaves the default outside the languages.
  */
 export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInput: z.infer<typeof organizationUpdateBodySchema>) {
   const { organizationFlags, setupConfig, toolsConfig, ...input } = organizationContract.normalizeBody(rawInput);
@@ -35,6 +36,14 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(txCtx, slug, 'organization');
       if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
+    }
+
+    // A row already inconsistent stays saveable while neither field is sent.
+    if (input.languageCodes || input.defaultLanguageCode) {
+      const languageCodes = input.languageCodes ?? organization.languageCodes;
+      const defaultLanguageCode = input.defaultLanguageCode ?? organization.defaultLanguageCode;
+      if (!languageCodes.includes(defaultLanguageCode))
+        throw new AppError(400, 'default_language_not_offered', 'warn', { entityType: 'organization' });
     }
 
     // Media in the welcome text may reference only this organization's uploads.
