@@ -4,12 +4,12 @@ import { ACCESS_KEY_EXAMPLE, accessKeyFault, accessKeyProgress, secretKeyFault }
 describe('accessKeyFault', () => {
   it.each([
     ['', 'Paste the access key.'],
-    ['scw10x9pssz7b106dzny', 'An access key starts with SCW, as SCW10X9PSSZ7B106DZNY does.'],
+    ['scwxxxxxxxxxxxxxxxxx', 'An access key starts with SCW, as SCWXXXXXXXXXXXXXXXXX does.'],
     ['SCW10X9', 'An access key has 20 characters, this one 7.'],
-    ['SCW10X9PSSZ7B106DZNYZ', 'An access key has 20 characters, this one 21.'],
-    ['SCW10X9PSSZ7B106DZN-', 'An access key holds capitals and digits only.'],
+    ['SCWXXXXXXXXXXXXXXXXXX', 'An access key has 20 characters, this one 21.'],
+    ['SCWXXXXXXXXXXXXXXXX-', 'An access key holds capitals and digits only.'],
     [ACCESS_KEY_EXAMPLE, undefined],
-    ['SCWMTJXYNE7MNRCAN49T', undefined],
+    ['SCWXXXXXXXX000000000', undefined],
   ])('%s → %s', (value, fault) => {
     expect(accessKeyFault(value)).toBe(fault);
   });

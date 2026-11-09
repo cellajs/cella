@@ -4,7 +4,7 @@ import { pc } from '../../lib/utils/cli-output';
 import { maskedSecret } from './masked-secret';
 
 /** An access key as Scaleway issues them: `SCW` and 17 capitals or digits. The example is the placeholder of the prompt. */
-export const ACCESS_KEY_EXAMPLE = 'SCW10X9PSSZ7B106DZNY';
+export const ACCESS_KEY_EXAMPLE = 'SCWXXXXXXXXXXXXXXXXX';
 const ACCESS_KEY = /^SCW[A-Z0-9]{17}$/;
 const SECRET_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

@@ -117,7 +117,7 @@ Add members in IAM → Groups → `<app>-operators`. Each member then holds what
 
 **A sitting.** Later keys are made in the console at the start of a sitting. Go to IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 
-**How a session is unlocked.** The first action that changes something or needs the passphrase asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCW10X9PSSZ7B106DZNY` until you type. As you type, it is checked for that form: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. With the key itself, the CLI asks IAM who bears it.
+**How a session is unlocked.** The first action that changes something or needs the passphrase asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCWXXXXXXXXXXXXXXXXX` until you type. As you type, it is checked for that form: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. With the key itself, the CLI asks IAM who bears it.
 
 It accepts the operator application or a user the operators group lists. It refuses a key of anyone else, and a key without an end date or with more than a day left. A key that leaks must die within the day. For a key the setup just made, the CLI asks IAM again a few times, as a new key's policy holds only after a moment.
 
