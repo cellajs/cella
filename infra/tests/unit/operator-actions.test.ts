@@ -38,6 +38,17 @@ const RETIRED_LABELS = [
   'Set up operator key',
   'Stack setup →',
   '"Stack setup"',
+  'Show status',
+  'Show runs',
+  'Manage runtime secrets',
+  'Open public DB access',
+  'Close public DB access',
+  'Rotate keys & secrets',
+  'Repair stack',
+  'Tear down stack',
+  'Unlock stack',
+  'Start a deploy',
+  'Keys & operators',
 ];
 
 const DOCS = [
@@ -88,8 +99,8 @@ describe('menu rows', () => {
     expect(new Set(listed).size).toBe(listed.length);
   });
 
-  it('keeps the menu to ten rows: the two DB access rows share one place', () => {
-    expect(rowIds).toHaveLength(11);
+  it('keeps the menu to twelve rows: the two DB access rows share one place', () => {
+    expect(rowIds).toHaveLength(13);
     expect(rowIds).toContain('db-open');
     expect(rowIds).toContain('db-close');
   });
@@ -98,21 +109,29 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it('leaves four actions without a row: the plan without its question, the key only a private repository needs, the hand start the schedule makes rare, and the rare removal from the state', () => {
+  it('gives every action a row, so nothing is reached by its command alone', () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
-    const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toEqual(['preview', 'repository-key', 'start-deploy', 'state-prune']);
+    expect(ids.filter((id) => !listed.has(id))).toEqual([]);
+  });
+
+  it('gives every row a letter of its own, the two DB access rows sharing theirs', () => {
+    const letters = rowIds.filter((id) => id !== 'db-close').map((id) => menuRow(id).hotkey);
+    expect(new Set(letters).size).toBe(letters.length);
+    expect(menuRow('db-open').hotkey).toBe(menuRow('db-close').hotkey);
+    for (const letter of letters) expect(letter).toMatch(/^[a-z]$/);
+    expect(letters).not.toContain('q');
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {
-    expect(menuPath('status')).toBe('Show status');
-    expect(menuPath('db-open')).toBe('Open public DB access');
-    expect(menuPath('db-close')).toBe('Close public DB access');
-    expect(menuPath('db-seed')).toBe('Open public DB access → Seed database');
-    expect(menuPath('apply')).toBe('Review & apply changes');
-    expect(menuPath('preview')).toBe('pnpm infra preview');
-    expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
-    expect(menuPath('start-deploy')).toBe('pnpm infra start-deploy');
+    expect(menuPath('status')).toBe('Full status');
+    expect(menuPath('db-open')).toBe('Open DB access');
+    expect(menuPath('db-close')).toBe('Close DB access');
+    expect(menuPath('db-seed')).toBe('Open DB access → Seed database');
+    expect(menuPath('apply')).toBe('Infrastructure changes → Review & apply changes');
+    expect(menuPath('preview')).toBe('Infrastructure changes → Preview changes');
+    expect(menuPath('unlock')).toBe('Repair → Unlock');
+    expect(menuPath('start-deploy')).toBe('Deploy now');
+    expect(menuPath('rotate-keys')).toBe('Operators & keys → Rotate keys');
   });
 });
 

@@ -1,136 +1,93 @@
-import { describe, expect, it, vi } from 'vitest';
-import { manageRuntimeSecrets } from './manage-runtime-secrets';
+import { stripVTControlCharacters } from 'node:util';
+import { describe, expect, it } from 'vitest';
+import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
+import { formatSecretsTable, planEnvImport, secretsTable } from './manage-runtime-secrets';
 
-const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn() };
+const definition = (overrides: Partial<RuntimeSecretDefinition>): RuntimeSecretDefinition => ({
+  id: 'x',
+  secretName: 'x',
+  description: '',
+  envVar: 'X',
+  required: false,
+  valueSource: 'operator',
+  generation: 'manual',
+  services: ['backend'],
+  ...overrides,
+});
 
-const listSecretsUnder = vi.fn();
-const getSecretByName = vi.fn();
-const ensureSecret = vi.fn();
-const putSecretValue = vi.fn();
-const deleteSecret = vi.fn();
-const provisionManagedKey = vi.fn();
+describe('secretsTable', () => {
+  it.each([
+    { state: 'missing · required', mark: '✖', secret: { required: true }, container: undefined },
+    { state: 'empty · optional', mark: '○', secret: {}, container: { version_count: 0 } },
+    { state: 'set Nov 8', mark: '●', secret: {}, container: { version_count: 2, setAt: '2026-11-08T12:00:00Z' } },
+    { state: 'made by infra', mark: '◇', secret: { valueSource: 'engine', generation: 'random', rotatable: true }, container: undefined },
+    { state: 'made by infra · kept', mark: '◇', secret: { valueSource: 'engine', generation: 'random' }, container: undefined },
+  ] as const)('reads $state', ({ state, mark, secret, container }) => {
+    const rows = secretsTable([definition(secret)], new Map(container ? [['x', container]] : []));
 
-vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ listSecretsUnder, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
-}));
-
-vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
-
-function resetMocks() {
-  prompts.select.mockReset();
-  prompts.password.mockReset();
-  prompts.confirm.mockReset();
-  listSecretsUnder.mockReset();
-  getSecretByName.mockReset();
-  ensureSecret.mockReset();
-  putSecretValue.mockReset();
-  deleteSecret.mockReset();
-  provisionManagedKey.mockReset();
-}
-
-const baseOptions = {
-  secretKey: 'caller-secret',
-  identityKey: async () => ({ secretKey: 'caller-secret', organizationId: 'org-1' }),
-  projectId: 'proj-1',
-  region: 'nl-ams',
-  slug: 'demo',
-  mode: 'production',
-  prompts,
-  log: vi.fn(),
-};
-
-describe('manageRuntimeSecrets', () => {
-  it('lists operator-managed secrets and reports presence', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit');
-    // brevo-api-key has a version → present; github-client-id's container is empty → empty, not present. Everything else is missing.
-    listSecretsUnder.mockResolvedValueOnce([
-      { name: 'brevo-api-key', id: 'brevo', path: '/runtime', version_count: 1 },
-      { name: 'github-client-id', id: 'gh', path: '/runtime', version_count: 0 },
-    ]);
-
-    await manageRuntimeSecrets(baseOptions);
-
-    expect(listSecretsUnder).toHaveBeenCalledWith('/runtime/');
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'));
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/));
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/));
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'));
+    expect(rows.map((row) => row.state)).toEqual([state]);
+    expect(stripVTControlCharacters(formatSecretsTable(rows)[1] ?? '')).toMatch(new RegExp(`^${mark} X +backend +${state}$`));
   });
 
-  it('updates an operator-managed secret in the runtime folder', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
-    prompts.password.mockResolvedValueOnce('new-api-key');
-    getSecretByName.mockImplementation(async (name: string, path: string) => ({ id: `${path}${name}`, name, path }));
-    putSecretValue.mockResolvedValue({ revision: 7 });
-
-    await manageRuntimeSecrets(baseOptions);
-
-    expect(ensureSecret).not.toHaveBeenCalled();
-    expect(putSecretValue).toHaveBeenCalledTimes(1);
-    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: '/runtime/brevo-api-key', value: 'new-api-key' }));
-  });
-
-  it('refuses to create a missing container and tells the operator to apply first', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
-    getSecretByName.mockResolvedValueOnce(undefined);
-
-    await manageRuntimeSecrets(baseOptions);
-
-    // Creating the container out-of-band would make the next `pulumi up` 409.
-    expect(ensureSecret).not.toHaveBeenCalled();
-    expect(putSecretValue).not.toHaveBeenCalled();
-    expect(prompts.password).not.toHaveBeenCalled();
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Apply first'));
-  });
-
-  it('deletes an entire secret object only after confirmation', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('exit');
-    prompts.confirm.mockResolvedValueOnce(true);
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-3', name: 'github-client-secret' });
-
-    await manageRuntimeSecrets(baseOptions);
-
-    expect(deleteSecret).toHaveBeenCalledWith('secret-3');
-  });
-
-  it('cancels deletion when confirmation is declined', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientId').mockResolvedValueOnce('exit');
-    prompts.confirm.mockResolvedValueOnce(false);
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-4', name: 'github-client-id' });
-
-    await manageRuntimeSecrets(baseOptions);
-
-    expect(deleteSecret).not.toHaveBeenCalled();
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deletion cancelled'));
-  });
-
-  it('mints a managed key after confirmation, passing the caller identity through', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit');
-    prompts.confirm.mockResolvedValueOnce(true);
-    provisionManagedKey.mockResolvedValueOnce({ applicationId: 'app-ai', seeded: { 'scw-ai-api-key': 1 } });
-
-    await manageRuntimeSecrets(baseOptions);
-
-    expect(provisionManagedKey).toHaveBeenCalledWith(
-      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo' }),
+  it('puts required values without a version first, then set ones, then optional ones, then the ones infra makes, in registry order', () => {
+    const rows = secretsTable(
+      [
+        definition({ envVar: 'ENGINE', secretName: 'engine', valueSource: 'engine' }),
+        definition({ envVar: 'SET', secretName: 'set' }),
+        definition({ envVar: 'OPTIONAL', secretName: 'optional' }),
+        definition({ envVar: 'REQUIRED_A', secretName: 'required-a', required: true }),
+        definition({ envVar: 'REQUIRED_B', secretName: 'required-b', required: true }),
+      ],
+      new Map([['set', { version_count: 1 }]]),
     );
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'));
+
+    expect(rows.map((row) => row.envVar)).toEqual(['REQUIRED_A', 'REQUIRED_B', 'SET', 'OPTIONAL', 'ENGINE']);
   });
 
-  it('does not mint when the confirmation is declined', async () => {
-    resetMocks();
-    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit');
-    prompts.confirm.mockResolvedValueOnce(false);
+  it('aligns the state column under its header', () => {
+    const rows = secretsTable(
+      [definition({ envVar: 'A_LONGER_NAME', services: ['backend', 'mcp'] }), definition({ envVar: 'B', required: true })],
+      new Map(),
+    );
+    const lines = formatSecretsTable(rows).map((line) => stripVTControlCharacters(line));
+    const header = lines[0] ?? '';
 
-    await manageRuntimeSecrets(baseOptions);
+    expect(lines.slice(1).map((line, index) => line.indexOf(rows[index]?.state ?? ''))).toEqual([header.indexOf('STATE'), header.indexOf('STATE')]);
+  });
+});
 
-    expect(provisionManagedKey).not.toHaveBeenCalled();
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Mint cancelled'));
+describe('planEnvImport', () => {
+  const definitions = [
+    definition({ envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key' }),
+    definition({ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', valueSource: 'engine', generation: 'random' }),
+  ];
+
+  it.each([
+    ['BREVO_API_KEY', 'xkeysib-0123456789ab', 'set (20 chars)', 'xkeysib-0123456789ab'],
+    ['BREVO_API_KEY', '  pasted  ', 'set (6 chars)', 'pasted'],
+    ['BREVO_API_KEY', '   ', 'empty', undefined],
+    ['COOKIE_SECRET', 'from-a-dev-env', 'made by infra', undefined],
+    ['FOO', 'bar', 'no such env var', undefined],
+  ])('reads %s=%j as %s', (key, value, note, written) => {
+    const [line] = planEnvImport([{ key, value }], definitions);
+
+    expect(line).toMatchObject({ key, note });
+    expect(line?.write?.value).toBe(written);
+  });
+
+  it('keeps one line per key, in file order with its last value, as a dotenv load does', () => {
+    const lines = planEnvImport(
+      [
+        { key: 'BREVO_API_KEY', value: 'first' },
+        { key: 'FOO', value: 'bar' },
+        { key: 'BREVO_API_KEY', value: 'second' },
+      ],
+      definitions,
+    );
+
+    expect(lines.map((line) => [line.key, line.write?.value])).toEqual([
+      ['BREVO_API_KEY', 'second'],
+      ['FOO', undefined],
+    ]);
   });
 });

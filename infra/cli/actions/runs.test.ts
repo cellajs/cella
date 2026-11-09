@@ -26,7 +26,7 @@ const store = (records: RunRecord[], log = 'line 1\nline 2\n'): RunStore => ({
     key === 'backend-20261015T010300Z-boot.log' ? 'service=backend\nboot_rc=1\n\n--- boot error ---\nmigrate exited 1\n\nlast boot line' : undefined,
 });
 
-describe('Show runs', () => {
+describe('Deploy logs', () => {
   it('reads a record left running as interrupted unless a deploy holds the lease under its run, as the deploy names it', async () => {
     const run = '20261015T000000Z-bbbbbbbbbb';
     const running = record(run, { outcome: 'running', endedAt: undefined });

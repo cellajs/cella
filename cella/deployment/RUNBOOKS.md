@@ -10,7 +10,12 @@ cannot be made again for the next setup. A clean slate deletes that too.
 
 ## Debug a failed deploy
 
-Start with `pnpm infra runs`, adding `--mode staging` for staging. A failed run shows the step that failed and a failed machine's boot error.
+**Deploy now** ends a run that did not deploy with one sentence on whose side the failure is, then the release your users still get. **Deploy logs** (`pnpm infra runs`, adding `--mode staging` for staging) shows the same sentence under a run's header, with the step that failed and a failed machine's boot error. The home's **Last deploy** line says it too. The sentence names one of four sides:
+
+- **Scaleway's side:** its API failed under the deploy, it had no machine of that type in stock, or a machine booted slower than its links lasted. Your code never ran there. **Deploy now** offers a retry, which usually passes. Raise a reached quota in the console at Organization → Quotas.
+- **The release's side:** its build failed, a new machine crashed at boot, or the smoke tests failed on it. The sentence names the report to read.
+- **Your side:** a value is missing ([A blocked deploy](#a-blocked-deploy)), or the release changes the infrastructure ([Apply needed](#apply-needed)).
+- **Not known:** the recorded error, or a new machine that never answered its health check, which is almost always a crash at boot.
 
 A switch that times out waiting for the new machine means its agent never answered 200. That is almost always a crash at boot, not the load balancer.
 
@@ -23,15 +28,13 @@ The deploy deleted the new machine, and the old one kept serving. A role that sw
    - a secret value of several lines ([Runtime secret delivery](../DEPLOYMENT.md#runtime-secret-delivery))
    - an image older than a change to the database or the secrets it expects
    - node-postgres checking the TLS hostname against the IP it dialed
-   - a link that ended before a slow boot fetched it: a 403 at `fetch-env` or `load-images`
-   - an instance-type quota too low for a new machine beside the old one
    - "an apply makes it": run **Review & apply changes**, then the same target
 
 ## A blocked deploy
 
-The running release stays: a blocked run booted no machine of the release. `pnpm infra runs` names the empty required secret it owes. What stores it depends on its kind:
+The running release stays: a blocked run booted no machine of the release. **Deploy now**, **Deploy logs** and the home's **Last deploy** line name the value it waits for. What stores it depends on its kind:
 
-- **An operator value:** **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again.
+- **An operator value:** **Env vars & secrets** (`pnpm infra secrets`) says above its table which deploy waits for which values, and lists each first as `missing · required`. Pick its row and set it. Storing it starts the target again.
 - **A generated or database value:** **Review & apply changes** (`pnpm infra apply`).
 - **The uploads key:** **Update identities**.
 
@@ -39,20 +42,31 @@ No scheduled run starts a blocked target again. Storing the value or the apply d
 
 ## Apply needed
 
-A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The running release stays: the run stopped before it read a runtime value or booted a machine of the release. `pnpm infra runs` shows the end with the target's and the applied description's hashes.
+A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The running release stays: the run stopped before it read a runtime value or booted a machine of the release. **Deploy logs** names the fields that differ, such as `services.search added`. For a release built without its description, it shows the two hashes.
 
-1. Check out the target's commit, for production its release tag. Run **Review & apply changes** (`pnpm infra apply --mode <env>`). It publishes that checkout's engine and starts the target again at its end.
+1. Check out the target's commit, for production its release tag. Run **Review & apply changes** (`pnpm infra apply --mode <env>`). Before it builds, it compares this checkout's description with the waiting release's. When they differ, it names the fields and stops with the command that checks out the release, `git switch --detach <tag>`. From the right checkout it publishes that checkout's engine and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition older than the applied engine. The apply in step 1 rewrites it.
-3. "reports no description" means the target is older than the applied engine, which cannot deploy it. Pin a newer release, or roll forward.
+3. "reports no description" means the target is older than the applied engine, which cannot deploy it. Deploy a newer release, or roll forward.
 4. "The image describes … the apply as …" during the apply's build has two causes. The apply's shell overrides a config value such as `APP_ORIGIN`, or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
 
-**Show status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
+**Full status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
+
+## Roll back
+
+No old machine is kept to switch back to: a rollback deploys an earlier release on the same forward path. `pnpm infra` → **Releases & roll back** (`pnpm infra releases`) lists the last ten releases, newest first. Each shows when it merged, how its deploy ended and whether it serves.
+
+1. Pick an earlier release. With your operator key it says whether the release's build is kept for the deploy to reuse, and whether the release describes the app as the applied engine does. One that does not needs an apply from a checkout at that release first ([Apply needed](#apply-needed)). One older than the applied engine cannot be deployed: roll forward then.
+2. Confirm, and it deploys the release and follows it as **Deploy now** does.
+
+The environment stays on that release, since a scheduled run never deploys a target again under a retry counter it already ran. Production holds until the next release, staging until its branch moves. After 60 days the target's run records expire, and the next scheduled run deploys the target again. To hold longer, add the line `<mode> <tag>` to `infra/environments`.
+
+A rotation of keys or secrets keeps the rollback: it deploys the live release again and starts the target only when the target has no run yet. To leave a release behind for good, commit a revert and publish the next release.
 
 ## A stale lease
 
 A deploy or an operator action that dies holds its lease until it lapses within minutes. The next run waits for it, and `pnpm infra status` reports it.
 
-1. `pnpm infra` → **Repair stack** → **Unlock stack** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra runs` first, since a live lease most likely belongs to a run still going.
+1. `pnpm infra` → **Repair** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra runs` first, since a live lease most likely belongs to a run still going.
 2. A deploy that died mid-switch may have left a machine on the idle slot. You owe nothing for it: the next deploy drains and deletes it before it boots there.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
 4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key and the passphrase from the environment's `/engine/` secret folder.
@@ -101,9 +115,9 @@ The worker makes a new slot when it starts again. Every client then refetches on
 
 ## Seed the admin by hand
 
-Fix a wrong admin email in **Manage runtime secrets**. Then run a deploy that makes a new backend machine, such as **Rotate secrets**. A machine keeps the env file it booted with. The new machine's boot seeds the admin while the users table is empty.
+Fix a wrong admin email in **Env vars & secrets**. Then run a deploy that makes a new backend machine, such as **Rotate secrets**. A machine keeps the env file it booted with. The new machine's boot seeds the admin while the users table is empty.
 
-On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
+On staging, **Open DB access** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
 
 ```bash
 pnpm --filter backend build
@@ -149,7 +163,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
+`pnpm infra` → **Tear down** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
 
 Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 

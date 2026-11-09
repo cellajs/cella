@@ -20,7 +20,7 @@ export interface UploadBootDiagnosticsOptions {
 // Mirrors the cloud-init log scrub (lib/deploy/machine-user-data.ts) so both diagnostic channels drop the same secret-bearing lines.
 const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|X-Amz-Signature/i;
 
-/** Replace secret-bearing lines before a log leaves the machine, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
+/** Replace secret-bearing lines before a log leaves the machine, so a DSN or key printed on crash never reaches the boot-diag bucket. */
 export function scrubSecretLines(text: string): string {
   return text
     .split('\n')

@@ -9,6 +9,7 @@ import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
 import { runIdentity } from './identity';
 import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
+import { runReleases } from './releases';
 import { runRepositoryKey } from './repository-key';
 import { runResetDatabase } from './reset-database';
 import { runRotateSecrets } from './rotate-secrets';
@@ -35,6 +36,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   'operator-key': runOperatorKey,
   identity: runIdentity,
   'start-deploy': runStartDeploy,
+  releases: runReleases,
   'repository-key': runRepositoryKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,

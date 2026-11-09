@@ -7,6 +7,8 @@ import {
   releaseAccounts,
   serviceAccountKeys,
 } from '../../lib/deploy/boot-accounts';
+import { classifyRun, scalewayStatus } from '../../lib/deploy/failure-class';
+import { commitRefs } from '../../lib/deploy/git-remote';
 import {
   findJobDefinition,
   isScheduledRun,
@@ -17,8 +19,9 @@ import {
   readJobDefinition,
   runEnded,
 } from '../../lib/deploy/job-runs';
-import { type Growth, type RunRecord, rewriteNote, runSummaryLine } from '../../lib/deploy/run-record';
+import { type Growth, type RunRecord, rewriteNote, runSummaryLine, stepLine, wroteRecord } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
+import { commitName, type RemoteRef } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
@@ -34,12 +37,17 @@ import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 const LIST_LENGTH = 10;
 const LOG_TAIL = 40;
 
-/** The machines' boot accounts a failed switch's record names: a failed one's error and the end of its log, a missing one said plainly. */
+/**
+ * The machines' boot accounts a failed switch's record names: a failed one's error and the end of its log, a missing one said plainly
+ * unless a 5xx of Scaleway's API failed the run, which left that machine unmade.
+ */
 async function bootLines(record: RunRecord, store: RunStore): Promise<string[]> {
   const lines: string[] = [];
   for (const entry of record.boot ?? []) {
     if (!entry.key) {
-      lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its agent never finished (its serial console says more)`);
+      if (scalewayStatus(record.error) === undefined) {
+        lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its agent never finished (its serial console says more)`);
+      }
       continue;
     }
     if (!entry.failed) continue;
@@ -56,17 +64,19 @@ function rewriteLines(what: string, growth: Growth<unknown> | undefined): string
 }
 
 /**
- * One run in full: its steps with their durations, how it ended, a failed machine's boot account, and the end of its log, each read by its
- * first version.
+ * One run in full: how it ended and, for a run that did not deploy, whose side that is on, its steps with their durations, a failed
+ * machine's boot account, and the end of its log, each read by its first version.
  */
-async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Promise<string[]> {
+async function runDetailLines(reading: Growth<RunRecord>, store: RunStore, refs?: readonly RemoteRef[]): Promise<string[]> {
   const record = reading.newest;
   const log = await store.readLog(record.run);
+  const sentence = ['running', 'deployed', 'unchanged'].includes(record.outcome) ? undefined : classifyRun(record).sentence;
   return [
-    `${pc.bold(record.run)}: ${record.target} to ${record.environment}, ${record.outcome}${record.failedStep ? ` at "${record.failedStep}"` : ''}`,
+    `${pc.bold(refs ? commitName(refs, record.target) : record.target.slice(0, 10))} ${pc.dim(`(${record.target.slice(0, 10)}, run ${record.run})`)} to ${record.environment}, ${record.outcome}${record.failedStep ? ` at "${record.failedStep}"` : ''}`,
+    ...(sentence ? [`  ${sentence}`] : []),
     ...rewriteLines('the record was', reading),
-    ...record.steps.map((step) => `  ${step.outcome === 'ok' ? ' ' : crossMark} ${step.title.padEnd(40)} ${String(step.seconds).padStart(4)} s`),
-    ...(record.error ? ['', `  ${record.error}`] : []),
+    ...record.steps.map(stepLine),
+    ...(record.error && record.error !== sentence ? ['', `  ${record.error}`] : []),
     ...(await bootLines(record, store)),
     ...(log
       ? [
@@ -93,12 +103,6 @@ function runWithoutRecordLine(run: JobRun, environment: string): string {
   if (!runEnded(run)) return `${when}  ${environment}  ${sha}  ${run.state}, no record yet`;
   const code = run.exit_code ? ` (exit ${run.exit_code})` : '';
   return `${when}  ${environment}  ${sha}  ${run.state}${code}, no record${run.error_message ? `: ${run.error_message.replace(/\s+/g, ' ').slice(0, 100)}` : ''}`;
-}
-
-/** True when a run started by hand wrote the record: the same target, started while the run ran. */
-function wroteRecord(run: JobRun, record: RunRecord): boolean {
-  if (record.target !== run.environment_variables?.TARGET_SHA) return false;
-  return record.startedAt >= (run.created_at ?? '') && (!run.terminated_at || record.startedAt <= run.terminated_at);
 }
 
 /** A record that says running while no deploy holds the lease under its run: its deploy died, or the job's time limit ended it. */
@@ -139,6 +143,8 @@ export async function showRuns(
     /** The environment's lease, which tells a record that runs from one that was interrupted. */
     lock?: LockInfo;
     now?: number;
+    /** The repository's tags and heads, which name each run's target. */
+    refs?: readonly RemoteRef[];
   },
 ): Promise<void> {
   const print = opts.print ?? ((line: string) => console.info(line));
@@ -152,13 +158,15 @@ export async function showRuns(
   const since = records.length === LIST_LENGTH ? (records.at(-1)?.startedAt ?? '') : '';
   const unrecorded = jobRuns.filter(
     (run) =>
-      (!isScheduledRun(run) && (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record))) ||
+      (!isScheduledRun(run) &&
+        (run.created_at ?? '') >= since &&
+        !records.some((record) => wroteRecord(run, run.environment_variables?.TARGET_SHA, record))) ||
       ownValues(run, opts.definition) !== '',
   );
   const rows = [
     ...readings.map(({ newest: record, rewrite }) => {
       const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
-      return { at: record.startedAt, line: `${runSummaryLine(record)}${rewritten}${interrupted(record, opts.lock)}` };
+      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}` };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
@@ -170,10 +178,13 @@ export async function showRuns(
   const [newest] = readings;
   if (!newest) return;
   const chosen = opts.pick
-    ? await select({ message: 'Show which run?', choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest), value: reading })) })
+    ? await select({
+        message: 'Show which run?',
+        choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest, opts.refs), value: reading })),
+      })
     : newest;
   print('');
-  for (const line of await runDetailLines(chosen, store)) print(line);
+  for (const line of await runDetailLines(chosen, store, opts.refs)) print(line);
 }
 
 /**
@@ -248,10 +259,13 @@ export async function runRuns(context: InfraContext): Promise<void> {
     ]);
     return { jobRuns, definition };
   };
-  const { jobRuns, definition } = await read().catch((error): Awaited<ReturnType<typeof read>> => {
-    console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
-    return { jobRuns: [] };
-  });
+  const [{ jobRuns, definition }, refs] = await Promise.all([
+    read().catch((error): Awaited<ReturnType<typeof read>> => {
+      console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
+      return { jobRuns: [] };
+    }),
+    commitRefs(),
+  ]);
   const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
   console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
@@ -261,5 +275,6 @@ export async function runRuns(context: InfraContext): Promise<void> {
     definition,
     environment: context.environment,
     lock,
+    refs,
   });
 }

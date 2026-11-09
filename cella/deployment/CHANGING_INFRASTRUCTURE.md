@@ -18,12 +18,12 @@ Everything Pulumi manages, such as the database and the load balancer's pools, i
 - DNS records
 - the main job's definition, schedule and engine image, and the applied description in `applied.json`
 
-Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Review & apply changes** (`pnpm infra apply`):
+Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Infrastructure changes** → **Review & apply changes** (`pnpm infra apply`):
 
 1. Builds the engine image from your checkout's tracked files and pushes it to the environment's registry on your operator key. No run starts from the image until the `up` names it.
 2. Shows the plan, with drift made outside Pulumi and the main job's new image, and asks once whether to apply it. Answering no applies nothing.
 3. On a yes, applies the plan. Running machines stay in place, as no machine is a resource of the program. If another apply ran meanwhile, you see the new plan and confirm again.
-4. Records the engine it published in `applied.json`, and fails when it cannot. It records its description on GitHub for the release PR's check ([Pull request check](#pull-request-check)). It verifies that the declared database privileges exist, and a mismatch fails the run. `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`. Last, it starts a target whose last run ended blocked or apply needed.
+4. Records the engine it published in `applied.json`, with its description beside the hash, and fails when it cannot. It records its description on GitHub for the release PR's check ([Pull request check](#pull-request-check)). It verifies that the declared database privileges exist, and a mismatch fails the run. `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`. Last, it starts a target whose last run ended blocked or apply needed.
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm infra preview` shows the same plan without the question and changes nothing. Use it for a script or a look that must never apply.
 
@@ -41,10 +41,10 @@ A deploy runs the engine the last **Review & apply changes** built. It holds eve
 Three rules decide what a release owes:
 
 - **Same description:** the release deploys without an apply.
-- **Changed description:** it ends **apply needed** until an apply from a checkout with the change.
+- **Changed description:** it ends **apply needed** until an apply from a checkout with the change. The run names the changed fields, such as `services.search added`.
 - **Engine code only:** a change to `infra/lib`, `infra/tasks` or `infra/resources` needs no apply.
 
-The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
+The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). Before it builds, the apply compares this checkout's description with the waiting release's. When they differ it stops and names the fields, since its engine would leave that release waiting. A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
 
 The database access actions and the seed run an `up` that keeps the main job's image. They refuse to run while no apply has published one, as that `up` would delete the main job.
 

@@ -12,6 +12,8 @@ export interface SecretManagerSecret {
   version_count?: number;
   status?: string;
   region?: string;
+  /** When Secret Manager last changed the secret, ISO 8601. */
+  updated_at?: string;
 }
 
 export interface SecretManagerSecretVersion {
@@ -91,6 +93,16 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         const path = normalizeSecretPath(secret.path);
         return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`);
       });
+    },
+
+    /** A secret's versions, in the order Scaleway lists them: when each value was written. */
+    async listSecretVersions(secretId: string): Promise<SecretManagerSecretVersion[]> {
+      const response = await scwFetch<{ versions?: SecretManagerSecretVersion[] }>(
+        auth,
+        'GET',
+        `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions?page_size=100`,
+      );
+      return response.versions ?? [];
     },
 
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {

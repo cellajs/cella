@@ -11,7 +11,7 @@ export interface OtlpSinkEnv {
 }
 
 /** Maple.dev's OTLP/HTTP ingest: the destination when only its ingest key is set, and the header that carries the key. */
-export const mapleIngest = { url: 'https://ingest.maple.dev', keyHeader: 'x-maple-ingest-key' } as const;
+const mapleIngest = { url: 'https://ingest.maple.dev', keyHeader: 'x-maple-ingest-key' } as const;
 
 /**
  * Where a process exports its telemetry, or undefined when export is off. `OTEL_EXPORTER_OTLP_ENDPOINT` wins: the OTel

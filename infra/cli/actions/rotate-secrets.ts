@@ -26,7 +26,7 @@ import { redeployAfterRotation } from './start-deploy';
  * Rotate the secrets the engine checks, on the operator key: a fresh password for every database role (set on the live role through the
  * database API) and a fresh value for every rotatable generated secret, in the runtime folder. A key that protects stored data is
  * not rotatable here (lib/runtime-secrets.ts). The rotation is recorded beside the live record, and its counter makes the deploys it starts
- * at its end (the live release again, then the target) replace every machine. Third-party keys are pasted anew in "Manage runtime secrets".
+ * at its end (the live release again, then the target) replace every machine. Third-party keys are pasted anew in "Env vars & secrets".
  */
 export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;

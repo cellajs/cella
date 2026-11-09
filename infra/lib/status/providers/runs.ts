@@ -1,3 +1,4 @@
+import { classifyRun } from '../../deploy/failure-class';
 import { commandOf, isScheduledRun, type JobDefinitionFacts, type JobRun, runEnded } from '../../deploy/job-runs';
 import { mainJobOutcome } from '../../deploy/main-job';
 import { type Growth, type RunRecord, rewriteNote } from '../../deploy/run-record';
@@ -22,7 +23,7 @@ export type RunsFacts = {
 };
 
 /** True for the bucket refusing the key: the policy an apply writes admits the observer's version reads. */
-function accessDenied(error: unknown): boolean {
+export function accessDenied(error: unknown): boolean {
   const { name, $metadata } = error as { name?: string; $metadata?: { httpStatusCode?: number } };
   return name === 'AccessDenied' || $metadata?.httpStatusCode === 403;
 }
@@ -46,7 +47,7 @@ const START_VALUES = new Set(['TARGET_SHA', 'RETRY']);
 
 /**
  * What a run was started with beyond the target and the retry counter (D-b): a value the definition does not set, another value for one it
- * sets, or a startup command or arguments of its own. The schedule sets none, and a rotation, an apply and Start a deploy the two only, so anything
+ * sets, or a startup command or arguments of its own. The schedule sets none, and a rotation, an apply and Deploy now the two only, so anything
  * else is a key holder's own start, which no check inside the job can stop. A run started before the definition's last change ran the values
  * and command of that time, a key the apply removed included, so nothing is compared for it. Empty for a run started as the engine starts one.
  */
@@ -64,23 +65,37 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
   return own;
 }
 
-/** A deploy's end, as its record says it, or a hand start's job run that wrote none. */
-function deployVerdict(runs: CheckBuilder, sha: string, outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>, state: string): Check {
-  if (outcome === 'running') return runs.ok(`${sha} is deploying`);
-  if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`);
+/** A deploy's end, as its record says it, or a hand start's job run that wrote none: then `record` is undefined. */
+function deployVerdict(
+  runs: CheckBuilder,
+  target: string,
+  outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>,
+  state: string,
+  record?: RunRecord,
+): Check {
+  const sha = target.slice(0, 10);
+  if (outcome === 'running') return runs.ok(`${sha} is deploying`, undefined, target);
+  if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`, undefined, target);
   if (outcome === 'blocked' || outcome === 'apply needed') {
-    return runs.warn(`${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`, {
-      description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
-      command: actionCommand('runs'),
-    });
+    return runs.warn(
+      `${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`,
+      {
+        description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
+        command: actionCommand('runs'),
+      },
+      target,
+    );
   }
-  return runs.error(`${sha} failed (${state})`, { description: 'Read how it ended', command: actionCommand('runs') });
+  const failed = record
+    ? `${sha} failed${record.failedStep ? ` at "${record.failedStep}"` : ''}: ${classifyRun(record).sentence}`
+    : `${sha} failed (${state})`;
+  return runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') }, target);
 }
 
 /**
  * How the environment's last deploy went: the newest record, or a run started by hand since that left none. A record that says running
  * is deploying while a deploy holds the lease under its run, and was interrupted otherwise. A blocked one owes an identity update, an apply
- * or a secret, a failed one is read in Show runs.
+ * or a secret, a failed one is read in Deploy logs.
  */
 export const runsProvider: StatusProvider<RunsFacts> = {
   domain: 'runs',
@@ -98,11 +113,11 @@ export const runsProvider: StatusProvider<RunsFacts> = {
     const runs = check('runs.last', 'Last deploy', 'scaleway');
     return [
       probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ runs: jobRuns, definition, record, lock }) => {
-        const label = (run: JobRun) => run.environment_variables?.TARGET_SHA?.slice(0, 10) ?? `scheduled run ${run.id}`;
+        const label = (run: JobRun) => run.environment_variables?.TARGET_SHA ?? `scheduled run ${run.id}`;
         const started = jobRuns.find((run) => definition && runOverrides(run, definition).length > 0);
         if (started && definition) {
           return runs.error(
-            `${label(started)} was started with its own values (${runOverrides(started, definition).join(', ')}): no start of the engine does that`,
+            `${label(started).slice(0, 10)} was started with its own values (${runOverrides(started, definition).join(', ')}): no start of the engine does that`,
             { description: 'Read the run, then rotate the keys that may start one', command: actionCommand('runs') },
           );
         }
@@ -138,7 +153,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
             command: actionCommand('runs'),
           });
         }
-        return deployVerdict(runs, sha, newest.outcome, newest.outcome);
+        return deployVerdict(runs, newest.target, newest.outcome, newest.outcome, newest);
       }),
     ];
   },

@@ -1,4 +1,7 @@
 import { scrubSecretLines } from '../../agent/src/diagnostics';
+import { checkMark, crossMark } from '../utils/cli-output';
+import type { JobRun } from './job-runs';
+import { commitName, type RemoteRef } from './target';
 
 /** Where runs are kept in the environment's diagnostics bucket: one folder per run, `runs/<run>/`. */
 export const RUNS_PREFIX = 'runs/';
@@ -37,7 +40,7 @@ export interface RunRecord {
   steps: RunStep[];
   failedStep?: string;
   error?: string;
-  /** Set when a switch failed: each role's account of the release, which Show runs prints for a failed boot. */
+  /** Set when a switch failed: each role's account of the release, which Deploy logs prints for a failed boot. */
   boot?: RunBootAccount[];
 }
 
@@ -214,10 +217,30 @@ export function rewriteNote(rewrite: Rewrite): string {
   return `rewritten: the version at ${rewrite.at.slice(0, 16).replace('T', ' ')} ${rewrite.detail}`;
 }
 
-/** One line per run for a list: when, what, how it ended, and where it stopped. */
-export function runSummaryLine(record: RunRecord): string {
+/** One step as a run shows it: a check or a cross, its title and how many seconds it took. */
+export function stepLine(step: RunStep): string {
+  return `  ${step.outcome === 'ok' ? checkMark : crossMark} ${step.title.padEnd(36)} ${String(step.seconds).padStart(4)}s`;
+}
+
+/**
+ * True when a job run started for `target` wrote the record: the same target, started while the run ran. The run's `created_at` and the
+ * record's `startedAt` compare as ISO strings.
+ */
+export function wroteRecord(run: Pick<JobRun, 'created_at' | 'terminated_at'>, target: string | undefined, record: RunRecord): boolean {
+  if (record.target !== target) return false;
+  return record.startedAt >= (run.created_at ?? '') && (!run.terminated_at || record.startedAt <= run.terminated_at);
+}
+
+/** How a run ended, where it stopped and how long it took: `failed at "Switch machines" in 2m46s`. */
+export function runOutcomeText(record: RunRecord): string {
   const seconds = record.endedAt ? Math.round((Date.parse(record.endedAt) - Date.parse(record.startedAt)) / 1000) : undefined;
   const took = seconds === undefined ? '' : ` in ${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
   const where = record.failedStep ? ` at "${record.failedStep}"` : '';
-  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${record.target.slice(0, 10)}  ${record.outcome}${where}${took}`;
+  return `${record.outcome}${where}${took}`;
+}
+
+/** One line per run for a list: when, what (named by its release when the refs are given), how it ended, and where it stopped. */
+export function runSummaryLine(record: RunRecord, refs?: readonly RemoteRef[]): string {
+  const target = refs ? commitName(refs, record.target).padEnd(12) : record.target.slice(0, 10);
+  return `${record.startedAt.slice(0, 16).replace('T', ' ')}  ${record.environment}  ${target}  ${runOutcomeText(record)}`;
 }

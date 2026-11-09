@@ -1,9 +1,9 @@
 import { confirm, select } from '@inquirer/prompts';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
-import { deleteApiKey } from '../../lib/scaleway/iam-client';
+import { createApiKey, deleteApiKey, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
-import { allPrincipalNames, type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
+import { allPrincipalNames, appPrincipalNames, type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { ensureApplication } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -14,7 +14,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { planUploadsKey, writeUploadsKey } from '../../tasks/uploads-key';
-import { forgetOwnerKey } from '../session';
+import { forgetOwnerKey, rememberOperatorKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
 import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared';
 import { ensureObserverForEnvironment } from './observer-key';
@@ -74,6 +74,33 @@ function printSummary(opts: { rotated: boolean; ciAccessKey: string; names: Prin
   console.info(divider);
 }
 
+/** How long the operator key a setup mints lives: within the day the session accepts. */
+const SETUP_KEY_HOURS = 23;
+
+/**
+ * Mint the one-day operator key the rest of the setup runs on, with the Owner key, so nobody makes one in the console. A failure is a
+ * warning: the operator part then asks for a key.
+ */
+async function mintSetupOperatorKey(ownerSecretKey: string, opts: { organizationId: string; projectId: string; appSlug: string }): Promise<void> {
+  const auth = { secretKey: ownerSecretKey };
+  const { operator } = appPrincipalNames(opts.appSlug);
+  try {
+    const applicationId = await resolveApplicationIdByName(auth, opts.organizationId, operator);
+    if (!applicationId) throw new Error(`the organization has no application '${operator}'`);
+    const now = new Date();
+    const key = await createApiKey(auth, {
+      applicationId,
+      description: `setup ${now.toISOString().slice(0, 10)}`,
+      defaultProjectId: opts.projectId,
+      expiresAt: new Date(now.getTime() + SETUP_KEY_HOURS * 3_600_000).toISOString(),
+    });
+    rememberOperatorKey({ accessKey: key.access_key, secretKey: key.secret_key }, { minted: true });
+    console.info(`  ${checkMark} Operator key ${key.access_key} made for this setup; it ends in ${SETUP_KEY_HOURS} hours.`);
+  } catch (error) {
+    console.warn(`${warningMark} Could not make the operator key (${errorMessage(error)}): the setup asks for one next.`);
+  }
+}
+
 /** Offer to revoke the Owner API key typed for this moment: the last call that needs it. */
 async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
   const revokeNow = autoAcceptDefaults()
@@ -130,8 +157,8 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt and checked as every Owner
  * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The uploads application with its policy and
  * key (in the runtime folder), the deploy key (its copy for the main job), and the app's operators and observer: created when the app has
- * none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces the deploy
- * key and the uploads key. Undefined when declined.
+ * none, else given this environment's project in place; the observer's key goes to this machine's env files. A setup also mints the
+ * one-day operator key its operator part runs on. A rotation replaces the deploy key and the uploads key. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -150,8 +177,8 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
   const projectId =
     context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
-  const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
-  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
+  const question = mode === 'rotate-keys' ? `${actionLabel('rotate-keys')} of ${environment}?` : `Create ${environment}'s deploy keys?`;
+  if (!(await confirmOrDefault({ message: question, default: true }))) return undefined;
 
   // The uploads key goes to the runtime folder, where the deploy composes it into the backend's env file; a rotation makes it anew.
   if (declaresUploads()) {
@@ -177,6 +204,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
   console.info('\n→ Operators');
   await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
+  if (mode !== 'rotate-keys') await mintSetupOperatorKey(pair.secretKey, { organizationId, projectId, appSlug: appConfig.appSlug });
 
   // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');

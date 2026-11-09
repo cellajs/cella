@@ -144,7 +144,7 @@ describe('DNS', () => {
 });
 
 describe('the last deploy', () => {
-  it('points a blocked run and a failed one at Show runs: a blocked run’s record names the apply or the secret it waits for', () => {
+  it('points a blocked run and a failed one at Deploy logs: a blocked run’s record names the apply or the secret it waits for', () => {
     const blocked = find(
       reportFor(base({ runs: { runs: [{ id: 'r2', state: 'failed', exit_code: 2, environment_variables: { TARGET_SHA: 'abc' } }] } })).checks,
       'runs.last',
@@ -361,8 +361,8 @@ describe('database public endpoint', () => {
     const report = reportFor(base({ db: live(['51.158.210.62:6317'], 0) }));
     const check = find(report.checks, 'db.publicEndpoint');
     expect(check).toMatchObject({ status: 'warn', detail: '51.158.210.62:6317 is open although exposure is off (0 ACL rule(s))' });
-    expect(check?.nextAction?.description).toContain('Close public DB access');
-    expect(report.nextAction?.description).toContain('Close public DB access');
+    expect(check?.nextAction?.description).toContain('Close DB access');
+    expect(report.nextAction?.description).toContain('Close DB access');
   });
 
   it('shows the ACL rule count of an endpoint opened on purpose', () => {

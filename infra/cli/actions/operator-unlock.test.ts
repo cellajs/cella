@@ -7,12 +7,18 @@ const input = vi.fn();
 const acquireOwnerKey = vi.fn();
 
 // The terminal prompts and the Owner key's own action: the effects a person answers. Scaleway is the fake below, behind fetch.
-vi.mock('../prompts/masked-secret', () => ({ maskedSecret: (...args: unknown[]) => maskedSecret(...args) }));
-vi.mock('@inquirer/prompts', () => ({ input: (...args: unknown[]) => input(...args) }));
+// The key prompt as the person answers it: the access key, then the secret key, as the two fakes resolve them.
+vi.mock('../prompts/key-pair', () => ({
+  keyPairPrompt: async (opts: unknown) => {
+    const accessKey = ((await input(opts)) as string).trim();
+    if (!accessKey) return undefined;
+    return { accessKey, secretKey: ((await maskedSecret(opts)) as string).trim() };
+  },
+}));
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
 const { acquireIdentityKey, acquireOperatorKey, refusalLines } = await import('./operator-unlock');
-const { forgetSession, rememberedOperatorKey } = await import('../session');
+const { forgetSession, rememberedOperatorKey, rememberOperatorKey } = await import('../session');
 
 const stack = {
   appConfig: { slug: 'cella', appSlug: 'cella', s3: { region: 'nl-ams' } },
@@ -135,7 +141,7 @@ describe('acquireOperatorKey', () => {
       bearers.set('SCWOPERATOR', bearer);
       await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
       expect(errorsPrinted()).toContain('must die within the day');
-      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate API key, with an expiration");
+      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate, expiring within a day");
       expect(rememberedOperatorKey()).toBeUndefined();
     }
   });
@@ -187,6 +193,40 @@ describe('acquireOperatorKey', () => {
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(maskedSecret).not.toHaveBeenCalled();
     expect(keyReads).toEqual([]);
+  });
+});
+
+describe('acquireOperatorKey with the key a setup minted', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    rememberOperatorKey({ accessKey: 'SCWMINTED', secretKey: 'minted-secret' }, { minted: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reads it again while IAM refuses it: a new key and its policy take up to a minute to hold', async () => {
+    bearers.set('SCWMINTED', 403);
+    const pending = acquireOperatorKey(stack);
+    await vi.advanceTimersByTimeAsync(20_000);
+    bearers.set('SCWMINTED', { application: 'cella-operator', expiresAt: inHours(23) });
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await expect(pending).resolves.toMatchObject({ accessKey: 'SCWMINTED' });
+    expect(input).not.toHaveBeenCalled();
+  });
+
+  it('ends with the refusal of a pasted key once the minute is over', async () => {
+    bearers.set('SCWMINTED', 401);
+    const ended = expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    await ended;
+    expect(keyReads).toHaveLength(7);
+    expect(errorsPrinted()).toContain('Scaleway does not know that secret key.');
+    expect(rememberedOperatorKey()).toBeUndefined();
   });
 });
 

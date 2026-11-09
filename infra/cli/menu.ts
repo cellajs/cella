@@ -6,12 +6,17 @@ import {
   MENU_ROWS,
   type MenuGroup,
   type MenuRowId,
-  menuPath,
   menuRow,
   type OperatorActionId,
 } from '../lib/operator-actions';
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
 import { pc } from '../lib/utils/cli-output';
+
+/** The step the home screen recommends, when one action of the CLI does it: the menu leads with it. */
+export interface UpNext {
+  action: OperatorActionId;
+  description: string;
+}
 
 /** What the menu knows about the stack and this machine, to say which entries can run. */
 export interface MenuState {
@@ -21,6 +26,7 @@ export interface MenuState {
   dbExposed: boolean;
   /** The instance's live public endpoints, when the observer key read them in time. */
   liveEndpoints?: string[];
+  upNext?: UpNext;
 }
 
 /** A selectable menu entry. An entry that cannot run now stays in the list with `disabled` saying why. */
@@ -36,14 +42,28 @@ export type MenuItem<T extends string> = MenuChoice<T> | { group: string };
 
 export const BACK = 'back';
 export const QUIT = 'quit';
+/** The value of the row that runs the recommended step. */
+export const UP_NEXT = 'up-next';
 
-const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = ['apply', 'preview', 'db-reset', 'db-seed', 'db-open', 'db-close'];
+/** What the main menu resolves to: a row, the recommended step, or the way out. */
+export type MainMenuValue = MenuRowId | typeof UP_NEXT | typeof QUIT;
+
+const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = [
+  'apply',
+  'preview',
+  'db-reset',
+  'db-seed',
+  'db-open',
+  'db-close',
+  'start-deploy',
+  'releases',
+];
 
 /** Why an action cannot run now, undefined when it can. Each reason names the action that lifts it, and stays short enough for one 80-column row. */
 export function disabledReason(id: OperatorActionId, state: MenuState): string | undefined {
   if (id === 'db-seed' && state.environment === 'production') return 'seed data never goes to production';
   if (NEEDS_BOOTSTRAPPED_STACK.includes(id) && state.stackState !== 'bootstrapped') {
-    return `needs a bootstrapped stack: run "${actionLabel('resume')}"`;
+    return `needs a set-up environment: run "${actionLabel('resume')}"`;
   }
   return undefined;
 }
@@ -52,19 +72,6 @@ export function disabledReason(id: OperatorActionId, state: MenuState): string |
 export function rowDisabledReason(id: MenuRowId, state: MenuState): string | undefined {
   const reasons = menuRow(id).actions.map((action) => disabledReason(action, state));
   return reasons.every(Boolean) ? reasons[0] : undefined;
-}
-
-/** A hint as the dim note on the right of an entry; the word DESTRUCTIVE keeps its colour. */
-function styleHint(hint: string): string {
-  return hint
-    .split(' · ')
-    .map((part) => (part === 'DESTRUCTIVE' ? pc.red(part) : pc.dim(part)))
-    .join(pc.dim(' · '));
-}
-
-/** An entry's name: the label padded to the hint column, then the hint. A disabled entry shows the label alone, so the reason after it fits the row. */
-function entryName(label: string, hint: string, width: number, disabled: boolean): string {
-  return disabled ? label : `${label.padEnd(width)}  ${styleHint(hint)}`;
 }
 
 /** True when a public DB endpoint is open: by the local exposure config, or live on the instance. */
@@ -85,11 +92,33 @@ function rowLabel(id: MenuRowId): string {
   return row.actions.length > 1 ? `${row.label} ›` : row.label;
 }
 
-/** The main menu: every row under its group heading, then the way out. */
-export function mainMenuItems(state: MenuState): Array<MenuItem<MenuRowId | typeof QUIT>> {
+/** An entry's name: its hotkey dim, then the label; the destructive ones say so. */
+function entryName(id: MenuRowId): string {
+  const destructive = id === 'db-reset' || id === 'teardown' ? `  ${pc.red('destructive')}` : '';
+  return `${pc.dim(menuRow(id).hotkey)}  ${rowLabel(id)}${destructive}`.replace('(OPEN)', pc.yellow('(OPEN)'));
+}
+
+/** The hotkeys of the rows a state lists and can run, by letter: the two DB access rows share theirs, as one of them is listed. */
+export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
+  return Object.fromEntries(
+    visibleRows(state)
+      .filter((id) => !rowDisabledReason(id, state))
+      .map((id) => [menuRow(id).hotkey, id]),
+  );
+}
+
+/** The main menu: the recommended step first when there is one, then every row under its group heading, then the way out. */
+export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> {
   const rows = visibleRows(state);
-  const width = Math.max(...rows.map((id) => rowLabel(id).length));
-  const items: Array<MenuItem<MenuRowId | typeof QUIT>> = [];
+  const items: Array<MenuItem<MainMenuValue>> = [];
+  if (state.upNext) {
+    items.push({ group: '' });
+    items.push({
+      name: `${pc.cyan('▶')}  Up next: ${state.upNext.description}`,
+      value: UP_NEXT,
+      description: actionDescription(state.upNext.action),
+    });
+  }
   for (const group of Object.keys(MENU_GROUPS) as MenuGroup[]) {
     items.push({ group: MENU_GROUPS[group] });
     for (const id of rows.filter((rowId) => menuRow(rowId).group === group)) {
@@ -98,8 +127,7 @@ export function mainMenuItems(state: MenuState): Array<MenuItem<MenuRowId | type
       const live = state.liveEndpoints ?? [];
       const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
       items.push({
-        // The open-endpoint marker is coloured after padding, so the hint column stays aligned.
-        name: entryName(rowLabel(id), row.hint, width, Boolean(reason)).replace('(OPEN)', pc.yellow('(OPEN)')),
+        name: reason ? rowLabel(id) : entryName(id),
         value: id,
         description: stray
           ? `The instance serves public endpoint ${live.join(', ')} although no exposure is configured: delete it.`
@@ -108,8 +136,13 @@ export function mainMenuItems(state: MenuState): Array<MenuItem<MenuRowId | type
       });
     }
   }
-  items.push({ group: '' }, { name: 'Quit', value: QUIT, description: 'Leave the CLI.' });
+  items.push({ group: '' }, { name: `${pc.dim('q')}  Quit`, value: QUIT, description: 'Leave the CLI.' });
   return items;
+}
+
+/** An action's name in a pick: the label padded to the hint column, then the key it runs with. A disabled entry shows the label alone, so the reason after it fits the row. */
+function pickName(action: OperatorActionId, width: number, disabled: boolean): string {
+  return disabled ? actionLabel(action) : `${actionLabel(action).padEnd(width)}  ${pc.dim(actionHint(action))}`;
 }
 
 /** The pick a row with several actions opens: its actions, then the way back. */
@@ -119,7 +152,7 @@ export function pickItems(id: MenuRowId, state: MenuState): Array<MenuChoice<Ope
   const choices = actions.map((action): MenuChoice<OperatorActionId> => {
     const reason = disabledReason(action, state);
     return {
-      name: entryName(actionLabel(action), actionHint(action), width, Boolean(reason)),
+      name: pickName(action, width, Boolean(reason)),
       value: action,
       description: actionDescription(action),
       ...(reason ? { disabled: `(${reason})` } : {}),
@@ -128,32 +161,9 @@ export function pickItems(id: MenuRowId, state: MenuState): Array<MenuChoice<Ope
   return [...choices, { name: '← Back', value: BACK, description: 'Return to the menu.' }];
 }
 
-/** The line under the header that says which stack this run targets. Production is red, so a run against it never looks like a staging run. */
+/** The line that says which environment this run targets. Production is red, so a run against it never looks like a staging run. */
 export function formatStackLine(stack: { slug: string; environment: Environment; state: StackState }): string {
   const mode = stack.environment === 'production' ? pc.bold(pc.red(stack.environment)) : pc.cyan(stack.environment);
-  const file = stack.state === 'fresh' ? '' : pc.dim(` (Pulumi.${stack.environment}.yaml)`);
-  return `${pc.bold(stack.slug)} · ${mode} · ${stack.state}${file}`;
-}
-
-/**
- * The header lines about what this machine can reach: whether the database has a public endpoint. `liveEndpoints` is undefined when the
- * instance was not read; the local exposure config then stands in, and a closed config gets no line.
- */
-export function formatAccessLines(facts: { stackState: StackState; dbExposed: boolean; liveEndpoints?: string[] }): string[] {
-  const lines: string[] = [];
-  if (facts.stackState !== 'bootstrapped') return lines;
-  const live = facts.liveEndpoints;
-  if (live && live.length > 0) {
-    const stray = facts.dbExposed ? '' : ' although exposure is off';
-    lines.push(`${pc.yellow('●')} DB access: ${pc.yellow('OPEN')} at ${live.join(', ')}${stray}; close it with "${menuPath('db-close')}"`);
-  } else if (live) {
-    lines.push(
-      facts.dbExposed
-        ? `${pc.yellow('●')} DB access: exposure is configured, but the instance has no public endpoint`
-        : `${pc.green('●')} DB access: private`,
-    );
-  } else if (facts.dbExposed) {
-    lines.push(`${pc.yellow('●')} DB access: exposure is configured ${pc.dim('(the instance was not read)')}`);
-  }
-  return lines;
+  const state = stack.state === 'bootstrapped' ? '' : stack.state === 'fresh' ? pc.dim(' · new') : pc.dim(' · setup not finished');
+  return `${pc.cyan('⧈')} ${pc.bold(stack.slug)} · ${mode}${state}`;
 }

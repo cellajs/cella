@@ -96,8 +96,22 @@ function main(): void {
     console.info('compose.gen.yml is up to date.');
     return;
   }
-  writeFileSync(OUTPUT_PATH, yaml);
+  writeCompose();
   console.info(`Wrote ${OUTPUT_PATH}`);
+}
+
+/** Write the Compose file from the service registry; `unchanged` when the file already holds it, so a caller can stay quiet. */
+export function writeCompose(): 'written' | 'unchanged' {
+  const yaml = renderCompose(composeConfig);
+  let current = '';
+  try {
+    current = readFileSync(OUTPUT_PATH, 'utf-8');
+  } catch {
+    // Missing: written below.
+  }
+  if (current === yaml) return 'unchanged';
+  writeFileSync(OUTPUT_PATH, yaml);
+  return 'written';
 }
 
 if (isMain(import.meta.url)) main();

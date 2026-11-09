@@ -1,305 +1,147 @@
-import { randomBytes } from 'node:crypto';
-import { managedKeys } from '../lib/managed-keys';
-import { actionCommand } from '../lib/operator-actions';
-import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
+import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
+import type { createSecretManagerClient, SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
-import { checkMark, pc, tildeMark, warningMark } from '../lib/utils/cli-output';
+import { crossMark, pc } from '../lib/utils/cli-output';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { isMain } from '../lib/utils/is-main';
-import { provisionManagedKey } from './provision-managed-key';
+import { ensureSecrets } from './ensure-secrets';
 
-type PromptOption<T extends string> = { name: string; value: T; description?: string };
+export type SecretManagerClient = ReturnType<typeof createSecretManagerClient>;
+
+/** A secret of the runtime folder, with the date its newest version was written. */
+export type RuntimeContainer = SecretManagerSecret & { setAt?: string };
+
+/** A row of the table: the name the app reads, the services that read it, and what Secret Manager holds for it. */
+export interface SecretRow {
+  envVar: string;
+  usedBy: string;
+  state: string;
+  kind: 'missing' | 'empty' | 'set' | 'infra';
+  definition: RuntimeSecretDefinition;
+}
+
+const kindOrder: SecretRow['kind'][] = ['missing', 'set', 'empty', 'infra'];
+const kindMarks: Record<SecretRow['kind'], string> = { missing: crossMark, empty: pc.dim('○'), set: pc.green('●'), infra: pc.dim('◇') };
+
+/** `Nov 8` in the local time zone, or nothing when Secret Manager gave no date. */
+function shortDate(iso: string | undefined): string {
+  const date = iso ? new Date(iso) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+}
 
 /**
- * Resolved by a selection prompt when the operator presses Esc to step back to
- * the previous menu without choosing an option. A symbol ensures it cannot
- * collide with a real (string) secret id or action value.
+ * One row per runtime secret: required values without a version first, then optional ones without, then the ones set, then the ones infra
+ * makes, in registry order within each. `containers` are the runtime folder's secrets by name.
  */
-export const BACK = Symbol('runtime-secret-menu-back');
-
-export interface RuntimeSecretPrompts {
-  select<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T | typeof BACK>;
-  password(options: { message: string; validate?: (value: string) => true | string }): Promise<string>;
-  confirm(options: { message: string; default?: boolean }): Promise<boolean>;
+export function secretsTable(
+  definitions: readonly RuntimeSecretDefinition[],
+  containers: ReadonlyMap<string, { version_count?: number; setAt?: string }>,
+): SecretRow[] {
+  const rows = definitions.map((definition): SecretRow => {
+    const row = { envVar: definition.envVar, usedBy: definition.services.join(', '), definition };
+    if (definition.valueSource !== 'operator') {
+      return { ...row, kind: 'infra', state: protectsStoredData(definition) ? 'made by infra · kept' : 'made by infra' };
+    }
+    const container = containers.get(definition.secretName);
+    if (container && (container.version_count ?? 0) > 0) return { ...row, kind: 'set', state: `set ${shortDate(container.setAt)}`.trimEnd() };
+    return definition.required ? { ...row, kind: 'missing', state: 'missing · required' } : { ...row, kind: 'empty', state: 'empty · optional' };
+  });
+  return rows.sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind));
 }
 
-export interface ManageRuntimeSecretsOptions {
-  secretKey: string;
-  /** The key that mints a managed key, which writes IAM, with its organization: asked for when a mint is confirmed. */
-  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
-  projectId: string;
-  region: string;
-  /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
-  slug: string;
-  /** Deploy mode: per-mode IAM naming of a minted key. */
-  mode: string;
-  prompts: RuntimeSecretPrompts;
-  log?: (message: string) => void;
-}
-
-type ManagedRuntimeSecret = RuntimeSecretDefinition;
-type Action = 'list' | 'set' | 'delete' | 'rotate' | 'mint' | 'exit';
-
-const defaultLog = (message: string) => console.info(message);
-
-function operatorManagedSecrets(): ManagedRuntimeSecret[] {
-  return runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
-}
-
-function formatSecretChoice(secret: ManagedRuntimeSecret): PromptOption<string> {
+/** The column header and a line formatter whose columns align across `rows`. */
+export function tableColumns(rows: readonly SecretRow[]): { header: string; line: (row: SecretRow) => string } {
+  const header = { envVar: 'NAME', usedBy: 'USED BY', state: 'STATE' };
+  const nameWidth = Math.max(...[header, ...rows].map((row) => row.envVar.length));
+  const usedByWidth = Math.max(...[header, ...rows].map((row) => row.usedBy.length));
+  const text = (row: Pick<SecretRow, 'envVar' | 'usedBy' | 'state'>) =>
+    `${row.envVar.padEnd(nameWidth)}  ${row.usedBy.padEnd(usedByWidth)}  ${row.state}`;
   return {
-    name: `${secret.secretName} (${secret.envVar})`,
-    value: secret.id,
-    description: `${secret.services.join(', ')}${secret.required ? ' • required' : ' • optional'}`,
+    header: pc.dim(`  ${text(header)}`),
+    line: (row) => `${kindMarks[row.kind]} ${row.kind === 'infra' ? pc.dim(text(row)) : text(row)}`,
   };
 }
 
-export function generateRandomRuntimeSecret() {
-  return randomBytes(32).toString('base64url');
+/** The header, then one line per row: a mark per state, and the rows infra makes dimmed. */
+export function formatSecretsTable(rows: readonly SecretRow[]): string[] {
+  const { header, line } = tableColumns(rows);
+  return [header, ...rows.map(line)];
 }
 
-/** Everything the per-action handlers need. */
-interface MenuContext {
-  client: ReturnType<typeof createSecretManagerClient>;
-  secrets: ManagedRuntimeSecret[];
-  prompts: RuntimeSecretPrompts;
-  /** The caller key, and the key the mint action writes IAM with. */
-  secretKey: string;
-  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
-  projectId: string;
-  region: string;
-  slug: string;
-  mode: string;
-  log: (message: string) => void;
+/** The runtime folder's secrets by name. */
+export async function readContainers(client: SecretManagerClient): Promise<Map<string, RuntimeContainer>> {
+  const secrets = await client.listSecretsUnder(RUNTIME_FOLDER);
+  // The secret's own `updated_at` moves with its container (a move, a description), so the date a value was set is its newest version's.
+  const setAt = await Promise.all(
+    secrets.map(async (secret) => {
+      if ((secret.version_count ?? 0) === 0) return undefined;
+      const versions = await client.listSecretVersions(secret.id).catch(() => []);
+      const newest = versions.reduce<(typeof versions)[number] | undefined>(
+        (best, version) => (!best || version.revision > best.revision ? version : best),
+        undefined,
+      );
+      return newest?.created_at ?? undefined;
+    }),
+  );
+  return new Map(secrets.map((secret, index) => [secret.name, { ...secret, setAt: setAt[index] }]));
 }
 
-/** Selection prompt shared by rotate/set/delete; undefined = Esc (go back). */
-async function selectSecret(ctx: MenuContext, message: string, choices: ManagedRuntimeSecret[]): Promise<ManagedRuntimeSecret | undefined> {
-  const selectedId = await ctx.prompts.select<string>({ message, choices: choices.map(formatSecretChoice) });
-  if (selectedId === BACK) return undefined;
-  const secret = choices.find((entry) => entry.id === selectedId);
-  if (!secret) throw new Error(`manage-runtime-secrets: prompt returned unknown secret id '${selectedId}'`);
-  return secret;
-}
-
-async function handleList(ctx: MenuContext): Promise<void> {
-  const existing = new Map((await ctx.client.listSecretsUnder(RUNTIME_FOLDER)).map((secret) => [secret.name, secret]));
-  ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.mode)}`);
-  for (const secret of ctx.secrets) {
-    // Only a versioned container is present; an empty one has no readable value, and the operator sets it.
-    const container = existing.get(secret.secretName);
-    const status = !container
-      ? `${tildeMark} missing`
-      : (container.version_count ?? 0) > 0
-        ? `${checkMark} present`
-        : `${warningMark} empty (no version: run "Set or update")`;
-    ctx.log(`- ${secret.secretName} (${secret.envVar}): ${status}; consumers: ${secret.services.join(', ')}`);
-  }
-}
-
-async function handleRotate(ctx: MenuContext): Promise<void> {
-  const rotatable = ctx.secrets.filter((secret) => secret.generation === 'random');
-  if (rotatable.length === 0) {
-    ctx.log(`${tildeMark} No operator-managed runtime secrets support random rotation yet.`);
-    return;
-  }
-  const secret = await selectSecret(ctx, 'Select a runtime secret to rotate (Esc to go back)', rotatable);
-  if (!secret) return;
-  // Pulumi owns container creation (resources/secrets.ts); refuse to create one
-  // out-of-band here, since that would make the next `pulumi up` fail with
-  // "secret already exists". An apply makes the container, then rotate.
-  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
-  if (!container) {
-    ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. Apply first (\`${actionCommand('apply')}\`), which creates it, then rotate.`,
-    );
-    return;
-  }
-  const version = await ctx.client.putSecretValue({
-    secretId: container.id,
-    value: generateRandomRuntimeSecret(),
-    description: 'Rotated by the infra CLI (Manage runtime secrets)',
-    disablePrevious: true,
-  });
-  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`);
-}
-
-async function handleDelete(ctx: MenuContext): Promise<void> {
-  const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets);
-  if (!secret) return;
-  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
-  if (!container) {
-    ctx.log(`${tildeMark} ${secret.secretName} has no container`);
-    return;
-  }
-  const confirmed = await ctx.prompts.confirm({
-    message: `${warningMark} Delete secret object ${secret.secretName} (${secret.envVar}) for ${secret.services.join(', ')}?`,
-    default: false,
-  });
-  if (!confirmed) {
-    ctx.log(`${tildeMark} Deletion cancelled.`);
-    return;
-  }
-  await ctx.client.deleteSecret(container.id);
-  ctx.log(`${checkMark} Deleted ${secret.secretName}`);
-}
-
-async function handleSet(ctx: MenuContext): Promise<void> {
-  const secret = await selectSecret(ctx, 'Select a runtime secret to set (Esc to go back)', ctx.secrets);
-  if (!secret) return;
-  // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
-  // An apply makes the empty container before the operator sets its value.
-  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
-  if (!container) {
-    ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
-        `Apply first (\`${actionCommand('apply')}\`), which creates it, then run "Set or update" again to give it a value.`,
-    );
-    return;
-  }
-
-  // Trim so accidental leading/trailing whitespace (e.g. from a paste) never
-  // becomes part of the stored secret; validate on the trimmed length so an
-  // all-whitespace entry is rejected the same as an empty one.
-  const value = (
-    await ctx.prompts.password({
-      message: `New value for ${secret.secretName}`,
-      // A machine's env file is line-based, and the deploy checks presence only: the form is checked here, where the value is written.
-      validate: (input) => {
-        const verdict = isEnvFileDeliverable(input.trim());
-        if (verdict.ok) return true;
-        return verdict.reason === 'empty' ? 'Value is required' : 'One line only: base64-encode a multi-line value and decode it in the service';
-      },
-    })
-  ).trim();
-  const version = await ctx.client.putSecretValue({
+/** Write `value` as the secret's new version and disable the one before, so a deploy reads this one. */
+export function setValue(client: SecretManagerClient, container: SecretManagerSecret, value: string): Promise<{ revision: number }> {
+  return client.putSecretValue({
     secretId: container.id,
     value,
-    description: 'Updated by the infra CLI (Manage runtime secrets)',
+    description: 'Updated by the infra CLI (Env vars & secrets)',
     disablePrevious: true,
   });
-  ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`);
 }
 
 /**
- * Mint (or rotate) a managed key: a scoped Scaleway IAM key cella creates and
- * writes into its runtime secrets without requiring an operator-created key.
- * Needs an IAMManager-capable caller key. The heavy lifting (verify containers
- * exist → mint → write versions) lives in `provision-managed-key.ts`.
+ * A fresh random value for `secret` and for every value derived from it: the Yjs relay's public key refuses every token a new private key
+ * signs. Returns the env vars written, none when no container exists yet.
  */
-async function handleMint(ctx: MenuContext): Promise<void> {
-  if (managedKeys.length === 0) {
-    ctx.log(`${tildeMark} No mintable managed keys are configured.`);
-    return;
-  }
-  const selectedId = await ctx.prompts.select<string>({
-    message: 'Select a managed key to mint / rotate (Esc to go back)',
-    choices: managedKeys.map((key) => {
-      const targets = Object.values(key.assign).map((id) => runtimeSecrets.find((secret) => secret.id === id)?.envVar ?? id);
-      return {
-        name: `${key.suffix}: ${key.label}`,
-        value: key.id,
-        description: `${ctx.slug}-${key.suffix} → ${targets.join(', ')}`,
-      };
-    }),
-  });
-  if (selectedId === BACK) return;
-  const key = managedKeys.find((entry) => entry.id === selectedId);
-  if (!key) throw new Error(`manage-runtime-secrets: prompt returned unknown managed key id '${selectedId}'`);
-
-  const confirmed = await ctx.prompts.confirm({
-    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; it writes IAM, so it takes an Owner API key.`,
-    default: false,
-  });
-  if (!confirmed) {
-    ctx.log(`${tildeMark} Mint cancelled.`);
-    return;
-  }
-  try {
-    const identity = await ctx.identityKey();
-    const result = await provisionManagedKey({
-      definition: key,
-      callerSecretKey: identity.secretKey,
-      organizationId: identity.organizationId,
-      projectId: ctx.projectId,
-      region: ctx.region,
-      slug: ctx.slug,
-      mode: ctx.mode,
-      log: ctx.log,
-    });
-    ctx.log(`${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`);
-  } catch (error) {
-    ctx.log(`${warningMark} Mint failed: ${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function rotateSecret(client: SecretManagerClient, secret: RuntimeSecretDefinition): Promise<string[]> {
+  const rotated = [secret, ...runtimeSecrets.filter((candidate) => candidate.derivedFrom?.secretId === secret.id)];
+  const written = new Set(await ensureSecrets({ client, secrets: rotated, rotate: true, log: () => {} }));
+  return rotated.filter((definition) => written.has(definition.secretName)).map((definition) => definition.envVar);
 }
 
-export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions): Promise<void> {
-  const ctx: MenuContext = {
-    client: createSecretManagerClient({ secretKey: options.secretKey, region: options.region, projectId: options.projectId }),
-    secrets: operatorManagedSecrets(),
-    prompts: options.prompts,
-    secretKey: options.secretKey,
-    identityKey: options.identityKey,
-    projectId: options.projectId,
-    region: options.region,
-    slug: options.slug,
-    mode: options.mode,
-    log: options.log ?? defaultLog,
-  };
+/** A key of an imported `.env` file: the value it sets, or why it is skipped. */
+export interface EnvImportLine {
+  key: string;
+  note: string;
+  write?: { definition: RuntimeSecretDefinition; value: string };
+}
 
-  // Secret Manager writes an immutable version immediately, but a machine gets it only in the env file of the deploy that makes it.
-  // The trailing newline separates this warning from the menu.
-  ctx.log(
-    `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
-      `${pc.dim("container metadata looking unchanged; check the secret's Versions list for the new revision. Running machines keep")}\n` +
-      `${pc.dim('the values they booted with: the machines of the next deploy get the latest value.')}\n`,
-  );
+/**
+ * Each key of an imported `.env` file once, in file order with its last value, matched to the runtime secret whose env var it names. A key
+ * no secret reads, one infra makes, and a value a set refuses are skipped. A value is trimmed, as a set trims it.
+ */
+export function planEnvImport(
+  entries: ReadonlyArray<{ key: string; value: string }>,
+  definitions: readonly RuntimeSecretDefinition[],
+): EnvImportLine[] {
+  const byEnvVar = new Map(definitions.map((definition) => [definition.envVar, definition]));
+  return [...new Map(entries.map(({ key, value }) => [key, value.trim()]))].map(([key, value]): EnvImportLine => {
+    const definition = byEnvVar.get(key);
+    if (!definition) return { key, note: 'no such env var' };
+    if (definition.valueSource !== 'operator') return { key, note: 'made by infra' };
+    const verdict = isEnvFileDeliverable(value);
+    if (!verdict.ok) return { key, note: verdict.reason === 'empty' ? 'empty' : 'not one line' };
+    return { key, note: `set (${value.length} chars)`, write: { definition, value } };
+  });
+}
 
-  // Loop the menu so an operator setting up a fresh environment can manage
-  // several secrets in one session.
-  // Each handler returns here; "Exit" (or Esc) is the only way out.
-  while (true) {
-    const action = await options.prompts.select<Action>({
-      message: 'Manage runtime secrets',
-      choices: [
-        {
-          name: 'List',
-          value: 'list',
-          description: 'Show operator-managed runtime secrets and whether a secret object exists.',
-        },
-        {
-          name: 'Set or update',
-          value: 'set',
-          description: 'Create a new secret version for a selected runtime secret.',
-        },
-        {
-          name: 'Rotate',
-          value: 'rotate',
-          description: 'Generate a fresh random value for a selected runtime secret when supported.',
-        },
-        {
-          name: 'Mint key',
-          value: 'mint',
-          description: 'Mint (or rotate) a scoped Scaleway IAM key and write it into its runtime secret(s).',
-        },
-        { name: 'Delete', value: 'delete', description: 'Delete an entire runtime secret object after confirmation.' },
-        { name: 'Exit', value: 'exit', description: 'Leave the runtime secrets menu.' },
-      ],
-    });
-
-    // Esc on the top menu behaves like "Exit"; there is no parent menu to return
-    // to (the infra CLI exits once secrets management is done).
-    if (action === BACK || action === 'exit') return;
-    if (action === 'list') await handleList(ctx);
-    else if (action === 'rotate') await handleRotate(ctx);
-    else if (action === 'mint') await handleMint(ctx);
-    else if (action === 'delete') await handleDelete(ctx);
-    else await handleSet(ctx);
-  }
+/** One line per key with the names aligned, the skipped keys dimmed. */
+export function formatEnvImport(lines: readonly EnvImportLine[]): string[] {
+  const width = Math.max(0, ...lines.map((line) => line.key.length));
+  return lines.map((line) => {
+    const text = `  ${line.key.padEnd(width)}  ${line.note}`;
+    return line.write ? text : pc.dim(text);
+  });
 }
 
 if (isMain(import.meta.url)) {
-  process.stderr.write('Run this task through the infra CLI (Manage runtime secrets) so prompts and stack context stay aligned.\n');
+  process.stderr.write('Run this task through the infra CLI (Env vars & secrets) so prompts and stack context stay aligned.\n');
   process.exit(1);
 }

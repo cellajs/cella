@@ -286,6 +286,8 @@ new scaleway.object.BucketPolicy(
                   pulumi.interpolate`${bootDiagBucket.name}/${BOOT_ACCOUNTS_PREFIX}*`,
                   pulumi.interpolate`${bootDiagBucket.name}/${RUNS_PREFIX}*`,
                   pulumi.interpolate`${bootDiagBucket.name}/${CONTROL_PREFIX}*`,
+                  // A release's manifest names its archives and its description, no value: Releases reads it to say what a rollback needs.
+                  pulumi.interpolate`${bootDiagBucket.name}/${RELEASES_PREFIX}*/manifest.json`,
                 ],
               },
             ]

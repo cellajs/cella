@@ -79,9 +79,9 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
       const served = svc.probe.version ?? '<none>';
       if (svc.expectedSha && svc.probe.version !== svc.expectedSha) {
         const source = svc.expectedFrom ? ` (runs on the ${svc.expectedFrom} host)` : '';
-        return service.warn(`serving ${short(served)}, expected ${short(svc.expectedSha)}${source}`, deployAction(session.mode));
+        return service.warn(`serving ${short(served)}, expected ${short(svc.expectedSha)}${source}`, deployAction(session.mode), served);
       }
-      return service.ok(`serving ${served === '<none>' ? served : short(served)}`);
+      return service.ok(`serving ${served === '<none>' ? served : short(served)}`, undefined, served === '<none>' ? undefined : served);
     });
   },
 };

@@ -39,6 +39,8 @@ export interface ReleaseManifest {
   images: Record<string, ArchiveDigest>;
   frontend?: ArchiveDigest;
   description?: string;
+  /** The description the hash is taken of, which names what an apply changes; absent for a commit whose script printed only the hash. */
+  describes?: Record<string, unknown>;
 }
 
 function digestOf(value: unknown, where: string): ArchiveDigest {
@@ -63,15 +65,17 @@ export function parseReleaseManifest(text: string, sha: string): ReleaseManifest
     if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`release manifest: '${name}' is no image name`);
     images[name] = digestOf(digest, name);
   }
-  const { description } = parsed;
+  const { description, describes } = parsed;
   if (description !== undefined && (typeof description !== 'string' || !HASH.test(description))) {
     throw new Error('release manifest: description is no sha256');
   }
+  if (describes !== undefined && !isRecord(describes)) throw new Error('release manifest: describes is no object');
   return {
     release: sha,
     images,
     ...(parsed.frontend === undefined ? {} : { frontend: digestOf(parsed.frontend, 'frontend') }),
     ...(description === undefined ? {} : { description }),
+    ...(describes === undefined ? {} : { describes }),
   };
 }
 

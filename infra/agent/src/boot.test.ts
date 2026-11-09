@@ -42,7 +42,6 @@ function writePlan(overrides: Record<string, unknown> = {}): void {
       profile: 'backend',
       services: ['backend'],
       releaseSha: 'abc123',
-      telemetry: { endpoint: 'https://ingest.example/v1', keyHeader: 'x-ingest-key', keyEnvVar: 'SINK_INGEST_KEY' },
       imageContract: 'docker-node-boot-v1',
       links: {
         env: envLink,
@@ -60,8 +59,8 @@ function writePlan(overrides: Record<string, unknown> = {}): void {
   );
 }
 
-/** Stub fetch: the env link serves `env`, the archive link the archive, the sink answers `sinkStatus`; every other request is recorded. */
-function stubNetwork(opts: { env: string; archive?: string; sinkStatus?: number }) {
+/** Stub fetch: the env link serves `env`, the archive link the archive; every other request is recorded. */
+function stubNetwork(opts: { env: string; archive?: string }) {
   const sent: Array<{ url: string; method: string; body: string }> = [];
   vi.stubGlobal(
     'fetch',
@@ -69,7 +68,7 @@ function stubNetwork(opts: { env: string; archive?: string; sinkStatus?: number 
       if (url === envLink) return new Response(opts.env, { status: 200 });
       if (url === archiveLink) return new Response(opts.archive ?? archiveBody, { status: 200 });
       sent.push({ url, method: init?.method ?? 'GET', body: String(init?.body ?? '') });
-      return new Response('', { status: url.startsWith('https://ingest.example/') ? (opts.sinkStatus ?? 200) : 200 });
+      return new Response('', { status: 200 });
     }),
   );
   return sent;
@@ -112,17 +111,15 @@ describe('boot', () => {
     files.clear();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
-  it('must not upload, export or print a secret or a link via a failed release companion', async () => {
+  it('must not upload or print a secret or a link via a failed release companion', async () => {
     const { password: dbPassword, dsn } = leakableDsn();
     const cookieSecret = 'ck-8888bbbbdd';
-    const sinkKey = 'ik-9999ccccee';
     writePlan();
     // The host boot log, mounted into the agent: cloud-init's script and earlier output, a secret among it without its name.
     files.set('/var/log/infra-boot.log', `::cella:: boot start\nlauncher saw ${cookieSecret}\nDATABASE_URL=${dsn}\n`);
-    const sent = stubNetwork({ env: `DATABASE_URL=${dsn}\nCOOKIE_SECRET=${cookieSecret}\nSINK_INGEST_KEY=${sinkKey}\n` });
+    const sent = stubNetwork({ env: `DATABASE_URL=${dsn}\nCOOKIE_SECRET=${cookieSecret}\n` });
     const printed: string[] = [];
     vi.spyOn(console, 'info').mockImplementation((line: unknown) => {
       printed.push(String(line));
@@ -138,8 +135,7 @@ describe('boot', () => {
         opts?.onLine?.(stderr, 'stderr');
         return { code: 1, stdout: '', stderr };
       }
-      if (line.includes(' logs '))
-        return ok([`backend | auth rejected ${cookieSecret}`, `backend | sink ${sinkKey}`, `fetched ${envLink}`].join('\n'));
+      if (line.includes(' logs ')) return ok([`backend | auth rejected ${cookieSecret}`, `fetched ${envLink}`].join('\n'));
       return ok();
     };
 
@@ -153,10 +149,9 @@ describe('boot', () => {
     expect(uploads[0]?.body).toContain('failed_phase=start-service');
     expect(uploads[0]?.body).toContain('auth rejected [REDACTED]');
     expect(uploads[0]?.body).toContain('::cella:: boot start\nlauncher saw [REDACTED]');
-    expect(sent.some((request) => request.url === 'https://ingest.example/v1/logs')).toBe(true);
 
     const channels = [...sent.map((request) => request.body), ...printed, (error as Error).message].join('\n');
-    for (const secret of [dbPassword, cookieSecret, sinkKey, envLink, 'X-Amz-Signature']) expect(channels).not.toContain(secret);
+    for (const secret of [dbPassword, cookieSecret, envLink, 'X-Amz-Signature']) expect(channels).not.toContain(secret);
   });
 
   it("must not load an archive that differs from its digest: whoever replaces it in the bucket cannot choose the machine's code", async () => {
@@ -200,81 +195,5 @@ describe('boot', () => {
     await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() });
 
     expect(calls.filter(isUp)).toEqual(['docker compose --profile backend up -d --wait --wait-timeout 240 backend']);
-  });
-
-  describe('live telemetry', () => {
-    /** An exec whose compose up runs for `upMs` of (fake) time; everything else succeeds at once. */
-    const slowUpExec =
-      (upMs: number): ExecFn =>
-      async (command, args) => {
-        const line = [command, ...args].join(' ');
-        if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
-        if (isUp(line)) await new Promise((resolve) => setTimeout(resolve, upMs));
-        return ok();
-      };
-
-    const sinkEvents = (sent: Array<{ url: string; body: string }>) =>
-      sent
-        .filter((request) => request.url === 'https://ingest.example/v1/logs')
-        .flatMap(
-          (request) =>
-            JSON.parse(request.body).resourceLogs[0].scopeLogs[0].logRecords as Array<{ eventName: string; body?: { stringValue?: string } }>,
-        );
-
-    it('exports a heartbeat while a phase hangs, before the phase ends', async () => {
-      vi.useFakeTimers();
-      writePlan();
-      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n' });
-      vi.spyOn(console, 'info').mockImplementation(() => {});
-      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowUpExec(65_000), archiveDir: archiveDir() });
-
-      await vi.advanceTimersByTimeAsync(31_000);
-      // The buffered start and early phases shipped once the key arrived; compose up still runs.
-      const live = sinkEvents(sent).map((record) => record.eventName);
-      expect(live).toContain('boot.started');
-      expect(live).toContain('boot.step.completed');
-      const heartbeat = sinkEvents(sent).find((record) => record.eventName === 'boot.step.running');
-      expect(heartbeat?.body?.stringValue).toBe('backend boot step start-service still running after 30s');
-      expect(live).not.toContain('boot.completed');
-
-      await vi.advanceTimersByTimeAsync(40_000);
-      await expect(booted).resolves.toBeUndefined();
-      expect(sinkEvents(sent).filter((record) => record.eventName === 'boot.step.running')).toHaveLength(2);
-      // Every heartbeat and export timer is stopped once the boot returns.
-      expect(vi.getTimerCount()).toBe(0);
-    });
-
-    it('streams compose output to the console and as capped telemetry records', async () => {
-      writePlan();
-      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n' });
-      const printed: string[] = [];
-      vi.spyOn(console, 'info').mockImplementation((line: unknown) => void printed.push(String(line)));
-      const exec: ExecFn = async (command, args, opts) => {
-        const line = [command, ...args].join(' ');
-        if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
-        if (isUp(line)) for (let index = 1; index <= 250; index++) opts?.onLine?.(`[migrate] step ${index} with ik-1234567890`, 'stdout');
-        return ok();
-      };
-      await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() });
-
-      expect(printed).toContain('[start-service] [migrate] step 1 with [REDACTED]');
-      expect(printed).toContain('[start-service] [migrate] step 250 with [REDACTED]');
-      const output = sinkEvents(sent).filter((record) => record.eventName === 'boot.output');
-      expect(output).toHaveLength(200);
-      expect(output[0]?.body?.stringValue).toBe('[migrate] step 1 with [REDACTED]');
-      expect(sinkEvents(sent).filter((record) => record.eventName === 'boot.output.capped')).toHaveLength(1);
-      expect(sent.map((request) => request.body).join('\n')).not.toContain('ik-1234567890');
-    });
-
-    it('boots and uploads its account while the sink rejects every export', async () => {
-      vi.useFakeTimers();
-      writePlan();
-      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n', sinkStatus: 500 });
-      vi.spyOn(console, 'info').mockImplementation(() => {});
-      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowUpExec(35_000), archiveDir: archiveDir() });
-      await vi.advanceTimersByTimeAsync(40_000);
-      await expect(booted).resolves.toBeUndefined();
-      expect(sent.some((request) => request.url === accountLink)).toBe(true);
-    });
   });
 });

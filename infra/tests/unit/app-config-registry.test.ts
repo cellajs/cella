@@ -1,13 +1,11 @@
 import { config } from 'shared/config/config.default';
 import { servicePaths } from 'shared/config-builder/service-paths';
-import { mapleIngest } from 'shared/otlp-sink';
 import { describe, expect, it } from 'vitest';
 import { appServices } from '../../config/services.config';
-import { telemetrySink } from '../../config/telemetry.config';
 
 /**
  * The engine reads config only through engine-config, so the registry repeats what the shared config
- * declares: a service's ports, the path it serves under and the telemetry ingest. A local stack, the Vite proxy and a
+ * declares: a service's ports and the path it serves under. A local stack, the Vite proxy and a
  * deployed container must agree on them, so a drift fails here.
  */
 describe('the service registry and the shared config', () => {
@@ -28,10 +26,5 @@ describe('the service registry and the shared config', () => {
       if (entry.pathPrefix !== undefined) expect(entry.pathPrefix, slug).toBe(paths[slug]);
     }
     for (const slug of Object.keys(paths)) expect(registry[slug]?.pathPrefix, slug).toBe(paths[slug]);
-  });
-
-  it('ships deploy telemetry to the ingest the services use', () => {
-    expect(telemetrySink.endpoint).toBe(`${mapleIngest.url}/v1`);
-    expect(telemetrySink.keyHeader).toBe(mapleIngest.keyHeader);
   });
 });

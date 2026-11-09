@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RunRecord } from './run-record';
-import { decideScheduledRun, type ScheduledEffects, scheduledVerdict } from './scheduled-run';
+import { decideScheduledRun, rotationTarget, type ScheduledEffects, scheduledVerdict } from './scheduled-run';
 
 const sha = (digit: string) => digit.repeat(40);
 const record = (target: string, outcome: RunRecord['outcome'], retry?: number): RunRecord => ({
@@ -28,6 +28,25 @@ describe('a scheduled run', () => {
   it('deploys a raised retry counter or another target, whatever ran before', () => {
     expect(decideScheduledRun({ sha: sha('b'), retry: 1 }, [record(sha('b'), 'failed', 0)])).toEqual({ action: 'deploy' });
     expect(decideScheduledRun({ sha: sha('b'), retry: 0 }, [record(sha('a'), 'deployed', 0)])).toEqual({ action: 'deploy' });
+  });
+});
+
+describe("a rotation's target", () => {
+  const target = { sha: sha('b'), retry: 0 };
+
+  it('starts a target no run deployed under its counter, as the schedule would', () => {
+    expect(rotationTarget(target, [])).toEqual({ action: 'start' });
+    expect(rotationTarget(target, [record(sha('b'), 'deployed', 1)])).toEqual({ action: 'start' });
+    expect(rotationTarget(target, [record(sha('a'), 'deployed', 0)])).toEqual({ action: 'start' });
+  });
+
+  it('stays on the live commit when the target has a run, so a rollback by hand holds through a rotation', () => {
+    const rolledBack = record(sha('b'), 'deployed', 0);
+    expect(rotationTarget(target, [rolledBack])).toEqual({ action: 'stay', record: rolledBack });
+  });
+
+  it('stays when the runs could not be read: a rotation never undoes a rollback it could not see', () => {
+    expect(rotationTarget(target, { error: 'AccessDenied' })).toEqual({ action: 'stay', unread: 'AccessDenied' });
   });
 });
 

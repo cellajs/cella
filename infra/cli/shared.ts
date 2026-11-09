@@ -3,7 +3,6 @@ import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
-import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { allPrincipalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
@@ -97,7 +96,7 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return maskedSecret({ message: 'Pulumi passphrase' });
+  if (!canVerify) return maskedSecret({ message: 'Recovery passphrase' });
 
   // From earlier in this run: a rotation since then changed the stack's salt, so a stale one fails here and is fetched or asked again.
   const remembered = rememberedPassphrase();
@@ -112,7 +111,7 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   if (stored) console.warn(`${warningMark} The passphrase in Secret Manager does not open this stack: type the current one, and it is stored again.`);
 
   while (true) {
-    const entered = await maskedSecret({ message: 'Pulumi passphrase' });
+    const entered = await maskedSecret({ message: 'Recovery passphrase' });
     if (verifyStackPassphrase(stackYaml, entered)) {
       rememberPassphrase(entered);
       if (await custody?.store(entered)) console.info(pc.dim('  Stored in Secret Manager: from now on the operator key fetches it.'));
@@ -123,14 +122,14 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
 }
 
 /** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, and that copy restores Secret Manager's. */
-async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
-  console.info(`\n→ ${heading}`);
+async function confirmPassphraseStored(passphrase: string): Promise<void> {
+  console.info(`\n→ ${pc.bold('Recovery passphrase')}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
   console.info(
-    `  ${pc.bold('Store it in your password manager now.')} Later runs fetch it from Secret Manager; your copy restores that one if it is lost.${note ? `\n  ${pc.dim(note)}` : ''}`,
+    `  ${pc.bold('Save it in your password manager now.')} It encrypts this environment's state. The CLI keeps a copy in Scaleway and fetches it\n  with your key; yours restores that copy if it is lost. It is shown this once.`,
   );
-  while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
-    console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
+  while (!(await confirm({ message: 'Saved?', default: false }))) {
+    console.warn(`${warningMark} Save it before continuing: this is the only time it is shown.`);
   }
 }
 
@@ -143,21 +142,13 @@ export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ p
   if (canVerify) return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
 
   const passphrase = generatePassphrase();
-  await confirmPassphraseStored(passphrase, `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`);
+  await confirmPassphraseStored(passphrase);
   return { passphrase, generated: true };
 }
 
 /** The stack name every action targets: derived from the mode on the DIY backend (`organization/infra/<mode>`); `INFRA_STACK_NAME` overrides it for unusual layouts. Never prompted. */
 export function stackNameFor(context: Pick<InfraContext, 'environment'>): string {
   return process.env.INFRA_STACK_NAME?.trim() || `organization/infra/${context.environment}`;
-}
-
-/** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`Scaleway Owner API key`); `hint` says where to get one. */
-export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, hint?: string): Promise<KeyPair> {
-  if (pair) return pair;
-  const accessKey = await input({ message: `${label}, access key${hint ? ` (${hint})` : ''}`, validate: (value) => !!value.trim() || '(required)' });
-  const secretKey = await maskedSecret({ message: `${label}, secret key` });
-  return { accessKey, secretKey };
 }
 
 /** S3-backend login URL for the app's Pulumi state bucket. */

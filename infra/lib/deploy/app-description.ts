@@ -37,7 +37,7 @@ function engineFields(config: EngineConfig): EngineConfig {
  * settings. Run once `APP_MODE` names the environment: the engine config and the registries load here.
  * @param root the checkout whose `package.json` is read
  */
-async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
+export async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
   const [
     { engineConfig: config },
     { runtimeSecrets },
@@ -47,7 +47,6 @@ async function appDescription(root = join(infraDir, '..')): Promise<Record<strin
     { generalConfig },
     { healthContract },
     { appEnvSuppliers },
-    { telemetrySink },
   ] = await Promise.all([
     import('../../config/engine-config'),
     import('../runtime-secrets'),
@@ -57,7 +56,6 @@ async function appDescription(root = join(infraDir, '..')): Promise<Record<strin
     import('../../config/general.config'),
     import('../../config/health.config'),
     import('../../config/env-suppliers.config'),
-    import('../../config/telemetry.config'),
   ]);
   const context = supplierContext(config);
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
@@ -78,7 +76,6 @@ async function appDescription(root = join(infraDir, '..')): Promise<Record<strin
     stores: Object.fromEntries(Object.entries(appStores).map(([id, store]) => [id, { kind: store.kind, settings: store.settings }])),
     managedKeys,
     env: Object.fromEntries(Object.entries(appEnvSuppliers).map(([name, supply]) => [name, supply(context)])),
-    telemetry: telemetrySink,
   };
 }
 

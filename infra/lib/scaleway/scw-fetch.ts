@@ -27,6 +27,9 @@ export function scwS3Endpoint(region: string): string {
   return `https://s3.${region}.scw.cloud`;
 }
 
+/** How long one call may take before it fails as a network error, so a stalled endpoint never holds a screen or a deploy step for good. */
+const REQUEST_TIMEOUT_MS = 60_000;
+
 async function request(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<string> {
   if (DEBUG) {
     const bodyLog = body ? ` body=${carriesSecretValues(url) ? REDACTED : JSON.stringify(body)}` : '';
@@ -41,6 +44,7 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
           method,
           headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'application/json' },
           body: body !== undefined ? JSON.stringify(body) : undefined,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         }),
       {
         attempts: networkAttempts,

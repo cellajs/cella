@@ -3,7 +3,7 @@ import { GetObjectCommand, ListObjectsV2Command, type S3Client } from '@aws-sdk/
 /**
  * A machine's own account of a boot: the agent uploads it at the end of every boot, healthy or not, to the diagnostics
  * bucket as `boot-diag/<service>-<YYYYMMDDThhmmssZ>-boot.log`, headed by `service=`, `release=` and `boot_rc=` lines. A failed boot adds a
- * `-failed-` copy and every boot its telemetry events beside it (`-events.jsonl`).
+ * `-failed-` copy.
  */
 export const BOOT_ACCOUNTS_PREFIX = 'boot-diag/';
 

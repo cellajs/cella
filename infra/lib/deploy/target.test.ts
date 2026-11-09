@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseEnvironmentsFile, parseLsRemote, type RemoteRef, resolveTarget, type Target } from './target';
+import { parseEnvironmentsFile, parseLsRemote, type RemoteRef, resolveTarget, sortedReleases, type Target } from './target';
 
 const sha = (digit: string) => digit.repeat(40);
 const refs: RemoteRef[] = [
@@ -60,5 +60,15 @@ describe('resolveTarget', () => {
 
   it('reads git ls-remote output', () => {
     expect(parseLsRemote(`${sha('a')}\trefs/heads/main\nwarning: noise\n`)).toEqual([{ sha: sha('a'), ref: 'refs/heads/main' }]);
+  });
+});
+
+describe('sortedReleases', () => {
+  it('lists the releases newest version first, each by the commit it points to', () => {
+    expect(sortedReleases(refs)).toEqual([
+      { tag: '0.18.1', sha: sha('3') },
+      { tag: '0.10.0', sha: sha('5') },
+      { tag: '0.9.8', sha: sha('1') },
+    ]);
   });
 });

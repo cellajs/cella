@@ -28,6 +28,7 @@ vi.mock('./operator-apply', () => ({
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
+vi.mock('./releases', () => ({ checkWaitingRelease: async () => {} }));
 vi.mock('../../tasks/publish-engine', () => ({
   publishEngine: (...args: unknown[]) => publishEngine(...args),
   discardEngine: (...args: unknown[]) => discardEngine(...args),

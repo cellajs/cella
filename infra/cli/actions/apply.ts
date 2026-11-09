@@ -8,6 +8,7 @@ import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
 import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, reviewPlan } from './plan';
+import { checkWaitingRelease } from './releases';
 import { startBlockedTarget } from './start-deploy';
 
 /**
@@ -35,6 +36,8 @@ export async function runApply(context: InfraContext): Promise<void> {
   await admitOperatorOrExit(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);
+  // A release waiting on an apply deploys only on the description of its own checkout: another one ends the action before the build.
+  await checkWaitingRelease(context, operator);
   // Built and pushed before the plan, so the plan shows the main job's new image: until the `up` names it, nothing runs it.
   let engine: PublishedEngine | undefined;
   try {

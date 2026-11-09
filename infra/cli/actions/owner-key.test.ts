@@ -1,13 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { allPrincipalNames } from '../../lib/scaleway/principals';
 
-const keyPairOrPrompt = vi.fn();
+const keyPairPrompt = vi.fn();
 const assertIamManager = vi.fn();
 
-vi.mock('../shared', async (original) => ({
-  ...(await original<typeof import('../shared')>()),
-  keyPairOrPrompt: (...args: unknown[]) => keyPairOrPrompt(...args),
-}));
+vi.mock('../prompts/key-pair', () => ({ keyPairPrompt: (...args: unknown[]) => keyPairPrompt(...args) }));
 vi.mock('../../lib/scaleway/operator-identity', async (original) => ({
   ...(await original<typeof import('../../lib/scaleway/operator-identity')>()),
   assertIamManager: (...args: unknown[]) => assertIamManager(...args),
@@ -36,7 +33,7 @@ const acquire = () =>
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  keyPairOrPrompt.mockImplementation(async (pair: unknown) => pair ?? typed);
+  keyPairPrompt.mockResolvedValue(typed);
   assertIamManager.mockResolvedValue(application);
 });
 
@@ -51,7 +48,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
     const first = await acquire();
     const second = await acquire();
 
-    expect(keyPairOrPrompt).toHaveBeenCalledTimes(1);
+    expect(keyPairPrompt).toHaveBeenCalledTimes(1);
     expect(assertIamManager).toHaveBeenCalledTimes(2);
     expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret' });
   });
@@ -64,7 +61,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
     expect(rememberedOwnerKey()).toBeUndefined();
 
     await acquire();
-    expect(keyPairOrPrompt).toHaveBeenCalledTimes(2);
+    expect(keyPairPrompt).toHaveBeenCalledTimes(2);
   });
 
   it('must not keep a key that never passed its validation', async () => {

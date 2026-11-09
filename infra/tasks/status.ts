@@ -3,41 +3,23 @@ import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { readAppliedEngine } from '../lib/deploy/applied-engine';
+import { commitRefs } from '../lib/deploy/git-remote';
 import { findJobDefinition, listJobRuns, readJobDefinition } from '../lib/deploy/job-runs';
-import { type LiveRecord, readLiveRecord } from '../lib/deploy/live-record';
+import { readLiveRecord } from '../lib/deploy/live-record';
+import type { RemoteRef } from '../lib/deploy/target';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
-import { menuPath } from '../lib/operator-actions';
-import {
-  classifyPrincipal,
-  describeKey,
-  formatKeyLine,
-  hoursUntilExpiry,
-  type KeyDescription,
-  type KeyPair,
-  type PrincipalRole,
-  resolveOperatorIdentity,
-} from '../lib/scaleway/operator-identity';
-import { allPrincipalNames } from '../lib/scaleway/principals';
+import { type KeyPair, resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
-import {
-  type LockInfo,
-  lockKey,
-  makeControlClient,
-  peekLock,
-  type RotationRecord,
-  type Rotations,
-  readRotations,
-  stateBucket,
-} from '../lib/stack/control-store';
+import { lockKey, makeControlClient, peekLock, stateBucket } from '../lib/stack/control-store';
 import { loadStackContext } from '../lib/stack/stack-context';
+import { nameSubject } from '../lib/status/check';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadRootEnvFile } from '../lib/utils/env-files';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { within } from '../lib/utils/retry';
 import { getFlag } from './args';
 
 /** Everything the report needs about the target stack, from the menu or standalone. */
@@ -167,7 +149,7 @@ export async function buildReport(ctx: StatusContext): Promise<StatusReport> {
 
 const MARKS: Record<CheckStatus, string> = { ok: checkMark, warn: warningMark, missing: crossMark, error: crossMark, unknown: pc.dim('?') };
 
-export function formatReport(report: StatusReport): string {
+export function formatReport(report: StatusReport, refs?: readonly RemoteRef[]): string {
   const lines: string[] = [];
   const s = report.summary;
   lines.push(pc.dim(DIVIDER));
@@ -178,7 +160,7 @@ export function formatReport(report: StatusReport): string {
   const width = report.checks.reduce((max, check) => Math.max(max, check.title.length), 0);
   for (const check of report.checks) {
     const label = pc.bold(pc.gray(check.title.padEnd(width)));
-    lines.push(`${MARKS[check.status]} ${label}  ${check.detail}`);
+    lines.push(`${MARKS[check.status]} ${label}  ${nameSubject(check, refs)}`);
   }
   if (report.nextAction) {
     lines.push(pc.dim(DIVIDER));
@@ -189,8 +171,8 @@ export function formatReport(report: StatusReport): string {
 }
 
 /** Print the report as JSON or human text. */
-export function printReport(report: StatusReport, opts: { json?: boolean }): void {
-  console.info(opts.json ? JSON.stringify(report, null, 2) : formatReport(report));
+export function printReport(report: StatusReport, opts: { json?: boolean; refs?: readonly RemoteRef[] }): void {
+  console.info(opts.json ? JSON.stringify(report, null, 2) : formatReport(report, opts.refs));
 }
 
 /**
@@ -205,17 +187,37 @@ export async function runStatus(context: {
   projectId: string;
   operatorKey?: KeyPair;
 }): Promise<void> {
-  const report = await withSpinner('Checking infra status', () =>
-    buildReport({
-      mode: context.environment,
-      appConfig: context.appConfig,
-      stackState: context.state,
-      stackYaml: context.stackYaml,
-      projectId: context.projectId || undefined,
-      operatorKey: context.operatorKey,
-    }),
-  );
-  printReport(report, { json: false });
+  const recent = recentReport(context.environment);
+  const report =
+    recent ??
+    (await withSpinner(`Checking ${context.environment}`, () =>
+      buildReport({
+        mode: context.environment,
+        appConfig: context.appConfig,
+        stackState: context.state,
+        stackYaml: context.stackYaml,
+        projectId: context.projectId || undefined,
+        operatorKey: context.operatorKey,
+      }),
+    ));
+  printReport(report, { json: false, refs: await commitRefs() });
+  if (recent) console.info(pc.dim(`As read ${Math.round((Date.now() - Date.parse(recent.generatedAt)) / 1000)} s ago, for the home screen.`));
+}
+
+/** How long a report the home screen read serves the full table too, so one key after the home does not read everything again. */
+const REPORT_FRESH_MS = 120_000;
+
+let lastReport: StatusReport | undefined;
+
+/** Keep the report the home screen read, for a full status asked right after. */
+export function rememberReport(report: StatusReport): void {
+  lastReport = report;
+}
+
+/** The remembered report of a mode while it is fresh. */
+function recentReport(mode: string): StatusReport | undefined {
+  if (!lastReport || lastReport.mode !== mode || Date.now() - Date.parse(lastReport.generatedAt) > REPORT_FRESH_MS) return undefined;
+  return lastReport;
 }
 
 /** The inventory alone (`inventory.*`), as Rotate keys prints it at its end: what remains beside the declared identities and machines. */
@@ -243,126 +245,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   loadRootEnvFile();
   const { appConfig, state: stackState, stackYaml, projectId } = await loadStackContext(mode);
-  const report = await withSpinner('Checking infra status', () =>
+  const report = await withSpinner(`Checking ${mode}`, () =>
     buildReport({ mode, appConfig, stackState, stackYaml, projectId: projectId || undefined }),
   );
-  printReport(report, { json });
+  printReport(report, { json, refs: json ? undefined : await commitRefs() });
 }
 
 runIfMain(import.meta.url, main);
-
-/** Which env pair the CLI found its key in: the observer key from infra/.env.<mode>, or the process's own SCW_* pair. */
-export type KeySlot = 'observer' | 'ambient';
-
-/** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
-export interface QuickFacts {
-  lock?: LockInfo;
-  live?: LiveRecord;
-  rotations?: Rotations;
-  /** The key's bearer and role, when it can describe itself, and the slot it came from. */
-  key?: { desc: KeyDescription; role: PrincipalRole; slot: KeySlot };
-  /** Probes that did not answer within the budget or errored, by name. */
-  unavailable: string[];
-}
-
-export async function collectQuickFacts(
-  ctx: { environment: string; appConfig: EngineConfig; projectId?: string },
-  opts: { budgetMs?: number; now?: number } = {},
-): Promise<QuickFacts> {
-  const budgetMs = opts.budgetMs ?? 4_000;
-  const facts: QuickFacts = { unavailable: [] };
-  const identity = resolveOperatorIdentity();
-  const slot: KeySlot | undefined = identity.observer ? 'observer' : identity.ambient ? 'ambient' : undefined;
-  const key = identity.observer ?? identity.ambient;
-  const bucket = deriveInfra(ctx.appConfig).naming.bootDiagBucket;
-
-  const controlProbe = async () => {
-    if (!key) return;
-    const s3 = await makeControlClient(
-      ctx.appConfig.s3.region,
-      ctx.projectId ? projectAccessKey(key.accessKey, ctx.projectId) : key.accessKey,
-      key.secretKey,
-    );
-    const [lock, live, rotations] = await Promise.all([
-      peekLock(s3, bucket, lockKey(ctx.environment)),
-      readLiveRecord(s3, bucket, ctx.environment).then((result) => result.record),
-      readRotations(s3, bucket, ctx.environment).then((result) => result.rotations),
-    ]);
-    facts.lock = lock;
-    facts.live = live;
-    facts.rotations = rotations;
-  };
-  const keyProbe = async () => {
-    if (!key || !slot) return;
-    const desc = await describeKey(key);
-    facts.key = { desc, role: classifyPrincipal(desc, allPrincipalNames(ctx.appConfig, ctx.environment)), slot };
-  };
-  await Promise.all([
-    within(
-      budgetMs,
-      controlProbe().catch(() => facts.unavailable.push('control records')),
-    ).then((v) => {
-      if (v === undefined && key && !facts.live && !facts.unavailable.includes('control records')) facts.unavailable.push('control records');
-    }),
-    within(
-      budgetMs,
-      keyProbe().catch(() => facts.unavailable.push('key lookup')),
-    ).then((v) => {
-      if (v === undefined && key && !facts.key && !facts.unavailable.includes('key lookup')) facts.unavailable.push('key lookup');
-    }),
-  ]);
-  return facts;
-}
-
-/** The last rotation of each kind, "never" where none happened. No date is a deadline: the line only says when. */
-export function rotationLine(rotations: Rotations | undefined): string {
-  const day = (record: RotationRecord | undefined) => (record ? `${record.at.slice(0, 10)} by ${record.by}` : 'never');
-  return `Last rotation: keys ${day(rotations?.keys)}, secrets ${day(rotations?.secrets)}`;
-}
-
-/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`; `observerApplication` names the application whose key the observer slot expects. */
-export function formatQuickFacts(
-  facts: QuickFacts,
-  opts: { now?: number; configured?: KeySlot | 'none'; observerApplication?: string } = {},
-): string[] {
-  const now = opts.now ?? Date.now();
-  const lines: string[] = [];
-  if (facts.lock) {
-    const expired = Date.parse(facts.lock.expiresAt) <= now;
-    lines.push(
-      `${expired ? warningMark : pc.yellow('●')} Lock: ${expired ? 'expired lease of' : 'held by'} ${pc.cyan(facts.lock.owner)} (${facts.lock.operation}, since ${facts.lock.acquiredAt.slice(0, 19).replace('T', ' ')} UTC)`,
-    );
-  } else if (opts.configured !== 'none' && (facts.live || !facts.unavailable.includes('control records'))) {
-    // Without a key the control records were never read, so the lease is unknown and gets no line.
-    lines.push(`${pc.green('●')} Lock: free`);
-  }
-  if (facts.live) {
-    const serving = Object.entries(facts.live.roles).map(([role, entry]) => `${role} ${entry.commit.slice(0, 7)} (${entry.slot})`);
-    const when = facts.live.updatedAt
-      ? ` (updated ${facts.live.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.live.updatedBy ?? '?'})`
-      : '';
-    lines.push(`${pc.green('●')} Live: ${serving.join(', ') || 'nothing deployed'}${when}`);
-  }
-  if (facts.rotations) lines.push(`${pc.green('●')} ${rotationLine(facts.rotations)}`);
-  const fetchHint = `${menuPath('identity')} puts it on this machine`;
-  const named = opts.observerApplication ? ` ('${opts.observerApplication}')` : '';
-  if (facts.key) {
-    const { desc, role, slot } = facts.key;
-    const hours = hoursUntilExpiry(desc, now);
-    const expiry = hours === undefined ? '' : hours < 0 ? ' · EXPIRED' : hours < 48 ? ` · expires in ${Math.max(1, Math.round(hours))}h` : '';
-    const healthy = slot === 'observer' && role === 'observer' && !(hours !== undefined && hours < 48);
-    const label = slot === 'observer' ? 'Observer key:' : 'Ambient key: SCW_ACCESS_KEY';
-    lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);
-    if (slot === 'ambient') {
-      lines.push(
-        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; the observer key${named} reads from infra/.env.<mode> as SCW_OBSERVER_* (${fetchHint}).`)}`,
-      );
-    } else if (role !== 'observer') {
-      lines.push(`  ${pc.dim(`SCW_OBSERVER_* should hold the observer key${named}: ${fetchHint}.`)}`);
-    }
-  } else if (opts.configured === 'none') {
-    lines.push(`${warningMark} Observer key${named}: none in infra/.env.<mode> (SCW_OBSERVER_ACCESS_KEY / SCW_OBSERVER_SECRET_KEY; ${fetchHint})`);
-  }
-  if (facts.unavailable.length > 0) lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
-  return lines;
-}

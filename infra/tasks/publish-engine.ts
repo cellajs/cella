@@ -3,8 +3,15 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, 
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
-import { appDescriptionHash } from '../lib/deploy/app-description';
-import { type AppliedEngine, ENGINE_IMAGE_NAME, engineImageRef, engineImageRepository, writeAppliedEngine } from '../lib/deploy/applied-engine';
+import { appDescription, appDescriptionHash } from '../lib/deploy/app-description';
+import {
+  type AppliedEngine,
+  canonicalJson,
+  ENGINE_IMAGE_NAME,
+  engineImageRef,
+  engineImageRepository,
+  writeAppliedEngine,
+} from '../lib/deploy/applied-engine';
 import { rootNodeVersion } from '../lib/deploy/main-job';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
 import { publishAppliedDescription } from '../lib/deploy/release-gate';
@@ -26,6 +33,8 @@ export interface PublishedEngine {
   image: string;
   imageDigest: string;
   descriptionHash: string;
+  /** The description the hash is taken of, which `applied.json` keeps beside it. */
+  describes: Record<string, unknown>;
   commit: string;
   /** The registry's tag of this push, which a declined plan deletes. */
   tagId: string;
@@ -143,6 +152,7 @@ export async function publishEngine(opts: {
     log(`  The engine image carries changes ${commit.slice(0, 10)} does not hold; applied.json names that commit all the same.`);
   }
   const descriptionHash = await appDescriptionHash(root);
+  const describes: Record<string, unknown> = JSON.parse(canonicalJson(await appDescription(root)));
   const repository = engineImageRepository(region, naming.registryNamespace);
   // A tag per push: one pushed again would move off the image the main job may still run, which no other tag then keeps.
   const tag = `${commit}-${new Date()
@@ -178,7 +188,7 @@ export async function publishEngine(opts: {
     if (status !== 0) throw new Error(`docker buildx build exited ${status}: the apply builds the engine image with Docker and buildx`);
     const pushed = (await engineTags(auth, region, namespace.id, tag)).find((candidate) => candidate.name === tag);
     if (!pushed?.digest) throw new Error(`the registry has no digest for ${ENGINE_IMAGE_NAME}:${tag} after the push`);
-    return { image: engineImageRef(repository, pushed.digest), imageDigest: pushed.digest, descriptionHash, commit, tagId: pushed.id };
+    return { image: engineImageRef(repository, pushed.digest), imageDigest: pushed.digest, descriptionHash, describes, commit, tagId: pushed.id };
   } finally {
     rmSync(docker.dir, { recursive: true, force: true });
     rmSync(context, { recursive: true, force: true });
@@ -200,6 +210,7 @@ export async function recordAppliedEngine(opts: {
     imageDigest: opts.engine.imageDigest,
     commit: opts.engine.commit,
     appliedAt: new Date().toISOString(),
+    describes: opts.engine.describes,
   };
   await writeAppliedEngine(s3, naming.bootDiagBucket, opts.stack, applied);
   // Under the lease too, so two applies publish in the order they recorded.

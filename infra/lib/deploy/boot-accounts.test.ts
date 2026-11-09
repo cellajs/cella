@@ -11,7 +11,6 @@ describe('a release’s boot accounts', () => {
   it('must not take an older release’s account for the deploying one: a machine that never reported has none', async () => {
     const objects = {
       'backend-20261024T100000Z-boot.log': account('a'.repeat(40)),
-      'backend-20261024T100000Z-events.jsonl': '{}',
       'cdc-20261025T090000Z-boot.log': account('b'.repeat(40), 1),
     };
     const [backend, cdc] = await releaseAccounts(reader(objects), ['backend', 'cdc'], 'bbbbbbb');
