@@ -23,7 +23,7 @@ export function SsoEntryPage() {
 
   const { data, error, isPending } = useQuery(ssoEntryQueryOptions(connectionId));
 
-  if (error) return <ErrorNotice error={error} boundary="public" />;
+  if (error) return <ErrorNotice error={error} boundary="auth" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
   const { institution, organization, federation, status } = data;
@@ -53,7 +53,7 @@ export function SsoEntryPage() {
         </Alert>
       )}
 
-      <Button variant="ghost" className="self-center" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
+      <Button variant="glass" className="self-center" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
         <ArrowLeftIcon />
         {t('c:sign_in_another_way')}
       </Button>

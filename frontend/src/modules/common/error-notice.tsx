@@ -43,7 +43,8 @@ const errorDetailRows = (error: ApiError) =>
 
 /**
  * `boundary` names the layout still standing around the notice, and so what the notice brings itself: root (none:
- * the overlay hosts and the footer), public (the public layout: the footer), app (the app layout: nothing).
+ * the overlay hosts and the footer), public (the public layout: the footer), auth (the auth layout: the footer, and
+ * glass secondary actions on its gradient), app (the app layout: nothing).
  * Without an `error`, the route's `error` and `severity` search params name it.
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
@@ -53,6 +54,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   const errorFromQuery = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).search.error });
   const severityFromQuery = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).search.severity });
   const contactButtonRef = useRef<HTMLButtonElement>(null);
+  const secondaryVariant = boundary === 'auth' ? 'glass' : 'secondary';
 
   const [showDetails, setShowDetails] = useState(false);
 
@@ -139,7 +141,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               )}
               {children || (
                 <>
-                  <Button onClick={handleGoToHome} variant="secondary">
+                  <Button onClick={handleGoToHome} variant={secondaryVariant}>
                     <HouseIcon />
                     {t('c:home')}
                   </Button>
@@ -152,7 +154,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
-                <Button ref={contactButtonRef} variant="secondary" onClick={() => askForHelp(contactButtonRef)}>
+                <Button ref={contactButtonRef} variant={secondaryVariant} onClick={() => askForHelp(contactButtonRef)}>
                   <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>

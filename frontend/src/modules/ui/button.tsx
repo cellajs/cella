@@ -28,7 +28,7 @@ export const buttonVariants = cva(
         ghost: 'hover:bg-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
-        glass: [glassClass, 'hover:border-foreground/30 hover:bg-background/60'],
+        glass: [glassClass, 'hover:border-foreground/30 hover:bg-background/60 aria-busy:opacity-100'],
         cell: 'group/cell-button text-foreground-soft hover:text-foreground flex w-full justify-start font-normal focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',
         input: 'border-input bg-background aria-invalid:border-destructive',
         // A list row in a DrawerRowGroup, as in the menu sheet

@@ -523,6 +523,38 @@
   @apply focus-visible:ring-inset focus-visible:ring-offset-0;
 }
 
+/* Draws the focus-effect ring as a pill inside the element, clear of the rounded corners of a clipping group. */
+@utility focus-inner {
+  @apply relative focus-visible:ring-0 focus-visible:ring-offset-0 forced-colors:focus-visible:-outline-offset-4;
+
+  @variant focus-ring {
+    &:focus-visible::after {
+      content: "";
+      position: absolute;
+      inset: 0.25rem;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 0 0 2px var(--ring);
+    }
+  }
+}
+
+/* Focus over a gradient: an outline leaves a real gap where the ring's offset would paint an opaque band. */
+@utility focus-gap {
+  & .focus-effect:not(.focus-inner):focus-visible {
+    @apply focus-ring:outline-solid focus-ring:outline-2 focus-ring:outline-offset-2 outline-ring ring-0 ring-offset-0;
+  }
+}
+
+/* A set of alternatives: once one control is busy, the others fade and stop taking the pointer. A fast answer shows no fade.
+   A keyboard still reaches them: a control whose second action would do harm also takes `disabled`. */
+@utility choice-set {
+  &:has([aria-busy="true"]) :is([data-slot="button"], [data-slot="input"]):not([aria-busy="true"], :disabled, .link-inline) {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 150ms linear 150ms;
+  }
+}
+
 /* Spotlight lift for virtualized rows (spotlighter/use-spotlighter.ts): virtua's row wrappers have
    `contain: layout style`, so escaping the z-110 overlay needs the z-index on the wrapper itself;
    the row marks itself and this rule climbs one level (pairs with `spotlightLift`, relative z-111). */

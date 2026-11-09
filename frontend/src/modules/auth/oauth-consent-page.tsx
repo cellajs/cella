@@ -29,7 +29,7 @@ export function OAuthConsentPage() {
   const { uid } = useSearch({ from: '/_public/auth/consent' });
 
   const { data, error, isPending } = useQuery(consentDetailsQueryOptions(uid));
-  const { mutate: decide, isPending: deciding } = useDecideConsentMutation(uid);
+  const { mutate: decide, isPending: deciding, variables: accepting } = useDecideConsentMutation(uid);
 
   // No session: sign in and come back to this very interaction.
   const unauthenticated = error?.status === 401;
@@ -40,7 +40,7 @@ export function OAuthConsentPage() {
   }, [unauthenticated, navigate, uid]);
 
   // An expired or unknown interaction is an answer, not a wait.
-  if (error && !unauthenticated) return <ErrorNotice error={error} boundary="public" />;
+  if (error && !unauthenticated) return <ErrorNotice error={error} boundary="auth" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
   const { client, redirectHost, scopes, refusal, target } = data;
@@ -75,10 +75,10 @@ export function OAuthConsentPage() {
       )}
 
       <div className="flex flex-col gap-2">
-        <Button size="block" loading={deciding} disabled={!!refusal} onClick={() => decide(true)}>
+        <Button size="block" loading={deciding && accepting} disabled={deciding || !!refusal} onClick={() => decide(true)}>
           {t('c:accept')}
         </Button>
-        <Button variant="glass" size="block" loading={deciding} onClick={() => decide(false)}>
+        <Button variant="glass" size="block" loading={deciding && !accepting} disabled={deciding} onClick={() => decide(false)}>
           {t('c:cancel')}
         </Button>
       </div>
