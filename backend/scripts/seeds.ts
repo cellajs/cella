@@ -1,9 +1,9 @@
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { getAdminDb, migrateConfig } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import '#/modules'; // composition root: register modules so seed writes fire their mutation handlers
 import { appConfig } from 'shared';
 import { checkMark, durationSuffix } from '#/utils/console';
 import { createDbRoles } from './db/create-db-roles';
+import { runMigrations } from './db/migrate-database';
 import { seedScripts } from './scripts-discovery';
 
 const isProduction = appConfig.mode === 'production';
@@ -37,7 +37,7 @@ await createDbRoles();
 
 // Migrate db using admin connection (applies RLS grants)
 const migrateStartedAt = performance.now();
-await migrate(migrationDb, migrateConfig);
+await runMigrations(migrationDb);
 console.info(`${checkMark} Migrations applied${durationSuffix(migrateStartedAt)}`);
 
 for (const seed of toRun) {

@@ -1,7 +1,23 @@
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { getAdminDb, migrateConfig } from '#/db/db';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { migrate } from 'drizzle-orm/pg-core';
+import { syncBulkMarkerPrefix } from 'shared/utils/worker-env';
+import { type DB, getAdminDb, migrateConfig } from '#/db/db';
 import { createDbRoles } from './create-db-roles';
 import { scheduleRetention } from './schedule-retention';
+
+/**
+ * Applies the pending migrations, each opening with the bulk marker: drizzle runs every pending one in one transaction,
+ * and the CDC worker records none of that transaction's writes and rebuilds its books at the commit. A backfill of any
+ * size passes, and clients see its rows by one refetch. The file hashes drizzle stores stay those of the files.
+ * @param db - The admin connection: the migrations grant to the roles it owns.
+ */
+export async function runMigrations(db: DB): Promise<void> {
+  const migrations = readMigrationFiles(migrateConfig).map((migration) => ({
+    ...migration,
+    sql: [`SELECT pg_logical_emit_message(true, '${syncBulkMarkerPrefix}', 'migrate:${migration.name}')`, ...migration.sql],
+  }));
+  await migrate(migrations, db, migrateConfig);
+}
 
 /**
  * Brings the database to this release: the roles the migrations grant to, the schema migrations, the nightly retention
@@ -17,7 +33,7 @@ export async function migrateDatabase(purpose: string, announce: (step: string) 
   await createDbRoles();
 
   announce('Running migrations...');
-  await migrate(migrationDb, migrateConfig);
+  await runMigrations(migrationDb);
 
   announce('Scheduling retention job...');
   await scheduleRetention();
