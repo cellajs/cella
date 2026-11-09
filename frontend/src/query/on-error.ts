@@ -71,7 +71,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   }
 
   if (tearsDownSession(error)) {
-    const redirect = location.pathname + location.search;
+    const path = location.pathname + location.search;
+    // A bare `/` names nothing to return to: a sign-in without a redirect reaches the same home page.
+    const redirect = path === '/' ? undefined : path;
     // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
     teardownUserState(false);
     // Dynamic import: the route tree imports this module, so a static router import would be a cycle.

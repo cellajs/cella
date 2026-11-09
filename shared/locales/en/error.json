@@ -151,7 +151,7 @@
   "no_recipients.text": "This action has nobody to send to.",
   "no_selected_rows": "Export cannot proceed as no rows are selected.",
   "no_session": "You're signed out",
-  "no_session.text": "Reload the page and sign in again.",
+  "no_session.text": "Sign in again to continue.",
   "no_sysadmin": "No system access",
   "no_sysadmin.text": "Only a system admin can do this.",
   "no_user_found": "No user found",
