@@ -1,4 +1,12 @@
-import type { FederationConfig, NavigationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput, SlotOf } from '../src/config-builder/types.ts';
+import type {
+  FederationConfig,
+  NavigationConfig,
+  ProductEmbedding,
+  RequiredConfig,
+  S3ConfigInput,
+  SlotOf,
+  SurfaceArrangement,
+} from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -64,12 +72,11 @@ export const config = {
   navigation: { navBar: true, menu: 'all', pageTabs: {} } as NavigationConfig<(typeof hierarchy.channelTypes)[number]>,
 
   /**
-   * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
-   * profile page. A surface listed here is total, so an id left out has no placement on it; a
-   * surface left out renders every registered placement in its declared order. The first id of a
-   * tab bar is also the tab a channel link opens on. The template lists none.
+   * The placements each surface shows, by id: `order` puts tabs on a channel's bar or sections on a
+   * settings or profile page first, and `hidden` leaves them off. A channel link opens on the first
+   * tab of its bar that needs no grant. The template arranges none.
    */
-  surfaces: {} as Partial<Record<SlotOf<(typeof hierarchy.channelTypes)[number]>, readonly string[]>>,
+  surfaces: {} as Partial<Record<SlotOf<(typeof hierarchy.channelTypes)[number]>, SurfaceArrangement>>,
 
   defaultRestrictions: {
     quotas: {

@@ -36,7 +36,7 @@ export function ConfirmForm({
   onConfirm,
   onCancel,
   pending,
-  allowOffline = false,
+  allowOffline,
   variant = 'default',
   icon: Icon,
   cancelLabel = 'c:cancel',

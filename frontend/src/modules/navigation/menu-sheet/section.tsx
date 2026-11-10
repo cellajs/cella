@@ -109,7 +109,7 @@ function MenuSheetSectionButton({
       <AnimatePresence initial={false}>
         {isSectionVisible && !!items.length && (
           <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
-            <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
+            <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
               <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" onClick={onToggleEditing}>
                 <Settings2Icon className="size-5" />
               </Button>

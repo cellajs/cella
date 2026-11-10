@@ -1,5 +1,5 @@
-import dayjs from 'dayjs';
 import i18n from 'i18next';
+import { clockTime } from '~/utils/date-short';
 
 /**
  * Formats a date as a full exact timestamp in the active language: "Thursday, Aug 20, 2026, 14:32". Meant for tooltips on
@@ -7,7 +7,7 @@ import i18n from 'i18next';
  */
 export const dateFull = (date?: string | null | Date) => {
   if (!date) return null;
-  const local = dayjs.utc(date).local();
-  const day = local.toDate().toLocaleDateString(i18n.language, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-  return `${day}, ${local.format('H:mm')}`;
+  const local = new Date(date);
+  const day = local.toLocaleDateString(i18n.language, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  return `${day}, ${clockTime(local)}`;
 };

@@ -26,7 +26,7 @@ interface MenuSheetHiddenToggleProps {
 
 const emptyChannelIds: string[] = [];
 
-function MenuSheetHiddenToggle({ onToggle, variant = 'hidden', count, channelIds = emptyChannelIds, dropItems }: MenuSheetHiddenToggleProps) {
+function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyChannelIds, dropItems }: MenuSheetHiddenToggleProps) {
   const { t } = useTranslation();
   const unseenCount = useUnseenCount(channelIds);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -94,7 +94,7 @@ interface MenuSheetHiddenGroupProps extends MenuSheetHiddenToggleProps {
 }
 
 /** The Hidden row with the hidden rows behind it, or the Archived row with the archived ones, for a section or a row's submenu. */
-export function MenuSheetHiddenGroup({ isSubmenu = false, isOpen, movesWithRow = false, children, ...toggleProps }: MenuSheetHiddenGroupProps) {
+export function MenuSheetHiddenGroup({ isSubmenu = false, isOpen, movesWithRow, children, ...toggleProps }: MenuSheetHiddenGroupProps) {
   const { count } = toggleProps;
 
   return (

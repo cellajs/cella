@@ -27,7 +27,7 @@ export function PhoneSearchChips({
   name,
   id,
   resultCount,
-  isSearching = false,
+  isSearching,
   disabled,
   groups,
   chips,

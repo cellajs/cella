@@ -241,7 +241,6 @@ export const ShouldAdvanceStepper: Story = {
   render: () => (
     <div className="w-[32rem]">
       <Stepper
-        initialStep={0}
         steps={[
           { id: 'invite', label: 'Invite' },
           { id: 'done', label: 'Done' },

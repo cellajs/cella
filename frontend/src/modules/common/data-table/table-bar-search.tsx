@@ -18,7 +18,7 @@ interface TableBarSearchProps extends Omit<SearchChipsFieldProps, OwnedProps> {
  * one width. Below `lg` it rests small and takes the row in use or filtering, the line under the bar clears it, and the
  * typed word's row carries the count.
  */
-export function TableBarSearch({ isFiltered, allowOfflineSearch = false, resultCount, className, ...props }: TableBarSearchProps) {
+export function TableBarSearch({ isFiltered, allowOfflineSearch, resultCount, className, ...props }: TableBarSearchProps) {
   const isCompact = useBreakpointBelow('lg');
   const isOnline = useOnlineManager();
   const isFetching = useIsFetching() > 0;

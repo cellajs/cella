@@ -1,7 +1,6 @@
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
-import { createUppy } from '~/modules/common/uploader/helpers/uppy-helpers';
 import { uploadResultsOf } from '~/modules/common/uploader/types';
 
 /** Upload and encoding together; past it the upload counts as failed. */
@@ -9,6 +8,8 @@ const uploadTimeoutMs = 5 * 60 * 1000;
 
 /** Uploads one file through the attachment template without a dialog and resolves with its row unpersisted; offline it resolves at once, stored on this device. */
 export const uploadAttachmentFile = async (file: File, organizationId: string): Promise<Attachment> => {
+  // Uppy and its plugins load with the first upload: the attachment module that imports this file runs at boot
+  const { createUppy } = await import('~/modules/common/uploader/helpers/uppy-helpers');
   const uppy = await createUppy(
     { restrictions: { ...appConfig.uppy.defaultRestrictions, allowedFileTypes: ['*/*'] } },
     { templateId: 'attachment', organizationId },

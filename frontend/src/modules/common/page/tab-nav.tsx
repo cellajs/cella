@@ -5,7 +5,6 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
 import {
-  assertSurfaceIds,
   getSlotDescriptors,
   isPlacementHidden,
   type PlacementDescriptor,
@@ -64,32 +63,6 @@ const toolParam = (params: unknown) => (params as { tool?: string } | undefined)
 /** The candidate a location shows: registry tabs match on the `$tool` param, route tabs on the route path. */
 const findActiveTab = (candidates: NavCandidate[], toolId: string | undefined, fullPath: string | undefined) =>
   toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === fullPath);
-
-/**
- * Startup check, once the router exists so route tabs count: a layout whose child routes declare `navTab` but which names
- * no `tabsSlot` renders an empty bar, and a `surfaces` id that names no placement hides a tab or section, both without an
- * error. Throws outside production; production logs it, since a crash over one misspelled id is the worse failure.
- */
-export function assertSurfaces(): void {
-  const routesById = getRoutesById();
-
-  try {
-    for (const [routeId, route] of Object.entries(routesById)) {
-      if (route.options?.staticData?.tabsSlot) continue;
-      if (getChildRoutes(route).some((child) => child.options?.staticData?.navTab)) {
-        throw new Error(`Route '${routeId}' has child routes with a navTab and declares no staticData.tabsSlot, so its tab bar stays empty`);
-      }
-    }
-    assertSurfaceIds((slot) => {
-      const parentRouteId = getTabsRouteId(slot);
-      const tabIds = parentRouteId ? getNavTabCandidates(parentRouteId).map((tab) => tab.id) : [];
-      return [...tabIds, ...getSlotDescriptors(slot).map((descriptor) => descriptor.id)];
-    });
-  } catch (error) {
-    if (appConfig.mode !== 'production') throw error;
-    console.error('[surfaces]', error);
-  }
-}
 
 /**
  * Every tab a surface declares, ungated and unordered: child routes with `staticData.navTab`, plus the tools of the parent's
@@ -187,7 +160,7 @@ export function guardNavTabs(
   }
   if (!needsLanding) return;
 
-  // The landing tab is the first one this surface resolves: the app's `surfaces` list sets it.
+  // The landing tab is the first one this surface resolves: the app's `surfaces` order sets it.
   const landing = resolveNavTabs(parentRouteId, options)[0];
   if (!landing) return;
 

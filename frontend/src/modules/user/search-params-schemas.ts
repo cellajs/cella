@@ -1,6 +1,6 @@
 import { zListUsersQuery } from 'sdk/zod.gen';
 import { z } from 'zod';
-import { csvSearchParam, listSearchDefaults, listSearchSchema } from '~/modules/common/search-params-schemas';
+import { csvSearchParam, listSearchDefaults, listSearchSchema, userSheetSearchSchema } from '~/modules/common/search-params-schemas';
 
 export const usersSearchDefaults = listSearchDefaults(zListUsersQuery);
 
@@ -10,5 +10,5 @@ export const accountSetValues = ['provisional'] as const;
 export const usersRouteSearchParamsSchema = listSearchSchema(zListUsersQuery).extend({
   role: zListUsersQuery.shape.role.catch(undefined),
   accounts: csvSearchParam(z.enum(accountSetValues)),
-  userSheetId: z.string().optional(),
+  ...userSheetSearchSchema.shape,
 });

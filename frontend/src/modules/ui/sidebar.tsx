@@ -116,7 +116,7 @@ export function SidebarMenuButton({
   return (
     <Tooltip>
       <TooltipTrigger render={button} />
-      <TooltipContent side="right" align="center" hidden={isMobile} {...tooltip} />
+      <TooltipContent side="right" hidden={isMobile} {...tooltip} />
     </Tooltip>
   );
 }

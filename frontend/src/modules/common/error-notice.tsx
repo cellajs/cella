@@ -5,6 +5,7 @@ import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
+import type { BoundaryType } from '~/lib/boundary';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Dialoger } from '~/modules/common/dialoger/provider';
@@ -12,10 +13,10 @@ import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { askForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import type { BoundaryType } from '~/routes/types';
 import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
 import { getErrorInfo } from '~/utils/get-error-info';
+import { isTearingDown } from '~/utils/teardown-user-state';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
@@ -77,6 +78,9 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
     resetErrorBoundary?.();
     window.location.replace(homePath);
   };
+
+  // The tab is leaving a page whose session is gone, which is all its errors say.
+  if (isTearingDown()) return null;
 
   return (
     <>

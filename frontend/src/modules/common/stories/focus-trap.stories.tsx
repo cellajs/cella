@@ -133,7 +133,7 @@ export const ContainFocus: Story = {
 export const ShouldCycleForwardOnTab: Story = {
   name: 'when Tab on last element, should wrap to first',
   tags: ['!dev', '!autodocs'],
-  render: () => <TrapWithButtons active label="Trap" />,
+  render: () => <TrapWithButtons active />,
   play: async ({ canvasElement, canvas, step }) => {
     const buttons = canvas.getAllByRole('button');
     const first = buttons[0];
@@ -158,7 +158,7 @@ export const ShouldCycleForwardOnTab: Story = {
 export const ShouldCycleBackwardOnShiftTab: Story = {
   name: 'when Shift+Tab on first element, should wrap to last',
   tags: ['!dev', '!autodocs'],
-  render: () => <TrapWithButtons active label="Trap" />,
+  render: () => <TrapWithButtons active />,
   play: async ({ canvasElement, canvas, step }) => {
     const buttons = canvas.getAllByRole('button');
     const first = buttons[0];
@@ -259,7 +259,7 @@ export const ShouldContainFocusOnOutsideClick: Story = {
 export const ShouldHandleMiddleElementFocus: Story = {
   name: 'when middle element has focus, Tab should move normally',
   tags: ['!dev', '!autodocs'],
-  render: () => <TrapWithButtons active label="Trap" count={4} />,
+  render: () => <TrapWithButtons active count={4} />,
   play: async ({ canvasElement, canvas, step }) => {
     const buttons = canvas.getAllByRole('button');
     const container = canvasElement.querySelector<HTMLElement>('[data-focus-guard]')!.parentElement!;

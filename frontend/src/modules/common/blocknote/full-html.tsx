@@ -150,7 +150,7 @@ export function BlockNoteFullHtml({
   className,
   dense = false,
   inline = false,
-  clickOpensPreview = false,
+  clickOpensPreview,
   tenantId,
   organizationId,
   onReady,

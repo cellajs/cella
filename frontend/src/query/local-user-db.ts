@@ -174,7 +174,11 @@ export function closeLocalUserDb(): void {
 
 /** Close the current per-user DB and delete it from disk: a hard sign-out. */
 export async function deleteLocalUserDb(): Promise<void> {
-  const userId = localUserId;
-  closeLocalUserDb();
-  if (userId) await Dexie.delete(`${appConfig.slug}:${userId}`);
+  if (localUserId) await deleteLocalUserDbOf(localUserId);
+}
+
+/** Deletes a user's database by id, closing it first when it is the bound one: for an account the page forgets before it binds it. */
+export async function deleteLocalUserDbOf(userId: string): Promise<void> {
+  if (localUserId === userId) closeLocalUserDb();
+  await Dexie.delete(`${appConfig.slug}:${userId}`);
 }

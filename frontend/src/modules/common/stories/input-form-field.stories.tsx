@@ -24,7 +24,7 @@ function InputFormFieldStory({
   description,
   placeholder,
   required,
-  type = 'text',
+  type,
   disabled,
   readOnly,
   icon,

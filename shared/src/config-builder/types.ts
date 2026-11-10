@@ -285,8 +285,8 @@ export interface ConfigStringArrays {
   uploadTemplateIds: readonly string[];
 }
 
-/** The placement surfaces that exist once per app, in the order they are declared; the rest belong to a channel. */
-export const singletonSlots = ['account.settings', 'account.preferences', 'home.sections', 'user.profile', 'system.tabs'] as const;
+/** The placement surfaces that exist once per app; the rest belong to a channel. */
+const singletonSlots = ['account.settings', 'account.preferences', 'home.sections', 'user.profile', 'system.tabs'] as const;
 
 export type SingletonSlot = (typeof singletonSlots)[number];
 
@@ -295,6 +295,14 @@ export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;
 
 /** Every placement surface of an app whose channel types are `C`. */
 export type SlotOf<C extends string> = ChannelSlotOf<C> | SingletonSlot;
+
+/** The app's arrangement of one surface, by placement id. An id that names no placement is skipped: a misspelled or renamed one leaves its placement in view. */
+export interface SurfaceArrangement {
+  /** Shown first, in this sequence; the other placements follow in their declared `order`. */
+  readonly order?: readonly string[];
+  /** Left off the surface, `locked` ones included. */
+  readonly hidden?: readonly string[];
+}
 
 /** How the app navigates; `C` is the app's channel types. */
 export interface NavigationConfig<C extends string = string> {
@@ -321,11 +329,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
   navigation: NavigationConfig<T['channelEntityTypes'][number] & string>;
-  /**
-   * Placement ids per surface, in display order. A listed surface is total: an id left out has no
-   * placement there. An unlisted surface renders every registered placement in its declared order.
-   */
-  surfaces: Partial<Record<SlotOf<T['channelEntityTypes'][number] & string>, readonly string[]>>;
+  surfaces: Partial<Record<SlotOf<T['channelEntityTypes'][number] & string>, SurfaceArrangement>>;
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   defaultRestrictions: {

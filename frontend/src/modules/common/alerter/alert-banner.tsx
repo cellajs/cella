@@ -25,17 +25,7 @@ export interface AlertBanner {
   contextMode?: AlertContextMode;
 }
 
-export function AlertBanner({
-  id,
-  icon: Icon,
-  children,
-  className,
-  title,
-  action,
-  variant = 'default',
-  animate = false,
-  contextMode = 'app',
-}: AlertBanner) {
+export function AlertBanner({ id, icon: Icon, children, className, title, action, variant, animate, contextMode }: AlertBanner) {
   const { t } = useTranslation();
   const alertsSeen = useAlertStore((state) => state.alertsSeen);
   const setAlertSeen = useAlertStore((state) => state.setAlertSeen);

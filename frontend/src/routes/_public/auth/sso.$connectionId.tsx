@@ -7,7 +7,6 @@ import { pageHead } from '~/utils/app-title';
 /** An institution's sign-in entry, by its connection id: the link an institution shares; lives under the sign-in framing. */
 export const Route = createFileRoute('/_public/auth/sso/$connectionId')({
   validateSearch: ssoEntryRouteSearchParamsSchema,
-  staticData: { isAuth: false },
   head: () => pageHead(i18n.t('c:sign_in')),
   component: SsoEntryPage,
 });

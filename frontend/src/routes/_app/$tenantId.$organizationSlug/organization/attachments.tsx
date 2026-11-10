@@ -5,9 +5,9 @@ import { OrganizationAttachmentsComponent } from '~/modules/organization/route-c
 import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization/attachments')({
+  staticData: { navTab: { id: 'attachments', label: 'c:attachment_other', description: 'c:tab_attachments.text' } },
   validateSearch: attachmentsRouteSearchParamsSchema,
   search: { middlewares: [stripSearchParams(attachmentsSearchDefaults)] },
-  staticData: { isAuth: true, navTab: { id: 'attachments', label: 'c:attachment_other', description: 'c:tab_attachments.text' } },
   head: ({ match }) => pageHead(`${i18n.t('c:attachment_other')} · ${match.context.organization?.name}`),
   component: OrganizationAttachmentsComponent,
 });

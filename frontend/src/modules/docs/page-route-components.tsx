@@ -5,7 +5,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 const ViewPage = lazyNamed(() => import('~/modules/page/view-page'), 'ViewPage');
 const DocsLandingPage = lazyNamed(() => import('~/modules/docs/docs-landing-page'), 'DocsLandingPage');
 
-const docsPageApi = getRouteApi('/_public/_content/docs/page/$');
+const docsPageApi = getRouteApi('/_public/docs/page/$');
 
 export function DocsIndexComponent() {
   return (

@@ -12,7 +12,7 @@ interface SubmitButtonProps extends Omit<ButtonProps, 'type'> {
 }
 
 /** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, ...props }: SubmitButtonProps) {
+export function SubmitButton({ onClick, children, allowOfflineDelete, loading, disabled, icon, ...props }: SubmitButtonProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 

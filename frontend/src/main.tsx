@@ -6,7 +6,6 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
 import '~/styling/tailwind.css';
-import '~/lib/dayjs';
 import '~/lib/i18n';
 import '~/lib/otel';
 import '~/modules'; // Composition root: registers every frontend module before first render
@@ -16,7 +15,6 @@ import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError, reportRejectedResponse } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
-import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { PersistedQueryProvider } from '~/query/persisted-query-provider';
@@ -41,9 +39,6 @@ client.interceptors.error.use((error, response, request) => {
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-// Both the module registry and the route tree are populated by now, so every listed id can be checked.
-assertSurfaces();
-
 if (appConfig.asciiArt.length) console.info(appConfig.asciiArt.join('\n'));
 
 initFaviconBadge(appConfig.mode);
@@ -54,7 +49,6 @@ initTextEditingObserver();
 initInputModality();
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.
-// `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
@@ -76,7 +70,6 @@ if (canonicalUrl) {
   }).render(
     <StrictMode>
       <Themer />
-      {/* With reduced motion asked for, motion/react jumps height, position, transform and layout changes; opacity still fades. */}
       <MotionConfig reducedMotion="user">
         {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
         <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>

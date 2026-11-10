@@ -192,7 +192,7 @@ export function HeaderCell<R, SR>({
 
         {resizable && <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} gap={0} />}
+      {closestEdge && <DropIndicator edge={closestEdge} />}
       {preview && createPortal(<div className="bg-background rounded border px-3 py-1.5 text-sm shadow-lg">{column.name}</div>, preview.container)}
     </>
   );

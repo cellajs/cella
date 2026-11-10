@@ -28,7 +28,7 @@ import type { OperationsRouteSearchParams } from '~/modules/docs/types';
 
 export function OperationsPage() {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<OperationsRouteSearchParams>({ from: '/_public/_content/docs/operations' });
+  const { search, setSearch } = useSearchParams<OperationsRouteSearchParams>({ from: '/_public/docs/operations' });
   const { q, filter, operationTag: activeTag } = search;
 
   const { prerender } = usePrerenderTrigger('operations');

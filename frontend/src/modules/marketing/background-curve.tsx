@@ -6,7 +6,7 @@ interface BackgroundCurveProps {
 }
 
 /** Decorative SVG curve at a gradient section edge; `position` places it at the section top or bottom. */
-export function BackgroundCurve({ height = 'clamp(3rem, 8vw, 8rem)', position = 'bottom' }: BackgroundCurveProps) {
+export function BackgroundCurve({ height = 'clamp(3rem, 8vw, 8rem)', position }: BackgroundCurveProps) {
   const isTop = position === 'top';
 
   return (

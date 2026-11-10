@@ -8,7 +8,7 @@ interface CountBadgeProps {
 }
 
 /** A 16px counter pill, compact from a thousand up (1.2k); the caller decides when it shows and where it sits. */
-export function CountBadge({ count, variant = 'primary', className }: CountBadgeProps) {
+export function CountBadge({ count, variant, className }: CountBadgeProps) {
   return (
     <span
       className={cn(

@@ -66,7 +66,7 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
   renderOption,
   clearable = false,
   disabled = false,
-  searchableTrigger = false,
+  searchableTrigger,
   placeholders: passedPlaceholders,
 }: ComboboxSelectProps<TOption>) {
   const { t } = useTranslation();
@@ -122,13 +122,12 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
       {searchableTrigger ? (
         <ComboboxInput
           placeholder={triggerText}
-          showTrigger
           showClear={clearable && !!selectedOption}
           detail={showPicked && selectedOption.detail}
           disabled={disabled}
           className="w-full"
         >
-          {showPicked && selectedOption.icon && <InputGroupAddon align="inline-start">{selectedOption.icon}</InputGroupAddon>}
+          {showPicked && selectedOption.icon && <InputGroupAddon>{selectedOption.icon}</InputGroupAddon>}
         </ComboboxInput>
       ) : (
         <ComboboxPrimitive.Trigger

@@ -68,16 +68,16 @@ export const AllEdges: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-8">
       <Container>
-        <DropIndicator edge="top" gap={0} />
+        <DropIndicator edge="top" />
       </Container>
       <Container>
-        <DropIndicator edge="bottom" gap={0} />
+        <DropIndicator edge="bottom" />
       </Container>
       <Container>
-        <DropIndicator edge="left" gap={0} />
+        <DropIndicator edge="left" />
       </Container>
       <Container>
-        <DropIndicator edge="right" gap={0} />
+        <DropIndicator edge="right" />
       </Container>
     </div>
   ),

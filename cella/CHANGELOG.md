@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.44.0](https://github.com/cellajs/cella/compare/0.43.0...0.44.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **frontend:** the app layout gates sign-in, route files keep to glue, and the router renders errors and pending loads ([#1789](https://github.com/cellajs/cella/issues/1789))
+* about counters roll their digits, and a lost demo session forgets the demo ([#1788](https://github.com/cellajs/cella/issues/1788))
+* surfaces order and hide placements by id, and the startup check goes ([#1784](https://github.com/cellajs/cella/issues/1784))
+* **frontend:** dates read in the active language, and Uppy and a second OTel line leave the boot path ([#1785](https://github.com/cellajs/cella/issues/1785))
+
+### 🎉 New features
+
+* about counters roll their digits, and a lost demo session forgets the demo ([#1788](https://github.com/cellajs/cella/issues/1788)) ([d91d122](https://github.com/cellajs/cella/commit/d91d122c83a7df4299a1118a560f4c8ea00d42b3))
+
+
+### 🐞 Bug fixes
+
+* **frontend:** dates read in the active language, and Uppy and a second OTel line leave the boot path ([#1785](https://github.com/cellajs/cella/issues/1785)) ([db0571e](https://github.com/cellajs/cella/commit/db0571eacf22d9e155d41e4014dae79c43463e93))
+
+
+### 🔧 Small improvements
+
+* **frontend:** drop defaults that repeat what the receiver already sets ([#1787](https://github.com/cellajs/cella/issues/1787)) ([aa41630](https://github.com/cellajs/cella/commit/aa416300e9ae4a986a4ac82f0b70941423db9d75))
+* **frontend:** the app layout gates sign-in, route files keep to glue, and the router renders errors and pending loads ([#1789](https://github.com/cellajs/cella/issues/1789)) ([f0d49c0](https://github.com/cellajs/cella/commit/f0d49c0871a1a3d38a3d5ca6ae9d98250f962ae4))
+* surfaces order and hide placements by id, and the startup check goes ([#1784](https://github.com/cellajs/cella/issues/1784)) ([d40a0de](https://github.com/cellajs/cella/commit/d40a0deaf35e9e6e78ac16aaa0ecc10e0033321f))
+
+## [0.43.0](https://github.com/cellajs/cella/compare/0.42.0...0.43.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** a guided TUI: home screen, deploy follow, env table, setup to a URL, releases and roll back ([#1768](https://github.com/cellajs/cella/issues/1768))
+* a demo keeps to its tenant and its session, and table dates read by day ([#1782](https://github.com/cellajs/cella/issues/1782))
+
+### 🎉 New features
+
+* a demo keeps to its tenant and its session, and table dates read by day ([#1782](https://github.com/cellajs/cella/issues/1782)) ([25dbea7](https://github.com/cellajs/cella/commit/25dbea79e6a8ddfb76cadcb7838734dac4ddfa89))
+* **infra:** a guided TUI: home screen, deploy follow, env table, setup to a URL, releases and roll back ([#1768](https://github.com/cellajs/cella/issues/1768)) ([7d94d8a](https://github.com/cellajs/cella/commit/7d94d8a4033693a47a2ab604820eab9ff04a01ac))
+
+
+### 🐞 Bug fixes
+
+* **frontend:** focus and loading on glass, and glass actions on the auth gradient ([#1781](https://github.com/cellajs/cella/issues/1781)) ([448753e](https://github.com/cellajs/cella/commit/448753e287f4b156d7040c6a62e80c48c8d51af2))
+* the apex answers the worker script, and a worker on another host than frontendUrl leaves it ([#1780](https://github.com/cellajs/cella/issues/1780)) ([8f40224](https://github.com/cellajs/cella/commit/8f4022489ce7f574505f26f213c8521a0ebbc0c6))
+
 ## [0.42.0](https://github.com/cellajs/cella/compare/0.41.0...0.42.0) (2026-11-09)
 
 

@@ -6,7 +6,6 @@ import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/unsubscribe')({
   validateSearch: zUnsubscribeNotificationsQuery,
-  staticData: { isAuth: false },
   head: () => pageHead(i18n.t('c:unsubscribe')),
   component: UnsubscribePage,
 });

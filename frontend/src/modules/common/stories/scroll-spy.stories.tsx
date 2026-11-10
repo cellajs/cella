@@ -233,7 +233,6 @@ const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: b
 
 const createStoryRouter = (label: string, showTests?: boolean) => {
   const rootRoute = createRootRoute({
-    staticData: { isAuth: false },
     component: () => (
       <>
         <Outlet />
@@ -242,7 +241,7 @@ const createStoryRouter = (label: string, showTests?: boolean) => {
     ),
   });
 
-  const catchAllRoute = createRoute({ getParentRoute: () => rootRoute, path: '$', staticData: { isAuth: false }, component: () => null });
+  const catchAllRoute = createRoute({ getParentRoute: () => rootRoute, path: '$', component: () => null });
 
   return createRouter({
     routeTree: rootRoute.addChildren([catchAllRoute]),

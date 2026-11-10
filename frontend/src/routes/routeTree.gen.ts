@@ -17,9 +17,9 @@ import { Route as AppHomeRouteImport } from './_app/home'
 import { Route as AppNRouteImport } from './_app/n'
 import { Route as AppSystemRouteRouteImport } from './_app/system/route'
 import { Route as AppWelcomeRouteImport } from './_app/welcome'
-import { Route as PublicContentRouteRouteImport } from './_public/_content/route'
 import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
+import { Route as PublicDocsRouteRouteImport } from './_public/docs/route'
 import { Route as PublicErrorRouteImport } from './_public/error'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
 import { Route as AppSystemToolRouteImport } from './_app/system/$tool'
@@ -27,7 +27,6 @@ import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organi
 import { Route as AppSystemRequestsRouteImport } from './_app/system/requests'
 import { Route as AppSystemTenantsRouteImport } from './_app/system/tenants'
 import { Route as AppSystemUsersRouteImport } from './_app/system/users'
-import { Route as PublicContentDocsRouteRouteImport } from './_public/_content/docs/route'
 import { Route as PublicMarketingAboutRouteImport } from './_public/_marketing/about'
 import { Route as PublicMarketingAccessibilityRouteImport } from './_public/_marketing/accessibility'
 import { Route as PublicMarketingContactRouteImport } from './_public/_marketing/contact'
@@ -40,23 +39,23 @@ import { Route as PublicAuthErrorRouteImport } from './_public/auth/error'
 import { Route as PublicAuthMfaRouteImport } from './_public/auth/mfa'
 import { Route as PublicAuthSignOutRouteImport } from './_public/auth/sign-out'
 import { Route as PublicAuthUnsubscribeRouteImport } from './_public/auth/unsubscribe'
+import { Route as PublicDocsIndexRouteImport } from './_public/docs/index'
+import { Route as PublicDocsOperationsRouteImport } from './_public/docs/operations'
+import { Route as PublicDocsOverviewRouteImport } from './_public/docs/overview'
+import { Route as PublicDocsPagesRouteImport } from './_public/docs/pages'
+import { Route as PublicDocsSchemasRouteImport } from './_public/docs/schemas'
 import { Route as AppTenantIdOrganizationSlugOrganizationRouteRouteImport } from './_app/$tenantId.$organizationSlug/organization/route'
-import { Route as PublicContentDocsIndexRouteImport } from './_public/_content/docs/index'
-import { Route as PublicContentDocsOperationsRouteImport } from './_public/_content/docs/operations'
-import { Route as PublicContentDocsOverviewRouteImport } from './_public/_content/docs/overview'
-import { Route as PublicContentDocsPagesRouteImport } from './_public/_content/docs/pages'
-import { Route as PublicContentDocsSchemasRouteImport } from './_public/_content/docs/schemas'
 import { Route as PublicMarketingLegalIndexRouteImport } from './_public/_marketing/legal.index'
 import { Route as PublicMarketingLegalSubjectRouteImport } from './_public/_marketing/legal.$subject'
 import { Route as PublicAuthConfirmLinkKindRouteImport } from './_public/auth/confirm-link.$kind'
 import { Route as PublicAuthEmailVerificationReasonRouteImport } from './_public/auth/email-verification.$reason'
 import { Route as PublicAuthSsoConnectionIdRouteImport } from './_public/auth/sso.$connectionId'
+import { Route as PublicDocsOperationsTableRouteImport } from './_public/docs/operations_.table'
+import { Route as PublicDocsPageSplatRouteImport } from './_public/docs/page.$'
 import { Route as AppTenantIdOrganizationSlugOrganizationToolRouteImport } from './_app/$tenantId.$organizationSlug/organization/$tool'
 import { Route as AppTenantIdOrganizationSlugOrganizationAttachmentsRouteImport } from './_app/$tenantId.$organizationSlug/organization/attachments'
 import { Route as AppTenantIdOrganizationSlugOrganizationMembersRouteImport } from './_app/$tenantId.$organizationSlug/organization/members'
 import { Route as AppTenantIdOrganizationSlugOrganizationSettingsRouteImport } from './_app/$tenantId.$organizationSlug/organization/settings'
-import { Route as PublicContentDocsOperationsTableRouteImport } from './_public/_content/docs/operations_.table'
-import { Route as PublicContentDocsPageSplatRouteImport } from './_public/_content/docs/page.$'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -96,10 +95,6 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const PublicContentRouteRoute = PublicContentRouteRouteImport.update({
-  id: '/_content',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
 const PublicMarketingRoute = PublicMarketingRouteImport.update({
   id: '/_marketing',
   getParentRoute: () => PublicRouteRoute,
@@ -107,6 +102,11 @@ const PublicMarketingRoute = PublicMarketingRouteImport.update({
 const PublicAuthRouteRoute = PublicAuthRouteRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicDocsRouteRoute = PublicDocsRouteRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicErrorRoute = PublicErrorRouteImport.update({
@@ -144,11 +144,6 @@ const AppSystemUsersRoute = AppSystemUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AppSystemRouteRoute,
-} as any)
-const PublicContentDocsRouteRoute = PublicContentDocsRouteRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => PublicContentRouteRoute,
 } as any)
 const PublicMarketingAboutRoute = PublicMarketingAboutRouteImport.update({
   id: '/about',
@@ -212,39 +207,36 @@ const PublicAuthUnsubscribeRoute = PublicAuthUnsubscribeRouteImport.update({
   path: '/unsubscribe',
   getParentRoute: () => PublicAuthRouteRoute,
 } as any)
+const PublicDocsIndexRoute = PublicDocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
+const PublicDocsOperationsRoute = PublicDocsOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
+const PublicDocsOverviewRoute = PublicDocsOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
+const PublicDocsPagesRoute = PublicDocsPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
+const PublicDocsSchemasRoute = PublicDocsSchemasRouteImport.update({
+  id: '/schemas',
+  path: '/schemas',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
 const AppTenantIdOrganizationSlugOrganizationRouteRoute =
   AppTenantIdOrganizationSlugOrganizationRouteRouteImport.update({
     id: '/organization',
     path: '/organization',
     getParentRoute: () => AppTenantIdOrganizationSlugRouteRoute,
-  } as any)
-const PublicContentDocsIndexRoute = PublicContentDocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PublicContentDocsRouteRoute,
-} as any)
-const PublicContentDocsOperationsRoute =
-  PublicContentDocsOperationsRouteImport.update({
-    id: '/operations',
-    path: '/operations',
-    getParentRoute: () => PublicContentDocsRouteRoute,
-  } as any)
-const PublicContentDocsOverviewRoute =
-  PublicContentDocsOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
-    getParentRoute: () => PublicContentDocsRouteRoute,
-  } as any)
-const PublicContentDocsPagesRoute = PublicContentDocsPagesRouteImport.update({
-  id: '/pages',
-  path: '/pages',
-  getParentRoute: () => PublicContentDocsRouteRoute,
-} as any)
-const PublicContentDocsSchemasRoute =
-  PublicContentDocsSchemasRouteImport.update({
-    id: '/schemas',
-    path: '/schemas',
-    getParentRoute: () => PublicContentDocsRouteRoute,
   } as any)
 const PublicMarketingLegalIndexRoute =
   PublicMarketingLegalIndexRouteImport.update({
@@ -276,6 +268,17 @@ const PublicAuthSsoConnectionIdRoute =
     path: '/sso/$connectionId',
     getParentRoute: () => PublicAuthRouteRoute,
   } as any)
+const PublicDocsOperationsTableRoute =
+  PublicDocsOperationsTableRouteImport.update({
+    id: '/operations_/table',
+    path: '/operations/table',
+    getParentRoute: () => PublicDocsRouteRoute,
+  } as any)
+const PublicDocsPageSplatRoute = PublicDocsPageSplatRouteImport.update({
+  id: '/page/$',
+  path: '/page/$',
+  getParentRoute: () => PublicDocsRouteRoute,
+} as any)
 const AppTenantIdOrganizationSlugOrganizationToolRoute =
   AppTenantIdOrganizationSlugOrganizationToolRouteImport.update({
     id: '/$tool',
@@ -300,30 +303,18 @@ const AppTenantIdOrganizationSlugOrganizationSettingsRoute =
     path: '/settings',
     getParentRoute: () => AppTenantIdOrganizationSlugOrganizationRouteRoute,
   } as any)
-const PublicContentDocsOperationsTableRoute =
-  PublicContentDocsOperationsTableRouteImport.update({
-    id: '/operations_/table',
-    path: '/operations/table',
-    getParentRoute: () => PublicContentDocsRouteRoute,
-  } as any)
-const PublicContentDocsPageSplatRoute =
-  PublicContentDocsPageSplatRouteImport.update({
-    id: '/page/$',
-    path: '/page/$',
-    getParentRoute: () => PublicContentDocsRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/system': typeof AppSystemRouteRouteWithChildren
   '/auth': typeof PublicAuthRouteRouteWithChildren
+  '/docs': typeof PublicDocsRouteRouteWithChildren
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
   '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
-  '/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
@@ -341,23 +332,23 @@ export interface FileRoutesByFullPath {
   '/auth/mfa': typeof PublicAuthMfaRoute
   '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribe': typeof PublicAuthUnsubscribeRoute
+  '/docs/operations': typeof PublicDocsOperationsRoute
+  '/docs/overview': typeof PublicDocsOverviewRoute
+  '/docs/pages': typeof PublicDocsPagesRoute
+  '/docs/schemas': typeof PublicDocsSchemasRoute
+  '/docs/': typeof PublicDocsIndexRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
-  '/docs/operations': typeof PublicContentDocsOperationsRoute
-  '/docs/overview': typeof PublicContentDocsOverviewRoute
-  '/docs/pages': typeof PublicContentDocsPagesRoute
-  '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/auth/confirm-link/$kind': typeof PublicAuthConfirmLinkKindRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
-  '/docs/': typeof PublicContentDocsIndexRoute
+  '/docs/operations/table': typeof PublicDocsOperationsTableRoute
+  '/docs/page/$': typeof PublicDocsPageSplatRoute
   '/legal/': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
-  '/docs/operations/table': typeof PublicContentDocsOperationsTableRoute
-  '/docs/page/$': typeof PublicContentDocsPageSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -386,31 +377,31 @@ export interface FileRoutesByTo {
   '/auth/mfa': typeof PublicAuthMfaRoute
   '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribe': typeof PublicAuthUnsubscribeRoute
+  '/docs/operations': typeof PublicDocsOperationsRoute
+  '/docs/overview': typeof PublicDocsOverviewRoute
+  '/docs/pages': typeof PublicDocsPagesRoute
+  '/docs/schemas': typeof PublicDocsSchemasRoute
+  '/docs': typeof PublicDocsIndexRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
-  '/docs/operations': typeof PublicContentDocsOperationsRoute
-  '/docs/overview': typeof PublicContentDocsOverviewRoute
-  '/docs/pages': typeof PublicContentDocsPagesRoute
-  '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/auth/confirm-link/$kind': typeof PublicAuthConfirmLinkKindRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
-  '/docs': typeof PublicContentDocsIndexRoute
+  '/docs/operations/table': typeof PublicDocsOperationsTableRoute
+  '/docs/page/$': typeof PublicDocsPageSplatRoute
   '/legal': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
-  '/docs/operations/table': typeof PublicContentDocsOperationsTableRoute
-  '/docs/page/$': typeof PublicContentDocsPageSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
   '/_app/system': typeof AppSystemRouteRouteWithChildren
-  '/_public/_content': typeof PublicContentRouteRouteWithChildren
   '/_public/auth': typeof PublicAuthRouteRouteWithChildren
+  '/_public/docs': typeof PublicDocsRouteRouteWithChildren
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/n': typeof AppNRoute
@@ -419,7 +410,6 @@ export interface FileRoutesById {
   '/_public/error': typeof PublicErrorRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
-  '/_public/_content/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/_app/system/$tool': typeof AppSystemToolRoute
   '/_app/system/organizations': typeof AppSystemOrganizationsRoute
   '/_app/system/requests': typeof AppSystemRequestsRoute
@@ -437,23 +427,23 @@ export interface FileRoutesById {
   '/_public/auth/mfa': typeof PublicAuthMfaRoute
   '/_public/auth/sign-out': typeof PublicAuthSignOutRoute
   '/_public/auth/unsubscribe': typeof PublicAuthUnsubscribeRoute
+  '/_public/docs/operations': typeof PublicDocsOperationsRoute
+  '/_public/docs/overview': typeof PublicDocsOverviewRoute
+  '/_public/docs/pages': typeof PublicDocsPagesRoute
+  '/_public/docs/schemas': typeof PublicDocsSchemasRoute
+  '/_public/docs/': typeof PublicDocsIndexRoute
   '/_app/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
-  '/_public/_content/docs/operations': typeof PublicContentDocsOperationsRoute
-  '/_public/_content/docs/overview': typeof PublicContentDocsOverviewRoute
-  '/_public/_content/docs/pages': typeof PublicContentDocsPagesRoute
-  '/_public/_content/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/_public/_marketing/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/_public/auth/confirm-link/$kind': typeof PublicAuthConfirmLinkKindRoute
   '/_public/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/_public/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
-  '/_public/_content/docs/': typeof PublicContentDocsIndexRoute
+  '/_public/docs/operations_/table': typeof PublicDocsOperationsTableRoute
+  '/_public/docs/page/$': typeof PublicDocsPageSplatRoute
   '/_public/_marketing/legal/': typeof PublicMarketingLegalIndexRoute
   '/_app/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/_app/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/_app/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/_app/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
-  '/_public/_content/docs/operations_/table': typeof PublicContentDocsOperationsTableRoute
-  '/_public/_content/docs/page/$': typeof PublicContentDocsPageSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -461,13 +451,13 @@ export interface FileRouteTypes {
     | '/'
     | '/system'
     | '/auth'
+    | '/docs'
     | '/account'
     | '/home'
     | '/n'
     | '/welcome'
     | '/error'
     | '/$tenantId/$organizationSlug'
-    | '/docs'
     | '/system/$tool'
     | '/system/organizations'
     | '/system/requests'
@@ -485,23 +475,23 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sign-out'
     | '/auth/unsubscribe'
-    | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
     | '/docs/pages'
     | '/docs/schemas'
+    | '/docs/'
+    | '/$tenantId/$organizationSlug/organization'
     | '/legal/$subject'
     | '/auth/confirm-link/$kind'
     | '/auth/email-verification/$reason'
     | '/auth/sso/$connectionId'
-    | '/docs/'
+    | '/docs/operations/table'
+    | '/docs/page/$'
     | '/legal/'
     | '/$tenantId/$organizationSlug/organization/$tool'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
-    | '/docs/operations/table'
-    | '/docs/page/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -530,30 +520,30 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sign-out'
     | '/auth/unsubscribe'
-    | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
     | '/docs/pages'
     | '/docs/schemas'
+    | '/docs'
+    | '/$tenantId/$organizationSlug/organization'
     | '/legal/$subject'
     | '/auth/confirm-link/$kind'
     | '/auth/email-verification/$reason'
     | '/auth/sso/$connectionId'
-    | '/docs'
+    | '/docs/operations/table'
+    | '/docs/page/$'
     | '/legal'
     | '/$tenantId/$organizationSlug/organization/$tool'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
-    | '/docs/operations/table'
-    | '/docs/page/$'
   id:
     | '__root__'
     | '/_app'
     | '/_public'
     | '/_app/system'
-    | '/_public/_content'
     | '/_public/auth'
+    | '/_public/docs'
     | '/_app/account'
     | '/_app/home'
     | '/_app/n'
@@ -562,7 +552,6 @@ export interface FileRouteTypes {
     | '/_public/error'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
-    | '/_public/_content/docs'
     | '/_app/system/$tool'
     | '/_app/system/organizations'
     | '/_app/system/requests'
@@ -580,23 +569,23 @@ export interface FileRouteTypes {
     | '/_public/auth/mfa'
     | '/_public/auth/sign-out'
     | '/_public/auth/unsubscribe'
+    | '/_public/docs/operations'
+    | '/_public/docs/overview'
+    | '/_public/docs/pages'
+    | '/_public/docs/schemas'
+    | '/_public/docs/'
     | '/_app/$tenantId/$organizationSlug/organization'
-    | '/_public/_content/docs/operations'
-    | '/_public/_content/docs/overview'
-    | '/_public/_content/docs/pages'
-    | '/_public/_content/docs/schemas'
     | '/_public/_marketing/legal/$subject'
     | '/_public/auth/confirm-link/$kind'
     | '/_public/auth/email-verification/$reason'
     | '/_public/auth/sso/$connectionId'
-    | '/_public/_content/docs/'
+    | '/_public/docs/operations_/table'
+    | '/_public/docs/page/$'
     | '/_public/_marketing/legal/'
     | '/_app/$tenantId/$organizationSlug/organization/$tool'
     | '/_app/$tenantId/$organizationSlug/organization/attachments'
     | '/_app/$tenantId/$organizationSlug/organization/members'
     | '/_app/$tenantId/$organizationSlug/organization/settings'
-    | '/_public/_content/docs/operations_/table'
-    | '/_public/_content/docs/page/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -662,13 +651,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_public/_content': {
-      id: '/_public/_content'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof PublicContentRouteRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
     '/_public/_marketing': {
       id: '/_public/_marketing'
       path: ''
@@ -681,6 +663,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof PublicAuthRouteRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/docs': {
+      id: '/_public/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof PublicDocsRouteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/error': {
@@ -731,13 +720,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/system/users'
       preLoaderRoute: typeof AppSystemUsersRouteImport
       parentRoute: typeof AppSystemRouteRoute
-    }
-    '/_public/_content/docs': {
-      id: '/_public/_content/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof PublicContentDocsRouteRouteImport
-      parentRoute: typeof PublicContentRouteRoute
     }
     '/_public/_marketing/about': {
       id: '/_public/_marketing/about'
@@ -823,47 +805,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAuthUnsubscribeRouteImport
       parentRoute: typeof PublicAuthRouteRoute
     }
+    '/_public/docs/': {
+      id: '/_public/docs/'
+      path: '/'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof PublicDocsIndexRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/_public/docs/operations': {
+      id: '/_public/docs/operations'
+      path: '/operations'
+      fullPath: '/docs/operations'
+      preLoaderRoute: typeof PublicDocsOperationsRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/_public/docs/overview': {
+      id: '/_public/docs/overview'
+      path: '/overview'
+      fullPath: '/docs/overview'
+      preLoaderRoute: typeof PublicDocsOverviewRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/_public/docs/pages': {
+      id: '/_public/docs/pages'
+      path: '/pages'
+      fullPath: '/docs/pages'
+      preLoaderRoute: typeof PublicDocsPagesRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/_public/docs/schemas': {
+      id: '/_public/docs/schemas'
+      path: '/schemas'
+      fullPath: '/docs/schemas'
+      preLoaderRoute: typeof PublicDocsSchemasRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
     '/_app/$tenantId/$organizationSlug/organization': {
       id: '/_app/$tenantId/$organizationSlug/organization'
       path: '/organization'
       fullPath: '/$tenantId/$organizationSlug/organization'
       preLoaderRoute: typeof AppTenantIdOrganizationSlugOrganizationRouteRouteImport
       parentRoute: typeof AppTenantIdOrganizationSlugRouteRoute
-    }
-    '/_public/_content/docs/': {
-      id: '/_public/_content/docs/'
-      path: '/'
-      fullPath: '/docs/'
-      preLoaderRoute: typeof PublicContentDocsIndexRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
-    }
-    '/_public/_content/docs/operations': {
-      id: '/_public/_content/docs/operations'
-      path: '/operations'
-      fullPath: '/docs/operations'
-      preLoaderRoute: typeof PublicContentDocsOperationsRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
-    }
-    '/_public/_content/docs/overview': {
-      id: '/_public/_content/docs/overview'
-      path: '/overview'
-      fullPath: '/docs/overview'
-      preLoaderRoute: typeof PublicContentDocsOverviewRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
-    }
-    '/_public/_content/docs/pages': {
-      id: '/_public/_content/docs/pages'
-      path: '/pages'
-      fullPath: '/docs/pages'
-      preLoaderRoute: typeof PublicContentDocsPagesRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
-    }
-    '/_public/_content/docs/schemas': {
-      id: '/_public/_content/docs/schemas'
-      path: '/schemas'
-      fullPath: '/docs/schemas'
-      preLoaderRoute: typeof PublicContentDocsSchemasRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
     }
     '/_public/_marketing/legal/': {
       id: '/_public/_marketing/legal/'
@@ -900,6 +882,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAuthSsoConnectionIdRouteImport
       parentRoute: typeof PublicAuthRouteRoute
     }
+    '/_public/docs/operations_/table': {
+      id: '/_public/docs/operations_/table'
+      path: '/operations/table'
+      fullPath: '/docs/operations/table'
+      preLoaderRoute: typeof PublicDocsOperationsTableRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/_public/docs/page/$': {
+      id: '/_public/docs/page/$'
+      path: '/page/$'
+      fullPath: '/docs/page/$'
+      preLoaderRoute: typeof PublicDocsPageSplatRouteImport
+      parentRoute: typeof PublicDocsRouteRoute
+    }
     '/_app/$tenantId/$organizationSlug/organization/$tool': {
       id: '/_app/$tenantId/$organizationSlug/organization/$tool'
       path: '/$tool'
@@ -927,20 +923,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenantId/$organizationSlug/organization/settings'
       preLoaderRoute: typeof AppTenantIdOrganizationSlugOrganizationSettingsRouteImport
       parentRoute: typeof AppTenantIdOrganizationSlugOrganizationRouteRoute
-    }
-    '/_public/_content/docs/operations_/table': {
-      id: '/_public/_content/docs/operations_/table'
-      path: '/operations/table'
-      fullPath: '/docs/operations/table'
-      preLoaderRoute: typeof PublicContentDocsOperationsTableRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
-    }
-    '/_public/_content/docs/page/$': {
-      id: '/_public/_content/docs/page/$'
-      path: '/page/$'
-      fullPath: '/docs/page/$'
-      preLoaderRoute: typeof PublicContentDocsPageSplatRouteImport
-      parentRoute: typeof PublicContentDocsRouteRoute
     }
   }
 }
@@ -1029,44 +1011,6 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
   AppRouteRouteChildren,
 )
 
-interface PublicContentDocsRouteRouteChildren {
-  PublicContentDocsOperationsRoute: typeof PublicContentDocsOperationsRoute
-  PublicContentDocsOverviewRoute: typeof PublicContentDocsOverviewRoute
-  PublicContentDocsPagesRoute: typeof PublicContentDocsPagesRoute
-  PublicContentDocsSchemasRoute: typeof PublicContentDocsSchemasRoute
-  PublicContentDocsIndexRoute: typeof PublicContentDocsIndexRoute
-  PublicContentDocsOperationsTableRoute: typeof PublicContentDocsOperationsTableRoute
-  PublicContentDocsPageSplatRoute: typeof PublicContentDocsPageSplatRoute
-}
-
-const PublicContentDocsRouteRouteChildren: PublicContentDocsRouteRouteChildren =
-  {
-    PublicContentDocsOperationsRoute: PublicContentDocsOperationsRoute,
-    PublicContentDocsOverviewRoute: PublicContentDocsOverviewRoute,
-    PublicContentDocsPagesRoute: PublicContentDocsPagesRoute,
-    PublicContentDocsSchemasRoute: PublicContentDocsSchemasRoute,
-    PublicContentDocsIndexRoute: PublicContentDocsIndexRoute,
-    PublicContentDocsOperationsTableRoute:
-      PublicContentDocsOperationsTableRoute,
-    PublicContentDocsPageSplatRoute: PublicContentDocsPageSplatRoute,
-  }
-
-const PublicContentDocsRouteRouteWithChildren =
-  PublicContentDocsRouteRoute._addFileChildren(
-    PublicContentDocsRouteRouteChildren,
-  )
-
-interface PublicContentRouteRouteChildren {
-  PublicContentDocsRouteRoute: typeof PublicContentDocsRouteRouteWithChildren
-}
-
-const PublicContentRouteRouteChildren: PublicContentRouteRouteChildren = {
-  PublicContentDocsRouteRoute: PublicContentDocsRouteRouteWithChildren,
-}
-
-const PublicContentRouteRouteWithChildren =
-  PublicContentRouteRoute._addFileChildren(PublicContentRouteRouteChildren)
-
 interface PublicAuthRouteRouteChildren {
   PublicAuthAuthenticateRoute: typeof PublicAuthAuthenticateRoute
   PublicAuthConfirmSignInRoute: typeof PublicAuthConfirmSignInRoute
@@ -1098,6 +1042,30 @@ const PublicAuthRouteRouteWithChildren = PublicAuthRouteRoute._addFileChildren(
   PublicAuthRouteRouteChildren,
 )
 
+interface PublicDocsRouteRouteChildren {
+  PublicDocsOperationsRoute: typeof PublicDocsOperationsRoute
+  PublicDocsOverviewRoute: typeof PublicDocsOverviewRoute
+  PublicDocsPagesRoute: typeof PublicDocsPagesRoute
+  PublicDocsSchemasRoute: typeof PublicDocsSchemasRoute
+  PublicDocsIndexRoute: typeof PublicDocsIndexRoute
+  PublicDocsOperationsTableRoute: typeof PublicDocsOperationsTableRoute
+  PublicDocsPageSplatRoute: typeof PublicDocsPageSplatRoute
+}
+
+const PublicDocsRouteRouteChildren: PublicDocsRouteRouteChildren = {
+  PublicDocsOperationsRoute: PublicDocsOperationsRoute,
+  PublicDocsOverviewRoute: PublicDocsOverviewRoute,
+  PublicDocsPagesRoute: PublicDocsPagesRoute,
+  PublicDocsSchemasRoute: PublicDocsSchemasRoute,
+  PublicDocsIndexRoute: PublicDocsIndexRoute,
+  PublicDocsOperationsTableRoute: PublicDocsOperationsTableRoute,
+  PublicDocsPageSplatRoute: PublicDocsPageSplatRoute,
+}
+
+const PublicDocsRouteRouteWithChildren = PublicDocsRouteRoute._addFileChildren(
+  PublicDocsRouteRouteChildren,
+)
+
 interface PublicMarketingRouteChildren {
   PublicMarketingAboutRoute: typeof PublicMarketingAboutRoute
   PublicMarketingAccessibilityRoute: typeof PublicMarketingAccessibilityRoute
@@ -1123,15 +1091,15 @@ const PublicMarketingRouteWithChildren = PublicMarketingRoute._addFileChildren(
 )
 
 interface PublicRouteRouteChildren {
-  PublicContentRouteRoute: typeof PublicContentRouteRouteWithChildren
   PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
+  PublicDocsRouteRoute: typeof PublicDocsRouteRouteWithChildren
   PublicMarketingRoute: typeof PublicMarketingRouteWithChildren
   PublicErrorRoute: typeof PublicErrorRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
-  PublicContentRouteRoute: PublicContentRouteRouteWithChildren,
   PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
+  PublicDocsRouteRoute: PublicDocsRouteRouteWithChildren,
   PublicMarketingRoute: PublicMarketingRouteWithChildren,
   PublicErrorRoute: PublicErrorRoute,
 }

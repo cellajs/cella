@@ -33,7 +33,7 @@ export function MembersTableBar({
   queryKey,
   columns,
   setColumns,
-  isSheet = false,
+  isSheet,
   canUpdate,
   clearSelection,
 }: MembersTableBarProps) {

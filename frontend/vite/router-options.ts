@@ -4,6 +4,6 @@ export const routerOptions = {
   autoCodeSplitting: true,
   routesDirectory: 'src/routes',
   generatedRouteTree: 'src/routes/routeTree.gen.ts',
-  // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
-  routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
+  // Helpers beside the routes without the `-` prefix: the router and the generated tree
+  routeFileIgnorePattern: '(router\\.ts|routeTree\\.gen\\.ts)$',
 } as const;

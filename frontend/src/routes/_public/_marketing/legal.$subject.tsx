@@ -10,7 +10,6 @@ export const Route = createFileRoute('/_public/_marketing/legal/$subject')({
     parse: (params) => ({ subject: z.enum(legalSubjects).catch(defaultLegalSubject).parse(params.subject) }),
     stringify: (params) => ({ subject: params.subject }),
   },
-  staticData: { isAuth: false },
   head: ({ params }) => pageHead(i18n.t(legalConfig[params.subject].label)),
   component: LegalPage,
 });

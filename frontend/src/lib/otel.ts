@@ -1,16 +1,17 @@
-import { trace } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { StackContextManager, TracerProvider } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
 import { isMapleOptedIn } from '~/env';
 
-// `@opentelemetry/instrumentation` and `-fetch` are pinned to the line @maple-dev/browser depends on (package.json),
-// so the boot bundle carries one copy of each, shared with Maple's.
+// The OpenTelemetry packages here follow the line @maple-dev/browser depends on (package.json), so the boot bundle
+// carries one copy of each, shared with Maple's.
 
 /** Select Maple tracing or the development tracer so exactly one provider registers. */
 export const mapleEnabled = !!appConfig.maplePublicIngestKey && (appConfig.mode !== 'development' || isMapleOptedIn);
@@ -19,12 +20,14 @@ export const mapleEnabled = !!appConfig.maplePublicIngestKey && (appConfig.mode 
 export const spanStore = createSpanStore({ maxSpans: 500 });
 
 if (!mapleEnabled) {
-  const provider = new WebTracerProvider({
+  const provider = new TracerProvider({
     resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: `${appConfig.slug}-frontend`, 'deployment.environment.name': appConfig.mode }),
     spanProcessors: [createSpanStoreProcessor({ store: spanStore })],
   });
 
-  provider.register();
+  trace.setGlobalTracerProvider(provider);
+  propagation.setGlobalPropagator(new CompositePropagator({ propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()] }));
+  context.setGlobalContextManager(new StackContextManager().enable());
 
   // Guarded for test environments where appConfig is partially mocked.
   if (appConfig.backendUrl) {
