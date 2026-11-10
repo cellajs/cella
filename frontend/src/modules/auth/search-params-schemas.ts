@@ -21,3 +21,9 @@ export const authErrorRouteSearchParamsSchema = z.object({ tokenId: z.string().o
 
 /** The authorization server's interaction id, carried through sign-in and back. */
 export const consentRouteSearchParamsSchema = z.object({ uid: z.string() });
+
+/** `force` skips the unsaved-work question: the account is gone, so nothing can save. `redirect` names the same-origin page to open once signed out; the about page without one. */
+export const signOutRouteSearchParamsSchema = z.object({ force: booleanSearchParam, redirect: z.string().optional() });
+
+/** `provider` names the OAuth provider whose callback sent the person to verify their address. */
+export const emailVerificationRouteSearchParamsSchema = z.object({ provider: z.string().optional() });

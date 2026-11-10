@@ -1,37 +1,15 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { z } from 'zod';
-import { errorSearchSchema } from '~/modules/common/search-params-schemas';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { meAuthQueryOptions } from '~/modules/me/query';
-import { toastTypeBySeverity } from '~/query/on-error';
-import { queryClient } from '~/query/query-client';
-import { withSuspenseSpinner } from '~/routes/-route-utils';
+import { withSuspenseSpinner } from '~/modules/common/with-suspense';
+import { AccountPage } from '~/modules/me/account-page';
+import { accountBeforeLoad, accountLoader } from '~/modules/me/route-logic';
+import { accountRouteSearchParamsSchema } from '~/modules/me/search-params-schemas';
 import { pageHead } from '~/utils/app-title';
-import { getErrorInfo } from '~/utils/get-error-info';
-import { lazyNamed } from '~/utils/lazy-named';
 
-const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'AccountPage');
-
-/**
- * Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. `connect`
- * names an institution's connection the authentication card offers to connect: where an SSO recovery link leads.
- */
 export const Route = createFileRoute('/_app/account')({
-  staticData: { isAuth: true },
-  validateSearch: errorSearchSchema.extend({ connect: z.uuid().optional().catch(undefined) }),
+  validateSearch: accountRouteSearchParamsSchema,
+  beforeLoad: ({ search }) => accountBeforeLoad(search),
+  loader: accountLoader,
   head: () => pageHead(i18n.t('c:account_settings')),
-  beforeLoad: ({ search }) => {
-    if (search.error) {
-      const { title, message } = getErrorInfo({ errorFromQuery: search.error });
-      toaster[toastTypeBySeverity[search.severity ?? 'warn']](title, { description: message || undefined });
-      throw redirect({ to: '/account', search: {}, replace: true });
-    }
-  },
-  // The stored entry paints at once and revalidates behind it.
-  loader: async () => {
-    await queryClient.query({ ...meAuthQueryOptions(), staleTime: 'static' });
-    void queryClient.query(meAuthQueryOptions()).catch(() => {});
-  },
   component: withSuspenseSpinner(AccountPage),
 });

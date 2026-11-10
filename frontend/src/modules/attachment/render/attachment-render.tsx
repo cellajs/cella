@@ -6,7 +6,7 @@ import { useDownloader } from '~/hooks/use-downloader';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner, Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -64,7 +64,7 @@ export function AttachmentRender({
     );
   }
 
-  if (!url) return <Spinner size="lg" className="mt-[45vh]" />;
+  if (!url) return <PageSpinner />;
 
   const kind = renderKinds.find((renderKind) => type.includes(renderKind));
 

@@ -48,7 +48,7 @@ function sortOperations(operations: GenOperationSummary[], sortColumns: SortColu
 export function OperationsTable() {
   const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
-  const { search, setSearch } = useSearchParams<OperationsTableRouteSearchParams>({ from: '/_public/_content/docs/operations_/table' });
+  const { search, setSearch } = useSearchParams<OperationsTableRouteSearchParams>({ from: '/_public/docs/operations_/table' });
   const { q, filter } = search;
 
   const { sortColumns, setSortColumns } = useSortColumns(search.sort, search.order, setSearch);

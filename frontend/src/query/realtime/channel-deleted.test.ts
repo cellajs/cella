@@ -46,7 +46,7 @@ vi.mock('~/query/realtime/catchup-processor', () => ({
   isOpaqueScope: (organizationId: string, type: string) => opaque.has(`${organizationId}:${type}`),
 }));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-source' }));
-vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
+vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: vi.fn(), state: { matches: [] } }) }));
 
 stubLocalStorage();
 

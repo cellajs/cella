@@ -1,7 +1,7 @@
 import { type ReactNode, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
@@ -17,7 +17,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   return (
     <>
       <MarketingNav />
-      <Suspense fallback={<Spinner size="lg" className="mt-[45vh]" />}>
+      <Suspense fallback={<PageSpinner />}>
         <main className="focus:outline-hidden">
           {/* The gradient keeps the hero's height, centered and clipped: a short header shows its middle, unsquashed */}
           <section className="rich-gradient relative overflow-hidden pt-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">

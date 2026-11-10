@@ -29,11 +29,10 @@ function Table() {
 }
 
 const createTestRouter = (url: string) => {
-  const rootRoute = createRootRoute({ staticData: { isAuth: false }, component: Outlet });
+  const rootRoute = createRootRoute({ component: Outlet });
   const tableRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/table',
-    staticData: { isAuth: false },
     validateSearch: (search: Record<string, unknown>) => ({
       q: search.q as string | undefined,
       attachmentDialogId: search.attachmentDialogId as string | undefined,

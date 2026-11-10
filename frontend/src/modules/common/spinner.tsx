@@ -20,3 +20,8 @@ export function Spinner({ size = 'md', className, noDelay = false }: SpinnerProp
     </div>
   );
 }
+
+/** The spinner of a page or pane still loading, where its content will be. */
+export function PageSpinner() {
+  return <Spinner size="lg" className="mt-[45vh]" />;
+}

@@ -20,13 +20,15 @@ Never annotate component declarations with `React.FC` or `FC`. Use `ComponentTyp
 
 ## Routes
 
-Routes are files in `src/routes/`, and the router's Vite plugin generates `routeTree.gen.ts` from them. A route file only declares its path, `staticData` and glue; the page itself lives in a module. The layouts:
+Routes are files in `src/routes/`, and the router's Vite plugin generates `routeTree.gen.ts` from them. A route file declares its path, `staticData` and glue, and imports its page: the plugin splits every `component` into a chunk of its own. The page, its `beforeLoad` and `loader` logic and its search schema live in the module that owns the page (`route-components.tsx`, `route-logic.ts`, `search-params-schemas.ts`). The layouts:
 
-- `_public/`: pages anyone can open, with `_marketing/` and `_content/` (public content such as the docs) below it.
-- `_app/`: pages behind sign-in.
+- `_public/`: pages anyone can open, with `_marketing/`, `auth/` and `docs/` below it.
+- `_app/`: pages behind sign-in. Its `beforeLoad` is the gate: a signed-out visit goes to sign in and comes back. A page under `_public` that needs an account calls `requireSession` in its own `beforeLoad`.
 - `_app/$tenantId.$organizationSlug/`: pages inside one organization.
 
-A trailing underscore (`page_.$id.edit.tsx`) takes a route out of its parent's component nesting. Helpers shared by route files sit in `-route-utils.tsx`.
+A layout names itself in `staticData.boundary`. The router's default error and not-found components read from it which layouts still stand around a failed route, and from `staticData.errorHome` where their home button leads. A route whose loader or page throws `notFound()` declares `notFoundComponent` itself. A load that outlasts a second shows the default pending spinner where the page will be.
+
+Route options read in one order: `staticData`, `params`, `validateSearch`, `search`, `beforeLoad`, `loaderDeps`, `loader`, `head`, then the components, `component` last. A trailing underscore (`page_..edit.tsx`) takes a route out of its parent's component nesting. A `-` prefix keeps a helper file out of the route tree; those shared by route files sit in `-route-utils.tsx`.
 
 ## Modules and placements
 

@@ -1,14 +1,15 @@
 import { createRouter } from '@tanstack/react-router';
+import { type BoundaryType, boundaryOf } from '~/lib/boundary';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { PageSpinner } from '~/modules/common/spinner';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { uiStore } from '~/modules/ui/ui-store';
 import { streamManager } from '~/query/realtime/stream-manager';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
-import { createNotFoundComponent } from '~/routes/-route-utils';
+import { RouteErrorComponent, RouteNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';
 import { parseSearch, stringifySearch } from '~/routes/-search-serializer';
 import { routeTree } from '~/routes/routeTree.gen';
-import type { BoundaryType } from '~/routes/types';
 import { setHasNavigated, setSkipPageEnter } from '~/utils/nav-transition';
 
 /** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
@@ -19,17 +20,19 @@ export const router = createRouter({
   routeTree,
   defaultPreload: false,
   context: {},
-  defaultPendingMinMs: 0,
   // Every search value is a string and a list its comma-separated values; a route schema coerces the rest
   parseSearch,
   stringifySearch,
-  // Covers not-founds scoped to an intermediate route; the root notFoundComponent only handles the root match.
-  defaultNotFoundComponent: createNotFoundComponent('public'),
+  // Rendered where the route failed; both read the layouts still standing from `staticData.boundary`
+  defaultErrorComponent: RouteErrorComponent,
+  defaultNotFoundComponent: RouteNotFoundComponent,
+  // A load that outlasts `defaultPendingMs` shows the spinner where the page will be; on a cold load that is the whole page
+  defaultPendingComponent: PageSpinner,
+  defaultPendingMs: 1000,
+  defaultPendingMinMs: 0,
 });
 
 setRouter(router);
-
-const getBoundary = (staticData: ({ boundary?: BoundaryType } | undefined)[]) => staticData.findLast((data) => data?.boundary)?.boundary;
 
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;
@@ -58,8 +61,8 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   // Matched by path only: static data lives on the routes, and the load that follows validates the search.
   const [pendingRoutes] = router.getMatchedRoutes(toLocation.pathname);
   cleanupOnBoundaryChange(
-    getBoundary(router.state.matches.map((match) => match.staticData)),
-    getBoundary(pendingRoutes.map((route) => route.options.staticData)),
+    boundaryOf(router.state.matches.map((match) => match.staticData)),
+    boundaryOf(pendingRoutes.map((route) => route.options.staticData)),
   );
 
   // A forward navigation staying on the same leaf route has no scroll delta to mask.

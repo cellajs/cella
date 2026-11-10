@@ -64,7 +64,7 @@ export function PagesSidebar() {
   const pages = useVisibleDocPages();
   const pageTree = buildPageNodeTree(pages);
   // The docs page's slug, which may contain slashes (sync-engine/cdc); undefined off a docs page
-  const activePageId = useMatch({ from: '/_public/_content/docs/page/$', shouldThrow: false, select: (match) => match.params._splat }) || undefined;
+  const activePageId = useMatch({ from: '/_public/docs/page/$', shouldThrow: false, select: (match) => match.params._splat }) || undefined;
 
   // The active page's ancestors are open from the first render, so the sheet opens expanded and Base UI skips the mount keyframe
   const [expandedIds, setExpandedIds] = useState(() => expandAncestors(new Set(), activePageId, pages));

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useUrlSheet } from '~/modules/common/sheeter/use-url-sheet';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { userQueryOptions } from '~/modules/user/query';
 import { UserProfile } from '~/modules/user/user-profile';
 import { useUserStore } from '~/modules/user/user-store';
@@ -16,7 +16,7 @@ function UserSheet({ id, organizationId }: { id: string; organizationId: string 
 
   const { data: user, isLoading, isError } = useQuery(userQueryOptions(id));
 
-  if (isLoading) return <Spinner size="lg" className="mt-[45vh]" />;
+  if (isLoading) return <PageSpinner />;
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
   if (!user)

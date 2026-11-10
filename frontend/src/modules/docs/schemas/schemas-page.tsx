@@ -15,7 +15,7 @@ import { collectTagKinds } from '~/modules/docs/tag-table';
 /** All component schemas from the OpenAPI spec, in the buckets the schema-kind tags define. */
 export function SchemasPage() {
   const { t } = useTranslation();
-  const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });
+  const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/docs/schemas' });
 
   const { prerender } = usePrerenderTrigger('schemas');
 
