@@ -6,7 +6,7 @@ import type { UserModel } from '#/modules/user/user-db';
 import { insertUsers } from '#/modules/user/user-queries';
 
 /** RFC 2606 reserves `.invalid` for names that resolve nowhere: an anonymous account's placeholder address lives under it. */
-export const anonymousAddressDomain = 'anonymous.invalid';
+const anonymousAddressDomain = 'anonymous.invalid';
 
 interface InsertAnonymousUserOpts {
   id: string;
