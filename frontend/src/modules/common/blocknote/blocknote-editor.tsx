@@ -93,7 +93,7 @@ export function BlockNote({
   className,
   defaultValue = '',
   trailingBlock = true,
-  clickOpensPreview = false,
+  clickOpensPreview,
   dense = false,
   headingLevels = [1, 2, 3],
   editable = true,

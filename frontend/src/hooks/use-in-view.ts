@@ -11,7 +11,7 @@ interface UseInViewOptions {
  * Tracks whether an element intersects the viewport. Returns a callback ref, so it follows an element that mounts
  * late or remounts; a detached element reads as out of view unless `once` already latched it.
  */
-export function useInView({ once = false, threshold = 0 }: UseInViewOptions = {}) {
+export function useInView({ once, threshold = 0 }: UseInViewOptions = {}) {
   const [inView, setInView] = useState(false);
 
   const ref = useCallback(

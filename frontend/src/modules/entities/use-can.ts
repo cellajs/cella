@@ -65,7 +65,7 @@ export const userAccess = (user: { id: string } | null, isSystemAdmin: boolean, 
  * authorizes a session, with no system-admin bypass.
  * A signed-in user is denied until the memberships load; without a user it asks as anonymous and fetches none.
  */
-export function useCan({ asMember = false, ignoreArchive = false }: { asMember?: boolean; ignoreArchive?: boolean } = {}) {
+export function useCan({ asMember, ignoreArchive }: { asMember?: boolean; ignoreArchive?: boolean } = {}) {
   const user = useUserStore((state) => state.user);
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
   const { data: myMemberships } = useQuery({ ...myMembershipsQueryOptions(), enabled: !!user });

@@ -10,7 +10,7 @@ interface DateTooltipProps {
 }
 
 /** A timestamp (timeago or short date) in a span that shows the exact date and time on hover; the span is the only box it adds. */
-export function DateTooltip({ date, children, className, side = 'bottom' }: DateTooltipProps) {
+export function DateTooltip({ date, children, className, side }: DateTooltipProps) {
   const content = dateFull(date);
   if (!content) return <span className={className}>{children}</span>;
 

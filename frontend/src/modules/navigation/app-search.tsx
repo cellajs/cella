@@ -51,7 +51,7 @@ interface SearchResultBlockProps {
   onRemove?: (item: SearchResult) => void;
 }
 
-function SearchResultBlock({ results, entityType, label, hideSeparator = false, collapsed, onToggleCollapsed, onRemove }: SearchResultBlockProps) {
+function SearchResultBlock({ results, entityType, label, hideSeparator, collapsed, onToggleCollapsed, onRemove }: SearchResultBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());

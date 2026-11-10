@@ -43,7 +43,7 @@ interface FocusTrapProps {
   containFocus?: boolean;
 }
 
-export function FocusTrap({ children, active = true, initialFocus = false, returnFocus = false, containFocus = false }: FocusTrapProps) {
+export function FocusTrap({ children, active = true, initialFocus, returnFocus, containFocus }: FocusTrapProps) {
   const trapRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement>(null);
 

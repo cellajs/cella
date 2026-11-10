@@ -18,7 +18,7 @@ type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
 } & Removable;
 
 /** An entity as a chip that starts with its avatar. */
-export function EntityChip({ type, id, name, url, icon, size = 'default', className, children, ...props }: EntityChipProps) {
+export function EntityChip({ type, id, name, url, icon, size, className, children, ...props }: EntityChipProps) {
   const isUser = type === 'user';
 
   return (

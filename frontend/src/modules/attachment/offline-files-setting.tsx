@@ -123,9 +123,7 @@ export function OfflineFilesSetting() {
     <div className="[--bar-width:min(100%,28.75rem)]">
       <SliderPrimitive.Root
         value={dragged ?? pending ?? current}
-        min={0}
         max={lastIndex}
-        step={1}
         onValueChange={(value) => {
           setDragged(value);
           setHovered(null);

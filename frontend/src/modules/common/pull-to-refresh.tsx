@@ -39,7 +39,7 @@ interface PullToRefreshProps {
   isDisabled?: boolean;
 }
 
-export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: PullToRefreshProps) {
+export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled }: PullToRefreshProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [pullPosition, setPullPosition] = useState(0);

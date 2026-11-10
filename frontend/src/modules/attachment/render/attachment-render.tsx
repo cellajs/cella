@@ -47,7 +47,7 @@ export function AttachmentRender({
   filename,
   alt,
   showButtons,
-  imagePanZoom = false,
+  imagePanZoom,
   itemClassName,
   containerClassName,
   onBackdropClick,

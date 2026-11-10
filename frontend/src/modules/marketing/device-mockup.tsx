@@ -36,7 +36,7 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
       <DeviceMockupFrame
         type={type}
         inView={inView}
-        renderCarousel={(containerClassName) => <AttachmentsCarousel items={items} isDialog={false} containerClassName={containerClassName} />}
+        renderCarousel={(containerClassName) => <AttachmentsCarousel items={items} containerClassName={containerClassName} />}
       />
     </div>
   );

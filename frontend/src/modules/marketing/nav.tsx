@@ -81,7 +81,7 @@ export function MarketingNav() {
               className="focus-effect active:press rounded-md p-0.5 transition-transform sm:hover:scale-105"
               aria-label={t('c:go_to_about')}
             >
-              <Logo size="md" title={t('c:go_to_about')} />
+              <Logo title={t('c:go_to_about')} />
             </Link>
 
             {marketingNavConfig.length > 0 && (

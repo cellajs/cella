@@ -21,7 +21,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
-    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton variant="ghost" size="icon-xs" />} className={className} {...props}>
+    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton size="icon-xs" />} className={className} {...props}>
       <XIcon className="pointer-events-none size-3.5" />
     </ComboboxPrimitive.Clear>
   );
@@ -50,7 +50,6 @@ export function ComboboxInput({
         {showTrigger && (
           <InputGroupButton
             size="icon-xs"
-            variant="ghost"
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"

@@ -54,7 +54,7 @@ export function InlineSearchChips({
   name,
   id,
   resultCount,
-  isCountInField = false,
+  isCountInField,
   isSearching = false,
   disabled,
   hideClear,

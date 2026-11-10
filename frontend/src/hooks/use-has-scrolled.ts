@@ -10,7 +10,7 @@ interface UseHasScrolledOptions {
 const scrollKeys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
 
 /** True once the user scrolls with wheel, touch or keyboard, and stays true. Waits `delay` before listening. */
-export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScrolledOptions = {}) => {
+export const useHasScrolled = ({ delay = 2000, immediate }: UseHasScrolledOptions = {}) => {
   const [hasScrolled, setHasScrolled] = useState(false);
 
   useEffect(() => {

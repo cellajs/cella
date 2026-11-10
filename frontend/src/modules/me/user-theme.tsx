@@ -28,7 +28,7 @@ interface UserThemeProps {
   tooltip?: boolean;
 }
 
-export function UserTheme({ buttonClassName, tooltip = false }: UserThemeProps) {
+export function UserTheme({ buttonClassName, tooltip }: UserThemeProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
