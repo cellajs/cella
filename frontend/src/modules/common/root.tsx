@@ -44,7 +44,6 @@ export function Root() {
 
   useEffect(() => configure({ trackLocalhostAs: null }), []);
 
-  // `timeout` keeps the tooltip delay group alive that long after one closes: the first waits, its neighbours are instant
   return (
     <TooltipProvider delay={300} timeout={400}>
       <HeadContent />
