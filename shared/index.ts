@@ -21,6 +21,7 @@ export {
 export { entityIdColumnKey, entityIdColumnName } from './src/config-builder/entity-id-column.ts';
 export { pathHomeId, pathSegments, pathStartsWith } from './src/config-builder/row-path.ts';
 export type {
+  CompanyAddress,
   FederationConfig,
   NavigationConfig,
   RequiredConfig,

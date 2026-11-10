@@ -37,8 +37,8 @@ describe('lookupIp', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    expect(await lookupIp('203.0.113.7')).toEqual({ country: null, asn: null });
-    expect(await lookupIp(null)).toEqual({ country: null, asn: null });
+    expect(await lookupIp('203.0.113.7')).toEqual({ regionCode: null, asn: null });
+    expect(await lookupIp(null)).toEqual({ regionCode: null, asn: null });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(openMock).not.toHaveBeenCalled();
   });
@@ -62,8 +62,8 @@ describe('refreshGeoipDatabases', () => {
     expect(readFileSync(join(dir, 'country.mmdb.etag'), 'utf8')).toBe('"v1-c"');
     expect(existsSync(join(dir, 'country.mmdb.tmp'))).toBe(false);
 
-    expect(await lookupIp('203.0.113.7')).toEqual({ country: 'NL', asn: 1136 });
-    expect(await lookupIp('203.0.113.8')).toEqual({ country: null, asn: null });
+    expect(await lookupIp('203.0.113.7')).toEqual({ regionCode: 'NL', asn: 1136 });
+    expect(await lookupIp('203.0.113.8')).toEqual({ regionCode: null, asn: null });
     expect(openMock).toHaveBeenCalledTimes(2);
   });
 
@@ -78,7 +78,7 @@ describe('refreshGeoipDatabases', () => {
     expect(headersFor('dbip-country-lite.mmdb.gz')).toEqual({ 'if-none-match': '"v1-c"' });
     expect(headersFor('dbip-asn-lite.mmdb.gz')).toEqual({ 'if-none-match': '"v1-a"' });
     expect(readFileSync(join(dir, 'country.mmdb'), 'utf8')).toBe('country-v1');
-    expect(await lookupIp('203.0.113.7')).toEqual({ country: 'NL', asn: 1136 });
+    expect(await lookupIp('203.0.113.7')).toEqual({ regionCode: 'NL', asn: 1136 });
     // Mocks are cleared between tests: no reopen at all is the assertion.
     expect(openMock).not.toHaveBeenCalled();
   });
@@ -94,7 +94,7 @@ describe('refreshGeoipDatabases', () => {
 
     expect(await refreshGeoipDatabases()).toEqual({ country: 'failed', asn: 'failed' });
     expect(readFileSync(join(dir, 'country.mmdb'), 'utf8')).toBe('country-v1');
-    expect(await lookupIp('203.0.113.7')).toEqual({ country: 'NL', asn: 1136 });
+    expect(await lookupIp('203.0.113.7')).toEqual({ regionCode: 'NL', asn: 1136 });
   });
 
   it('replaces a database when its etag moved and reopens only that reader', async () => {
@@ -105,7 +105,7 @@ describe('refreshGeoipDatabases', () => {
 
     expect(await refreshGeoipDatabases()).toEqual({ country: 'updated', asn: 'unchanged' });
     expect(readFileSync(join(dir, 'country.mmdb'), 'utf8')).toBe('country-v2');
-    expect(await lookupIp('203.0.113.7')).toEqual({ country: 'NL', asn: 1136 });
+    expect(await lookupIp('203.0.113.7')).toEqual({ regionCode: 'NL', asn: 1136 });
     expect(openMock).toHaveBeenCalledTimes(1);
     expect(openMock).toHaveBeenCalledWith(join(dir, 'country.mmdb'));
   });

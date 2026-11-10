@@ -12,6 +12,8 @@ export const authenticateRouteSearchParamsSchema = z.object({
   tokenId: z.string().optional(),
   redirect: redirectSearchSchema,
   fromRoot: booleanSearchParam,
+  /** Opens the waitlist form; ignored unless sign-up is closed and the waitlist open. */
+  waitlist: booleanSearchParam,
 });
 
 /** The page the institution's sign-in returns to. */

@@ -1,7 +1,7 @@
 import { inArray, sql } from 'drizzle-orm';
 import { batchCreateAttachments, presignPublicAttachmentUrls, updateOrganization } from 'sdk';
 import { entityIdColumnKey, hierarchy, publicReadGrants } from 'shared';
-import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { channelsDownToStrictHome, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ActorContext } from '#/core/context';
@@ -21,8 +21,11 @@ import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-/** The channel an attachment homes at in this app; its toggle is the event the cascade listens on. */
-const homeType = hierarchy.getParent('attachment') ?? 'organization';
+/** The channel `seedAttachmentHome` homes attachments at, the deepest strict ancestor; its toggle is the event the cascade listens on. */
+const [homeType = 'organization'] = channelsDownToStrictHome(
+  hierarchy.getOrderedAncestors('attachment'),
+  hierarchy.getNullableAncestors('attachment'),
+);
 const homeEvent = `${homeType}.updated` as const;
 
 /** Set by a test to look into `organization.updated` from a handler registered after the modules' own. */

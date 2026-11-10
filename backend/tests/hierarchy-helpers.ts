@@ -31,12 +31,13 @@ export async function seedEntityHierarchy(
       row.ancestorColumns.map((column) => sql`${column.id}`),
       sql`, `,
     );
+    // The slug takes the id's random tail: a uuidv7 starts with a timestamp that rows seeded together share.
     await db.execute(sql`
       INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
         (id, tenant_id, entity_type, name, slug, created_by, ${ancestorNames})
       VALUES (
         ${row.id}, ${opts.tenantId}, ${row.channelType}, ${`${opts.slugPrefix} ${row.channelType}`},
-        ${`${opts.slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${opts.createdBy}, ${ancestorValues}
+        ${`${opts.slugPrefix}-${row.channelType}-${row.id.slice(-12)}`}, ${opts.createdBy}, ${ancestorValues}
       )
       ON CONFLICT (id) DO NOTHING
     `);

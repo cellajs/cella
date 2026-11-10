@@ -88,7 +88,7 @@ const repoRoot = path.resolve(import.meta.dirname, '..');
 // target has a docs wrapper, navigation stays inside the site; other repo paths still point to GitHub.
 // The map derives from the wrapper pages' own imports, so a moved document cannot leave a stale route.
 const repoDocRoutes = repoDocRouteMap(path.resolve(import.meta.dirname, 'src/content/docs'), repoRoot);
-const repoLinks = { repoRoot, repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes };
+const repoLinks = { repoRoot, repoUrl: appConfig.repositoryUrl ?? '', docRoutes: repoDocRoutes };
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
 const devPort = frontendDevPort();

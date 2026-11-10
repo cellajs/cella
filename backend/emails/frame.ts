@@ -1,4 +1,5 @@
-import { countryName } from '#/lib/geoip';
+import { appConfig } from 'shared';
+import { regionName } from '#/lib/geoip';
 import type { RequestDetails } from '#/lib/request-details';
 import { i18n, plainText } from './i18n';
 import { type EmailTemplateDef, type ParamPlaceholder, plainParam } from './types';
@@ -15,7 +16,15 @@ export interface EmailFrame {
   requestDetails?: RequestDetailRow[];
   /** "Sent to <address> by <app>", the recipient's address as the mailer's placeholder fills it per recipient. */
   sentTo?: string;
+  /** The company's postal address on one line, its country named in the mail's language; unset without one in the config. */
+  postalAddress?: string;
 }
+
+const postalAddress = (lng: string) => {
+  const { address } = appConfig.company;
+  if (!address) return undefined;
+  return `${address.streetAddress}・${address.city}・${regionName(address.regionCode, lng)}, ${address.postalCode}`;
+};
 
 const mailTimeFormat = (lng: string) =>
   new Intl.DateTimeFormat(lng, {
@@ -39,12 +48,12 @@ export const formatMailTime = (iso: string, lng: string) => {
 };
 
 /** The request details as rows in `lng`. A row whose value is unknown is left out; the time is always known. */
-const requestDetailRows = (lng: string, { at, country, browser, os }: RequestDetails): RequestDetailRow[] => {
+const requestDetailRows = (lng: string, { at, regionCode, browser, os }: RequestDetails): RequestDetailRow[] => {
   const t = (key: 'browser' | 'browser_value' | 'country' | 'country_value' | 'time', values: Record<string, string> = {}) =>
     i18n.t(`backend:email.request_details.${key}`, { lng, ...values, ...plainText });
 
   const rows: RequestDetailRow[] = [];
-  if (country) rows.push({ label: t('country'), value: t('country_value', { country: countryName(country, lng) }) });
+  if (regionCode) rows.push({ label: t('country'), value: t('country_value', { country: regionName(regionCode, lng) }) });
   const device = browser && os ? t('browser_value', { browser, os }) : (browser ?? os);
   if (device) rows.push({ label: t('browser'), value: device });
   rows.push({ label: t('time'), value: formatMailTime(at, lng) });
@@ -66,5 +75,6 @@ export function emailFrame<TStatic>(
   return {
     requestDetails: details && declared ? requestDetailRows(lng, details) : undefined,
     sentTo: i18n.t('backend:email.sent_to', { lng, email: param('email'), ...plainText }),
+    postalAddress: postalAddress(lng),
   };
 }
