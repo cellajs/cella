@@ -49,7 +49,6 @@ initTextEditingObserver();
 initInputModality();
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.
-// `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
@@ -71,7 +70,6 @@ if (canonicalUrl) {
   }).render(
     <StrictMode>
       <Themer />
-      {/* With reduced motion asked for, motion/react jumps height, position, transform and layout changes; opacity still fades. */}
       <MotionConfig reducedMotion="user">
         {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
         <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>

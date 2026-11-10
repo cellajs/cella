@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { endSession } from '~/modules/auth/end-session';
+import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { UnsavedEdit } from '~/modules/auth/unsaved-edits-dialog';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -18,12 +19,13 @@ const UnsavedEditsGate = lazyNamed(() => import('~/modules/auth/unsaved-edits-di
  * Signs out, after asking while some edits no server holds would go with the session: the dialog lists them live, and
  * sign-out continues by itself once they all saved. `force` (the account is gone) skips the question: nothing can save.
  * A sign-out the server did not confirm keeps the page, which says this browser is still signed in and offers a retry.
+ * It then opens the about page, or the same-origin page `redirect` names.
  */
 export function SignOutPage() {
   const { t } = useTranslation();
   const router = useRouter();
 
-  const { force } = useSearch({ from: '/_public/auth/sign-out' });
+  const { force, redirect } = useSearch({ from: '/_public/auth/sign-out' });
 
   // Edits still queued for the store are written first, so the list holds them.
   const [flushed, setFlushed] = useState(!!force);
@@ -57,7 +59,7 @@ export function SignOutPage() {
       }
     }
     // Full page reload so every store and cache is rebuilt. No toast: the reload would cut it off, and this page already says it
-    window.location.href = appConfig.aboutUrl;
+    window.location.href = safeRedirectPath(redirect) ?? appConfig.aboutUrl;
   };
 
   useEffect(() => {

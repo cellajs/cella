@@ -12,6 +12,7 @@ import {
   bindLocalUserDb,
   closeLocalUserDb,
   deletedElsewhereListeners,
+  deleteLocalUserDbOf,
   getLocalUserDb,
   type LocalUserDatabase,
   notifyLocalUserChange,
@@ -20,7 +21,7 @@ import { persister, persistOptions, resetPersister } from '~/query/persister';
 import { cacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
-import { clearUserState, teardownUserState } from '~/utils/teardown-user-state';
+import { clearUserState, isTearingDown, teardownUserState } from '~/utils/teardown-user-state';
 
 /** Minimal contract a per-user store must satisfy to join {@link localUserStores}: hydrate on bind, reset on sign-out. */
 export interface LocalUserStore {
@@ -91,12 +92,28 @@ export const localUserStorageReady = (): Promise<void> => readyPromise;
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();
 
+/**
+ * Forgets the stored user at boot, before anything loads as them, as a hard sign-out would: the store resets at once,
+ * which unbinds, and the database is deleted once the bind under way has settled, as its open request would otherwise
+ * create the database anew behind the delete.
+ */
+export function forgetStoredUser(): void {
+  const userId = userStore.getState().user?.id;
+  if (!userId) return;
+  const bound = readyPromise;
+  userStore.getState().reset();
+  bound
+    .finally(() => deleteLocalUserDbOf(userId))
+    .catch((error) => console.error('[localUserDb] Deleting the forgotten user database failed:', error));
+}
+
 // Another tab stored another signed-in user, or none: this tab's queued writes would replay on whatever session the
 // browser holds next. They leave memory before a focus or online event can resume them, their copy stays on disk for
 // their user, and the tab boots as whoever is signed in. It stores no user, which the other tab would read as a sign-out.
 window.addEventListener('storage', (event) => {
   const userId = userStore.getState().user?.id;
-  if (event.key !== userStorageKey || !userId || storedUserId(event.newValue) === userId) return;
+  // A tab tearing down keeps its user only until it has left its page.
+  if (event.key !== userStorageKey || !userId || isTearingDown() || storedUserId(event.newValue) === userId) return;
   void clearUserState().finally(() => {
     closeLocalUserDb();
     window.location.reload();
@@ -106,7 +123,8 @@ window.addEventListener('storage', (event) => {
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. A lazy import keeps the
 // router out of this module's importer graph.
 deletedElsewhereListeners.add(() => {
-  void teardownUserState()
-    .then(() => import('~/routes/router'))
-    .then(({ router }) => router.navigate({ to: '/auth/authenticate', replace: true }));
+  void teardownUserState(true, () =>
+    // `fromRoot`: the other tab ends the session after its delete, so a probe from here can still find it alive and sign back in
+    import('~/routes/router').then(({ router }) => router.navigate({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true })),
+  );
 });

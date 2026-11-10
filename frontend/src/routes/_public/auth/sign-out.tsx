@@ -6,7 +6,7 @@ import { booleanSearchParam } from '~/modules/common/search-params-schemas';
 import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/sign-out')({
-  validateSearch: z.object({ force: booleanSearchParam }),
+  validateSearch: z.object({ force: booleanSearchParam, redirect: z.string().optional() }),
   staticData: { isAuth: false },
   head: () => pageHead(i18n.t('c:sign_out')),
   component: SignOutPage,

@@ -1,14 +1,17 @@
 import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
+import { isDemoAddress } from 'shared/utils/demo-address';
 import { isSessionLost } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { userStore } from '~/modules/user/user-store';
+import { localUserStorageReady } from '~/query/local-user-storage';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 import { getErrorInfo, getErrorMessage } from '~/utils/get-error-info';
-import { teardownUserState } from '~/utils/teardown-user-state';
+import { isTearingDown, teardownUserState } from '~/utils/teardown-user-state';
 
 /** The toast an API error's severity shows as. */
 export const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'error' | 'warning' | 'info'> = {
@@ -51,8 +54,11 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
   if (!(error instanceof ApiError)) return;
   const { type, instance, path, status } = error;
-  // A /me probe without a valid session shows no error.
-  if (path === '/me' && status === 401) return;
+  const probe = path === '/me' && status === 401;
+  // A demo account's session is its demo: lost, it ends the account, which nothing signs back in, so its browser forgets it and is a visitor again.
+  const demo = isDemoAddress(userStore.getState().user?.email);
+  // A /me probe without a valid session shows no error: a person's browser stays where it is until a guard sends it to sign in.
+  if (probe && !demo) return;
 
   // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
   if (status >= 500) console.error('[api]', type ?? 'server_error', { instance, path, status });
@@ -61,7 +67,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   const suppress = meta?.suppressGlobalErrorToast;
   const optedOut = typeof suppress === 'function' ? suppress(error) : suppress === true;
   // The API client raised the down alert for a service that is down; it lies over the toast stack, so no toast follows.
-  const skipToast = type === 'service_unavailable' || optedOut;
+  const skipToast = type === 'service_unavailable' || optedOut || probe;
 
   if (!skipToast) {
     const { title, message } = getErrorInfo({ error });
@@ -70,13 +76,22 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     toaster[toastType](title, { description: getToastDescription(error, message) });
   }
 
-  if (tearsDownSession(error)) {
+  // The 401s of the requests still in flight begin no second teardown.
+  if (tearsDownSession(error) && !isTearingDown()) {
     const path = location.pathname + location.search;
     // A bare `/` names nothing to return to: a sign-in without a redirect reaches the same home page.
     const redirect = path === '/' ? undefined : path;
-    // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
-    teardownUserState(false);
     // Dynamic import: the route tree imports this module, so a static router import would be a cycle.
-    import('~/routes/router').then(({ router }) => router.navigate({ to: '/auth/authenticate', search: { redirect } }));
+    const leave = () =>
+      import('~/routes/router').then(({ router }) => {
+        // `fromRoot`: this 401 already found no session, and the user still in the store would have sign-in send the tab back here
+        if (!demo) return router.navigate({ to: '/auth/authenticate', search: { fromRoot: true, redirect } });
+        // The visitor leaves a page that needs an account for the about page, and stays on any other
+        if (router.state.matches.at(-1)?.staticData?.isAuth) return router.navigate({ to: '/about', replace: true });
+      });
+    // A demo's localUserDb goes with it, once no restore of its cached queries can refill the cleared cache. Any other stays on disk
+    // with its unsynced offline work: a 401 is involuntary and the same user usually re-auths and recovers it.
+    if (demo) void localUserStorageReady().then(() => teardownUserState(true, leave));
+    else void teardownUserState(false, leave);
   }
 };
