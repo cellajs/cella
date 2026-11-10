@@ -125,9 +125,7 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
 async function confirmPassphraseStored(passphrase: string): Promise<void> {
   console.info(`\n→ ${pc.bold('Recovery passphrase')}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
-  console.info(
-    `  ${pc.bold('Save it in your password manager now.')} It encrypts this environment's state. The CLI keeps a copy in Scaleway and fetches it\n  with your key; yours restores that copy if it is lost. It is shown this once.`,
-  );
+  console.info(`  ${pc.bold('Save it in your password manager:')} it restores this environment if the copy in Scaleway is lost. Shown once.`);
   while (!(await confirm({ message: 'Saved?', default: false }))) {
     console.warn(`${warningMark} Save it before continuing: this is the only time it is shown.`);
   }

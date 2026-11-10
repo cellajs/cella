@@ -30,11 +30,7 @@ import { redeployAfterRotation } from './start-deploy';
  */
 export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(
-    pc.dim(
-      `\n${actionLabel('rotate-secrets')}: fresh database role passwords and generated values, then the live release deployed again, which replaces every machine.\n`,
-    ),
-  );
+  console.info(pc.dim(`\n${actionLabel('rotate-secrets')}: new database passwords and generated values, then a redeploy.\n`));
   console.warn(
     `${warningMark} The running machines keep the old values until that deploy replaces them, and the database refuses the new connections they open with the old passwords.`,
   );

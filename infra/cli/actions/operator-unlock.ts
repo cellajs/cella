@@ -118,7 +118,7 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
   if (!pair) {
     pair = await keyPairPrompt({
       label: 'Operator key',
-      howto: `Paste a key of '${names.operator}' that expires today, or your own as a member of '${names.operators}'.`,
+      howto: `Paste a key of '${names.operator}' that expires today.`,
       optional: opts.optional,
     });
     if (!pair) return undefined;
@@ -198,7 +198,7 @@ export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; sta
  */
 export async function acquireIdentityKey(stack: StackRef, why: string): Promise<OwnerKey> {
   const names = allPrincipalNames(stack.appConfig, stack.environment);
-  console.info(pc.dim(`${why} That writes IAM, which the operator key cannot: it takes your Owner API key.`));
+  console.info(pc.dim(`${why} It takes your Owner key.`));
   return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
 }
 

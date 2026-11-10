@@ -167,9 +167,6 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     );
   }
   if (firstProvision) {
-    console.info(
-      `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
-    );
     // Fresh provision: the marker says the first provisioning has not finished, until its `up` succeeds (lib/stack/bootstrap-stack-state.ts).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
@@ -245,7 +242,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
     );
   }
-  console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
+  console.info(`\n${checkMark} Foundation created. The first deploy brings the machines up.`);
 
   // The database roles and connection strings, and the generated values, are made outside the state once the `up` made their containers.
   await ensureDatabaseForStack({
@@ -288,8 +285,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     operatorSecrets.adminEmail = await askAdminEmail();
     operatorSecrets.brevoApiKey = await optionalSecret('Brevo API key (optional)');
   }
-  const question = firstSetup ? `Set up ${environment} now?` : `${actionLabel('resume')} of ${environment}?`;
-  if (!(await confirmOrDefault({ message: question, default: true }))) return;
+  if (!firstSetup && !(await confirmOrDefault({ message: `${actionLabel('resume')} of ${environment}?`, default: true }))) return;
 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
   // operator application lets it in first.
@@ -320,11 +316,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, { retry: true });
   await must('Pulumi login (S3 backend)', 'pulumi', ['login', pulumiLoginUrl(appConfig)], spawnSync, { retry: true });
   const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' });
-  if (selected.status === 0) {
-    console.info(`\n→ Pulumi stack: ${stackName} (exists: selected)`);
-  } else {
-    await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
-  }
+  if (selected.status !== 0) await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
   writeStackFileProjectId(environment, projectId);
 
   // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
@@ -350,9 +342,6 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 
   // Base infrastructure provisioning
-  console.info(
-    `\n${pc.bold('Next: the foundation')} ${pc.dim('(database, network, load balancer, buckets, registry; a deploy makes the machines)')}`,
-  );
   const runNow = await confirmOrDefault({
     message: firstSetup ? 'Create the database, network and load balancer now?' : 'Bring the foundation up to date now (pulumi up)?',
     default: firstSetup,
@@ -384,8 +373,7 @@ export async function copyDeployKeyForMainJob(
 ): Promise<void> {
   if (!ciKey?.accessKey || !ciKey.secretKey) return;
   const { appConfig } = context;
-  await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), ciKey).then(
-    () => console.info(`  ${checkMark} The deploy key's copy for the main job is in the engine folder.`),
+  await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), ciKey).catch(
     (error) =>
       console.warn(
         `${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); \`${actionCommand('rotate-keys')}\` makes a new key and copies it.`,

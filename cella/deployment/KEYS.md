@@ -113,7 +113,7 @@ A key of either keeps working, since the policies are written in place. A new en
 
 Add members in IAM → Groups → `<app>-operators`. Each member then holds what the application holds.
 
-**The first key.** An environment's setup makes it in its Owner moment, once the operators are written. It is a key of `<app>-operator` that ends within the day, kept in memory for the rest of that run. The CLI prints only its access key. The operator part runs on it, so a setup asks for no operator key unless that key could not be made.
+**The first key.** An environment's setup makes it in its Owner moment, once the operators are written. It is a key of `<app>-operator` that ends within the day, kept in memory for the rest of that run. The operator part runs on it, so a setup asks for no operator key unless that key could not be made.
 
 **A sitting.** Later keys are made in the console at the start of a sitting. Go to [IAM → API keys](https://console.scaleway.com/iam/api-keys) → Generate API key, with `<app>-operator` as its bearer and an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 

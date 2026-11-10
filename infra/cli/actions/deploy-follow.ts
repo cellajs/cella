@@ -154,7 +154,7 @@ async function reportEnd(
  * whose side the failure is on and what the users get meanwhile. A failure that a retry usually clears offers to start the same target
  * and retry counter again, as the deploy replaces only the roles that do not serve it yet, up to three tries; a blocked run names the one
  * action that deploys it again. Without a record, the job's state says how it ended.
- * @param started what the run does, after "Run <id>".
+ * @param started the line that opens the follow.
  */
 export async function deployAndFollow(
   context: InfraContext,
@@ -168,7 +168,7 @@ export async function deployAndFollow(
   const { store } = await deployStores(context, key);
   for (let tries = 1; ; tries++) {
     const start = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
-    console.info(`  ${checkMark} Run ${start.id} ${started}.`);
+    console.info(`  ${checkMark} ${started}.`);
     const { run, record } = await followRun(auth, region, store, commit.sha, start);
     const outcome = mainJobOutcome(run);
     const unended = `The run ended ${run.state} before ${record ? 'its record did' : 'it wrote a record'}${run.error_message ? `: ${run.error_message}` : '.'}`;
