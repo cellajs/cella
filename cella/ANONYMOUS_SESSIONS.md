@@ -1,6 +1,8 @@
 # Anonymous sessions
 
-An anonymous account is an account without an identity: no proven address, no sign-in method, nothing that binds it to a person. An anonymous session is the one thing that signs it in, minted by the server flow that created the account and expiring with whatever that flow set. The template ships one such flow, the demo ([Multi-tenancy](./MULTI_TENANCY.md#tenant-kinds)); an app may add others: trying the product before signing up, a visitor keeping state on a public board or form, a kiosk or event mode, an API playground, onboarding before the account exists.
+An anonymous account is an account without an identity: no proven address, no sign-in method, nothing that binds it to a person. An anonymous session is the one thing that signs it in, minted by the server flow that created the account and expiring with whatever that flow set.
+
+The template ships one such flow, the demo ([Multi-tenancy](./MULTI_TENANCY.md#tenant-kinds)); an app may add others: trying the product before signing up, a visitor keeping state on a public board or form, a kiosk or event mode, an API playground, onboarding before the account exists.
 
 One word per layer: **anonymous** is the account and its session, **visitor** a request with no actor at all (`{ visitor: true }` in the permission engine), **demo** the tenant kind and the feature, and *Guest* only what the demo names the person.
 
@@ -21,7 +23,14 @@ The row keeps its placeholder, so the unique `email` column holds. The API never
 
 A session's memberships bind it to its tenants, and `tenantGuard` keeps it there: an anonymous account is a member of what its flow made it a member of, and of nothing else.
 
-Every other route that authenticates a session, one with `userGuard` and no tenant guard, refuses an anonymous one with 403 `anonymous_session_restricted` unless the route carries `xAnonymous: true`, documented as `x-anonymous`. `createXRoute` puts the gate right after the guard that authenticates the session, ahead of `stepUpGuard`, `sysAdminGuard` and `relatableGuard`, so the refusal is the same whatever comes next. The rule for admitting a route: a read about the account itself is admitted, since it answers nothing for an anonymous account (`getMe`, `getMyAuth`, `listMyMemberships`, `listMyInvitations`, `listConnectedApps`, the stream, notifications, unseen counts, `updateMe`, the cross-tenant lists); an action that binds, mails, connects or pushes is refused (invitations, `createTenant`, connected apps, sessions, step-up, push, `deleteMe`). A route an app adds is refused until it says otherwise, and `tests/security/anonymous-gate.test.ts` enumerates the OpenAPI document and names it.
+Every other route that authenticates a session, one with `userGuard` and no tenant guard, refuses an anonymous one with 403 `anonymous_session_restricted` unless the route carries `xAnonymous: true`, documented as `x-anonymous`. `createXRoute` puts the gate right after the guard that authenticates the session, ahead of `stepUpGuard`, `sysAdminGuard` and `relatableGuard`. Whatever comes next, the refusal is the same.
+
+The rule for admitting a route:
+
+- A read about the account itself is admitted, since it answers nothing for an anonymous account (`getMe`, `getMyAuth`, `listMyMemberships`, `listMyInvitations`, `listConnectedApps`, the stream, notifications, unseen counts, `updateMe`, the cross-tenant lists).
+- An action that binds, mails, connects or pushes is refused (invitations, `createTenant`, connected apps, sessions, step-up, push, `deleteMe`).
+
+A route an app adds is refused until it says otherwise, and `tests/security/anonymous-gate.test.ts` enumerates the OpenAPI document and names it.
 
 Two rules hold whatever the routes say. An account without a proven address binds no invitation and accepts none (`isProvenAccount`, 403 `anonymous_account`), so lasting access never depends on the route layer. And no mail reaches a placeholder address.
 
