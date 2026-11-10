@@ -1,5 +1,4 @@
 import { onlineManager } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { BirdIcon, MailIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
@@ -20,6 +19,7 @@ import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { queryClient } from '~/query/query-client';
+import { dateRelative } from '~/utils/date-mini';
 import { dateShort } from '~/utils/date-short';
 
 /** Withdraws a pending invitation, such as one sent to a mistyped address; inviting the address again undoes it. */
@@ -57,7 +57,7 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
     if (Date.parse(linkExpiresAt) < Date.now()) {
       return { tone: 'warning', label: t('c:pending_expired'), detail: t('c:pending_last_email', { date: dateShort(remindedAt) }) } as const;
     }
-    return { tone: 'info', label: t('c:pending_sent'), detail: t('c:pending_link_expires', { time: dayjs(linkExpiresAt).fromNow() }) } as const;
+    return { tone: 'info', label: t('c:pending_sent'), detail: t('c:pending_link_expires', { time: dateRelative(linkExpiresAt) }) } as const;
   };
   const { tone, label, detail } = describe();
 

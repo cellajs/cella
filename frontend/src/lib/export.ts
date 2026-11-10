@@ -1,16 +1,13 @@
-import dayjs from 'dayjs';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
 import i18n from 'i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Mode } from '~/modules/ui/ui-store';
-
-dayjs.extend(localizedFormat);
 
 // biome-ignore lint/suspicious/noExplicitAny: rows of any entity, read by column key; their cells reach jspdf-autotable as they are.
 type Row = Record<string, any>;
 
 /** A date as an export writes it, for a column's `exportValue`; a missing date stays missing. */
-export const exportDate = (date?: string | number | Date | null) => (date ? dayjs.utc(date).local().format('lll') : null);
+export const exportDate = (date?: string | number | Date | null) =>
+  date ? new Date(date).toLocaleString(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }) : null;
 
 /** Exports visible table columns/rows to a downloadable CSV file. */
 export function exportToCsv<R extends Row>(columns: ColumnOrColumnGroup<R>[], rows: R[], fileName: string) {

@@ -1,7 +1,5 @@
 import '~/query/tests/query-client-env';
-import '~/lib/dayjs';
 import { QueryClientProvider } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { createElement, Fragment, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { appConfig, hierarchy, isChannel } from 'shared';
@@ -19,7 +17,7 @@ const { queryClient } = await import('~/query/query-client');
 const { meKeys } = await import('~/modules/me/query');
 const organizations = await import('~/modules/organization/table/organizations-columns');
 const members = await import('~/modules/memberships/members-table/members-columns');
-const { exportToCsv } = await import('~/lib/export');
+const { exportDate, exportToCsv } = await import('~/lib/export');
 
 type Column = { key: string; renderHeaderCell?: () => ReactNode } & Record<string, unknown>;
 
@@ -76,8 +74,8 @@ describe('csv export', () => {
     return file ? (await file.text()).split('\n') : [];
   }
 
-  // The export writes dates in the long localized format; with a comma in it, the cell is quoted.
-  const dateCell = (value: string | number) => `"${dayjs.utc(value).local().format('lll')}"`;
+  // The export writes dates with a comma in them, so the cell is quoted.
+  const dateCell = (value: string | number) => `"${exportDate(value)}"`;
 
   // Count columns follow the hierarchy and the members config, so an app's own entities keep these tests valid.
   // Organizations show the last channel and the first product below them, as organizations-columns does.
