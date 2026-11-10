@@ -5,6 +5,7 @@ import { authStore } from '~/modules/auth/auth-store';
 import { resolvePostAuthRedirect } from '~/modules/auth/post-auth-redirect';
 import { pendingMfaQueryOptions } from '~/modules/auth/query';
 import type { authenticateRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
+import { joinsWaitlist } from '~/modules/auth/sign-up-link';
 import { meKeys, meQueryOptions, readMe } from '~/modules/me/query';
 import { userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -43,6 +44,7 @@ type AuthenticateSearch = z.output<typeof authenticateRouteSearchParamsSchema>;
  */
 export async function authenticateBeforeLoad({ cause, search }: { cause: RouteCause; search: AuthenticateSearch }): Promise<void> {
   authStore.getState().reset();
+  if (search.waitlist && joinsWaitlist && !search.tokenId) authStore.getState().setStep('waitlist', '');
 
   // Probed on every pass, so a sign-in made on this page reaches the confirm step too.
   if (search.tokenId) {

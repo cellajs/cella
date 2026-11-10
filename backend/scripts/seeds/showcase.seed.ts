@@ -70,7 +70,7 @@ interface Showcase {
 }
 type ShowcaseOrganization = Showcase['organizations'][number];
 
-/** What the app's `seedAppShowcase` gets: the organizations in `json/showcase.json` order, with their members in place. */
+/** What the app's `seedAppShowcase` gets: the organizations in `backend/scripts/seeds/showcase.json` order, with their members in place. */
 export interface ShowcaseSeeded {
   adminId: string;
   organizations: ReturnType<typeof planOrganization>[];
@@ -238,7 +238,7 @@ const readAllBut = async (unread: number) => {
 };
 
 /**
- * Seeds the curated dataset of `json/showcase.json` that the marketing screenshots show, in place of the random seed:
+ * Seeds the curated dataset of `backend/scripts/seeds/showcase.json` that the marketing screenshots show, in place of the random seed:
  * a dozen organizations, their members and attachments, the app's own rows (`showcase.app.ts`), the admin's menu, unseen
  * counts and inbox, and MFA. Runs only when named, on an empty throwaway database.
  */

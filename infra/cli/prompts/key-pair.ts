@@ -5,6 +5,8 @@ import { maskedSecret } from './masked-secret';
 
 /** An access key as Scaleway issues them: `SCW` and 17 capitals or digits. The example is the placeholder of the prompt. */
 export const ACCESS_KEY_EXAMPLE = 'SCWXXXXXXXXXXXXXXXXX';
+/** The console page that makes a key of a user or of an application. */
+const API_KEYS_URL = 'https://console.scaleway.com/iam/api-keys';
 const ACCESS_KEY = /^SCW[A-Z0-9]{17}$/;
 const SECRET_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -85,8 +87,6 @@ export interface KeyPairPromptOptions {
   label: string;
   /** Where the key comes from, printed once above the prompts. */
   howto: string;
-  /** The console page that makes it. */
-  url?: string;
   /** What an empty access key means, when one is allowed; the prompt then resolves to undefined on it. */
   optional?: string;
 }
@@ -96,7 +96,7 @@ export interface KeyPairPromptOptions {
  * its own form check. Undefined when the prompt is optional and left empty.
  */
 export async function keyPairPrompt(opts: KeyPairPromptOptions): Promise<KeyPair | undefined> {
-  console.info(`\n  ${pc.dim(opts.howto)}${opts.url ? `\n  ${pc.dim('Console:')} ${pc.underline(opts.url)}` : ''}\n`);
+  console.info(`\n  ${pc.dim(opts.howto)}\n  ${pc.dim('Console:')} ${pc.underline(API_KEYS_URL)}\n`);
   const accessKey = await accessKeyPrompt({ message: opts.label, optional: opts.optional });
   if (!accessKey) return undefined;
   const secretKey = (await maskedSecret({ message: `${opts.label}, secret`, validate: (value) => secretKeyFault(value.trim()) ?? true })).trim();

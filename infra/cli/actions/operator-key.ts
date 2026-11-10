@@ -51,14 +51,8 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
   const mode = context.environment;
   const names = allPrincipalNames(appConfig, mode);
   const reach = operatorReach(mode, projectId, projectsOfOtherModes(mode));
-  console.info(
-    pc.dim(
-      `\n${actionLabel('operator-key')}: the '${names.operator}' application and the '${names.operators}' group, with a policy each and no key.\n`,
-    ),
-  );
-  console.info(`They work in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
-  console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).'));
-  console.info(pc.dim('  The policies are written in place: a key of either keeps working.\n'));
+  console.info(pc.dim(`\n${actionLabel('operator-key')}: who may run privileged actions.\n`));
+  console.info(`They work in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.\n`);
   if (!(await confirm({ message: `Set up the operators of ${appConfig.appSlug}?`, default: false }))) {
     console.info('Aborted; nothing changed.');
     return;

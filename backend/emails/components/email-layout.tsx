@@ -75,6 +75,6 @@ export const EmailLayout = ({
       )}
     </EmailBody>
     <EmailLogo />
-    <EmailFooter supportText={supportText} sentTo={frame.sentTo} />
+    <EmailFooter supportText={supportText} sentTo={frame.sentTo} postalAddress={frame.postalAddress} />
   </EmailContainer>
 );

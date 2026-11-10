@@ -77,22 +77,22 @@ export const lookupTargetIp = (ip: string | null | undefined, { mode, sampleIp }
  * ISO-3166 alpha-2 country code and ASN for an IP; either is null when its database is missing or the IP is unknown.
  * Never throws, so auth and session paths can call it directly.
  */
-export const lookupIp = async (ip: string | null | undefined): Promise<{ country: string | null; asn: number | null }> => {
+export const lookupIp = async (ip: string | null | undefined): Promise<{ regionCode: string | null; asn: number | null }> => {
   const target = lookupTargetIp(ip, { mode: appConfig.mode, sampleIp: env.GEOIP_DEV_SAMPLE_IP });
-  if (!target) return { country: null, asn: null };
+  if (!target) return { regionCode: null, asn: null };
   try {
     const [countryReader, asnReader] = await Promise.all([loadReader(country), loadReader(asn)]);
-    const countryCode = countryReader?.get(target)?.country?.iso_code ?? null;
+    const regionCode = countryReader?.get(target)?.country?.iso_code ?? null;
     const asnNumber = asnReader?.get(target)?.autonomous_system_number ?? null;
-    return { country: countryCode, asn: asnNumber };
+    return { regionCode, asn: asnNumber };
   } catch (err) {
     log.warn('GeoIP lookup failed', { err });
-    return { country: null, asn: null };
+    return { regionCode: null, asn: null };
   }
 };
 
 /** The region's name in `language` for the ISO code GeoIP gives; the code itself when the runtime has no name. */
-export const countryName = (code: string, language: string) => {
+export const regionName = (code: string, language: string) => {
   try {
     return new Intl.DisplayNames([language], { type: 'region' }).of(code) ?? code;
   } catch {

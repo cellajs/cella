@@ -206,6 +206,7 @@ export const config = {
   aboutUrl: '/about',
   statusUrl: '',
   productionUrl: 'https://www.cellajs.com',
+  repositoryUrl: 'https://github.com/cellajs/cella',
 
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',
@@ -236,7 +237,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v40-api-urls',
+  clientCacheVersion: 'v41-region-codes',
 
   // Authentication
 
@@ -336,6 +337,7 @@ export const config = {
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
   // OpenFreeMap: free, no key, no cookies. Any MapLibre style URL works; its origin is added to the CSP.
   mapStyleUrls: { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' },
+  mapZoom: 3,
   maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
@@ -382,7 +384,7 @@ export const config = {
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
-  commonCountries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
+  commonRegionCodes: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
   /** How a date reads in tables and tiles: 'day' as "Today" or "Sep 23" with the time on hover, 'minute' with the time shown. */
   listDatePrecision: 'day' as const,
 
@@ -390,23 +392,21 @@ export const config = {
 
   company: {
     name: 'CellaJS',
-    shortName: 'Cella',
     email: 'info@cellajs.com',
-    tel: '+31 6 12345678',
-    streetAddress: 'Drizzle Road 42',
-    postcode: '90210 JS',
-    city: 'Hono City',
-    country: 'TypeScript Rock',
+    phone: '+31 6 12345678',
+    address: {
+      streetAddress: 'Drizzle Road 42',
+      postalCode: '90210 JS',
+      city: 'Hono City',
+      regionCode: 'NL',
+      directionsUrl: 'https://goo.gl/maps/SQlrh',
+      coordinates: { lat: 51.92760809717153, lng: 4.47421039909924 },
+    },
     registration: 'Chamber of Commerce (KvK): 578 25 920',
     vatNumber: 'NL001234567B01',
-    directionsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     socialUrl: 'https://bsky.app/profile/flipvh.bsky.social',
-    blueskyHandle: '@flipvh.bsky.social',
-    element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
-    githubUrl: 'https://github.com/cellajs/cella',
-    mapZoom: 3,
-    coordinates: { lat: 51.92760809717153, lng: 4.47421039909924 },
+    chatUrl: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
   },
 
   // User defaults

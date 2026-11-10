@@ -21,7 +21,7 @@ const ensureDeviceId = (ctx: Context<Env>): string => {
 /** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
 export type SignInContext = {
   rawIp: string | null;
-  country: string | null;
+  regionCode: string | null;
   asn: number | null;
   device: DeviceInfo;
   deviceId: string;
@@ -30,7 +30,7 @@ export type SignInContext = {
 /** The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect. */
 export const collectSignInContext = async (ctx: Context<Env>): Promise<SignInContext> => {
   const rawIp = getIp(ctx);
-  const { country, asn } = await lookupIp(rawIp);
+  const { regionCode, asn } = await lookupIp(rawIp);
 
-  return { rawIp, country, asn, device: deviceInfo(ctx), deviceId: ensureDeviceId(ctx) };
+  return { rawIp, regionCode, asn, device: deviceInfo(ctx), deviceId: ensureDeviceId(ctx) };
 };

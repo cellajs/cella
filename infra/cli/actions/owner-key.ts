@@ -1,21 +1,18 @@
 import {
   assertIamManager,
   durableKeyLife,
-  formatKeyLine,
+  formatBearer,
   type KeyDescription,
   type KeyPair,
   organizationIdOfKey,
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
 import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
-import { pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
 import { endAction } from '../shared';
-
-/** Where a person makes an Owner API key: their own user's keys. */
-const OWNER_KEYS_URL = 'https://console.scaleway.com/iam/api-keys';
 
 export interface OwnerKey extends KeyPair {
   organizationId: string;
@@ -47,8 +44,7 @@ export async function acquireOwnerKey(opts: {
     remembered ??
     (await keyPairPrompt({
       label: 'Owner key',
-      howto: 'Paste a key of your own as an organization Owner, made for this and expiring within hours (any key holding IAMManager works).',
-      url: OWNER_KEYS_URL,
+      howto: 'Paste a key of your own that expires within hours.',
     }));
   if (!pair) return endAction(1);
 
@@ -71,7 +67,6 @@ export async function acquireOwnerKey(opts: {
     console.error(`${warningMark} ${errorMessage(error)}`);
     endAction(1);
   }
-  console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
   const life = durableKeyLife(desc);
   if (life) {
     forgetOwnerKey();
@@ -80,6 +75,7 @@ export async function acquireOwnerKey(opts: {
     );
     endAction(1);
   }
+  console.info(`${checkMark} ${formatBearer(desc, role)}`);
   rememberOwnerKey(pair);
   if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
   return { ...pair, organizationId, bearer: desc, release: async () => {} };

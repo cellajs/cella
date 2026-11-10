@@ -219,27 +219,33 @@ export interface ThemeConfig {
   email: ThemeEmailConfig;
 }
 
-export interface CompanyConfig {
-  name: string;
-  shortName: string;
-  email: string;
-  tel: string;
+export interface CompanyAddress {
   streetAddress: string;
-  postcode: string;
+  postalCode: string;
   city: string;
-  country: string;
-  registration: string;
-  vatNumber: string;
+  /** The country's ISO 3166-1 alpha-2 code (AEP-143 region code), shown as its name in the reader's language. */
+  regionCode: string;
   /** Link behind "Get directions" and the address on the contact page. */
-  directionsUrl: string;
-  scheduleCallUrl: string;
-  socialUrl: string;
-  blueskyHandle: string;
-  element: string;
-  githubUrl: string;
-  /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets. */
-  mapZoom: number;
-  coordinates: { lat: number; lng: number };
+  directionsUrl?: string;
+  /** Where the contact map puts the company; without it the map stays hidden. */
+  coordinates?: { lat: number; lng: number };
+}
+
+/** The organization behind the app, as its legal pages, contact page, footer and emails name it. */
+export interface CompanyConfig {
+  /** The legal name, which the terms, the privacy policy and `{{company}}` in translations use. */
+  name: string;
+  /** Shown on the contact page, and where requests and tenant removals are reported. */
+  email: string;
+  phone?: string;
+  address?: CompanyAddress;
+  /** One line as the legal pages print it, such as "Chamber of Commerce (KvK): 578 25 920". */
+  registration?: string;
+  vatNumber?: string;
+  scheduleCallUrl?: string;
+  socialUrl?: string;
+  /** A chat room link, such as a matrix.to address. */
+  chatUrl?: string;
 }
 
 /**
@@ -364,6 +370,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   aboutUrl: string;
   statusUrl: string;
   productionUrl: string;
+  /** The app's public GitHub repository; the docs link a repository path under its `/blob/main/`. */
+  repositoryUrl?: string;
   defaultRedirectPath: string;
   welcomeRedirectPath: string;
 
@@ -397,6 +405,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   gleapToken: string;
   mapStyleUrls: { light: string; dark: string };
+  /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets. */
+  mapZoom: number;
   maplePublicIngestKey: string;
   /** Hosts a Web Push subscription endpoint may name; `*.` matches any subdomain. */
   pushServiceHosts: readonly string[];
@@ -407,7 +417,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   defaultLanguage: string;
   /** ISO 3166-1 alpha-2 codes a country field suggests after the one the device's timezone points to. */
-  commonCountries: readonly string[];
+  commonRegionCodes: readonly string[];
   listDatePrecision: 'day' | 'minute';
 
   company: CompanyConfig;

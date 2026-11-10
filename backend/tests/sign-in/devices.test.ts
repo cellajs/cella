@@ -26,7 +26,7 @@ afterEach(async () => await clearDatabase());
 
 const browser = (deviceId = nanoid(24)): SignInContext => ({
   rawIp: null,
-  country: 'NL',
+  regionCode: 'NL',
   asn: null,
   device: { name: null, type: 'desktop', os: 'macOS', browser: 'Firefox' },
   deviceId,

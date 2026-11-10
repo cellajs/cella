@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" RENAME COLUMN "ip_country" TO "ip_region_code";

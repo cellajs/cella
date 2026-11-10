@@ -3,13 +3,13 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
 import { createApiKey, deleteApiKey, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
-import { allPrincipalNames, appPrincipalNames, type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
+import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { ensureApplication } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import type { Environment } from '../../lib/stack/bootstrap-stack-state';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
-import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
+import { changeMark, checkMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
@@ -58,20 +58,12 @@ async function mintCiKey(
   }
 }
 
-function printSummary(opts: { rotated: boolean; ciAccessKey: string; names: PrincipalNames }): void {
-  const { ciAccessKey, names } = opts;
-  const divider = pc.dim(DIVIDER);
-  console.info(`\n${divider}`);
-  if (ciAccessKey) {
+function printSummary(opts: { rotated: boolean; ciAccessKey: string }): void {
+  if (opts.ciAccessKey) console.info(`\n${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Deploy keys created.'))}`);
+  else
     console.info(
-      `${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Identities written.'))} Deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`,
+      `\n${warningMark} ${pc.bold(pc.yellowBright('Done, but the deploy key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`,
     );
-  } else {
-    console.info(
-      `${warningMark} ${pc.bold(pc.yellowBright('Done, but the deploy key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`,
-    );
-  }
-  console.info(divider);
 }
 
 /** How long the operator key a setup mints lives: within the day the session accepts. */
@@ -95,7 +87,7 @@ async function mintSetupOperatorKey(ownerSecretKey: string, opts: { organization
       expiresAt: new Date(now.getTime() + SETUP_KEY_HOURS * 3_600_000).toISOString(),
     });
     rememberOperatorKey({ accessKey: key.access_key, secretKey: key.secret_key }, { minted: true });
-    console.info(`  ${checkMark} Operator key ${key.access_key} made for this setup; it ends in ${SETUP_KEY_HOURS} hours.`);
+    console.info(`  ${checkMark} Operator key made for this setup; it ends in ${SETUP_KEY_HOURS} hours.`);
   } catch (error) {
     console.warn(`${warningMark} Could not make the operator key (${errorMessage(error)}): the setup asks for one next.`);
   }
@@ -106,7 +98,7 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
   const revokeNow = autoAcceptDefaults()
     ? true
     : await confirm({
-        message: `Revoke the Owner API key you pasted (${pair.accessKey}) now? Nothing else needs it: the rest runs on the operator key.`,
+        message: 'Revoke the Owner key now?',
         default: true,
       });
   if (!revokeNow) {
@@ -118,7 +110,7 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
   try {
     await withSpinner('Revoking the Owner API key', () => deleteApiKey({ secretKey: pair.secretKey }, pair.accessKey));
     forgetOwnerKey();
-    console.info(`${checkMark} Key ${pair.accessKey} revoked.`);
+    console.info(`${checkMark} Owner key revoked.`);
   } catch (error) {
     console.warn(
       `${warningMark} Could not revoke the key (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
@@ -131,7 +123,6 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
  * the project of another environment is listed and cannot be taken. The stack file gets the chosen id once the stack exists, later in this run.
  */
 async function ensureProjectId(opts: { slug: string; mode: Environment; secretKey: string; organizationId: string }): Promise<string> {
-  console.info(`\n→ Scaleway project for ${opts.mode} ${pc.dim('(none configured yet)')}`);
   const { organizationId } = opts;
   const projects = await withSpinner('Loading Scaleway projects', () => listProjects(opts.secretKey, organizationId));
   const CREATE = '__create__';
@@ -163,9 +154,10 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
   const environment = context.environment;
-  const names = principalNames(appConfig.slug, environment);
   console.info(
-    pc.dim(`\n→ Owner moment for ${environment}: the project and the identities, written with your Owner API key. Nothing else runs on it.`),
+    pc.dim(
+      `\n→ Account owner sign-in: ${mode === 'rotate-keys' ? 'replaces the deploy and uploads keys' : 'creates the project and the deploy keys'}.`,
+    ),
   );
   const ownerKey = await acquireOwnerKey({
     names: allPrincipalNames(appConfig, environment),
@@ -177,8 +169,8 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
   const projectId =
     context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
-  const question = mode === 'rotate-keys' ? `${actionLabel('rotate-keys')} of ${environment}?` : `Create ${environment}'s deploy keys?`;
-  if (!(await confirmOrDefault({ message: question, default: true }))) return undefined;
+  if (mode === 'rotate-keys' && !(await confirmOrDefault({ message: `${actionLabel('rotate-keys')} of ${environment}?`, default: true })))
+    return undefined;
 
   // The uploads key goes to the runtime folder, where the deploy composes it into the backend's env file; a rotation makes it anew.
   if (declaresUploads()) {
@@ -212,7 +204,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
 
-  printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
+  printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
   await offerOwnerKeyRevoke(pair);
   return { projectId, ciKey };

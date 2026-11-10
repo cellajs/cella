@@ -9,13 +9,13 @@ import { mockOrganizationResponse } from '#/modules/organization/organization-mo
 import { tenantKindsQuerySchema } from '#/modules/tenants/tenants-schema';
 import {
   booleanTransformSchema,
-  countryCodeSchema,
   includeQuerySchema,
   languageSchema,
   listQuerySchema,
   maxLength,
   noDuplicateSlugsRefine,
   orderByQuerySchema,
+  regionCodeSchema,
   timeZoneSchema,
   translatedError,
   validCDNUrlSchema,
@@ -73,7 +73,7 @@ export const organizationContract = evolutionContract.channel('organization', {
     slug: validSlugSchema,
     name: validNameSchema,
     shortName: validNameSchema.nullable(),
-    regionCode: countryCodeSchema.nullable(),
+    regionCode: regionCodeSchema.nullable(),
     timeZone: timeZoneSchema.nullable(),
     languageCodes: z.array(languageSchema).min(1).max(64),
     defaultLanguageCode: languageSchema.optional(),

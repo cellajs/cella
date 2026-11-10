@@ -1,6 +1,8 @@
 import { BuildingIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
+import { regionName } from '~/utils/region-name';
 
 export function SupportEmailLink({ className }: { className?: string }) {
   const { supportEmail } = appConfig;
@@ -12,14 +14,9 @@ export function SupportEmailLink({ className }: { className?: string }) {
   );
 }
 
-interface LegalContactProps {
-  /** Leaves out the registration and VAT lines. */
-  addressOnly?: boolean;
-  className?: string;
-}
-
-export function LegalContact({ addressOnly, className }: LegalContactProps) {
-  const { name, streetAddress, postcode, city, country, registration, vatNumber } = appConfig.company;
+export function LegalContact({ className }: { className?: string }) {
+  const { i18n } = useTranslation();
+  const { name, address, registration, vatNumber } = appConfig.company;
 
   return (
     <div className={cn('not-prose flex gap-6', className)}>
@@ -31,16 +28,20 @@ export function LegalContact({ addressOnly, className }: LegalContactProps) {
         <li className="mb-2">
           <strong>{name}</strong>
         </li>
-        <li>{streetAddress}</li>
-        <li>
-          {city}, {postcode}
-        </li>
-        <li>{country}</li>
+        {address && (
+          <>
+            <li>{address.streetAddress}</li>
+            <li>
+              {address.city}, {address.postalCode}
+            </li>
+            <li>{regionName(address.regionCode, i18n.language)}</li>
+          </>
+        )}
         <li>
           <SupportEmailLink className="link-inline" />
         </li>
-        {!addressOnly && <li>{registration}</li>}
-        {!addressOnly && vatNumber && <li>VAT number: {vatNumber}</li>}
+        {registration && <li>{registration}</li>}
+        {vatNumber && <li>VAT number: {vatNumber}</li>}
       </ul>
     </div>
   );

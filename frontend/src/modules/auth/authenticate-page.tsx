@@ -68,8 +68,8 @@ export function AuthenticatePage() {
   const oauth = useOAuthAlternatives(alternativesStep);
 
   useEffect(() => {
-    // The link-sent step stays until the visitor leaves it.
-    if (step === 'magicLinkSent') return;
+    // The link-sent and waitlist steps stay until the visitor leaves them.
+    if (step === 'magicLinkSent' || step === 'waitlist') return;
 
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 

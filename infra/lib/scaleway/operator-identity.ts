@@ -140,8 +140,13 @@ const ROLE_LABELS: Record<PrincipalRole, string> = {
 
 /** One human line per key: bearer, role and expiry. */
 export function formatKeyLine(desc: KeyDescription, role: PrincipalRole): string {
+  return `${desc.accessKey} → ${formatBearer(desc, role)}`;
+}
+
+/** Who bears a key: name, role and expiry, for the line that confirms a key was taken. */
+export function formatBearer(desc: KeyDescription, role: PrincipalRole): string {
   const expiry = desc.expiresAt ? `, expires ${desc.expiresAt.slice(0, 16).replace('T', ' ')} UTC` : '';
-  return `${desc.accessKey} → ${desc.name} (${ROLE_LABELS[role]}${expiry})`;
+  return `${desc.name} (${ROLE_LABELS[role]}${expiry})`;
 }
 
 /** Hours until a key expires, negative when already expired, undefined for a key without expiry. */

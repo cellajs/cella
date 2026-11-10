@@ -74,7 +74,7 @@ export const sessionsTable = snakeCase.table(
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),
-    ipCountry: varchar({ length: 2 }),
+    ipRegionCode: varchar({ length: 2 }),
     ipAsn: integer(),
     deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,

@@ -54,7 +54,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
 
   const status = sessionStatus(session);
   const isLive = status === 'current' || status === 'active';
-  const countryName = session.ipCountry ? regionName(session.ipCountry, i18n.language) : null;
+  const countryName = session.ipRegionCode ? regionName(session.ipRegionCode, i18n.language) : null;
   const when = isLive ? t('c:signed_in_relative', { time: dateRelative(session.createdAt) }).toLowerCase() : dateShort(sessionEndedAt(session));
 
   return (
@@ -77,9 +77,9 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       meta={
         <>
           {/* object-cover, so the radius rounds the flag and not the space around it */}
-          {session.ipCountry && (
+          {session.ipRegionCode && (
             <>
-              <CountryFlag countryCode={session.ipCountry} height={11} className="rounded-xs object-cover align-[-1px] opacity-80" />
+              <CountryFlag countryCode={session.ipRegionCode} height={11} className="rounded-xs object-cover align-[-1px] opacity-80" />
               {' · '}
             </>
           )}

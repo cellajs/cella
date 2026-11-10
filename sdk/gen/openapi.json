@@ -2146,7 +2146,7 @@
                   "type": ["string", "null"],
                   "maxLength": 64
                 },
-                "ipCountry": {
+                "ipRegionCode": {
                   "type": ["string", "null"],
                   "maxLength": 2
                 },
@@ -2199,7 +2199,7 @@
                 "connectionId",
                 "ipHash",
                 "ipSubnetHash",
-                "ipCountry",
+                "ipRegionCode",
                 "ipAsn",
                 "deviceIdHash",
                 "createdAt",
@@ -2282,7 +2282,7 @@
               "connectionId": null,
               "ipHash": null,
               "ipSubnetHash": null,
-              "ipCountry": null,
+              "ipRegionCode": null,
               "ipAsn": null,
               "deviceIdHash": "e73e1e9b96a7acab442bcbafafbc1c5f",
               "revokedAt": null,
@@ -9520,7 +9520,7 @@
                             "type": ["string", "null"],
                             "maxLength": 64
                           },
-                          "ipCountry": {
+                          "ipRegionCode": {
                             "type": ["string", "null"],
                             "maxLength": 2
                           },
@@ -9566,7 +9566,7 @@
                           "connectionId",
                           "ipHash",
                           "ipSubnetHash",
-                          "ipCountry",
+                          "ipRegionCode",
                           "ipAsn",
                           "deviceIdHash",
                           "createdAt",

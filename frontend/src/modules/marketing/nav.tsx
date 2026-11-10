@@ -15,7 +15,7 @@ import { useFloatingNavItems } from '~/modules/navigation/floating-nav/use-float
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
 
-const hasDrawer = marketingNavConfig.length > 0 || !!appConfig.company.githubUrl;
+const hasDrawer = marketingNavConfig.length > 0 || !!appConfig.repositoryUrl;
 
 interface MarketingNavLinksProps {
   onNavigate: () => void;
@@ -96,13 +96,13 @@ export function MarketingNav() {
 
             <UserTheme buttonClassName={hasDrawer ? 'max-xs:hidden mr-2' : 'mr-2'} />
 
-            {appConfig.company.githubUrl && (
+            {appConfig.repositoryUrl && (
               <Button
                 variant="ghost"
                 aria-label={t('c:github')}
                 className="max-sm:hidden"
                 size="icon"
-                render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
+                render={<a href={appConfig.repositoryUrl} target="_blank" rel="noreferrer" />}
               >
                 <GithubIcon className="size-6" />
               </Button>
@@ -125,8 +125,8 @@ export function MarketingNav() {
                 {t('c:about')}
               </Button>
               <MarketingNavLinks onNavigate={closeDrawer} />
-              {appConfig.company.githubUrl && (
-                <Button size="lg" render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
+              {appConfig.repositoryUrl && (
+                <Button size="lg" render={<a href={appConfig.repositoryUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
                   <GithubIcon className="size-6" />
                   {t('c:github')}
                 </Button>

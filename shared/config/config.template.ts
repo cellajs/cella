@@ -323,6 +323,7 @@ export const config = {
    * each style's origin; tiles, fonts and icons must come from that same origin.
    */
   mapStyleUrls: { light: '', dark: '' },
+  mapZoom: 3,
   /** Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off. */
   maplePublicIngestKey: '',
   /**
@@ -370,32 +371,13 @@ export const config = {
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
-  commonCountries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
+  commonRegionCodes: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
   /** How a date reads in tables and tiles: 'day' as "Today" or "Sep 23" with the time on hover, 'minute' with the time shown. */
   listDatePrecision: 'day' as const,
 
   // Company details
 
-  company: {
-    name: '__project_name__',
-    shortName: '__project_name__',
-    email: 'info@__project_slug__.example.com',
-    tel: '',
-    streetAddress: '',
-    postcode: '',
-    city: '',
-    country: '',
-    registration: '',
-    vatNumber: '',
-    directionsUrl: '',
-    scheduleCallUrl: '',
-    socialUrl: '',
-    blueskyHandle: '',
-    element: '',
-    githubUrl: '',
-    mapZoom: 3,
-    coordinates: { lat: 0, lng: 0 },
-  },
+  company: { name: '__project_name__', email: 'info@__project_slug__.example.com' },
 
   // User defaults
 

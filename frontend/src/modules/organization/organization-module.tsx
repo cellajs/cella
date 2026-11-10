@@ -23,7 +23,8 @@ defineFrontendModule({
       createAction: (triggerRef) =>
         openCreateOrganizationDialog(triggerRef, (organization) =>
           getRouter().navigate({
-            to: '/$tenantId/$organizationSlug/organization/members',
+            // The bare layout route: `guardNavTabs` opens the first tab `appConfig.surfaces` arranges
+            to: '/$tenantId/$organizationSlug/organization',
             params: { tenantId: organization.tenantId, organizationSlug: organization.slug },
           }),
         ),

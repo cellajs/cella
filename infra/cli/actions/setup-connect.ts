@@ -44,13 +44,12 @@ export async function connectRepository(environment: string): Promise<void> {
   const base = defaultBranch();
   const pullRequest = `The scheduled runs read ${base}: open a pull request, so this commit reaches it.`;
   const onBase = gitOutput(['branch', '--show-current']) === base;
-  const reach = `so every checkout and the scheduled runs see ${environment} set up`;
   if (state === 'committed') {
     if (!onBase) console.info(`  ${pullRequest}`);
-    else if (await confirmOrDefault({ message: `Push the commit of ${stackFile}, ${reach}?`, default: true })) pushToBase(base, pullRequest);
+    else if (await confirmOrDefault({ message: `Push the commit of ${stackFile}?`, default: true })) pushToBase(base, pullRequest);
     return;
   }
-  if (!(await confirmOrDefault({ message: `Commit ${stackFile} and push, ${reach}?`, default: true }))) return;
+  if (!(await confirmOrDefault({ message: `Commit and push ${stackFile}?`, default: true }))) return;
   const files = addEnvironmentsLine(environment, base) ? [stackFile, ENVIRONMENTS_FILE] : [stackFile];
   // The pathspec commits these files only, whatever else is staged.
   if (!runGit(['add', ...files]) || !runGit(['commit', '-m', `chore(infra): connect ${environment}`, '--', ...files])) {

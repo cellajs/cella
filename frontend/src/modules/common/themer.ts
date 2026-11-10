@@ -50,11 +50,22 @@ export function Themer() {
     setBrandColor(theme);
     setContrastAttribute(contrast);
 
-    return uiStore.subscribe((state, prev) => {
+    const unsubscribe = uiStore.subscribe((state, prev) => {
       if (state.mode !== prev.mode) setModeClass(state.mode);
       if (state.theme !== prev.theme) setBrandColor(state.theme);
       if (state.contrast !== prev.contrast) setContrastAttribute(state.contrast);
     });
+
+    // Another tab, or a same-origin frame, has its own store: its change reaches this one only through storage
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === uiStore.persist.getOptions().name) void uiStore.persist.rehydrate();
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   return null;

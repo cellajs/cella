@@ -11,7 +11,7 @@ export interface RequestDetails {
   /** ISO moment of the send. */
   at: string;
   /** ISO-3166 alpha-2 code; null when GeoIP has no answer. */
-  country: string | null;
+  regionCode: string | null;
   browser: string | null;
   os: string | null;
 }
@@ -21,7 +21,7 @@ export const currentRequestDetails = async (): Promise<RequestDetails | null> =>
   const ctx = ambientRequest();
   if (!ctx) return null;
 
-  const { country } = await lookupIp(getIp(ctx));
+  const { regionCode } = await lookupIp(getIp(ctx));
   const { browser, os } = deviceInfo(ctx);
-  return { requestId: ctx.var.requestId, at: getIsoDate(), country, browser, os };
+  return { requestId: ctx.var.requestId, at: getIsoDate(), regionCode, browser, os };
 };

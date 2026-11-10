@@ -13,7 +13,7 @@ import { tw } from '~/utils/tw';
 export function DocsLandingPage() {
   const { t } = useTranslation();
   const Content = getDocPageComponent('');
-  const sourceUrl = appConfig.company.githubUrl;
+  const sourceUrl = appConfig.repositoryUrl;
 
   return (
     <div className="container">

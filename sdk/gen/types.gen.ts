@@ -444,7 +444,7 @@ export type MeAuthData = {
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
-    ipCountry: string | null;
+    ipRegionCode: string | null;
     ipAsn: number | null;
     deviceIdHash: string | null;
     createdAt: string;
@@ -3932,7 +3932,7 @@ export type RevokeMySessionsResponses = {
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
-      ipCountry: string | null;
+      ipRegionCode: string | null;
       ipAsn: number | null;
       deviceIdHash: string | null;
       createdAt: string;

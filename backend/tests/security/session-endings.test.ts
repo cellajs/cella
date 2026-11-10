@@ -146,7 +146,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     const browser = (deviceId: string): SignInContext => ({
       rawIp: null,
-      country: null,
+      regionCode: null,
       asn: null,
       device: { name: null, type: 'desktop', os: 'macOS', browser: 'Firefox' },
       deviceId,

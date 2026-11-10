@@ -13,7 +13,7 @@ type CountryFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProp
   onSelect?: (code: string) => void;
 };
 
-/** Suggests the device's country first, then `appConfig.commonCountries`. */
+/** Suggests the device's country first, then `appConfig.commonRegionCodes`. */
 export function CountryFormField<TFieldValues extends FieldValues>(props: CountryFormFieldProps<TFieldValues>) {
   const { t, i18n } = useTranslation();
 
@@ -30,7 +30,7 @@ export function CountryFormField<TFieldValues extends FieldValues>(props: Countr
     <ComboboxFormField
       {...props}
       options={options}
-      suggested={{ label: t('c:suggested'), values: detected ? [detected, ...appConfig.commonCountries] : appConfig.commonCountries }}
+      suggested={{ label: t('c:suggested'), values: detected ? [detected, ...appConfig.commonRegionCodes] : appConfig.commonRegionCodes }}
       clearable
       placeholders={{ trigger: 'c:placeholder.select_country', resource: 'c:country' }}
     />

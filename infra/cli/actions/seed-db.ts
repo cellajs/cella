@@ -19,13 +19,12 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     endAction(1);
   }
 
-  console.info(pc.dim(`\n${actionLabel('db-seed')}: open the endpoint to your IP -> run backend seeds -> close the endpoint.\n`));
   const detected = await detectPublicIp();
   if (!detected) {
     console.error(`${crossMark} Could not detect your public IP; use "${actionLabel('db-open')}" + manual seeding instead.`);
     endAction(1);
   }
-  console.info(`Seeds run from this machine over a temporary endpoint restricted to ${pc.cyan(`${detected}/32`)}.`);
+  console.info(pc.dim(`\n${actionLabel('db-seed')}: open the endpoint to ${detected}/32, run the backend seeds, close it.\n`));
   if (!(await confirm({ message: `Seed the ${context.environment} database now?`, default: false }))) {
     console.info('Aborted; no changes made.');
     return;
