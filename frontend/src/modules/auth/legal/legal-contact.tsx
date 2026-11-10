@@ -18,7 +18,7 @@ interface LegalContactProps {
   className?: string;
 }
 
-export function LegalContact({ addressOnly = false, className }: LegalContactProps) {
+export function LegalContact({ addressOnly, className }: LegalContactProps) {
   const { name, streetAddress, postcode, city, country, registration, vatNumber } = appConfig.company;
 
   return (

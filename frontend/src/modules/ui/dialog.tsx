@@ -74,7 +74,7 @@ export function DialogContent({
   children,
   container,
   layer,
-  outsideScroll = false,
+  outsideScroll,
   viewportClassName,
   dock,
   ...props

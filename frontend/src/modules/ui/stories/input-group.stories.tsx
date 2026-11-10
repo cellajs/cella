@@ -15,7 +15,7 @@ type Story = StoryObj;
 export const Default: Story = {
   render: () => (
     <InputGroup>
-      <InputGroupAddon align="inline-start">
+      <InputGroupAddon>
         <InputGroupText>
           <UserIcon className="size-4" />
         </InputGroupText>
@@ -70,7 +70,7 @@ export const WithButton: Story = {
 export const MultipleButtons: Story = {
   render: () => (
     <InputGroup>
-      <InputGroupAddon align="inline-start">
+      <InputGroupAddon>
         <InputGroupButton variant="outline">
           <UserIcon className="size-4" />
         </InputGroupButton>
@@ -136,7 +136,7 @@ export const PasswordToggle: Story = {
       <InputGroup>
         <InputGroupInput type={showPassword ? 'text' : 'password'} placeholder="Enter password" />
         <InputGroupAddon align="inline-end">
-          <InputGroupButton type="button" onClick={() => setShowPassword(!showPassword)}>
+          <InputGroupButton onClick={() => setShowPassword(!showPassword)}>
             {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </InputGroupButton>
         </InputGroupAddon>
@@ -201,7 +201,7 @@ export const SearchWithFilters: Story = {
   render: () => (
     <div className="space-y-4">
       <InputGroup>
-        <InputGroupAddon align="inline-start">
+        <InputGroupAddon>
           <InputGroupButton variant="outline">
             <SearchIcon className="size-4" />
           </InputGroupButton>
@@ -232,7 +232,7 @@ export const UrlInput: Story = {
   render: () => (
     <div className="space-y-4">
       <InputGroup>
-        <InputGroupAddon align="inline-start">
+        <InputGroupAddon>
           <InputGroupText>https://</InputGroupText>
         </InputGroupAddon>
         <InputGroupInput placeholder="your-website" />
@@ -242,7 +242,7 @@ export const UrlInput: Story = {
       </InputGroup>
 
       <InputGroup>
-        <InputGroupAddon align="inline-start">
+        <InputGroupAddon>
           <InputGroupText>https://</InputGroupText>
         </InputGroupAddon>
         <InputGroupInput placeholder="your-subdomain" />
@@ -264,16 +264,12 @@ export const NumberInput: Story = {
 
     return (
       <InputGroup>
-        <InputGroupAddon align="inline-start">
-          <InputGroupButton type="button" onClick={decrement}>
-            -
-          </InputGroupButton>
+        <InputGroupAddon>
+          <InputGroupButton onClick={decrement}>-</InputGroupButton>
         </InputGroupAddon>
         <InputGroupInput type="number" value={value} onChange={(e) => setValue(e.target.value)} className="text-center" />
         <InputGroupAddon align="inline-end">
-          <InputGroupButton type="button" onClick={increment}>
-            +
-          </InputGroupButton>
+          <InputGroupButton onClick={increment}>+</InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
     );
@@ -301,7 +297,7 @@ export const ComplexForm: Story = {
       <div className="space-y-2">
         <label className="text-sm font-medium">Personal Information</label>
         <InputGroup>
-          <InputGroupAddon align="inline-start">
+          <InputGroupAddon>
             <InputGroupText>
               <UserIcon className="size-4" />
             </InputGroupText>

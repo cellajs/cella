@@ -70,7 +70,7 @@ interface MenuSheetItemsListProps {
   isResting?: boolean;
 }
 
-export function MenuSheetItemsList({ items, entityType, group, options, isSubmenu = false, isResting = false }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, group, options, isSubmenu = false, isResting }: MenuSheetItemsListProps) {
   const matchRoute = useMatchRoute();
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 

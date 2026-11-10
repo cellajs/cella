@@ -265,7 +265,7 @@ interface ChannelTileMembershipProps {
 }
 
 /** The viewer's own state: a pending-invite badge once the invites list is cached, or the joined button, else `fallback`. */
-export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: ChannelTileMembershipProps) {
+export function ChannelTileMembership({ hideOwnRole, fallback = null }: ChannelTileMembershipProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());

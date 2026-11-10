@@ -103,7 +103,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   }
 
   return (
-    <Popover key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
+    <Popover key={dropdown.key} open onOpenChange={handleOpenChange}>
       <PopoverContent
         anchor={trigger}
         align={dropdown.align}
@@ -114,7 +114,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
         finalFocus={triggerFocusRef}
         aria-label={dropdown.triggerLabel}
       >
-        <FocusTrap active initialFocus returnFocus containFocus>
+        <FocusTrap initialFocus returnFocus containFocus>
           <div className="contents">
             <DropdownerContent dropdown={dropdown} surface="panel">
               {dropdown.content}

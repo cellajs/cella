@@ -90,7 +90,7 @@ export function RenderEnumSelect<TRow extends { id: string; name?: string | null
   return (
     <>
       <span ref={probeRef} aria-hidden className="hidden" />
-      <Popover open onOpenChange={handleOpenChange} modal={false}>
+      <Popover open onOpenChange={handleOpenChange}>
         <PopoverContent
           anchor={anchor}
           align="start"
@@ -130,7 +130,7 @@ function EnumSelectMenu<TValue extends string>({
         if (value != null) onSelect(value);
       }}
     >
-      <ComboboxList ref={listRef} className="rounded-lg p-1 outline-hidden" tabIndex={-1}>
+      <ComboboxList ref={listRef} className="rounded-lg p-1 outline-hidden">
         {options.map((opt) => (
           <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2">
             <span className="text-foreground flex-1">{opt.label}</span>

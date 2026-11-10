@@ -17,7 +17,7 @@ interface DeleteFormProps extends Pick<ConfirmFormProps, 'onCancel' | 'pending' 
 /** A delete confirmation whose act names what goes: "Delete organization". */
 export function DeleteForm({
   onDelete,
-  allowOfflineDelete = false,
+  allowOfflineDelete,
   resource,
   count,
   label = resource ? 'c:delete_resource' : 'c:delete',

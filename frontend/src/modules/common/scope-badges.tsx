@@ -3,7 +3,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { Badge } from '~/modules/ui/badge';
 
 /** The scopes of a token or consent, as the consent screen and the account page show them. */
-export function ScopeBadges({ scopes, withLabels = false }: { scopes: string[]; withLabels?: boolean }) {
+export function ScopeBadges({ scopes, withLabels }: { scopes: string[]; withLabels?: boolean }) {
   const { t } = useTranslation();
 
   // `<entity>:<read|write>` as a label built from the entity's plural, so app entity types need no extra keys

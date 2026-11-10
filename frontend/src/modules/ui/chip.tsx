@@ -34,19 +34,7 @@ const keepFocus = (event: MouseEvent) => event.preventDefault();
  * A selected value as a pill, with an optional remove button. That button cannot sit inside another button, so a picker
  * lays its own trigger behind its chips and sets `pointer-events-none` on their row, which the chip's buttons opt out of.
  */
-export function Chip({
-  className,
-  children,
-  start,
-  end,
-  onRemove,
-  removeLabel,
-  onPress,
-  pressLabel,
-  isExpanded,
-  size = 'default',
-  ...props
-}: ChipProps) {
+export function Chip({ className, children, start, end, onRemove, removeLabel, onPress, pressLabel, isExpanded, size, ...props }: ChipProps) {
   const value = <span className="truncate">{children}</span>;
   const media = start && <span className="-my-px mr-1.5 -ml-px flex shrink-0">{start}</span>;
 

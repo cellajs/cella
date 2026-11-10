@@ -27,7 +27,7 @@ function StepFooter() {
   );
 }
 
-function OnboardingLikeStepper({ items, initialStep = 0 }: { items: StepItem[]; initialStep?: number }) {
+function OnboardingLikeStepper({ items, initialStep }: { items: StepItem[]; initialStep?: number }) {
   const [completed, setCompleted] = useState(false);
 
   return (

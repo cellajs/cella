@@ -46,7 +46,7 @@ function useCarousel() {
 
 export function Carousel({
   orientation = 'horizontal',
-  isDialog = false,
+  isDialog,
   opts,
   setApi,
   plugins,

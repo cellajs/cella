@@ -17,7 +17,7 @@ function DropdownerDoneTip() {
       {done && (
         <Tooltip key={done.key} open={done.open}>
           {/* Shown on mobile too: unlike a hover hint, it reports what just happened */}
-          <TooltipContent anchor={done.trigger} side="top" sideOffset={6} className="pointer-events-none max-sm:block">
+          <TooltipContent anchor={done.trigger} sideOffset={6} className="pointer-events-none max-sm:block">
             {done.label}
           </TooltipContent>
         </Tooltip>

@@ -12,7 +12,7 @@ interface NavSheetFrameProps {
 }
 
 /** Shell of every nav sheet: a column with the sheet focus target first, optional panels, and the bottom focus bridges. */
-export function NavSheetFrame({ children, panels = false, ref, className }: NavSheetFrameProps) {
+export function NavSheetFrame({ children, panels, ref, className }: NavSheetFrameProps) {
   return (
     <div ref={ref} className={cn('flex min-h-dvh w-full flex-col', className)}>
       <FocusTarget target="sheet" />
