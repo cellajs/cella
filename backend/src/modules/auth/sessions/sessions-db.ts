@@ -45,7 +45,7 @@ const stepUpProofs = ['passkey', 'totp', 'email', 'sso'] as const;
 export type StepUpProof = (typeof stepUpProofs)[number];
 
 /**
- * Authenticated session data. `secret` holds the hash of the random token in the session's cookie, never the token. A
+ * Authenticated session data. `secretHash` holds the hash of the random token in the session's cookie, never the token. A
  * revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows what ended and why; expiry needs
  * no stamp. Expired rows are swept nightly by apply_retention() (`appConfig.retention`).
  */
@@ -53,7 +53,7 @@ export const sessionsTable = snakeCase.table(
   'sessions',
   {
     id: uuid().primaryKey().$defaultFn(generateId),
-    secret: varchar({ length: maxLength.field }).notNull(),
+    secretHash: varchar({ length: maxLength.field }).notNull(),
     kind: varchar({ enum: sessionKinds }).notNull().default('regular'),
     userId: uuid()
       .notNull()
@@ -86,10 +86,10 @@ export const sessionsTable = snakeCase.table(
     steppedUpAt: isoTimestamp(),
     steppedUpVia: varchar({ enum: stepUpProofs }),
     /** The hash of the step-up cookie the stamp went out with: the stamp counts only for a browser presenting that cookie. */
-    steppedUpSecret: varchar({ length: maxLength.field }),
+    steppedUpSecretHash: varchar({ length: maxLength.field }),
   },
   (table) => [
-    index('sessions_secret_idx').on(table.secret),
+    index('sessions_secret_hash_idx').on(table.secretHash),
     index('sessions_user_id_idx').on(table.userId),
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
@@ -97,7 +97,7 @@ export const sessionsTable = snakeCase.table(
   ],
 );
 
-const { secret: _secret, steppedUpSecret: _steppedUpSecret, ...safeColumns } = getColumns(sessionsTable);
+const { secretHash: _secretHash, steppedUpSecretHash: _steppedUpSecretHash, ...safeColumns } = getColumns(sessionsTable);
 /** Every column but the secrets: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
@@ -106,7 +106,7 @@ const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = s
 export const sessionFactColumns = { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt };
 
 /** A session row without its secrets. */
-export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret' | 'steppedUpSecret'>;
+export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secretHash' | 'steppedUpSecretHash'>;
 
 /** What the guards know about a session: fixed when it was created, so the auth cache may hold them until it ends. */
 export type SessionFacts = Pick<SessionModel, keyof typeof sessionFactColumns>;

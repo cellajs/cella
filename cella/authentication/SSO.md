@@ -19,7 +19,7 @@ the people it knows through that connection to sign in this way.
 
 ## Signing in
 
-At the callback, an active connection must accept the institution the claims assert. The identity is the federation's issuer and subject. A first sign-in creates the account only with the connection's `jitProvisioning` or an invitation.
+At the callback, an active connection must accept the institution the claims assert. The identity is the federation and its subject. A first sign-in creates the account only with the connection's `jitProvisioning` or an invitation.
 
 The institution proves an address only on the connection's domains or their subdomains. It does so only where the federation vouches for its institutions' mailboxes, since the federation passes any address an identity provider releases.
 

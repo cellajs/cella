@@ -16,11 +16,11 @@ export function SessionsList() {
   const allSessions = useSuspenseQuery(meAuthQueryOptions()).data.sessions;
 
   const liveSessions = allSessions.filter(isLiveSession);
-  const revocable = liveSessions.filter((session) => !session.isCurrent);
+  const revocable = liveSessions.filter((session) => !session.current);
 
-  const currentDeviceHash = liveSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
-  const isCurrentDevice = (session: Session) => !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
-  const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
+  const currentDeviceHash = liveSessions.find((session) => session.current)?.deviceIdHash ?? null;
+  const isCurrentDevice = (session: Session) => !session.current && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
+  const rank = (session: Session) => (session.current ? 0 : isCurrentDevice(session) ? 1 : 2);
   const sessions = liveSessions.sort((a, b) => rank(a) - rank(b));
 
   // Revoked and expired sessions of the last 30 days, the most recently ended first.

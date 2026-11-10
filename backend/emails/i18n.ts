@@ -13,9 +13,9 @@ const i18n = i18next.createInstance();
 i18n.init({
   resources: locales,
   ns: ['backend', 'c', 'error'],
-  supportedLngs: appConfig.languages,
+  supportedLngs: appConfig.languageCodes,
   load: 'languageOnly',
-  fallbackLng: appConfig.defaultLanguage,
+  fallbackLng: appConfig.defaultLanguageCode,
   interpolation: { escapeValue: true, defaultVariables: i18nDefaultVariables },
   defaultNS: 'backend',
   keySeparator: false,

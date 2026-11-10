@@ -53,7 +53,7 @@ describe('Magic link authentication', async () => {
       const user = await createTestUser(signUpUser.email);
 
       const { response: res } = await call(sendMagicLink, {
-        body: { email: signUpUser.email, redirect: '/orgs/acme?tab=files#top' },
+        body: { email: signUpUser.email, redirectPath: '/orgs/acme?tab=files#top' },
         headers: defaultHeaders,
       });
 
@@ -62,15 +62,15 @@ describe('Magic link authentication', async () => {
     });
 
     it.each([
-      { name: 'absolute URL', redirect: 'https://evil.example/phish' },
-      { name: 'scheme-relative URL', redirect: '//evil.example' },
-      { name: 'backslash authority trick', redirect: '/\\evil.example' },
-      { name: 'backend route', redirect: '/api/me' },
-      { name: 'overlong path', redirect: `/${'a'.repeat(300)}` },
-    ])('should drop an invalid redirect ($name)', async ({ redirect }) => {
+      { name: 'absolute URL', redirectPath: 'https://evil.example/phish' },
+      { name: 'scheme-relative URL', redirectPath: '//evil.example' },
+      { name: 'backslash authority trick', redirectPath: '/\\evil.example' },
+      { name: 'backend route', redirectPath: '/api/me' },
+      { name: 'overlong path', redirectPath: `/${'a'.repeat(300)}` },
+    ])('should drop an invalid redirect ($name)', async ({ redirectPath }) => {
       const user = await createTestUser(signUpUser.email);
 
-      const { response: res } = await call(sendMagicLink, { body: { email: signUpUser.email, redirect }, headers: defaultHeaders });
+      const { response: res } = await call(sendMagicLink, { body: { email: signUpUser.email, redirectPath }, headers: defaultHeaders });
 
       expect(res.status).toBe(204);
       expect((await getMagicToken(user.id)).redirectPath).toBeNull();
@@ -247,14 +247,14 @@ describe('Magic link authentication', async () => {
       expect(await userFor('stranger@example.com')).toHaveLength(0);
     });
 
-    it('does not count a rejected invitation', async () => {
+    it('does not count a declined invitation', async () => {
       closeRegistration();
       const organization = await createTestOrganization();
       const inviter = await createTestUser('inviter@example.com');
       const { inactiveMembership, token } = await createInvitation({ organization, email: 'declined@example.com', createdBy: inviter.id });
       await db
         .update(inactiveMembershipsTable)
-        .set({ rejectedAt: new Date().toISOString() })
+        .set({ declinedAt: new Date().toISOString() })
         .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
       await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 

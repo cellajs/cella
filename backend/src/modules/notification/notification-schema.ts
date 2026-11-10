@@ -27,7 +27,7 @@ export const notificationSchema = createSelectSchema(notificationsTable).omit({ 
   organizationName: z.string(),
   organizationThumbnailUrl: z.string().nullable(),
   /** The context's name, as the digest names it: the thread for a comment or reply, else the subject's own. */
-  subjectTitle: z.string(),
+  subjectName: z.string(),
 });
 
 /** A page of the inbox holds at most 100 rows: each one names its actor, channel and subject. */
@@ -46,6 +46,6 @@ export const markReadBodySchema = z.object({
 
 export const markReadResponseSchema = z.object({ updated: z.number().int().min(0) });
 
-export const preferencesSchema = z.object({ mentionEmail: z.boolean(), commentEmail: z.boolean(), digest: z.enum(digestFrequencies) });
+export const preferencesSchema = z.object({ mentionEmails: z.boolean(), commentEmails: z.boolean(), digest: z.enum(digestFrequencies) });
 
 export const updatePreferencesBodySchema = preferencesSchema.partial();

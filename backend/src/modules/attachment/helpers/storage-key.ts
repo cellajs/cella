@@ -25,6 +25,6 @@ export function namesUploaderStorage(keys: AttachmentKeys, organizationId: strin
  * deletes only such keys, so a shared seed object is never removed with a row.
  */
 export function isSignableKey(key: string, bucketName: string, organizationId: string): boolean {
-  const appBuckets = [appConfig.s3.privateBucket, appConfig.s3.publicBucket];
+  const appBuckets = [appConfig.s3.privateBucketName, appConfig.s3.publicBucketName];
   return appBuckets.includes(bucketName) && isOrganizationKey(key, organizationId);
 }

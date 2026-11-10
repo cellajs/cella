@@ -13,20 +13,20 @@ import type { IconComponent } from '~/modules/common/icons/types';
 /** The backend route that starts an SSO round trip: pinned to an institution's connection, or at a federation at large. */
 export const ssoStartUrl = (
   target: { connectionId: string } | { federation: string },
-  { kind = 'auth', redirectAfter }: { kind?: 'auth' | 'connect'; redirectAfter?: string | null } = {},
+  { kind = 'auth', redirectPath }: { kind?: 'auth' | 'connect'; redirectPath?: string | null } = {},
 ) => {
   const base =
     'connectionId' in target
       ? `${appConfig.backendAuthUrl}/sso/connections/${target.connectionId}/start`
       : `${appConfig.backendAuthUrl}/sso/federations/${target.federation}/start`;
   const params = new URLSearchParams({ kind });
-  if (redirectAfter) params.set('redirectAfter', redirectAfter);
+  if (redirectPath) params.set('redirectPath', redirectPath);
   return `${base}?${params}`;
 };
 
 const federationLogos: Partial<Record<FederationKey, IconComponent>> = Object.fromEntries(
-  Object.entries(appConfig.federations).flatMap(([key, { label, logo }]) =>
-    logo ? [[key, () => <img src={logo} alt={label} className="h-5 shrink-0" draggable={false} />]] : [],
+  Object.entries(appConfig.federations).flatMap(([key, { name, logoUrl }]) =>
+    logoUrl ? [[key, () => <img src={logoUrl} alt={name} className="h-5 shrink-0" draggable={false} />]] : [],
   ),
 );
 
@@ -43,7 +43,7 @@ export function useSsoAlternatives(connectionId?: string, federations: GetAuthHe
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { data: entry, isLoading } = useQuery(ssoEntryQueryOptions(connectionId));
-  const redirectAfter = tokenId ? invitationResumePath(tokenId) : safeRedirectPath(redirect);
+  const redirectPath = tokenId ? invitationResumePath(tokenId) : safeRedirectPath(redirect);
 
   if (!isStrategyEnabled('sso')) return { institution: null, federations: [], isLoading: false };
 
@@ -51,9 +51,9 @@ export function useSsoAlternatives(connectionId?: string, federations: GetAuthHe
   const institution = contextual && {
     id: contextual.id,
     icon: BuildingIcon,
-    label: t('c:sign_in_with_institution', { institution: contextual.institution.displayName }),
-    shortLabel: contextual.institution.displayName,
-    href: ssoStartUrl({ connectionId: contextual.id }, { redirectAfter }),
+    label: t('c:sign_in_with_institution', { institution: contextual.institution.name }),
+    shortLabel: contextual.institution.name,
+    href: ssoStartUrl({ connectionId: contextual.id }, { redirectPath }),
   };
 
   return {
@@ -68,10 +68,10 @@ export function useSsoAlternatives(connectionId?: string, federations: GetAuthHe
         return {
           id: federation.key,
           icon: logo ?? BuildingIcon,
-          label: logo ? t('c:sign_in_with_your_institution') : t('c:sign_in_with_your_institution_via', { federation: federation.label }),
+          label: logo ? t('c:sign_in_with_your_institution') : t('c:sign_in_with_your_institution_via', { federation: federation.name }),
           shortLabel: t('c:your_institution'),
-          meta: logo ? undefined : federation.label,
-          href: ssoStartUrl({ federation: federation.key }, { redirectAfter }),
+          meta: logo ? undefined : federation.name,
+          href: ssoStartUrl({ federation: federation.key }, { redirectPath }),
         };
       }),
   };

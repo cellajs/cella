@@ -18,14 +18,14 @@ export const useColumns = () => {
       sortable: true,
       resizable: true,
       width: 160,
-      renderCell: ({ row: { kind, wasInvited } }) => {
-        const status = wasInvited ? t('c:pending') : t('c:not_processed');
+      renderCell: ({ row: { kind, invited } }) => {
+        const status = invited ? t('c:pending') : t('c:not_processed');
         return (
           <div className="flex items-center gap-2">
             {t(`c:${kind}`)}
             {kind === 'waitlist' && (
               <TooltipButton toolTipContent={status}>
-                <span className={cn('inline-block size-2 rounded-full', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')}>
+                <span className={cn('inline-block size-2 rounded-full', invited ? 'bg-warning' : 'bg-muted-foreground/70')}>
                   <span className="sr-only">{status}</span>
                 </span>
               </TooltipButton>

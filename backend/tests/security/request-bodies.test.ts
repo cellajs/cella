@@ -127,7 +127,7 @@ describe('request bodies', () => {
     expect(found).toEqual([]);
   });
 
-  // A string without a cap costs whatever `jsonBodyLimit` allows, per field, in the parser, an index, a regex or a mail.
+  // A string without a cap costs whatever `maxBodySize` allows, per field, in the parser, an index, a regex or a mail.
   // A `.max()` before any refinement refuses it first; a `maxLength` constant or the column's length names the cap.
   it('must not accept a string without a length limit', async () => {
     const { paths = {}, components } = await loadDocument();

@@ -36,7 +36,7 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
       findSsoConnectionByTenant(ctx, { tenantId: inactiveMembership.tenantId }),
     ]);
     // The invited organization's institution, so the invitee is offered that sign-in first.
-    if (connection?.status === 'active' && isFederationKey(connection.issuer) && isFederationConfigured(connection.issuer)) {
+    if (connection?.status === 'active' && isFederationKey(connection.federation) && isFederationConfigured(connection.federation)) {
       tokenData.ssoConnectionId = connection.id;
     }
     if (entity) {

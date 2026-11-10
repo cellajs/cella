@@ -39,8 +39,8 @@ export const connectionSchema = z
 export const connectionParamSchema = tenantOnlyParamSchema.extend({ connectionId: validIdSchema });
 
 export const createConnectionBodySchema = z.object({
-  issuer: federationKeySchema,
-  displayName: validNameSchema.describe("The institution's name, as the federation's metadata lists it"),
+  federation: federationKeySchema,
+  name: validNameSchema.describe("The institution's name, as the federation's metadata lists it"),
   claimValues: z
     .array(validDomainSchema)
     .min(1)
@@ -53,4 +53,4 @@ export const createConnectionBodySchema = z.object({
   logoUrl: z.string().max(maxLength.field).pipe(validUrlSchema).optional(),
 });
 
-export const updateConnectionBodySchema = createConnectionBodySchema.omit({ issuer: true }).partial();
+export const updateConnectionBodySchema = createConnectionBodySchema.omit({ federation: true }).partial();

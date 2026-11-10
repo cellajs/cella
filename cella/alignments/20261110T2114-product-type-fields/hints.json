@@ -1,0 +1,3 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "notifications", "entity_type"], "to": ["public", "notifications", "product_type"] }
+]

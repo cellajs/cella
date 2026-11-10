@@ -9,9 +9,9 @@ import { getIsoDate } from '#/utils/iso-date';
 export type { PendingSignUp } from '#/modules/auth/tokens/tokens-db';
 
 /** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
-export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
+export type TokenRecord = Omit<UnsafeTokenModel, 'secretHash' | 'singleUseToken'>;
 
-const { secret: _secret, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
+const { secretHash: _secretHash, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
 
 interface FindInvitationTokenOpts {
   id: string;
@@ -105,7 +105,7 @@ const replacementSubjects = {
     if (identityId) return eq(tokensTable.identityId, identityId);
     if (!pendingSignUp) return undefined;
     return and(
-      sql`${tokensTable.pendingSignUp}->>'issuer' = ${pendingSignUp.issuer}`,
+      sql`${tokensTable.pendingSignUp}->>'provider' = ${pendingSignUp.provider}`,
       sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
     );
   },
@@ -138,7 +138,7 @@ export const insertTokens = async (ctx: DbContext, { values }: { values: InsertT
   ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
 
 /** Names the token a link of `kind` carries, by the hash of the raw value in its URL. */
-const namedBy = (kind: LinkTokenKind, rawToken: string) => and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.kind, kind));
+const namedBy = (kind: LinkTokenKind, rawToken: string) => and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind));
 
 interface LinkTokenOpts {
   kind: LinkTokenKind;
@@ -188,7 +188,7 @@ export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, 
  * the cookie holds its single-use value, a cookie-carried token's cookie holds the token itself.
  */
 const boundTo = (kind: TokenKind, cookie: string) => {
-  const hashedColumn = tokenPolicies[kind].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secret;
+  const hashedColumn = tokenPolicies[kind].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secretHash;
   return and(eq(tokensTable.kind, kind), eq(hashedColumn, hashToken(cookie)));
 };
 
@@ -228,7 +228,7 @@ export const deleteSessionCodeToken = async (ctx: DbContext, { kind, sessionId, 
       and(
         eq(tokensTable.kind, kind),
         eq(tokensTable.sessionId, sessionId),
-        eq(tokensTable.secret, hashToken(code)),
+        eq(tokensTable.secretHash, hashToken(code)),
         gt(tokensTable.expiresAt, getIsoDate()),
       ),
     )

@@ -15,7 +15,7 @@ export const requestsTable = snakeCase.table(
     message: text(),
     email: varchar({ length: maxLength.field }).notNull(),
     kind: varchar({ enum: requestKinds }).notNull(),
-    /** When an invitation first went out to a waitlist request's address; responses carry it as `wasInvited`. */
+    /** When an invitation first went out to a waitlist request's address; responses carry it as `invited`. */
     invitedAt: isoTimestamp(),
   },
   (table) => [

@@ -17,7 +17,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-type Created = { data: { id: string; createdBy: { id: string } | null }[]; rejectedIds: string[] };
+type Created = { results: { id: string; createdBy: { id: string } | null }[]; rejectedIds: string[] };
 
 /**
  * A replayed create answers with the rows its first attempt wrote, before the CDC worker saw them (the suite runs without
@@ -38,7 +38,7 @@ describe('Idempotent attachment creates and deletes', async () => {
   /** A create body for an upload in `home`, sent as the sync mutation `mutationId`. */
   const bodyFor = (id: string, mutationId: string, home = plan) =>
     attachmentBody(id, home, {
-      bucketName: appConfig.s3.privateBucket,
+      bucketName: appConfig.s3.privateBucketName,
       stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
     });
 
@@ -53,7 +53,7 @@ describe('Idempotent attachment creates and deletes', async () => {
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
     const created = data as Created | undefined;
-    return { status: response.status, body: error, data: created?.data ?? [], rejectedIds: created?.rejectedIds ?? [] };
+    return { status: response.status, body: error, data: created?.results ?? [], rejectedIds: created?.rejectedIds ?? [] };
   };
 
   /** A delete of `ids`, sent as the sync mutation `mutationId`. */

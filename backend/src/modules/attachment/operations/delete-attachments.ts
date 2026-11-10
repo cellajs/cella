@@ -19,9 +19,9 @@ export async function deleteAttachmentsOp(
   ctx: ActorContext,
   ids: string[],
   stx: Pick<StxBase, 'mutationId' | 'sourceId'> = createServerStx(),
-): Promise<{ data: []; rejectedIds: string[] }> {
+): Promise<{ results: []; rejectedIds: string[] }> {
   const { allowedIds, rejectedIds } = await splitDeleteByPermission(ctx, attachmentsTable, 'attachment', ids, stx);
-  if (!allowedIds.length) return { data: [], rejectedIds };
+  if (!allowedIds.length) return { results: [], rejectedIds };
 
   await tenantContextIncludingDeleted(ctx, async (txCtx) => {
     const deleted = await deleteAttachmentsByIds(txCtx, { ids: allowedIds, actorId: ctx.var.actor.id, stx });
@@ -31,5 +31,5 @@ export async function deleteAttachmentsOp(
 
   log.info('Attachments deleted', { ids: allowedIds });
 
-  return { data: [], rejectedIds };
+  return { results: [], rejectedIds };
 }

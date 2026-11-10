@@ -4,7 +4,7 @@ import { ALLOWED_KEYS, buildDeployEnv } from './deploy-env';
 const fakeAppConfig = {
   slug: 'cella',
   mode: 'production',
-  s3: { region: 'nl-ams', publicBucket: 'cella-public', privateBucket: 'cella-private', host: 's3.nl-ams.scw.cloud' },
+  s3: { region: 'nl-ams', publicBucketName: 'cella-public', privateBucketName: 'cella-private', host: 's3.nl-ams.scw.cloud' },
   domain: 'cella.example',
   frontendUrl: 'https://www.cella.example',
   backendUrl: 'https://www.cella.example/api',

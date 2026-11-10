@@ -232,10 +232,10 @@ describe('Opening a token link while signed in', async () => {
     const me = await createTestUser('my-account@example.com');
     const { rawToken: raw } = await freshInvitation({ email: invitedEmail });
 
-    const { response, redirectTo } = await openHeldLink('invitation', raw, new CookieJar([await createTestSession(me)]));
+    const { response, redirectUrl } = await openHeldLink('invitation', raw, new CookieJar([await createTestSession(me)]));
 
     expect(response.status).toBe(200);
-    expect(redirectTo).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
+    expect(redirectUrl).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
   });
 
   it('keeps an opened invitation usable long enough to sign in to another account', async () => {

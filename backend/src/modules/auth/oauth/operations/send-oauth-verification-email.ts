@@ -25,8 +25,8 @@ type Props = { redirectPath?: string | null } & (
     }
 );
 
-/** The provider's name as people read it: an identity stores the strategy slug as its issuer. */
-const readableProviderName = (issuer: string) => strategyLabels[issuer as AuthStrategy] ?? issuer;
+/** The provider's name as people read it: an identity stores the strategy slug as its provider. */
+const readableProviderName = (provider: string) => strategyLabels[provider as AuthStrategy] ?? provider;
 
 /** What the mail says and where it goes, with the token that stands for the verification. */
 const verificationFor = async (props: Props) => {
@@ -36,7 +36,7 @@ const verificationFor = async (props: Props) => {
   if ('signUp' in props) {
     const { signUp, email } = props;
     const token: NewToken = { kind: 'oauth-verification', email, pendingSignUp: signUp, redirectPath };
-    return { token, name: signUp.name, lng: appConfig.defaultLanguage, providerName: readableProviderName(signUp.issuer), isNewUser: true };
+    return { token, name: signUp.name, lng: appConfig.defaultLanguageCode, providerName: readableProviderName(signUp.provider), isNewUser: true };
   }
 
   const user = await findUserById(dbCtx, { id: props.userId });
@@ -60,7 +60,7 @@ const verificationFor = async (props: Props) => {
     identityId: identity.id,
     redirectPath,
   };
-  return { token, name: user.name, lng: user.languageCode, providerName: readableProviderName(identity.issuer), isNewUser: false };
+  return { token, name: user.name, lng: user.languageCode, providerName: readableProviderName(identity.provider), isNewUser: false };
 };
 
 /**

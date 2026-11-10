@@ -13,7 +13,7 @@ export const activitiesTable = snakeCase.table(
     id: varchar({ length: maxLength.id }).notNull(),
     tenantId: varchar({ length: tenantIdLength }),
     /** The row's writer as the CDC worker infers it from the row's writer columns: a user or a service account. */
-    userId: uuid().$type<ActorId>(),
+    actorId: uuid().$type<ActorId>(),
     entityType: varchar({ enum: appConfig.entityTypes }),
     resourceType: varchar({ enum: appConfig.resourceTypes }),
     action: varchar({ enum: activityActions }).notNull(),

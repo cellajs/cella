@@ -270,7 +270,7 @@ exist need a data migration that gives them the new id column.
   (`backend/src/modules/entities/`). Never query `product_counters` yourself.
 - **Embedding in another product**: an id array on the host, declared in `appConfig.productEmbeddings`
   ([Embeddings](../../SYNC_ENGINE.md#embeddings)). A host write keeps only the ids `filterExistingProductIds` returns.
-- **Limits**: `defaultRestrictions.quotas` for a per-tenant cap, `requestLimits` for batch sizes.
+- **Limits**: `defaultRestrictions.quotas` for a per-tenant cap, `pageSizes` for the default page size of its list.
 - **Tables that are no entity**: register them in `backend/src/db/product-tables.ts`:
   `appPartitionConfigs` for a time-partitioned table with retention (its period from
   `appConfig.retention`), `appFullCrudTables` or `appReadOnlyTables` for a table outside RLS that

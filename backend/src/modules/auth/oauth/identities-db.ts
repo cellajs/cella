@@ -11,8 +11,8 @@ const identityKinds = ['oauth', 'sso'] as const;
 export type IdentityKind = (typeof identityKinds)[number];
 
 /**
- * External identities of a user, keyed on the issuer's own subject: (kind, issuer, subject). A user can hold several.
- * The address is a display snapshot of what the issuer asserted last, never a key or a lookup; proven inboxes live in
+ * External identities of a user, keyed on the provider's own subject: (kind, provider, subject). A user can hold several.
+ * The address is a display snapshot of what the provider asserted last, never a key or a lookup; proven inboxes live in
  * `emails`.
  */
 export const identitiesTable = snakeCase.table(
@@ -26,7 +26,7 @@ export const identitiesTable = snakeCase.table(
       .$type<UserId>(),
     kind: varchar({ enum: identityKinds }).notNull().default('oauth'),
     /** Always a slug, namespaced by kind: an OAuth provider for 'oauth', a federation key for 'sso'; the issuer URL lives in config. */
-    issuer: varchar({ length: maxLength.field }).notNull(),
+    provider: varchar({ length: maxLength.field }).notNull(),
     subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),
     verified: boolean().notNull().default(false),
@@ -39,7 +39,7 @@ export const identitiesTable = snakeCase.table(
   },
   (table) => [
     index('identities_user_id_idx').on(table.userId),
-    uniqueIndex('identities_kind_issuer_subject_idx').on(table.kind, table.issuer, table.subject),
+    uniqueIndex('identities_kind_provider_subject_idx').on(table.kind, table.provider, table.subject),
   ],
 );
 

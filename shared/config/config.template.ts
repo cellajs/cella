@@ -89,7 +89,7 @@ export const config = {
       serviceAccount: 20,
       apiKey: 100,
     },
-    rateLimits: { apiPointsPerHour: 1000, invitationMailsPerDay: 250 },
+    rateLimits: { apiPointsPerHour: 1000, invitationEmailsPerDay: 250 },
   },
 
   /**
@@ -215,11 +215,11 @@ export const config = {
   has: {
     pwa: true,
     push: false,
-    commentEmail: false,
+    commentEmails: false,
     selfRegistration: false,
     waitlist: false,
     /** Off until S3 is configured: files stay in the browser (IndexedDB). */
-    uploadEnabled: false,
+    uploads: false,
     chatSupport: false,
     demos: false,
   },
@@ -239,7 +239,7 @@ export const config = {
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
   enabledOAuthProviders: ['github'] as const,
   /**
-   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities issuer
+   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities provider
    * slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is
    * live when those are set. Every mode but production signs in through its `sandbox`. A tenant's connection names one
    * entry and the institution behind it. A new app starts with none; the template's own config declares `surfconext` as
@@ -264,9 +264,9 @@ export const config = {
 
   apiDescription: '⚠️ ATTENTION: PRERELEASE! This API is organized into modules based on logical domains.',
 
-  // Request limits
+  // Page and body sizes
 
-  requestLimits: {
+  pageSizes: {
     default: 40,
     users: 100,
     members: 40,
@@ -276,13 +276,13 @@ export const config = {
     pendingMemberships: 20,
   },
 
-  jsonBodyLimit: 1 * 1024 * 1024,
+  maxBodySize: 1 * 1024 * 1024,
 
   // Storage & uploads (S3)
 
   s3: { region: '', host: '' } as S3ConfigInput,
 
-  uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
+  uploadTemplateIds: ['thumbnail', 'banner', 'attachment', 'newsletter'] as const,
 
   /**
    * Origin of the media asset CDN, which serves re-hosted images as immutable content-hash objects. A media block may
@@ -336,7 +336,7 @@ export const config = {
   // Theming & UI
 
   theme: {
-    navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
+    navigation: { sidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
     strokeWidth: 1.75,
     /**
@@ -369,8 +369,8 @@ export const config = {
 
   // Localization
 
-  defaultLanguage: 'en' as const,
-  languages: ['en', 'nl'] as const,
+  defaultLanguageCode: 'en' as const,
+  languageCodes: ['en', 'nl'] as const,
   commonRegionCodes: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
   /** How a date reads in tables and tiles: 'day' as "Today" or "Sep 23" with the time on hover, 'minute' with the time shown. */
   listDatePrecision: 'day' as const,

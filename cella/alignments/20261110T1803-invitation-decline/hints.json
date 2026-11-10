@@ -1,0 +1,3 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "inactive_memberships", "rejected_at"], "to": ["public", "inactive_memberships", "declined_at"] }
+]

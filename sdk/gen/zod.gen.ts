@@ -231,7 +231,7 @@ export const zStreamChange = z.object({
   spreadWindow: z.int().nullable(),
   propagation: z
     .object({
-      embeddedProduct: z.enum(['attachment']),
+      embeddedProductType: z.enum(['attachment']),
       update: z.array(z.string()),
       remove: z.array(z.string()),
     })
@@ -318,10 +318,10 @@ export const zMeAuthData = z.object({
   institutions: z.array(
     z.object({
       connectionId: z.string(),
-      displayName: z.string(),
+      name: z.string(),
       federation: z.object({
         key: z.enum(['surfconext']),
-        label: z.string(),
+        name: z.string(),
       }),
       identity: z
         .object({
@@ -360,8 +360,8 @@ export const zMeAuthData = z.object({
       revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
-      isCurrent: z.boolean(),
-      isNewDevice: z.boolean(),
+      current: z.boolean(),
+      newDevice: z.boolean(),
     }),
   ),
   passkeys: z.array(
@@ -544,7 +544,6 @@ export const zOrganization = z.object({
   languageCodes: z.array(z.enum(['en', 'nl'])).min(1),
   notificationEmail: z.string().max(255).nullable(),
   color: z.string().max(255).nullable(),
-  logoUrl: z.string().max(2048).nullable(),
   websiteUrl: z.string().max(2048).nullable(),
   welcomeText: z.string().max(1000000).nullable(),
   chatSupport: z.boolean(),
@@ -587,7 +586,7 @@ export const zRequest = z.object({
   message: z.string().nullable(),
   email: z.string().max(255),
   kind: z.enum(['waitlist', 'newsletter', 'contact']),
-  wasInvited: z.boolean(),
+  invited: z.boolean(),
 });
 
 /**
@@ -703,7 +702,7 @@ export const zTenant = z.object({
     }),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
-      invitationMailsPerDay: z.int().gte(0),
+      invitationEmailsPerDay: z.int().gte(0),
     }),
     allowUnregisteredClients: z.boolean(),
   }),
@@ -767,9 +766,9 @@ export const zConnection = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
   kind: z.enum(['sso']),
-  issuer: z.string().max(255),
+  federation: z.string().max(255),
   claimValues: z.array(z.string()),
-  displayName: z.string().max(255),
+  name: z.string().max(255),
   status: z.enum(['pending', 'active', 'disabled']),
   jitProvisioning: z.boolean(),
   config: z.object({
@@ -876,7 +875,7 @@ export const zPresignAttachmentUrlsPath = z.object({
  * Presigned URLs
  */
 export const zPresignAttachmentUrlsResponse = z.object({
-  data: z.array(
+  results: z.array(
     z.object({
       attachmentId: z.uuid(),
       variant: z.enum(['original', 'preview', 'thumbnail', 'converted']),
@@ -955,12 +954,12 @@ export const zBatchCreateAttachmentsPath = z.object({
 
 export const zBatchCreateAttachmentsResponse = z.union([
   z.object({
-    data: z.array(zAttachment),
+    results: z.array(zAttachment),
     rejectedIds: z.array(z.string()),
     rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
   z.object({
-    data: z.array(zAttachment),
+    results: z.array(zAttachment),
     rejectedIds: z.array(z.string()),
     rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
@@ -1010,7 +1009,7 @@ export const zBatchDeleteAttachmentsPath = z.object({
  * Success
  */
 export const zBatchDeleteAttachmentsResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1036,7 +1035,7 @@ export const zPresignPublicAttachmentUrlsPath = z.object({
  * Presigned URLs
  */
 export const zPresignPublicAttachmentUrlsResponse = z.object({
-  data: z.array(
+  results: z.array(
     z.object({
       attachmentId: z.uuid(),
       variant: z.enum(['original', 'preview', 'thumbnail', 'converted']),
@@ -1056,7 +1055,7 @@ export const zGetAuthHealthResponse = z.object({
   federations: z.array(
     z.object({
       key: z.enum(['surfconext']),
-      label: z.string(),
+      name: z.string(),
     }),
   ),
   emailEnabled: z.boolean(),
@@ -1099,7 +1098,7 @@ export const zRedeemLinkTokenPath = z.object({
  * Where the browser goes next: the app with the token session, or the provider for a verification.
  */
 export const zRedeemLinkTokenResponse = z.object({
-  redirectTo: z.string(),
+  redirectUrl: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
@@ -1157,7 +1156,7 @@ export const zSignOutResponse = z.void();
 
 export const zSendMagicLinkBody = z.object({
   email: z.email().min(4).max(255),
-  redirect: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 /**
@@ -1296,17 +1295,17 @@ export const zStartOAuthConnectResponse = z.void();
 
 export const zStartGithubOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
-  redirectAfter: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 export const zStartGoogleOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
-  redirectAfter: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 export const zStartMicrosoftOAuthQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
-  redirectAfter: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 export const zGithubCallbackQuery = z.object({
@@ -1348,10 +1347,10 @@ export const zGetSsoEntryResponse = z.object({
   status: z.enum(['pending', 'active', 'disabled']),
   federation: z.object({
     key: z.enum(['surfconext']),
-    label: z.string(),
+    name: z.string(),
   }),
   institution: z.object({
-    displayName: z.string(),
+    name: z.string(),
     logoUrl: z.string().nullable(),
   }),
   organization: z
@@ -1370,7 +1369,7 @@ export const zStartSsoPath = z.object({
 
 export const zStartSsoQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
-  redirectAfter: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 export const zStartSsoFederationPath = z.object({
@@ -1379,7 +1378,7 @@ export const zStartSsoFederationPath = z.object({
 
 export const zStartSsoFederationQuery = z.object({
   kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
-  redirectAfter: z.string().max(2048).optional(),
+  redirectPath: z.string().max(2048).optional(),
 });
 
 export const zSsoCallbackQuery = z.object({
@@ -1498,7 +1497,7 @@ export const zArchiveChannelPath = z.object({
  * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
  */
 export const zArchiveChannelResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1520,7 +1519,7 @@ export const zUnarchiveChannelPath = z.object({
  * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
  */
 export const zUnarchiveChannelResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1537,7 +1536,7 @@ export const zCatchUpMyStreamBody = z.object({
     .array(
       z.object({
         organizationId: z.string().max(50),
-        entityType: z.enum(['attachment']),
+        productType: z.enum(['attachment']),
         cursor: z.int().gte(0),
       }),
     )
@@ -1556,7 +1555,7 @@ export const zCatchUpMyStreamResponse = z.object({
       propagation: z
         .array(
           z.object({
-            embeddedProduct: z.enum(['attachment']),
+            embeddedProductType: z.enum(['attachment']),
             update: z.array(z.string()),
             remove: z.array(z.string()),
             overflow: z.boolean().optional(),
@@ -1570,7 +1569,7 @@ export const zCatchUpMyStreamResponse = z.object({
   views: z.array(
     z.object({
       organizationId: z.string(),
-      entityType: z.enum(['attachment']),
+      productType: z.enum(['attachment']),
       status: z.enum(['ok', 'opaque', 'forbidden']),
       frontier: z.int().optional(),
     }),
@@ -1678,7 +1677,7 @@ export const zListMyInvitationsResponse = z.object({
         email: z.string().max(255),
         userId: z.uuid().nullable(),
         role: z.enum(['admin', 'member']),
-        rejectedAt: z.string().nullable(),
+        declinedAt: z.string().nullable(),
         remindedAt: z.string().nullable(),
         createdBy: zActorRef,
         organizationId: z.uuid(),
@@ -1699,14 +1698,14 @@ export const zAcceptInvitationPath = z.object({
  */
 export const zAcceptInvitationResponse = zChannelBase;
 
-export const zRejectInvitationPath = z.object({
+export const zDeclineInvitationPath = z.object({
   invitationId: z.string().max(50),
 });
 
 /**
  * The invitation's organization
  */
-export const zRejectInvitationResponse = zChannelBase;
+export const zDeclineInvitationResponse = zChannelBase;
 
 export const zRevokeMySessionsBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
@@ -1716,7 +1715,7 @@ export const zRevokeMySessionsBody = z.object({
  * Sessions were revoked
  */
 export const zRevokeMySessionsResponse = z.object({
-  data: z.array(
+  results: z.array(
     z.object({
       id: z.uuid(),
       kind: z.enum(['regular', 'mfa']),
@@ -1756,7 +1755,7 @@ export const zLeaveMembershipResponse = z.void();
 
 export const zGetUploadTokenQuery = z.object({
   organizationId: z.uuid().optional(),
-  templateId: z.enum(['avatar', 'cover', 'attachment', 'newsletter']),
+  templateId: z.enum(['thumbnail', 'banner', 'attachment', 'newsletter']),
 });
 
 /**
@@ -1843,7 +1842,7 @@ export const zInviteMembersQuery = z.object({
  * What happened to each address
  */
 export const zInviteMembersResponse = z.object({
-  data: z.array(
+  results: z.array(
     z.object({
       id: z.uuid(),
       tenantId: z.string().max(24),
@@ -1902,7 +1901,7 @@ export const zBatchDeleteMembersQuery = z.object({
  * Success
  */
 export const zBatchDeleteMembersResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2139,7 +2138,7 @@ export const zListNotificationsResponse = z.object({
       createdAt: z.string(),
       actorId: z.uuid().nullable(),
       kind: z.enum(['mention', 'comment', 'reply']),
-      entityType: z.enum(['attachment']),
+      productType: z.enum(['attachment']),
       subjectId: z.uuid(),
       contextId: z.uuid().nullable(),
       channelId: z.uuid(),
@@ -2158,7 +2157,7 @@ export const zListNotificationsResponse = z.object({
       channelThumbnailUrl: z.string().nullable(),
       organizationName: z.string(),
       organizationThumbnailUrl: z.string().nullable(),
-      subjectTitle: z.string(),
+      subjectName: z.string(),
     }),
   ),
   nextPageToken: z.string().optional(),
@@ -2184,14 +2183,14 @@ export const zMarkNotificationsReadResponse = z.object({
  * Notification preferences
  */
 export const zGetNotificationPreferencesResponse = z.object({
-  mentionEmail: z.boolean(),
-  commentEmail: z.boolean(),
+  mentionEmails: z.boolean(),
+  commentEmails: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
 export const zUpdateNotificationPreferencesBody = z.object({
-  mentionEmail: z.boolean().optional(),
-  commentEmail: z.boolean().optional(),
+  mentionEmails: z.boolean().optional(),
+  commentEmails: z.boolean().optional(),
   digest: z.enum(['off', 'daily', 'weekly']).optional(),
 });
 
@@ -2199,8 +2198,8 @@ export const zUpdateNotificationPreferencesBody = z.object({
  * Preferences updated
  */
 export const zUpdateNotificationPreferencesResponse = z.object({
-  mentionEmail: z.boolean(),
-  commentEmail: z.boolean(),
+  mentionEmails: z.boolean(),
+  commentEmails: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
@@ -2304,7 +2303,7 @@ export const zBatchCreateOrganizationsPath = z.object({
  * Organizations were created
  */
 export const zBatchCreateOrganizationsResponse = z.object({
-  data: z.array(
+  results: z.array(
     zOrganization.and(
       z.object({
         included: z
@@ -2399,7 +2398,6 @@ export const zUpdateOrganizationBody = z.object({
   notificationEmail: z.string().max(255).nullish(),
   color: z.string().max(255).nullish(),
   thumbnailUrl: z.string().max(2048).nullish(),
-  logoUrl: z.string().max(2048).nullish(),
   bannerUrl: z.string().max(2048).nullish(),
   websiteUrl: z.string().max(2048).nullish(),
   welcomeText: z.string().max(1000000).nullish(),
@@ -2452,7 +2450,7 @@ export const zPublishOrganizationPath = z.object({
  */
 export const zPublishOrganizationResponse = z.object({
   organization: zOrganization,
-  invitationsSent: z.int().gte(0),
+  invitationCount: z.int().gte(0),
 });
 
 export const zBatchDeleteOrganizationsBody = z.object({
@@ -2467,7 +2465,7 @@ export const zBatchDeleteOrganizationsPath = z.object({
  * Success
  */
 export const zBatchDeleteOrganizationsResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2561,7 +2559,7 @@ export const zBatchDeleteRequestsBody = z.object({
  * Success
  */
 export const zBatchDeleteRequestsResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2574,8 +2572,8 @@ export const zBatchDeleteRequestsResponse = z.object({
 export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
 
 export const zMarkSeenBody = z.object({
-  entityIds: z.array(z.string().max(50)).min(1).max(500),
-  entityType: z.enum(['attachment']),
+  productIds: z.array(z.string().max(50)).min(1).max(500),
+  productType: z.enum(['attachment']),
 });
 
 export const zMarkSeenPath = z.object({
@@ -2747,10 +2745,10 @@ export const zInviteUsersBody = z.object({
  * Invitations are sent
  */
 export const zInviteUsersResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
-  invitesSentCount: z.number(),
+  invitationCount: z.number(),
 });
 
 /**
@@ -2768,7 +2766,7 @@ export const zBatchDeleteUsersBody = z.object({
  * Success
  */
 export const zBatchDeleteUsersResponse = z.object({
-  data: z.array(z.unknown()).max(0),
+  results: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2914,7 +2912,7 @@ export const zUpdateTenantBody = z.object({
       rateLimits: z
         .object({
           apiPointsPerHour: z.int().gte(0).nullish(),
-          invitationMailsPerDay: z.int().gte(0).nullish(),
+          invitationEmailsPerDay: z.int().gte(0).nullish(),
         })
         .nullish(),
       allowUnregisteredClients: z.boolean().nullish(),
@@ -2956,8 +2954,8 @@ export const zListConnectionsResponse = z.object({
 });
 
 export const zCreateConnectionBody = z.object({
-  issuer: z.enum(['surfconext']),
-  displayName: z
+  federation: z.enum(['surfconext']),
+  name: z
     .string()
     .min(1)
     .max(255)
@@ -2998,7 +2996,7 @@ export const zDeleteConnectionPath = z.object({
 export const zDeleteConnectionResponse = z.void();
 
 export const zUpdateConnectionBody = z.object({
-  displayName: z
+  name: z
     .string()
     .min(1)
     .max(255)

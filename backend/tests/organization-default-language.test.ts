@@ -9,7 +9,7 @@ import { createOrganizationAdminUser, createTestOrganization, createTestSession,
 import { clearSecurityTestData } from './security/helpers';
 import { createAppClient } from './test-client';
 
-const [first, second] = appConfig.languages;
+const [first, second] = appConfig.languageCodes;
 
 describe.skipIf(!second)('Organization default language', async () => {
   const call = await createAppClient();

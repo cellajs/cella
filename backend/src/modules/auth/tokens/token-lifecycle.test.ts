@@ -77,9 +77,9 @@ describe('issueToken', () => {
     const { token, rawToken } = await issueToken(ctx, { kind: 'magic', email: address() });
 
     const row = await rowOf(token.id);
-    expect(row.secret).toBe(hashToken(rawToken));
+    expect(row.secretHash).toBe(hashToken(rawToken));
     expect(row.singleUseToken).toBeNull();
-    expect(token).not.toHaveProperty('secret');
+    expect(token).not.toHaveProperty('secretHash');
     expect(token).not.toHaveProperty('singleUseToken');
     expect(minutesUntil(row.expiresAt)).toBeGreaterThan(14);
     expect(minutesUntil(row.expiresAt)).toBeLessThanOrEqual(15);

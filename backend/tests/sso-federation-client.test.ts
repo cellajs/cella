@@ -24,7 +24,7 @@ const issuer = 'https://connect.test.surfconext.nl';
 
 const federation: Federation = {
   key: 'surfconext',
-  label: 'SURFconext',
+  name: 'SURFconext',
   issuer,
   scopes: ['openid'],
   clientAuthMethod: 'client_secret_basic',

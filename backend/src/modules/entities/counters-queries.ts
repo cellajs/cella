@@ -28,7 +28,7 @@ const membershipPairs = (alias: string, idColumn: string, channelType: string, c
   countPair(
     'm:c:pending',
     'inactive_memberships im',
-    `im.${idColumn} = ${alias}.id AND im.channel_type = '${channelType}' AND im.rejected_at IS NULL`,
+    `im.${idColumn} = ${alias}.id AND im.channel_type = '${channelType}' AND im.declined_at IS NULL`,
   ),
 ];
 

@@ -13,7 +13,7 @@ app.get('/', (c) => {
   const rows = emailPreviewList
     .map(({ name, variant }) => {
       const query = variant ? `&variant=${variant}` : '';
-      const links = appConfig.languages.map((lng) => `<a href="${base}${name}?lng=${lng}${query}">${lng}</a>`).join(' · ');
+      const links = appConfig.languageCodes.map((lng) => `<a href="${base}${name}?lng=${lng}${query}">${lng}</a>`).join(' · ');
       return `<li><strong>${previewPath({ name, variant })}</strong>: ${links}</li>`;
     })
     .join('\n');
@@ -38,7 +38,7 @@ app.get('/', (c) => {
   return c.html(html);
 });
 
-app.get('/list', (c) => c.json({ names: emailPreviewList.map(previewPath), languages: appConfig.languages }));
+app.get('/list', (c) => c.json({ names: emailPreviewList.map(previewPath), languages: appConfig.languageCodes }));
 
 app.get('/:name', async (c) => {
   const name = c.req.param('name');
@@ -47,7 +47,7 @@ app.get('/:name', async (c) => {
   const variant = c.req.query('variant') || undefined;
   if (!previewData(name, variant)) return c.text(`Unknown variant of email preview ${name}: ${variant}`, 404);
 
-  const lng = c.req.query('lng') || appConfig.languages[0];
+  const lng = c.req.query('lng') || appConfig.languageCodes[0];
   const placeholders = c.req.query('placeholders') === '1';
 
   const { html } = await renderEmailPreview(name, { lng, variant, placeholders });

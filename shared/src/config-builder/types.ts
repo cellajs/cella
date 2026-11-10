@@ -25,17 +25,18 @@ export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
 
 /**
  * An identity federation institutions sign in through (the `sso` method): public metadata only. The key it sits
- * under in `federations` is the session strategy, the identities issuer slug and the env prefix of its client
+ * under in `federations` is the session strategy, the identities provider slug and the env prefix of its client
  * secret (`SSO_<KEY>_CLIENT_ID`, `SSO_<KEY>_CLIENT_SECRET`).
  */
 export interface FederationConfig {
   /** Shown on sign-in buttons and in session lists. */
-  label: string;
+  name: string;
   /**
-   * Path of the federation's logo under the frontend's public folder. Its "sign in with your institution" button shows
-   * the logo in place of the generic icon and of the federation's name; use the file the federation publishes, unaltered.
+   * Relative URL of the federation's logo in the frontend's public folder. Its "sign in with your institution" button
+   * shows the logo in place of the generic icon and of the federation's name; use the file the federation publishes,
+   * unaltered.
    */
-  logo?: string;
+  logoUrl?: string;
   /** OIDC issuer; endpoints come from its discovery document. */
   issuer: string;
   /** SAML metadata feed listing the federation's institutions (entity ids, names, logos, domains); optional. */
@@ -67,15 +68,15 @@ export type BaseOAuthProviders = (typeof oauthProviders)[number];
 export interface S3ConfigInput {
   region: string;
   host: string;
-  publicBucket?: string;
-  privateBucket?: string;
+  publicBucketName?: string;
+  privateBucketName?: string;
   publicCDNUrl?: string;
   privateCDNUrl?: string;
 }
 
 export type S3Config = Required<S3ConfigInput>;
 
-export interface RequestLimitsConfig {
+export interface PageSizesConfig {
   default: number;
   [key: string]: number;
 }
@@ -85,10 +86,10 @@ export interface HasFlagsConfig {
   /** Web Push delivery for notifications; sending also needs VAPID_* backend env vars. */
   push: boolean;
   /** Comment and reply emails: shows the preference in the account settings and mails those who turn it on. */
-  commentEmail: boolean;
+  commentEmails: boolean;
   selfRegistration: boolean;
   waitlist: boolean;
-  uploadEnabled: boolean;
+  uploads: boolean;
   chatSupport: boolean;
   /** Visitors can take a demo (`createDemo`): a throwaway account with a `demo` tenant, signed in by a `demo` session. */
   demos: boolean;
@@ -116,7 +117,7 @@ export interface TenantKindConfig<Q extends string = string> {
   /** Laid over `defaultRestrictions` when a tenant of this kind is created. */
   restrictions?: {
     quotas?: Partial<Record<Q, number>>;
-    rateLimits?: Partial<{ apiPointsPerHour: number; invitationMailsPerDay: number }>;
+    rateLimits?: Partial<{ apiPointsPerHour: number; invitationEmailsPerDay: number }>;
   };
 }
 
@@ -196,7 +197,7 @@ export interface RetentionConfig {
 }
 
 export interface ThemeNavigationConfig {
-  hasSidebarTextLabels: boolean;
+  sidebarTextLabels: boolean;
   sidebarWidthExpanded: string;
   sidebarWidthCollapsed: string;
   sheetPanelWidth: string;
@@ -256,8 +257,8 @@ export interface CompanyConfig {
  * references to dead rows.
  */
 export interface ProductEmbedding<P extends string = string> {
-  readonly embeddedProduct: P;
-  readonly hostProduct: P;
+  readonly embeddedProductType: P;
+  readonly hostProductType: P;
   readonly hostColumn: string;
   readonly lifecycle?: 'shared' | 'owned';
 }
@@ -287,7 +288,7 @@ export interface ConfigStringArrays {
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
   tokenKinds: readonly string[];
-  languages: readonly string[];
+  languageCodes: readonly string[];
   uploadTemplateIds: readonly string[];
 }
 
@@ -342,7 +343,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
     /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
-    rateLimits: { apiPointsPerHour: number; invitationMailsPerDay: number };
+    rateLimits: { apiPointsPerHour: number; invitationEmailsPerDay: number };
   };
   selfServiceTenantsPerUser: number;
   tenantKinds: Record<TenantKind, TenantKindConfig<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey'>>;
@@ -353,7 +354,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   tokenKinds: T['tokenKinds'];
 
-  languages: T['languages'];
+  languageCodes: T['languageCodes'];
 
   uploadTemplateIds: T['uploadTemplateIds'];
 
@@ -395,9 +396,9 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   apiDescription: string;
 
-  requestLimits: RequestLimitsConfig;
+  pageSizes: PageSizesConfig;
   /** The largest request body the API reads, in bytes, whatever its content type. */
-  jsonBodyLimit: number;
+  maxBodySize: number;
 
   s3: S3ConfigInput;
   /** Origin of the media asset CDN; empty while none is configured. */
@@ -417,7 +418,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   /** Background classes for an avatar or cover without an image, picked per id. */
   placeholderColors: readonly string[];
 
-  defaultLanguage: string;
+  defaultLanguageCode: string;
   /** ISO 3166-1 alpha-2 codes a country field suggests after the one the device's timezone points to. */
   commonRegionCodes: readonly string[];
   listDatePrecision: 'day' | 'minute';

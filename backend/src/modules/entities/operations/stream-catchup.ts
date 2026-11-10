@@ -23,10 +23,10 @@ export async function streamCatchupOp(ctx: UserContext, { views = [] }: z.infer<
   const counterRows = keys.length > 0 ? await findChannelCountersByKeys(ctx, { keys }) : [];
   const counters = new Map(counterRows.map((row) => [row.channelKey, parseCounterCounts(row.counts)]));
 
-  const viewAnswers = views.map(({ organizationId, entityType }) => {
-    const status = resolveViewReadStatus(access, entityType, organizationId);
-    if (status !== 'ok') return { organizationId, entityType, status };
-    return { organizationId, entityType, status, frontier: counters.get(organizationId)?.frontiers[entityType] };
+  const viewAnswers = views.map(({ organizationId, productType }) => {
+    const status = resolveViewReadStatus(access, productType, organizationId);
+    if (status !== 'ok') return { organizationId, productType, status };
+    return { organizationId, productType, status, frontier: counters.get(organizationId)?.frontiers[productType] };
   });
 
   const generation = await findSyncGeneration(ctx);

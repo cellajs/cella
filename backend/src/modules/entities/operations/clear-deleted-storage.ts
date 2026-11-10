@@ -38,7 +38,7 @@ function ownedObjectsOf({ entityType, entityId, organizationId, storage }: Delet
     const url = storage[column];
     const key = typeof url === 'string' ? publicKeyOf(url) : null;
     // `isOrganizationKey` is the prefix rule of every upload path, a user's personal prefix included.
-    if (key && owner && isOrganizationKey(key, owner)) objects.push({ bucketName: appConfig.s3.publicBucket, key });
+    if (key && owner && isOrganizationKey(key, owner)) objects.push({ bucketName: appConfig.s3.publicBucketName, key });
   }
   return objects;
 }
@@ -80,7 +80,7 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
     if (entityType !== 'organization') continue;
     // A stored key may keep the leading slash of the signed upload path, which `isOrganizationKey` tolerates too.
     for (const prefix of [`${entityId}/`, `/${entityId}/`]) {
-      for (const bucketName of [appConfig.s3.privateBucket, appConfig.s3.publicBucket]) await deleteStoredPrefix(bucketName, prefix);
+      for (const bucketName of [appConfig.s3.privateBucketName, appConfig.s3.publicBucketName]) await deleteStoredPrefix(bucketName, prefix);
     }
   }
 }

@@ -171,10 +171,10 @@ if (merged.retention.deletedItemsDays < merged.retention.activityDays + 30) {
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage
 // across applications.
 const s3 = merged.s3 as S3Config;
-s3.publicBucket ??= `${merged.slug}-public`;
-s3.privateBucket ??= `${merged.slug}-private`;
-s3.publicCDNUrl ??= `https://${s3.publicBucket}.${s3.host}`;
-s3.privateCDNUrl ??= `https://${s3.privateBucket}.${s3.host}`;
+s3.publicBucketName ??= `${merged.slug}-public`;
+s3.privateBucketName ??= `${merged.slug}-private`;
+s3.publicCDNUrl ??= `https://${s3.publicBucketName}.${s3.host}`;
+s3.privateCDNUrl ??= `https://${s3.privateBucketName}.${s3.host}`;
 
 /**
  * The runtime config: the default config, then the mode config `APP_MODE` (or `NODE_ENV`) names, the app's number and

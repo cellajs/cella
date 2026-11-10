@@ -21,8 +21,8 @@ afterEach(async () => {
 
 /** The institution an admin connects: a SURFconext institution with two IdPs and two domains. */
 const institution = {
-  issuer: 'surfconext' as const,
-  displayName: 'Hogeschool Utrecht',
+  federation: 'surfconext' as const,
+  name: 'Hogeschool Utrecht',
   claimValues: ['hu.nl', 'student.hu.nl'],
   idpEntityIds: ['https://idp.hu.nl/students', 'https://idp.hu.nl/employees'],
 };
@@ -44,7 +44,7 @@ describe('connections, managed per tenant by system admins', async () => {
     expect(data).toMatchObject({
       tenantId: organization.tenantId,
       kind: 'sso',
-      issuer: 'surfconext',
+      federation: 'surfconext',
       status: 'pending',
       jitProvisioning: true,
       claimValues: ['hu.nl', 'student.hu.nl'],

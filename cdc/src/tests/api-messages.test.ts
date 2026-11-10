@@ -42,7 +42,7 @@ describe('generateActivityId', () => {
 });
 
 describe('sendProductMessagesToApi', () => {
-  type SentRow = { activityId: string; userId: string | null; seq?: number; rowData: Record<string, unknown>; movedFrom?: Record<string, unknown> };
+  type SentRow = { activityId: string; actorId: string | null; seq?: number; rowData: Record<string, unknown>; movedFrom?: Record<string, unknown> };
   type Sent = { activity: Record<string, unknown>; rows: SentRow[] };
 
   const trace = { traceId: 'test', spanId: 'test' } as never;
@@ -91,22 +91,22 @@ describe('sendProductMessagesToApi', () => {
     const first = inOrg('org-a', 10);
     first.activity = {
       ...first.activity,
-      userId: 'writer-1',
+      actorId: 'writer-1',
       changedFields: ['name'],
       stx: { mutationId: 'mut-1', sourceId: 'tab-1', fieldTimestamps: {} },
     };
     const second = inOrg('org-a', 11);
-    second.activity = { ...second.activity, userId: 'writer-2', changedFields: ['description'], stx: null };
+    second.activity = { ...second.activity, actorId: 'writer-2', changedFields: ['description'], stx: null };
     sendProductMessagesToApi('attachment', [first, second], trace);
 
     const [message] = sent();
     expect(message.rows).toEqual([
-      expect.objectContaining({ activityId: 'act-10', userId: 'writer-1', changedFields: ['name'], stx: first.activity.stx, seq: 10 }),
-      expect.objectContaining({ activityId: 'act-11', userId: 'writer-2', changedFields: ['description'], stx: null, seq: 11 }),
+      expect.objectContaining({ activityId: 'act-10', actorId: 'writer-1', changedFields: ['name'], stx: first.activity.stx, seq: 10 }),
+      expect.objectContaining({ activityId: 'act-11', actorId: 'writer-2', changedFields: ['description'], stx: null, seq: 11 }),
     ]);
     // What the rows share speaks for the message; no row's identity does.
     expect(message.activity).toMatchObject({ type: 'attachment.created', action: 'create' });
-    for (const key of ['id', 'userId', 'subjectId', 'changedFields', 'stx']) expect(message.activity).not.toHaveProperty(key);
+    for (const key of ['id', 'actorId', 'subjectId', 'changedFields', 'stx']) expect(message.activity).not.toHaveProperty(key);
   });
 
   it('must not send the content of a row, of one row or of several', () => {

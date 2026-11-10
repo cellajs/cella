@@ -35,13 +35,13 @@ import { Switch } from '~/modules/ui/switch';
 import { Textarea } from '~/modules/ui/textarea';
 import { formResolver } from '~/utils/form-resolver';
 
-const federationItems = Object.entries(appConfig.federations).map(([value, { label }]) => ({ value, label }));
+const federationItems = Object.entries(appConfig.federations).map(([value, { name }]) => ({ value, label: name }));
 const statuses = ['pending', 'active', 'disabled'] as const;
 
 /** The form collects lists as text; the request body gets arrays. */
 const formSchema = z.object({
-  issuer: z.string().min(1),
-  displayName: z.string().trim().min(2).max(100),
+  federation: z.string().min(1),
+  name: z.string().trim().min(2).max(100),
   claimValues: z.string().trim().min(1),
   idpEntityIds: z.string().trim().min(1),
 });
@@ -67,7 +67,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
-    defaultValues: { issuer: federationItems[0]?.value ?? '', displayName: '', claimValues: '', idpEntityIds: '' },
+    defaultValues: { federation: federationItems[0]?.value ?? '', name: '', claimValues: '', idpEntityIds: '' },
   };
 
   const formContainerId = 'tenant-connections';
@@ -79,8 +79,8 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
         path: { tenantId: tenant.id },
         body: {
           // The select offers only appConfig.federations keys; the form keeps the value a string so its default can be empty.
-          issuer: values.issuer as CreateConnectionData['body']['issuer'],
-          displayName: values.displayName,
+          federation: values.federation as CreateConnectionData['body']['federation'],
+          name: values.name,
           claimValues: splitList(values.claimValues, /[,\s]+/),
           idpEntityIds: splitList(values.idpEntityIds, /\n+/),
         },
@@ -97,7 +97,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
   const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) =>
     openConfirm(event.currentTarget, {
       id: `delete-connection-${connection.id}`,
-      title: <DeleteQuestion resource="c:connection" name={connection.displayName} />,
+      title: <DeleteQuestion resource="c:connection" name={connection.name} />,
       resource: 'c:connection',
       onConfirm: () => remove({ path: { tenantId: tenant.id, connectionId: connection.id } }),
     });
@@ -113,8 +113,10 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
           {ssoConnections.map((connection) => (
             <div key={connection.id} className="flex flex-col gap-3 rounded-md border p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold">{connection.displayName}</span>
-                <Badge variant="outline">{federationItems.find((item) => item.value === connection.issuer)?.label ?? connection.issuer}</Badge>
+                <span className="font-semibold">{connection.name}</span>
+                <Badge variant="outline">
+                  {federationItems.find((item) => item.value === connection.federation)?.label ?? connection.federation}
+                </Badge>
                 <Select
                   value={connection.status}
                   onValueChange={(status) =>
@@ -172,12 +174,12 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
           {ssoConnections.length === 0 && federationItems.length > 0 && (
             <Form {...form}>
               <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                <SelectFormField control={form.control} name="issuer" label={t('c:federation')} options={federationItems} />
+                <SelectFormField control={form.control} name="federation" label={t('c:federation')} options={federationItems} />
                 <FormField
                   control={form.control}
-                  name="displayName"
+                  name="name"
                   render={({ field }) => (
-                    <FormItem name="displayName">
+                    <FormItem name="name">
                       <FormLabel>{t('c:institution_name')}</FormLabel>
                       <FormControl>
                         <Input {...field} />

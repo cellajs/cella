@@ -20,7 +20,7 @@ type PresignedUrlItem = z.infer<typeof attachmentPresignedUrlSchema>;
 type AttachmentVariant = z.infer<typeof attachmentVariantSchema>;
 
 interface PresignedUrlsResult {
-  data: PresignedUrlItem[];
+  results: PresignedUrlItem[];
   rejectedIds: string[];
 }
 
@@ -80,7 +80,7 @@ async function signReadable(access: Access<ActorBinding>, rows: AttachmentModel[
   });
   const rejectedIds = ids.filter((id) => !isSignable(id));
 
-  const data = await Promise.all(
+  const signed = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {
       const url = await getSignedUrlFromKey(variantKeyOf(row, variant), {
         bucketName: row.bucketName,
@@ -91,7 +91,7 @@ async function signReadable(access: Access<ActorBinding>, rows: AttachmentModel[
     }),
   );
 
-  return { data, rejectedIds };
+  return { results: signed, rejectedIds };
 }
 
 /** Signs private-bucket download URLs for up to 50 attachments the caller may read; the rows resolve under tenant RLS. */
@@ -112,7 +112,7 @@ export async function getPublicPresignedUrlsOp(
 ): Promise<PresignedUrlsResult> {
   const ids = idsOf(items);
   const tenant = await loadTenant(tenantId);
-  if (!tenant || !servesPublicly(tenant)) return { data: [], rejectedIds: ids };
+  if (!tenant || !servesPublicly(tenant)) return { results: [], rejectedIds: ids };
 
   const rows = await tenantReadById(tenantId, (tx) => findLiveAttachmentsIn({ var: { db: tx } }, { ids, tenantId, organizationId }));
   return signReadable({ anonymous: true }, rows, items);

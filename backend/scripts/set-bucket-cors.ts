@@ -9,7 +9,7 @@ const originArg = process.argv[2];
 const requestedOrigins = [...new Set((originArg?.split(',') ?? [appConfig.frontendUrl]).map((o) => o.trim()).filter(Boolean))];
 
 // Buckets to configure: the two shared development buckets.
-const buckets = [appConfig.s3.publicBucket, appConfig.s3.privateBucket];
+const buckets = [appConfig.s3.publicBucketName, appConfig.s3.privateBucketName];
 
 // CORS rule tuned for browser reads: GET/HEAD plus the headers PDF.js needs for
 // range requests. Exposed headers let the browser read content length/range.

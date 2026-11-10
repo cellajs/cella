@@ -50,7 +50,7 @@ const location = {
   organizationId: 'org-1',
   channelType: channelType('project'),
   channelId: 'project-1',
-  entityType: 'attachment' as const,
+  productType: 'attachment' as const,
   subjectId: 'subject-1',
   contextId: 'host-1',
 };

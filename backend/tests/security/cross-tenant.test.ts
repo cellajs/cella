@@ -172,8 +172,8 @@ describe('Cross-tenant API isolation', async () => {
       expect(response.status).toBe(200);
       const result = data as PresignAttachmentUrlsResponse;
       expect(result.rejectedIds).toEqual([]);
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.url).toContain(storedKey);
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0]?.url).toContain(storedKey);
     });
 
     it("must not sign Tenant A's attachment via User B's session on Tenant A's path", async () => {
@@ -194,7 +194,7 @@ describe('Cross-tenant API isolation', async () => {
       // A foreign id is indistinguishable from a nonexistent one: 200 + rejectedIds, no oracle.
       expect(response.status).toBe(200);
       const result = data as PresignAttachmentUrlsResponse;
-      expect(result.data).toEqual([]);
+      expect(result.results).toEqual([]);
       expect(result.rejectedIds).toEqual([presignAttachmentId]);
     });
   });

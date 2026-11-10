@@ -49,12 +49,12 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     request: { params: myInvitationParamSchema },
     responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
   }),
-  rejectInvitation: xRoute({
+  declineInvitation: xRoute({
     method: 'post',
-    path: '/invitations/{invitationId}/~reject',
+    path: '/invitations/{invitationId}/~decline',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: 'Reject membership invitation',
+    summary: 'Decline membership invitation',
     description: "Declines the invitation, and its emailed link stops working. Returns the invitation's organization.",
     request: { params: myInvitationParamSchema },
     responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },

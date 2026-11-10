@@ -13,7 +13,7 @@ export const userStorageKey = `${appConfig.slug}-user`;
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
 const mirrorLanguage = (language?: User['languageCode']) => {
-  const lng = language || appConfig.defaultLanguage;
+  const lng = language || appConfig.defaultLanguageCode;
   if (i18n.language !== lng) i18n.changeLanguage(lng);
 };
 

@@ -1,0 +1,7 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "sessions", "secret"], "to": ["public", "sessions", "secret_hash"] },
+  { "type": "rename", "kind": "column", "from": ["public", "sessions", "stepped_up_secret"], "to": ["public", "sessions", "stepped_up_secret_hash"] },
+  { "type": "rename", "kind": "column", "from": ["public", "tokens", "secret"], "to": ["public", "tokens", "secret_hash"] },
+  { "type": "rename", "kind": "index", "from": ["public", "sessions", "sessions_secret_idx"], "to": ["public", "sessions", "sessions_secret_hash_idx"] },
+  { "type": "rename", "kind": "index", "from": ["public", "tokens", "tokens_secret_kind_idx"], "to": ["public", "tokens", "tokens_secret_hash_kind_idx"] }
+]

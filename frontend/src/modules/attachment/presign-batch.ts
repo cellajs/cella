@@ -52,7 +52,7 @@ async function sendChunk(requests: PendingRequest[]) {
     const body = { items: requests.map(({ attachmentId, variant }) => ({ attachmentId, variant })) };
     // Signed out, the public route signs what a row's own flag opens to anyone.
     const response = useUserStore.getState().user ? await presignAttachmentUrls({ path, body }) : await presignPublicAttachmentUrls({ path, body });
-    const urlByPair = new Map(response.data.map((item) => [pairKey(item.attachmentId, item.variant), item.url]));
+    const urlByPair = new Map(response.results.map((item) => [pairKey(item.attachmentId, item.variant), item.url]));
     const rejected = new Set(response.rejectedIds);
 
     for (const request of requests) {

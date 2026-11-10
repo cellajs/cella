@@ -1,4 +1,4 @@
-const avatar = {
+const thumbnail = {
   publicBucket: true,
   steps: {
     converted: { use: ':original', robot: '/image/resize', background: 'none', format: 'webp' },
@@ -14,11 +14,11 @@ const avatar = {
   use: ['thumbnail'] as const,
 };
 
-const cover = {
+const banner = {
   publicBucket: true,
   steps: {
     converted: { use: ':original', robot: '/image/resize', background: 'none', format: 'webp' },
-    cover: {
+    banner: {
       use: 'converted',
       robot: '/image/resize',
       background: 'none',
@@ -27,7 +27,7 @@ const cover = {
       height: 700,
     },
   },
-  use: ['cover'] as const,
+  use: ['banner'] as const,
 };
 
 // @link https://transloadit.com/docs/transcoding/file-filtering/file-filter/
@@ -154,4 +154,4 @@ const newsletter = {
  * banners, newsletter images); anything else stays private. A public template exports only images it re-encoded,
  * never `:original`. `systemAdminOnly` templates store under the system prefix, outside every organization.
  */
-export const uploadTemplates = { avatar, cover, attachment, newsletter };
+export const uploadTemplates = { thumbnail, banner, attachment, newsletter };

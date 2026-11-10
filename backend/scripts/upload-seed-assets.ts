@@ -105,7 +105,7 @@ async function upload(files: LocalFile[]): Promise<void> {
     process.exit(1);
   }
 
-  const bucket = appConfig.s3.publicBucket;
+  const bucket = appConfig.s3.publicBucketName;
   const s3Client = new S3Client({
     region: appConfig.s3.region,
     endpoint: `https://${appConfig.s3.host}`,

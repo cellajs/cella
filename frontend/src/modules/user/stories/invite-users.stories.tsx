@@ -69,8 +69,8 @@ const meta = {
       if (url.pathname.endsWith('/members:check-invite')) return json({ outcomes });
 
       requests.push({ path: url.pathname, search: url.search, body });
-      if (url.pathname.endsWith('/users:invite')) return json({ data: [], rejectedIds: [], invitesSentCount: body.emails.length });
-      return json({ data: [], outcomes, held: false });
+      if (url.pathname.endsWith('/users:invite')) return json({ results: [], rejectedIds: [], invitationCount: body.emails.length });
+      return json({ results: [], outcomes, held: false });
     });
     const success = spyOn(toaster, 'success');
 

@@ -17,7 +17,7 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecip
     return {
       subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName, ...plainText }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      previewText: param('subjectTitle'),
+      previewText: param('subjectName'),
       headerHtml: i18n.t('c:email.mention.title', { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
       buttonText: i18n.t('c:email.mention.button', { lng }),
@@ -33,7 +33,7 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecip
     statics: { actorName: 'John', channelName: 'Design 101' },
     recipient: {
       name: 'Emily',
-      subjectTitle: 'Roadmap review',
+      subjectName: 'Roadmap review',
       excerpt: 'Could you take a look at this before Friday?',
       link: 'https://example.com/acme',
       unsubscribeLink: 'https://example.com/unsubscribe',

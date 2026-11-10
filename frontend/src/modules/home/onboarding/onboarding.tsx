@@ -149,7 +149,7 @@ function InvitationsStep({ children }: { children?: ReactNode }) {
     previousCountRef.current = invitations.length;
   }, [invitations.length]);
 
-  const answer = (invitationId: string, action: 'accept' | 'reject') => handleInvitation({ invitationId, action });
+  const answer = (invitationId: string, action: 'accept' | 'decline') => handleInvitation({ invitationId, action });
 
   return (
     <div className="flex flex-col gap-4">
@@ -183,7 +183,7 @@ function InvitationsStep({ children }: { children?: ReactNode }) {
                 variant="secondary"
                 className="max-sm:w-full"
                 disabled={isPending}
-                onClick={() => answer(inactiveMembership.id, 'reject')}
+                onClick={() => answer(inactiveMembership.id, 'decline')}
               >
                 {t('c:decline')}
               </Button>

@@ -5,7 +5,7 @@ import { appNotificationKinds } from '#/schemas/app-schemas';
  * Template-owned kinds. `mention` is addressed to you personally, so it survives a muted channel
  * and mails instantly by default; `comment` and `reply` are thread activity an app's
  * `resolveRecipients` classifies, delivered in-app and by digest, and mailed instantly only when
- * the app sets `has.commentEmail` and the recipient turns comment emails on.
+ * the app sets `has.commentEmails` and the recipient turns comment emails on.
  */
 const templateNotificationKinds = ['mention', 'comment', 'reply'] as const;
 
@@ -19,5 +19,5 @@ export const notificationKinds = [...templateNotificationKinds, ...appNotificati
 
 export type NotificationKind = (typeof notificationKinds)[number];
 
-/** Kinds the fan-out mails at once: mentions, plus comments and replies when the app sets `has.commentEmail`. */
-export const instantEmailKinds = (): NotificationKind[] => (appConfig.has.commentEmail ? ['mention', 'comment', 'reply'] : ['mention']);
+/** Kinds the fan-out mails at once: mentions, plus comments and replies when the app sets `has.commentEmails`. */
+export const instantEmailKinds = (): NotificationKind[] => (appConfig.has.commentEmails ? ['mention', 'comment', 'reply'] : ['mention']);

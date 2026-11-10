@@ -14,7 +14,7 @@ const mockRequest = (key = 'request:default'): RequestModel =>
 
 export const mockRequestResponse = (key = 'request:default') => {
   const { invitedAt: _, ...request } = mockRequest(key);
-  return { ...request, wasInvited: false };
+  return { ...request, invited: false };
 };
 
 export const mockPaginatedRequestsResponse = (count = 2) => mockPaginated(mockRequestResponse, count);

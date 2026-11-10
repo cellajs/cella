@@ -89,7 +89,7 @@ function mayAddMentions(action: ActivityAction, { changedFields }: ActivityRow):
 /** Writes one row's notifications under its activity and writer, and signals and pushes the recipients written; returns their rows. */
 async function fanOutRow(
   { organizationId, tenantId }: EventIds,
-  { activityId, userId: writerId }: ActivityRow,
+  { activityId, actorId: writerId }: ActivityRow,
   source: NotificationSource,
   row: NotificationSubjectRow,
   readsMentions: boolean,
@@ -119,7 +119,7 @@ async function fanOutRow(
   if (allowed.length === 0) return [];
 
   const contextId = resolveContextId ? resolveContextId(row) : row.id;
-  const place = { tenantId, organizationId, channelId: channel.id, channelType: channel.type, entityType, subjectId: row.id };
+  const place = { tenantId, organizationId, channelId: channel.id, channelType: channel.type, productType: entityType, subjectId: row.id };
   const told = await insertNotificationsIgnoringDuplicates(dbCtx, {
     rows: allowed.map<NotificationInsert>((recipient) => ({ ...recipient, ...place, contextId, activityId, actorId })),
   });

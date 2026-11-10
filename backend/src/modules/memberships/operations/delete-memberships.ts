@@ -30,5 +30,5 @@ export async function deleteMembershipsOp(ctx: UserContext, { userIds, entityId,
     log.info('Memberships deleted', { count: targets.length, userIds: targets.map((target) => target.userId) });
   }
 
-  return { data: [], rejectedIds };
+  return { results: [], rejectedIds };
 }

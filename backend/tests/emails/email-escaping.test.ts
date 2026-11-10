@@ -47,7 +47,7 @@ describe('email templates escape names interpolated into HTML', () => {
     const html = await render(
       mentionEmail.component({
         ...translated,
-        subjectTitle: 'Roadmap',
+        subjectName: 'Roadmap',
         excerpt: 'See this',
         link,
         unsubscribeLink: 'https://app.example.test/unsubscribe',

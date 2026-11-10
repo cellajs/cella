@@ -64,7 +64,7 @@ const attachmentEvent = (
     organizationId,
     ...nullAncestorScopes,
     rowData: null,
-    rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
+    rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, actorId: null, changedFields: null, stx: null, ...row })),
     trace: null,
     ...overrides,
   }) as unknown as StreamProductEvent;
@@ -125,7 +125,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     streamSubscriberManager.register(member.subscriber);
     const stx = { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} };
 
-    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, stx, userId: 'writer-user', rowData: attachmentRow('attachment-1', orgA) }]));
+    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, stx, actorId: 'writer-user', rowData: attachmentRow('attachment-1', orgA) }]));
 
     // The tab that wrote the row recognises its own write by the stx and fetches nothing.
     expect(member.received).toEqual([expect.objectContaining({ rows: [{ subjectId: 'attachment-1', seq: 7, stx, actorId: 'writer-user' }] })]);
@@ -136,7 +136,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     streamSubscriberManager.register(member.subscriber);
 
     // Sequence values of one audience need not be contiguous or in order: 21 belongs to another audience.
-    const rows = [22, 20, 23].map((seq) => ({ seq, userId: `writer-${seq}`, rowData: attachmentRow(`attachment-${seq}`, orgA) }));
+    const rows = [22, 20, 23].map((seq) => ({ seq, actorId: `writer-${seq}`, rowData: attachmentRow(`attachment-${seq}`, orgA) }));
     await dispatchChange(attachmentEvent(orgA, rows));
 
     expect(member.received).toHaveLength(1);

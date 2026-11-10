@@ -17,17 +17,17 @@ type CreateConnectionInput = z.infer<typeof createConnectionBodySchema>;
  *   when a domain is taken or the tenant already has an SSO connection.
  */
 export async function createConnectionOp(ctx: UserContext, input: CreateConnectionInput) {
-  const { issuer, displayName, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
+  const { federation, name, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
 
-  if (!isFederationConfigured(issuer)) throw new AppError(400, 'sso_not_configured', 'error', { meta: { strategy: issuer } });
-  await assertClaimValuesFree(ctx, { issuer, claimValues });
+  if (!isFederationConfigured(federation)) throw new AppError(400, 'sso_not_configured', 'error', { meta: { strategy: federation } });
+  await assertClaimValuesFree(ctx, { federation, claimValues });
 
   const connection = await insertConnection(ctx, {
     values: {
       tenantId: ctx.var.tenantId,
       kind: 'sso',
-      issuer,
-      displayName,
+      federation,
+      name,
       claimValues,
       status,
       jitProvisioning,
@@ -36,7 +36,7 @@ export async function createConnectionOp(ctx: UserContext, input: CreateConnecti
     },
   });
 
-  log.info('Connection created', { connectionId: connection.id, tenantId: connection.tenantId, issuer });
+  log.info('Connection created', { connectionId: connection.id, tenantId: connection.tenantId, federation });
 
   return withActorRef(ctx, connection);
 }

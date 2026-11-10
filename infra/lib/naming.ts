@@ -65,8 +65,8 @@ export function deriveInfra(appConfig: Cfg) {
       prefix,
       resource: (suffix: string) => `${prefix}-${suffix}`,
       frontendBucket: `${prefix}-frontend`,
-      publicBucket: appConfig.s3.publicBucket,
-      privateBucket: appConfig.s3.privateBucket,
+      publicBucket: appConfig.s3.publicBucketName,
+      privateBucket: appConfig.s3.privateBucketName,
       pulumiStateBucket: stateBucket(prefix),
       bootDiagBucket: `${prefix}-boot-diag`,
       // Registry namespace names require >= 4 chars and no hyphens; slug length is validated at config load.

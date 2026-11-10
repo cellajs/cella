@@ -31,7 +31,7 @@ const statuses = {
 const sessionStatus = (session: Session): keyof typeof statuses => {
   if (session.revokedAt !== null) return 'signed_out';
   if (!isLiveSession(session)) return 'expired';
-  return session.isCurrent ? 'current' : 'active';
+  return session.current ? 'current' : 'active';
 };
 
 interface SessionTileProps {
@@ -49,7 +49,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
   /** A federation names itself in config; every other method has a locale key. */
   const strategyLabel = (strategy: Session['authStrategy']) =>
     strategy in appConfig.federations
-      ? appConfig.federations[strategy as FederationKey].label
+      ? appConfig.federations[strategy as FederationKey].name
       : t(`c:${strategy as Exclude<typeof strategy, DeclaredFederation>}`);
 
   const status = sessionStatus(session);
@@ -71,7 +71,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
             </span>
           )}
           {isCurrentDevice && <Badge variant="outline">{t('c:this_device')}</Badge>}
-          {session.isNewDevice && !session.isCurrent && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
+          {session.newDevice && !session.current && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
         </>
       }
       meta={

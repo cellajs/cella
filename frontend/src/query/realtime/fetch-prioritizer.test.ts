@@ -118,7 +118,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('fires collected propagation hints after the flush', async () => {
-    const hint = { embeddedProduct: 'label', update: ['l1'], remove: [] };
+    const hint = { embeddedProductType: 'label', update: ['l1'], remove: [] };
     enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, propagation: hint as never });
 
     await flushAllNow();

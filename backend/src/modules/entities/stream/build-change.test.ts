@@ -8,7 +8,10 @@ vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   return {
     ...actual,
-    appConfig: { ...actual.appConfig, productEmbeddings: [{ embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'attachments' }] },
+    appConfig: {
+      ...actual.appConfig,
+      productEmbeddings: [{ embeddedProductType: 'attachment', hostProductType: 'attachment', hostColumn: 'attachments' }],
+    },
   };
 });
 
@@ -20,7 +23,7 @@ const org = 'org-hint';
 /** A row as a message carries it: the activity it was recorded as, its permission fields and no content. */
 const row = (id: string, seq: number, deletedAt: string | null = null): ActivityRow => ({
   activityId: `act-${id}`,
-  userId: null,
+  actorId: null,
   changedFields: null,
   stx: null,
   rowData: { id, organizationId: org, deletedAt },
@@ -49,7 +52,7 @@ const event = (action: 'create' | 'update' | 'delete', rows: ActivityRow[]) =>
 describe('buildStreamChange: the propagation hint of an embedded product', () => {
   it('names the one row of a single-row message', () => {
     expect(buildStreamChange(event('update', [row('a1', 7)])).propagation).toMatchObject({
-      embeddedProduct: 'attachment',
+      embeddedProductType: 'attachment',
       update: ['a1'],
       remove: [],
     });

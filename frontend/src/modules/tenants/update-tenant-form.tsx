@@ -47,7 +47,9 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
     ...(isStrategyEnabled('passkey') ? [{ value: 'passkey' as const, label: t('c:passkey') }] : []),
     ...(isStrategyEnabled('magic') ? [{ value: 'magic' as const, label: t('c:magic') }] : []),
     ...(isStrategyEnabled('oauth') ? appConfig.enabledOAuthProviders.map((provider) => ({ value: provider, label: t(`c:${provider}`) })) : []),
-    ...(isStrategyEnabled('sso') ? Object.entries(appConfig.federations).map(([key, { label }]) => ({ value: key as SignInMethod, label })) : []),
+    ...(isStrategyEnabled('sso')
+      ? Object.entries(appConfig.federations).map(([key, { name }]) => ({ value: key as SignInMethod, label: name }))
+      : []),
   ];
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(tenant) };

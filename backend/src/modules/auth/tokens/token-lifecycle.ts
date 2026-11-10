@@ -42,7 +42,7 @@ const newHashedCode = () => {
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
 export type NewToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secret' | 'singleUseToken' | 'expiresAt' | 'invokedAt' | 'createdAt'>>;
+  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secretHash' | 'singleUseToken' | 'expiresAt' | 'invokedAt' | 'createdAt'>>;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its kind's `ttl`. Each first
@@ -65,7 +65,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
     values: issued.map(({ token, id, hash }) => ({
       ...token,
       id,
-      secret: hash,
+      secretHash: hash,
       expiresAt: isoDateIn(tokenPolicies[token.kind].ttl),
     })),
   });

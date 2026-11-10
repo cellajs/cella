@@ -37,13 +37,13 @@ describe.skipIf(!isSeenTracked('attachment'))('markSeen and rows the caller cann
     return id;
   };
 
-  const markAs = async (as: { sessionCookie: string }, entityIds: string[]) => {
-    const entityType = 'attachment';
+  const markAs = async (as: { sessionCookie: string }, productIds: string[]) => {
+    const productType = 'attachment';
     // Only narrows the type: the suite is skipped where attachments are not tracked.
-    if (!isSeenTracked(entityType)) return 0;
+    if (!isSeenTracked(productType)) return 0;
     const { data, response } = await call(markSeen, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { entityIds, entityType },
+      body: { productIds, productType },
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
     expect(response.status).toBe(200);

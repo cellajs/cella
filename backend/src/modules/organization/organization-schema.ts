@@ -80,7 +80,6 @@ export const organizationContract = evolutionContract.channel('organization', {
     websiteUrl: validUrlSchema.nullable(),
     thumbnailUrl: validCDNUrlSchema.nullable(),
     bannerUrl: validCDNUrlSchema.nullable(),
-    logoUrl: validCDNUrlSchema.nullable(),
     welcomeText: z.string().max(maxLength.html).nullable(),
     organizationFlags: mergePatchSchema(organizationFlagsSchema),
     setupConfig: mergePatchSchema(setupConfigSchema),
@@ -97,7 +96,6 @@ export const organizationContract = evolutionContract.channel('organization', {
       notificationEmail: true,
       color: true,
       thumbnailUrl: true,
-      logoUrl: true,
       bannerUrl: true,
       websiteUrl: true,
       welcomeText: true,
@@ -111,7 +109,7 @@ export const organizationContract = evolutionContract.channel('organization', {
 
 export const organizationPublishResponseSchema = z.object({
   organization: organizationSchema,
-  invitationsSent: z.number().int().min(0).openapi({ description: 'Invitations held while it was a draft and sent now.' }),
+  invitationCount: z.number().int().min(0).openapi({ description: 'Invitations held while it was a draft and sent now.' }),
 });
 
 /** Array schema for batch creates - rejects duplicate slugs */

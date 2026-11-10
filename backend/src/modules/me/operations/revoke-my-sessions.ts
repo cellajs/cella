@@ -22,8 +22,8 @@ export async function revokeMySessionsOp(ctx: UserContext, ids: string[]) {
     revokeSessions(ctx, { userId: user.id, sessionIds: otherIds, reason: 'other_session', by: user.id }),
     revokeSessions(ctx, { userId: user.id, sessionIds: ownIds, reason: 'sign_out', by: user.id }),
   ]);
-  const data = [...others, ...own];
-  const revokedIds = data.map((session) => session.id);
+  const results = [...others, ...own];
+  const revokedIds = results.map((session) => session.id);
 
-  return { data, rejectedIds: ids.filter((id) => !revokedIds.includes(id)), signedOut: own.length > 0 };
+  return { results, rejectedIds: ids.filter((id) => !revokedIds.includes(id)), signedOut: own.length > 0 };
 }

@@ -106,8 +106,8 @@ const seedConnection = async (overrides: Partial<InsertConnectionModel> = {}) =>
     .values({
       tenantId: organization.tenantId,
       kind: 'sso',
-      issuer: 'surfconext',
-      displayName: 'Hogeschool Utrecht',
+      federation: 'surfconext',
+      name: 'Hogeschool Utrecht',
       claimValues: ['hu.nl', 'student.hu.nl'],
       status: 'active',
       config: { idpEntityIds: ['https://idp.hu.nl/students', 'https://idp.hu.nl/employees'] },
@@ -156,8 +156,8 @@ describe('SSO sign-in through an institution', async () => {
     expect(data).toMatchObject({
       id: connection.id,
       status: 'active',
-      federation: { key: 'surfconext', label: 'SURFconext' },
-      institution: { displayName: 'Hogeschool Utrecht', logoUrl: null },
+      federation: { key: 'surfconext', name: 'SURFconext' },
+      institution: { name: 'Hogeschool Utrecht', logoUrl: null },
       organization: { id: organization.id, name: organization.name },
     });
 
@@ -205,7 +205,14 @@ describe('SSO sign-in through an institution', async () => {
     expect(user).toMatchObject({ name: 'Sanne de Vries', givenName: 'Sanne', familyName: 'de Vries' });
 
     const [identity] = await identitiesOf(user.id);
-    expect(identity).toMatchObject({ kind: 'sso', issuer: 'surfconext', subject, email: studentEmail, verified: true, connectionId: connection.id });
+    expect(identity).toMatchObject({
+      kind: 'sso',
+      provider: 'surfconext',
+      subject,
+      email: studentEmail,
+      verified: true,
+      connectionId: connection.id,
+    });
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['student', 'member'], acr: claimsOf().acr });
 
     const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, studentEmail));
@@ -410,7 +417,7 @@ describe('SSO sign-in through an institution', async () => {
       expect(response.status).toBe(302);
       expect(cookieChange(response, 'session')).toBe('set');
       expect(await identitiesOf(user.id)).toMatchObject([
-        { kind: 'sso', issuer: 'surfconext', subject: 'lars-subject', verified: true, connectionId: connection.id },
+        { kind: 'sso', provider: 'surfconext', subject: 'lars-subject', verified: true, connectionId: connection.id },
       ]);
       // The institution operates the mailbox it asserts: the address joins the account's ledger.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'lars@student.hu.nl'))).toMatchObject([
@@ -445,7 +452,7 @@ describe('SSO sign-in through an institution', async () => {
     it('refuses an institution account that belongs to another user, and a connect without a pin', async () => {
       const { connection } = await seedConnection();
       const holder = await createTestUser('holder@hu.nl');
-      await linkIdentity(holder, { kind: 'sso', issuer: 'surfconext', subject, connectionId: connection.id });
+      await linkIdentity(holder, { kind: 'sso', provider: 'surfconext', subject, connectionId: connection.id });
 
       const user = await createTestUser('l.jansen@hu.nl');
       await pinConnect(user);
@@ -505,7 +512,7 @@ describe('SSO sign-in through an institution', async () => {
     it('recovers an account whose identifier at the institution changed, even where the tenant requires SSO', async () => {
       const { organization, connection } = await seedConnection();
       const user = await createTestUser(studentEmail);
-      await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
+      await linkIdentity(user, { kind: 'sso', provider: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
       await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
       await requireSso(organization.tenantId);
 
@@ -521,9 +528,9 @@ describe('SSO sign-in through an institution', async () => {
 
     it('does not lift the policy for a sign-in through another institution', async () => {
       const { organization, connection } = await seedConnection();
-      const other = await seedConnection({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'] });
+      const other = await seedConnection({ name: 'Universiteit Utrecht', claimValues: ['uu.nl'] });
       const user = await createTestUser(studentEmail);
-      await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
+      await linkIdentity(user, { kind: 'sso', provider: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
       await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
       await requireSso(organization.tenantId);
 

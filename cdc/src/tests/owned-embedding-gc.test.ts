@@ -50,7 +50,7 @@ vi.mock('shared', async (importOriginal) => {
     appConfig: {
       ...actual.appConfig,
       entityIdColumnKeys: deepHierarchy.idColumnKeys,
-      productEmbeddings: [{ embeddedProduct: 'item', hostProduct: 'task', hostColumn: 'items', lifecycle: 'owned' }],
+      productEmbeddings: [{ embeddedProductType: 'item', hostProductType: 'task', hostColumn: 'items', lifecycle: 'owned' }],
     },
   };
 });
@@ -88,7 +88,7 @@ const { gcOwnedEmbeddedRows } = await import('../embeddings/owned-embedding-gc')
 type GcEvents = Parameters<typeof gcOwnedEmbeddedRows>[1];
 
 /** The synthetic products exist only in the mocked hierarchy, so their names need widening here. */
-const gc = (hostProduct: string, events: GcEvents) => gcOwnedEmbeddedRows(hostProduct as ProductEntityType, events);
+const gc = (hostProductType: string, events: GcEvents) => gcOwnedEmbeddedRows(hostProductType as ProductEntityType, events);
 
 const hostEvent = (rowData: Record<string, unknown>, oldRowData: Record<string, unknown>) => ({
   result: { rowData: rowData as CdcRowData, oldRowData: oldRowData as CdcRowData },

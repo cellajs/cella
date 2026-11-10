@@ -22,7 +22,7 @@ interface CountPendingInactiveMembershipSeatsOpts {
 /**
  * The organization's seats its pending invitations hold: each address with an invitation still waiting for an answer,
  * to the organization or to any channel below it, counted once, since accepting either makes an organization member.
- * An invitation bound to an account that is a member already, or a rejected one, holds none.
+ * An invitation bound to an account that is a member already, or a declined one, holds none.
  */
 export const countPendingInactiveMembershipSeats = async (
   ctx: DbContext,
@@ -45,7 +45,7 @@ export const countPendingInactiveMembershipSeats = async (
     .where(
       and(
         eq(inactiveMembershipsTable.organizationId, organizationId),
-        isNull(inactiveMembershipsTable.rejectedAt),
+        isNull(inactiveMembershipsTable.declinedAt),
         notExists(orgMembership),
         exceptEmails.length ? notInArray(inactiveMembershipsTable.email, exceptEmails) : undefined,
       ),
@@ -53,22 +53,22 @@ export const countPendingInactiveMembershipSeats = async (
   return seats;
 };
 
-/** The channel's inactive memberships addressed to exactly these addresses, pending or rejected. */
+/** The channel's inactive memberships addressed to exactly these addresses, pending or declined. */
 export const findInactiveMembershipsByEmails = async (ctx: DbContext, { emails, channelId }: { emails: string[]; channelId: string }) => {
   if (!emails.length) return [];
   return ctx.var.db
-    .select(pick(inactiveMembershipsTable, ['id', 'email', 'userId', 'role', 'rejectedAt', 'createdAt', 'remindedAt']))
+    .select(pick(inactiveMembershipsTable, ['id', 'email', 'userId', 'role', 'declinedAt', 'createdAt', 'remindedAt']))
     .from(inactiveMembershipsTable)
     .where(and(eq(inactiveMembershipsTable.channelId, channelId), inArray(inactiveMembershipsTable.email, emails)));
 };
 
-/** Pending (not rejected) inactive memberships of a set of channels. */
+/** Pending (not declined) inactive memberships of a set of channels. */
 export const findPendingInactiveMembershipsByChannels = async (ctx: DbContext, { channelIds }: { channelIds: string[] }) => {
   if (!channelIds.length) return [];
   return ctx.var.db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(inArray(inactiveMembershipsTable.channelId, channelIds), isNull(inactiveMembershipsTable.rejectedAt)));
+    .where(and(inArray(inactiveMembershipsTable.channelId, channelIds), isNull(inactiveMembershipsTable.declinedAt)));
 };
 
 /** Stamps `remindedAt` on the invitations whose mail just went out: a first mail, a reminder, a resend or a dispatch. */
@@ -83,18 +83,18 @@ interface FindPendingInactiveMembershipOpts {
   forUpdate?: boolean;
 }
 
-/** A membership invitation by id while it stands: not rejected. */
+/** A membership invitation by id while it stands: not declined. */
 export const findPendingInactiveMembership = async (ctx: DbContext, { id, forUpdate = false }: FindPendingInactiveMembershipOpts) => {
   const query = ctx.var.db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), isNull(inactiveMembershipsTable.rejectedAt)));
+    .where(and(eq(inactiveMembershipsTable.id, id), isNull(inactiveMembershipsTable.declinedAt)));
   const [invitation] = forUpdate ? await query.for('update') : await query;
   return invitation;
 };
 
 /**
- * The pending (not rejected) invitations among `ids`, locked for the caller's transaction in id order: a concurrent
+ * The pending (not declined) invitations among `ids`, locked for the caller's transaction in id order: a concurrent
  * answer, rejection or resend waits for it, and two batches over the same rows never deadlock.
  */
 export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: { ids: string[] }) => {
@@ -102,22 +102,22 @@ export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: { 
   return ctx.var.db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(inArray(inactiveMembershipsTable.id, ids), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(inArray(inactiveMembershipsTable.id, ids), isNull(inactiveMembershipsTable.declinedAt)))
     .orderBy(inactiveMembershipsTable.id)
     .for('update');
 };
 
-/** A membership invitation to the address that stands, not rejected; undefined when none does. */
+/** A membership invitation to the address that stands, not declined; undefined when none does. */
 export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { email }: { email: string }) => {
   const [invitation] = await ctx.var.db
     .select({ id: inactiveMembershipsTable.id })
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.declinedAt)))
     .limit(1);
   return invitation;
 };
 
-/** An invitation to the address into the organization itself that stands, not rejected: it names the role a sign-in must not pre-empt. */
+/** An invitation to the address into the organization itself that stands, not declined: it names the role a sign-in must not pre-empt. */
 export const findPendingOrganizationInactiveMembership = async (
   ctx: DbContext,
   { email, organizationId }: { email: string; organizationId: string },
@@ -130,7 +130,7 @@ export const findPendingOrganizationInactiveMembership = async (
         eq(inactiveMembershipsTable.email, email),
         eq(inactiveMembershipsTable.channelType, 'organization'),
         eq(inactiveMembershipsTable.channelId, organizationId),
-        isNull(inactiveMembershipsTable.rejectedAt),
+        isNull(inactiveMembershipsTable.declinedAt),
       ),
     )
     .limit(1);
@@ -155,13 +155,13 @@ interface FindInactiveMembershipByIdOpts {
   id: string;
 }
 
-/** An inactive membership by id, of any organization, pending or rejected. */
+/** An inactive membership by id, of any organization, pending or declined. */
 export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
   const [membership] = await ctx.var.db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
   return membership;
 };
 
-/** An inactive membership of the request's organization by id, pending or rejected; one of another organization reads as missing. */
+/** An inactive membership of the request's organization by id, pending or declined; one of another organization reads as missing. */
 export const findInactiveMembershipInOrg = async (ctx: OrgContext, { id }: FindInactiveMembershipByIdOpts) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
@@ -176,12 +176,12 @@ interface FindInactiveMembershipForUserOpts {
   userId: string;
 }
 
-/** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
+/** Id path: a pending invitation bound to this user; a declined one is answered and stays so. */
 export const findInactiveMembershipForUser = async (ctx: DbContext, { id, userId }: FindInactiveMembershipForUserOpts) => {
   const [membership] = await ctx.var.db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId), isNull(inactiveMembershipsTable.declinedAt)))
     .limit(1);
   return membership;
 };
@@ -189,10 +189,10 @@ export const findInactiveMembershipForUser = async (ctx: DbContext, { id, userId
 /**
  * An invitation is claimable by a user while it is pending and unbound, or bound to that same user. Every write that
  * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3)
- * and a rejected one is never revived.
+ * and a declined one is never revived.
  */
 const claimableBy = (userId: string) =>
-  and(isNull(inactiveMembershipsTable.rejectedAt), or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)));
+  and(isNull(inactiveMembershipsTable.declinedAt), or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)));
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: DbContext, { id, userId }: FindInactiveMembershipForUserOpts) => {
@@ -247,7 +247,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   const table = inactiveMembershipsTable;
   const orderBy = getOrderColumns({ sort, order, columns: { createdAt: table.createdAt }, tieBreaker: table.id });
 
-  const where = and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt));
+  const where = and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.declinedAt));
 
   const itemsQuery = db
     .select(pick(table, ['id', 'role', 'email', 'createdAt', 'remindedAt', 'createdBy']))
@@ -271,7 +271,7 @@ export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveM
 
 interface UpdateInactiveMembershipsOpts {
   ids: string[];
-  values: { role?: EntityRole; rejectedAt?: null; remindedAt?: string | null };
+  values: { role?: EntityRole; declinedAt?: null; remindedAt?: string | null };
 }
 
 /** Invitations sent again: a declined one opens again, a higher role replaces a lower one, the last email moves. */
@@ -280,13 +280,13 @@ export const updateInactiveMemberships = async (ctx: DbContext, { ids, values }:
   await ctx.var.db.update(inactiveMembershipsTable).set(values).where(inArray(inactiveMembershipsTable.id, ids));
 };
 
-/** Stamps an inactive membership rejected now. */
-export const stampInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
-  await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
+/** Stamps an inactive membership declined now. */
+export const stampInactiveMembershipDeclined = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
+  await ctx.var.db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
 };
 
 /**
- * The user's open invitations: inactive memberships not rejected, each with its channel's base columns and, for a
+ * The user's open invitations: inactive memberships not declined, each with its channel's base columns and, for a
  * channel below the organization, the organization's name.
  */
 export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { userId }: { userId: string }) => {
@@ -310,7 +310,7 @@ export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { use
         and(
           eq(inactiveMembershipsTable.channelType, channelType),
           eq(inactiveMembershipsTable.userId, userId),
-          isNull(inactiveMembershipsTable.rejectedAt),
+          isNull(inactiveMembershipsTable.declinedAt),
           // An invitation to an unpublished channel stays hidden until it is published, except one for a prepare role:
           // its email went out at once, so the invitee must be able to answer it.
           or(isNotNull(cols.publishedAt), prepareRoles.length ? inArray(inactiveMembershipsTable.role, prepareRoles) : undefined),

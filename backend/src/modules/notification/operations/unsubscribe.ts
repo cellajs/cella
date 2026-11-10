@@ -13,8 +13,8 @@ type Preferences = z.infer<typeof updatePreferencesBodySchema>;
 /** The preferences each notification category's link sets, off and back on. The digest comes back at its default. */
 const categoryPreferences = {
   digest: (enabled) => ({ digest: enabled ? defaultPreferences.digest : 'off' }),
-  mention: (enabled) => ({ mentionEmail: enabled }),
-  comment: (enabled) => ({ commentEmail: enabled }),
+  mention: (enabled) => ({ mentionEmails: enabled }),
+  comment: (enabled) => ({ commentEmails: enabled }),
 } satisfies Record<Exclude<UnsubscribeCategory, 'newsletter'>, (enabled: boolean) => Preferences>;
 
 interface EmailCategoryInput {

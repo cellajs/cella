@@ -5,19 +5,19 @@ import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
 
 interface FindIdentityBySubjectOpts {
-  issuer: string;
-  /** The issuer's own id for the account. */
+  provider: string;
+  /** The provider's own id for the account. */
   subject: string;
-  /** The trust class the issuer slug lives in; a social provider by default. */
+  /** The trust class the provider slug lives in; a social provider by default. */
   kind?: IdentityKind;
 }
 
-/** The identity an external account is: keyed on (kind, issuer, subject), never on its address. */
-export const findIdentityBySubject = async (ctx: DbContext, { issuer, subject, kind = 'oauth' }: FindIdentityBySubjectOpts) => {
+/** The identity an external account is: keyed on (kind, provider, subject), never on its address. */
+export const findIdentityBySubject = async (ctx: DbContext, { provider, subject, kind = 'oauth' }: FindIdentityBySubjectOpts) => {
   const [identity] = await ctx.var.db
     .select()
     .from(identitiesTable)
-    .where(and(eq(identitiesTable.kind, kind), eq(identitiesTable.issuer, issuer), eq(identitiesTable.subject, subject)));
+    .where(and(eq(identitiesTable.kind, kind), eq(identitiesTable.provider, provider), eq(identitiesTable.subject, subject)));
   return identity;
 };
 
@@ -31,7 +31,7 @@ export const findIdentityById = async (ctx: DbContext, { id }: { id: string }) =
 export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db
     .select({
-      provider: identitiesTable.issuer,
+      provider: identitiesTable.provider,
       email: identitiesTable.email,
       createdAt: identitiesTable.createdAt,
       lastUsedAt: identitiesTable.lastUsedAt,
@@ -47,9 +47,9 @@ export const findSsoIdentities = async (ctx: DbContext, { userId }: { userId: st
     .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'sso'), isNotNull(identitiesTable.connectionId)));
 
 interface InsertIdentityOpts {
-  values: Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> &
+  values: Pick<IdentityModel, 'userId' | 'provider' | 'subject'> &
     Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data'> & { email: string | null };
-  /** Verified now, when an inbox proof in the same flow already stands for it, or the issuer's assertion is the proof. */
+  /** Verified now, when an inbox proof in the same flow already stands for it, or the provider's assertion is the proof. */
   verified?: boolean;
 }
 

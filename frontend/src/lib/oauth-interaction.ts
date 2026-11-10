@@ -13,7 +13,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 export const getConsentDetails = (uid: string) => request<ConsentDetails>(interactionUrl(uid, 'details'));
 
 export const decideConsent = (uid: string, accept: boolean) =>
-  request<{ redirectTo: string }>(interactionUrl(uid, 'consent'), {
+  request<{ redirectUrl: string }>(interactionUrl(uid, 'consent'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accept }),

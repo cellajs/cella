@@ -22,7 +22,7 @@ vi.mock('shared', async (importOriginal) => {
       productEntityTypes: deepHierarchy.productTypes,
       entityIdColumnKeys: deepHierarchy.idColumnKeys,
       // A task holds the ids of items: the `labels` of an app.
-      productEmbeddings: [{ embeddedProduct: 'item', hostProduct: 'task', hostColumn: 'items' }],
+      productEmbeddings: [{ embeddedProductType: 'item', hostProductType: 'task', hostColumn: 'items' }],
     },
   };
 });
@@ -72,7 +72,7 @@ vi.mock('#/tables', async () => {
   };
   const resourceTables = {
     membership: pgTable('memberships', membership()),
-    inactive_membership: pgTable('inactive_memberships', { ...membership(), rejectedAt: timestamp('rejected_at', { mode: 'string' }) }),
+    inactive_membership: pgTable('inactive_memberships', { ...membership(), declinedAt: timestamp('declined_at', { mode: 'string' }) }),
   };
 
   return {
@@ -117,7 +117,7 @@ const ddl = [
   `CREATE TABLE items (${productColumns})`,
   `CREATE TABLE tasks (${productColumns}, items uuid[] NOT NULL DEFAULT '{}')`,
   `CREATE TABLE memberships (${membershipColumns})`,
-  `CREATE TABLE inactive_memberships (${membershipColumns}, rejected_at timestamp)`,
+  `CREATE TABLE inactive_memberships (${membershipColumns}, declined_at timestamp)`,
   'CREATE TABLE channel_counters (LIKE public.channel_counters INCLUDING ALL)',
 ];
 
@@ -392,12 +392,12 @@ function workloadOn(tx: Tx, seed: number) {
     },
     async (organizationId) => {
       const place = { organizationId, courseId: null, courseSectionId: null, projectId: null };
-      const invite = { id: newId(), ...place, channelType: 'organization', channelId: organizationId, role: 'member', rejectedAt: null };
+      const invite = { id: newId(), ...place, channelType: 'organization', channelId: organizationId, role: 'member', declinedAt: null };
       await run('invite', [await insert('inactive_membership', invite)]);
     },
     async () => {
-      const invite = random.pick((await all('inactive_membership')).filter((row) => row.rejectedAt == null));
-      if (invite) await run('reject invite', [await update('inactive_membership', invite.id, { rejectedAt: now() })]);
+      const invite = random.pick((await all('inactive_membership')).filter((row) => row.declinedAt == null));
+      if (invite) await run('decline invite', [await update('inactive_membership', invite.id, { declinedAt: now() })]);
     },
   ];
 

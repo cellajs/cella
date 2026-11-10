@@ -82,7 +82,7 @@ describe('Membership Invitation', async () => {
 
     // The last mail carries the link of its own address's token.
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMemberships[1].id));
-    expect(token.secret).toBe(hashToken(mailedLink('inviteLink').token));
+    expect(token.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('should invite existing users to organization', async () => {
@@ -208,7 +208,7 @@ describe('Membership Invitation', async () => {
 
     expect(res.status).toBe(200);
     // Their own membership: the client files it with their other memberships, menu order included.
-    const [joined] = (data as { data: Record<string, unknown>[] }).data;
+    const [joined] = (data as { results: Record<string, unknown>[] }).results;
     expect(joined).toMatchObject({ userId: sysAdmin.id, role: memberRole, hidden: false, muted: false });
     expect(joined.displayOrder).toEqual(expect.any(Number));
   });

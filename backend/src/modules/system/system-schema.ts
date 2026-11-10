@@ -7,7 +7,7 @@ import { batchResponseSchema, maxLength, translatedError, uniqueIdsSchema, valid
 
 export const inviteBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50) });
 
-export const systemInviteResponseSchema = batchResponseSchema().extend({ invitesSentCount: z.number() });
+export const systemInviteResponseSchema = batchResponseSchema().extend({ invitationCount: z.number() });
 
 /** What a system admin may change of another user; a display preference such as `contrast` stays the user's own. */
 export const systemUserUpdateBodySchema = userUpdateBodySchema.omit({ contrast: true });

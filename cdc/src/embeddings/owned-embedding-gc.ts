@@ -10,8 +10,8 @@ import { isSoftDeleteTransition } from './is-soft-delete-transition';
 
 /** Pre-resolved owned embedding with Drizzle column references, keyed by host product. */
 interface ResolvedOwnedEmbedding {
-  hostProduct: ProductEntityType;
-  embeddedProduct: ProductEntityType;
+  hostProductType: ProductEntityType;
+  embeddedProductType: ProductEntityType;
   embeddedTable: AnyPgTable;
   /** The columns the GC reads; it writes the tombstone and audit columns `productColumns` gives every product table. */
   embeddedColumns: Record<'id' | 'stx' | 'deletedAt', AnyPgColumn>;
@@ -31,24 +31,24 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
 
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.lifecycle !== 'owned') continue;
-    const { embeddedProduct, hostProduct, hostColumn: hostColumnName } = embedding;
+    const { embeddedProductType, hostProductType, hostColumn: hostColumnName } = embedding;
 
-    const hostTable = getEntityTable(hostProduct);
+    const hostTable = getEntityTable(hostProductType);
     const hostColumns = getColumns(hostTable);
     // Widened for the host column, which the config names.
     const columns: Record<string, AnyPgColumn> = hostColumns;
     const hostColumn = columns[hostColumnName];
-    if (!hostColumn) throw new Error(`owned embedding: column "${hostColumnName}" not found on "${hostProduct}" table`);
+    if (!hostColumn) throw new Error(`owned embedding: column "${hostColumnName}" not found on "${hostProductType}" table`);
 
-    const embeddedTable = getEntityTable(embeddedProduct);
+    const embeddedTable = getEntityTable(embeddedProductType);
     const embeddedColumns = getColumns(embeddedTable);
 
     // Refcounting is scoped to the organization, so a host in a sibling subtree still spares the row.
     const scopeColumnName = appConfig.entityIdColumnKeys.organization;
 
     resolved.push({
-      hostProduct,
-      embeddedProduct,
+      hostProductType,
+      embeddedProductType,
       embeddedTable,
       embeddedColumns: { id: embeddedColumns.id, stx: embeddedColumns.stx, deletedAt: embeddedColumns.deletedAt },
       embeddedScopeColumn: embeddedColumns[scopeColumnName],
@@ -61,7 +61,7 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     });
   }
 
-  return Map.groupBy(resolved, (embedding) => embedding.hostProduct);
+  return Map.groupBy(resolved, (embedding) => embedding.hostProductType);
 }
 
 /** Owned embeddings keyed by HOST product type (host-side dispatch, unlike embedding-cleanup). */
@@ -94,7 +94,7 @@ export async function gcOwnedEmbeddedRows(
   if (!embeddings?.length) return;
 
   for (const embedding of embeddings) {
-    const { embeddedProduct, embeddedTable, embeddedColumns, embeddedScopeColumn } = embedding;
+    const { embeddedProductType, embeddedTable, embeddedColumns, embeddedScopeColumn } = embedding;
     const { hostTable, hostColumn, hostColumnName, hostScopeColumn, hostDeletedAtColumn, scopeColumnName } = embedding;
 
     // The organization is the GC scope boundary.
@@ -149,7 +149,7 @@ export async function gcOwnedEmbeddedRows(
           .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
           .returning({ id: embeddedColumns.id });
 
-        if (deleted.length > 0) log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
+        if (deleted.length > 0) log.info('Owned embedded rows garbage-collected', { embeddedProductType, scopeId, count: deleted.length });
       }),
     );
   }

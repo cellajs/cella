@@ -9,7 +9,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Inactive memberships: invitations to a channel, pending or declined (`rejectedAt`). Accepting one replaces the row with a membership. */
+/** Inactive memberships: invitations to a channel, pending or declined (`declinedAt`). Accepting one replaces the row with a membership. */
 export const inactiveMembershipsTable = snakeCase.table(
   'inactive_memberships',
   {
@@ -25,7 +25,7 @@ export const inactiveMembershipsTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
-    rejectedAt: isoTimestamp(),
+    declinedAt: isoTimestamp(),
     /** When the invitation's mail last went out. Null while it is held: made in a draft channel and never mailed. */
     remindedAt: isoTimestamp(),
     createdBy: uuid()
@@ -40,7 +40,7 @@ export const inactiveMembershipsTable = snakeCase.table(
     index('inactive_memberships_created_by_idx').on(table.createdBy),
     index('inactive_memberships_tenant_id_idx').on(table.tenantId),
     index('inactive_memberships_email_idx').on(table.email),
-    index('inactive_memberships_org_pending_idx').on(table.organizationId, table.rejectedAt),
+    index('inactive_memberships_org_pending_idx').on(table.organizationId, table.declinedAt),
     unique('inactive_memberships_tenant_email_ctx').on(table.tenantId, table.email, table.channelId),
     organizationForeignKey(table),
   ],

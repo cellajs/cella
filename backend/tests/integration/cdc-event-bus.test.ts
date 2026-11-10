@@ -137,7 +137,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(event.rows).toHaveLength(1);
     expect(event.rows[0].seq).toBe(stored.seq);
     expect(stored.seq).toBeGreaterThan(0);
-    expect(event.rows[0].userId).toBe(testUser.id);
+    expect(event.rows[0].actorId).toBe(testUser.id);
     // What decides who may read the row travels; its name and its file do not, and no whole row comes beside the list.
     expect(event.rows[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
     expect(event.rows[0].rowData).not.toHaveProperty('name');

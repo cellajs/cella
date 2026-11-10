@@ -8,7 +8,7 @@ const search: NotificationLinkSearch = {
   organizationId: 'org-1',
   channelId: 'org-1',
   channelType: 'organization',
-  entityType: 'attachment',
+  productType: 'attachment',
   subjectId: 'comment-1',
   contextId: 'post-1',
   nid: 'notification-1',
@@ -25,7 +25,7 @@ describe('buildNotificationLink', () => {
   });
 
   it('leaves out the optional fields a notification lacks', () => {
-    const { entityType: _entityType, subjectId: _subjectId, contextId: _contextId, nid: _nid, ...location } = search;
+    const { productType: _productType, subjectId: _subjectId, contextId: _contextId, nid: _nid, ...location } = search;
     const link = buildNotificationLink(frontendUrl, location);
     expect(new URL(link).searchParams.has('contextId')).toBe(false);
     expect(parse(link)).toEqual(location);

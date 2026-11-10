@@ -92,7 +92,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
     role,
     userIds,
     include,
-    limit = appConfig.requestLimits.members,
+    limit = appConfig.pageSizes.members,
   } = params;
   // `include` stays out of the cache key so queries with/without counts share the same cache
   const filters = { q, sort, order, role, userIds };
@@ -107,7 +107,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 };
 
 export const pendingMembershipsQueryOptions = (params: PendingMembershipsListParams) => {
-  const { entityId, tenantId, organizationId, entityType, limit = appConfig.requestLimits.pendingMemberships } = params;
+  const { entityId, tenantId, organizationId, entityType, limit = appConfig.pageSizes.pendingMemberships } = params;
   const query = { entityId, entityType };
 
   return infiniteQueryOptions({

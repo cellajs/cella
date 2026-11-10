@@ -14,15 +14,15 @@ const dbCtx = { var: { db: baseDb } };
 export const getSsoEntryOp = async (connectionId: string) => {
   const entry = await findConnectionEntry(dbCtx, { id: connectionId });
   const connection = entry?.connection;
-  if (!entry || !connection || connection.kind !== 'sso' || !isFederationKey(connection.issuer)) {
+  if (!entry || !connection || connection.kind !== 'sso' || !isFederationKey(connection.federation)) {
     throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
   }
 
   return {
     id: connection.id,
     status: connection.status,
-    federation: { key: connection.issuer, label: appConfig.federations[connection.issuer].label },
-    institution: { displayName: connection.displayName, logoUrl: connection.config.logoUrl ?? null },
+    federation: { key: connection.federation, name: appConfig.federations[connection.federation].name },
+    institution: { name: connection.name, logoUrl: connection.config.logoUrl ?? null },
     organization: entry.organization,
   };
 };

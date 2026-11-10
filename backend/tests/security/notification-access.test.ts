@@ -45,7 +45,7 @@ describe('Notification access', async () => {
         userId,
         actorId: tenant.user.id,
         kind: 'mention',
-        entityType: 'attachment',
+        productType: 'attachment',
         subjectId,
         contextId: subjectId,
         channelId: tenant.organization.id,
@@ -67,7 +67,7 @@ describe('Notification access', async () => {
       entityType: 'attachment',
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
-      rows: [{ activityId: `act:${generateId()}`, userId: tenant.user.id, changedFields: null, stx: null, rowData: { id: subjectId } }],
+      rows: [{ activityId: `act:${generateId()}`, actorId: tenant.user.id, changedFields: null, stx: null, rowData: { id: subjectId } }],
     }) as unknown as ProductActivityEvent;
 
   /** Fans out the admin's item that mentions both users, then forgets the rows it wrote. */
@@ -164,7 +164,7 @@ describe('Notification access', async () => {
     expect(unreadCount).toBe(2);
     const fresh = items.find((item) => item.subjectId === attachmentIds.fresh);
     expect(fresh).toMatchObject({
-      subjectTitle: 'Fresh item',
+      subjectName: 'Fresh item',
       channelName: 'Renamed organization',
       channelThumbnailUrl: 'https://example.com/organization.png',
       organizationName: 'Renamed organization',
@@ -184,7 +184,7 @@ describe('Notification access', async () => {
     const leaverRows = await db.select().from(notificationsTable).where(eq(notificationsTable.userId, leaver.id));
     expect(leaverRows.map((row) => row.subjectId)).toEqual([attachmentIds.secret]);
     // A current member's mention goes out (positive control).
-    expect(mailsTo(stayer.email).map(({ recipient }) => 'subjectTitle' in recipient && recipient.subjectTitle)).toEqual(['Mentioning item']);
+    expect(mailsTo(stayer.email).map(({ recipient }) => 'subjectName' in recipient && recipient.subjectName)).toEqual(['Mentioning item']);
   });
 
   it("must not mail a left organization's items, nor reach past the first window, via the digest", async () => {
@@ -208,7 +208,7 @@ describe('Notification access', async () => {
       // The stayer still belongs, so the rows stay, but none names its item or channel.
       const { results: items, unreadCount } = await inbox(stayer);
       expect(unreadCount).toBe(2);
-      for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '', channelThumbnailUrl: null });
+      for (const item of items) expect(item).toMatchObject({ subjectName: '', channelName: '', channelThumbnailUrl: null });
 
       await fanOutMention();
       expect(mailsTo(stayer.email)).toEqual([]);

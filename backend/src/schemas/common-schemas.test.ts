@@ -34,7 +34,7 @@ describe('booleanTransformSchema', () => {
 
 describe('pageQuerySchema', () => {
   it('reads the default page size from the start when the params are absent', () => {
-    expect(pageQuerySchema.parse({})).toMatchObject({ maxPageSize: appConfig.requestLimits.default, skip: 0 });
+    expect(pageQuerySchema.parse({})).toMatchObject({ maxPageSize: appConfig.pageSizes.default, skip: 0 });
   });
 
   it('parses complete unsigned integer strings', () => {
@@ -42,7 +42,7 @@ describe('pageQuerySchema', () => {
   });
 
   it.each([
-    ['0', appConfig.requestLimits.default],
+    ['0', appConfig.pageSizes.default],
     ['1000', 1000],
     ['1001', 1000],
     ['5000', 1000],

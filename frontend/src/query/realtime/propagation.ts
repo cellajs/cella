@@ -10,7 +10,7 @@ import { queryClient } from '~/query/query-client';
 
 /** Patch stale embedded-product references across every host column productEmbeddings declares for the changed product. */
 export function propagateEmbeddings(hint: NonNullable<StreamChange['propagation']>): void {
-  const { embeddedProduct, update, remove } = hint;
+  const { embeddedProductType, update, remove } = hint;
   if (update.length === 0 && remove.length === 0) return;
 
   const updateSet = new Set(update);
@@ -19,27 +19,27 @@ export function propagateEmbeddings(hint: NonNullable<StreamChange['propagation'
   // The caller guarantees the fresh embedded data is already cached.
   const freshEmbedded = new Map<string, ItemData>();
   for (const id of update) {
-    const data = findInCache<ItemData>(embeddedProduct, id);
+    const data = findInCache<ItemData>(embeddedProductType, id);
     if (data) freshEmbedded.set(id, data);
   }
 
   for (const embedding of appConfig.productEmbeddings) {
-    if (embedding.embeddedProduct !== embeddedProduct) continue;
-    patchHostCaches(embedding.hostProduct, embedding.hostColumn, updateSet, removeSet, freshEmbedded);
+    if (embedding.embeddedProductType !== embeddedProductType) continue;
+    patchHostCaches(embedding.hostProductType, embedding.hostColumn, updateSet, removeSet, freshEmbedded);
   }
 }
 
 /** Patch one host product's cached lists and details for a single embedded column. */
 function patchHostCaches(
-  hostProduct: ProductEntityType,
+  hostProductType: ProductEntityType,
   hostColumn: string,
   updateSet: Set<string>,
   removeSet: Set<string>,
   freshEmbedded: Map<string, ItemData>,
 ): void {
-  if (!hasEntityQueryKeys(hostProduct)) return;
+  if (!hasEntityQueryKeys(hostProductType)) return;
 
-  const keys = getEntityQueryKeys(hostProduct);
+  const keys = getEntityQueryKeys(hostProductType);
 
   forEachListQuery(keys.list.base, (queryKey, data) => {
     const patched = mapListItems(data, (items) => patchItems(items, hostColumn, updateSet, removeSet, freshEmbedded));
@@ -54,19 +54,19 @@ function patchHostCaches(
 }
 
 /** Optimistic propagation for mutation hooks, so the actor's cache updates without waiting on the stream. For updates the fresh embedded copy must already be cached. */
-export function propagateEmbeddedProduct(embeddedProduct: ProductEntityType, ids: string[], kind: 'update' | 'remove'): void {
-  propagateEmbeddings({ embeddedProduct, update: kind === 'update' ? ids : [], remove: kind === 'remove' ? ids : [] });
+export function propagateEmbeddedProduct(embeddedProductType: ProductEntityType, ids: string[], kind: 'update' | 'remove'): void {
+  propagateEmbeddings({ embeddedProductType, update: kind === 'update' ? ids : [], remove: kind === 'remove' ? ids : [] });
 }
 
 /**
  * Rollback path for optimistic removals: propagation can strip an embedded copy but cannot re-insert one, so a failed delete recovers host data through a refetch.
  * @public
  */
-export function invalidateEmbeddingHosts(embeddedProduct: ProductEntityType, organizationId: string): void {
+export function invalidateEmbeddingHosts(embeddedProductType: ProductEntityType, organizationId: string): void {
   for (const embedding of appConfig.productEmbeddings) {
-    if (embedding.embeddedProduct !== embeddedProduct) continue;
-    if (!hasEntityQueryKeys(embedding.hostProduct)) continue;
-    const keys = getEntityQueryKeys(embedding.hostProduct);
+    if (embedding.embeddedProductType !== embeddedProductType) continue;
+    if (!hasEntityQueryKeys(embedding.hostProductType)) continue;
+    const keys = getEntityQueryKeys(embedding.hostProductType);
     queryClient.invalidateQueries({ queryKey: keys.list.org(organizationId) });
   }
 }

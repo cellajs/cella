@@ -21,7 +21,7 @@ vi.mock('shared', async (importOriginal) => {
     appConfig: {
       channelEntityTypes: hierarchy.channelTypes,
       entityIdColumnKeys: hierarchy.idColumnKeys,
-      productEmbeddings: [{ embeddedProduct: 'label', hostProduct: 'task', hostColumn: 'labels' }],
+      productEmbeddings: [{ embeddedProductType: 'label', hostProductType: 'task', hostColumn: 'labels' }],
     },
     hierarchy,
     isChannel: hierarchy.isChannel,

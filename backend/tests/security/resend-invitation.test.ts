@@ -92,11 +92,11 @@ describe('Resend an invitation', async () => {
     expect(fresh).toMatchObject({ inactiveMembershipId: inactiveMembership.id, invokedAt: null, singleUseToken: null });
     expect(new Date(fresh.expiresAt).getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
     const rawFresh = mailedRawToken();
-    expect(fresh.secret).toBe(hashToken(rawFresh));
+    expect(fresh.secretHash).toBe(hashToken(rawFresh));
 
     const opened = await openHeldLink('invitation', rawFresh);
     expect(opened.response.status).toBe(200);
-    expect(opened.redirectTo).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
+    expect(opened.redirectUrl).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
 
     const old = await invoke(rawToken);
     await expectRefusal(old, 401, 'invitation_not_found');
@@ -139,12 +139,12 @@ describe('Resend an invitation', async () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
     expect(tokens[0]).toMatchObject({ inactiveMembershipId: null, invokedAt: null });
-    expect(tokens[0].secret).toBe(hashToken(mailedRawToken()));
+    expect(tokens[0].secretHash).toBe(hashToken(mailedRawToken()));
   });
 
-  it('must not re-mint a rejected invitation via resend-invitation', async () => {
+  it('must not re-mint a declined invitation via resend-invitation', async () => {
     const { token, inactiveMembership } = await expiredInvitation();
-    await db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
     const { response } = await resend({ tokenId: token.id });
 
@@ -171,7 +171,7 @@ describe('Resend an invitation', async () => {
     const restrictions = defaultRestrictions();
     await db
       .update(tenantsTable)
-      .set({ restrictions: { ...restrictions, rateLimits: { ...restrictions.rateLimits, invitationMailsPerDay: 1 } } })
+      .set({ restrictions: { ...restrictions, rateLimits: { ...restrictions.rateLimits, invitationEmailsPerDay: 1 } } })
       .where(eq(tenantsTable.id, organization.tenantId));
     const inviter = await createTestUser('inviter@example.com');
     const first = await createInvitation({ organization, email: invitedEmail, createdBy: inviter.id });
@@ -293,7 +293,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     const tokens = await invitationTokensOf(invitedEmail);
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
-    expect(tokens[0].secret).toBe(hashToken(mailedRawToken()));
+    expect(tokens[0].secretHash).toBe(hashToken(mailedRawToken()));
     // The resend is the invitation's last mail: a dispatch of held invitations leaves it alone.
     const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.invitationId));
     expect(resent.remindedAt).not.toBeNull();
@@ -318,13 +318,13 @@ describe('Resend a pending invitation from the pending list', async () => {
     expect(await remindedAt()).not.toBeNull();
   });
 
-  it('must not re-mint a rejected invitation via the pending list', async () => {
+  it('must not re-mint a declined invitation via the pending list', async () => {
     const { headers, path, token, inactiveMembership } = await setup();
-    await db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
     const { response, error } = await call(resendInvitation, { path, headers });
 
-    // A rejected invitation is no longer pending: it answers like a missing one.
+    // A declined invitation is no longer pending: it answers like a missing one.
     await expectRefusal({ response, error }, 404, 'not_found');
     expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);

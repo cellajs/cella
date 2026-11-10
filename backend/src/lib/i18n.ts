@@ -12,9 +12,9 @@ const initOptions: InitOptions = {
   // biome-ignore lint/style/noProcessEnv: see above
   debug: process.env.DEBUG === 'true',
   ns: ['backend', 'c', 'error', 'appError'],
-  supportedLngs: appConfig.languages,
+  supportedLngs: appConfig.languageCodes,
   load: 'languageOnly',
-  fallbackLng: appConfig.defaultLanguage,
+  fallbackLng: appConfig.defaultLanguageCode,
   interpolation: {
     // Texts go into JSON responses; the email templates escape through their own instance.
     escapeValue: false,

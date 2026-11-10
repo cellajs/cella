@@ -28,7 +28,7 @@ export function loadtestEmail(index: number) {
 export function loadtestSession(index: number, hashedToken: string, expiresAt: string): InsertSessionModel {
   return {
     id: sessionId(index),
-    secret: hashedToken,
+    secretHash: hashedToken,
     kind: 'regular',
     userId: userId(index),
     deviceType: 'desktop',

@@ -33,7 +33,7 @@ export const userQueryOptions = (id: string) =>
 
 export const usersListQueryOptions = (params: UsersListParams) => {
   const defaults = usersSearchDefaults;
-  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, accounts = [], limit = appConfig.requestLimits.users } = params;
+  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, accounts = [], limit = appConfig.pageSizes.users } = params;
   const includeProvisional = accounts.includes('provisional') || undefined;
   const filters = { q, sort, order, role, includeProvisional };
 

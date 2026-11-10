@@ -31,8 +31,8 @@ function PublishOrganizationForm({ organization, close }: { organization: Pick<O
     mutate(
       { path: { tenantId: organization.tenantId, organizationId: organization.id } },
       {
-        onSuccess: ({ invitationsSent }) => {
-          const description = invitationsSent ? t('c:invitations_sent', { count: invitationsSent }) : undefined;
+        onSuccess: ({ invitationCount }) => {
+          const description = invitationCount ? t('c:invitations_sent', { count: invitationCount }) : undefined;
           toaster.success(t('c:success.publish_resource', { name: organization.name }), { description });
           close();
         },

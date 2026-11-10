@@ -101,7 +101,7 @@ export function AccountAuthenticationCard() {
   const { connect } = useSearch({ from: '/_app/account' });
   const listed = authData.institutions.find((institution) => institution.connectionId === connect);
   const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect), enabled: !!connect && !listed });
-  const offered = entry?.status === 'active' ? { connectionId: entry.id, displayName: entry.institution.displayName, identity: null } : undefined;
+  const offered = entry?.status === 'active' ? { connectionId: entry.id, name: entry.institution.name, identity: null } : undefined;
   const institutions = offered ? [...authData.institutions, offered] : authData.institutions;
   const toConnect = [listed, offered].find((institution) => institution && !institution.identity);
 
@@ -116,9 +116,9 @@ export function AccountAuthenticationCard() {
     onError: () => setConnecting(null),
   });
 
-  const connectTo = (id: string, signInUrl: (search: { kind: 'connect'; redirectAfter: string }) => string) => {
+  const connectTo = (id: string, signInUrl: (search: { kind: 'connect'; redirectPath: string }) => string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    startConnect({ id, url: signInUrl({ kind: 'connect', redirectAfter: window.location.pathname + window.location.hash }) });
+    startConnect({ id, url: signInUrl({ kind: 'connect', redirectPath: window.location.pathname + window.location.hash }) });
   };
 
   return (
@@ -184,20 +184,20 @@ export function AccountAuthenticationCard() {
             {toConnect && (
               <Alert variant="info" className="mb-3">
                 <InfoIcon />
-                <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
+                <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.name })}</AlertDescription>
               </Alert>
             )}
             <div className="mb-8 flex flex-col gap-2">
               {institutions.map((institution) => {
-                const { connectionId, displayName, identity } = institution;
+                const { connectionId, name, identity } = institution;
                 return identity ? (
                   <IdentityTile
                     key={connectionId}
                     value={connectionId}
                     icon={<BuildingIcon />}
-                    title={displayName}
+                    title={name}
                     identity={identity}
-                    via={'federation' in institution ? institution.federation.label : undefined}
+                    via={'federation' in institution ? institution.federation.name : undefined}
                   />
                 ) : (
                   <Button
@@ -208,7 +208,7 @@ export function AccountAuthenticationCard() {
                     onClick={() => connectTo(connectionId, (search) => ssoStartUrl({ connectionId }, search))}
                   >
                     <BuildingIcon />
-                    <span className="truncate">{t('c:connect_institution', { institution: displayName })}</span>
+                    <span className="truncate">{t('c:connect_institution', { institution: name })}</span>
                   </Button>
                 );
               })}

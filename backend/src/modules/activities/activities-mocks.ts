@@ -17,7 +17,7 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
     return {
       id: mockUuid(),
       tenantId: mockTenantId(),
-      userId: mockUuid(),
+      actorId: mockUuid(),
       entityType,
       resourceType: null,
       action,

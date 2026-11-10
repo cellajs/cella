@@ -8,8 +8,8 @@ import { defaultHook } from '#/utils/default-hook';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(seenRoutes.markSeen, async (ctx) => {
-  const { entityIds, entityType } = ctx.req.valid('json');
-  return ctx.json(await markSeenOp(ctx, entityIds, entityType), 200);
+  const { productIds, productType } = ctx.req.valid('json');
+  return ctx.json(await markSeenOp(ctx, productIds, productType), 200);
 });
 
 export const seenHandlers = app;

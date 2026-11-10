@@ -52,7 +52,7 @@ const attachmentActivity = (id: string, action: 'update' | 'delete' = 'delete') 
 /** A product row as the worker sends it: the activity it was recorded as, and its permission fields. */
 const messageRow = (id: string, extra: { seq?: number; rowData?: Record<string, unknown>; movedFrom?: Record<string, unknown> } = {}) => ({
   activityId: `act-${id}`,
-  userId: null,
+  actorId: null,
   changedFields: null,
   stx: null,
   rowData: { id, organizationId: 'org-1' },
@@ -152,7 +152,7 @@ describe('CDC socket: a message as the bus receives it', () => {
     expect(event.rowData).toBeNull();
     // The first row's activity must not speak for the message.
     expect(event).not.toHaveProperty('subjectId');
-    expect(event).not.toHaveProperty('userId');
+    expect(event).not.toHaveProperty('actorId');
   });
 
   it('hands a row that is no product to the bus whole, without a list of rows', () => {

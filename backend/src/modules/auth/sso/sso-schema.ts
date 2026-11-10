@@ -16,8 +16,8 @@ export const federationKeySchema = z
   .pipe(z.custom<FederationKey>((value) => typeof value === 'string' && isFederationKey(value), { message: 'Unknown federation' }))
   .openapi({ type: 'string', description: 'A federation key in appConfig.federations', ...(federationKeys.length ? { enum: federationKeys } : {}) });
 
-/** A federation as a response names it: its config key and label. */
-export const federationRefSchema = z.object({ key: federationKeySchema, label: z.string() });
+/** A federation as a response names it: its config key and name. */
+export const federationRefSchema = z.object({ key: federationKeySchema, name: z.string() });
 
 export const ssoConnectionParamSchema = z.object({ connectionId: validIdSchema });
 
@@ -29,7 +29,7 @@ export const ssoEntrySchema = z
     id: z.string(),
     status: z.enum(connectionStatuses).describe('Only `active` signs in; `pending` means the institution has not activated the app yet'),
     federation: federationRefSchema,
-    institution: z.object({ displayName: z.string(), logoUrl: z.string().nullable() }),
+    institution: z.object({ name: z.string(), logoUrl: z.string().nullable() }),
     organization: z.object({ id: z.string(), name: z.string(), slug: z.string(), thumbnailUrl: z.string().nullable() }).nullable(),
   })
   .openapi({

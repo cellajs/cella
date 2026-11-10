@@ -30,7 +30,7 @@ const serviceAccountKeys = {
 export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
-    queryFn: () => listServiceAccounts({ path, query: { maxPageSize: appConfig.requestLimits.default } }),
+    queryFn: () => listServiceAccounts({ path, query: { maxPageSize: appConfig.pageSizes.default } }),
   });
 
 export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>

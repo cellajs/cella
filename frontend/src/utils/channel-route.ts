@@ -111,7 +111,7 @@ interface ProductLocation {
   organizationId: string;
   channelType: ChannelEntityType;
   channelId: string;
-  entityType?: ProductEntityType;
+  productType?: ProductEntityType;
   subjectId?: string;
   /** Grouping context of the subject (a comment's host item); the host opens when the product declares one. */
   contextId?: string | null;
@@ -121,10 +121,10 @@ interface ProductLocation {
  * Search that opens the subject on the target page, from the subject product's `deepLinkParam`. Both its own
  * param and its host's go in: whichever the target route does not declare in `validateSearch`, the router strips.
  */
-function getSubjectSearch({ entityType, subjectId, contextId }: ProductLocation): Record<string, string> {
-  if (!entityType || !subjectId) return {};
+function getSubjectSearch({ productType, subjectId, contextId }: ProductLocation): Record<string, string> {
+  if (!productType || !subjectId) return {};
 
-  const { param, hostParam } = getProductDeepLink(entityType);
+  const { param, hostParam } = getProductDeepLink(productType);
   return { ...(param ? { [param]: subjectId } : {}), ...(hostParam && contextId ? { [hostParam]: contextId } : {}) };
 }
 

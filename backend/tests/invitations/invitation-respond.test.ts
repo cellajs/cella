@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { acceptInvitation, invokeToken, rejectInvitation } from 'sdk';
+import { acceptInvitation, declineInvitation, invokeToken } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -23,8 +23,8 @@ describe('Invitation response', async () => {
     return await createTestOrganization();
   }
 
-  async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'reject', sessionCookie: string) {
-    return await call(action === 'accept' ? acceptInvitation : rejectInvitation, {
+  async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'decline', sessionCookie: string) {
+    return await call(action === 'accept' ? acceptInvitation : declineInvitation, {
       path: { invitationId: inactiveMembershipId },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
@@ -98,7 +98,7 @@ describe('Invitation response', async () => {
     expect(memberships[0].role).toBe(adminRole);
   });
 
-  it('should reject invitation', async () => {
+  it('should decline invitation', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
 
@@ -111,16 +111,16 @@ describe('Invitation response', async () => {
     });
     const sessionCookie = await createTestSession(invitedUser);
 
-    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'reject', sessionCookie);
+    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'decline', sessionCookie);
 
     expect(res.status).toBe(200);
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(0);
 
-    const rejectedInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
-    expect(rejectedInactive).toHaveLength(1);
-    expect(rejectedInactive[0].rejectedAt).toBeDefined();
+    const declinedInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    expect(declinedInactive).toHaveLength(1);
+    expect(declinedInactive[0].declinedAt).toBeDefined();
   });
 
   it('answers a declining invitee with the organization as a channel base, without its settings or writers', async () => {
@@ -133,14 +133,14 @@ describe('Invitation response', async () => {
       boundTo: invitedUser.id,
     });
 
-    const path = `/me/invitations/${inactiveMembership.id}:reject`;
+    const path = `/me/invitations/${inactiveMembership.id}:decline`;
     const { status, body } = await rawJsonRequest(path, await createTestSession(invitedUser), { method: 'POST' });
 
     expect(status).toBe(200);
     expect(Object.keys(body).sort()).toEqual(channelBaseSchema.keyof().options.toSorted());
   });
 
-  it("retires a rejected invitation's emailed link", async () => {
+  it("retires a declined invitation's emailed link", async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
     const { inactiveMembership, rawToken } = await createInvitation({
@@ -151,7 +151,7 @@ describe('Invitation response', async () => {
       role: memberRole,
     });
 
-    const { response: res } = await respondToInvitation(inactiveMembership.id, 'reject', await createTestSession(invitedUser));
+    const { response: res } = await respondToInvitation(inactiveMembership.id, 'decline', await createTestSession(invitedUser));
     expect(res.status).toBe(200);
 
     expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id))).toHaveLength(0);

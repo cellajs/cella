@@ -12,7 +12,7 @@ const addressLimits = { points: 1, duration: day };
  */
 const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits });
 
-/** A tenant's invitation mails a day, against its `invitationMailsPerDay` restriction, so admin accounts do not multiply it. */
+/** A tenant's invitation mails a day, against its `invitationEmailsPerDay` restriction, so admin accounts do not multiply it. */
 const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day });
 
 const addressKey = (tenantId: string, email: string) => subjectSegment('tenantId', tenantId) + subjectSegment('email', email);
@@ -47,7 +47,7 @@ export async function takeInvitationMails(
   const heldBack = new Set(reservations.flatMap(({ email, reservation }) => (reservation.granted ? [] : [email])));
 
   const count = mailNow.length - heldBack.size + mailAtPublish;
-  const budget = tenant.restrictions.rateLimits.invitationMailsPerDay;
+  const budget = tenant.restrictions.rateLimits.invitationEmailsPerDay;
   if (!count || budget === 0) return heldBack;
 
   const total = await reserveAttempt(tenantMails, tenantId, { points: budget, duration: day }, count);
@@ -65,5 +65,5 @@ export async function refundInvitationMails(ctx: InvitationMailsContext, emails:
   const { tenantId, tenant } = ctx.var;
 
   for (const email of emails) await refundAttempt(addressMails, addressKey(tenantId, email));
-  if (tenant.restrictions.rateLimits.invitationMailsPerDay !== 0) await refundAttempt(tenantMails, tenantId, emails.length);
+  if (tenant.restrictions.rateLimits.invitationEmailsPerDay !== 0) await refundAttempt(tenantMails, tenantId, emails.length);
 }

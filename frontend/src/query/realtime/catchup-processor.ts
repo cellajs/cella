@@ -83,7 +83,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
     if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
-      const { organizationId, entityType } = answer;
+      const { organizationId, productType: entityType } = answer;
       if (!hasEntityQueryKeys(entityType)) continue;
       const viewKey = `${organizationId}:${entityType}`;
 
@@ -97,7 +97,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
       if (answer.status === 'opaque') {
         opaqueScopes.add(viewKey);
         // Before the lists refetch, so a list read in flight finds no cursor move to read again.
-        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProduct }) => embeddedProduct === entityType);
+        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProductType }) => embeddedProductType === entityType);
         if (!baselineOnly && hint) settleOpaqueHint(organizationId, hint, keys);
         // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
         if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
@@ -170,10 +170,10 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
       for (const hint of propagation) {
         // More rows changed than a hint names: the host lists refetch, embedded copies included.
         if (hint.overflow) {
-          invalidateEmbeddingHosts(hint.embeddedProduct, organizationId);
+          invalidateEmbeddingHosts(hint.embeddedProductType, organizationId);
           continue;
         }
-        const pending = hasEntityQueryKeys(hint.embeddedProduct) && attachPendingPropagation(hint.embeddedProduct, organizationId, hint);
+        const pending = hasEntityQueryKeys(hint.embeddedProductType) && attachPendingPropagation(hint.embeddedProductType, organizationId, hint);
         if (!pending) propagateEmbeddings(hint);
       }
     }
@@ -210,12 +210,12 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
  * the next hint names only newer rows. Nothing fetched the updated rows, so the host lists refetch and the updated
  * rows' own cached details are marked; the hint's removals still propagate.
  */
-function settleOpaqueHint(organizationId: string, { embeddedProduct, update, untilSeq }: PropagationHint, keys: EntityQueryKeys): void {
+function settleOpaqueHint(organizationId: string, { embeddedProductType, update, untilSeq }: PropagationHint, keys: EntityQueryKeys): void {
   if (untilSeq === undefined) return;
   const syncState = syncStore.getState();
-  syncState.setOrgSeq(organizationId, embeddedProduct, Math.max(syncState.getOrgSeq(organizationId, embeddedProduct), untilSeq));
+  syncState.setOrgSeq(organizationId, embeddedProductType, Math.max(syncState.getOrgSeq(organizationId, embeddedProductType), untilSeq));
   if (update.length === 0) return;
-  invalidateEmbeddingHosts(embeddedProduct, organizationId);
+  invalidateEmbeddingHosts(embeddedProductType, organizationId);
   for (const id of update) cacheOps.invalidateEntityDetail(id, keys, 'none');
 }
 

@@ -23,6 +23,7 @@ import {
   confirmInvitationAddress,
   createPasskey,
   createTotp,
+  declineInvitation,
   deleteConnectedApp,
   deleteMe,
   deletePasskey,
@@ -32,7 +33,6 @@ import {
   listConnectedApps,
   listMyInvitations,
   listMyMemberships,
-  rejectInvitation,
   revokeMySessions,
   toggleMfa,
   updateMe,
@@ -228,7 +228,7 @@ export const myMembershipsQueryOptions = () =>
  * drop the invite from cache, and say so. The answer names the organization, also for an invitation to a channel below
  * it, so the invite is found by its own id; a token answer carries none, and the list reloads.
  */
-const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'reject') => {
+const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'decline') => {
   // Stale before the invite leaves the cache: the onboarding's completed screen opens on that and waits for the list
   if (action === 'accept') queryClient.invalidateQueries({ queryKey: getEntityQueryKeys('organization').list.base });
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
@@ -243,14 +243,14 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
     queryClient.invalidateQueries({ queryKey: meKeys.invites });
   }
 
-  toaster.success(t(action === 'accept' ? 'c:success.accept_invitation' : 'c:success.reject_invitation'));
+  toaster.success(t(action === 'accept' ? 'c:success.accept_invitation' : 'c:success.decline_invitation'));
 };
 
 /** Answers an invitation listed in-app, by its id. */
 export const useHandleInvitationMutation = () =>
-  useMutation<AcceptInvitationResponse, ApiError, { invitationId: string; action: 'accept' | 'reject' }>({
+  useMutation<AcceptInvitationResponse, ApiError, { invitationId: string; action: 'accept' | 'decline' }>({
     mutationKey: meKeys.handleInvitation,
-    mutationFn: ({ invitationId, action }) => (action === 'accept' ? acceptInvitation : rejectInvitation)({ path: { invitationId } }),
+    mutationFn: ({ invitationId, action }) => (action === 'accept' ? acceptInvitation : declineInvitation)({ path: { invitationId } }),
     onSuccess: (_organization, { invitationId, action }) => applySettledInvitation(invitationId, action),
   });
 
@@ -290,11 +290,11 @@ export const useRevokeConnectedAppMutation = () =>
 
 /** Revokes sessions by id, stepping up when another session is among them; each cached session takes its revoked row and moves to history. */
 export const useRevokeSessionsMutation = () =>
-  useMutation<RevokeMySessionsResponse['data'], ApiError, string[]>({
+  useMutation<RevokeMySessionsResponse['results'], ApiError, string[]>({
     mutationKey: meKeys.delete.sessions,
     mutationFn: async (ids) => {
-      const { data } = await withStepUp(() => revokeMySessions({ body: { ids } }));
-      return data;
+      const { results } = await withStepUp(() => revokeMySessions({ body: { ids } }));
+      return results;
     },
     onSuccess: (revoked) => {
       const revokedById = new Map(revoked.map((session) => [session.id, session]));

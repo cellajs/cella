@@ -19,5 +19,5 @@ export async function deleteUsersOp(ctx: UserContext, ids: string[]) {
   await deleteAccounts(ctx, { userIds: foundIds, by: ctx.var.user.id });
   log.info('Users deleted', { count: foundIds.length, ids: foundIds });
 
-  return { data: [], rejectedIds };
+  return { results: [], rejectedIds };
 }

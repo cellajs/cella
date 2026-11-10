@@ -49,7 +49,7 @@ export async function releaseReplacedImages({ holder, before, after }: ReleaseRe
         : new Set<string>(),
     ]);
     const released = keys.filter((key) => !images.has(key) && !attachments.has(key));
-    if (released.length > 0) await deleteStoredObjects(appConfig.s3.publicBucket, released);
+    if (released.length > 0) await deleteStoredObjects(appConfig.s3.publicBucketName, released);
   } catch (error) {
     log.error('Replaced images could not be deleted', { keys, err: error });
   }

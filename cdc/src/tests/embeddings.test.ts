@@ -48,9 +48,9 @@ vi.mock('shared', async (importOriginal) => {
       channelEntityTypes: deepHierarchy.channelTypes,
       entityIdColumnKeys: deepHierarchy.idColumnKeys,
       productEmbeddings: [
-        { embeddedProduct: 'item', hostProduct: 'task', hostColumn: 'items' },
+        { embeddedProductType: 'item', hostProductType: 'task', hostColumn: 'items' },
         // Hydrated from a single reference: the host keeps `mainItemId` and no column of this name.
-        { embeddedProduct: 'item', hostProduct: 'task', hostColumn: 'mainItem' },
+        { embeddedProductType: 'item', hostProductType: 'task', hostColumn: 'mainItem' },
       ],
     },
   };

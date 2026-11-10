@@ -1,0 +1,4 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "notification_preferences", "mention_email"], "to": ["public", "notification_preferences", "mention_emails"] },
+  { "type": "rename", "kind": "column", "from": ["public", "notification_preferences", "comment_email"], "to": ["public", "notification_preferences", "comment_emails"] }
+]

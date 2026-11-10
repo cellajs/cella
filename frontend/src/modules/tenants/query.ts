@@ -46,8 +46,8 @@ export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number
     kind = [],
     sort = tenantsSearchDefaults.sort,
     order = tenantsSearchDefaults.order,
-    // requestLimits has no tenants entry
-    limit = appConfig.requestLimits.users,
+    // pageSizes has no tenants entry
+    limit = appConfig.pageSizes.users,
   } = params;
   const filters = { q, status, kind, sort, order };
   const query = { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order) };

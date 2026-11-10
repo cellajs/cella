@@ -10,5 +10,5 @@ export const listSignInFederations = async () => {
   if (!isStrategyEnabled('sso')) return [];
   return (await findActiveSsoFederations(dbCtx))
     .filter((key): key is FederationKey => isFederationKey(key) && isFederationConfigured(key))
-    .map((key) => ({ key, label: appConfig.federations[key].label }));
+    .map((key) => ({ key, name: appConfig.federations[key].name }));
 };

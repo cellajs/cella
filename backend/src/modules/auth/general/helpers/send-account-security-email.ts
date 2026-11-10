@@ -12,7 +12,7 @@ export const sendAccountSecurityEmail = (
   type: AccountSecurityType,
   details?: Record<string, string | number>,
 ) => {
-  const lng = recipient.languageCode ?? appConfig.defaultLanguage;
+  const lng = recipient.languageCode ?? appConfig.defaultLanguageCode;
 
   // A new sign-in notice is routine; every other type marks something an operator may want to look at. Addresses and
   // IPs stay in the mail: the type and the recipient's user id find it, and a mail without one keeps the request's ids.

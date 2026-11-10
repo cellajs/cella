@@ -39,7 +39,7 @@ describe('Replaced images', async () => {
           id: attachmentId,
           tenantId: tenant.tenantId,
           ...plan.channelIdColumns,
-          bucketName: appConfig.s3.publicBucket,
+          bucketName: appConfig.s3.publicBucketName,
           keys: { original: orgKey('shared.webp') },
           createdBy: tenant.user.id,
           updatedBy: null,

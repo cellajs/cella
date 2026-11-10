@@ -26,7 +26,7 @@ const attachmentA = {
   id: 'att-a',
   organizationId: 'org-1',
   createdBy: 'user-1',
-  bucketName: appConfig.s3.privateBucket,
+  bucketName: appConfig.s3.privateBucketName,
   filename: 'a.jpg',
   contentType: 'image/jpeg',
   convertedContentType: null,
@@ -36,7 +36,7 @@ const attachmentB = {
   id: 'att-b',
   organizationId: 'org-1',
   createdBy: 'user-2',
-  bucketName: appConfig.s3.privateBucket,
+  bucketName: appConfig.s3.privateBucketName,
   filename: 'b.doc',
   contentType: 'application/msword',
   convertedContentType: 'application/pdf',
@@ -71,7 +71,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     expect(findAttachmentsByIds).toHaveBeenCalledWith(ctx, { ids: ['att-a', 'att-b'] });
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(2);
     expect(res).toEqual({
-      data: [
+      results: [
         { attachmentId: 'att-a', variant: 'preview', url: `https://signed.example/${attachmentA.keys.preview}` },
         { attachmentId: 'att-b', variant: 'original', url: `https://signed.example/${attachmentB.keys.original}` },
       ],
@@ -97,11 +97,11 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     // A fallback to the original serves the original's declared type and name.
     expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
-      bucketName: appConfig.s3.privateBucket,
+      bucketName: appConfig.s3.privateBucketName,
       contentType: attachmentA.contentType,
       filename: attachmentA.filename,
     });
-    expect(res.data[0]?.variant).toBe('converted');
+    expect(res.results[0]?.variant).toBe('converted');
   });
 
   it('puts unresolved ids in rejectedIds and never signs them', async () => {
@@ -155,7 +155,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     });
 
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(1);
-    expect(res.data.map((item) => item.attachmentId)).toEqual(['att-a']);
+    expect(res.results.map((item) => item.attachmentId)).toEqual(['att-a']);
     expect(res.rejectedIds).toEqual(['att-b', 'att-c']);
   });
 
@@ -165,7 +165,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-missing', variant: 'original' }] });
 
-    expect(res).toEqual({ data: [], rejectedIds: ['att-missing'] });
+    expect(res).toEqual({ results: [], rejectedIds: ['att-missing'] });
     expect(getSignedUrlFromKey).not.toHaveBeenCalled();
   });
 });

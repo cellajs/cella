@@ -20,7 +20,7 @@ const rateLimitsSchema = z.object({
   apiPointsPerHour: countSchema.describe(
     'Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)',
   ),
-  invitationMailsPerDay: countSchema.describe('Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)'),
+  invitationEmailsPerDay: countSchema.describe('Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)'),
 });
 
 const quotasSchema = z

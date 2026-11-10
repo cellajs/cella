@@ -24,8 +24,8 @@ export interface EngineConfig {
   s3: {
     region: string;
     host: string;
-    publicBucket: string;
-    privateBucket: string;
+    publicBucketName: string;
+    privateBucketName: string;
     publicCDNUrl: string;
     privateCDNUrl: string;
   };

@@ -20,8 +20,8 @@ function engineFields(config: EngineConfig): EngineConfig {
     s3: {
       region: s3.region,
       host: s3.host,
-      publicBucket: s3.publicBucket,
-      privateBucket: s3.privateBucket,
+      publicBucketName: s3.publicBucketName,
+      privateBucketName: s3.privateBucketName,
       publicCDNUrl: s3.publicCDNUrl,
       privateCDNUrl: s3.privateCDNUrl,
     },

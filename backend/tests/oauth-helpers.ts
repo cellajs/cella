@@ -188,10 +188,10 @@ export async function authorizationCode(
   if (decision.status !== 200) {
     return { code: null, verifier, consent, failure: { status: decision.status, body: await decision.json() } };
   }
-  const { redirectTo } = (await decision.json()) as { redirectTo: string };
+  const { redirectUrl } = (await decision.json()) as { redirectUrl: string };
 
   // Resume the authorization request; the provider may hop once more before landing on the client's redirect URI.
-  let location = redirectTo;
+  let location = redirectUrl;
   let code: string | null = null;
   for (let hop = 0; hop < 5 && !code; hop++) {
     const response = await fetch(location, { redirect: 'manual', headers: { Cookie: jar.header() } });

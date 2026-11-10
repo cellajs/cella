@@ -101,7 +101,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Tenant policy: `sso-policy` (a member's identity bound however they signed in, no magic link to an institution-proven address).
   - Connections admin: `connections` (non-sysadmin and sso off, domain uniqueness).
   - Claim on proof: `invitations/claim-on-signup` (claims bind only to the proven account).
-  - Redirect: `oauth` (an attacker `redirectAfter`), plus the `shared` safe-redirect unit tests.
+  - Redirect: `oauth` (an attacker `redirectPath`), plus the `shared` safe-redirect unit tests.
 - **Asks:** the RFC 9700 client checklist per provider; a table of trusted claims; a table of redirect targets and their origin (all build on `appConfig.frontendUrl` today); federation metadata refresh and signature.
 - **Not this class:** machine tokens, the OAuth server, consent and the `oauth-grants` test belong to A5 (that test covers the OAuth server, not provider sign-in). Sessions, MFA, step-up after sign-in and the device cookie belong to A2 and A3. Invitation-address takeover through the confirmation link belongs to C7. Magic-link mechanics belong to A1. Log content of federation refusals belongs to D1. The discovery fetch (`oauth-metadata-fetch-*` tests) belongs to C5.
 
@@ -184,7 +184,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B2 Roles and function-level access
 - **Gain:** escalation inside a tenant.
-- **Merges:** role escalation on a membership update, the last admin, invitations (role against the inviter's, resend, pending, rejected, draft), the service-account role cap and bindings, `system_roles` written by the admin connection only, the system role in user lists, tenant lifecycle actions, app-defined roles (`elevated`, `prepareRoles`).
+- **Merges:** role escalation on a membership update, the last admin, invitations (role against the inviter's, resend, pending, declined, draft), the service-account role cap and bindings, `system_roles` written by the admin connection only, the system role in user lists, tenant lifecycle actions, app-defined roles (`elevated`, `prepareRoles`).
 - **Advisories:** 2 (hono improper authorization, JWT scheme).
 - **Files:**
   - `backend/src/modules/memberships/` (also holds the invitation routes in `memberships-routes.ts`).
@@ -196,7 +196,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
-  - `pending-invitations`: no account oracle on list, resend, invite, check; a member cannot withdraw. `rejected-invitations`: a declined invitation cannot be accepted by id, token or inbox proof. `resend-invitation`: no re-mint of rejected, revoked, accepted or used invitations.
+  - `pending-invitations`: no account oracle on list, resend, invite, check; a member cannot withdraw. `declined-invitations`: a declined invitation cannot be accepted by id, token or inbox proof. `resend-invitation`: no re-mint of rejected, revoked, accepted or used invitations.
   - `tests/invitations/*`: draft invites held, only `prepareRoles` dispatch, a member cannot publish; invite and accept flows.
   - `tests/service-accounts`: a member cannot create an account, key scopes mask grants, revoke through another account, no grant at the tenant door, quota.
   - `tests/integration/system-roles-write-guard`: `runtime_role` cannot insert, update or delete `system_roles` even with the grant open; the admin connection and the user-delete cascade still work.
@@ -209,7 +209,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** mass assignment (the body pick), the writable set per update route, the secret-column registry (responses, logs, the CDC row image), visibility by relation (the MFA setting, the personal view, addresses of organization members, invited addresses), `included` membership, activities `changedFields`, base against full schemas.
 - **Advisories:** none.
 - **Files:**
-  - `backend/src/db/secret-columns.ts`: the registry (api_keys.hash, oauth_clients.secretHash, passkey_challenges.challengeHash, sessions.secret, signing_keys.privateJwk, tokens.secret and singleUseToken, totps.secret), the allowed look-alikes and the pattern.
+  - `backend/src/db/secret-columns.ts`: the registry (api_keys.hash, oauth_clients.secretHash, passkey_challenges.challengeHash, sessions.secretHash and steppedUpSecretHash, signing_keys.privateJwk, tokens.secretHash and singleUseToken, totps.secret), the allowed look-alikes and the pattern.
   - `withActorRefs` in `backend/src/modules/actors/actor-refs.ts` (single-row `withActorRef`); output is `ActorRef` (id, kind, name, slug, thumbnailUrl; no email).
   - `backend/src/modules/activities/` (`activities-db.ts`, `activities-schema.ts`, mocks, module; no route reads it). Readers: `backend/src/lib/cdc-websocket.ts` and `modules/entities/entities-queries.ts` (selects `id` only).
   - Every `*-schema.ts`.
@@ -305,7 +305,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/body-limit.ts`, `backend/src/schemas/common-schemas.ts`, `backend/src/middlewares/rate-limiter/` (`core.ts`, `helpers.ts`, `limiters.ts`, `points-cache.ts`, `tests/`), `backend/src/lib/transloadit.ts`.
   - `backend/src/modules/entities/stream/` and its handler `backend/src/modules/entities/entities-handlers.ts`.
   - The relay: `yjs/src/` (`server/ws-server.ts`, `server/upgrade.ts`, `server/rate-limiter.ts`, `constants.ts`) and `backend/src/modules/yjs/`.
-  - Config: `shared/config/config.default.ts` (`requestLimits`, `jsonBodyLimit`, `fileUploadLimit`, `defaultBodyLimit`, `uppy`, `localBlobStorage`); `config.template.ts` repeats the three body limits.
+  - Config: `shared/config/config.default.ts` (`pageSizes`, `maxBodySize`, `uppy`, `localBlobStorage`); `config.template.ts` repeats them.
   - `ctx.req.json()` call sites: `middlewares/rate-limiter/helpers.ts` (email and bulk-length readers, after `dynamicBodyLimit`), `modules/yjs/yjs-internal-handlers.ts`, `modules/oauth-server/interactions.ts`; `modules/mcp/mcp-routes.ts` takes `jsonBody(z.any())`.
   - `JSON.parse` sites: `backend/src/lib/cdc-websocket.ts` (each worker frame), `modules/yjs/helpers/{description-update,sanitize-block-media}.ts`, `backend/src/utils/extract-keywords.ts` (stored descriptions).
   - pg-boss is cron-only: `backend/src/lib/pg-boss.ts`, `jobs-worker.ts`; no `boss.send` with request data.

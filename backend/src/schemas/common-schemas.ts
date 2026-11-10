@@ -41,7 +41,7 @@ export const validTempIdSchema = z
 
 export const cookieSchema = z.string().max(maxLength.field);
 
-export const languageSchema = z.enum(appConfig.languages);
+export const languageSchema = z.enum(appConfig.languageCodes);
 
 const countryCodes = new Set(countries.map(({ code }) => code));
 
@@ -98,7 +98,7 @@ export type OrderDirection = z.infer<typeof orderSchema>;
  * `max`, and a negative value fails.
  */
 export const maxPageSizeSchema = (max: number) => {
-  const fallback = Math.min(appConfig.requestLimits.default, max);
+  const fallback = Math.min(appConfig.pageSizes.default, max);
   return integerQuerySchema(translatedError('error:invalid_page_size'))
     .optional()
     .transform((size) => Math.min(size || fallback, max))

@@ -44,7 +44,7 @@ const fetchRequestsPage = (filters: RequestFilters, page: PageRequest, signal?: 
   return listRequests({ query: { q, orderBy: orderByParam(sort, order), ...page }, signal });
 };
 
-export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.requests, ...params }: RequestsListParams) => {
+export const requestsListQueryOptions = ({ limit = appConfig.pageSizes.requests, ...params }: RequestsListParams) => {
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({
@@ -73,7 +73,7 @@ export const useSendApprovalInviteMutation = () =>
     mutationKey: requestsKeys.approve,
     mutationFn: (requests) => inviteUsers({ body: { emails: requests.map(({ email }) => email) } }),
     onSuccess: (_, requests) => {
-      const invited = requests.map((request) => ({ ...request, wasInvited: true }));
+      const invited = requests.map((request) => ({ ...request, invited: true }));
       cacheUpdate(requestsKeys.table.base, invited);
       toaster.success(t('c:success.users_invited'));
     },

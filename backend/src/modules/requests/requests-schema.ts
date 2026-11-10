@@ -7,7 +7,7 @@ import { listQuerySchema, orderByQuerySchema, validEmailSchema } from '#/schemas
 
 export const requestSchema = createSelectSchema(requestsTable)
   .omit({ invitedAt: true })
-  .extend({ kind: z.enum(requestKinds), wasInvited: z.boolean() })
+  .extend({ kind: z.enum(requestKinds), invited: z.boolean() })
   .openapi('Request', {
     description:
       'A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.',

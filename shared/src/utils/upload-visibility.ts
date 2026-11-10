@@ -19,7 +19,7 @@ export const maxFilesPerUpload = 20;
 export const uploadStorage = (templateId: UploadTemplateId) => {
   const template: TemplateStorage = uploadTemplates[templateId];
   const publicBucket = template.publicBucket === true;
-  return { publicBucket, bucketName: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket };
+  return { publicBucket, bucketName: publicBucket ? appConfig.s3.publicBucketName : appConfig.s3.privateBucketName };
 };
 
 /**

@@ -48,8 +48,8 @@ const seed = async (overrides: Partial<InsertConnectionModel> = {}, authStrategi
     .values({
       tenantId: organization.tenantId,
       kind: 'sso',
-      issuer: 'surfconext',
-      displayName: 'Hogeschool Utrecht',
+      federation: 'surfconext',
+      name: 'Hogeschool Utrecht',
       claimValues: ['hu.nl'],
       status: 'active',
       config: { idpEntityIds: ['https://idp.hu.nl/students'] },
@@ -76,7 +76,7 @@ describe("the tenant's sign-in policy", async () => {
     const path = { tenantId: organization.tenantId, organizationId: organization.id };
 
     const student = await createOrganizationAdminUser(`student-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
-    await linkIdentity(student, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    await linkIdentity(student, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
 
     const viaMagic = await call(getOrganization, {
       path,
@@ -110,13 +110,13 @@ describe("the tenant's sign-in policy", async () => {
 
   it('must refuse a member of an SSO-only tenant who signs in through another connection', async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
-    const other = await seed({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'], config: { idpEntityIds: ['https://idp.uu.nl'] } });
+    const other = await seed({ name: 'Universiteit Utrecht', claimValues: ['uu.nl'], config: { idpEntityIds: ['https://idp.uu.nl'] } });
     const path = { tenantId: organization.tenantId, organizationId: organization.id };
 
     // Offboarded at the tenant's institution, the member also holds an account at another connected one.
     const member = await createOrganizationAdminUser(`member-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
-    await linkIdentity(member, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
-    await linkIdentity(member, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: other.connection.id });
+    await linkIdentity(member, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    await linkIdentity(member, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: other.connection.id });
     const signedIn = async (connectionId?: string) =>
       call(getOrganization, {
         path,
@@ -137,7 +137,7 @@ describe("the tenant's sign-in policy", async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
     const email = `l.jansen-${suffix()}@hu.nl`;
     const user = await createTestUser(email);
-    await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    await linkIdentity(user, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
     await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, email));
 
     // Any browser gets the answer every address gets: the inbox learns where to sign in.
@@ -172,7 +172,7 @@ describe('what the sign-in surfaces read', async () => {
   it('lists the federations with a connected institution for the generic entrance', async () => {
     await seed();
     const { data } = await call(getAuthHealth, { headers: defaultHeaders });
-    expect((data as { federations: { key: string; label: string }[] }).federations).toContainEqual({ key: 'surfconext', label: 'SURFconext' });
+    expect((data as { federations: { key: string; name: string }[] }).federations).toContainEqual({ key: 'surfconext', name: 'SURFconext' });
   });
 
   it("names the invited organization's institution on the invitation data", async () => {
@@ -199,10 +199,10 @@ describe('what the sign-in surfaces read', async () => {
 
     const before = await call(getMyAuth, { headers });
     expect((before.data as { institutions: unknown[] }).institutions).toEqual([
-      { connectionId: connection.id, displayName: 'Hogeschool Utrecht', federation: { key: 'surfconext', label: 'SURFconext' }, identity: null },
+      { connectionId: connection.id, name: 'Hogeschool Utrecht', federation: { key: 'surfconext', name: 'SURFconext' }, identity: null },
     ]);
 
-    await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    await linkIdentity(user, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
     const after = await call(getMyAuth, { headers });
     expect((after.data as { institutions: { identity: unknown }[] }).institutions[0].identity).not.toBeNull();
   });

@@ -5,7 +5,7 @@ import type { NotificationModel } from '#/modules/notification/notification-db';
 import { getNotificationSource, groupByTenantAndType, loadSubjectRows } from '#/modules/notification/notification-sources';
 
 /** The subject a notification row names. */
-type NotificationRef = Pick<NotificationModel, 'tenantId' | 'entityType' | 'subjectId'>;
+type NotificationRef = Pick<NotificationModel, 'tenantId' | 'productType' | 'subjectId'>;
 
 /**
  * The subjects among `refs` that `access` may read now: the row is live and the permission engine allows read. A
@@ -14,8 +14,8 @@ type NotificationRef = Pick<NotificationModel, 'tenantId' | 'entityType' | 'subj
  */
 export async function findReadableSubjectIds(access: Access, refs: NotificationRef[]): Promise<Set<string>> {
   const readable = new Set<string>();
-  for (const { tenantId, entityType, ids } of groupByTenantAndType(refs.map((ref) => ({ ...ref, id: ref.subjectId })))) {
-    const source = getNotificationSource(entityType);
+  for (const { tenantId, productType, ids } of groupByTenantAndType(refs.map((ref) => ({ ...ref, id: ref.subjectId })))) {
+    const source = getNotificationSource(productType);
     if (!source) continue;
     const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, ids));
     const subjects = rows.map((row) => buildSubjectFromEntity(source.entityType, row));

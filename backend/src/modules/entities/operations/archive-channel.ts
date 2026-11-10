@@ -80,5 +80,5 @@ export async function archiveChannelOp(ctx: OrgContext, { channelType, channelId
   }
   log.info(archived ? 'Channel archived' : 'Channel unarchived', { channelType, channelId: channel.id, changedIds, rejectedIds });
 
-  return { data: [], rejectedIds };
+  return { results: [], rejectedIds };
 }

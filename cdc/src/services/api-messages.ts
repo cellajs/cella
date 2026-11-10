@@ -15,7 +15,7 @@ type ProductMessageInput = Extract<CdcMessageInput, { rows: unknown }>;
 type RecordedActivity = CdcActivity & { id: string };
 
 /** The columns a product row carries of its own activity, typed as the worker records them for the wire check. */
-type RowActivityColumns = 'userId' | 'changedFields' | 'stx';
+type RowActivityColumns = 'actorId' | 'changedFields' | 'stx';
 
 /**
  * One product row of a message: the activity it was recorded as (its id, writer, changed fields and stx), the fields
@@ -93,14 +93,14 @@ export interface ProductRow {
 
 /** The message of one audience: what its rows share, and each row with its own activity and permission fields. */
 function buildProductMessage(productType: ProductEntityType, rows: ProductRow[], traceContext: TraceContext): CdcProductMessage {
-  const { id, userId, subjectId, changedFields, stx, createdAt, organizationId, tenantId, ...shared } = rows[0].activity;
+  const { id, actorId, subjectId, changedFields, stx, createdAt, organizationId, tenantId, ...shared } = rows[0].activity;
   // Product tables hold both NOT NULL, and a row without its organization already failed the flush's count deltas.
   if (!organizationId || !tenantId) throw new Error(`A ${productType} activity without its tenant or organization`);
   return {
     activity: { ...shared, entityType: productType, organizationId, tenantId },
     rows: rows.map(({ activity, rowData, seq, movedFrom }) => ({
       activityId: activity.id,
-      userId: activity.userId,
+      actorId: activity.actorId,
       changedFields: activity.changedFields,
       stx: activity.stx,
       rowData: pickPermissionRowData(rowData),

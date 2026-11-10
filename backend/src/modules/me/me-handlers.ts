@@ -36,15 +36,15 @@ app.openapi(meRoutes.acceptInvitation, async (ctx) => {
   return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'accept'), 200);
 });
 
-app.openapi(meRoutes.rejectInvitation, async (ctx) => {
-  return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'reject'), 200);
+app.openapi(meRoutes.declineInvitation, async (ctx) => {
+  return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'decline'), 200);
 });
 
 app.openapi(meRoutes.revokeMySessions, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const { data, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
+  const { results, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
   if (signedOut) deleteAuthCookie(ctx, 'session');
-  return ctx.json({ data, rejectedIds }, 200);
+  return ctx.json({ results, rejectedIds }, 200);
 });
 
 app.openapi(meRoutes.updateMe, async (ctx) => ctx.json(await updateMeOp(ctx, ctx.req.valid('json')), 200));

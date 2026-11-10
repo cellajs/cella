@@ -79,7 +79,7 @@ export function AccountSheet() {
 
   const uploadCover = () =>
     openImageUpload({
-      templateId: 'cover',
+      templateId: 'banner',
       title: coverLabel,
       onUploaded: (bannerUrl) => updateUser({ bannerUrl }, { onSuccess: () => toaster.success(t('c:success.upload_cover')) }),
       onDelete: user.bannerUrl
@@ -113,7 +113,7 @@ export function AccountSheet() {
           </div>
           <p className="max-w-full truncate text-base font-semibold">{user.name}</p>
         </div>
-        {appConfig.has.uploadEnabled && (
+        {appConfig.has.uploads && (
           <TooltipButton toolTipContent={coverLabel} side="left">
             <Button
               variant="outline-ghost"

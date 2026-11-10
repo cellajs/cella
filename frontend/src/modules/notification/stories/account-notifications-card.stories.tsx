@@ -5,7 +5,7 @@ import { AccountNotificationsCard } from '~/modules/notification/account-notific
 import { notificationKeys } from '~/modules/notification/query';
 import { withApp } from '~/stories/with-app';
 
-const preferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' };
+const preferences = { mentionEmails: true, commentEmails: false, digest: 'weekly' };
 
 /** The notification settings card: email switches and the digest cadence, over the stored preferences. */
 const meta = {
@@ -20,10 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 export const MentionEmailOnly: Story = {
   beforeEach: () => {
-    const { commentEmail } = appConfig.has;
-    appConfig.has.commentEmail = false;
+    const { commentEmails } = appConfig.has;
+    appConfig.has.commentEmails = false;
     return () => {
-      appConfig.has.commentEmail = commentEmail;
+      appConfig.has.commentEmails = commentEmails;
     };
   },
   play: async ({ canvasElement }) => {
@@ -39,10 +39,10 @@ export const MentionEmailOnly: Story = {
 
 export const WithCommentEmail: Story = {
   beforeEach: () => {
-    const { commentEmail } = appConfig.has;
-    appConfig.has.commentEmail = true;
+    const { commentEmails } = appConfig.has;
+    appConfig.has.commentEmails = true;
     return () => {
-      appConfig.has.commentEmail = commentEmail;
+      appConfig.has.commentEmails = commentEmails;
     };
   },
   play: async ({ canvasElement }) => {

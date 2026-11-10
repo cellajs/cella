@@ -17,8 +17,8 @@ export const sessionBaseSchema = createSelectSchema(sessionsTable).omit({ revoke
 
 /** A session as the account page lists it. */
 const sessionSchema = sessionBaseSchema.extend({
-  isCurrent: z.boolean(),
-  isNewDevice: z.boolean().openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
+  current: z.boolean(),
+  newDevice: z.boolean().openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
 });
 
 export const meSchema = z
@@ -37,13 +37,13 @@ export const meSchema = z
 /** When a sign-in method was added, and when it last signed the user in. */
 const methodDatesShape = { createdAt: z.string(), lastUsedAt: z.union([z.string(), z.null()]) };
 
-/** An external identity the account holds, with the address its issuer asserted last. */
+/** An external identity the account holds, with the address its provider asserted last. */
 const identityShape = { email: z.union([z.string(), z.null()]), ...methodDatesShape };
 
 /** An institution a member could sign in through: the active connection of a tenant they belong to. */
 const institutionAccountSchema = z.object({
   connectionId: z.string(),
-  displayName: z.string(),
+  name: z.string(),
   federation: federationRefSchema,
   identity: z.union([z.object(identityShape), z.null()]).describe('The identity the account holds through this connection; null when not connected'),
 });

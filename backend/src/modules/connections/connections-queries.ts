@@ -39,20 +39,20 @@ export const findConnectionEntry = async (ctx: DbContext, { id }: { id: string }
 };
 
 interface FindActiveSsoConnectionByClaimOpts {
-  issuer: string;
+  federation: string;
   /** The asserted value of the federation's tenant claim, lower case. */
   claimValue: string;
 }
 
 /** The active SSO connection that accepts the asserted institution value, for a sign-in that started without one. */
-export const findActiveSsoConnectionByClaim = async (ctx: DbContext, { issuer, claimValue }: FindActiveSsoConnectionByClaimOpts) => {
+export const findActiveSsoConnectionByClaim = async (ctx: DbContext, { federation, claimValue }: FindActiveSsoConnectionByClaimOpts) => {
   const [row] = await ctx.var.db
     .select()
     .from(connectionsTable)
     .where(
       and(
         eq(connectionsTable.kind, 'sso'),
-        eq(connectionsTable.issuer, issuer),
+        eq(connectionsTable.federation, federation),
         eq(connectionsTable.status, 'active'),
         arrayOverlaps(connectionsTable.claimValues, [claimValue]),
       ),
@@ -62,21 +62,21 @@ export const findActiveSsoConnectionByClaim = async (ctx: DbContext, { issuer, c
 };
 
 export interface FindConnectionsClaimingOpts {
-  issuer: string;
+  federation: string;
   claimValues: string[];
   /** The connection being updated, whose own values do not collide. */
   excludeId?: string;
 }
 
 /** SSO connections of any tenant that already accept one of the values. */
-export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimValues, excludeId }: FindConnectionsClaimingOpts) =>
+export const findConnectionsClaiming = async (ctx: DbContext, { federation, claimValues, excludeId }: FindConnectionsClaimingOpts) =>
   ctx.var.db
     .select({ id: connectionsTable.id, tenantId: connectionsTable.tenantId, claimValues: connectionsTable.claimValues })
     .from(connectionsTable)
     .where(
       and(
         eq(connectionsTable.kind, 'sso'),
-        eq(connectionsTable.issuer, issuer),
+        eq(connectionsTable.federation, federation),
         arrayOverlaps(connectionsTable.claimValues, claimValues),
         excludeId ? ne(connectionsTable.id, excludeId) : undefined,
       ),
@@ -91,7 +91,7 @@ export const insertConnection = async (ctx: DbContext, { values }: { values: Ins
 interface UpdateConnectionOpts {
   id: string;
   tenantId: string;
-  values: Partial<Pick<InsertConnectionModel, 'displayName' | 'claimValues' | 'status' | 'jitProvisioning' | 'config' | 'updatedAt' | 'updatedBy'>>;
+  values: Partial<Pick<InsertConnectionModel, 'name' | 'claimValues' | 'status' | 'jitProvisioning' | 'config' | 'updatedAt' | 'updatedBy'>>;
 }
 
 /** Writes `values` to one tenant's connection; the updated row, or undefined when the tenant holds no such connection. */
@@ -135,10 +135,10 @@ export const findActiveSsoConnectionsByTenants = async (ctx: DbContext, { tenant
 /** The federations with at least one active connection: the generic entrance shows a button per federation. */
 export const findActiveSsoFederations = async (ctx: DbContext) => {
   const rows = await ctx.var.db
-    .selectDistinct({ issuer: connectionsTable.issuer })
+    .selectDistinct({ federation: connectionsTable.federation })
     .from(connectionsTable)
     .where(and(eq(connectionsTable.kind, 'sso'), eq(connectionsTable.status, 'active')));
-  return rows.map(({ issuer }) => issuer);
+  return rows.map(({ federation }) => federation);
 };
 
 /**
@@ -164,14 +164,14 @@ export const findAddressGovernance = async (ctx: DbContext, { email }: { email: 
   const [row] = await ctx.var.db
     .select({
       connectionId: connectionsTable.id,
-      displayName: connectionsTable.displayName,
+      name: connectionsTable.name,
       status: connectionsTable.status,
       authStrategies: tenantsTable.authStrategies,
     })
     .from(emailsTable)
     .innerJoin(
       identitiesTable,
-      and(eq(identitiesTable.userId, emailsTable.userId), eq(identitiesTable.kind, 'sso'), eq(identitiesTable.issuer, emailsTable.lastVerifiedVia)),
+      and(eq(identitiesTable.userId, emailsTable.userId), eq(identitiesTable.kind, 'sso'), eq(identitiesTable.provider, emailsTable.lastVerifiedVia)),
     )
     .innerJoin(connectionsTable, eq(connectionsTable.id, identitiesTable.connectionId))
     .innerJoin(tenantsTable, eq(tenantsTable.id, connectionsTable.tenantId))

@@ -59,14 +59,14 @@ export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }:
 
 interface FindSessionBySecretOpts {
   /** The hash of the session token, the only form the database stores. */
-  secret: string;
+  secretHash: string;
 }
 
 /**
  * The session a token's hash names, whether revoked or expired, with its user, the user's system role and the version
  * of the user's bindings. Undefined for an unknown hash.
  */
-export const findSessionBySecret = async (ctx: DbContext, { secret }: FindSessionBySecretOpts) => {
+export const findSessionBySecret = async (ctx: DbContext, { secretHash }: FindSessionBySecretOpts) => {
   const [result] = await ctx.var.db
     .select({
       session: sessionFactColumns,
@@ -79,7 +79,7 @@ export const findSessionBySecret = async (ctx: DbContext, { secret }: FindSessio
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id))
     .innerJoin(actorsTable, eq(actorsTable.id, usersTable.id))
     .leftJoin(systemRolesTable, eq(systemRolesTable.userId, usersTable.id))
-    .where(eq(sessionsTable.secret, secret))
+    .where(eq(sessionsTable.secretHash, secretHash))
     .limit(1);
   return result;
 };
@@ -101,7 +101,7 @@ export const findLiveSession = async (ctx: DbContext, { id }: { id: string }) =>
   return live;
 };
 
-/** Stores a session; its `secret` is the hash of the session token, never the token. */
+/** Stores a session; its `secretHash` is the hash of the session token, never the token. */
 export const insertSession = async (ctx: DbContext, { values }: { values: InsertSessionModel }) => {
   await ctx.var.db.insert(sessionsTable).values(values);
 };
@@ -151,7 +151,7 @@ export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since,
   // The factors are looked up by the session's user id as a parameter: a select field renders its columns without their
   // table, so a `sessions` column in these subqueries would name the subquery's own `user_id`.
   const held = heldFactorsSql(userId);
-  const stampHeld = presentedSecret ? eq(sessionsTable.steppedUpSecret, presentedSecret) : sql`false`;
+  const stampHeld = presentedSecret ? eq(sessionsTable.steppedUpSecretHash, presentedSecret) : sql`false`;
   const [row] = await ctx.var.db
     .select({
       stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} and ${stampHeld} then ${sessionsTable.steppedUpVia} end`,
@@ -171,18 +171,18 @@ interface UpdateSessionSteppedUpOpts {
   userId: string;
   via: StepUpProof;
   /** The hash of the step-up cookie the stamp goes out with. */
-  secret: string;
+  secretHash: string;
 }
 
 /**
  * Stamps a live session of the user as stepped up now, by the proof given; only the named session. Undefined when the
  * session ended or belongs to someone else.
  */
-export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via, secret }: UpdateSessionSteppedUpOpts) => {
+export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via, secretHash }: UpdateSessionSteppedUpOpts) => {
   const now = getIsoDate();
   const [stamped] = await ctx.var.db
     .update(sessionsTable)
-    .set({ steppedUpAt: now, steppedUpVia: via, steppedUpSecret: secret })
+    .set({ steppedUpAt: now, steppedUpVia: via, steppedUpSecretHash: secretHash })
     .where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now)))
     .returning({ id: sessionsTable.id });
   return stamped;

@@ -68,7 +68,7 @@ describe('starting a provider sign-in', async () => {
     // A page on another site navigates one window to the start again and again, each with a long redirect path.
     const states: string[] = [];
     for (let start = 0; start < 8; start++) {
-      const { response } = await call(startGithubOAuth, { query: { kind: 'auth', redirectAfter: `/${'a'.repeat(2000)}` }, headers: inBrowser() });
+      const { response } = await call(startGithubOAuth, { query: { kind: 'auth', redirectPath: `/${'a'.repeat(2000)}` }, headers: inBrowser() });
       expect(response.status).toBe(302);
       states.push(new URL(response.headers.get('location') ?? '').searchParams.get('state') ?? '');
       browser.absorb(response);

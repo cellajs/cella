@@ -8,7 +8,7 @@ type Preferences = z.infer<typeof preferencesSchema>;
 type PreferencesUpdate = z.infer<typeof updatePreferencesBodySchema>;
 
 function toResponse(row: Preferences): Preferences {
-  return { mentionEmail: row.mentionEmail, commentEmail: row.commentEmail, digest: row.digest };
+  return { mentionEmails: row.mentionEmails, commentEmails: row.commentEmails, digest: row.digest };
 }
 
 /** The caller's email and digest preferences; the defaults for a user who never saved any. */
