@@ -7,7 +7,7 @@ import { insertRequest } from '#/modules/requests/requests-queries';
 import type { requestCreateBodySchema } from '#/modules/requests/requests-schema';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
-import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../../../../emails';
+import { accountExistsEmail, requestReceivedEmail, requestResponseEmail } from '../../../../emails';
 
 const addressMailLimits = { points: 1, duration: 60 * 60 * 24 };
 /** One mail per address a day from the form, whatever its kind: anyone may type anyone's address into it. */
@@ -17,10 +17,10 @@ const mayMail = async (email: string) => (await reserveAttempt(addressMails, sub
 type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 
 /**
- * Stores a waitlist, newsletter or contact request and confirms it by mail. The caller answers every submission alike,
- * a waitlist or newsletter one before this runs, so the form tells nobody whether an address has an account or is
+ * Stores a waitlist, info or contact request and confirms it by mail. The caller answers every submission alike,
+ * a waitlist or info one before this runs, so the form tells nobody whether an address has an account or is
  * listed already: a waitlist request from an address with an account gets a mail pointing to sign-in and is not stored,
- * and a repeat of a waitlist or newsletter request is dropped. An address gets one mail from the form a day. Notifying
+ * and a repeat of a waitlist or info request is dropped. An address gets one mail from the form a day. Notifying
  * the team runs in the background.
  */
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
@@ -42,7 +42,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
 
   // Taken before the insert, so a stored request and a dropped repeat cost the same statements.
   const confirms = await mayMail(normalizedEmail);
-  // The unique index drops a repeat of a waitlist or newsletter request, concurrent ones included.
+  // The unique index drops a repeat of a waitlist or info request, concurrent ones included.
   if (!(await insertRequest(ctx, { email: normalizedEmail, kind, message }))) return;
 
   let title: string;
@@ -51,8 +51,8 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     case 'waitlist':
       title = 'Join waitlist request';
       break;
-    case 'newsletter':
-      title = 'Join newsletter request';
+    case 'info':
+      title = 'Info request';
       break;
     case 'contact':
       title = `Request for contact with message: "${message}"`;
@@ -62,7 +62,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   // Replies go to the requester, who typed this address: answering means writing back.
   mailer
     .sendEmails(
-      requestInfoEmail,
+      requestReceivedEmail,
       { kind, message, email: normalizedEmail, subject: title },
       [{ email: appConfig.company.email, lng }],
       normalizedEmail,

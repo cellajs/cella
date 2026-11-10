@@ -183,7 +183,7 @@ export interface RetentionConfig {
   /** Known devices kept per user, the most recently seen. */
   devicesPerUser: number;
   oidcPayloadDaysAfterUse: number;
-  /** Contact messages and waitlist entries; a newsletter subscription stays until the unsubscribe. */
+  /** Requests of every kind: contact messages, waitlist entries and info requests. */
   requestDays: number;
   /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
   invitationDays: number;

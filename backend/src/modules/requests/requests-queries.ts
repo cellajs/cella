@@ -20,7 +20,7 @@ interface InsertRequestOpts {
   message?: string | null;
 }
 
-/** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
+/** Returns undefined when the unique signup index (lower(email) for waitlist and info) rejects the row as a duplicate. */
 export const insertRequest = async (ctx: DbContext, { email, kind, message }: InsertRequestOpts) => {
   const [created] = await ctx.var.db.insert(requestsTable).values({ email, kind, message }).onConflictDoNothing().returning(requestColumns);
   return created;

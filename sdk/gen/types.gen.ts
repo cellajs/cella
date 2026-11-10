@@ -673,14 +673,14 @@ export type Organization = {
 };
 
 /**
- * A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.
+ * A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.
  */
 export type Request = {
   createdAt: string;
   id: string;
   message: string | null;
   email: string;
-  kind: 'waitlist' | 'newsletter' | 'contact';
+  kind: 'waitlist' | 'info' | 'contact';
   wasInvited: boolean;
 };
 
@@ -5892,7 +5892,7 @@ export type ListRequestsResponse = ListRequestsResponses[keyof ListRequestsRespo
 export type CreateRequestData = {
   body: {
     email: string;
-    kind: 'waitlist' | 'newsletter' | 'contact';
+    kind: 'waitlist' | 'info' | 'contact';
     message: string | null;
   };
   path?: never;

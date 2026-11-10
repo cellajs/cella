@@ -16,7 +16,7 @@ describe('request query uniqueness', () => {
 
   it('allows distinct signup kinds for one address', async () => {
     await expect(insertRequest(ctx, { email, kind: 'waitlist' })).resolves.toMatchObject({ kind: 'waitlist' });
-    await expect(insertRequest(ctx, { email, kind: 'newsletter' })).resolves.toMatchObject({ kind: 'newsletter' });
+    await expect(insertRequest(ctx, { email, kind: 'info' })).resolves.toMatchObject({ kind: 'info' });
   });
 
   it('swallows duplicate signups case-insensitively at the database boundary', async () => {

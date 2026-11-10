@@ -3,15 +3,15 @@ import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
 import type { RequestKind } from './request-was-sent';
 
-interface RequestInfoStatic {
+interface RequestReceivedStatic {
   kind: RequestKind;
   email: string;
   message: string | null;
   subject: string;
 }
 
-/** Notifies sysadmin of a waitlist signup, newsletter subscription, or contact form submission. */
-export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
+/** Notifies the team of a waitlist signup, info request or contact form submission. */
+export const requestReceivedEmail = defineEmailTemplate<RequestReceivedStatic>()({
   translate(lng, { kind, email, message, subject }) {
     return {
       subject,

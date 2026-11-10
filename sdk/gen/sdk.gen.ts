@@ -2703,7 +2703,7 @@ export const removePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Get list of requests
  *
- * Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.
+ * Returns a list of submitted requests of every kind: contact form, info request and waitlist.
  *
  * **GET /requests** ·· [listRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
  *
@@ -2728,7 +2728,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
+ * Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· _requests · cella_
  *
