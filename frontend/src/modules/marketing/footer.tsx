@@ -5,7 +5,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
-import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
+import { RequestInfoForm } from '~/modules/marketing/request-info-form';
 import { useIsAboutPage } from '~/modules/marketing/use-is-about-page';
 import { tw } from '~/utils/tw';
 
@@ -83,7 +83,7 @@ export function MarketingFooter() {
           <div>
             <div className={headingClass}>{t('c:request_info')}</div>
             <div className={textClass}>{t('c:request_info.text')}</div>
-            <SubscribeNewsletterForm />
+            <RequestInfoForm />
           </div>
         </div>
 

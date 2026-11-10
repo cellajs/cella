@@ -406,7 +406,7 @@
     },
     {
       "name": "requests",
-      "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups, and waitlist entries.",
+      "description": "Endpoints for handling incoming requests such as contact form submissions, info requests and waitlist entries.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -3022,14 +3022,14 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["waitlist", "newsletter", "contact"]
+            "enum": ["waitlist", "info", "contact"]
           },
           "wasInvited": {
             "type": "boolean"
           }
         },
         "required": ["createdAt", "id", "message", "email", "kind", "wasInvited"],
-        "description": "A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.",
+        "description": "A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
           "email": "al.braun57@gmail.com",
@@ -13845,7 +13845,7 @@
         "operationId": "createRequest",
         "tags": ["requests", "cella"],
         "summary": "Create request",
-        "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
+        "description": "Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "requestBody": {
@@ -13863,7 +13863,7 @@
                   },
                   "kind": {
                     "type": "string",
-                    "enum": ["waitlist", "newsletter", "contact"]
+                    "enum": ["waitlist", "info", "contact"]
                   },
                   "message": {
                     "type": ["string", "null"],
@@ -13899,7 +13899,7 @@
         "operationId": "listRequests",
         "tags": ["requests", "cella"],
         "summary": "Get list of requests",
-        "description": "Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.",
+        "description": "Returns a list of submitted requests of every kind: contact form, info request and waitlist.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [

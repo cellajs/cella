@@ -10,7 +10,7 @@ export const requestSchema = createSelectSchema(requestsTable)
   .extend({ kind: z.enum(requestKinds), wasInvited: z.boolean() })
   .openapi('Request', {
     description:
-      'A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.',
+      'A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.',
     example: mockRequestResponse(),
     'x-tags': schemaTags('data', 'requests', 'cella'),
   });
@@ -18,7 +18,7 @@ export const requestSchema = createSelectSchema(requestsTable)
 export const requestCreateBodySchema = z.object({
   email: validEmailSchema,
   kind: requestSchema.shape.kind,
-  /** A contact message runs to a few paragraphs; a waitlist or newsletter request has none. */
+  /** A contact message runs to a few paragraphs; a waitlist or info request has none. */
   message: z.string().max(5000).nullable(),
 });
 

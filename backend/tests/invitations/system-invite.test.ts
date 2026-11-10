@@ -70,7 +70,7 @@ describe('System Invitation', async () => {
       const sessionCookie = await createAdminSession();
       await db.insert(requestsTable).values([
         { email: 'waiting@example.com', kind: 'waitlist' },
-        { email: 'waiting@example.com', kind: 'newsletter' },
+        { email: 'waiting@example.com', kind: 'info' },
         { email: 'other@example.com', kind: 'waitlist' },
       ]);
 
