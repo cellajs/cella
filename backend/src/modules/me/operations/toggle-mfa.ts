@@ -8,7 +8,7 @@ import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
-import { findMfaRequired, findUserById, updateUserMfa } from '#/modules/user/user-queries';
+import { findMfaRequired, findServedUserById, updateUserMfa } from '#/modules/user/user-queries';
 
 /**
  * Turns MFA on or off for the signed-in user. Turning it on ends every other regular session and replaces this
@@ -52,5 +52,5 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
 
   if (changed) sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
-  return findUserById(ctx, { id: user.id });
+  return findServedUserById(ctx, { id: user.id });
 }

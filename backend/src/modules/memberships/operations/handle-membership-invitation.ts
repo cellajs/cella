@@ -33,7 +33,7 @@ interface HandleMembershipInvitationOpts {
  * are one already; declining stamps it declined. Either way its links go, and the answer is its organization as `ChannelBase`.
  * @throws AppError 404 `not_found` for a missing, declined or another user's invitation alike, 409 `user_mismatch` when
  * a token accept loses the bind to another account, 403 `channel_archived` for an accept into an archived channel, 403
- * `provisional_account` for an accept by an account without a proven address.
+ * `anonymous_account` for an accept by an account without a proven address, which binds nothing lasting to itself.
  */
 export async function handleMembershipInvitationOp(
   ctx: InvitationAnswerContext,
@@ -43,7 +43,7 @@ export async function handleMembershipInvitationOp(
 ) {
   const userId = ctx.var.user.id;
   if (acceptOrDecline === 'accept' && !(await isProvenAccount(ctx, { userId }))) {
-    throw new AppError(403, 'provisional_account', 'warn', { meta: { resource: 'invitation' } });
+    throw new AppError(403, 'anonymous_account', 'warn', { meta: { resource: 'invitation' } });
   }
 
   const inactiveMembership = viaToken

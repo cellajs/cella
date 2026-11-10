@@ -121,9 +121,7 @@ export async function exitOnIdentityChanges(
   await release?.();
   console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
   for (const line of changes) console.error(`  ${tildeMark} ${line}`);
-  console.error(
-    `  They are IAM, which the operator key cannot write: \`${actionCommand('identity')}\` writes them with your Owner API key. Nothing applied.`,
-  );
+  console.error(`  \`${actionCommand('identity')}\` writes them. Nothing applied.`);
   endAction(1);
 }
 
@@ -199,11 +197,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
   const names = appPrincipalNames(appConfig.appSlug);
-  console.info(
-    pc.dim(
-      `\n${actionLabel('identity')}: the deploy key's and the uploads application's policies, the uploads key and the observer, written with your Owner API key.\n`,
-    ),
-  );
+  console.info(pc.dim(`\n${actionLabel('identity')}: write what differs from the declared identities.\n`));
 
   const show = (plan: IdentityPlan): boolean => {
     if (plan.retiredAdmin && !plan.retiredAdmin.removable) {

@@ -20,7 +20,6 @@ import {
 } from '#/schemas';
 import { actorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
-import { userBaseSchema } from '#/schemas/user-schema-base';
 
 const entityRoleSchema = z.enum(roles.all);
 
@@ -76,7 +75,7 @@ const inviteOutcomes = ['invite', 'remind', 'add', 'member'] as const;
 
 export const inviteOutcomeSchema = z
   .object({
-    email: userBaseSchema.shape.email,
+    email: validEmailSchema,
     outcome: z.enum(inviteOutcomes).openapi({
       description:
         '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.',
@@ -137,7 +136,7 @@ export const pendingMembershipListQuerySchema = pageQuerySchema.extend({
 export const pendingMembershipSchema = z.object({
   id: z.string(),
   /** The address the invitation went to. */
-  email: userBaseSchema.shape.email,
+  email: validEmailSchema,
   role: entityRoleSchema,
   createdAt: membershipSchema.shape.createdAt,
   /** The last email; null while it waits for its channel to be published. */

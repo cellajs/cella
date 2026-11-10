@@ -458,7 +458,7 @@ BEGIN
       row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC) AS position FROM devices) ranked
       WHERE position > 50);
   DELETE FROM oidc_payloads WHERE expires_at < now() OR consumed_at < now() - interval '30 days';
-  DELETE FROM requests WHERE kind IN ('contact', 'waitlist') AND created_at < now() - interval '365 days';
+  DELETE FROM requests WHERE created_at < now() - interval '365 days';
   DELETE FROM inactive_memberships WHERE declined_at < now() - interval '120 days' OR (declined_at IS NULL AND reminded_at < now() - interval '120 days');
   DELETE FROM rate_limits WHERE expire < now() - interval '1 days';
   DELETE FROM push_subscriptions WHERE last_seen_at < now() - interval '400 days';

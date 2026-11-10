@@ -33,6 +33,7 @@ export const organizationRoutes = createXRoutes(['organizations', 'cella', 'chan
     method: 'get',
     path: '/',
     xGuard: [userGuard, relatableGuard],
+    xAnonymous: true,
     summary: 'Get list of organizations',
     description: 'Returns a list of organizations across tenants: the `-` tenant reads every tenant.',
     request: { query: organizationListQuerySchema },

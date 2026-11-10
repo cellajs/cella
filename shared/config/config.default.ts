@@ -118,7 +118,7 @@ export const config = {
   },
 
   /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
-  demo: { addressDomain: 'demo.invalid', perDay: 500 },
+  demo: { perDay: 500 },
 
   /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
   retention: {
@@ -237,7 +237,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v42-one-name-per-field',
+  clientCacheVersion: 'v44-one-name-per-field',
 
   // Authentication
 

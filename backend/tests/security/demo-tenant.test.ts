@@ -5,6 +5,7 @@ import {
   createDemo,
   createTenant,
   createTotp,
+  getMe,
   getOrganization,
   getPublicCounts,
   inviteMembers,
@@ -82,13 +83,16 @@ describe('Demo tenants', async () => {
     const demo = await takeDemo();
     expect(demo.tenant.kind).toBe('demo');
     expect(demo.tenant.expiresAt).not.toBeNull();
-    expect(demo.user.email.endsWith(`@${appConfig.demo.addressDomain}`)).toBe(true);
+    // The placeholder stays in the row; the API serves the account as anonymous, with no address.
+    expect(demo.user.email.endsWith('.invalid')).toBe(true);
+    const me = (await call(getMe, { headers: demo.headers })).data as { user: { email: string | null; isAnonymous: boolean } };
+    expect(me.user).toMatchObject({ email: null, isAnonymous: true });
 
     const tenant = await call(createTenant, { body: { name: 'Escape' }, headers: demo.headers });
-    await expectRefusal(tenant, 403, 'demo_session_restricted');
+    await expectRefusal(tenant, 403, 'anonymous_session_restricted');
 
     const totp = await call(createTotp, { body: { code: '000000' }, headers: demo.headers });
-    await expectRefusal(totp, 403, 'demo_session_restricted');
+    await expectRefusal(totp, 403, 'anonymous_session_restricted');
 
     const invite = (tenantId: string, organizationId: string) => ({
       path: { tenantId, organizationId },
@@ -143,9 +147,9 @@ describe('Demo tenants', async () => {
     await openHeldLink('invitation', rawToken, browser);
     const asDemo = () => ({ headers: { ...defaultHeaders, Cookie: browser.header() } });
 
-    await expectRefusal(await call(confirmInvitationAddress, asDemo()), 403, 'provisional_account');
-    await expectRefusal(await call(acceptInvitationToken, asDemo()), 403, 'provisional_account');
-    await expectRefusal(await call(sendStepUpCode, { headers: demo.headers }), 400, 'invalid_request');
+    await expectRefusal(await call(confirmInvitationAddress, asDemo()), 403, 'anonymous_session_restricted');
+    await expectRefusal(await call(acceptInvitationToken, asDemo()), 403, 'anonymous_session_restricted');
+    await expectRefusal(await call(sendStepUpCode, { headers: demo.headers }), 403, 'anonymous_session_restricted');
     expect(sentMails()).toHaveLength(0);
     const elsewhere = await db
       .select()
@@ -227,9 +231,9 @@ describe('Demo tenants', async () => {
     expect(idsOf(await call(listOrganizations, { headers }))).toEqual([live.organization.id]);
     expect(idsOf(await call(listOrganizations, { query: { kind: 'demo' }, headers }))).toEqual([demo.tenant.organization.id]);
     expect(idsOf(await call(listUsers, { headers }))).not.toContain(demo.user.id);
-    expect(idsOf(await call(listUsers, { query: { includeProvisional: true }, headers }))).toContain(demo.user.id);
-    // A member asking for provisional accounts is refused: the switch belongs to the system table.
-    const member = await call(listUsers, { query: { includeProvisional: true }, headers: { ...defaultHeaders, Cookie: live.sessionCookie } });
+    expect(idsOf(await call(listUsers, { query: { includeAnonymous: true }, headers }))).toContain(demo.user.id);
+    // A member asking for anonymous accounts is refused: the switch belongs to the system table.
+    const member = await call(listUsers, { query: { includeAnonymous: true }, headers: { ...defaultHeaders, Cookie: live.sessionCookie } });
     await expectRefusal(member, 403, 'forbidden');
   });
 });

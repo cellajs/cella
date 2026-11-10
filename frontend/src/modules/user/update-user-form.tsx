@@ -102,10 +102,12 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
 
             {isSelf && (
               <>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="account-email">{t('c:email')}</Label>
-                  <Input id="account-email" value={currentUser.email} autoComplete="off" disabled />
-                </div>
+                {currentUser.email && (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="account-email">{t('c:email')}</Label>
+                    <Input id="account-email" value={currentUser.email} autoComplete="off" disabled />
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}

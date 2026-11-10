@@ -235,6 +235,7 @@ export const useChangeEntityRoleMutation = () =>
       }
 
       const { email } = getCurrentUser();
+      if (!email) throw new Error('An account without an address joins nothing');
       const result = await inviteMembers({
         query: { entityId, entityType },
         path: { tenantId, organizationId },

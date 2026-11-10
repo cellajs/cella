@@ -20,7 +20,7 @@ vi.mock('shared', async (importOriginal) => {
   const checkAccessFanout = (accesses: Access[], action: EntityActionType, subject: SubjectForPermission) =>
     getDecisionsForAccesses(
       policies,
-      accesses.map((access) => ('anonymous' in access ? { memberships: [] } : access)),
+      accesses.map((access) => ('visitor' in access ? { memberships: [] } : access)),
       subject,
       // Cella grants no public read on attachments, so the sweep's public bit pins a decision only with one granted here.
       { publicGrants: { ...publicReadGrants, attachment: true } },

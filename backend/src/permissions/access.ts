@@ -18,4 +18,4 @@ export const accessFrom = (ctx: AccessContext): Access<ActorBinding> =>
         memberships: ctx.var.actor.bindings,
         scopes: ctx.var.actor.scopes,
       }
-    : { anonymous: true };
+    : { visitor: true };

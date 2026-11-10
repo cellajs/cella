@@ -19,9 +19,7 @@ import { startBlockedTarget } from './start-deploy';
  * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
-  console.info(
-    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your operator key.\n`),
-  );
+  console.info(pc.dim(`\n${actionLabel('apply')}: plan what differs between code and live stack and apply it.\n`));
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
   const operator = await acquireOperatorKey(context);
@@ -58,9 +56,7 @@ export async function runApply(context: InfraContext): Promise<void> {
     return;
   }
 
-  console.warn(
-    `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim(`If it is interrupted, run "${actionLabel('apply')}" again to converge.`)}`,
-  );
+  console.warn(`${pc.yellow(pc.bold('⚠  Keep this terminal open.'))} ${pc.dim('If it stops, run it again.')}`);
 
   // An established stack recovers from an interruption by running the apply again; the first-provisioning marker is the setup's alone.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=true) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.

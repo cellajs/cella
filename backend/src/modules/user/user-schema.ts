@@ -23,17 +23,20 @@ export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProvider
 const userFlagKeys = typedEntries(appConfig.defaultUserFlags).map(([key]) => key);
 export const userFlagsSchema = z.object(recordFromKeys(userFlagKeys, () => z.boolean()));
 
-export const userSchema = createSelectSchema(usersTable, { email: z.email(), languageCode: languageSchema, userFlags: userFlagsSchema })
+export const userSchema = createSelectSchema(usersTable, { email: z.email().nullable(), languageCode: languageSchema, userFlags: userFlagsSchema })
   // A profile, not an audited row: who last changed it stays in the database.
   .omit({ updatedBy: true })
   .extend({
+    isAnonymous: z.boolean().openapi({
+      description: 'The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null.',
+    }),
     // Activity times from the user's actors row (userSelect)
     lastSeenAt: z.string().nullable(),
     lastSignInAt: z.string().nullable(),
   })
   .openapi('User', {
     description:
-      'A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.',
+      'A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.',
     example: mockUserResponse(),
     'x-tags': schemaTags('data', 'users', 'cella'),
   });
@@ -78,7 +81,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
 export const userListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'], 'createdAt desc'),
   role: z.enum(appConfig.systemRoles).optional(),
-  includeProvisional: booleanTransformSchema.describe(
-    'Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.',
+  includeAnonymous: booleanTransformSchema.describe(
+    'Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.',
   ),
 });

@@ -58,6 +58,7 @@ export const entityRoutes = createXRoutes(['entities', 'cella'], {
     method: 'get',
     path: '/me/stream',
     xGuard: [userGuard],
+    xAnonymous: true,
     xRateLimiter: [streamConnectLimiter],
     summary: 'SSE stream',
     description:
@@ -74,6 +75,7 @@ export const entityRoutes = createXRoutes(['entities', 'cella'], {
     method: 'post',
     path: '/me/stream/~catch-up',
     xGuard: [userGuard],
+    xAnonymous: true,
     xRateLimiter: [singlePointsLimiter],
     summary: 'Stream catchup',
     description:

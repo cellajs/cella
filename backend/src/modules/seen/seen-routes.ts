@@ -20,6 +20,7 @@ export const seenRoutes = createXRoutes(['seen', 'cella'], {
     method: 'get',
     path: '/unseen-counts',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Get unseen counts',
     description:
       'Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.',

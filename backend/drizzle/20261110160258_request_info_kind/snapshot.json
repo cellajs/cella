@@ -1,0 +1,42 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4f69ed7c-8ffb-40c9-a577-2d7155d8e0af",
+  "prevIds": [
+    "cc7d7d9e-1cd7-47af-8574-4ec79d1ab95a"
+  ],
+  "footprints": [
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "requests",
+        "requests_unique_signup_email_kind"
+      ],
+      "writes": [
+        "s|idx|public.requests_unique_signup_email_kind",
+        "n|idx|public.requests_unique_signup_email_kind",
+        "e|idx|public.requests_unique_signup_email_kind",
+        "n|rel|public.requests_unique_signup_email_kind"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public",
+        "n|col|public.requests.kind"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "09cbcaf339577549"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"requests_unique_signup_email_kind\"]",
+      "set": {
+        "where": "\"kind\" in ('waitlist', 'info')"
+      }
+    }
+  ]
+}

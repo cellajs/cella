@@ -56,10 +56,10 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
-  const email = getCurrentUser().email;
+  const { email, name } = getCurrentUser();
   const generatedName = generatePasskeyName();
   const devSuffix = appConfig.mode === 'development' ? ` for ${appConfig.name}` : '';
-  const nameOnDevice = `${email} (${generatedName})${devSuffix}`;
+  const nameOnDevice = `${email ?? name} (${generatedName})${devSuffix}`;
 
   const attestation = await startRegistration({
     optionsJSON: {

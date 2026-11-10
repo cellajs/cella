@@ -106,7 +106,7 @@ describe('draftChannelVisibleTo', () => {
   it('shows a draft to a system admin and to no one without a grant', () => {
     expect(shows([], null, accessOf([], true))).toBe(true);
     expect(shows([])).toBe(false);
-    expect(shows([], null, { anonymous: true })).toBe(false);
+    expect(shows([], null, { visitor: true })).toBe(false);
   });
 
   it('shows a draft organization to its own members alone', () => {

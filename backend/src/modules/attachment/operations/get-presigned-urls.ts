@@ -115,5 +115,5 @@ export async function getPublicPresignedUrlsOp(
   if (!tenant || !servesPublicly(tenant)) return { results: [], rejectedIds: ids };
 
   const rows = await tenantReadById(tenantId, (tx) => findLiveAttachmentsIn({ var: { db: tx } }, { ids, tenantId, organizationId }));
-  return signReadable({ anonymous: true }, rows, items);
+  return signReadable({ visitor: true }, rows, items);
 }

@@ -66,7 +66,13 @@ export function MembersTableBar({
       count: selected.length,
       content: <DeleteMemberships channel={channel} members={selected} callback={clearSelection} />,
       title: t('c:remove_resource', { resource: t('c:member_other') }),
-      description: <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email) }} />,
+      description: (
+        <NamedText
+          i18nKey="c:confirm.remove_members"
+          name={channel.name}
+          values={{ emails: selected.map((member) => member.email ?? member.name) }}
+        />
+      ),
     });
 
   const openInvite = (triggerRef: TriggerRef) => {

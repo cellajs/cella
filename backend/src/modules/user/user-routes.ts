@@ -11,6 +11,7 @@ export const userRoutes = createXRoutes(['users', 'cella'], {
     method: 'get',
     path: '/',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Get list of users',
     description: 'Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.',
     request: { query: userListQuerySchema },
@@ -32,6 +33,7 @@ export const userRoutes = createXRoutes(['users', 'cella'], {
     method: 'get',
     path: '/{userId}',
     xGuard: [userGuard, relatableGuard],
+    xAnonymous: true,
     summary: 'Get user',
     description:
       'Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.',

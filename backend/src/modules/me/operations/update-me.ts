@@ -6,7 +6,7 @@ import { releaseReplacedImages } from '#/modules/attachment/operations/release-r
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import type { UpdateMeInput } from '#/modules/me/me-schema';
 import { nameAfterUpdate } from '#/modules/user/helpers/name-after-update';
-import { findUserById, updateUser } from '#/modules/user/user-queries';
+import { findServedUserById, updateUser } from '#/modules/user/user-queries';
 
 /**
  * The user's update of their own profile and preferences; `userFlags` merge into the stored flags. Returns the user
@@ -28,5 +28,5 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   invalidateCache.user(user.id);
   await releaseReplacedImages({ holder: { userId: user.id }, before: user, after: input });
 
-  return findUserById(ctx, { id: user.id });
+  return findServedUserById(ctx, { id: user.id });
 }

@@ -15,7 +15,7 @@ export const requestRoutes = createXRoutes(['requests', 'cella'], {
     middleware: [isNoBot],
     summary: 'Create request',
     description:
-      'Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.',
+      'Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.',
     request: { body: jsonBody(requestCreateBodySchema) },
     responses: { 204: { description: 'Request received' } },
   }),
@@ -24,7 +24,7 @@ export const requestRoutes = createXRoutes(['requests', 'cella'], {
     path: '/',
     xGuard: [userGuard, sysAdminGuard],
     summary: 'Get list of requests',
-    description: 'Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.',
+    description: 'Returns a list of submitted requests of every kind: contact form, info request and waitlist.',
     request: { query: requestListQuerySchema },
     responses: { 200: json('Requests', paginationSchema(requestSchema), mockPaginatedRequestsResponse()) },
   }),

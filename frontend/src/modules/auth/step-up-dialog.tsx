@@ -31,7 +31,8 @@ const firstView = (methods: StepUpMethod[]): View => (methods.includes('enroll')
 
 /** The dialog's title and description per view; setting up reads as a replacement for a user who holds a factor. */
 const headings = (view: View, holdsFactor: boolean) => {
-  if (view === 'code') return { title: i18n.t('c:step_up_code'), description: i18n.t('c:step_up_code.text', { email: getCurrentUser().email }) };
+  if (view === 'code')
+    return { title: i18n.t('c:step_up_code'), description: i18n.t('c:step_up_code.text', { email: getCurrentUser().email ?? '' }) };
   if (view === 'add') {
     return { title: i18n.t('c:step_up_add_factor'), description: i18n.t(holdsFactor ? 'c:step_up_new_factor.text' : 'c:step_up_add_factor.text') };
   }
@@ -152,7 +153,7 @@ function StepUpDialog({ methods, onStepUp }: { methods: StepUpMethod[]; onStepUp
     return (
       <div className="flex flex-col gap-3">
         <p className="text-muted-foreground text-sm">
-          <NamedText i18nKey="c:step_up_email.text" values={{ email: getCurrentUser().email }} />
+          <NamedText i18nKey="c:step_up_email.text" values={{ email: getCurrentUser().email ?? '' }} />
         </p>
         <Button className="w-full" loading={sending} onClick={() => sendCode()}>
           <MailIcon />

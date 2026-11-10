@@ -86,7 +86,7 @@ describe('refusalLines', () => {
   it('calls a 401 a key Scaleway does not know, and says where a one-day key is made', () => {
     const lines = refusalLines({ status: 401, detail: 'x', names });
     expect(lines[0]).toBe('Scaleway does not know that secret key.');
-    expect(lines[1]).toContain("IAM → Applications → 'cella-operator' → API keys");
+    expect(lines[1]).toContain("IAM → API keys → Generate, with 'cella-operator' as its bearer");
   });
 
   it('must not leave a 403 unexplained: a key that reads no IAM is neither the operator application nor a member, and the Owner makes both', () => {
@@ -141,7 +141,7 @@ describe('acquireOperatorKey', () => {
       bearers.set('SCWOPERATOR', bearer);
       await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
       expect(errorsPrinted()).toContain('must die within the day');
-      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate, expiring within a day");
+      expect(errorsPrinted()).toContain("IAM → API keys → Generate, with 'cella-operator' as its bearer, expiring within a day");
       expect(rememberedOperatorKey()).toBeUndefined();
     }
   });

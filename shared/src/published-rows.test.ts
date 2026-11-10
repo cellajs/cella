@@ -31,7 +31,7 @@ describe('draftVisibleTo', () => {
     expect(draftVisibleTo(draft, 'other-user')).toBe(false);
   });
 
-  it('fail-closed: anonymous actors and unattributed drafts match nobody', () => {
+  it('fail-closed: visitors and unattributed drafts match nobody', () => {
     expect(draftVisibleTo(draft, undefined)).toBe(false);
     expect(draftVisibleTo(draft, null)).toBe(false);
     expect(draftVisibleTo(draft, '')).toBe(false);

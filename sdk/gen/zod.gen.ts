@@ -269,7 +269,7 @@ export const zProtectedResourceMetadata = z.object({
 });
 
 /**
- * A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
+ * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
  */
 export const zUser = z.object({
   createdAt: z.string(),
@@ -280,7 +280,7 @@ export const zUser = z.object({
   slug: z.string().max(255),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
-  email: z.email(),
+  email: z.email().nullable(),
   mfaRequired: z.boolean(),
   givenName: z.string().max(255).nullable(),
   familyName: z.string().max(255).nullable(),
@@ -291,6 +291,7 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   updatedAt: z.string().nullable(),
+  isAnonymous: z.boolean(),
   lastSeenAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
 });
@@ -347,7 +348,7 @@ export const zMeAuthData = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -436,7 +437,7 @@ export const zMembershipBase = z.object({
  * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
  */
 export const zInviteOutcome = z.object({
-  email: z.email(),
+  email: z.email().min(4).max(255),
   outcome: z.enum(['invite', 'remind', 'add', 'member']),
   invitedAt: z.string().optional(),
   declinedAt: z.string().optional(),
@@ -455,7 +456,7 @@ export const zUserBase = z.object({
   thumbnailUrl: z.string().nullable(),
   bannerUrl: z.string().nullable(),
   description: z.string().nullable(),
-  email: z.email(),
+  email: z.email().nullable(),
   entityType: z.enum(['user']),
 });
 
@@ -578,14 +579,14 @@ export const zOrganization = z.object({
 });
 
 /**
- * A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.
+ * A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.
  */
 export const zRequest = z.object({
   createdAt: z.string(),
   id: z.uuid(),
   message: z.string().nullable(),
   email: z.string().max(255),
-  kind: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'info', 'contact']),
   invited: z.boolean(),
 });
 
@@ -706,7 +707,7 @@ export const zTenant = z.object({
     }),
     allowUnregisteredClients: z.boolean(),
   }),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext'])),
   subscriptionId: z.string().max(255).nullable(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
@@ -1724,7 +1725,7 @@ export const zRevokeMySessionsResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -2076,7 +2077,7 @@ export const zListInvitationsResponse = z.object({
   results: z.array(
     z.object({
       id: z.string(),
-      email: z.email(),
+      email: z.email().min(4).max(255),
       role: z.enum(['admin', 'member']),
       createdAt: z.string(),
       remindedAt: z.string().nullable(),
@@ -2542,7 +2543,7 @@ export const zListRequestsResponse = z.object({
 
 export const zCreateRequestBody = z.object({
   email: z.email().min(4).max(255),
-  kind: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'info', 'contact']),
   message: z.string().max(5000).nullable(),
 });
 
@@ -2895,7 +2896,7 @@ export const zUpdateTenantBody = z.object({
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
   subscriptionPlan: z.string().max(255).nullish(),
   authStrategies: z
-    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']))
+    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
     .max(9)
     .optional(),
   restrictions: z
@@ -3058,7 +3059,7 @@ export const zListUsersQuery = z.object({
     .optional()
     .default('createdAt desc'),
   role: z.enum(['admin']).optional(),
-  includeProvisional: z
+  includeAnonymous: z
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),

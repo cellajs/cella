@@ -15,20 +15,20 @@ type ActorFields = { actorId: string; isSystemAdmin?: boolean; scopes: readonly 
 
 /**
  * Memberships and actor travel together, so no call site can pair one user's memberships with
- * another's actor. An anonymous access carries no memberships.
+ * another's actor. A visitor (a request with no actor) carries no memberships.
  */
-export type Access<T extends AccessMembership = AccessMembership> = (ActorFields & { memberships: T[] }) | { anonymous: true };
+export type Access<T extends AccessMembership = AccessMembership> = (ActorFields & { memberships: T[] }) | { visitor: true };
 
 /**
  * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its actor's grants allow,
  * never more. Unscoped access (a session, or `scopes: null`) passes untouched.
  */
 const scopeAllows = (access: Access, entityType: AccessScopedEntityType, action: EntityActionType): boolean =>
-  'anonymous' in access || accessScopes.allows(access.scopes, entityType, action);
+  'visitor' in access || accessScopes.allows(access.scopes, entityType, action);
 
-/** System admins bypass every check; anonymous actors hold nothing. */
+/** System admins bypass every check; a visitor holds nothing. */
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>
-  'anonymous' in access
+  'visitor' in access
     ? { memberships: [] }
     : { memberships: access.memberships, actorId: access.actorId, isSystemAdmin: access.isSystemAdmin === true };
 

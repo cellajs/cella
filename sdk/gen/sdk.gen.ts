@@ -835,7 +835,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
 /**
  * Accept invitation token as current user
  *
- * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. An account without a proven address accepts none (403 `provisional_account`). Only an invitation not yet bound to another user can be accepted this way.
+ * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. An account without a proven address accepts none (403 `anonymous_account`). Only an invitation not yet bound to another user can be accepted this way.
  *
  * **POST /auth/accept-invitation-token** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/accept-invitation-token) ·· _auth · cella_
  *
@@ -855,7 +855,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
 /**
  * Confirm the invited address
  *
- * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account. An account without a proven address binds none (403 `provisional_account`).
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account. An account without a proven address binds none (403 `anonymous_account`).
  *
  * **POST /auth/confirm-invitation-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/confirm-invitation-address) ·· _auth · cella_
  *
@@ -1853,7 +1853,7 @@ export const listMyInvitations = <ThrowOnError extends boolean = true>(
  *
  * @param {acceptInvitationData} options
  * @param {string} options.path.invitationId - `string`
- * @returns Possible status codes: 200, 400, 401, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const acceptInvitation = <ThrowOnError extends boolean = true>(
   options: Options<AcceptInvitationData, ThrowOnError>,
@@ -1874,7 +1874,7 @@ export const acceptInvitation = <ThrowOnError extends boolean = true>(
  *
  * @param {declineInvitationData} options
  * @param {string} options.path.invitationId - `string`
- * @returns Possible status codes: 200, 400, 401, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const declineInvitation = <ThrowOnError extends boolean = true>(
   options: Options<DeclineInvitationData, ThrowOnError>,
@@ -1921,7 +1921,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
  * @param {leaveMembershipData} options
  * @param {string} options.body.entityId - `string`
  * @param {enum} options.body.entityType - `enum`
- * @returns Possible status codes: 204, 400, 401, 404, 409, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 413, 429
  */
 export const leaveMembership = <ThrowOnError extends boolean = true>(
   options: Options<LeaveMembershipData, ThrowOnError>,
@@ -2014,7 +2014,7 @@ export const listConnectedApps = <ThrowOnError extends boolean = true>(
  *
  * @param {deleteConnectedAppData} options
  * @param {string} options.path.connectedAppId - `string`
- * @returns Possible status codes: 204, 400, 401, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteConnectedApp = <ThrowOnError extends boolean = true>(
   options: Options<DeleteConnectedAppData, ThrowOnError>,
@@ -2635,7 +2635,7 @@ export const batchDeleteOrganizations = <ThrowOnError extends boolean = true>(
  * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push · cella_
  *
  * @param {getPushVapidData} options
- * @returns Possible status codes: 200, 400, 401, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const getPushVapid = <ThrowOnError extends boolean = true>(
   options?: Options<GetPushVapidData, ThrowOnError>,
@@ -2683,7 +2683,7 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
  *
  * @param {removePushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @returns Possible status codes: 200, 400, 401, 413
+ * @returns Possible status codes: 200, 400, 401, 403, 413
  */
 export const removePushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<RemovePushSubscriptionData, ThrowOnError>,
@@ -2702,7 +2702,7 @@ export const removePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Get list of requests
  *
- * Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.
+ * Returns a list of submitted requests of every kind: contact form, info request and waitlist.
  *
  * **GET /requests** ·· [listRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
  *
@@ -2727,7 +2727,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
+ * Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· _requests · cella_
  *
@@ -3175,7 +3175,7 @@ export const listTenants = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name. A demo session creates none.
+ * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name. An anonymous session creates none.
  *
  * **POST /tenants** ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· _tenants · cella_
  *
@@ -3374,7 +3374,7 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum | boolean=} options.query.includeProvisional - `enum | boolean` (optional)
+ * @param {enum | boolean=} options.query.includeAnonymous - `enum | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listUsers = <ThrowOnError extends boolean = true>(

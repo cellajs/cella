@@ -37,19 +37,16 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
     },
   });
 
-  // Provisional accounts (a demo's, with no proven address) stay out until asked for; the one option switches them in.
-  const includesProvisional = accounts.includes('provisional');
-  const toggleProvisional = () => {
+  // Anonymous accounts (a demo's, with no proven address) stay out until asked for; the one option switches them in.
+  const includesAnonymous = accounts.includes('anonymous');
+  const toggleAnonymous = () => {
     clearSelection();
-    setSearch({ accounts: includesProvisional ? [] : ['provisional'] });
+    setSearch({ accounts: includesAnonymous ? [] : ['anonymous'] });
   };
-  const provisionalOption = { value: 'provisional', label: t('c:provisional_accounts'), isSelected: includesProvisional };
+  const anonymousOption = { value: 'anonymous', label: t('c:anonymous_accounts'), isSelected: includesAnonymous };
   const searchFilters = {
-    groups: [...roleFilters.groups, { key: 'accounts', label: t('c:account'), options: [provisionalOption], onToggle: toggleProvisional }],
-    chips: [
-      ...roleFilters.chips,
-      ...(includesProvisional ? [{ key: 'provisional', label: provisionalOption.label, onRemove: toggleProvisional }] : []),
-    ],
+    groups: [...roleFilters.groups, { key: 'accounts', label: t('c:account'), options: [anonymousOption], onToggle: toggleAnonymous }],
+    chips: [...roleFilters.chips, ...(includesAnonymous ? [{ key: 'anonymous', label: anonymousOption.label, onRemove: toggleAnonymous }] : [])],
   };
 
   const openInvite = (triggerRef: TriggerRef) =>
@@ -66,7 +63,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         <NamedText
           i18nKey="c:confirm.delete_resource"
           values={{
-            name: selected.map((user) => user.email),
+            name: selected.map((user) => user.email ?? user.name),
             resource: t('c:user', { count: selected.length }),
           }}
         />

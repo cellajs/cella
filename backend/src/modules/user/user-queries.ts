@@ -10,7 +10,7 @@ import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-quer
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-roles-db';
 import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
-import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
+import { hasProvenEmail, lastSeenOrder, memberSelect, servedUserSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { getIsoDate } from '#/utils/iso-date';
@@ -27,11 +27,7 @@ const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) =>
       .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, organizationIds))),
   );
 
-/** `EXISTS` on a proven address of the user row: what sets a real account apart from a provisional one (a demo's, a sample's). */
-export const hasProvenEmail = (userId: typeof usersTable.id): SQL =>
-  sql`EXISTS (SELECT 1 FROM ${emailsTable} WHERE ${emailsTable.userId} = ${userId})`;
-
-/** Whether the account holds a proven address; false for a provisional one, which binds nothing lasting to itself. */
+/** Whether the account holds a proven address; false for an anonymous one, which binds nothing lasting to itself. */
 export const isProvenAccount = async (ctx: DbContext, { userId }: { userId: string }) => {
   const [row] = await ctx.var.db
     .select({ proven: hasProvenEmail(usersTable.id) })
@@ -115,6 +111,17 @@ export const findUserByEmail = async (ctx: DbContext, { email }: { email: string
 /** The user with the activity times of its `actors` row; undefined when no user has `id`. */
 export const findUserById = async (ctx: DbContext, { id }: { id: string }) => {
   const [user] = await ctx.var.db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
+  return user;
+};
+
+/** The user as the API serves a full account (`User`): a proven address or null, and `isAnonymous`; undefined when no user has `id`. */
+export const findServedUserById = async (ctx: DbContext, { id }: { id: string }) => {
+  const [user] = await ctx.var.db
+    .select(servedUserSelect)
+    .from(usersTable)
+    .innerJoin(actorsTable, userActorJoin)
+    .where(eq(usersTable.id, id))
+    .limit(1);
   return user;
 };
 
@@ -278,10 +285,10 @@ export const findExistingUserIds = async (ctx: DbContext, { ids }: UserIdsOpts) 
   ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
 
 /**
- * The ids among `ids` of provisional accounts nothing holds any more: no proven address and no membership left. A
+ * The ids among `ids` of anonymous accounts nothing holds any more: no proven address and no membership left. A
  * removed tenant's demo account is one; a member who signed up stays, and so does one who belongs elsewhere.
  */
-export const findOrphanedProvisionalUserIds = async (ctx: DbContext, { ids }: UserIdsOpts): Promise<string[]> => {
+export const findOrphanedAnonymousUserIds = async (ctx: DbContext, { ids }: UserIdsOpts): Promise<string[]> => {
   if (ids.length === 0) return [];
   const rows = await ctx.var.db
     .select({ id: usersTable.id })

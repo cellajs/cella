@@ -9,9 +9,9 @@ import type { AccessMembership, PermissionCheckOptions, SubjectForPermission } f
 import { validateSubject } from './validation.ts';
 
 /**
- * One actor's inputs to a decision: memberships plus the two actor fields the engine reads. An
- * anonymous actor is `{ memberships: [] }` with no `actorId`, which the `checkAccess*` wrappers
- * map their public `Access` union onto.
+ * One actor's inputs to a decision: memberships plus the two actor fields the engine reads. A
+ * visitor is `{ memberships: [] }` with no `actorId`, which the `checkAccess*` wrappers map their
+ * public `Access` union onto.
  */
 export interface EngineAccess<T extends AccessMembership = AccessMembership> {
   memberships: T[];

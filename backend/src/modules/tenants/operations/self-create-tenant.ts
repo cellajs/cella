@@ -14,16 +14,13 @@ type SelfCreateTenantInput = z.infer<typeof selfCreateTenantBodySchema>;
 
 /**
  * Creates a tenant for the signed-in user, or reuses the one they created that holds no organization yet.
- * @throws AppError 403 `demo_session_restricted` on a demo session: a demo stays in the tenant it was given.
  * @throws AppError 403 `restrict_by_app` when a user who is not a system admin created `selfServiceTenantsPerUser`
  * tenants already.
  * @throws AppError 500 `server_error` when the tenant it wrote cannot be read back.
  */
 export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTenantInput) {
-  const { actor, isSystemAdmin, session } = ctx.var;
+  const { actor, isSystemAdmin } = ctx.var;
   const createdBy = actor.id;
-
-  if (session.authStrategy === 'demo') throw new AppError(403, 'demo_session_restricted', 'warn', { meta: { resource: 'tenant' } });
 
   const id = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
