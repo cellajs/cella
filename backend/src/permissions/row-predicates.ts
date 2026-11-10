@@ -14,14 +14,14 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
   return column;
 };
 
-/** SQL twin of the check-form `matchesRowCondition` (parity-tested); anonymous actors never match actor-bound forms. */
+/** SQL twin of the check-form `matchesRowCondition` (parity-tested); a visitor never matches an actor-bound form. */
 const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, access: Access): SQL => {
   switch (name) {
     case 'own': {
-      const actorId = 'anonymous' in access ? undefined : access.actorId;
+      const actorId = 'visitor' in access ? undefined : access.actorId;
       return actorId ? eq(resolveColumn(table, 'createdBy', name), actorId) : neverPredicate;
     }
-    // Actor-independent (public read): matches for anonymous actors too.
+    // Actor-independent (public read): matches for a visitor too.
     case 'public':
       return eq(resolveColumn(table, 'public', name), true);
   }

@@ -81,12 +81,7 @@ A tenant's `kind` says what it is for, and `appConfig.tenantKinds` says what eac
 
 A system admin moves a tenant between `live` and `test`.
 
-A demo holds one account, admin of the tenant's organization, under a placeholder address with no proven inbox. Only a `demo` session signs it in. The app's `onDemoCreated` hooks fill it with content. It expires after `retention.demoTenantDays`. A demo invites no one, since that mails third parties. Its session is refused when it would:
-
-- create a tenant
-- add a sign-in method
-- prove an address
-- hand out lasting access
+A demo holds one [anonymous account](./ANONYMOUS_SESSIONS.md), admin of the tenant's organization. Only the anonymous session minted for it signs it in. The app's `onDemoCreated` hooks fill it with content. It expires after `retention.demoTenantDays`. A demo invites no one, since that mails third parties. Beyond the tenant its memberships bind it to, its session reaches only the routes that admit an anonymous one (`xAnonymous`): it creates no tenant, adds no sign-in method, proves no address and hands out no lasting access.
 
 ## Tenant lifecycle
 
@@ -94,7 +89,7 @@ A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every req
 
 Deleting its organization archives a tenant. A system admin also archives one when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
 
-A system admin restores a tenant by setting it active again. Once its archived period or its expiry passes, an hourly sweep removes the tenant with everything in it. The provisional accounts it leaves with no membership go too.
+A system admin restores a tenant by setting it active again. Once its archived period or its expiry passes, an hourly sweep removes the tenant with everything in it. The anonymous accounts it leaves with no membership go too.
 
 ## Verification
 

@@ -60,7 +60,10 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
 
   // The last results stay while the next arrive, so the popup keeps its height as the search changes
   const { data, isFetching } = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchQuery }), placeholderData: keepPreviousData });
-  const items = (data?.pages.flatMap((page) => page.results) ?? []).map((user) => ({ ...user, email: user.email.toLowerCase() }));
+  // An anonymous account has no address to invite by, so it is left out
+  const items = (data?.pages.flatMap((page) => page.results) ?? []).flatMap((user) =>
+    user.email ? [{ ...user, email: user.email.toLowerCase() }] : [],
+  );
 
   // The same check as typed addresses: a member is left out, one invited before shows when
   const resultEmails = items.map((user) => user.email).sort();

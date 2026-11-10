@@ -28,7 +28,7 @@ function setGleapUser(user: User) {
 
   window.Gleap.setLanguage(user.languageCode || 'en');
 
-  const contact = { email: user.email, name: user.name || user.email };
+  const contact = { email: user.email ?? undefined, name: user.name || user.email || '' };
   if (window.Gleap.isUserIdentified()) window.Gleap.updateContact(contact);
   else window.Gleap.identify(user.id, { ...contact, createdAt: new Date(user.createdAt) });
 }

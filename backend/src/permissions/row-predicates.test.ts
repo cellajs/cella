@@ -141,7 +141,7 @@ interface Scenario {
 
 const scenarioAccess = (scenario: Scenario): Access<MembershipBaseModel> =>
   scenario.userId === undefined
-    ? { anonymous: true }
+    ? { visitor: true }
     : { actorId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin, memberships: scenario.memberships, scopes: null };
 
 const membership = (channelType: ChannelEntityType, channelId: string, role: EntityRole): MembershipBaseModel =>
@@ -411,7 +411,7 @@ const deepEngineReadableIds = (scenario: DeepScenario, deepHierarchy: EntityHier
 /** The deep scenario's access. Deep chains exercise scope, not the admin bypass. */
 const deepAccess = (scenario: DeepScenario): Access<MembershipBaseModel> =>
   scenario.userId === undefined
-    ? { anonymous: true }
+    ? { visitor: true }
     : { actorId: scenario.userId, isSystemAdmin: false, memberships: scenario.memberships, scopes: null };
 
 const deepSqlReadableIds = async (scenario: DeepScenario, deepHierarchy: EntityHierarchy): Promise<Set<string>> => {

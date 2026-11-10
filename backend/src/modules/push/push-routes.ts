@@ -1,4 +1,4 @@
-import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { userGuard } from '#/middlewares/guard';
 import { pushSubscriptionLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -31,7 +31,7 @@ export const pushRoutes = createXRoutes(['push', 'cella'], {
       "An endpoint another user registered moves to the caller only with that subscription's auth secret, as the browser holding it sends. " +
       'The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.',
     request: { body: jsonBody(pushSubscriptionBodySchema) },
-    responses: { 201: json('Stored subscription', pushSubscriptionResponseSchema), ...errors(403) },
+    responses: { 201: json('Stored subscription', pushSubscriptionResponseSchema) },
   }),
   removePushSubscription: xRoute({
     method: 'post',

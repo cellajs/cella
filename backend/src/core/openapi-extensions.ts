@@ -26,6 +26,13 @@ const extensionMap = {
     kind: 'metadata',
   },
   'x-guard': { id: 'xGuard', description: 'Authorization middleware applied to the endpoint', required: true, kind: 'middleware' },
+  'x-anonymous': {
+    id: 'xAnonymous',
+    description:
+      'An anonymous session (an account without an identity, such as a demo takes) may call the endpoint. Without it, an endpoint that binds the session to no tenant refuses one with 403 `anonymous_session_restricted`',
+    required: false,
+    kind: 'metadata',
+  },
   'x-rate-limiter': { id: 'xRateLimiter', description: 'Rate limiting rules applied to the endpoint', required: false, kind: 'middleware' },
   'x-tool': { id: 'xTool', description: 'MCP tool registration metadata', required: false, kind: 'metadata' },
 } as const satisfies Record<string, ExtensionMetadata>;
@@ -88,6 +95,11 @@ export type XRouteProps = {
   /** The config switch the route belongs to; `createXRoute` refuses the route while it is off, before its guards. */
   xEnabledBy?: ConfigSwitch;
   xGuard: MiddlewareArray;
+  /**
+   * Admits an anonymous session to a route that binds the session to no tenant; such a route refuses one by default.
+   * A route with a tenant guard needs it not: the session's memberships bind it there.
+   */
+  xAnonymous?: true;
   xRateLimiter?: MiddlewareArray;
   xTool?: XTool;
 };

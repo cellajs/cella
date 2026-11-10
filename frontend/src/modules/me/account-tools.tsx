@@ -248,7 +248,7 @@ export function AccountDeleteCard() {
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
       title: t('c:delete_account'),
-      description: <NamedText i18nKey="c:confirm.delete_account" values={{ email: user.email }} />,
+      description: <NamedText i18nKey="c:confirm.delete_account" values={{ email: user.email ?? '' }} />,
     });
 
   return (

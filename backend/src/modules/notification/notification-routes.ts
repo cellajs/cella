@@ -21,6 +21,7 @@ export const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'get',
     path: '/notifications',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'List notifications',
     description:
       'Returns the current user notification inbox, newest first, with the unread count. ' +
@@ -33,6 +34,7 @@ export const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'post',
     path: '/notifications/~mark-read',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Mark notifications as read',
     description:
       'Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.',
@@ -43,6 +45,7 @@ export const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'get',
     path: '/me/notification-preferences',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Get notification preferences',
     description: 'Email and digest preferences for the current user. In-app delivery is not opt-out.',
     responses: { 200: json('Notification preferences', preferencesSchema) },
@@ -51,6 +54,7 @@ export const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'patch',
     path: '/me/notification-preferences',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Update notification preferences',
     description: 'Partial update; unspecified keys keep their stored value.',
     request: { body: jsonBody(updatePreferencesBodySchema) },
