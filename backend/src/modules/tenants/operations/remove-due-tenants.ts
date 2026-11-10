@@ -8,7 +8,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMemberUserIdsByTenant } from '#/modules/memberships/memberships-queries';
 import { deleteDueTenant, findDueTenants } from '#/modules/tenants/tenants-queries';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
-import { findOrphanedProvisionalUserIds } from '#/modules/user/user-queries';
+import { findOrphanedAnonymousUserIds } from '#/modules/user/user-queries';
 import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
@@ -34,7 +34,7 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
 /**
  * Removes the tenants whose time is over: archived longer than `appConfig.retention.archivedTenantDays` (an
  * organization its admin deleted, or a contract ended) or past their `expiresAt` (a demo after its days). Each goes
- * with its organization and everything in it, the stored files through the deletion queue, then the provisional
+ * with its organization and everything in it, the stored files through the deletion queue, then the anonymous
  * accounts it orphaned: a member with no proven address and no membership left, such as a demo's account, which goes
  * with its actor row. An app's fixture account without an email row follows the same rule and goes with the last tenant
  * that held it; a fixture that must outlive its tenants needs a proven address or a membership elsewhere. For a kind
@@ -58,7 +58,7 @@ export async function removeDueTenants(): Promise<number> {
       // Restored, archived again or given more time since the listing: kept, and no mail.
       if (!deleted) continue;
       removed += 1;
-      const orphaned = await findOrphanedProvisionalUserIds(dbCtx, { ids: memberIds });
+      const orphaned = await findOrphanedAnonymousUserIds(dbCtx, { ids: memberIds });
       if (orphaned.length > 0) await deleteAccounts(dbCtx, { userIds: orphaned, by: null, dropActors: true });
       log.info('Tenant removed', { tenantId: tenant.id, kind: tenant.kind, counts, orphanedAccounts: orphaned.length });
       if (!operatorNotices) continue;

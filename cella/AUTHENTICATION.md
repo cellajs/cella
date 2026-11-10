@@ -46,9 +46,9 @@ Holding an invitation link proves nothing, since it can be forwarded:
 - **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
 - **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
 
-A provisional account is the exception to a proven inbox. An external party asserts its identity. Its placeholder address on a reserved domain has no inbox. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one.
+An anonymous account is the exception to a proven inbox: it has no identity at all. Its placeholder address on a reserved domain has no inbox, the API serves it as `email: null` with `isAnonymous`, and only the anonymous session minted for it signs it in. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one. What such a session reaches and how an app mints one: [Anonymous sessions](./ANONYMOUS_SESSIONS.md).
 
-An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). No mailed link signs a provisional account in: it proves an inbox only from a signed-in session.
+An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). No mailed link signs an anonymous account in: an address is proven only from a signed-in session.
 
 ## Tokens
 

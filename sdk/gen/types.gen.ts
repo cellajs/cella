@@ -366,7 +366,7 @@ export type Me = {
 };
 
 /**
- * A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
+ * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
  */
 export type User = {
   createdAt: string;
@@ -377,7 +377,7 @@ export type User = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  email: string;
+  email: string | null;
   mfaRequired: boolean;
   givenName: string | null;
   familyName: string | null;
@@ -388,6 +388,10 @@ export type User = {
     finishedOnboarding: boolean;
   };
   updatedAt: string | null;
+  /**
+   * The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null.
+   */
+  isAnonymous: boolean;
   lastSeenAt: string | null;
   lastSignInAt: string | null;
 };
@@ -436,7 +440,7 @@ export type MeAuthData = {
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;
     browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext';
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
@@ -526,9 +530,6 @@ export type MembershipBase = {
  * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
  */
 export type InviteOutcome = {
-  /**
-   * The primary email address, shown to every user who shares an organization with this one.
-   */
   email: string;
   /**
    * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
@@ -552,9 +553,9 @@ export type UserBase = {
   bannerUrl: string | null;
   description: string | null;
   /**
-   * The primary email address, shown to every user who shares an organization with this one.
+   * The proven email address, shown to every user who shares an organization with this one; null for an anonymous account.
    */
-  email: string;
+  email: string | null;
   entityType: 'user';
 };
 
@@ -810,7 +811,7 @@ export type Tenant = {
      */
     allowUnregisteredClients: boolean;
   };
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
@@ -3805,6 +3806,10 @@ export type AcceptInvitationErrors = {
    */
   401: UnauthorizedError;
   /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
    * Not found
    */
   404: NotFoundError;
@@ -3847,6 +3852,10 @@ export type RejectInvitationErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -3919,7 +3928,7 @@ export type RevokeMySessionsResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
@@ -3967,6 +3976,10 @@ export type LeaveMembershipErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -4180,6 +4193,10 @@ export type DeleteConnectedAppErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -4737,9 +4754,6 @@ export type ListInvitationsResponses = {
   200: {
     results: Array<{
       id: string;
-      /**
-       * The primary email address, shown to every user who shares an organization with this one.
-       */
       email: string;
       role: 'admin' | 'member';
       createdAt: string;
@@ -5679,6 +5693,10 @@ export type GetPushVapidErrors = {
    */
   401: UnauthorizedError;
   /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -5766,6 +5784,10 @@ export type RemovePushSubscriptionErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
   /**
    * Payload too large
    */
@@ -6872,7 +6894,7 @@ export type UpdateTenantData = {
     subscriptionId?: string | null;
     subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
     subscriptionPlan?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */
@@ -7274,9 +7296,9 @@ export type ListUsersData = {
       | 'lastSeenAt desc';
     role?: 'admin';
     /**
-     * Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.
+     * Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.
      */
-    includeProvisional?: 'true' | 'false' | boolean;
+    includeAnonymous?: 'true' | 'false' | boolean;
   };
   url: '/users';
 };

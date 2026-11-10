@@ -1,6 +1,5 @@
 import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
-import { isDemoAddress } from 'shared/utils/demo-address';
 import { isSessionLost } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
 import { boundaryOf } from '~/lib/boundary';
@@ -57,10 +56,10 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   if (!(error instanceof ApiError)) return;
   const { type, instance, path, status } = error;
   const probe = path === '/me' && status === 401;
-  // A demo account's session is its demo: lost, it ends the account, which nothing signs back in, so its browser forgets it and is a visitor again.
-  const demo = isDemoAddress(userStore.getState().user?.email);
+  // An anonymous account's session is all it has: lost, it ends the account, which nothing signs back in, so its browser forgets it and is a visitor again.
+  const anonymous = userStore.getState().user?.isAnonymous === true;
   // A /me probe without a valid session shows no error: a person's browser stays where it is until a guard sends it to sign in.
-  if (probe && !demo) return;
+  if (probe && !anonymous) return;
 
   // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
   if (status >= 500) console.error('[api]', type ?? 'server_error', { instance, path, status });
@@ -86,13 +85,13 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     const leave = async () => {
       const router = getRouter();
       // `fromRoot`: this 401 already found no session, and the user still in the store would have sign-in send the tab back here
-      if (!demo) return router.navigate({ to: '/auth/authenticate', search: { fromRoot: true, redirect } });
+      if (!anonymous) return router.navigate({ to: '/auth/authenticate', search: { fromRoot: true, redirect } });
       // The visitor leaves a page that needs an account for the about page, and stays on any other
       if (boundaryOf(router.state.matches.map((match) => match.staticData)) === 'app') return router.navigate({ to: '/about', replace: true });
     };
-    // A demo's localUserDb goes with it, once no restore of its cached queries can refill the cleared cache. Any other stays on disk
-    // with its unsynced offline work: a 401 is involuntary and the same user usually re-auths and recovers it.
-    if (demo) void localUserStorageReady().then(() => teardownUserState(true, leave));
+    // An anonymous account's localUserDb goes with it, once no restore of its cached queries can refill the cleared cache. Any other stays
+    // on disk with its unsynced offline work: a 401 is involuntary and the same user usually re-auths and recovers it.
+    if (anonymous) void localUserStorageReady().then(() => teardownUserState(true, leave));
     else void teardownUserState(false, leave);
   }
 };

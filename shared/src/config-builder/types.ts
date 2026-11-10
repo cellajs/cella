@@ -122,8 +122,6 @@ export interface TenantKindConfig<Q extends string = string> {
 
 /** A visitor's demo (`has.demos`). */
 export interface DemoConfig {
-  /** The reserved domain of a demo account's placeholder address, which no mail reaches. */
-  addressDomain: string;
   /** Demos created a day across every visitor; past it `createDemo` answers 503. */
   perDay: number;
 }

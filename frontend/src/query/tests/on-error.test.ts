@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // onError dispatches by severity (toaster.error/warning/info), so the mock needs those methods.
@@ -27,8 +26,8 @@ const { ApiError } = await import('~/lib/api');
 const { userStore } = await import('~/modules/user/user-store');
 const { onError } = await import('~/query/on-error');
 
-const person = { id: 'user-1', email: 'user@example.test' };
-const demo = { id: 'demo-1', email: `demo-1@${appConfig.demo.addressDomain}` };
+const person = { id: 'user-1', email: 'user@example.test', isAnonymous: false };
+const demo = { id: 'demo-1', email: null, isAnonymous: true };
 const onPage = (needsAccount: boolean) => {
   mockRouter.state.matches = [{ staticData: { boundary: needsAccount ? 'app' : 'public' } }];
 };

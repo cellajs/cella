@@ -120,17 +120,17 @@ export const resolveCollectionReadFilter = (
     channelIds.length === 0 ? [] : [{ channelType: homeLevel, channelIds, ...(condition && { condition }) }];
 
   // A scoped API key or token that lacks the `<type>:read` access scope reads nothing, sysadmin or not.
-  if (!('anonymous' in access) && !accessScopes.allows(access.scopes, entityType, 'read')) return { orgWide: false, scopes: [] };
+  if (!('visitor' in access) && !accessScopes.allows(access.scopes, entityType, 'read')) return { orgWide: false, scopes: [] };
 
   // Administrator short-circuit, matching the engine: they may pass the guard without a membership.
-  if (!('anonymous' in access) && access.isSystemAdmin) {
+  if (!('visitor' in access) && access.isSystemAdmin) {
     // A requested home channel still narrows: sysadmin widens WHO can read, never WHAT a filtered list returns.
     if (requested?.homeChannelId !== undefined) return { orgWide: false, scopes: atHome([requested.homeChannelId]) };
     if (requested?.homeChannelIds !== undefined) return { orgWide: false, scopes: atHome(requested.homeChannelIds) };
     return { orgWide: true, scopes: [] };
   }
 
-  const memberships = 'anonymous' in access ? [] : access.memberships;
+  const memberships = 'visitor' in access ? [] : access.memberships;
   const filter = resolveScopes(policies, memberships, entityType, organizationId, hierarchy.elevatedGrants, ancestors, publicGrants);
   if (!requested || (requested.homeChannelId === undefined && requested.homeChannelIds === undefined)) return filter;
 

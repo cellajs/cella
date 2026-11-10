@@ -8,7 +8,7 @@ Systems outside the browser act on your app through the REST API and an MCP endp
 
 ## Actors
 
-Every actor is a row in `actors`, a user or a service account. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
+Every actor is a row in `actors`, a user or a service account. A person without an account signs in as an [anonymous user](./ANONYMOUS_SESSIONS.md), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
 
 A service account is tenant-scoped and holds role bindings like a member does. "Create API key" in organization settings makes one, named after the key, as a member of the organization. Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
 

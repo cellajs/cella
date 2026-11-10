@@ -72,6 +72,6 @@ describe('the mask applies per row in batch and fan-out', () => {
   });
 
   it('fan-out: each access carries its own mask', () => {
-    expect(checkAccessFanout([admin(null), admin(['attachment:read']), { anonymous: true }], 'update', subject())).toEqual([true, false, false]);
+    expect(checkAccessFanout([admin(null), admin(['attachment:read']), { visitor: true }], 'update', subject())).toEqual([true, false, false]);
   });
 });

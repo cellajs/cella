@@ -23,7 +23,7 @@ export async function authorizeYjsEditor(ctx: OrgContext, { entityType, entityId
 
   const access = accessFrom(ctx);
   const subject = buildSubjectFromEntity(entityType, entity);
-  if ('anonymous' in access || !checkAccess({ ...access, isSystemAdmin: false }, 'update', subject).allowed) {
+  if ('visitor' in access || !checkAccess({ ...access, isSystemAdmin: false }, 'update', subject).allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action: 'update' } });
   }
 

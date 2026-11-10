@@ -9,6 +9,7 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     method: 'get',
     path: '/step-up',
     xGuard: [userGuard],
+    xAnonymous: true,
     summary: 'Get step-up state',
     description:
       'Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.',
@@ -24,7 +25,7 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Get a step-up passkey challenge',
     description:
       "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.",
-    responses: { 200: json('Challenge issued', passkeyChallengeSchema), ...errors(403) },
+    responses: { 200: json('Challenge issued', passkeyChallengeSchema) },
   }),
   stepUp: xRoute({
     method: 'post',
@@ -35,7 +36,7 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge), a TOTP code of a factor they hold, or the code a step-up mail carried. The proof counts for ten minutes.',
     request: { body: jsonBody(stepUpBodySchema) },
-    responses: { 204: { description: 'Session stepped up' }, ...errors(403, 404) },
+    responses: { 204: { description: 'Session stepped up' }, ...errors(404) },
   }),
   sendStepUpCode: xRoute({
     method: 'post',
@@ -45,6 +46,6 @@ export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Email a step-up code',
     description:
       'For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes. An account without a proven address is offered no code.',
-    responses: { 204: { description: 'Code sent' }, ...errors(403, 409) },
+    responses: { 204: { description: 'Code sent' }, ...errors(409) },
   }),
 });

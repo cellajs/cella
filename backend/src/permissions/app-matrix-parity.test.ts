@@ -123,7 +123,7 @@ const randomScenario = (random: () => number, { hierarchy, permissions }: Matrix
 
   const anonymous = random() < 0.08;
   const access: Access<MembershipBaseModel> = anonymous
-    ? { anonymous: true }
+    ? { visitor: true }
     : { actorId: pick(random, users), isSystemAdmin: random() < 0.08, memberships, scopes: null };
   const holds = memberships.map((m) => `${m.channelType}:${m.channelId}:${m.role}`).join(', ');
   return {
@@ -171,12 +171,12 @@ describe.each([projectsMatrixFixture, coursesMatrixFixture])('$name matrix: comp
     for (let i = 0; i < 100; i++) {
       const { policies, publicGrants, access, label } = randomScenario(random, fixture, product, i);
       const rules = { policies, publicGrants, hierarchy };
-      const actor = 'anonymous' in access ? {} : { actorId: access.actorId, isSystemAdmin: access.isSystemAdmin };
+      const actor = 'visitor' in access ? {} : { actorId: access.actorId, isSystemAdmin: access.isSystemAdmin };
 
       const engineRows = rows.filter((row) => {
         // The fixture's entity types are not the app's, so its subject is cast.
         const subject = { entityType: product, id: row.id, createdBy: row.createdBy, channelIds: row.chain, row } as unknown as SubjectForPermission;
-        return getAllDecisions(policies, 'anonymous' in access ? [] : access.memberships, subject, { ...actor, publicGrants, hierarchy }).can.read;
+        return getAllDecisions(policies, 'visitor' in access ? [] : access.memberships, subject, { ...actor, publicGrants, hierarchy }).can.read;
       });
 
       const sqlIds = async (requested?: { homeChannelId: string }) => {

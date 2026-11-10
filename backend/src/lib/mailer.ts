@@ -133,11 +133,8 @@ async function sendBatch({ subject, html, versions, replyTo, htmlParams, headers
   });
 }
 
-/** RFC 2606 reserves `.invalid` for names that resolve nowhere: a placeholder account (a demo's, a sample's) lives under it. */
-const isUndeliverable = (email: string) => {
-  const address = email.toLowerCase();
-  return address.endsWith('.invalid') || address.endsWith(`@${appConfig.demo.addressDomain}`);
-};
+/** RFC 2606 reserves `.invalid` for names that resolve nowhere: a placeholder account (an anonymous one, a sample's) lives under it. */
+const isUndeliverable = (email: string) => email.toLowerCase().endsWith('.invalid');
 
 /** Sends the app's mail through Brevo's transactional API. */
 export const mailer = {

@@ -49,7 +49,7 @@ describe('step-up', async () => {
   };
 
   it('offers an account without a proven address nothing by mail, so it can neither step up nor enroll', async () => {
-    const [user] = await insertUsers({ var: { db } }, { users: [mockUser({ email: `provisional-${nanoid(6)}@security-test.com` })] });
+    const [user] = await insertUsers({ var: { db } }, { users: [mockUser({ email: `unproven-${nanoid(6)}@security-test.com` })] });
     const session = await insertStaleSession(user);
 
     for (const tier of ['account', 'enroll', 'factor'] as const) expect((await stateOf(session, tier)).methods).toEqual([]);

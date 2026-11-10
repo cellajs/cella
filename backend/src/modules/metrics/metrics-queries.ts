@@ -4,8 +4,8 @@ import type { DbContext } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countedTenantKinds } from '#/modules/tenants/tenant-restrictions';
 import { tenantOfKind } from '#/modules/tenants/tenants-queries';
+import { hasProvenEmail } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-import { hasProvenEmail } from '#/modules/user/user-queries';
 import { getEntityTable } from '#/tables';
 
 /** The channel type's rows in tenants of a counted kind (`appConfig.tenantKinds`), counted on the context's connection. */

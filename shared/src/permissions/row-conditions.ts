@@ -6,7 +6,7 @@ import type { SubjectForPermission } from './engine/types.ts';
  */
 export type RowConditionName = 'own' | 'public';
 
-/** The actor for condition evaluation. `actorId` is absent for anonymous actors. */
+/** The actor for condition evaluation. `actorId` is absent for a visitor. */
 export type ConditionActor = { actorId?: string };
 
 /** The row fields a condition reads. */

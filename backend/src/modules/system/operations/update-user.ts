@@ -7,7 +7,7 @@ import { releaseReplacedImages } from '#/modules/attachment/operations/release-r
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import type { systemUserUpdateBodySchema } from '#/modules/system/system-schema';
 import { nameAfterUpdate } from '#/modules/user/helpers/name-after-update';
-import { findUserById, updateUser } from '#/modules/user/user-queries';
+import { findServedUserById, findUserById, updateUser } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof systemUserUpdateBodySchema>;
@@ -47,5 +47,5 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   log.info('User updated', { userId: updatedUser.id });
 
   // Re-select to include the activity times of the user's actors row
-  return findUserById(ctx, { id: updatedUser.id });
+  return findServedUserById(ctx, { id: updatedUser.id });
 }

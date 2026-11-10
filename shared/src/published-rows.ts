@@ -9,7 +9,7 @@ export function isUnpublishedDraft(row: Record<string, unknown> | null | undefin
 /**
  * Row-level visibility of drafts: published rows are visible to anyone the permission
  * engine allows; a draft is visible to its author alone. Fail-closed: a draft with no
- * readable `createdBy` (or an anonymous actor) matches nobody, system admins included.
+ * readable `createdBy` (or a visitor) matches nobody, system admins included.
  */
 export function draftVisibleTo(row: Record<string, unknown> | null | undefined, userId: string | null | undefined): boolean {
   if (!isUnpublishedDraft(row)) return true;

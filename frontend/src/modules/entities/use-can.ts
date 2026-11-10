@@ -54,9 +54,9 @@ export const archivedChannelIds = (row: CanRow): ReadonlySet<string> => {
   return new Set(cached?.archived ? [cached.id] : []);
 };
 
-/** The signed-in user's access over their memberships; no user is anonymous. */
+/** The signed-in user's access over their memberships; no user is a visitor. */
 export const userAccess = (user: { id: string } | null, isSystemAdmin: boolean, memberships: MembershipBase[]): Access =>
-  user ? { actorId: user.id, isSystemAdmin, scopes: null, memberships } : { anonymous: true };
+  user ? { actorId: user.id, isSystemAdmin, scopes: null, memberships } : { visitor: true };
 
 /**
  * Asks the permission engine what the user may do, by their memberships in `meKeys.memberships`; the backend decides.

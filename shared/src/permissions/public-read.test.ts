@@ -17,7 +17,7 @@ const projectSubject = (isPublic: boolean): SubjectForPermission =>
 // No policies at all: everything below must come from public grants alone.
 const noPolicies = {};
 
-describe('public read grants: anonymous actor', () => {
+describe('public read grants: visitor', () => {
   it('grants read when the row is public', () => {
     const { can } = getAllDecisions(noPolicies, [], projectSubject(true), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
@@ -60,7 +60,7 @@ describe('public read grants: anonymous actor', () => {
 });
 
 describe("the 'public' row condition: the shared rule", () => {
-  it('is actor-independent and reads only the row: it matches for anonymous actors when the row is public', () => {
+  it('is actor-independent and reads only the row: it matches for visitors when the row is public', () => {
     // What makes public read enforceable in list endpoints: `'public'` reads only the row's own
     // `public` flag, so it compiles identically here and in collection SQL. An actor-bound or
     // cross-row rule would not compile, and public rows would drop out of lists.

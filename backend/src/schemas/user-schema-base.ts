@@ -7,7 +7,9 @@ export const userBaseSchema = channelBaseSchema
   .omit({ entityType: true, tenantId: true, archived: true })
   .extend({
     description: z.string().nullable(),
-    email: z.email().openapi({ description: 'The primary email address, shown to every user who shares an organization with this one.' }),
+    email: z.email().nullable().openapi({
+      description: 'The proven email address, shown to every user who shares an organization with this one; null for an anonymous account.',
+    }),
     entityType: z.literal('user'),
   })
   .openapi('UserBase', {

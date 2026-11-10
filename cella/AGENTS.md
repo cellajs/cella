@@ -39,7 +39,7 @@ The client's global handler (`frontend/src/query/on-error.ts`) toasts every `Api
 
 ## Auth and permissions
 
-Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Decisions: [Permissions](./PERMISSIONS.md). Database backstop: [Multi-tenancy](./MULTI_TENANCY.md).
+Sign-in and sessions: [Authentication](./AUTHENTICATION.md). An account without an identity, a demo's: [Anonymous sessions](./ANONYMOUS_SESSIONS.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Decisions: [Permissions](./PERMISSIONS.md). Database backstop: [Multi-tenancy](./MULTI_TENANCY.md).
 
 - A backend check takes its `Access` from `accessFrom(ctx)` and a frontend check goes through `useCan`; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
 - Tokens are issued, redeemed and spent through `auth/tokens/`, the only importer of `tokens-db`.

@@ -14,7 +14,7 @@ import { invitationAddressEmail } from '../../../../../emails';
  * Mails the invited address a new link to the invitation, linked to the signed-in account, for an account that does not
  * hold that address. The new link replaces every older one, so a link forwarded earlier stops working. Opened by this
  * account, it lets `acceptInvitationTokenOp` accept the invitation; the address stays off the account.
- * @throws AppError 403 `provisional_account` for an account without a proven address, which binds no invitation; 409
+ * @throws AppError 403 `anonymous_account` for an account without a proven address, which binds no invitation; 409
  *   `user_mismatch` for a token linked to another account or an address another account holds, 400 `invalid_request`
  *   when the account holds the address already, 404 `not_found` for an invitation no longer pending.
  */
@@ -24,8 +24,7 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
 
   const user = ctx.var.user;
   if (userId && userId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
-  if (!(await isProvenAccount(ctx, { userId: user.id })))
-    throw new AppError(403, 'provisional_account', 'warn', { meta: { resource: 'invitation' } });
+  if (!(await isProvenAccount(ctx, { userId: user.id }))) throw new AppError(403, 'anonymous_account', 'warn', { meta: { resource: 'invitation' } });
 
   const holder = await findUserByEmail(ctx, { email });
   if (holder) throw holder.id === user.id ? new AppError(400, 'invalid_request', 'warn') : new AppError(409, 'user_mismatch', 'warn');

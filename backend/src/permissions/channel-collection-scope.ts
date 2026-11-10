@@ -43,7 +43,7 @@ export const resolveChannelCollectionReadScope = (
   organizationId: string,
   { policies: allPolicies = policyMatrix, hierarchy = appHierarchy }: Omit<ReadRules, 'publicGrants'> = {},
 ): ChannelCollectionReadScope => {
-  if ('anonymous' in access) return { orgWide: null, ancestorScopes: [] };
+  if ('visitor' in access) return { orgWide: null, ancestorScopes: [] };
   if (access.isSystemAdmin) return { orgWide: 'all', ancestorScopes: [] };
 
   const policies = getEntityPolicies(allPolicies, channelType);
@@ -103,7 +103,7 @@ export const draftChannelVisibleTo = (
   rules?: Omit<ReadRules, 'publicGrants'>,
 ): boolean => {
   if (channel.publishedAt !== null) return true;
-  if ('anonymous' in access) return false;
+  if ('visitor' in access) return false;
   if (access.isSystemAdmin) return true;
   if (access.memberships.some((membership) => membership.channelType === channelType && membership.channelId === channel.id)) return true;
   // Nothing sits above the organization, so its draft shows to its own members alone.

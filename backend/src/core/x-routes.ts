@@ -16,6 +16,7 @@ import {
 import { toKebabCase } from '#/core/openapi-helpers';
 import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors, recordPatchBody } from '#/core/openapi-validation';
 import { preconditionHeaders, preconditionResponses, preconditionsMiddleware, preconditionTarget } from '#/core/preconditions';
+import { anonymousGate } from '#/middlewares/anonymous-gate';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -54,8 +55,11 @@ type XRoute<R extends Draft> = ReturnType<
   typeof createRoute<R['path'], Omit<R, ExtensionPropId> & { responses: Omit<typeof sharedErrorResponses, keyof R['responses']> }>
 >;
 
-/** Refuses a route at load where a guard reads context (`requires`) that no guard before it provides. */
-const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => {
+/**
+ * Refuses a route at load where a guard reads context (`requires`) that no guard before it provides.
+ * @returns The context the chain's guards provide.
+ */
+const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]): Set<GuardContext> => {
   const provided = new Set<GuardContext>();
   for (const mw of xMiddlewares) {
     const missing = mw.__requires?.filter((key) => !provided.has(key)) ?? [];
@@ -66,6 +70,21 @@ const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => 
     }
     for (const key of mw.__provides ?? []) provided.add(key);
   }
+  return provided;
+};
+
+/**
+ * Whether an anonymous session is kept out of the route: it reaches a tenant's routes through its memberships, which
+ * the tenant guard binds it to, and every other route that authenticates it only when the route admits it (`xAnonymous`).
+ */
+const keepsAnonymousOut = (route: string, provided: Set<GuardContext>, admits: boolean): boolean => {
+  const userLevel = provided.has('actor') && !provided.has('tenant');
+  if (admits && !userLevel) {
+    throw new Error(
+      `[routes] ${route}: xAnonymous on a route an anonymous session reaches anyway (no actor guard, or a tenant guard binds it). Drop it.`,
+    );
+  }
+  return userLevel && !admits;
 };
 
 /** A literal path segment, and a custom verb: lowercase kebab-case. */
@@ -161,7 +180,7 @@ const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof shared
  * The error statuses a route's chain answers with before its handler, each with what answers it. The switch gate
  * answers 404 for a service or a feature flag and 400 for a sign-in method.
  */
-const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
+const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean, gated: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
   const claim = (code: ErrorCode, owner: string) => {
     if (!owners.has(code)) owners.set(code, owner);
@@ -171,15 +190,18 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
   if (config.xEnabledBy) claim('service' in config.xEnabledBy || 'feature' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
   if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
+  if (gated) claim(403, 'the anonymous gate');
   return owners;
 };
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
- * order: the error page (a 302 or 303 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
- * preconditions of a route for one channel or product (`preconditionTarget`: entity tags and `If-Match`), the
- * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
- * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
+ * order: the error page (a 302 or 303 route), the config switch gate (`xEnabledBy`), `xGuard` with, right after the
+ * guard that authenticates the session, the anonymous gate of a user-level route that does not admit an anonymous
+ * session (`xAnonymous`, documented as `x-anonymous`), `xRateLimiter`, the preconditions of a route for one channel or
+ * product (`preconditionTarget`: entity tags and `If-Match`), the route's own `middleware`, then validation and the
+ * handler. The switch needs no caller, so a route that is off answers before any guard shows how it authenticates;
+ * `middleware` runs after the guards and may read the actor.
  * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
  * documented on every route that lists the guard.
  * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where
@@ -206,18 +228,21 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const errorPage = '302' in config.responses || '303' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
   const preconditions = target ? [preconditionsMiddleware(target)] : [];
-  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...preconditions, ...existing];
+  const isMarked = (mw: MiddlewareHandler<Env>): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string';
 
   // Each marked middleware, then the limiters a guard runs itself, so the document lists them and their errors.
-  const xMiddlewares = middleware
-    .filter((mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string')
-    .flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
-  assertGuardOrder(route, xMiddlewares);
+  const xMiddlewares = [...extensionMiddleware, ...existing].filter(isMarked).flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
+  const provided = assertGuardOrder(route, xMiddlewares);
+  const gated = keepsAnonymousOut(route, provided, config.xAnonymous === true);
+  // The gate follows the guard that authenticates the session, ahead of any guard after it, so an anonymous session is refused for what it is.
+  const gateAt = extensionMiddleware.findIndex((mw) => isMarked(mw) && mw.__provides?.includes('actor')) + 1;
+  const guarded = gated ? [...extensionMiddleware.slice(0, gateAt), anonymousGate, ...extensionMiddleware.slice(gateAt)] : extensionMiddleware;
+  const middleware = [...operation, ...errorPage, ...switchGate, ...guarded, ...preconditions, ...existing];
   const specificationExtensions = createSpecificationExtensions((key) =>
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  const owners = chainErrors(config, xMiddlewares, !!target);
+  const owners = chainErrors(config, xMiddlewares, !!target, gated);
   if (checksAuthoringRules) {
     for (const [code, owner] of owners) {
       if (config.responses[code] === sharedErrorResponses[code]) {
@@ -249,7 +274,15 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   }
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
-  const { xGuard: _guard, xRateLimiter: _rateLimiter, xTool: _tool, xEnabledBy: _enabledBy, xScope: _scope, ...routeConfig } = config;
+  const {
+    xGuard: _guard,
+    xAnonymous: _anonymous,
+    xRateLimiter: _rateLimiter,
+    xTool: _tool,
+    xEnabledBy: _enabledBy,
+    xScope: _scope,
+    ...routeConfig
+  } = config;
   const parameters = target ? { parameters: [...(config.parameters ?? []), ...preconditionHeaders(target)] } : {};
   const cleanConfig = { ...routeConfig, ...parameters, ...createMetadataExtensions(config) };
 
