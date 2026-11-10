@@ -1,8 +1,10 @@
 import { createRouter } from '@tanstack/react-router';
 import { type BoundaryType, boundaryOf } from '~/lib/boundary';
+import type { PlacementDescriptor, Slot } from '~/lib/placements';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { PageSpinner } from '~/modules/common/spinner';
 import { navigationStore } from '~/modules/navigation/navigation-store';
+import type { NavItemId } from '~/modules/navigation/types';
 import { uiStore } from '~/modules/ui/ui-store';
 import { streamManager } from '~/query/realtime/stream-manager';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
@@ -78,9 +80,22 @@ router.subscribe('onRendered', ({ pathChanged, toLocation }) => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 });
 
-// Type registration must live in the file that creates the router.
+// The router's types live in the file that creates it: its registration, and what a route may declare in `staticData`.
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
+  }
+
+  interface StaticDataRouteOption {
+    /** The layout this route stands up: an error or not-found notice below it reads the layouts still standing from the nearest one. */
+    boundary?: BoundaryType;
+    /** Where the home button of an error or not-found notice at or below this route leads; `/` without one. */
+    errorHome?: string;
+    /** Nav items floating on a phone in place of the bottom bar; `right` stays empty where a page floats its main action. */
+    floatingNavButtons?: { right?: NavItemId; left?: NavItemId };
+    /** Nav tab placement for PageTabNav: default order 0, lower first, ties keep route order. */
+    navTab?: PlacementDescriptor;
+    /** The placement surface this route's tab bar is: its tabs resolve against `appConfig.surfaces[tabsSlot]`. A tabbed layout route must declare it. */
+    tabsSlot?: Slot;
   }
 }
