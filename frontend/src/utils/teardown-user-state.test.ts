@@ -9,7 +9,7 @@ import * as Y from 'yjs';
 const { queryClient } = await import('~/query/query-client');
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { userStore } = await import('~/modules/user/user-store');
-const { teardownUserState } = await import('~/utils/teardown-user-state');
+const { isTearingDown, teardownUserState } = await import('~/utils/teardown-user-state');
 const { createYDocWriter } = await import('~/modules/common/blocknote/yjs-store');
 
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
@@ -71,6 +71,24 @@ describe('teardownUserState', () => {
     onlineManager.setOnline(true);
     await queryClient.resumePausedMutations();
     expect(sent).toEqual(['user-b']);
+  });
+
+  it.each([true, false])('must leave the page while its user is still there, after the cache it leaves is cleared (wipe: %s)', async (wipe) => {
+    const user = { id: 'user-a', email: 'a@example.test' };
+    userStore.setState({ user: user as never, lastUser: user });
+    bindLocalUserDb('user-a');
+    queryClient.setQueryData(['thing', 'a'], { owner: 'user-a' });
+
+    let atLeave: Record<string, unknown> = {};
+    await teardownUserState(wipe, async () => {
+      const { user, lastUser } = userStore.getState();
+      atLeave = { user, lastUser, queries: queryClient.getQueryCache().getAll().length, tearingDown: isTearingDown() };
+    });
+
+    // A page still on screen reads the user and would throw without it; the auth page that opens reads `lastUser`, which a wipe forgets first.
+    expect(atLeave).toEqual({ user, lastUser: wipe ? null : user, queries: 0, tearingDown: true });
+    expect(userStore.getState().user).toBeNull();
+    expect(isTearingDown()).toBe(false);
   });
 
   it("must not lose a collaborative edit still queued at a lost session: it is stored first, unsynced, for the user's next one", async () => {

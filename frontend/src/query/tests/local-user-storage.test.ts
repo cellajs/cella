@@ -18,7 +18,7 @@ const { getLocalUserDb } = await import('~/query/local-user-db');
 const { onError } = await import('~/query/on-error');
 const { markCacheRestored, queryClient } = await import('~/query/query-client');
 const { persister, persistOptions } = await import('~/query/persister');
-const { localUserStorageReady } = await import('~/query/local-user-storage');
+const { forgetStoredUser, localUserStorageReady } = await import('~/query/local-user-storage');
 const { teardownUserState } = await import('~/utils/teardown-user-state');
 
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
@@ -109,6 +109,19 @@ describe('the per-user database follows who is signed in', () => {
     await vi.waitFor(() => expect(reload).toHaveBeenCalledOnce());
     expect(getLocalUserDb()).toBeNull();
     expect(await Dexie.exists(dbName(target.id))).toBe(true);
+  });
+
+  it('forgets the stored user at boot with their database, which the bind under way must not create anew', async () => {
+    // The bind starts as the page's first module reads the store, and is still opening the database when the user is forgotten
+    userStore.setState({ user: target as never });
+    const opening = getLocalUserDb()?.kv.put({ key: 'board', value: '{}' });
+    forgetStoredUser();
+    markCacheRestored();
+    await opening?.catch(() => {});
+
+    expect(userStore.getState()).toMatchObject({ user: null, lastUser: null });
+    expect(getLocalUserDb()).toBeNull();
+    await vi.waitFor(async () => expect(await Dexie.exists(dbName(target.id))).toBe(false));
   });
 
   it('must not lose the writes a lost session left queued when the same user signs in again on the page: they return to memory and stay stored', async () => {
