@@ -20,7 +20,7 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
   const repository = repositoryUrl();
   console.info(
     pc.dim(
-      `\n${actionLabel('repository-key')}: the key the builder fetches a release's commit of ${repository} with, in ${RUNTIME_FOLDER} of ${context.environment}.\n` +
+      `\n${actionLabel('repository-key')}: lets a deploy fetch a private repository.\n` +
         '  Make a fine-grained GitHub token for this repository only, with "Contents: read" and nothing else, and an expiry.\n',
     ),
   );

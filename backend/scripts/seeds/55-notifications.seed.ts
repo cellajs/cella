@@ -6,17 +6,18 @@ import { getSeedDb } from '#/db/db';
 import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import type { NotificationSubjectRow } from '#/lib/module';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { type MembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { type InsertNotificationModel, notificationsTable } from '#/modules/notification/notification-db';
 import { mockSeedNotification } from '#/modules/notification/notification-mocks';
 import { seedMentionEntityTypes } from '#/modules/notification/notification-seed-subjects';
 import { getNotificationSource } from '#/modules/notification/notification-sources';
-import { usersTable } from '#/modules/user/user-db';
+import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { getEntityTable } from '#/tables';
 import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
 import type { SeedScript } from '../types';
 import { appendMention } from './description-document';
+import { seedAppNotifications } from './notifications.app';
 
 // Seed scripts use the admin connection for privileged operations.
 const db = getSeedDb();
@@ -34,6 +35,12 @@ const mentionBodies = [
 type SubjectTable = AnyPgTable & Record<'id' | 'organizationId' | 'createdAt' | 'deletedAt' | 'description' | 'updatedAt' | 'updatedBy', PgColumn>;
 type SubjectRow = NotificationSubjectRow & { tenantId: string; createdAt: string };
 
+/** What the app's `seedAppNotifications` gets: the admin and the channels the admin is a member of. */
+export interface NotificationsSeeded {
+  admin: Pick<UserModel, 'id' | 'name' | 'slug'>;
+  adminChannels: Pick<MembershipModel, 'channelType' | 'channelId' | 'organizationId'>[];
+}
+
 const isNotificationsSeeded = async () => {
   const rows = await db.select({ id: notificationsTable.id }).from(notificationsTable).where(like(notificationsTable.activityId, 'seed:%')).limit(1);
   return rows.length > 0;
@@ -44,6 +51,7 @@ const isNotificationsSeeded = async () => {
  * to mentions the admin in a closing paragraph of a row homed there (`updatedBy` records the editor, `createdBy` is
  * immutable), and the matching `mention` row is written as the fan-out would write it. Homing every mention in one of
  * the admin's own channels keeps each link resolvable from the menu, which a system admin's read access alone does not.
+ * Then `seedAppNotifications` adds the app's own.
  */
 export const notificationsSeed = async () => {
   startSpinner('Seeding notifications...');
@@ -134,17 +142,19 @@ export const notificationsSeed = async () => {
     }
   }
 
-  if (!rows.length) {
-    warnSpinner(`No ${seedMentionEntityTypes.join(' or ')} rows in channels the admin shares with a member → seed those first`);
+  // Inbox rows first: a CDC worker that replicates the edits below finds the admin already told and adds no second row.
+  if (rows.length) await db.insert(notificationsTable).values(rows);
+  for (const { table, id, ...edit } of edits) await db.update(table).set(edit).where(eq(table.id, id));
+
+  const created = [...rows, ...(await seedAppNotifications({ admin, adminChannels }))];
+  if (!created.length) {
+    warnSpinner('No products in channels the admin shares with a member → seed those first');
     return;
   }
 
-  // Inbox rows first: a CDC worker that replicates the edits below finds the admin already told and adds no second row.
-  await db.insert(notificationsTable).values(rows);
-  for (const { table, id, ...edit } of edits) await db.update(table).set(edit).where(eq(table.id, id));
-
-  const unread = rows.filter((row) => !row.readAt).length;
-  succeedSpinner(`Created ${rows.length} mention notifications for the admin (${unread} unread)`);
+  const byKind = Object.entries(Object.groupBy(created, ({ kind }) => kind)).map(([kind, group = []]) => `${group.length} ${kind}`);
+  const unread = created.filter((row) => !row.readAt).length;
+  succeedSpinner(`Created ${created.length} notifications (${byKind.join(', ')}; ${unread} unread)`);
 };
 
 export const seedConfig: SeedScript = { name: 'notifications', run: notificationsSeed };

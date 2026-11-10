@@ -47,7 +47,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   const instanceName = naming.resource('postgres');
   const databaseName = naming.dbName;
 
-  console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
+  console.info(pc.dim('\nReset database: wipe it and rebuild it empty.'));
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
   // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.

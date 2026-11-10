@@ -42,16 +42,16 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
   }
 
   return (
-    <div className={cn('rounded-lg p-2 sm:p-6', tileClassName)}>
+    <div className={cn('rounded-lg p-3 sm:p-6', tileClassName)}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-medium">{t(title)}</h3>
         {layers?.map((layer) => (
-          <Badge key={layer} variant="brand" soft size="micro">
+          <Badge key={layer} variant="brand" soft size="micro" className="border-0">
             {layer}
           </Badge>
         ))}
       </div>
-      <p className="text-muted-foreground mt-2 text-sm">{t(text)}</p>
+      <p className="text-muted-foreground mt-1 text-sm sm:mt-2">{t(text)}</p>
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function InfoGrid<C extends string>({
           const categoryItems = items.filter((item) => item.category === category);
           return (
             <div key={category}>
-              <h2 className="mb-6 flex items-center gap-2 pl-2 text-xl font-semibold sm:pl-6">
+              <h2 className="mb-6 flex items-center gap-2 pl-3 text-xl font-semibold sm:pl-6">
                 <CategoryIcon className="text-muted-foreground size-5" />
                 {t(`about:${namespace}.category_${category}` as TKey)}
               </h2>

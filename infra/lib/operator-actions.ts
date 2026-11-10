@@ -33,56 +33,47 @@ export const OPERATOR_ACTIONS = {
   apply: {
     label: 'Review & apply changes',
     key: 'operator',
-    description:
-      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, buckets, DNS. Machine policies are written by "Update identities". Answer no to only look.',
+    description: 'See what differs between code and live stack, and apply it on your yes.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description:
-      'Replace the deploy key and the uploads key; then deploy the live release again, so no machine keeps a deleted key, and start a target that has not run.',
+    description: 'Replace the deploy and uploads keys, then redeploy so no machine keeps an old one.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
-    description:
-      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and a target that has not run started. Keys that protect stored data stay; third-party keys are pasted anew in "Env vars & secrets".',
+    description: 'New database passwords and generated values, then a redeploy of what serves.',
   },
   'operator-key': {
     label: 'Set up operators',
     key: 'owner',
-    description:
-      "Make or repair the app's operator application and operators group, each with a policy over every environment and no condition. Makes no key: at each sitting a person makes a one-day key of the application, or of their own user as a group member, in the console.",
+    description: "Make or repair the app's operator application and operators group.",
   },
   identity: {
     label: 'Update identities',
     key: 'owner',
-    description:
-      'Make the uploads application and its key, write the deploy, uploads and observer policies, put the observer key on this machine, and delete the retired admin and machine applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
+    description: 'Write what differs from the declared identities. Asks for your Owner key only when something must change.',
   },
   'start-deploy': {
     label: 'Deploy now',
     key: 'operator',
-    description:
-      "Deploy the environment's target now (production's newest release, or the environments file's line) and follow it step by step until it is deployed, blocked or failed.",
+    description: "Deploy the environment's target now and follow it step by step.",
   },
   releases: {
     label: 'Releases & roll back',
     key: 'operator',
-    description:
-      'The last releases with how each deploy ended and which one serves; pick an earlier one to deploy it again. Production stays on it until the next release, or 60 days.',
+    description: 'The last releases and how each deploy ended; pick an earlier one to deploy it again.',
   },
   'repository-key': {
     label: 'Set repository read key',
     key: 'operator',
-    description:
-      "Store, replace or remove the read-only GitHub key a private repository needs: a scheduled run reads the environments file and the release tags with it, the builder fetches a release's commit. A repository anyone may read needs none.",
+    description: 'Store, replace or remove the read-only GitHub key a private repository needs.',
   },
   secrets: {
     label: 'Env vars & secrets',
     key: 'operator',
-    description:
-      'The values the services read at boot, in one table: set, rotate or delete one, and mint managed keys. A new value reaches the machines at the next deploy.',
+    description: 'The values the services read at boot, in one table. A new value reaches the machines at the next deploy.',
   },
   'db-open': {
     label: 'Open DB access',
@@ -122,8 +113,7 @@ export const OPERATOR_ACTIONS = {
   teardown: {
     label: 'Tear down',
     key: 'owner',
-    description:
-      "DESTRUCTIVE: delete everything that runs or costs, the environment's identities included, after a final dump of the database. Keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which a setup adopts again.",
+    description: 'DESTRUCTIVE: delete everything that runs or costs, after a final dump. Uploads and the dump are kept.',
   },
 } as const satisfies Record<string, OperatorAction>;
 
@@ -197,8 +187,7 @@ export const MENU_ROWS = {
     label: 'Infrastructure changes',
     actions: ['apply', 'preview'],
     hotkey: 'a',
-    description:
-      'What differs between the code and the live foundation (database, network, load balancer, buckets, DNS, the main job): review and apply it, or only look.',
+    description: 'What differs between code and live foundation: review and apply it, or only look.',
   },
   identity: {
     group: 'configure',
@@ -234,8 +223,7 @@ export const MENU_ROWS = {
     actions: ['rotate-keys', 'rotate-secrets', 'operator-key', 'repository-key'],
     // `k` is the menu's vim-style up.
     hotkey: 'o',
-    description:
-      'Replace every Scaleway key or every secret the engine makes, set up the operator application and operators group, or store the read key of a private repository.',
+    description: "Replace keys or secrets, set up the operators, or store a private repository's read key.",
   },
   repair: {
     group: 'more',

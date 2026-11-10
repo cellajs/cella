@@ -207,7 +207,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
     console.error(`${crossMark} ${environment} has no main job yet: an apply makes it (\`${actionCommand('apply')}\`).`);
     return endAction(1);
   }
-  const outcome = await deployAndFollow(context, operator, definitionId, { sha: picked.sha, retry: 0 }, 'started');
+  const outcome = await deployAndFollow(context, operator, definitionId, { sha: picked.sha, retry: 0 }, 'Started');
   if (outcome !== 'deployed') endAction(1);
 }
 

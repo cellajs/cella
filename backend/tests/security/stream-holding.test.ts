@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { batchDeleteMembers } from 'sdk';
+import { appConfig, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -35,6 +36,8 @@ afterEach(async () => {
 /** A deleted attachment of the organization, as the CDC worker delivers it: one frame per reader, no notification. */
 const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: string) => {
   const id = generateId();
+  // A row names each of its ancestors, null where it is homed above them: the stream reads them to route a frame
+  const ancestorColumns = Object.fromEntries(hierarchy.getOrderedAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null]));
   activityBus.emit({
     id: generateId(),
     type: 'attachment.deleted',
@@ -46,7 +49,7 @@ const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: 
     tenantId: org.tenantId,
     organizationId: org.id,
     rowData: null,
-    rows: [{ rowData: { id, organizationId: org.id, tenantId: org.tenantId, createdBy: authorId } }],
+    rows: [{ rowData: { ...ancestorColumns, id, organizationId: org.id, tenantId: org.tenantId, createdBy: authorId } }],
     trace: null,
     stx: null,
   } as never);

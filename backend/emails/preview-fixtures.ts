@@ -29,7 +29,7 @@ export const previewRecipientEmail = 'emily@example.com';
 export const previewRequestDetails: RequestDetails = {
   requestId: 'd97be30c-c253-470d-948f-f2983733c77f',
   at: '2026-10-27T09:30:00.000Z',
-  country: 'NL',
+  regionCode: 'NL',
   browser: 'Firefox',
   os: 'macOS',
 };

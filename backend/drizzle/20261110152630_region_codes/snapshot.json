@@ -1,0 +1,39 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c69eaba7-e1e9-41b4-a7b8-c47d4f4831cb",
+  "prevIds": [
+    "cc7d7d9e-1cd7-47af-8574-4ec79d1ab95a"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "ip_country"
+      ],
+      "writes": [
+        "s|col|public.sessions.ip_country",
+        "n|col|public.sessions.ip_country",
+        "s|col|public.sessions.ip_region_code",
+        "n|col|public.sessions.ip_region_code"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"sessions\",\"ip_country\"]",
+      "set": {
+        "name": "ip_region_code"
+      }
+    }
+  ]
+}

@@ -725,7 +725,7 @@
   "request_verification.connect.text": "We sent you an email to connect your {{provider}} account. Open the link in it to verify your email address.",
   "request_verification.signup.text": "We sent you an email to finish signing up. Open the link in it to verify your email address.",
   "require_mfa": "MFA is recommended",
-  "require_mfa.text": "Multifactor authentication adds a second step at sign-in, so a stolen link or device alone can't open your account.",
+  "require_mfa.text": "Multifactor authentication adds a second step at sign-in to protect your account.",
   "resend": "Resend",
   "resend_invitation.text": "Receive a new invitation by email with a new expiration date.",
   "reset": "Reset",

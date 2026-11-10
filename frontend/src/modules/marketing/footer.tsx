@@ -16,14 +16,18 @@ const textClass = tw('mt-4 text-sm text-white/90');
 
 export interface FooterLinkProps {
   title: TKey;
-  href: string;
+  /** Unset for a link the config leaves out, which the footer skips. */
+  href?: string;
 }
 
+type ShownLink = Required<FooterLinkProps>;
+
 // The sign-up link only shows where visitors can sign up by themselves
-const isShown = ({ title }: FooterLinkProps) => title !== 'c:sign_up' || appConfig.has.selfRegistration;
+const isShown = <T extends FooterLinkProps>(link: T): link is T & ShownLink =>
+  !!link.href && (link.title !== 'c:sign_up' || appConfig.has.selfRegistration);
 
 /** A footer link; a web page opens in a new tab, an app route in this one. */
-function FooterLink({ title, href }: FooterLinkProps) {
+function FooterLink({ title, href }: ShownLink) {
   const { t } = useTranslation();
   const isExternal = href.startsWith('http');
 
@@ -68,7 +72,7 @@ export function MarketingFooter() {
   const { t } = useTranslation();
   const isAboutPage = useIsAboutPage();
   const statusUrl = appConfig.statusUrl.trim();
-  const legalFooterLinks: FooterLinkProps[] = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
+  const legalFooterLinks: ShownLink[] = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (
     <section className="rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]">
