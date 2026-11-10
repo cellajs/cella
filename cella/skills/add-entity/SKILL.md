@@ -225,8 +225,8 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `declare module '~/lib/placements' { interface ChannelEntityByType { <name>: Enriched<Name> } }`.
 - `frontend/src/routes-config.tsx`: `<name>: { path: '/$tenantId/$organizationSlug/<name>/$slug',
   paramName: 'slug' }`, with `subitemOf: { entityType, searchParam }` for a menu subentity.
-- `shared/config/config.default.ts`: an entry in `menuStructure`, and `surfaces['<name>.tabs']` to fix
-  which tabs its page shows and in which order.
+- `shared/config/config.default.ts`: an entry in `menuStructure`, and `surfaces['<name>.tabs']` when
+  its tabs need an `order` other than their declared one, or a template tab is `hidden`.
 - Routes under `frontend/src/routes/_app/$tenantId.$organizationSlug/<name>.$slug/`, built like the
   `organization/` folder: `route.tsx` with `tabsSlot: '<name>.tabs'` and `guardNavTabs` in its
   `beforeLoad`, which also resolves the channel from the slug (`resolveChannelBySlug`) into the route

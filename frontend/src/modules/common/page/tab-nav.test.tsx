@@ -8,11 +8,11 @@ const fakeRoute = (over: Record<string, unknown>) => ({ children: [], options: {
 const routesById: Record<string, unknown> = {};
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ routesById }) }));
 
-import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
+import { assumeNoSurfaces } from 'shared/testing/surfaces';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
 import type { ResolvePlacementOptions } from '~/lib/placements';
-import { assertSurfaces, guardNavTabs } from '~/modules/common/page/tab-nav';
+import { guardNavTabs } from '~/modules/common/page/tab-nav';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -43,18 +43,6 @@ function seedRoutes(id: string, tabsSlot: string) {
   const toolHost = fakeRoute({ path: '$tool', fullPath: `${id}/$tool` });
   routesById[id] = fakeRoute({ children: [members, settings, toolHost], options: { staticData: { tabsSlot } } });
 }
-
-describe('assertSurfaces checks the route tree at startup', () => {
-  beforeEach(() => {
-    for (const key of Object.keys(routesById)) delete routesById[key];
-  });
-
-  it('accepts a surface list of route tabs and registry tools, and throws for any other id', () => {
-    seedRoutes('/org', 'organization.tabs');
-    withSurface('organization.tabs', ['reports', 'members', 'settings'], () => expect(() => assertSurfaces()).not.toThrow());
-    withSurface('organization.tabs', ['members', 'ghost'], () => expect(() => assertSurfaces()).toThrowError(/lists 'ghost'/));
-  });
-});
 
 describe('guardNavTabs forwards bare-parent and disabled-tab navigations in beforeLoad', () => {
   beforeEach(() => {

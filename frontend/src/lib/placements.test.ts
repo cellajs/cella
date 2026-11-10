@@ -17,15 +17,20 @@ describe('arrangePlacements', () => {
     { id: 'c', label: key('c:c'), order: 30 },
   ];
 
-  it('lists a slot the app lists in the list order, without the ids the list leaves out, and keeps a hidden one', () => {
-    withSurface(slot, ['c', 'a'], () => {
-      expect(arrangePlacements(slot, items, { order: [], hidden: ['a'] }).map((i) => i.id)).toEqual(['c', 'a']);
-      expect(arrangePlacements(slot, items, { order: ['a'] }).map((i) => i.id)).toEqual(['a', 'c']);
+  it("puts the app's ordered ids first, the rest after them in declared order, and skips an id that names no placement", () => {
+    withSurface(slot, { order: ['c', 'ghost', 'b'] }, () => {
+      expect(arrangePlacements(slot, items).map((i) => i.id)).toEqual(['c', 'b', 'a']);
+    });
+  });
+
+  it("drops what the app hides, keeps what the channel hides, and applies the channel's order over the app's", () => {
+    withSurface(slot, { order: ['c', 'b'], hidden: ['b'] }, () => {
+      expect(arrangePlacements(slot, items, { order: ['a'], hidden: ['a'] }).map((i) => i.id)).toEqual(['a', 'c']);
     });
   });
 
   it('gives the order the bar of the slot resolves, for every placement the bar shows', () => {
-    withSurface(slot, ['b', 'c', 'a'], () => {
+    withSurface(slot, { order: ['b', 'c', 'a'] }, () => {
       const slotConfig = { order: ['c'], hidden: ['b'] };
       const shown = resolvePlacementList(slot, items, { slotConfig }).map((i) => i.id);
       expect(
@@ -40,13 +45,12 @@ describe('arrangePlacements', () => {
 describe('isPlacementHidden', () => {
   const item = { id: 'extra', label: key('c:extra'), order: 50 };
 
-  it("lets a channel's stored config hide any placement but a locked one, and the app's surfaces list hide any it leaves out", () => {
+  it("lets a channel's stored config hide any placement but a locked one, and the app's surfaces entry hide any", () => {
     const slotConfig = { order: [], hidden: ['extra'] };
     expect(isPlacementHidden(slot, item, { slotConfig })).toBe(true);
     expect(isPlacementHidden(slot, { ...item, locked: true }, { slotConfig })).toBe(false);
 
-    withSurface(slot, ['general'], () => {
-      expect(isPlacementHidden(slot, item, {})).toBe(true);
+    withSurface(slot, { hidden: ['extra'] }, () => {
       expect(isPlacementHidden(slot, { ...item, locked: true }, {})).toBe(true);
       expect(isPlacementHidden(slot, { id: 'general', label: key('c:general'), order: 10 }, {})).toBe(false);
     });

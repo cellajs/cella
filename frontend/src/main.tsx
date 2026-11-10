@@ -16,7 +16,6 @@ import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError, reportRejectedResponse } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
-import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { PersistedQueryProvider } from '~/query/persisted-query-provider';
@@ -40,9 +39,6 @@ client.interceptors.error.use((error, response, request) => {
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
-
-// Both the module registry and the route tree are populated by now, so every listed id can be checked.
-assertSurfaces();
 
 if (appConfig.asciiArt.length) console.info(appConfig.asciiArt.join('\n'));
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, type EntityActionType, hierarchy } from 'shared';
-import { allSlots, type Slot, surfaceOrder } from 'shared/placements';
+import { type Slot, surfaceArrangement } from 'shared/placements';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import type { TKey } from '~/lib/i18n-locales';
 import { onFrontendModuleRegister } from '~/lib/module';
@@ -27,7 +27,7 @@ export interface PlacementDescriptor {
   requires?: PlacementGrant;
   /** Context-role pairs (e.g. 'course.staff') that may see this placement. A UI condition, never data authorization. */
   visibleTo?: ContextRole[];
-  /** Channel-stored config cannot hide a locked placement (reorder still works); leaving it out of the app's `surfaces` list still can. */
+  /** Channel-stored config cannot hide a locked placement (reorder still works); the app's `surfaces` entry still can. */
   locked?: boolean;
 }
 
@@ -126,19 +126,12 @@ export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot:
   return bySlot.get(slot) ?? [];
 }
 
-/** Stored ids first in stored order, unlisted placements appended by declared `order`, unmatched stored ids ignored. */
-function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(items: T[], slotConfig?: SlotToolsConfig): T[] {
-  const stored = slotConfig?.order;
-  if (!stored?.length) return [...items].sort((a, b) => a.order - b.order);
-  const rank = new Map(stored.map((id, index) => [id, index]));
-  return [...items].sort((a, b) => {
-    const rankA = rank.get(a.id);
-    const rankB = rank.get(b.id);
-    if (rankA !== undefined && rankB !== undefined) return rankA - rankB;
-    if (rankA !== undefined) return -1;
-    if (rankB !== undefined) return 1;
-    return a.order - b.order;
-  });
+/** Ids in `order` first, in that sequence, and the rest after them in declared `order`. */
+function orderByIds<T extends PlacementDescriptor & { order: number }>(items: T[], order: readonly string[]): T[] {
+  const rank = new Map<string, number>();
+  for (const id of order) if (!rank.has(id)) rank.set(id, rank.size);
+  const rankOf = (item: T) => rank.get(item.id) ?? rank.size;
+  return [...items].sort((a, b) => rankOf(a) - rankOf(b) || a.order - b.order);
 }
 
 /** Resolution inputs a consumer passes for a slot (all optional; absent means unconditioned). */
@@ -151,24 +144,20 @@ export interface ResolvePlacementOptions {
   slotConfig?: SlotToolsConfig;
 }
 
-/** Hiding only, no `requires`/`visibleTo` gating: the slot's `surfaces` list omits the id, or the channel's stored config hides an unlocked one. */
+/** Hiding only, no `requires`/`visibleTo` gating: the app's `surfaces` entry hides the id, or the channel's stored config hides an unlocked one. */
 export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {
-  const listed = surfaceOrder(slot);
-  if (listed && !listed.includes(item.id)) return true;
+  if (surfaceArrangement(slot)?.hidden?.includes(item.id)) return true;
   return !item.locked && (options.slotConfig?.hidden ?? []).includes(item.id);
 }
 
 /**
- * The placements of a slot in the order it shows them, hidden ones included: what a channel arranges. The app's
- * `surfaces` list for the slot decides which placements exist and their base order; a slot the app does not list keeps
- * every placement in its declared `order`. The channel's stored order applies on top.
+ * The placements of a slot in the order it shows them, channel-hidden ones included: what a channel arranges. The app's
+ * `surfaces` entry leaves out the ones it hides and orders the rest, and the channel's stored order applies on top.
  */
 export function arrangePlacements<T extends PlacementDescriptor & { order: number }>(slot: Slot, items: T[], slotConfig?: SlotToolsConfig): T[] {
-  const listed = surfaceOrder(slot);
-  if (!listed) return orderBySlotConfig(items, slotConfig);
-
-  const surfaced = items.filter((item) => listed.includes(item.id)).map((item) => ({ ...item, order: listed.indexOf(item.id) }));
-  return orderBySlotConfig(surfaced, slotConfig);
+  const { order = [], hidden = [] } = surfaceArrangement(slot) ?? {};
+  const shown = items.filter((item) => !hidden.includes(item.id));
+  return orderByIds(shown, [...(slotConfig?.order ?? []), ...order]);
 }
 
 /** {@link arrangePlacements} for what a viewer sees: channel-stored hiding (`locked` immune), then `requires`/`visibleTo` leave a placement out. */
@@ -185,16 +174,4 @@ export function resolvePlacementList<T extends PlacementDescriptor & { order: nu
     .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)));
 
   return arrangePlacements(slot, visible, slotConfig);
-}
-
-/** Startup check, run once the route tree exists: every id an app lists names a placement of its slot, so a typo never hides a tab in silence. */
-export function assertSurfaceIds(candidateIdsBySlot: (slot: Slot) => readonly string[]): void {
-  for (const slot of allSlots()) {
-    const listed = surfaceOrder(slot);
-    if (!listed) continue;
-    const available = new Set(candidateIdsBySlot(slot));
-    for (const id of listed) {
-      if (!available.has(id)) throw new Error(`appConfig.surfaces['${slot}'] lists '${id}', which is no placement of that surface`);
-    }
-  }
 }
