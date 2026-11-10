@@ -84,7 +84,7 @@ export const createSession = async (
   kind: SessionKind = 'regular',
   { steppedUpVia = null, steppedUpAt, connectionId = null, expiresAt: endsAt }: SessionExtras = {},
 ) => {
-  const { rawIp, country, asn, device, deviceId } = context;
+  const { rawIp, regionCode, asn, device, deviceId } = context;
 
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
@@ -106,7 +106,7 @@ export const createSession = async (
     authStrategy: strategy,
     ipHash: rawIp ? hashIpForUser(rawIp, user.id) : null,
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
-    ipCountry: country,
+    ipRegionCode: regionCode,
     ipAsn: asn,
     deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
     createdAt: now,

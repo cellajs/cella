@@ -75,6 +75,8 @@ export default defineConfig({
       'backend/bench/seeds/attachment-home.ts',
       'shared/json/text-blocks.json',
       'backend/scripts/seeds/showcase.json',
+      'backend/scripts/seeds/organization.app.ts',
+      'backend/scripts/seeds/notifications.app.ts',
     ],
   },
 });

@@ -6,7 +6,7 @@ import { test } from '../../config/config.test.ts';
 import { tunnel } from '../../config/config.tunnel.ts';
 import { resolveDevPortOffset, shiftLocalPort } from './dev-port-offset.ts';
 import { authPath, servicePaths } from './service-paths.ts';
-import type { AppServiceConfig, ConfigMode, DeepPartial, FederationConfig, S3Config, WidenScalars } from './types.ts';
+import type { AppServiceConfig, CompanyConfig, ConfigMode, DeepPartial, FederationConfig, S3Config, WidenScalars } from './types.ts';
 import { mergeDeep, typedEntries } from './utils.ts';
 
 /** The default config as readers see it: a literal `true` or `1` of the file is its base type here. */
@@ -14,9 +14,12 @@ type BaseConfig = WidenScalars<typeof defaultConfig>;
 /** Services whose public URL the builder derives from the origin. */
 type UrlBearingService = 'frontend' | 'backend' | 'yjs' | 'mcp' | 'oauth';
 type BuiltServices = BaseConfig['services'] & Record<UrlBearingService, { publicUrl: string }>;
-type Config = Omit<BaseConfig, 's3' | 'services'> & {
+// The optional keys come from the interface: a key the app's literal leaves out would be missing from `BaseConfig`.
+type Config = Omit<BaseConfig, 's3' | 'services' | 'company' | 'repositoryUrl'> & {
   s3: S3Config;
   services: BuiltServices;
+  company: CompanyConfig;
+  repositoryUrl?: string;
   mode: ConfigMode;
   /** Development, tunnel and test: a stack on this machine, whose ports `devAppIndex` and the dev port offset move. */
   isLocal: boolean;

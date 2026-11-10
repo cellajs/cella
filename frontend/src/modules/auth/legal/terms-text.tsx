@@ -2,10 +2,12 @@ import { appConfig } from 'shared';
 import { LegalContact, SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
+import { regionName } from '~/utils/region-name';
 
 export function TermsText() {
   const appName = appConfig.name;
   const company = appConfig.company.name;
+  const regionCode = appConfig.company.address?.regionCode;
   const frontendUrl = appConfig.frontendUrl;
 
   return (
@@ -120,8 +122,9 @@ export function TermsText() {
 
       <LegalSection subject="terms" id="governing-law">
         <p>
-          These Terms are governed by the laws of {appConfig.company.country}, and the competent court where {company} is established decides
-          disputes. Nothing in these Terms limits rights that mandatory law where you live gives you.
+          These Terms are governed by the law of the country where {company} is established
+          {regionCode && ` (${regionName(regionCode, 'en')})`}, and the competent court there decides disputes. Nothing in these Terms limits rights
+          that mandatory law where you live gives you.
         </p>
       </LegalSection>
 

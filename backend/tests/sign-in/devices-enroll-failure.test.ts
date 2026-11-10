@@ -16,7 +16,7 @@ describe('sign-in when device enrollment fails', () => {
     const user = await createTestUser(signUpUser.email);
     const context = {
       rawIp: null,
-      country: null,
+      regionCode: null,
       asn: null,
       device: { name: null, type: 'desktop' as const, os: null, browser: null },
       deviceId: nanoid(24),

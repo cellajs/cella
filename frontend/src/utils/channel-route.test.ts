@@ -19,6 +19,26 @@ vi.mock('~/routes-config', () => ({
     },
   },
 }));
+// The hierarchy those routes belong to, so the ancestor walk reads the same channels in every app.
+vi.mock('shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared')>();
+  const roles = actual.createRoleRegistry(['member'] as const);
+  const hierarchy = actual
+    .createEntityHierarchy(roles)
+    .user()
+    .organization({ roles: roles.all })
+    .channel('workspace', { parent: 'organization', roles: roles.all })
+    .channel('project', { parent: 'workspace', roles: roles.all })
+    .product('attachment', { parent: 'project' })
+    .build();
+  return {
+    ...actual,
+    appConfig: { ...actual.appConfig, entityIdColumnKeys: hierarchy.idColumnKeys },
+    hierarchy,
+    isChannel: hierarchy.isChannel,
+    isProduct: hierarchy.isProduct,
+  };
+});
 vi.mock('~/lib/entity-modules', () => ({ getProductDeepLink }));
 vi.mock('~/query/basic/find-in-list-cache', () => ({ findInCache }));
 

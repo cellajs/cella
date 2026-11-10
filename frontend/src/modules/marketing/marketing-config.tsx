@@ -44,7 +44,7 @@ export const marketingNavConfig = [
 /** @public */
 export const socials = [
   { title: 'c:social', href: appConfig.company.socialUrl, icon: CloudIcon },
-  { title: 'c:chat', href: appConfig.company.element, icon: ElementIcon },
+  { title: 'c:chat', href: appConfig.company.chatUrl, icon: ElementIcon },
 ] satisfies (FooterLinkProps & { icon: IconComponent })[];
 
 export const footerSections = [
@@ -60,7 +60,7 @@ export const footerSections = [
     links: [
       { title: 'c:getting_started', href: '/docs/page/quickstart' },
       { title: 'c:docs.api_reference', href: '/docs/operations' },
-      { title: 'c:source_code', href: appConfig.company.githubUrl },
+      { title: 'c:source_code', href: appConfig.repositoryUrl },
     ],
   },
   {
@@ -242,7 +242,7 @@ export const pricingPlans: PricingPlan[] = [
 // About - FAQ
 
 export const faqsData = [
-  { id: 'production-ready', link: appConfig.company.githubUrl },
+  { id: 'production-ready', link: appConfig.repositoryUrl },
   { id: 'cella-vs-next' },
   { id: 'alternative-to-nextjs' },
   { id: 'cella-made-in-europe' },

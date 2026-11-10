@@ -8,7 +8,7 @@ const lineStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textA
 const linkStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textDecoration: 'underline' };
 
 /** "Sent to <address> by <app>" with the support link on one line, then the postal address. */
-export const EmailFooter = ({ supportText, sentTo }: { supportText: string; sentTo?: string }) => (
+export const EmailFooter = ({ supportText, sentTo, postalAddress }: { supportText: string; sentTo?: string; postalAddress?: string }) => (
   <div style={{ marginTop: '2rem', maxWidth: '400px', padding: '0 1.5rem 2.5rem' }}>
     <EmailText className="email-muted" style={lineStyle}>
       {sentTo ?? appConfig.name}・
@@ -16,8 +16,10 @@ export const EmailFooter = ({ supportText, sentTo }: { supportText: string; sent
         {supportText}
       </Link>
     </EmailText>
-    <EmailText className="email-muted" style={{ ...lineStyle, margin: 0 }}>
-      {appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}
-    </EmailText>
+    {postalAddress && (
+      <EmailText className="email-muted" style={{ ...lineStyle, margin: 0 }}>
+        {postalAddress}
+      </EmailText>
+    )}
   </div>
 );

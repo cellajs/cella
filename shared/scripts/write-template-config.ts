@@ -3,13 +3,15 @@ import { join } from 'node:path';
 
 /**
  * One leaf of `config.default.ts` the scaffolder's template sets differently: `value` is the TypeScript source of the
- * template's value, `replace` an edit of the line's own text, and `comment` the doc comment the template carries above
- * the leaf in place of the default's. A `path` names the leaf by its keys, so the entry survives a move within the file.
+ * template's value, `replace` an edit of the line's own text, `remove` drops an optional leaf with its doc comment, and
+ * `comment` the doc comment the template carries above the leaf in place of the default's. A `path` names the leaf by
+ * its keys, so the entry survives a move within the file.
  */
 interface TemplateLeaf {
   path: string;
   value?: string;
   replace?: [from: string, to: string];
+  remove?: true;
   comment?: string;
 }
 
@@ -30,6 +32,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
   { path: 'services.yjs', replace: ['enabled: true', 'enabled: false'] },
   { path: 'statusUrl', value: `'https://status.${domain}'` },
   { path: 'productionUrl', value: `'https://www.${domain}'` },
+  { path: 'repositoryUrl', remove: true },
   { path: 'senderEmail', value: `'notifications@${domain}'` },
   { path: 'supportEmail', value: `'support@${domain}'` },
   { path: 'securityEmail', value: `'security@${domain}'` },
@@ -60,25 +63,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
     value: "''",
     comment: 'Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off.',
   },
-  { path: 'company.name', value: `'${name}'` },
-  { path: 'company.shortName', value: `'${name}'` },
-  { path: 'company.email', value: `'info@${domain}'` },
-  ...[
-    'tel',
-    'streetAddress',
-    'postcode',
-    'city',
-    'country',
-    'registration',
-    'vatNumber',
-    'directionsUrl',
-    'scheduleCallUrl',
-    'socialUrl',
-    'blueskyHandle',
-    'element',
-    'githubUrl',
-  ].map((key) => ({ path: `company.${key}`, value: "''" })),
-  { path: 'company.coordinates', value: '{ lat: 0, lng: 0 }' },
+  { path: 'company', value: `{ name: '${name}', email: 'info@${domain}' }` },
 ];
 
 const indentOf = (line: string) => line.length - line.trimStart().length;
@@ -143,6 +128,11 @@ export function applyLeaves(source: string, leaves: readonly TemplateLeaf[], fil
     const { start, end } = locate(lines, leaf.path, file);
     const indent = ' '.repeat(indentOf(lines[start]));
     const key = leaf.path.split('.').at(-1);
+    if (leaf.remove) {
+      const cut = commentAbove(lines, start);
+      lines.splice(cut, end + 1 - cut);
+      continue;
+    }
     const replacement: string[] = [];
     if (leaf.value !== undefined) replacement.push(`${indent}${key}: ${leaf.value},`);
     else if (leaf.replace) {

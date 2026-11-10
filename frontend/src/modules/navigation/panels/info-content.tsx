@@ -84,7 +84,7 @@ function StatusTile() {
   const status = worstStatus(statusEntries);
 
   const hasStatusPage = !!appConfig.statusUrl.trim();
-  const sourceUrl = appConfig.company.githubUrl;
+  const sourceUrl = appConfig.repositoryUrl;
 
   return (
     // Not a button, since its entries and status page link are; the transparent border keeps a NavSheetRow's box

@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
 import { getSeedDb } from '#/db/db';
 import { mockMany, setMockContext } from '#/mocks';
@@ -15,6 +14,7 @@ import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
 import type { SeedScript } from '../types';
 import { textDocument } from './description-document';
+import { membersPerOrganization, tenantCount } from './organization.app';
 import { toBatches } from './seed-volume';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
@@ -23,10 +23,7 @@ setMockContext('script');
 // Seed scripts use admin connection for privileged operations
 const db = getSeedDb();
 
-// 1 tenant = 1 organization. One org per tenant; keep ~100 orgs by using 100 tenants.
-const TENANTS_COUNT = 100;
 const ORGANIZATIONS_PER_TENANT = 1;
-const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
 const isOrganizationSeeded = async () => {
@@ -46,7 +43,7 @@ export const organizationsSeed = async () => {
   }
 
   // Create tenants (one organization each, matching the one-organization-per-tenant constraint)
-  const tenantRecords = Array.from({ length: TENANTS_COUNT }, (_, i) => ({
+  const tenantRecords = Array.from({ length: tenantCount }, (_, i) => ({
     name: `Tenant ${i + 1}`,
     createdBy: defaultAdminUser.id,
     // Give first 2 tenants an active subscription for dev testing
@@ -60,7 +57,7 @@ export const organizationsSeed = async () => {
 
   // Make organizations - one per tenant (1 tenant = 1 org)
   // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)
-  const organizationRecords = mockMany(mockOrganization, TENANTS_COUNT * ORGANIZATIONS_PER_TENANT).map((org, i) => ({
+  const organizationRecords = mockMany(mockOrganization, tenantCount * ORGANIZATIONS_PER_TENANT).map((org, i) => ({
     ...org,
     tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // one org per tenant
     createdBy: defaultAdminUser.id,
@@ -79,7 +76,7 @@ export const organizationsSeed = async () => {
   for (const organization of organizations) {
     // Make many users → Insert into the database, batched: thousands of ~20-column rows overrun the
     // Postgres bind-parameter limit in one statement
-    const userRecords = mockMany(() => mockUser(), MEMBERS_COUNT);
+    const userRecords = mockMany(() => mockUser(), membersPerOrganization);
     const users: UserModel[] = [];
     for (const batch of toBatches(userRecords)) {
       users.push(...(await insertUsers({ var: { db } }, { users: batch, onConflictDoNothing: true })));
@@ -108,13 +105,13 @@ export const organizationsSeed = async () => {
   }
 
   // One organization the seed admin administers starts as a draft, so publishing can be tried by hand
-  const draftOrganizationId = adminMemberships.find((membership) => !membership.hidden)?.channelId;
+  const draftOrganizationId = adminMemberships[0]?.channelId;
   if (draftOrganizationId) {
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, draftOrganizationId));
   }
 
   succeedSpinner(
-    `Created ${TENANTS_COUNT} tenants, one organization each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`,
+    `Created ${tenantCount} tenants, one organization each (${tenantCount * ORGANIZATIONS_PER_TENANT} total), ${membersPerOrganization} members per org`,
   );
 };
 
@@ -132,10 +129,9 @@ const addAdminMembership = (adminUser: UserModel, organization: OrganizationMode
   // Make admin membership
   const membership = mockChannelMembership('organization', organization, adminUser);
 
-  // Adjust the admin membership: an org admin wherever the membership is live, so the seed admin can
-  // administer every organization in their active menu; hidden ones keep a random role
-  membership.hidden = faker.datatype.boolean(0.5);
-  if (!membership.hidden) membership.role = 'admin';
+  // Adjust the admin membership: never hidden and always org admin, so every organization the seed admin
+  // belongs to shows in their menu and home feed, and they can administer each one
+  membership.role = 'admin';
   membership.displayOrder = 1 + adminMemberships.length * 10;
 
   // Add admin membership to the list

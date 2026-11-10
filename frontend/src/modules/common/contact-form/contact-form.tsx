@@ -1,11 +1,11 @@
-import { MailIcon, MessageSquareIcon, SendIcon } from 'lucide-react';
+import { MailIcon, MessageSquareIcon, SendIcon, XIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { LegalContact } from '~/modules/auth/legal/legal-contact';
+import { ContactMethodRows } from '~/modules/common/contact-form/contact-methods';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -13,7 +13,10 @@ import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { useCreateRequestMutation } from '~/modules/requests/query';
+import { Button } from '~/modules/ui/button';
+import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
 import { formResolver } from '~/utils/form-resolver';
@@ -57,47 +60,79 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
       },
     });
 
+  const contactForm = (
+    <Form {...form}>
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-4 md:gap-6">
+        <InputFormField
+          control={form.control}
+          name="email"
+          label={t('c:email')}
+          labelClassName="max-sm:sr-only"
+          type="email"
+          autoComplete="email"
+          placeholder={t('c:placeholder.your_input', { inputLabel: t('c:email') })}
+          icon={<MailIcon />}
+          required
+        />
+        <InputFormField
+          control={form.control}
+          name="message"
+          label={t('c:message')}
+          labelClassName="max-sm:sr-only"
+          type="textarea"
+          inputClassName="min-h-24 sm:min-h-32 lg:min-h-50"
+          placeholder={t('c:placeholder.your_input', { inputLabel: t('c:message') })}
+          icon={<MessageSquareIcon />}
+          required
+        />
+        <FormActions>
+          <SubmitButton loading={isPending} icon={<SendIcon />}>
+            {t('c:send')}
+          </SubmitButton>
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
+        </FormActions>
+      </form>
+    </Form>
+  );
+
+  // The map takes the height of the form beside it
+  const map = (
+    <Suspense>
+      <ContactFormMap />
+    </Suspense>
+  );
+
+  if (!isDialog)
+    return (
+      <div className="flex w-full gap-10">
+        {contactForm}
+        {isLargeScreen && <div className="bg-accent w-full overflow-hidden rounded-md">{map}</div>}
+      </div>
+    );
+
+  const title = t('c:contact_us');
+
+  // The dialog renders its own header, so the map can reach the dialog's edges and carry the close button
   return (
-    <div className="flex w-full flex-col gap-4 md:flex-row md:gap-10">
-      <Form {...form}>
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-4 md:gap-6">
-          <InputFormField
-            control={form.control}
-            name="email"
-            label={t('c:email')}
-            labelClassName="max-sm:sr-only"
-            type="email"
-            autoComplete="email"
-            placeholder={t('c:placeholder.your_input', { inputLabel: t('c:email') })}
-            icon={<MailIcon />}
-            required
-          />
-          <InputFormField
-            control={form.control}
-            name="message"
-            label={t('c:message')}
-            labelClassName="max-sm:sr-only"
-            type="textarea"
-            placeholder={t('c:placeholder.your_input', { inputLabel: t('c:message') })}
-            icon={<MessageSquareIcon />}
-            required
-          />
-          <FormActions>
-            <SubmitButton loading={isPending} icon={<SendIcon />}>
-              {t('c:send')}
-            </SubmitButton>
-            <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
-          </FormActions>
-        </form>
-      </Form>
-      {isLargeScreen ? (
-        <div className="bg-accent mb-12 w-full overflow-hidden rounded-md">
-          <Suspense>
-            <ContactFormMap />
-          </Suspense>
+    <div className="grid lg:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-4 lg:p-6">
+        <DialogHeader sticky closeButton={!isLargeScreen}>
+          <DialogTitle className="h-6 min-w-0 truncate leading-6">
+            <UnsavedBadge title={title} />
+          </DialogTitle>
+        </DialogHeader>
+        <DialogDescription>{t('c:contact_us.text')}</DialogDescription>
+        {contactForm}
+        {!isLargeScreen && <ContactMethodRows className="mt-4" />}
+      </div>
+      {isLargeScreen && (
+        <div className="bg-accent relative overflow-hidden rounded-r-lg">
+          {map}
+          <DialogClose render={<Button variant="outline" size="icon" />} className="absolute top-3 right-3 size-8 rounded-full shadow-sm">
+            <XIcon className="size-4" />
+            <span className="sr-only">{t('c:close')}</span>
+          </DialogClose>
         </div>
-      ) : (
-        <LegalContact className="my-4 w-full sm:my-0" addressOnly />
       )}
     </div>
   );
