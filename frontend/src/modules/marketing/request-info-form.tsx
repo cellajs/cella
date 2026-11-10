@@ -7,7 +7,7 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-export function SubscribeNewsletterForm() {
+export function RequestInfoForm() {
   const { t } = useTranslation();
   const [isDirty, setIsDirty] = useState(false);
 
@@ -20,10 +20,10 @@ export function SubscribeNewsletterForm() {
     const email = new FormData(form).get('email')?.toString().trim().toLowerCase();
     if (!email) return;
     createRequest(
-      { email, kind: 'newsletter', message: null },
+      { email, kind: 'info', message: null },
       {
         onSuccess: () => {
-          toaster.success(t('c:success.newsletter_sign_up'));
+          toaster.success(t('c:success.request_info'));
           form.reset();
           setIsDirty(false);
         },
@@ -39,7 +39,7 @@ export function SubscribeNewsletterForm() {
           name="email"
           placeholder={t('c:placeholder.your_input', { inputLabel: t('c:email') })}
           autoComplete="email"
-          aria-label={t('c:newsletter_email')}
+          aria-label={t('c:request_info_email')}
           required
           onChange={(event) => setIsDirty(event.target.value !== '')}
           // The footer band stays dark in both themes, so the field reads the dark text steps
@@ -49,7 +49,7 @@ export function SubscribeNewsletterForm() {
           <InputGroupButton
             type="submit"
             variant={isDirty ? 'default' : 'ghost'}
-            aria-label={t('c:newsletter_submit')}
+            aria-label={t('c:request_info')}
             className={cn('dark mr-0.5 size-10 rounded-[10px]', !isDirty && 'text-white')}
           >
             {isPending ? <Spinner size="sm" noDelay className="text-current" /> : <SendIcon className="size-4" />}

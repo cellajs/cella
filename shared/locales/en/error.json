@@ -144,7 +144,6 @@
   "missing_ancestor.text": "Request is missing a required ancestor channel id.",
   "network_error": "No connection",
   "network_error.text": "The server could not be reached. Pages you opened before stay available offline.",
-  "newsletter_sign_up": "Your email address could not be submitted. Try again later.",
   "no_email_found": "No email found",
   "no_email_found.text": "No email address could be found on the resource.",
   "no_permission_for_sync": "View only",

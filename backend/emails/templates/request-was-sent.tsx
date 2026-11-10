@@ -11,7 +11,7 @@ interface RequestResponseStatic {
 }
 
 /**
- * Confirms a waitlist signup, newsletter subscription, or contact form submission. Anyone can type any address into the
+ * Confirms a waitlist signup, info request or contact form submission. Anyone can type any address into the
  * form, so the mail never repeats what they typed.
  */
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
@@ -42,6 +42,6 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
   preview: { statics: { kind: 'contact' }, recipient: {} },
   previewVariants: {
     waitlist: { statics: { kind: 'waitlist' }, recipient: {} },
-    newsletter: { statics: { kind: 'newsletter' }, recipient: {} },
+    info: { statics: { kind: 'info' }, recipient: {} },
   },
 });

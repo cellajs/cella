@@ -117,7 +117,7 @@ describe('apply_retention() row rules', () => {
       removed: [payloads.expired, payloads.usedLongAgo],
     });
 
-    const request = async (kind: 'contact' | 'waitlist' | 'newsletter', createdAt: Date) => {
+    const request = async (kind: 'contact' | 'waitlist' | 'info', createdAt: Date) => {
       const id = generateId();
       await db.insert(requestsTable).values({ id, kind, email: `${id}@retention.test`, message: 'hello', createdAt: createdAt.toISOString() });
       return id;
@@ -126,7 +126,7 @@ describe('apply_retention() row rules', () => {
       oldContact: await request('contact', outside(retention.requestDays)),
       recentContact: await request('contact', inside(retention.requestDays)),
       oldWaitlist: await request('waitlist', outside(retention.requestDays)),
-      oldNewsletter: await request('newsletter', outside(retention.requestDays)),
+      oldInfo: await request('info', outside(retention.requestDays)),
     };
     cases.push({
       rule: 'requests',
@@ -137,8 +137,8 @@ describe('apply_retention() row rules', () => {
             .from(requestsTable)
             .where(inArray(requestsTable.id, Object.values(requests)))
         ).map((row) => row.id),
-      kept: [requests.recentContact, requests.oldNewsletter],
-      removed: [requests.oldContact, requests.oldWaitlist],
+      kept: [requests.recentContact],
+      removed: [requests.oldContact, requests.oldWaitlist, requests.oldInfo],
     });
 
     const invitation = async ({ rejectedAt = null, remindedAt = null }: { rejectedAt?: Date | null; remindedAt?: Date | null }) => {

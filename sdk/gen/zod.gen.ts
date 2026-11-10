@@ -579,14 +579,14 @@ export const zOrganization = z.object({
 });
 
 /**
- * A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.
+ * A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.
  */
 export const zRequest = z.object({
   createdAt: z.string(),
   id: z.uuid(),
   message: z.string().nullable(),
   email: z.string().max(255),
-  kind: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'info', 'contact']),
   wasInvited: z.boolean(),
 });
 
@@ -2544,7 +2544,7 @@ export const zListRequestsResponse = z.object({
 
 export const zCreateRequestBody = z.object({
   email: z.email().min(4).max(255),
-  kind: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'info', 'contact']),
   message: z.string().max(5000).nullable(),
 });
 
