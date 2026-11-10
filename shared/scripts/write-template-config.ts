@@ -162,11 +162,14 @@ export function renderTemplateConfig(source: string): string {
   return applyLeaves(source, templateLeaves, 'config.default.ts');
 }
 
-/** What the app-shape suite run (check-config-shape.ts) edits in both config files: listed surfaces, another feature flag. */
+/** What the app-shape suite run (check-config-shape.ts) edits in both config files: arranged surfaces, another feature flag. */
 export const appShapeLeaves: readonly TemplateLeaf[] = [
   {
     path: 'surfaces',
-    replace: ['surfaces: {} as', "surfaces: { 'organization.tabs': ['members', 'settings'], 'user.profile': ['organizations'] } as"],
+    replace: [
+      'surfaces: {} as',
+      "surfaces: { 'organization.tabs': { order: ['members', 'settings'], hidden: ['attachments'] }, 'user.profile': { order: ['organizations'] } } as",
+    ],
   },
   { path: 'has.commentEmail', replace: ['commentEmail: false', 'commentEmail: true'] },
 ];

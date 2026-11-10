@@ -1,9 +1,10 @@
 import { afterEach, beforeEach } from 'vitest';
 import { appConfig } from '../config-builder/app-config.ts';
+import type { SurfaceArrangement } from '../config-builder/types.ts';
 
-type Surfaces = Record<string, readonly string[] | undefined>;
+type Surfaces = Record<string, SurfaceArrangement | undefined>;
 
-/** A test file calls this at its top: every test starts with no listed surface, whatever the app lists, and the app's lists return afterwards. */
+/** A test file calls this at its top: every test starts with no arranged surface, whatever the app arranges, and the app's arrangements return afterwards. */
 export function assumeNoSurfaces() {
   const surfaces = appConfig.surfaces as Surfaces;
   let configured: Surfaces = {};
@@ -17,11 +18,11 @@ export function assumeNoSurfaces() {
   });
 }
 
-/** Lists one surface while `run` executes, and puts back what the slot held before. */
-export function withSurface(slot: string, ids: readonly string[], run: () => void) {
+/** Arranges one surface while `run` executes, and puts back what the slot held before. */
+export function withSurface(slot: string, arrangement: SurfaceArrangement, run: () => void) {
   const surfaces = appConfig.surfaces as Surfaces;
   const previous = surfaces[slot];
-  surfaces[slot] = ids;
+  surfaces[slot] = arrangement;
   try {
     run();
   } finally {
