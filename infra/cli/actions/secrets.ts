@@ -134,8 +134,8 @@ async function handleSet(ctx: MenuContext, secret: RuntimeSecretDefinition, cont
       },
     })
   ).trim();
-  const version = await setValue(client, container, value);
-  ctx.log(`${checkMark} Updated ${secret.envVar} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`);
+  await setValue(client, container, value);
+  ctx.log(`${checkMark} Updated ${secret.envVar}`);
   return true;
 }
 
@@ -147,7 +147,7 @@ async function handleSet(ctx: MenuContext, secret: RuntimeSecretDefinition, cont
  */
 async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<boolean> {
   const confirmed = await ctx.prompts.confirm({
-    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; it writes IAM, so it takes an Owner API key.`,
+    message: `${warningMark} Mint a new key for ${key.label}? It takes your Owner key.`,
     default: false,
   });
   if (!confirmed) {
@@ -156,7 +156,7 @@ async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<
   }
   try {
     const identity = await ctx.identityKey();
-    const result = await provisionManagedKey({
+    await provisionManagedKey({
       definition: key,
       callerSecretKey: identity.secretKey,
       organizationId: identity.organizationId,
@@ -166,7 +166,7 @@ async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<
       mode: ctx.mode,
       log: ctx.log,
     });
-    ctx.log(`${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`);
+    ctx.log(`${checkMark} Minted ${key.label}`);
     return true;
   } catch (error) {
     ctx.log(`${warningMark} Mint failed: ${errorMessage(error)}`);

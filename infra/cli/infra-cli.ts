@@ -3,15 +3,7 @@ import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { writeCompose } from '../compose/synth';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
-import {
-  actionCommand,
-  actionLabel,
-  type MenuRowId,
-  menuRow,
-  OPERATOR_ACTIONS,
-  type OperatorActionId,
-  PULUMI_ACTIONS,
-} from '../lib/operator-actions';
+import { actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, type OperatorActionId, PULUMI_ACTIONS } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
@@ -141,11 +133,8 @@ function printStackNotices(context: InfraContext): void {
   // One line per key misconfiguration (a superseded name in the env file, a key the CLI no longer reads, …) before any action trips over it.
   for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
 
-  const deferredSince = detectComputeDeferred(context.stackYaml);
-  if (deferredSince) {
-    console.warn(
-      `${warningMark} ${pc.bold('The first setup has not finished')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}: "${actionLabel('resume')}" continues it.\n`,
-    );
+  if (detectComputeDeferred(context.stackYaml)) {
+    console.warn(`${warningMark} ${pc.bold('The first setup has not finished')}: "${actionLabel('resume')}" continues it.\n`);
   }
 }
 
@@ -300,5 +289,4 @@ while (true) {
   printStackNotices(context);
   home = await printHome(context);
 }
-console.info(pc.dim(`Run an action without the menu: ${actionCommand('status')}, or \`pnpm infra help\` for the list.`));
 process.exit(0);

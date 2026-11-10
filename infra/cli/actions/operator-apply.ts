@@ -258,12 +258,9 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
           );
           endAction(1);
         }
-        console.info(
-          `${checkMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, describing the app as ${engine.descriptionHash.slice(0, 12)}.`,
-        );
-        await pruneEngines({ appConfig, projectId, secretKey: operator.secretKey, applied: engine }).then(
-          (deleted) => deleted.length > 0 && console.info(pc.dim(`  Deleted ${deleted.length} earlier engine image(s) from the registry.`)),
-          (error) => console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
+        console.info(`${checkMark} Deploy engine updated.`);
+        await pruneEngines({ appConfig, projectId, secretKey: operator.secretKey, applied: engine }).catch((error) =>
+          console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
         );
       }
     } finally {
@@ -288,7 +285,6 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     }
 
     if (completed && opts.verifyAfter) {
-      console.info(pc.dim('\n→ Verifying live database privileges against the program…'));
       const result = await verifyAfterApply({ appConfig, secretKey: operator.secretKey, log: (msg) => console.info(pc.dim(msg)) });
       verified = result.ok;
       if (result.errors.length > 0) {
@@ -303,7 +299,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         );
         console.error(pc.dim('  Re-run with --debug-provider to capture the API calls.'));
       } else if (result.errors.length === 0) {
-        console.info(`${checkMark} live privileges match the program`);
+        console.info(`${checkMark} Database privileges verified.`);
       }
     }
     if (completed && opts.afterUp) {

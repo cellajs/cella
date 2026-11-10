@@ -206,7 +206,7 @@ async function convergeOrExit(
  * The endpoint is internet-reachable but restricted to the ACL; run "Close DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
-  console.info(pc.dim(`\n${actionLabel('db-open')}: add a scoped, temporary public endpoint for operator tasks.\n`));
+  console.info(pc.dim(`\n${actionLabel('db-open')}: a temporary public endpoint, open to your IP.\n`));
 
   const detected = await detectPublicIp();
   const suggestion = detected ? `${detected}/32` : '';
@@ -228,11 +228,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   }
   const acl = parsed.cidrs.join(',');
 
-  console.warn(
-    `\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n` +
-      `  ${pc.dim(`Exposure lives only in the gitignored overlay Pulumi.${context.environment}.exposure.yaml; the committed stack config stays clean.`)}\n` +
-      `  ${pc.dim(`A deploy does not remove the endpoint: run "${actionLabel('db-close')}" when done.`)}\n`,
-  );
+  console.warn(`\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n`);
   if (!(await confirm({ message: 'Proceed with exposing the database?', default: false }))) {
     console.info('Aborted; no changes made.');
     return;
@@ -262,15 +258,14 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     const shownDsn = caPath ? hardenPublicDsn(dsn, caPath) : dsn;
     console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(shownDsn)}\n`);
     console.info(`  ${pc.dim('Example:')} psql "${shownDsn}"`);
-    if (caPath) console.info(`  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`);
-    else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
+    if (!caPath) console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
   }
-  console.info(`\n  ${pc.bold(`When finished, run "${actionLabel('db-close')}" to close it again.`)}`);
+  console.info(`\n  ${pc.bold(`When finished, run "${actionLabel('db-close')}": a deploy does not close it.`)}`);
 }
 
 /** Close the database's public endpoint: delete it over the RDB API, converge without the exposure config, and confirm the instance has none left. */
 export async function runUnexposeDatabase(context: InfraContext): Promise<void> {
-  console.info(pc.dim(`\n${actionLabel('db-close')}: remove the public endpoint and ACL, return to private-only.\n`));
+  console.info(pc.dim(`\n${actionLabel('db-close')}: back to private.\n`));
   if (!(await confirm({ message: 'Close the public database endpoint now?', default: true }))) {
     console.info('Aborted; no changes made.');
     return;

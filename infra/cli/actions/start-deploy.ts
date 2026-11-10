@@ -37,7 +37,7 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
     return endAction(1);
   }
   const name = commitName(await commitRefs(), target.sha);
-  console.info(pc.dim(`\n${actionLabel('start-deploy')}: ${name} to ${environment} (${target.source}, retry ${target.retry}).\n`));
+  if (target.retry > 0) console.info(pc.dim(`\n${actionLabel('start-deploy')}: ${name} to ${environment}, retry ${target.retry}.\n`));
   // A deploy under way is followed, not doubled: the observer key finds it without a paste, the operator key once it is in hand.
   const observer = resolveOperatorIdentity().observer;
   if (observer && (await followIfLive(context, observer)) === 'deployed') return;
@@ -54,7 +54,7 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
     );
     return endAction(1);
   }
-  const outcome = await deployAndFollow(context, operator, definitionId, target, 'started');
+  const outcome = await deployAndFollow(context, operator, definitionId, target, 'Started');
   if (outcome !== 'deployed') endAction(1);
 }
 
@@ -145,7 +145,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
       key,
       definitionId,
       { sha: live, retry: 0 },
-      `deploys the live ${live.slice(0, 10)} again, replacing every machine with the rotated keys and values`,
+      `Deploying the live ${commitName(await commitRefs(), live)} again, which replaces every machine`,
     );
     if (outcome !== 'deployed') {
       console.warn(`${warningMark} The machines keep what the rotation replaced until a deploy succeeds; the target is not started.`);
@@ -154,10 +154,8 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
     if (!target || target.sha === live || (await targetHasRun(context, key, live, target))) return;
   }
   if (!target) return;
-  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
-  console.info(
-    `${checkMark} Run ${run.id} deploys the target ${target.sha.slice(0, 10)}${live ? '' : ' with the rotated keys and values, replacing every machine'} (\`${actionCommand('runs')}\` shows how it ends).`,
-  );
+  await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
+  console.info(`${checkMark} Deploying ${commitName(await commitRefs(), target.sha)}.`);
 }
 
 /**
@@ -221,9 +219,7 @@ export async function startBlockedTarget(context: InfraContext, key: KeyPair): P
       ? { target: record.target, retry: String(record.retry ?? 0), outcome: record.outcome }
       : undefined;
   if (!last) return false;
-  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: last.target, RETRY: last.retry } });
-  console.info(
-    `${checkMark} The last deploy was ${last.outcome}: run ${run.id} deploys ${last.target.slice(0, 10)} again (\`${actionCommand('runs')}\` shows how it ends).`,
-  );
+  await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: last.target, RETRY: last.retry } });
+  console.info(`${checkMark} The last deploy was ${last.outcome}: deploying ${commitName(await commitRefs(), last.target)} again.`);
   return true;
 }

@@ -7,7 +7,7 @@ import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectEtag, stateBucket } from '../../lib/stack/control-store';
 import { checkpointKey } from '../../lib/stack/pending-operations';
 import { forgetRetiredResources } from '../../lib/stack/retired-state';
-import { pc, warningMark } from '../../lib/utils/cli-output';
+import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -105,6 +105,5 @@ export async function reviewPlan(
     console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env) and the passphrase.`);
     endAction(status);
   }
-  console.info(`\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code.')}`);
   return { passphrase, checkpoint };
 }
