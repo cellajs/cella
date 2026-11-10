@@ -1,23 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { z } from 'zod';
-import { booleanSearchParam } from '~/modules/common/search-params-schemas';
+import { withSuspense } from '~/modules/common/with-suspense';
 import { HomePage } from '~/modules/home/home-page';
-import { redirectToWelcomeIfOnboarding } from '~/modules/home/route-logic';
-import { withSuspense } from '~/routes/-route-utils';
+import { homeBeforeLoad } from '~/modules/home/route-logic';
+import { homeRouteSearchParamsSchema } from '~/modules/home/search-params-schemas';
 import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_app/home')({
-  validateSearch: z.object({
-    skipWelcome: booleanSearchParam,
-    // The home page opens the user sheet
-    userSheetId: z.string().optional(),
-  }),
-  staticData: { isAuth: true },
+  validateSearch: homeRouteSearchParamsSchema,
+  beforeLoad: ({ cause, search }) => homeBeforeLoad({ cause, skipWelcome: search.skipWelcome }),
   head: () => pageHead(i18n.t('c:home')),
-  onEnter: ({ search, cause }) => {
-    if (cause !== 'enter' || search.skipWelcome) return;
-    redirectToWelcomeIfOnboarding();
-  },
   component: withSuspense(HomePage),
 });

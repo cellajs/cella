@@ -11,6 +11,7 @@ import { publishSyncedRows } from '~/query/realtime/sync-events';
 import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
 import { resolveChannelPath } from '~/query/realtime/view-declaration';
+import { getRouter } from '~/routes/-router-instance';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
 const defaultSpreadWindowMs = 15_000;
@@ -333,8 +334,6 @@ function installListeners(): void {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
 
-  // Navigation flushes pending scopes and route context promotes org-level scopes; the lazy import keeps the route tree out of this module's importer graph.
-  void import('~/routes/router').then(({ router }) => {
-    router.subscribe('onLoad', promoteLiveChannels);
-  });
+  // Navigation flushes pending scopes and route context promotes org-level scopes.
+  getRouter().subscribe('onLoad', promoteLiveChannels);
 }

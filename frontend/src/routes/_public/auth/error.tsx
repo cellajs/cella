@@ -6,7 +6,6 @@ import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/error')({
   validateSearch: authErrorRouteSearchParamsSchema,
-  staticData: { isAuth: false },
   head: () => pageHead(i18n.t('c:authentication_error')),
   component: AuthErrorPage,
 });

@@ -16,7 +16,7 @@ export interface AppStoryParameters {
 const StoryContext = createContext<ReactNode>(null);
 
 // The route renders whatever story the decorator currently passes, so args changes re-render without a new router.
-const rootRoute = createRootRoute({ staticData: { isAuth: false }, component: () => useContext(StoryContext) });
+const rootRoute = createRootRoute({ component: () => useContext(StoryContext) });
 
 function AppHarness({ url, queryData, children }: Required<AppStoryParameters> & { children: ReactNode }) {
   const [router] = useState(() => {

@@ -75,6 +75,9 @@ export const meKeys = {
 /** Never persisted: the guards read it as `static`, so a stored entry would pass a session revoked between visits and skip the store write. */
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, meta: { persist: false } });
 
+/** The signed-in user's profile from the cache whatever its age, fetched once when none is cached; the fetch sets the user store. */
+export const readMe = () => queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
+
 // A mount past the stale time refetches: a session, passkey or connected app added elsewhere must show.
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
 

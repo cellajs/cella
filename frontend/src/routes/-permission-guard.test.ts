@@ -18,8 +18,8 @@ const membership = (role: string, channelId = 'org-1') => ({ channelType: 'organ
 
 // The row a slug fetch returns on a cold load, before the memberships are cached.
 const organization = { id: 'org-1', entityType: 'organization' as const, slug: 'acme' };
-const settingsGate = () => requireEntityAction(organization, 'organization', 'update', '/organization');
-const redirected = { redirect: { to: '/organization', params: true, replace: true } };
+const settingsGate = () => requireEntityAction(organization, 'organization', 'update');
+const redirected = { redirect: { to: '/$tenantId/$organizationSlug/organization', params: true, replace: true } };
 
 describe('requireEntityAction', () => {
   afterEach(() => {

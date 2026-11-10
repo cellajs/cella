@@ -2,7 +2,7 @@ import { useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 
@@ -12,7 +12,7 @@ export function AppRouter() {
   // Subscribed, so pull-to-refresh comes back when the connection does
   const isOnline = useOnlineManager();
 
-  if (isRestoring && !isOnline) return <Spinner size="lg" className="mt-[45vh]" />;
+  if (isRestoring && !isOnline) return <PageSpinner />;
 
   const handleRefresh = async () => {
     console.debug('[AppRouter] Refreshing router');

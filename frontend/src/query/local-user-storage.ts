@@ -21,6 +21,7 @@ import { persister, persistOptions, resetPersister } from '~/query/persister';
 import { cacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
+import { getRouter } from '~/routes/-router-instance';
 import { clearUserState, isTearingDown, teardownUserState } from '~/utils/teardown-user-state';
 
 /** Minimal contract a per-user store must satisfy to join {@link localUserStores}: hydrate on bind, reset on sign-out. */
@@ -120,11 +121,8 @@ window.addEventListener('storage', (event) => {
   });
 });
 
-// Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. A lazy import keeps the
-// router out of this module's importer graph.
+// Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app.
 deletedElsewhereListeners.add(() => {
-  void teardownUserState(true, () =>
-    // `fromRoot`: the other tab ends the session after its delete, so a probe from here can still find it alive and sign back in
-    import('~/routes/router').then(({ router }) => router.navigate({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true })),
-  );
+  // `fromRoot`: the other tab ends the session after its delete, so a probe from here can still find it alive and sign back in
+  void teardownUserState(true, () => getRouter().navigate({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true }));
 });

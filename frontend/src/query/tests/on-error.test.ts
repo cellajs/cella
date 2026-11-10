@@ -9,10 +9,10 @@ const mockTeardownUserState = vi.fn(async (_wipe: boolean, leave?: () => Promise
 });
 let tearingDown = false;
 /** The router as the handler reads it: where to go, and whether the page it is on needs an account. */
-const mockRouter = { navigate: vi.fn(), state: { matches: [{ staticData: { isAuth: true } }] } };
+const mockRouter = { navigate: vi.fn(), state: { matches: [{ staticData: { boundary: 'app' } }] } };
 
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: mockToaster }));
-vi.mock('~/routes/router', () => ({ router: mockRouter }));
+vi.mock('~/routes/-router-instance', () => ({ getRouter: () => mockRouter }));
 vi.mock('~/utils/teardown-user-state', () => ({ teardownUserState: mockTeardownUserState, isTearingDown: () => tearingDown }));
 vi.mock('~/query/local-user-storage', () => ({ localUserStorageReady: () => Promise.resolve() }));
 // A translation is its own key; a test names the keys that exist.
@@ -29,8 +29,8 @@ const { onError } = await import('~/query/on-error');
 
 const person = { id: 'user-1', email: 'user@example.test' };
 const demo = { id: 'demo-1', email: `demo-1@${appConfig.demo.addressDomain}` };
-const onPage = (isAuth: boolean) => {
-  mockRouter.state.matches = [{ staticData: { isAuth } }];
+const onPage = (needsAccount: boolean) => {
+  mockRouter.state.matches = [{ staticData: { boundary: needsAccount ? 'app' : 'public' } }];
 };
 const noToast = () => {
   for (const type of ['error', 'warning', 'info'] as const) expect(mockToaster[type]).not.toHaveBeenCalled();

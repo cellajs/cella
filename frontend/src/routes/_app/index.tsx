@@ -1,19 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { z } from 'zod';
+import { userSheetSearchSchema } from '~/modules/common/search-params-schemas';
+import { withSuspense } from '~/modules/common/with-suspense';
 import { HomePage } from '~/modules/home/home-page';
-import { redirectToWelcomeIfOnboarding } from '~/modules/home/route-logic';
-import { withSuspense } from '~/routes/-route-utils';
+import { homeBeforeLoad } from '~/modules/home/route-logic';
 import { pageHead } from '~/utils/app-title';
 
+/** `/` is the home page too; the user sheet opens from its search. */
 export const Route = createFileRoute('/_app/')({
-  // Renders the home page, which opens the user sheet
-  validateSearch: z.object({ userSheetId: z.string().optional() }),
+  validateSearch: userSheetSearchSchema,
+  beforeLoad: ({ cause }) => homeBeforeLoad({ cause }),
   head: () => pageHead(i18n.t('c:home')),
-  staticData: { isAuth: true },
-  onEnter: ({ cause }) => {
-    if (cause !== 'enter') return;
-    redirectToWelcomeIfOnboarding();
-  },
   component: withSuspense(HomePage),
 });

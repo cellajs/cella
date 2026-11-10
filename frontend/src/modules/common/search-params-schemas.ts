@@ -4,6 +4,9 @@ import { z } from 'zod';
 /** Search params for the error routes: error page, auth error, account OAuth errors. */
 export const errorSearchSchema = z.object({ error: z.string().optional(), severity: zApiError.shape.severity.optional() });
 
+/** `userSheetId` opens the user sheet; a page that lists people declares it, since the sheet reads the route's search. */
+export const userSheetSearchSchema = z.object({ userSheetId: z.string().optional() });
+
 type SortOrder = 'asc' | 'desc';
 
 const sortOrderSchema = z.enum(['asc', 'desc']);

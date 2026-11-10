@@ -2,22 +2,21 @@ import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { DocsPageComponent } from '~/modules/docs/page-route-components';
 import { ensureDocPageComponent, getDocPage } from '~/modules/page/content';
-import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
+import { RouteNotFoundComponent } from '~/routes/-route-utils';
 import { pageHead } from '~/utils/app-title';
 
 /** The splat param is the page slug and may contain slashes (e.g. architecture/sync-engine). */
-export const Route = createFileRoute('/_public/_content/docs/page/$')({
-  staticData: { isAuth: false },
+export const Route = createFileRoute('/_public/docs/page/$')({
+  // Resolve code-split MDX before mount to avoid a fallback flash.
+  loader: async ({ params }) => {
+    await ensureDocPageComponent(params._splat ?? '');
+  },
   // Title/description resolve synchronously from the docs metadata index (frontmatter)
   head: ({ params }) => {
     const page = getDocPage(params._splat ?? '');
     return pageHead(page?.name ?? i18n.t('c:docs'), page?.description);
   },
-  // Resolve code-split MDX before mount to avoid a fallback flash.
-  loader: async ({ params }) => {
-    await ensureDocPageComponent(params._splat ?? '');
-  },
-  errorComponent: createErrorComponent('public', '/docs'),
-  notFoundComponent: createNotFoundComponent('public', '/docs'),
+  // The page throws `notFound()` for a slug the index has no page for; declared here, it renders inside the docs layout
+  notFoundComponent: RouteNotFoundComponent,
   component: DocsPageComponent,
 });

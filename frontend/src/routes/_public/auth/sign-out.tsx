@@ -1,13 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { z } from 'zod';
+import { signOutRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
 import { SignOutPage } from '~/modules/auth/sign-out-page';
-import { booleanSearchParam } from '~/modules/common/search-params-schemas';
 import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/sign-out')({
-  validateSearch: z.object({ force: booleanSearchParam, redirect: z.string().optional() }),
-  staticData: { isAuth: false },
+  validateSearch: signOutRouteSearchParamsSchema,
   head: () => pageHead(i18n.t('c:sign_out')),
   component: SignOutPage,
 });

@@ -7,18 +7,16 @@ const slugs: Record<string, string> = { 'org-1': 'acme' };
 
 /** A layout that rewrites its own param from an id, with a page below it, as the organization layout sits above a channel's. */
 function createTestRouter(url: string) {
-  const rootRoute = createRootRoute({ staticData: { isAuth: false } });
+  const rootRoute = createRootRoute();
   const layoutRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/$organizationSlug',
-    staticData: { isAuth: false },
     beforeLoad: ({ params }) => rewriteUrlToSlug(params, { organizationSlug: slugs[params.organizationSlug] }),
   });
-  const layoutIndexRoute = createRoute({ getParentRoute: () => layoutRoute, path: '/', staticData: { isAuth: false } });
+  const layoutIndexRoute = createRoute({ getParentRoute: () => layoutRoute, path: '/' });
   const pageRoute = createRoute({
     getParentRoute: () => layoutRoute,
     path: '/project/$slug',
-    staticData: { isAuth: false },
     validateSearch: (search: Record<string, unknown>) => ({ open: search.open as string | undefined }),
   });
   const routeTree = rootRoute.addChildren([layoutRoute.addChildren([layoutIndexRoute, pageRoute])]);

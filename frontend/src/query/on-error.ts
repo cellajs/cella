@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import { isDemoAddress } from 'shared/utils/demo-address';
 import { isSessionLost } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
+import { boundaryOf } from '~/lib/boundary';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -10,6 +11,7 @@ import { userStore } from '~/modules/user/user-store';
 import { localUserStorageReady } from '~/query/local-user-storage';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
+import { getRouter } from '~/routes/-router-instance';
 import { getErrorInfo, getErrorMessage } from '~/utils/get-error-info';
 import { isTearingDown, teardownUserState } from '~/utils/teardown-user-state';
 
@@ -81,14 +83,13 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     const path = location.pathname + location.search;
     // A bare `/` names nothing to return to: a sign-in without a redirect reaches the same home page.
     const redirect = path === '/' ? undefined : path;
-    // Dynamic import: the route tree imports this module, so a static router import would be a cycle.
-    const leave = () =>
-      import('~/routes/router').then(({ router }) => {
-        // `fromRoot`: this 401 already found no session, and the user still in the store would have sign-in send the tab back here
-        if (!demo) return router.navigate({ to: '/auth/authenticate', search: { fromRoot: true, redirect } });
-        // The visitor leaves a page that needs an account for the about page, and stays on any other
-        if (router.state.matches.at(-1)?.staticData?.isAuth) return router.navigate({ to: '/about', replace: true });
-      });
+    const leave = async () => {
+      const router = getRouter();
+      // `fromRoot`: this 401 already found no session, and the user still in the store would have sign-in send the tab back here
+      if (!demo) return router.navigate({ to: '/auth/authenticate', search: { fromRoot: true, redirect } });
+      // The visitor leaves a page that needs an account for the about page, and stays on any other
+      if (boundaryOf(router.state.matches.map((match) => match.staticData)) === 'app') return router.navigate({ to: '/about', replace: true });
+    };
     // A demo's localUserDb goes with it, once no restore of its cached queries can refill the cleared cache. Any other stays on disk
     // with its unsynced offline work: a 401 is involuntary and the same user usually re-auths and recovers it.
     if (demo) void localUserStorageReady().then(() => teardownUserState(true, leave));
