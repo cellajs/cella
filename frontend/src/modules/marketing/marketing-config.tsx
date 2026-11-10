@@ -287,8 +287,6 @@ export const showcaseItems: ShowcaseItem[] = [
   {
     id: 'raak',
     url: 'https://www.raak.dev',
-    cellaLoc: 142000,
-    totalLoc: 162000,
     lightItems: [screenshot('showcases/raak-1.webp', 'raak board'), screenshot('showcases/raak-2.webp', 'raak task')],
     darkItems: [screenshot('showcases/raak-1-dark.webp', 'raak board'), screenshot('showcases/raak-2-dark.webp', 'raak task')],
   },
