@@ -58,7 +58,6 @@
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "cnfast": "^0.2.0",
-    "dayjs": "^1.11.23",
     "dexie": "^4.4.7",
     "dompurify": "^3.4.17",
     "embla-carousel-autoplay": "^8.6.0",

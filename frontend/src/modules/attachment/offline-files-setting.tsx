@@ -1,5 +1,4 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
-import dayjs from 'dayjs';
 import { TriangleAlertIcon } from 'lucide-react';
 import { type PointerEvent, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +13,7 @@ import { percentFull, useOfflineFootprint } from '~/modules/attachment/offline/u
 import { NamedText } from '~/modules/common/named-text';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { dateRelative } from '~/utils/date-mini';
 import { formatBytes } from '~/utils/format-bytes';
 
 export const offlineFilesTierText = {
@@ -228,7 +228,7 @@ export function OfflineFilesSetting() {
               used: formatBytes(stored),
               budget: formatBytes(budgets[current]),
             })}
-            {footprint?.lastStoredAt && ` ${t('c:offline_files.last_saved', { time: dayjs(footprint.lastStoredAt).fromNow() })}`}
+            {footprint?.lastStoredAt && ` ${t('c:offline_files.last_saved', { time: dateRelative(footprint.lastStoredAt) })}`}
           </p>
           {offlineFilesTiers.map((value, index) => (
             <p key={value} id={showsTier(index) ? descriptionId : undefined} aria-hidden={!showsTier(index)} className={fadeClass(showsTier(index))}>

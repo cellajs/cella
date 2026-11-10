@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import { LogOutIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type FederationKey } from 'shared';
@@ -8,6 +7,7 @@ import { DeviceTile } from '~/modules/me/device-tile';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { dateRelative } from '~/utils/date-mini';
 import { dateShort } from '~/utils/date-short';
 import { regionName } from '~/utils/region-name';
 
@@ -55,7 +55,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
   const status = sessionStatus(session);
   const isLive = status === 'current' || status === 'active';
   const countryName = session.ipCountry ? regionName(session.ipCountry, i18n.language) : null;
-  const when = isLive ? t('c:signed_in_relative', { time: dayjs(session.createdAt).fromNow() }).toLowerCase() : dateShort(sessionEndedAt(session));
+  const when = isLive ? t('c:signed_in_relative', { time: dateRelative(session.createdAt) }).toLowerCase() : dateShort(sessionEndedAt(session));
 
   return (
     <DeviceTile

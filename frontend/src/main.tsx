@@ -6,7 +6,6 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
 import '~/styling/tailwind.css';
-import '~/lib/dayjs';
 import '~/lib/i18n';
 import '~/lib/otel';
 import '~/modules'; // Composition root: registers every frontend module before first render

@@ -1,10 +1,9 @@
-import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type DateMiniOptions, dateMini, dateMiniKind, dayMs, hourMs, minuteMs } from '~/utils/date-mini';
+import { type DateMiniOptions, dateMini, dateMiniKind, dayMs, hourMs, minuteMs, msFromNow } from '~/utils/date-mini';
 
 const getDelay = (date: string, compact?: boolean) => {
-  const age = dayjs().diff(dayjs.utc(date));
+  const age = -msFromNow(date);
   if (age < minuteMs) return 10_000;
   if (age < hourMs) return 30_000;
   // A date past a day stays put, a compact count goes on: "1d" turns "2d"

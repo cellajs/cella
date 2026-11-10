@@ -1,6 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-import type { TFunction } from 'i18next';
+import i18n, { type TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { InviteOutcome } from 'sdk';
 import { appConfig } from 'shared';
@@ -11,6 +10,7 @@ import type { TileTone } from '~/modules/common/expandable-tile';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import type { InvitePerson } from '~/modules/user/use-invite-list';
+import { dayMs } from '~/utils/date-mini';
 
 /** What an invite does with an address: asks to be fixed, goes unchecked, sends a first invitation, sends the email again, or leaves it out. */
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
@@ -26,7 +26,7 @@ interface InviteView {
   checking?: boolean;
 }
 
-const day = (date?: string) => (date ? dayjs.utc(date).local().format('D MMM') : '');
+const day = (date?: string | number) => (date ? new Date(date).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }) : '');
 
 /** The view of a checked address from what the check or the invite answered; `held` mails only addresses with no email yet, on publish. */
 export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, held?: boolean): InviteView => {
@@ -43,7 +43,7 @@ export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, he
   if (declinedAt) {
     const word = t('c:invite_state_declined', { date: day(declinedAt) });
     if (declineHolds(declinedAt)) {
-      const until = dayjs.utc(declinedAt).add(appConfig.retention.declinedInvitationHoldDays, 'day').toISOString();
+      const until = Date.parse(declinedAt) + appConfig.retention.declinedInvitationHoldDays * dayMs;
       const note = lowercaseLabel(t('c:invite_state_no_email_until', { date: day(until) }));
       return { group: 'out', tone: 'warning', word, note, fact: note };
     }

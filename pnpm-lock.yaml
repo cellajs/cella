@@ -506,9 +506,6 @@ importers:
       cnfast:
         specifier: ^0.2.0
         version: 0.2.0
-      dayjs:
-        specifier: ^1.11.23
-        version: 1.11.23
       dexie:
         specifier: ^4.4.7
         version: 4.4.7
