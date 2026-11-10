@@ -21,6 +21,7 @@ import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicDocsRouteRouteImport } from './_public/docs/route'
 import { Route as PublicErrorRouteImport } from './_public/error'
+import { Route as PublicThumbnailRouteImport } from './_public/thumbnail'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
 import { Route as AppSystemToolRouteImport } from './_app/system/$tool'
 import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organizations'
@@ -112,6 +113,11 @@ const PublicDocsRouteRoute = PublicDocsRouteRouteImport.update({
 const PublicErrorRoute = PublicErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicThumbnailRoute = PublicThumbnailRouteImport.update({
+  id: '/thumbnail',
+  path: '/thumbnail',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const AppTenantIdOrganizationSlugRouteRoute =
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/n': typeof AppNRoute
   '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
+  '/thumbnail': typeof PublicThumbnailRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
@@ -359,6 +366,7 @@ export interface FileRoutesByTo {
   '/n': typeof AppNRoute
   '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
+  '/thumbnail': typeof PublicThumbnailRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
@@ -408,6 +416,7 @@ export interface FileRoutesById {
   '/_app/welcome': typeof AppWelcomeRoute
   '/_public/_marketing': typeof PublicMarketingRouteWithChildren
   '/_public/error': typeof PublicErrorRoute
+  '/_public/thumbnail': typeof PublicThumbnailRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/_app/system/$tool': typeof AppSystemToolRoute
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/n'
     | '/welcome'
     | '/error'
+    | '/thumbnail'
     | '/$tenantId/$organizationSlug'
     | '/system/$tool'
     | '/system/organizations'
@@ -502,6 +512,7 @@ export interface FileRouteTypes {
     | '/n'
     | '/welcome'
     | '/error'
+    | '/thumbnail'
     | '/$tenantId/$organizationSlug'
     | '/system/$tool'
     | '/system/organizations'
@@ -550,6 +561,7 @@ export interface FileRouteTypes {
     | '/_app/welcome'
     | '/_public/_marketing'
     | '/_public/error'
+    | '/_public/thumbnail'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
     | '/_app/system/$tool'
@@ -677,6 +689,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof PublicErrorRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/thumbnail': {
+      id: '/_public/thumbnail'
+      path: '/thumbnail'
+      fullPath: '/thumbnail'
+      preLoaderRoute: typeof PublicThumbnailRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_app/$tenantId/$organizationSlug': {
@@ -1095,6 +1114,7 @@ interface PublicRouteRouteChildren {
   PublicDocsRouteRoute: typeof PublicDocsRouteRouteWithChildren
   PublicMarketingRoute: typeof PublicMarketingRouteWithChildren
   PublicErrorRoute: typeof PublicErrorRoute
+  PublicThumbnailRoute: typeof PublicThumbnailRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
@@ -1102,6 +1122,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicDocsRouteRoute: PublicDocsRouteRouteWithChildren,
   PublicMarketingRoute: PublicMarketingRouteWithChildren,
   PublicErrorRoute: PublicErrorRoute,
+  PublicThumbnailRoute: PublicThumbnailRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(

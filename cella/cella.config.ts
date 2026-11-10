@@ -41,7 +41,7 @@ export default defineConfig({
       'frontend/src/modules/common/morph-animation',
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
-      'frontend/public/thumbnail.png',
+      'frontend/public/thumbnail.jpg',
       'frontend/src/modules/common/logo-art.tsx',
       'frontend/src/styling/app.css',
       'frontend/src/modules/auth/legal/legal-config.ts',

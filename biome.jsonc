@@ -422,7 +422,11 @@
     {
       // A drawn device: bezel and button colors belong to the hardware, and the code on the hero's
       // phone to an editor theme, not to a role in the theme.
-      "includes": ["frontend/src/modules/marketing/device-mockup-frame.tsx", "frontend/src/modules/marketing/about/hero-stack.tsx"],
+      "includes": [
+        "frontend/src/modules/marketing/device-mockup-frame.tsx",
+        "frontend/src/modules/marketing/about/hero-stack.tsx",
+        "frontend/src/modules/common/thumbnail-page.tsx"
+      ],
       "linter": {
         "rules": {
           "nursery": {

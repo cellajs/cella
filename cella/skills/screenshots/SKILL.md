@@ -1,12 +1,12 @@
 ---
 name: screenshots
-description: Re-shoot the marketing screenshots this app ships: the device mockups and the hero's phone screen on /about, and the README banner.
+description: Re-shoot the marketing screenshots this app ships: the device mockups and the hero's phone screen on /about, the README banner and the link preview image.
 ---
 
 # Re-shooting the marketing screenshots
 
-The images in `frontend/public/static/marketing/` are shipped files, not generated ones: they show the app as it looked
-the day someone shot them. Re-shoot when the UI they show has moved: navigation, tables, the settings page, the theme.
+The images in `frontend/public/static/marketing/` and the link preview `frontend/public/thumbnail.jpg` are shipped files,
+not generated ones: they show the app as it looked the day someone shot them. Re-shoot when the UI they show has moved: navigation, tables, the settings page, the theme.
 
 `cella/screenshots.ts` lists what the template shoots, and `cella/screenshots.app.ts` what an app adds, removes or
 overrides; `pnpm cella shoot` handles the mechanics. Picking the state and judging the result is this skill's job,
@@ -44,7 +44,8 @@ An app's seed can be heavy, so shoot one app at a time, and shoot its tables wit
 
 Read each image. The command reports sizes, not whether a shot is worth shipping.
 
-1. **Fill**: the shot matches its frame's ratio (`pc` and `pcWide` 16:9, `tablet` 3:4, `mobile` 9:16, `phone` 9:19.5). A
+1. **Fill**: the shot matches its frame's ratio (`pc` and `pcWide` 16:9, `tablet` 3:4, `mobile` 9:16, `phone` 9:19.5,
+   `card` 1.91:1). A
    slide renders `object-contain`, so a mismatch is letterboxed inside the mockup.
 2. **Data**: tables full, no empty state, no one-row table, counts plausible. No real person's name or address: a
    database seeded from someone's own account puts their email in the first row of every member table.
@@ -55,11 +56,22 @@ Read each image. The command reports sizes, not whether a shot is worth shipping
 5. **Theme**: the dark shot is actually dark, and lays out like its light twin.
 6. **Crop**: a bottom row may be cut, which reads as "more below"; a header, a tab or a control may not.
 7. **Text**: English, no raw `about:...` translation keys, no truncation that reads as broken.
-8. **Weight**: at scale 2 a WebP shot weighs 50-120 KB, a PNG about three times that. Heavier than that wants a
+8. **Weight**: at scale 2 a WebP shot weighs 50-120 KB, a PNG about three times that; the thumbnail JPEG about 90 KB. Heavier than that wants a
    smaller `scale` for its device; say so rather than shipping it quietly.
 9. **Pair**: the light and dark shot show the same page, the same rows and the same scroll.
 
-Then fix the shot's `open` or the data and re-shoot that one id. Marketing images are what a first-time visitor judges
+Then fix the shot's `open` or the data and re-shoot that one id.
+
+## The link preview
+
+`thumbnail` is the image `index.html` names for link previews: the `c:tagline.text` translation over the `readme` shot,
+one dark JPEG at 1200x630, rendered by the development-only `/thumbnail` page. A full run shoots `readme` first and the
+thumbnail shows that copy; `pnpm cella shoot thumbnail` alone shows the one the app ships. Judge it as the vendors show it:
+
+- The headline keeps 60px from every edge and runs two lines at most.
+- Nothing that must be read sits in the bottom-left corner, where X prints the domain over the image.
+- Shrunk to 360px wide, Slack's size, the headline still reads.
+- The middle 630x630 square, which WhatsApp and Telegram crop to, holds part of the headline and the screen. Marketing images are what a first-time visitor judges
 the product by: a half-loaded table or a stray tooltip is worth another run.
 
 ## After
@@ -68,7 +80,8 @@ the product by: a half-loaded table or a stray tooltip is worth another run.
   of slides changes. `README.md` references two of the same files by path. A changed `format` leaves the files of the
   old one behind: delete them.
 - Replacing a file in place is enough for production: the deploy re-uploads a `static/` file whose content changed
-  (`infra/tasks/frontend-assets.ts`).
+  (`infra/tasks/frontend-assets.ts`). `index.html` names the thumbnail with a hash of its content, so a link preview
+  fetches a re-shot one once the vendor reads the page again.
 
 ## In an app built on cella
 
