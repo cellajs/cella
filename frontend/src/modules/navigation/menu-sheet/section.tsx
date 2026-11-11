@@ -21,6 +21,8 @@ import { closeNavSheet } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 export type MenuSectionOptions = {
   label: TKey;
@@ -32,18 +34,11 @@ export type MenuSectionOptions = {
   rowMark?: (item: UserMenuItem) => { icon: IconComponent; label: TKey } | undefined;
 };
 
-/**
- * Enter, exit and timing props for the icon buttons that appear beside a menu sheet section toggle once the section
- * opens. Like `collapseMotion`, they run on a toggle only, so width and margin lay out on every screen size.
- */
-const closed = { width: 0, marginLeft: 0, opacity: 0 };
-
-const widenMotion = {
-  initial: closed,
-  animate: { width: '2.5rem', marginLeft: '0.5rem', opacity: 1 },
-  exit: closed,
-  transition: { bounce: 0, duration: 0.2 },
-};
+// The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them
+const widenClass = tw(
+  'grid shrink-0 grid-cols-[0fr] opacity-0 transition-[grid-template-columns,margin-left,opacity] duration-200 ease-out *:min-w-0 *:overflow-hidden motion-reduce:transition-opacity',
+);
+const widenOpenClass = tw('ml-2 grid-cols-[1fr] opacity-100');
 
 interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;
@@ -76,6 +71,7 @@ function MenuSheetSectionButton({
   const activeCount = items.filter((item) => menuGroup(item) === 'active').length;
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
+  const hasSettings = isSectionVisible && items.length > 0;
 
   return (
     <div className="bg-card sticky top-0 z-10 flex items-center pt-2">
@@ -102,30 +98,22 @@ function MenuSheetSectionButton({
         <div className="group-label flex h-10 min-w-0 flex-1 items-center px-3 whitespace-nowrap">{t(options.label)}</div>
       )}
 
-      {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}
-      <AnimatePresence initial={false}>
-        {isSectionVisible && !!items.length && (
-          <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
-            <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
-              <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" onClick={onToggleEditing}>
-                <Settings2Icon className="size-5" />
-              </Button>
-            </TooltipButton>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence initial={false}>
-        {isSectionVisible && onCreate && (
-          <motion.div key={`create-${options.entityType}`} {...widenMotion} className="shrink-0">
-            <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-              <Button ref={createButtonRef} variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
-                <PlusIcon className="size-5" />
-              </Button>
-            </TooltipButton>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:hidden')}>
+        <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
+          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" onClick={onToggleEditing}>
+            <Settings2Icon className="size-5" />
+          </Button>
+        </TooltipButton>
+      </div>
+      {onCreate && (
+        <div inert={!isSectionVisible} className={cn(widenClass, isSectionVisible && widenOpenClass)}>
+          <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
+            <Button ref={createButtonRef} variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
+              <PlusIcon className="size-5" />
+            </Button>
+          </TooltipButton>
+        </div>
+      )}
     </div>
   );
 }

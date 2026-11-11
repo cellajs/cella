@@ -2,7 +2,6 @@ import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon } from 'lucide-rea
 import { Map as MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -124,9 +123,9 @@ export function ContactFormMap() {
   return (
     <ErrorBoundary fallbackRender={errorNoticeFallback('app')}>
       {hasStarted && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} className="size-full">
+        <div className="mount-fade size-full delay-1000 duration-500">
           <CompanyMap styleUrl={styleUrl} address={address} center={address.coordinates} />
-        </motion.div>
+        </div>
       )}
     </ErrorBoundary>
   );
