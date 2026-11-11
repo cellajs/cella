@@ -13,10 +13,11 @@ that import `noDirectAccess` from `~/utils/no-direct-access` drop the call.
 
 ## What & why
 
-With organization buttons on the rail (`navigation.menu: 'perOrganization'`), a press on another organization, or a pick
-in the phone switcher, now opens that organization's lobby behind its menu sheet. The old page stayed behind the sheet
-of a different organization. The bare organization URL renders the lobby, so `noDirectAccess` lost its last caller
-and is removed. The `c:home.text` key is gone with the home page's subtitle.
+With organization buttons on the rail (`navigation.menu: 'perOrganization'`), a press on an organization while a page
+of another organization is open, or a pick in the phone switcher there, now opens that organization's lobby behind its
+menu sheet. The old page stayed behind the sheet of a different organization. On a page outside every organization,
+the press opens the menu sheet alone. The bare organization URL renders the lobby, so `noDirectAccess` lost its last
+caller and is removed. The `c:home.text` key is gone with the home page's subtitle.
 
 ## Blast radius
 
