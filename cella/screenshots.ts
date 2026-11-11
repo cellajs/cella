@@ -82,6 +82,8 @@ export default defineScreenshotsBase({
     mobile: { width: 375, height: 667, scale: 2 }, // aspect-9/16
     // The /about hero's floating screen: no mockup frame, so the ratio of a current phone
     phone: { width: 390, height: 844, scale: 2 }, // 9:19.5
+    // The link preview: 1.91:1, which Open Graph readers show whole, and 1200px wide, which none draws wider
+    card: { width: 1200, height: 630, scale: 1 },
   },
 
   // The dev banner and the first-visit menu hints of the public pages
@@ -209,6 +211,19 @@ export default defineScreenshotsBase({
         await membersFilled(page);
         await openMenu(page);
         await tidyHeader(page);
+        await hideDevUi(page);
+      },
+    },
+    {
+      // The image `index.html` names for link previews. It shows the `readme` shot, and a full run writes that one first.
+      id: 'thumbnail',
+      device: 'card',
+      path: '/thumbnail',
+      out: 'frontend/public/thumbnail',
+      mode: 'dark',
+      format: 'jpg',
+      open: async (page) => {
+        await page.locator('main img').evaluate((image: HTMLImageElement) => image.decode());
         await hideDevUi(page);
       },
     },

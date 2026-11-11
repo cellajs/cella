@@ -81,7 +81,9 @@ A tenant's `kind` says what it is for, and `appConfig.tenantKinds` says what eac
 
 A system admin moves a tenant between `live` and `test`.
 
-A demo holds one [anonymous account](./ANONYMOUS_SESSIONS.md), admin of the tenant's organization. Only the anonymous session minted for it signs it in. The app's `onDemoCreated` hooks fill it with content. It expires after `retention.demoTenantDays`. A demo invites no one, since that mails third parties. Beyond the tenant its memberships bind it to, its session reaches only the routes that admit an anonymous one (`xAnonymous`): it creates no tenant, adds no sign-in method, proves no address and hands out no lasting access.
+A demo holds one [anonymous account](./ANONYMOUS_SESSIONS.md), admin of the tenant's organization. Only the anonymous session minted for it signs it in. The app's `onDemoCreated` hooks fill it with content. It expires after `retention.demoTenantDays`.
+
+A demo invites no one, since that mails third parties. Beyond the tenant its memberships bind it to, its session reaches only the routes that admit an anonymous one (`xAnonymous`): it creates no tenant, adds no sign-in method, proves no address and hands out no lasting access.
 
 ## Tenant lifecycle
 

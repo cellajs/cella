@@ -4,11 +4,17 @@ This document walks through setting up a cella app's first environment on Scalew
 
 ### TL;DR
 
-A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard follows a launch checklist. In one Owner moment it writes the identities and makes a one-day operator key, on which it sets up state storage, the recovery passphrase and the first infrastructure. It commits the stack file and ends at the first deploy or at your first release. From then on the main job's schedule deploys every release, and the first admin signs in with a magic link.
+A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard follows a launch checklist. In one Owner moment it writes the identities and makes a one-day operator key, on which it sets up state storage, the recovery passphrase and the first infrastructure.
+
+It commits the stack file and ends at the first deploy or at your first release. From then on the main job's schedule deploys every release, and the first admin signs in with a magic link.
 
 ## How the CLI runs
 
-Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. It opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped. On a stack that is set up, `pnpm infra` opens on the home screen of the [Infra CLI](../../infra/README.md). A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm infra --mode staging`. `--defaults` takes the default answer to every question. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
+Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. On a stack that is set up, `pnpm infra` opens on the home screen of the [Infra CLI](../../infra/README.md).
+
+The wizard opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped.
+
+A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm infra --mode staging`. `--defaults` takes the default answer to every question. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
 
 ## 1. Prerequisites
 

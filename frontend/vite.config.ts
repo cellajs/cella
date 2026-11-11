@@ -1,4 +1,6 @@
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
@@ -89,6 +91,18 @@ const repoRoot = path.resolve(import.meta.dirname, '..');
 // The map derives from the wrapper pages' own imports, so a moved document cannot leave a stale route.
 const repoDocRoutes = repoDocRouteMap(path.resolve(import.meta.dirname, 'src/content/docs'), repoRoot);
 const repoLinks = { repoRoot, repoUrl: appConfig.repositoryUrl ?? '', docRoutes: repoDocRoutes };
+
+// Link previews cache an image by its URL. The content hash gives a re-shot thumbnail a new one.
+const thumbnailHash = createHash('sha256')
+  .update(readFileSync(path.resolve(import.meta.dirname, 'public/thumbnail.jpg')))
+  .digest('hex');
+const thumbnailUrl = new URL(`/thumbnail.jpg?v=${thumbnailHash.slice(0, 8)}`, frontendUrl).href;
+
+/** The tagline the thumbnail shows, in English: `common.json` with the app's `app.json` over it. */
+const tagline = (() => {
+  const read = (file: string) => JSON.parse(readFileSync(path.resolve(repoRoot, `shared/locales/en/${file}.json`), 'utf8'));
+  return { ...read('common'), ...read('app') }['tagline.text'];
+})();
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
 const devPort = frontendDevPort();
@@ -434,6 +448,8 @@ const viteConfig = {
       author: appConfig.company.name,
       url: appConfig.frontendUrl,
       apiUrl: appConfig.backendUrl,
+      thumbnailUrl,
+      thumbnailAlt: `${appConfig.name}: ${tagline}`,
     }),
     ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
     ...(isStorybook ? [] : [precompress()]),
