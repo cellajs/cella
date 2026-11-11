@@ -45,6 +45,8 @@ export function organizationSections(organization: UserMenuItem, menu: UserMenu)
       entityType === 'organization'
         ? (organization.submenu ?? [])
         : menuItems.filter((item) => item.entityType === entityType && item.membership.organizationId === organization.id);
+    // Nothing to list and nothing to create: the section would hold its empty placeholder only
+    if (!items.length && !options.createAction) return [];
     return [{ options, items }];
   });
 }

@@ -28,6 +28,8 @@ export type MenuSectionOptions = {
   /** Opens the create flow; `organizationId` is set when it starts from one organization's menu sheet. */
   createAction?: (ref: RefObject<HTMLButtonElement | null>, organizationId?: string) => void;
   icon?: IconComponent;
+  /** A glyph in the corner of a row's avatar with its accessible name, such as a read-only mark for a role that cannot write. */
+  rowMark?: (item: UserMenuItem) => { icon: IconComponent; label: TKey } | undefined;
 };
 
 /**
