@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { hierarchy, isChannelHideable } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -45,3 +46,9 @@ export const isMenuItemDragData = (data: Record<string | symbol, unknown>): data
 export const hiddenDropData = { menuHiddenToggle: true };
 
 export const isHiddenDropData = (data: Record<string | symbol, unknown>) => data.menuHiddenToggle === true;
+
+/** A folded toggle's accessible name: its label, the rows it lists and what is new in them, "Workspaces, 12, 3 new". Undefined without rows. */
+export const foldedToggleLabel = (t: TFunction, label: string, rowCount: number, unseenCount: number) =>
+  rowCount
+    ? t(unseenCount ? 'c:menu_section_count_unseen' : 'c:menu_section_count', { resource: label, total: rowCount, count: unseenCount })
+    : undefined;
