@@ -1,18 +1,17 @@
 import { persistQueryClientRestore } from '@tanstack/react-query-persist-client';
-import { isRecord } from 'shared/utils/as-record';
+import { settleOrReport } from '~/lib/tracing';
 import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { boardStore } from '~/modules/common/board/board-store';
 import { draftStore } from '~/modules/common/form-draft/draft-store';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
-import { userStorageKey, userStore } from '~/modules/user/user-store';
+import { storedUserIds, userStorageKey, userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
 import {
   bindLocalUserDb,
   closeLocalUserDb,
   deletedElsewhereListeners,
-  deleteLocalUserDbOf,
   getLocalUserDb,
   type LocalUserDatabase,
   notifyLocalUserChange,
@@ -22,7 +21,8 @@ import { cacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
-import { clearUserState, isTearingDown, teardownUserState } from '~/utils/teardown-user-state';
+import { clearUserState, isTearingDown, sweepForgottenUserDbs, teardownUserState } from '~/utils/teardown-user-state';
+import { longWaitMs } from '~/utils/wait-for';
 
 /** Minimal contract a per-user store must satisfy to join {@link localUserStores}: hydrate on bind, reset on sign-out. */
 export interface LocalUserStore {
@@ -35,17 +35,6 @@ const localUserStores = [seenStore, syncStore, navigationStore, draftStore, aler
 
 let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
-
-/** The signed-in user id in a value the user store persisted; `null` when signed out, removed or unreadable. */
-function storedUserId(value: string | null): string | null {
-  try {
-    const stored: unknown = JSON.parse(value ?? 'null');
-    const user = isRecord(stored) && isRecord(stored.state) ? stored.state.user : null;
-    return isRecord(user) && typeof user.id === 'string' ? user.id : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * The provider restores the query cache once per page. A database bound after it read, as when the same user signs in
@@ -66,7 +55,14 @@ function bindLocalUser(userId: string): void {
   if (db === previous) return;
   resetPersister();
   const rehydrations = localUserStores.map((store) => store.persist.rehydrate());
-  readyPromise = Promise.all([...rehydrations, restoreQueryCache(db)]).then(() => {});
+  readyPromise = settleOrReport('local_user_db.bind', longWaitMs, Promise.all([...rehydrations, restoreQueryCache(db)])).then((answered) => {
+    if (answered || getLocalUserDb() !== db) return;
+    // The tab goes on without a database, as while signed out, until its next load. Closed and reset, a read that
+    // answers late fills nothing: it would put stored state over what the page loaded meanwhile.
+    closeLocalUserDb();
+    resetPersister();
+    notifyLocalUserChange(null);
+  });
 }
 
 function unbind(): void {
@@ -93,28 +89,28 @@ export const localUserStorageReady = (): Promise<void> => readyPromise;
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();
 
+// A delete that a sign-out could not finish, as while another tab held the database open, is made here.
+void sweepForgottenUserDbs();
+
 /**
  * Forgets the stored user at boot, before anything loads as them, as a hard sign-out would: the store resets at once,
  * which unbinds, and the database is deleted once the bind under way has settled, as its open request would otherwise
  * create the database anew behind the delete.
  */
 export function forgetStoredUser(): void {
-  const userId = userStore.getState().user?.id;
-  if (!userId) return;
+  if (!userStore.getState().user) return;
   const bound = readyPromise;
   userStore.getState().reset();
-  bound
-    .finally(() => deleteLocalUserDbOf(userId))
-    .catch((error) => console.error('[localUserDb] Deleting the forgotten user database failed:', error));
+  void bound.then(sweepForgottenUserDbs);
 }
 
 // Another tab stored another signed-in user, or none: this tab's queued writes would replay on whatever session the
-// browser holds next. They leave memory before a focus or online event can resume them, their copy stays on disk for
-// their user, and the tab boots as whoever is signed in. It stores no user, which the other tab would read as a sign-out.
+// browser holds next. They leave memory before a focus or online event can resume them, and the tab boots as whoever
+// is signed in. It stores no user, which the other tab would read as a sign-out.
 window.addEventListener('storage', (event) => {
   const userId = userStore.getState().user?.id;
   // A tab tearing down keeps its user only until it has left its page.
-  if (event.key !== userStorageKey || !userId || isTearingDown() || storedUserId(event.newValue) === userId) return;
+  if (event.key !== userStorageKey || !userId || isTearingDown() || storedUserIds(event.newValue).userId === userId) return;
   void clearUserState().finally(() => {
     closeLocalUserDb();
     window.location.reload();
@@ -123,6 +119,9 @@ window.addEventListener('storage', (event) => {
 
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app.
 deletedElsewhereListeners.add(() => {
-  // `fromRoot`: the other tab ends the session after its delete, so a probe from here can still find it alive and sign back in
+  // A tab that slept through the sign-out hears of it late. With a user stored since, a wipe here would forget them:
+  // the `storage` listener reloads this tab as that user.
+  if (storedUserIds().userId) return;
+  // `fromRoot`: no session is left to probe, and the user this tab holds until it has left would have sign-in send it back
   void teardownUserState(true, () => getRouter().navigate({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true }));
 });

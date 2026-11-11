@@ -12,11 +12,11 @@ const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/
 export function AuthLayout() {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
-  const isSignInPage = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).pathname === '/auth/authenticate' });
+  const pathname = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).pathname });
 
   const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: appConfig.aboutUrl }];
 
-  if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
+  if (pathname !== '/auth/authenticate') authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
   return (
     <div className="group/auth-layout rich-gradient focus-gap container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
@@ -38,8 +38,8 @@ export function AuthLayout() {
             <Outlet />
           </main>
 
-          {/* An error notice brings its own footer, so this one hides */}
-          <div className="contents group-has-[.error-notice]/auth-layout:hidden">
+          {/* An error notice brings its own footer, and the sign-out page offers no way out while it works */}
+          <div hidden={pathname === '/auth/sign-out'} className="contents group-has-[.error-notice]/auth-layout:hidden">
             <Link
               to="/about"
               draggable={false}

@@ -12,14 +12,12 @@ vi.stubGlobal('window', {
 vi.stubGlobal('navigator', { onLine: true, userAgent: '' });
 vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
 
-/** An empty storage for a module that reads `localStorage` itself; node tests run without one. */
+/** An in-memory storage for a module that reads `localStorage` itself, as the user store does to persist; node tests run without one. */
 export function stubLocalStorage(): void {
+  const items = new Map<string, string>();
   vi.stubGlobal('localStorage', {
-    getItem: vi.fn(() => null),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
-    clear: vi.fn(),
-    key: vi.fn(() => null),
-    length: 0,
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: (key: string, value: string) => void items.set(key, value),
+    removeItem: (key: string) => void items.delete(key),
   });
 }

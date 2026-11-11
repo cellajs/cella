@@ -36,7 +36,7 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { persister, persistOptions, shouldPersistQuery } = await import('~/query/persister');
-const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
+const { bindLocalUserDb, getLocalUserDb, sweepLocalUserDbs } = await import('~/query/local-user-db');
 const { registerVariablesVersion } = await import('~/query/offline/mutation-variables');
 const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
@@ -94,7 +94,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await deleteLocalUserDb();
+  await sweepLocalUserDbs(() => []);
 });
 
 // The filter every save passes through, fed the app's own query options, so a query that must stay out of the local

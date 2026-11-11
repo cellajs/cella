@@ -14,14 +14,18 @@ function urlBase64ToUint8Array(base64: string) {
 const isPushSupported = () =>
   appConfig.has.push && typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
-/** Drops this browser's push subscription on the server (needs the session) and in the push service. `ready` never resolves without a registered worker (dev), hence `getRegistration`. */
+/**
+ * Drops this browser's push subscription in the push service, then on the server, which needs the session. The browser
+ * goes first: no push reaches it after that, whatever becomes of the request, and the sender prunes a row whose endpoint
+ * is gone. `ready` never resolves without a registered worker (dev), hence `getRegistration`.
+ */
 export async function disablePushSubscription(): Promise<void> {
   if (!isPushSupported()) return;
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
-  await unregisterPushSubscription(subscription.endpoint);
   await subscription.unsubscribe();
+  await unregisterPushSubscription(subscription.endpoint).catch(() => {});
 }
 
 /**
@@ -89,7 +93,7 @@ export function usePushSubscription() {
       await disablePushSubscription();
       setEnabled(false);
     } catch {
-      // A failed request leaves the switch on.
+      // A failed unsubscribe leaves the switch on.
     } finally {
       setBusy(false);
     }

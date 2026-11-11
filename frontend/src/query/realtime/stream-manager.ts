@@ -27,6 +27,7 @@ import {
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
+import { settleWithin } from '~/utils/wait-for';
 
 const streamName = 'Stream';
 const streamUrl = `${appConfig.backendUrl}/me/stream`;
@@ -264,18 +265,10 @@ class StreamManager {
   /** The catchup of one round, failed and aborted once it takes longer than `catchupTimeoutMs`, so the gate paused writes wait on cannot stay closed. */
   private async boundedCatchup(): Promise<void> {
     const round = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const expiry = new Promise<never>((_resolve, reject) => {
-      timer = setTimeout(() => {
-        round.abort();
-        reject(new Error(`Catchup took longer than ${catchupTimeoutMs / 1000}s`));
-      }, catchupTimeoutMs);
-    });
-    try {
-      await Promise.race([fetchAndProcessCatchup(round.signal), expiry]);
-    } finally {
-      clearTimeout(timer);
-    }
+    const catchup = fetchAndProcessCatchup(round.signal);
+    if (await settleWithin(catchupTimeoutMs, catchup)) return catchup;
+    round.abort();
+    throw new Error(`Catchup took longer than ${catchupTimeoutMs / 1000}s`);
   }
 
   /** The one failure path of a catchup or a tab election. */

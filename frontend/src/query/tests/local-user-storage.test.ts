@@ -1,14 +1,16 @@
 import 'fake-indexeddb/auto';
-import '~/query/tests/query-client-env';
 import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // A window that delivers events, so another tab's write to `localStorage` reaches this tab as the browser sends it.
 const reload = vi.fn();
 vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload }, setTimeout: window.setTimeout }));
+
+stubLocalStorage();
 
 const { ApiError } = await import('~/lib/api');
 /** What the API client throws for a gateway's 503. */
