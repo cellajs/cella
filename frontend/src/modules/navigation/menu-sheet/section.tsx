@@ -214,7 +214,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
                   isOpen={isHiddenVisible}
                   onToggle={handleToggleHidden}
                   count={hiddenCount}
-                  channelIds={hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true))}
+                  channelIds={isEditing ? undefined : hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true))}
                   dropItems={isEditing ? items : undefined}
                 >
                   {isEditing ? (
@@ -232,7 +232,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
                   isOpen={isArchivedVisible}
                   onToggle={() => setSectionOpen(archivedSectionKey, !isArchivedVisible)}
                   count={archivedItems.length}
-                  channelIds={archivedItems.flatMap((item) => menuUnseenChannelIds(item, true))}
+                  channelIds={isEditing ? undefined : archivedItems.flatMap((item) => menuUnseenChannelIds(item, true))}
                 >
                   {isEditing ? (
                     <MenuSheetItemsListEdit items={items} group="archived" options={options} />
