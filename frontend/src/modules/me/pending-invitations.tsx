@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +18,15 @@ const rowClass = tw('bg-card text-card-foreground flex flex-wrap items-center ga
 
 function InvitationRow({ invitation: { entity, inactiveMembership, organizationName } }: { invitation: Invitation }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { mutate, isPending, variables } = useHandleInvitationMutation();
+
+  // An accept opens the channel joined, through the link that resolves its route
+  const open = () =>
+    navigate({
+      to: '/n',
+      search: { tenantId: entity.tenantId, organizationId: inactiveMembership.organizationId, channelId: entity.id, channelType: entity.entityType },
+    });
   const values = {
     inviterName: inactiveMembership.createdBy.name,
     entityName: entity.name,
@@ -42,7 +51,7 @@ function InvitationRow({ invitation: { entity, inactiveMembership, organizationN
             variant={action === 'accept' ? 'success' : 'secondary'}
             disabled={isPending}
             loading={isPending && variables?.action === action}
-            onClick={() => mutate({ invitationId: inactiveMembership.id, action })}
+            onClick={() => mutate({ invitationId: inactiveMembership.id, action }, action === 'accept' ? { onSuccess: open } : undefined)}
           >
             {t(`c:${action}`)}
           </Button>

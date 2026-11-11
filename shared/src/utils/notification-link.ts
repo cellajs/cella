@@ -23,12 +23,16 @@ export const notificationLinkSearchSchema = z.object({
 
 export type NotificationLinkSearch = z.infer<typeof notificationLinkSearchSchema>;
 
-/** Absolute, self-describing link; it outlives the inbox row's retention because nothing is looked up. */
-export function buildNotificationLink(frontendUrl: string, search: NotificationLinkSearch): string {
+/** The link's path with its search, for a redirect that stays in the frontend. */
+export function buildNotificationPath(search: NotificationLinkSearch): string {
   const params = new URLSearchParams();
   for (const key of Object.keys(notificationLinkSearchSchema.shape) as (keyof NotificationLinkSearch)[]) {
     const value = search[key];
     if (value !== undefined) params.set(key, value);
   }
-  return `${frontendUrl}${notificationLinkPath}?${params.toString()}`;
+  return `${notificationLinkPath}?${params.toString()}`;
 }
+
+/** Absolute, self-describing link; it outlives the inbox row's retention because nothing is looked up. */
+export const buildNotificationLink = (frontendUrl: string, search: NotificationLinkSearch): string =>
+  `${frontendUrl}${buildNotificationPath(search)}`;

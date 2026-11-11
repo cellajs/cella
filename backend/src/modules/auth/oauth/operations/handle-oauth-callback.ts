@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
+import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -7,7 +8,11 @@ import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
-import { acceptFollowedInvitation, findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
+import {
+  acceptFollowedInvitation,
+  findFollowedInvitation,
+  type JoinedChannel,
+} from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
@@ -27,7 +32,7 @@ import { getIsoDate } from '#/utils/iso-date';
 const dbCtx = { var: { db: baseDb } };
 
 type OAuthFlowResult =
-  | { type: 'verified'; user: UserWithActivity; identity: IdentityModel }
+  | { type: 'verified'; user: UserWithActivity; identity: IdentityModel; joined?: JoinedChannel | null }
   | {
       /** A provider account a proven user connected, awaiting the click on its verification mail. */
       type: 'unverified';
@@ -202,8 +207,8 @@ const inviteCallbackFlow = async ({
   const user = await findUserById(dbCtx, { id: created.userId });
   const { inactiveMembershipId } = invitationToken;
   const followed = inactiveMembershipId ? { inactiveMembershipId, email } : null;
-  await acceptFollowedInvitation(user, { provenEmail: providerUser.email, followed });
-  return { type: 'verified', user, identity: created.identity };
+  const joined = await acceptFollowedInvitation(user, { provenEmail: providerUser.email, followed });
+  return { type: 'verified', user, identity: created.identity, joined };
 };
 
 /**
@@ -301,8 +306,8 @@ const completeSignUp = async ({
   deleteAuthCookie(ctx, 'oauth-verification');
 
   const user = await findUserById(dbCtx, { id: created.userId });
-  await acceptFollowedInvitation(user, { provenEmail: email, followed });
-  return { type: 'verified', user, identity: created.identity };
+  const joined = await acceptFollowedInvitation(user, { provenEmail: email, followed });
+  return { type: 'verified', user, identity: created.identity, joined };
 };
 
 /**
@@ -336,7 +341,8 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectPath?: string }) => {
   const { ctx, provider, redirectPath } = info;
 
-  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectPath);
+  // A flow started with a path keeps it; a sign-in that joined a channel lands there
+  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectPath ?? (info.joined && buildNotificationPath(info.joined)));
 
   // Stored on the verification token; null means "use the default path" at the final hop.
   const tokenRedirectPath = frontendRedirectPath(redirectPath);

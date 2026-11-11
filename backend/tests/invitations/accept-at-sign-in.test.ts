@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { invokeToken, sendMagicLink } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
+import { buildNotificationPath } from 'shared/utils/notification-link';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -62,6 +63,16 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
 
       const { response, user } = await openMagicLink(existing ?? { email: invitedEmail }, [invitationCookie]);
       expect(cookieChange(response, 'session')).toBe('set');
+      // The sign-in lands on the joined organization, through the link the frontend resolves to its route
+      const location = new URL(response.headers.get('location') ?? '');
+      expect(`${location.pathname}${location.search}`).toBe(
+        buildNotificationPath({
+          tenantId: organization.tenantId,
+          organizationId: organization.id,
+          channelId: organization.id,
+          channelType: 'organization',
+        }),
+      );
 
       expect((await membershipsOf(user.id)).map(({ organizationId }) => organizationId)).toEqual([organization.id]);
       expect(await invitationRow(inactiveMembership.id)).toBeUndefined();

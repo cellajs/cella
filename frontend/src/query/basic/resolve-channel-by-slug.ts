@@ -1,6 +1,7 @@
 import { type DefaultError, type FetchQueryOptions, onlineManager, type QueryKey } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
+import { isUuid } from 'shared/utils/entity-id';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { queryClient } from '~/query/query-client';
@@ -13,7 +14,7 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   /** Looks up a cached entity by id or slug (list cache), scoped to tenant. */
   findInCache: (idOrSlug: string, tenantId: string) => T | undefined;
   detailQueryOptions: (id: string) => FetchQueryOptions<T, DefaultError, T, TQueryKey>;
-  /** Fetches the entity by slug when it isn't resolvable from cache. */
+  /** Fetches the entity by slug when it isn't resolvable from cache; an id in the param reads the detail query by id. */
   fetchBySlug: () => Promise<T>;
   /** Default true: skip the id-based read while offline, resolving to undefined. False always reads and waits for reconnection. */
   readRequiresOnline?: boolean;
@@ -24,7 +25,7 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   buildSlugOverrides: (entity: T) => Partial<Record<keyof TParams, string>>;
 };
 
-/** Resolves an id-or-slug route param from the list cache, the detail cache it seeds, or a slug fetch; redirects to /home when nothing resolves, else rewrites the URL to the slug. */
+/** Resolves an id-or-slug route param from the list cache, the detail cache it seeds, or a fetch by id or slug; redirects to /home when nothing resolves, else rewrites the URL to the slug. */
 export async function resolveChannelBySlug<
   T extends { id: string; slug: string },
   TParams extends Record<string, string>,
@@ -68,6 +69,9 @@ export async function resolveChannelBySlug<
       entity = slugsDisagree ? await queryClient.query({ ...options, staleTime: 0 }) : read;
       if (!slugsDisagree && (revalidateIfStale || seeded) && isOnline) void queryClient.query(options).catch(() => {});
     }
+  } else if (isOnline && isUuid(idOrSlug)) {
+    // A link that travels by id (a notification, an accepted invitation) names a channel the lists may not hold yet
+    entity = await queryClient.query(detailQueryOptions(idOrSlug));
   } else if (isOnline) {
     // Fetched through the query cache for its error handling; a key per call and gcTime 0 leave no slug-keyed entry behind.
     const fetched = await queryClient.query({ queryKey: ['slug-fetch', crypto.randomUUID()], queryFn: fetchBySlug, gcTime: 0 });

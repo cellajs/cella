@@ -1117,6 +1117,9 @@ export const zGetTokenDataResponse = z.object({
   invitation: z
     .object({
       entityType: z.enum(['organization']),
+      tenantId: z.string(),
+      organizationId: z.string(),
+      channelId: z.string(),
       entityName: z.string(),
       organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
