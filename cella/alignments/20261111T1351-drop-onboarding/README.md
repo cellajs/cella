@@ -1,6 +1,6 @@
 ---
 breaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: compiler
 grep: finishedOnboarding, welcomeRedirectPath, skipWelcome, useStepper, Stepper, TextEffect, useUpdateSelfFlagsMutation, resetSections, booleanSearchParam, finishOnboarding, onboarding_
 ---
@@ -25,7 +25,8 @@ and the server's welcome redirect.
 
 Breaking for an app that imports a removed module or sets `finishedOnboarding` (a seed, a demo's `create-demo`):
 typecheck fails there. `defaultUserFlags` is `{}`; a stored `finishedOnboarding` is ignored, and `/me` still returns it
-until the optional SQL below runs. No lens or `clientCacheVersion` change. An app that never touched onboarding gets the change for free.
+until the optional SQL below runs. `userFlags` lost a required property on the wire, so `clientCacheVersion` is bumped;
+no lens. An app that never touched onboarding gets the change for free.
 
 ## Run
 
