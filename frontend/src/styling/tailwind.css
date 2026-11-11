@@ -42,7 +42,14 @@
   --animate-ring-cut: ring-cut 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Something landing in a tile: a disc in its status dot's color spreads 12px past the dot and fades, twice */
   --animate-dot-landed: dot-landed 1.2s cubic-bezier(0, 0, 0.2, 1) 2;
+  /* An arrow pointing at something beside it nudges that way three times: moving content past 5s needs a pause control (WCAG 2.2.2) */
+  --animate-nudge-left: nudge-left 1s ease-in-out 3;
 
+  @keyframes nudge-left {
+    40% {
+      transform: translateX(-5px);
+    }
+  }
   @keyframes ring-cut {
     from {
       stroke-dasharray: var(--ring-segment) 0;

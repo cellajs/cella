@@ -45,6 +45,7 @@ import { Route as PublicDocsOperationsRouteImport } from './_public/docs/operati
 import { Route as PublicDocsOverviewRouteImport } from './_public/docs/overview'
 import { Route as PublicDocsPagesRouteImport } from './_public/docs/pages'
 import { Route as PublicDocsSchemasRouteImport } from './_public/docs/schemas'
+import { Route as AppTenantIdOrganizationSlugIndexRouteImport } from './_app/$tenantId.$organizationSlug/index'
 import { Route as AppTenantIdOrganizationSlugOrganizationRouteRouteImport } from './_app/$tenantId.$organizationSlug/organization/route'
 import { Route as PublicMarketingLegalIndexRouteImport } from './_public/_marketing/legal.index'
 import { Route as PublicMarketingLegalSubjectRouteImport } from './_public/_marketing/legal.$subject'
@@ -238,6 +239,12 @@ const PublicDocsSchemasRoute = PublicDocsSchemasRouteImport.update({
   path: '/schemas',
   getParentRoute: () => PublicDocsRouteRoute,
 } as any)
+const AppTenantIdOrganizationSlugIndexRoute =
+  AppTenantIdOrganizationSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppTenantIdOrganizationSlugRouteRoute,
+  } as any)
 const AppTenantIdOrganizationSlugOrganizationRouteRoute =
   AppTenantIdOrganizationSlugOrganizationRouteRouteImport.update({
     id: '/organization',
@@ -351,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs/operations/table': typeof PublicDocsOperationsTableRoute
   '/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/$tenantId/$organizationSlug/': typeof AppTenantIdOrganizationSlugIndexRoute
   '/legal/': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
@@ -367,7 +375,6 @@ export interface FileRoutesByTo {
   '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
-  '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs/operations/table': typeof PublicDocsOperationsTableRoute
   '/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugIndexRoute
   '/legal': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
@@ -448,6 +456,7 @@ export interface FileRoutesById {
   '/_public/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/_public/docs/operations_/table': typeof PublicDocsOperationsTableRoute
   '/_public/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/_app/$tenantId/$organizationSlug/': typeof AppTenantIdOrganizationSlugIndexRoute
   '/_public/_marketing/legal/': typeof PublicMarketingLegalIndexRoute
   '/_app/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
   '/_app/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/auth/sso/$connectionId'
     | '/docs/operations/table'
     | '/docs/page/$'
+    | '/$tenantId/$organizationSlug/'
     | '/legal/'
     | '/$tenantId/$organizationSlug/organization/$tool'
     | '/$tenantId/$organizationSlug/organization/attachments'
@@ -513,7 +523,6 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/error'
     | '/thumbnail'
-    | '/$tenantId/$organizationSlug'
     | '/system/$tool'
     | '/system/organizations'
     | '/system/requests'
@@ -543,6 +552,7 @@ export interface FileRouteTypes {
     | '/auth/sso/$connectionId'
     | '/docs/operations/table'
     | '/docs/page/$'
+    | '/$tenantId/$organizationSlug'
     | '/legal'
     | '/$tenantId/$organizationSlug/organization/$tool'
     | '/$tenantId/$organizationSlug/organization/attachments'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/_public/auth/sso/$connectionId'
     | '/_public/docs/operations_/table'
     | '/_public/docs/page/$'
+    | '/_app/$tenantId/$organizationSlug/'
     | '/_public/_marketing/legal/'
     | '/_app/$tenantId/$organizationSlug/organization/$tool'
     | '/_app/$tenantId/$organizationSlug/organization/attachments'
@@ -859,6 +870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicDocsSchemasRouteImport
       parentRoute: typeof PublicDocsRouteRoute
     }
+    '/_app/$tenantId/$organizationSlug/': {
+      id: '/_app/$tenantId/$organizationSlug/'
+      path: '/'
+      fullPath: '/$tenantId/$organizationSlug/'
+      preLoaderRoute: typeof AppTenantIdOrganizationSlugIndexRouteImport
+      parentRoute: typeof AppTenantIdOrganizationSlugRouteRoute
+    }
     '/_app/$tenantId/$organizationSlug/organization': {
       id: '/_app/$tenantId/$organizationSlug/organization'
       path: '/organization'
@@ -992,12 +1010,15 @@ const AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren =
 
 interface AppTenantIdOrganizationSlugRouteRouteChildren {
   AppTenantIdOrganizationSlugOrganizationRouteRoute: typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
+  AppTenantIdOrganizationSlugIndexRoute: typeof AppTenantIdOrganizationSlugIndexRoute
 }
 
 const AppTenantIdOrganizationSlugRouteRouteChildren: AppTenantIdOrganizationSlugRouteRouteChildren =
   {
     AppTenantIdOrganizationSlugOrganizationRouteRoute:
       AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren,
+    AppTenantIdOrganizationSlugIndexRoute:
+      AppTenantIdOrganizationSlugIndexRoute,
   }
 
 const AppTenantIdOrganizationSlugRouteRouteWithChildren =
