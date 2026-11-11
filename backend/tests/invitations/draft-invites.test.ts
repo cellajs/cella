@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { listInvitations, listMyInvitations, publishOrganization, resendInvitation } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -35,7 +35,7 @@ afterEach(async () => await clearDatabase());
 
 // Unpublished contexts hold invites until publishing calls `dispatchDeferredInvites`; the hierarchy's `drafts.prepareRoles`
 // (admin, for an organization) are invited at once.
-describe('Draft context invite deferral', async () => {
+describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
   const dbContext = { var: { db } };
