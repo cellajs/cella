@@ -1,5 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { CheckIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -36,7 +37,7 @@ interface UserComboboxProps {
   onToEmail: () => void;
 }
 
-/** Search people by name or email. A press adds or removes, the search stays open, and its text is selected for the next. */
+/** Search people by name or email. A press adds or removes and clears the search for the next. */
 export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onToEmail }: UserComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
@@ -46,7 +47,6 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
   // Results wait for the first typed character: an empty field suggests nobody
   const [open, setOpen] = useState(false);
   const hasSearch = !!searchQuery.trim();
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const [highlighted, setHighlighted] = useState<string>();
   // The row a press just changed shows its new state until the highlight leaves it
   const [toggled, setToggled] = useState<string>();
@@ -82,7 +82,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
   const afterToggle = (email: string, added: boolean) => {
     setToggled(email);
     setNotice((current) => ({ added, count: (current?.count ?? 0) + 1 }));
-    requestAnimationFrame(() => inputRef.current?.select());
+    setSearchQuery('');
   };
 
   const pick = (person?: (typeof items)[number]) => {
@@ -110,6 +110,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
       onValueChange={toggle}
       open={open && hasSearch}
       onOpenChange={(next, details) => {
+        // A press clears the search itself: the combobox's own clear would end the badge with it
         if (!next && details.reason === 'item-press') return details.cancel();
         setOpen(next);
       }}
@@ -126,10 +127,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
       filter={() => true}
     >
       <ComboboxInput
-        ref={(node) => {
-          inputRef.current = node;
-          if (autoFocus) focusOnMount(node);
-        }}
+        ref={autoFocus ? focusOnMount : undefined}
         placeholder={t('c:placeholder.name_or_email')}
         showTrigger={false}
         // Visual only: the option's selected state already tells a screen reader
@@ -174,6 +172,8 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
           {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
             const outcome = outcomeByEmail.get(email);
             const view = outcome ? outcomeView(outcome, t) : null;
+            const hasState = !!view && view.group !== 'new';
+            const isMember = outcome?.outcome === 'member';
             return (
               <ComboboxItem key={id} value={email} disabled={isLeftOut(email)} className="group/user-item justify-between">
                 <div className="flex min-w-0 items-center gap-2">
@@ -183,16 +183,22 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
                   </span>
                 </div>
 
-                <div className="flex min-w-0 items-center gap-2">
-                  {view && view.group !== 'new' ? (
+                {/* A state keeps its width, so the address beside it truncates */}
+                <div className={cn('flex min-w-0 items-center gap-2', hasState && 'shrink-0')}>
+                  {view && hasState ? (
                     <span className="flex shrink-0 items-center gap-1.5 text-sm">
-                      <StatusDot variant={view.tone} pulse={false} />
-                      <span className={cn('font-medium max-sm:hidden', tileTones[view.tone].text)}>{view.word}</span>
+                      {!isMember && <StatusDot variant={view.tone} pulse={false} />}
+                      <span className={cn('font-medium', tileTones[view.tone].text)}>{view.word}</span>
                     </span>
                   ) : (
                     <MiddleCut text={email} className="max-sm:hidden" />
                   )}
-                  <ComboboxItemIndicator asRemove={highlighted === email && toggled !== email} />
+                  {/* In the column of a picked row's check, in the word's color: in already, not by this invite */}
+                  {isMember ? (
+                    <CheckIcon aria-hidden className="text-muted-foreground size-4 shrink-0 pointer-coarse:size-5" />
+                  ) : (
+                    <ComboboxItemIndicator asRemove={highlighted === email && toggled !== email} />
+                  )}
                 </div>
               </ComboboxItem>
             );

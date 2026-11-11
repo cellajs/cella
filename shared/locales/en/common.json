@@ -417,6 +417,8 @@
   "invite_show_more": "Show {{step}} more, {{hidden}} are hidden",
   "invite_sign_in": "Sign in to accept",
   "invite_sign_in.text": "Use the account you want to join with.",
+  "invite_state_already_role": "Already {{role, lowercase}}",
+  "invite_state_already_role_member": "Already a member",
   "invite_state_check_spelling": "Check the spelling",
   "invite_state_checking": "Checking",
   "invite_state_declined": "Declined {{date}}",

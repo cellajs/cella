@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDownIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
@@ -21,7 +21,6 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { RecentSelection } from '~/modules/navigation/types';
-import { Badge } from '~/modules/ui/badge';
 import { Combobox, ComboboxEmpty, ComboboxGroup, ComboboxItem, ComboboxList, ComboboxSeparator } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
@@ -47,7 +46,7 @@ interface SearchResultBlockProps {
   hideSeparator?: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  /** Gives each row a remove button in place of the member badge. */
+  /** Gives each row a remove button in place of the viewer's role. */
   onRemove?: (item: SearchResult) => void;
 }
 
@@ -72,32 +71,35 @@ function SearchResultBlock({ results, entityType, label, hideSeparator, collapse
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>
-        {results.map((item) => (
-          <ComboboxItem
-            key={item.id}
-            value={item}
-            data-already-member={isChannelType && !!findMembership(myMemberships?.results ?? [], item.id)}
-            className={cn('group group/recent justify-between', collapsed && 'hidden')}
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-              <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
-                <HighlightText text={item.name} />
-              </span>
-            </div>
+        {results.map((item) => {
+          const membership = isChannelType ? findMembership(myMemberships?.results ?? [], item.id) : null;
+          return (
+            <ComboboxItem
+              key={item.id}
+              value={item}
+              data-already-member={!!membership}
+              className={cn('group group/recent justify-between', collapsed && 'hidden')}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
+                <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
+                  <HighlightText text={item.name} />
+                </span>
+              </div>
 
-            <div className="flex items-center">
               {onRemove ? (
                 <SearchRecentRemoveButton onRemove={() => onRemove(item)} />
               ) : (
-                <Badge size="sm" soft className="hidden gap-1 group-data-[already-member=true]:flex">
-                  <UserIcon />
-                  <span className="max-sm:hidden">{t('c:member')}</span>
-                </Badge>
+                membership && (
+                  <span className="text-muted-foreground flex shrink-0 items-center gap-1 font-medium">
+                    <CheckIcon className="text-success" />
+                    {t(`c:${membership.role}`)}
+                  </span>
+                )
               )}
-            </div>
-          </ComboboxItem>
-        ))}
+            </ComboboxItem>
+          );
+        })}
       </ComboboxGroup>
     </div>
   );
