@@ -37,7 +37,9 @@ export function MenuSheet() {
 
   const menuSections = appConfig.menuStructure.flatMap(({ entityType }) => {
     const menuSection = getMenuSection(entityType);
-    return menuSection ? [{ entityType, menuSection }] : [];
+    // Nothing to list and nothing to create: the section would hold its empty placeholder only
+    if (!menuSection || (!menu[entityType].length && !menuSection.createAction)) return [];
+    return [{ entityType, menuSection }];
   });
   const renderedSections = menuSections.map(({ entityType, menuSection }) => (
     <MenuSheetSection key={entityType} options={menuSection} items={menu[entityType]} isCollapsible={menuSections.length > 1} />

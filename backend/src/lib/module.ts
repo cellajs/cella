@@ -105,13 +105,13 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
 export type MembershipEntity = EntityModel<ChannelEntityType> & { [key: string]: unknown; tenantId: string };
 
 /**
- * A module's own columns on a membership about to be inserted, resolved inside the caller's transaction before the
- * insert, so the membership is complete from its first commit. May write rows of its own. An item its caller gave
- * `extraFields` skips this; undefined adds nothing.
+ * A module's own columns on a membership about to be inserted, keyed on the role if it needs. They resolve inside the
+ * caller's transaction before the insert: the membership is complete from its first commit. May write rows of its own.
+ * An item its caller gave `extraFields` skips this; undefined adds nothing.
  */
 export type MembershipColumnsResolver = (
   ctx: DbContext,
-  item: { userId: string; entity: MembershipEntity },
+  item: { userId: string; role: InsertMembershipModel['role']; entity: MembershipEntity },
 ) => Promise<Partial<InsertMembershipModel> | undefined>;
 
 /** What `createDemo` wrote before the hooks run: the demo account, its tenant and the organization the account administers. */

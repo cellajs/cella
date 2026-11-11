@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import i18n, { type TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { InviteOutcome } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { declineHolds } from 'shared/decline-hold';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -56,7 +56,7 @@ export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, he
 };
 
 /** The view of text that holds no address: near-misses ask for a fix, anything else in a paste is simply left out. */
-export const unparsedView = (text: string, t: TFunction): InviteView => {
+const unparsedView = (text: string, t: TFunction): InviteView => {
   if (!text.includes('@')) {
     const word = t('c:invite_state_no_address');
     return { group: 'out', tone: 'muted', word, note: lowercaseLabel(t('c:invite_group_out')), fact: lowercaseLabel(word) };
@@ -74,6 +74,7 @@ export function useInviteCheck(
   unparsed: string[],
   held: boolean,
   people: Map<string, InvitePerson>,
+  role?: string,
 ) {
   const { t } = useTranslation();
   const settled = useDebounce(emails, 300);
@@ -93,7 +94,12 @@ export function useInviteCheck(
   for (const email of emails) {
     const outcome = byEmail.get(email.toLowerCase()) ?? people.get(email.toLowerCase())?.outcome;
     if (outcome || !channel) {
-      add(email, outcomeView(outcome, t, held));
+      const view = outcomeView(outcome, t, held);
+      // An invite never changes a member's role: the chip names the one that stays
+      if (outcome?.outcome === 'member' && outcome.role && channel && role && hierarchy.outranks(channel.entityType, role, outcome.role)) {
+        view.fact = lowercaseLabel(t('c:invite_state_keeps_role', { role: t(`c:${outcome.role}`) }));
+      }
+      add(email, view);
     } else if (isFetching || settled !== emails) {
       add(email, { group: 'new', tone: 'muted', word: t('c:invite_state_checking'), note: '', checking: true });
     } else {

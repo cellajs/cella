@@ -11,7 +11,7 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { sendInBatches } from '~/modules/memberships/query';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import { type InviteResultData, inviteResultNeedsScreen, inviteResultTitle } from '~/modules/user/invite-result';
+import { describeInviteResult, type InviteResultData } from '~/modules/user/invite-result';
 import { pendingSystemInvitesQueryOptions } from '~/modules/user/query';
 import type { InviteCheck } from '~/modules/user/use-invite-check';
 import type { InviteList, InvitePerson } from '~/modules/user/use-invite-list';
@@ -63,28 +63,38 @@ export interface InviteFieldProps {
   onToEmail: () => void;
 }
 
+/** What a send that stopped part way did, kept beside the addresses it could not send. */
+export interface InviteReport {
+  text: string;
+  anySent: boolean;
+  unsent: string[];
+}
+
 interface UseInviteSubmitOptions {
   /** Without one the form sends a system invite. */
   channel?: EnrichedChannel;
-  onSent: () => void;
-  /** Takes over when a sent invite has more to say than a toast holds. */
-  onResult: (result: InviteResultData) => void;
-  /** After a send a toast covers. */
-  onClose: () => void;
+  /** The addresses the list shows as left out, which the report does not name again. */
+  shownOut: string[];
+  /** After a send that left nothing to send again, which a toast reports. */
+  onDone: () => void;
+  /** After a send that stopped part way: what it could not send stays in the form, beside the report. */
+  onPartial: (report: InviteReport) => void;
 }
 
 /** Sends the form as a membership invite to `channel`, or as a system invite without one, then says what happened. */
-export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInviteSubmitOptions) {
+export function useInviteSubmit({ channel, shownOut, onDone, onPartial }: UseInviteSubmitOptions) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const report = (result: InviteResultData) => {
-    onSent();
-    if (inviteResultNeedsScreen(result, t)) return onResult(result);
+    const { title, notes, anySent } = describeInviteResult(result, shownOut, t, channel?.name);
+    // The form stays, and its alert and tiles already say what waits for a publish
+    const { unsent } = result;
+    if (unsent.length) return onPartial({ text: [title, t('c:invite_result_unsent')].join(' · '), anySent, unsent });
 
-    onClose();
-    const description = result.held && channel ? t('c:invite_result_held', { name: channel.name }) : undefined;
-    toaster.success(inviteResultTitle(result, t), description ? { description } : undefined);
+    onDone();
+    const description = notes.join(' ') || undefined;
+    (anySent ? toaster.success : toaster.warning)(title, description ? { description } : undefined);
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
@@ -93,7 +103,7 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
     onSuccess: () => queryClient.invalidateQueries({ queryKey: pendingSystemInvitesQueryOptions().queryKey }),
   });
 
-  const onSubmit = ({ unparsed, typed: _typed, pasted: _pasted, people: _people, ...body }: InviteFormValues) => {
+  const onSubmit = ({ unparsed: _unparsed, typed: _typed, pasted: _pasted, people: _people, ...body }: InviteFormValues) => {
     if (!channel) {
       return inviteUsers(body, {
         onSuccess: ({ results, unsent }) => {
@@ -101,7 +111,7 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
           const outcomes = body.emails
             .filter((email) => !rejected.includes(email) && !unsent.includes(email))
             .map((email) => ({ email, outcome: 'invite' as const }));
-          report({ outcomes, rejected, unsent, unparsed, held: false });
+          report({ outcomes, rejected, unsent, held: false });
         },
       });
     }
@@ -112,8 +122,7 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
     membershipInvite(
       { body, path, query, channel },
       {
-        onSuccess: ({ outcomes, held, unsent }) =>
-          report({ outcomes, rejected: [], unsent, unparsed, held, role: body.role, entityType: channel.entityType }),
+        onSuccess: ({ outcomes, held, unsent }) => report({ outcomes, rejected: [], unsent, held }),
       },
     );
   };

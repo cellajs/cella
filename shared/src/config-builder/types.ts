@@ -261,7 +261,10 @@ export interface ProductEmbedding<P extends string = string> {
   readonly lifecycle?: 'shared' | 'owned';
 }
 
-/** A `menuStructure` section: the channel type `C` it lists, and the channel type `S` nested under each of its items. */
+/**
+ * A `menuStructure` section: the channel type `C` it lists, and the channel type `S` nested under each of its items. A
+ * type nested under a parent may have a section of its own too, which lists the memberships filed under no parent.
+ */
 export interface MenuStructureItem<C extends string = string, S extends string = C> {
   entityType: C;
   subentityType: S | null;

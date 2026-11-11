@@ -15,9 +15,13 @@ onBackendModuleRegister(({ membershipColumns }) => {
   if (membershipColumns) columnResolvers.push(membershipColumns);
 });
 
-const resolveModuleColumns = async (ctx: DbContext, { userId, entity }: { userId: string; entity: MembershipEntity }) => {
+/** The modules' own columns for a membership of `entity` at `role`, in registration order; a later module's win. */
+const resolveMembershipModuleColumns = async (
+  ctx: DbContext,
+  { userId, role, entity }: { userId: string; role: MembershipModel['role']; entity: MembershipEntity },
+) => {
   const columns: Partial<InsertMembershipModel> = {};
-  for (const resolve of columnResolvers) Object.assign(columns, await resolve(ctx, { userId, entity }));
+  for (const resolve of columnResolvers) Object.assign(columns, await resolve(ctx, { userId, role, entity }));
   return columns;
 };
 
@@ -44,7 +48,7 @@ export const insertMemberships = async <T extends MembershipEntity>(
   // Ahead of the order baseline: a resolver may insert memberships, whose order this run then continues from.
   const items: Array<InsertMultipleProps<T>> = [];
   for (const item of givenItems) {
-    items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
+    items.push({ ...item, extraFields: item.extraFields ?? (await resolveMembershipModuleColumns(ctx, item)) });
   }
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));

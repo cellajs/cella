@@ -32,7 +32,7 @@ function useCachedDetail({ entityType, id }: EnrichedChannel) {
   );
 }
 
-export function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
+function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
   sheeter.getState().create(
     <div className="container">
       <Suspense>

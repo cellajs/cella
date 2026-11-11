@@ -122,6 +122,15 @@ export function useInviteList(form: InviteForm) {
       setTypedInvalid(false);
       setRevision((current) => current + 1);
     },
+    /** Empties the list but for these addresses, which a send could not send. */
+    keep: (addresses: string[]) => {
+      const people = (form.getValues('people') ?? []).filter(({ email }) => addresses.includes(email.toLowerCase()));
+      form.setValue('emails', addresses, shouldDirty);
+      form.setValue('unparsed', [], shouldDirty);
+      form.setValue('people', people, shouldDirty);
+      setLast(null);
+      setRevision((current) => current + 1);
+    },
   };
 }
 

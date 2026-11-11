@@ -1,11 +1,9 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { UsersRoundIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
-import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { tileTones } from '~/modules/common/expandable-tile';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
@@ -18,11 +16,11 @@ import { Badge } from '~/modules/ui/badge';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList } from '~/modules/ui/combobox';
 import { skipPasswordManagers } from '~/modules/ui/input';
 import { InputGroupAddon } from '~/modules/ui/input-group';
-import { focusOnMount } from '~/modules/user/invite-result';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { outcomeView } from '~/modules/user/use-invite-check';
 import type { InvitePerson } from '~/modules/user/use-invite-list';
 import { cn } from '~/utils/cn';
+import { focusOnMount } from '~/utils/focus-on-mount';
 
 // How long the field names the last add or remove
 const noticeDuration = 5000;
@@ -45,6 +43,9 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Results wait for the first typed character: an empty field suggests nobody
+  const [open, setOpen] = useState(false);
+  const hasSearch = !!searchQuery.trim();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [highlighted, setHighlighted] = useState<string>();
   // The row a press just changed shows its new state until the highlight leaves it
@@ -59,7 +60,11 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
   }, [notice]);
 
   // The last results stay while the next arrive, so the popup keeps its height as the search changes
-  const { data, isFetching } = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchQuery }), placeholderData: keepPreviousData });
+  const { data, isFetching } = useInfiniteQuery({
+    ...usersListQueryOptions({ q: debouncedSearchQuery }),
+    enabled: !!debouncedSearchQuery.trim(),
+    placeholderData: keepPreviousData,
+  });
   // An anonymous account has no address to invite by, so it is left out
   const items = (data?.pages.flatMap((page) => page.results) ?? []).flatMap((user) =>
     user.email ? [{ ...user, email: user.email.toLowerCase() }] : [],
@@ -103,8 +108,10 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
       itemToStringValue={(email) => email}
       value={chosen}
       onValueChange={toggle}
-      onOpenChange={(open, details) => {
-        if (!open && details.reason === 'item-press') details.cancel();
+      open={open && hasSearch}
+      onOpenChange={(next, details) => {
+        if (!next && details.reason === 'item-press') return details.cancel();
+        setOpen(next);
       }}
       onItemHighlighted={(email) => {
         setHighlighted(email);
@@ -150,7 +157,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
         }}
       >
         <InputGroupAddon>
-          <SearchSpinner hasSearch={!!searchQuery} isSearching={isFetching} />
+          <SearchSpinner hasSearch={hasSearch} isSearching={isFetching} />
         </InputGroupAddon>
       </ComboboxInput>
 
@@ -158,12 +165,10 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
         {!data && <SearchResultsSkeleton />}
         <ComboboxList>
           <ComboboxEmpty>
-            {!data ? null : debouncedSearchQuery.length ? (
+            {data && !!debouncedSearchQuery.trim() && (
               <p className="p-2">
                 {t('c:invite_search_none')} <InlineLinkButton onClick={onToEmail}>{t('c:invite_by_email')}</InlineLinkButton>
               </p>
-            ) : (
-              <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_search_empty" />
             )}
           </ComboboxEmpty>
           {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
