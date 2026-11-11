@@ -428,7 +428,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   /** Defaults of `user.userFlags`, a bag the user sets key by key; it gates no entitlement. */
   defaultUserFlags: Record<string, boolean>;
 
-  /** Defaults of `organization.organizationFlags`, a bag anyone who may update the organization sets key by key. Never gate an entitlement on it: that belongs in the tenant's `subscriptionPlan` and `restrictions`, which only system admins write. */
+  /** Defaults of `organization.organizationFlags`, a bag anyone who may update the organization sets key by key. Never gate an entitlement on it: that belongs in the tenant's `restrictions`, which only system admins write. */
   defaultOrganizationFlags: Record<string, boolean>;
 
   /**

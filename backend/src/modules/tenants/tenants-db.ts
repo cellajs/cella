@@ -10,7 +10,6 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
 
 export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
-export const subscriptionStatusValues = ['none', 'trialing', 'active', 'past_due', 'paused', 'canceled'] as const;
 
 /** Top-level isolation boundary for RLS. System resource, not an entity. */
 export const tenantsTable = snakeCase.table(
@@ -28,9 +27,6 @@ export const tenantsTable = snakeCase.table(
     restrictions: jsonb().$type<Restrictions>().notNull().default(defaultRestrictions()),
     /** Sign-in methods the tenant's members may use (empty = every enabled method); `tenantGuard` enforces them. */
     authStrategies: jsonb().$type<AuthStrategy[]>().notNull().default([]),
-    subscriptionId: varchar({ length: maxLength.field }),
-    subscriptionStatus: varchar({ enum: subscriptionStatusValues }).notNull().default('none'),
-    subscriptionPlan: varchar({ length: maxLength.field }),
     ...auditColumns(),
   },
   (table) => [
@@ -39,7 +35,6 @@ export const tenantsTable = snakeCase.table(
     index('tenants_expires_at_index').on(table.expiresAt),
     index('tenants_created_at_index').on(table.createdAt.desc()),
     index('tenants_created_by_index').on(table.createdBy),
-    index('tenants_subscription_status_index').on(table.subscriptionStatus),
     check('tenants_demo_expires_check', sql`${table.kind} <> 'demo' OR ${table.expiresAt} IS NOT NULL`),
   ],
 );

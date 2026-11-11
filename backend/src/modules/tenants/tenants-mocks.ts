@@ -18,9 +18,6 @@ export const mockTenantResponse = (key = 'tenant:default') =>
       authStrategies: [],
       createdBy: mockActorRef(`${key}:created-by`),
       updatedBy: null,
-      subscriptionId: null,
-      subscriptionStatus: 'none' as const,
-      subscriptionPlan: null,
       ...timestamps,
       organization: {
         id: mockUuid(),

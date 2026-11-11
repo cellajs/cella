@@ -17,7 +17,7 @@ import { applyMergePatch } from '#/utils/merge-patch';
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
 /**
- * Updates a tenant's name, kind, status, subscription, sign-in policy or restrictions; a restrictions update is a
+ * Updates a tenant's name, kind, status, sign-in policy or restrictions; a restrictions update is a
  * merge patch of the stored ones. A status change also moves the members' bindings and ends their streams. The kind
  * moves between `live` and `test` only: a demo is made by `createDemo` alone and stays one.
  * @throws AppError 403 `restrict_by_tenant_kind` for a kind change to or from `demo`.

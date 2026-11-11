@@ -706,9 +706,6 @@ export const zTenant = z.object({
     allowUnregisteredClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext'])),
-  subscriptionId: z.string().max(255).nullable(),
-  subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
-  subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -2889,9 +2886,6 @@ export const zUpdateTenantBody = z.object({
     .optional(),
   kind: z.enum(['live', 'test', 'demo']).optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
-  subscriptionId: z.string().max(255).nullish(),
-  subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
-  subscriptionPlan: z.string().max(255).nullish(),
   authStrategies: z
     .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
     .max(9)

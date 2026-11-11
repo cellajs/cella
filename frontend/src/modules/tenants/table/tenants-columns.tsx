@@ -25,14 +25,6 @@ const statusTextClasses: Record<Tenant['status'], string> = { active: 'text-succ
 
 const kindVariants: Record<Tenant['kind'], BadgeVariant> = { live: 'success', test: 'secondary', demo: 'warning' };
 
-const subscriptionVariants: Record<Exclude<Tenant['subscriptionStatus'], 'none'>, BadgeVariant> = {
-  trialing: 'default',
-  active: 'success',
-  past_due: 'destructive',
-  paused: 'secondary',
-  canceled: 'secondary',
-};
-
 export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
     id: 'update-tenant',
@@ -134,19 +126,6 @@ export const useColumns = () => {
           {t(`c:${row.kind}`)}
         </Badge>
       ),
-    },
-    {
-      key: 'subscriptionStatus',
-      name: t('c:subscription'),
-      minBreakpoint: 'md',
-      width: 140,
-      placeholderValue: '-',
-      renderCell: ({ row }) =>
-        row.subscriptionStatus === 'none' ? null : (
-          <Badge variant={subscriptionVariants[row.subscriptionStatus]} soft>
-            {t(`c:${row.subscriptionStatus}`)}
-          </Badge>
-        ),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
     dateColumn('expiresAt', { name: t('c:expires_at'), sortable: false, hidden: true }),
