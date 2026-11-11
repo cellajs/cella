@@ -16,7 +16,6 @@ import { Route as AppAccountRouteImport } from './_app/account'
 import { Route as AppHomeRouteImport } from './_app/home'
 import { Route as AppNRouteImport } from './_app/n'
 import { Route as AppSystemRouteRouteImport } from './_app/system/route'
-import { Route as AppWelcomeRouteImport } from './_app/welcome'
 import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicDocsRouteRouteImport } from './_public/docs/route'
@@ -90,11 +89,6 @@ const AppNRoute = AppNRouteImport.update({
 const AppSystemRouteRoute = AppSystemRouteRouteImport.update({
   id: '/system',
   path: '/system',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppWelcomeRoute = AppWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const PublicMarketingRoute = PublicMarketingRouteImport.update({
@@ -325,7 +319,6 @@ export interface FileRoutesByFullPath {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
-  '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
@@ -372,7 +365,6 @@ export interface FileRoutesByTo {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
-  '/welcome': typeof AppWelcomeRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
   '/system/$tool': typeof AppSystemToolRoute
@@ -421,7 +413,6 @@ export interface FileRoutesById {
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/n': typeof AppNRoute
-  '/_app/welcome': typeof AppWelcomeRoute
   '/_public/_marketing': typeof PublicMarketingRouteWithChildren
   '/_public/error': typeof PublicErrorRoute
   '/_public/thumbnail': typeof PublicThumbnailRoute
@@ -473,7 +464,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/n'
-    | '/welcome'
     | '/error'
     | '/thumbnail'
     | '/$tenantId/$organizationSlug'
@@ -520,7 +510,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/n'
-    | '/welcome'
     | '/error'
     | '/thumbnail'
     | '/system/$tool'
@@ -568,7 +557,6 @@ export interface FileRouteTypes {
     | '/_app/account'
     | '/_app/home'
     | '/_app/n'
-    | '/_app/welcome'
     | '/_public/_marketing'
     | '/_public/error'
     | '/_public/thumbnail'
@@ -665,13 +653,6 @@ declare module '@tanstack/react-router' {
       path: '/system'
       fullPath: '/system'
       preLoaderRoute: typeof AppSystemRouteRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/welcome': {
-      id: '/_app/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_public/_marketing': {
@@ -1031,7 +1012,6 @@ interface AppRouteRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppHomeRoute: typeof AppHomeRoute
   AppNRoute: typeof AppNRoute
-  AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTenantIdOrganizationSlugRouteRoute: typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
 }
@@ -1041,7 +1021,6 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppHomeRoute: AppHomeRoute,
   AppNRoute: AppNRoute,
-  AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppTenantIdOrganizationSlugRouteRoute:
     AppTenantIdOrganizationSlugRouteRouteWithChildren,

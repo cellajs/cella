@@ -209,7 +209,6 @@ export const config = {
   repositoryUrl: 'https://github.com/cellajs/cella',
 
   defaultRedirectPath: '/home',
-  welcomeRedirectPath: '/welcome',
 
   // Email
 
@@ -411,7 +410,7 @@ export const config = {
 
   // User defaults
 
-  defaultUserFlags: { finishedOnboarding: false },
+  defaultUserFlags: {},
 
   // Organization defaults
 

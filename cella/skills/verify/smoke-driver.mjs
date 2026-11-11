@@ -172,8 +172,6 @@ try {
   };
   const { user } = await call('/me');
   check('the seeded admin signs in', Boolean(user?.id), { email: user?.email ?? EMAIL });
-  // Home sends a user who has not finished onboarding to the welcome page; the smoke wants the home page itself
-  if (!user.userFlags?.finishedOnboarding) await call('/me', { method: 'PATCH', body: { userFlags: { finishedOnboarding: true } } });
 
   const [{ results: organizations }, { results: memberships }] = await Promise.all([
     call('/tenants/-/organizations?maxPageSize=50'),

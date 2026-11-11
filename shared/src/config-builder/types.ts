@@ -377,7 +377,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   /** The app's public GitHub repository; the docs link a repository path under its `/blob/main/`. */
   repositoryUrl?: string;
   defaultRedirectPath: string;
-  welcomeRedirectPath: string;
 
   supportEmail: string;
   senderEmail: string;

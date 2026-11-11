@@ -1,5 +1,5 @@
 import { auditContrast, defineA11yBase, type Page, type SignedIn, settle } from '@cellajs/cli/a11y';
-import { type Client, createClient, createConfig } from '../sdk/gen/client/index.ts';
+import { createClient, createConfig } from '../sdk/gen/client/index.ts';
 import { getMe, listMyMemberships, listOrganizations, updateMe } from '../sdk/gen/index.ts';
 
 /** The SDK as the signed-in user: its functions check each response against the spec, and a failed one names its request. */
@@ -9,13 +9,6 @@ export const apiClient = ({ backendUrl, cookie }: SignedIn) => {
     response && !response.ok ? new Error(`${options.method} ${options.url} answered ${response.status}`) : error,
   );
   return client;
-};
-
-/** A freshly seeded user has not finished onboarding, and `/home` then redirects to the welcome page. */
-export const finishOnboarding = async (client: Client) => {
-  const { user } = await getMe({ client });
-  if (!user.userFlags.finishedOnboarding) await updateMe({ client, body: { userFlags: { finishedOnboarding: true } } });
-  return user;
 };
 
 export const openMenuSheet = async (page: Page) => {
@@ -40,10 +33,10 @@ export const openAccountSheet = async (page: Page) => {
 export default defineA11yBase({
   prepare: async (user) => {
     const client = apiClient(user);
-    const { contrast } = await finishOnboarding(client);
+    const { user: me } = await getMe({ client });
     // The browser context asks for more contrast, but `/me` overwrites the seeded UI store on every authenticated page.
     // Without this the run would quietly measure the default edges on exactly the pages richest in form controls.
-    if (contrast !== auditContrast) await updateMe({ client, body: { contrast: auditContrast } });
+    if (me.contrast !== auditContrast) await updateMe({ client, body: { contrast: auditContrast } });
   },
 
   placeholders: {

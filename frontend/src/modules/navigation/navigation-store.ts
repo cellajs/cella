@@ -36,7 +36,6 @@ interface NavigationStoreState {
 
   activeSections: Record<string, boolean> | null; // Expanded state per section the user toggled, including hidden ones
   setSectionOpen: (sectionKey: string, open: boolean) => void;
-  resetSections: () => void;
 
   navSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
   toggleNavSheetPanel: (panel: string) => void;
@@ -135,11 +134,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setSectionOpen: (sectionKey, open) => {
             set((state) => {
               state.activeSections = { ...state.activeSections, [sectionKey]: open };
-            });
-          },
-          resetSections: () => {
-            set((state) => {
-              state.activeSections = null;
             });
           },
           toggleNavSheetPanel: (panel) => {

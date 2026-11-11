@@ -385,7 +385,7 @@ export type User = {
   newsletter: boolean;
   contrast: 'system' | 'more';
   userFlags: {
-    finishedOnboarding: boolean;
+    [key: string]: unknown;
   };
   updatedAt: string | null;
   /**
@@ -3589,7 +3589,7 @@ export type UpdateMeData = {
     thumbnailUrl?: string | null;
     slug?: string;
     userFlags?: {
-      finishedOnboarding?: boolean | null;
+      [key: string]: unknown;
     };
   };
   path?: never;

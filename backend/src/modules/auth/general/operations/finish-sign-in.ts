@@ -21,7 +21,7 @@ export const finishSignIn = async (
 ) => {
   const mfaRedirectPath = await initiateMfa(ctx, user, strategy, extras.connectionId);
 
-  const resolvedPath = resolvePostAuthRedirectPath(user, { redirectPath, mfaPath: mfaRedirectPath });
+  const resolvedPath = resolvePostAuthRedirectPath({ redirectPath, mfaPath: mfaRedirectPath });
   const redirectUrl = new URL(resolvedPath, appConfig.frontendUrl);
 
   if (!mfaRedirectPath) await setUserSession(ctx, user, strategy, 'regular', extras);

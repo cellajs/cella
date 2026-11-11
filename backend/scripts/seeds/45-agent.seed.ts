@@ -33,7 +33,6 @@ export const agentSeed = async () => {
     givenName: 'Agent',
     name: 'Agent User',
     slug: 'agent-user',
-    userFlags: { finishedOnboarding: true },
   };
   await insertUsers({ var: { db } }, { users: [agentRecord], onConflictDoNothing: true });
   await db.insert(systemRolesTable).values({ userId: defaultAgentUser.id, role: 'admin' }).onConflictDoNothing();

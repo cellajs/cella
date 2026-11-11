@@ -1,6 +1,6 @@
 import { defineScreenshotsBase, type Page } from '@cellajs/cli/screenshots';
 import { listMyMemberships, listOrganizations } from '../sdk/gen/index.ts';
-import { apiClient, finishOnboarding } from './a11y.ts';
+import { apiClient } from './a11y.ts';
 
 /**
  * Hidden entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
@@ -88,10 +88,6 @@ export default defineScreenshotsBase({
 
   // The dev banner and the first-visit menu hints of the public pages
   suppress: { alerts: ['test-credentials'], hints: ['floating-menu-marketing', 'floating-menu-docs'] },
-
-  prepare: async (user) => {
-    await finishOnboarding(apiClient(user));
-  },
 
   placeholders: {
     /**
