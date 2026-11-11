@@ -1,5 +1,6 @@
 {
   "about": "About",
+  "about_app": "About {{appName}}",
   "accept": "Accept",
   "accept_invitations.text": "Here you can accept or decline invitations.",
   "access": "Access",
@@ -344,7 +345,6 @@
   "highlight": "Highlight",
   "history": "Recent searches",
   "home": "Home",
-  "home.text": "An overview of your activity on {{appName}}",
   "host": "Host",
   "http_status": "HTTP status",
   "id": "ID",
