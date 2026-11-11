@@ -2,18 +2,11 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 
-/** New users (never signed in) are sent to the welcome page. */
-const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) =>
-  user.lastSignInAt ? appConfig.defaultRedirectPath : appConfig.welcomeRedirectPath;
-
 /**
- * Resolves the final post-auth path: MFA challenge (carrying the redirect along), then validated explicit redirect, then welcome or default.
+ * Resolves the final post-auth path: MFA challenge (carrying the redirect along), then validated explicit redirect, then the default.
  * Untrusted input is re-validated here, so callers can pass stored token values or cookie payloads directly.
  */
-export const resolvePostAuthRedirectPath = (
-  user: { lastSignInAt: string | null },
-  { redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null },
-) => {
+export const resolvePostAuthRedirectPath = ({ redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null }) => {
   const explicitRedirect = frontendRedirectPath(redirectPath);
 
   // MFA interrupts the flow; hand the redirect to the MFA page so it survives the challenge.
@@ -21,13 +14,7 @@ export const resolvePostAuthRedirectPath = (
     return explicitRedirect ? `${mfaPath}?redirect=${encodeURIComponent(explicitRedirect)}` : mfaPath;
   }
 
-  if (!explicitRedirect) return getPostAuthRedirectPath(user);
-
-  // A deep link targeting home would be bounced to welcome by the frontend onboarding guard; mark it to skip that.
-  const resolved = new URL(explicitRedirect, appConfig.frontendUrl);
-  if (resolved.pathname === appConfig.defaultRedirectPath) resolved.searchParams.set('skipWelcome', 'true');
-
-  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  return explicitRedirect ?? appConfig.defaultRedirectPath;
 };
 
 /** Redirects a browser navigation: 303 after a form post, so the browser follows it with a GET (RFC 9110 §15.4.4), else 302. */

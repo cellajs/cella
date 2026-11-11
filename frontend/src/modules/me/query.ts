@@ -59,7 +59,7 @@ export const meKeys = {
   memberships: ['me', 'memberships'] as const,
   totpKey: ['me', 'totp-key'] as const,
   register: { passkey: ['me', 'register', 'passkey'] as const, totp: ['me', 'register', 'totp'] as const },
-  update: { info: ['me', 'update', 'info'] as const, flags: ['me', 'update', 'flags'] as const },
+  update: { info: ['me', 'update', 'info'] as const },
   delete: {
     passkey: ['me', 'delete', 'passkey'] as const,
     connectedApp: ['me', 'delete', 'connected-app'] as const,
@@ -103,7 +103,7 @@ export const totpKeyQueryOptions = () =>
   });
 
 export const useUpdateSelfMutation = () =>
-  useMutation<User, ApiError, Omit<UpdateMeData['body'], 'userFlags'>>({
+  useMutation<User, ApiError, UpdateMeData['body']>({
     mutationKey: meKeys.update.info,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
@@ -119,19 +119,6 @@ export const useToggleMfaMutation = () =>
       if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
       toaster.success(t(updatedUser.mfaRequired ? 'c:mfa_enabled' : 'c:mfa_disabled'));
     },
-    gcTime: 1000 * 10,
-  });
-
-export const useUpdateSelfFlagsMutation = () =>
-  useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
-    mutationKey: meKeys.update.flags,
-    mutationFn: (body) => updateMe({ body }),
-    // Applied before the request and kept on failure: guards read flags from the store, so a late flag sends a just-onboarded user back.
-    onMutate: ({ userFlags }) =>
-      userStore.setState((state) => {
-        if (state.user) Object.assign(state.user.userFlags, userFlags);
-      }),
-    onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
 
@@ -229,7 +216,7 @@ export const myMembershipsQueryOptions = () =>
  * it, so the invite is found by its own id; a token answer carries none, and the list reloads.
  */
 const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'decline') => {
-  // Stale before the invite leaves the cache: the onboarding's completed screen opens on that and waits for the list
+  // An accept can add an organization, and home's create prompt reads that list
   if (action === 'accept') queryClient.invalidateQueries({ queryKey: getEntityQueryKeys('organization').list.base });
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 

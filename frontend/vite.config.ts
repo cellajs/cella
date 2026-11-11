@@ -225,7 +225,7 @@ const viteConfig = {
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|cnfast|nanoid|uuidv7|dobajs|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|nanoid|uuidv7|dobajs|qrcode\.react|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
             {

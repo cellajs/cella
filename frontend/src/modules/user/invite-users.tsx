@@ -13,7 +13,6 @@ import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio'
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { NamedText } from '~/modules/common/named-text';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -182,14 +181,11 @@ interface InviteUsersProps {
   dialog?: boolean;
   /** Skips the chooser. Without the dialog's title there is no way back to it. */
   mode?: InviteMode;
-  /** Takes the place of the cancel button. */
-  children?: ReactNode;
 }
 
 /** The invite form. The mode only swaps its field, so the form, its draft and a running send outlive a switch. */
-export function InviteUsers({ channel, dialog, mode: initialMode, children }: InviteUsersProps) {
+export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersProps) {
   const { t } = useTranslation();
-  const { nextStep } = useStepper();
   const formRef = useRef<HTMLFormElement>(null);
 
   const [inviteMode, setInviteMode] = useState<InviteMode | null>(initialMode ?? null);
@@ -204,7 +200,6 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
 
   const close = () => {
     if (dialog) dialoger.getState().remove(inviteDialogId);
-    nextStep();
   };
 
   const { onSubmit, isPending } = useInviteSubmit({
@@ -276,8 +271,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
                     <SendIcon />
                     {t(submitLabel({ invite, remind, isEmpty, held }))}
                   </SubmitButton>
-                  {!children && <CancelButton dirty={form.isDirty} onClick={cancel} />}
-                  {children}
+                  <CancelButton dirty={form.isDirty} onClick={cancel} />
                 </FormActions>
               </motion.div>
             ) : (

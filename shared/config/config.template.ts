@@ -202,7 +202,6 @@ export const config = {
   productionUrl: 'https://www.__project_slug__.example.com',
 
   defaultRedirectPath: '/home',
-  welcomeRedirectPath: '/welcome',
 
   // Email
 
@@ -381,7 +380,7 @@ export const config = {
 
   // User defaults
 
-  defaultUserFlags: { finishedOnboarding: false },
+  defaultUserFlags: {},
 
   // Organization defaults
 

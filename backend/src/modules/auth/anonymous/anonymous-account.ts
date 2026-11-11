@@ -23,7 +23,7 @@ interface InsertAnonymousUserOpts {
  */
 export const insertAnonymousUser = async (ctx: DbContext, { id, name, slug, givenName, userFlags }: InsertAnonymousUserOpts) => {
   const [user] = await insertUsers(ctx, {
-    users: [{ id, name, givenName, slug, email: `${id}@${anonymousAddressDomain}`, userFlags: { finishedOnboarding: true, ...userFlags } }],
+    users: [{ id, name, givenName, slug, email: `${id}@${anonymousAddressDomain}`, userFlags }],
   });
   return user;
 };

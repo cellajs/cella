@@ -3,7 +3,6 @@ import i18n from 'i18next';
 import { hierarchy } from 'shared';
 import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test';
 import { draftStore } from '~/modules/common/form-draft/draft-store';
-import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 // Registers the organization query keys a membership invite updates, as the app does at boot.
@@ -228,42 +227,6 @@ export const ShouldCancelEmailForm: Story = {
 
     await expect(canvas.queryByText(i18n.t('c:invite_summary_new', { count: 1 }))).not.toBeInTheDocument();
     await expect(requests).toEqual([]);
-  },
-};
-
-/** Onboarding renders the email form in a step and passes its own footer as children. */
-export const ShouldAdvanceStepper: Story = {
-  name: 'when an invite inside a stepper succeeds, should move to the next step',
-  tags: playTags,
-  render: () => (
-    <div className="w-[32rem]">
-      <Stepper
-        steps={[
-          { id: 'invite', label: 'Invite' },
-          { id: 'done', label: 'Done' },
-        ]}
-      >
-        <Step label="Invite">
-          <InviteUsers mode="email">
-            <span>Step footer</span>
-          </InviteUsers>
-        </Step>
-        <Step label="Done">
-          <p>Next step content</p>
-        </Step>
-      </Stepper>
-    </div>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await expect(canvas.getByText('Step footer')).toBeInTheDocument();
-    await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}');
-    await expect(canvas.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
-    await userEvent.click(canvas.getByRole('button', { name: /^invite/i }));
-
-    await expect(await canvas.findByText('Next step content')).toBeVisible();
-    await expect(requests).toHaveLength(1);
   },
 };
 
