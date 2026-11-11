@@ -112,7 +112,7 @@ export function FloatingNavButton({
           <span className="overflow-hidden">
             <span
               className={cn(
-                'block -translate-x-2 pr-4 pl-2 text-xs font-semibold opacity-0 transition-[opacity,translate] duration-300 ease-in-out motion-reduce:transition-none',
+                'block -translate-x-2 pr-4 pl-2 text-base font-medium opacity-0 transition-[opacity,translate] duration-300 ease-in-out motion-reduce:transition-none',
                 labelVisible && 'translate-x-0 opacity-100 delay-150',
               )}
             >
