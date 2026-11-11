@@ -28,14 +28,14 @@
     "@pulumi/pulumi": "^3.274.1",
     "@pulumiverse/scaleway": "^1.62.0",
     "picocolors": "^1.1.1",
-    "shared": "workspace:*"
+    "shared": "workspace:*",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "ajv": "^8.20.0",
     "rolldown": "~1.3.1",
-    "tsx": "^4.23.15",
     "typescript": "6.0.3",
     "vitest": "^5.1.0",
     "yaml": "^2.9.1"
