@@ -11,7 +11,7 @@ import { navSheetId, type SheetData, sheeter } from '~/modules/common/sheeter/us
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { uiStore } from '~/modules/ui/ui-store';
 
-type BeforeLoad = (event: { pathChanged: boolean }) => void;
+type BeforeLoad = (event: { pathChanged: boolean; toLocation: { pathname: string } }) => void;
 
 const router = vi.hoisted(() => ({ listeners: new Set<BeforeLoad>() }));
 
@@ -22,6 +22,8 @@ vi.mock('~/routes/-router-instance', () => ({
       router.listeners.add(listener);
       return () => router.listeners.delete(listener);
     },
+    // No target route asks to keep the nav sheet.
+    getMatchedRoutes: () => [[]],
   }),
 }));
 
@@ -40,7 +42,7 @@ const sheet = (id: string, data: Partial<SheetData> = {}): SheetData => ({ id, s
 
 const changeRoute = (pathChanged: boolean) =>
   act(() => {
-    for (const listener of router.listeners) listener({ pathChanged });
+    for (const listener of router.listeners) listener({ pathChanged, toLocation: { pathname: '/next' } });
   });
 
 const dialogIds = () => dialoger.getState().dialogs.map((d) => d.id);
