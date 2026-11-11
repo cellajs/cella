@@ -175,7 +175,7 @@ export function HeroStack({ shown, className }: HeroStackProps) {
   };
 
   const shot = (name: string) => `/static/marketing/screenshots/${name}${mode === 'dark' ? '-dark' : ''}.webp`;
-  const motion = 'duration-500 ease-in-out motion-reduce:transition-none';
+  const motionClass = 'duration-500 ease-in-out motion-reduce:transition-none';
 
   return (
     <button
@@ -193,14 +193,14 @@ export function HeroStack({ shown, className }: HeroStackProps) {
           <div className={cn('absolute -inset-s-[14px] top-[150px] h-[56px] w-[4px] rounded-s-[4px]', chromeFill)} />
           <div className={cn('absolute -inset-e-[14px] top-[200px] h-[84px] w-[4px] rounded-e-[4px]', chromeFill)} />
           <div className="relative size-full overflow-hidden rounded-[36px] text-start">
-            <CodeScreen files={closedCode} className={cn('transition-opacity', motion, open && 'opacity-0')} />
-            <CodeScreen files={openCode} className={cn('transition-opacity', motion, !open && 'opacity-0')} />
+            <CodeScreen files={closedCode} className={cn('transition-opacity', motionClass, open && 'opacity-0')} />
+            <CodeScreen files={openCode} className={cn('transition-opacity', motionClass, !open && 'opacity-0')} />
           </div>
         </div>
         {/* At 2x, scaled to half, so the tilted layer rasterizes sharp */}
         <div className="absolute top-[10px] left-[10px] h-[1280px] w-[592px] origin-top-left translate-z-[300px] scale-50 overflow-hidden rounded-[72px] ring-16 ring-black/8 dark:ring-white/12">
           <img src={shot('hero-page')} alt="" width={592} height={1280} decoding="async" className="size-full max-w-none" />
-          <div className={cn('bg-overlay absolute inset-0 transition-opacity', motion, !open && 'opacity-0')} />
+          <div className={cn('bg-overlay absolute inset-0 transition-opacity', motionClass, !open && 'opacity-0')} />
           {/* The sheet fills the shot's left 95%; the rest is the page it dims */}
           <img
             src={shot('hero-menu')}
@@ -211,7 +211,7 @@ export function HeroStack({ shown, className }: HeroStackProps) {
             decoding="async"
             className={cn(
               'absolute inset-0 size-full max-w-none transition-transform [clip-path:inset(0_5%_0_0)]',
-              motion,
+              motionClass,
               !open && '-translate-x-[95%]',
             )}
           />

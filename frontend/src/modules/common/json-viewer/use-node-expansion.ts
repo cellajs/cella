@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
 import type { JsonPath } from '~/modules/common/json-viewer/utils';
+import { scrollBehavior } from '~/utils/reduced-motion';
 
 /** Whether `path` is `target` or leads to it. */
 const isPathPrefix = (path: JsonPath, target: JsonPath | null) =>
@@ -38,14 +39,14 @@ export function useNodeExpansion(path: JsonPath, initiallyExpanded: boolean) {
   const rowRef = useRef<HTMLDivElement>(null);
   // Also runs on mount: a row inside a collapsed node exists only after its ancestors expanded.
   useEffect(() => {
-    if (isCurrentMatch) rowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (isCurrentMatch) rowRef.current?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
   }, [isCurrentMatch, searchMatchPath]);
 
   const isRefTarget = isOnTargetPath && path.length === targetPath?.length;
   const keyRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!isRefTarget) return;
-    keyRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    keyRef.current?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
     keyRef.current?.animate(refTargetFlash, 3000);
   }, [isRefTarget, targetPath]);
 

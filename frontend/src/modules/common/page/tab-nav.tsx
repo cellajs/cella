@@ -2,7 +2,7 @@ import { type AnyRoute, Link, type LinkComponentProps, redirect, useNavigate, us
 import { type ReactNode, useEffect, useRef } from 'react';
 import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import type { TKey } from '~/lib/i18n-locales';
 import {
   getSlotDescriptors,
@@ -218,7 +218,7 @@ export function PageTabNav({
   ...placementOptions
 }: PageTabNavProps) {
   const isMobile = useBreakpointBelow('sm', false);
-  const { hasStarted } = useMountedState();
+  const hasStarted = useDelayedFlag(true, settledAfterMountMs);
 
   const tabs = explicitTabs ?? resolveNavTabs(parentRouteId ?? '', placementOptions);
 

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { swapMotion } from '~/modules/common/motion-presets';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { navItems } from '~/modules/navigation/nav-items';
 import { openNavSheet } from '~/modules/navigation/nav-sheet';
@@ -15,14 +16,6 @@ import { findMembership } from '~/query/enrichment/helpers';
 import { getChannelRoute } from '~/utils/channel-route';
 
 const lobbyRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/');
-
-// The open menu's hint and the closed menu's button trade places with a short fade and rise
-const swapMotion = {
-  initial: { opacity: 0, y: 4 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -4 },
-  transition: { duration: 0.15 },
-};
 
 /** An organization's page with nothing of it open: it names the organization a rail press or a switcher pick moved to. */
 export function OrganizationLobby() {

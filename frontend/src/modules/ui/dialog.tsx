@@ -112,7 +112,7 @@ export function DialogContent({
           className={cn(
             'data-closed:fade-out-0 data-open:fade-in-0 bg-background data-closed:animate-out data-open:animate-in relative mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip overscroll-none rounded-lg p-4 shadow-lg duration-200 focus-visible:outline-hidden',
             dock
-              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom shadow-floating duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom shadow-floating ease-drawer duration-300'
               : 'sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
             // A container owns the scroll, so the popup only clips
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',

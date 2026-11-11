@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type CompanyAddress } from 'shared';
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { CloseButton } from '~/modules/common/close-button';
 import '~/modules/common/contact-form/contact-form-map.css';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
@@ -116,7 +116,7 @@ function CompanyMap({ styleUrl, address, center }: { styleUrl: string; address: 
 
 export function ContactFormMap() {
   const styleUrl = useUIStore((state) => appConfig.mapStyleUrls[state.mode]);
-  const { hasStarted } = useMountedState();
+  const hasStarted = useDelayedFlag(true, settledAfterMountMs);
   const { address } = appConfig.company;
 
   if (!styleUrl || !address?.coordinates) return null;

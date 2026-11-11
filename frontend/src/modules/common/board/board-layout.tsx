@@ -20,6 +20,7 @@ import {
 } from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
+import { scrollBehavior } from '~/utils/reduced-motion';
 
 /** In px */
 export const panelMinWidth = 300;
@@ -122,7 +123,7 @@ export function BoardLayout({
       // Once the glide has the panel at its open width
       window.setTimeout(() => {
         const el = document.querySelector(`[data-panel="${CSS.escape(panelId)}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
+        el?.scrollIntoView({ behavior: scrollBehavior(), inline: 'nearest' });
       }, panelGlideDuration);
     },
   }));

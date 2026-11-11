@@ -1,5 +1,9 @@
 import { AnimatePresence, motion, PresenceContext } from 'motion/react';
 import type { ReactNode } from 'react';
+import { fadeMotion } from '~/modules/common/motion-presets';
+
+// The old content leaves in half the time the new takes: the swap reads as one move
+const fastExit = { opacity: 0, transition: { duration: 0.08 } };
 
 /** Ref callback that starts mounting content at the top of its sheet's scroll container; stable, so only mounts call it. */
 function scrollToTop(element: HTMLElement | null) {
@@ -13,14 +17,7 @@ export function ContentKeyTransition({ contentKey, children }: { contentKey?: st
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={contentKey}
-        ref={scrollToTop}
-        className="flex flex-1 flex-col"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { duration: 0.15 } }}
-        exit={{ opacity: 0, transition: { duration: 0.08 } }}
-      >
+      <motion.div key={contentKey} ref={scrollToTop} className="flex flex-1 flex-col" {...fadeMotion} exit={fastExit}>
         {/* Parts with an `exit` of their own leave with this content: one that mounts while it fades out would hold the swap forever */}
         <PresenceContext.Provider value={null}>{children}</PresenceContext.Provider>
       </motion.div>

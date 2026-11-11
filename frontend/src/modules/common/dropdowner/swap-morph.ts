@@ -1,5 +1,6 @@
 import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { prefersReducedMotion } from '~/utils/reduced-motion';
 
 /** Where a dropdown's box stays put while it resizes: the corner or edge that faces its trigger. */
 export interface MorphAnchor {
@@ -112,7 +113,8 @@ function morph(container: HTMLElement, content: HTMLElement, from: SwapSnapshot,
   copy.style.pointerEvents = 'none';
   container.append(copy);
 
-  const { duration, easing } = timing;
+  const { duration } = timing;
+  const easing = themeEase(timing.ease);
   const animations = [
     container.animate(
       [
@@ -142,8 +144,12 @@ function morph(container: HTMLElement, content: HTMLElement, from: SwapSnapshot,
 
 export interface MorphTiming {
   duration: number;
-  easing: string;
+  /** A curve of the theme: `out` for a popup, `drawer` for a sheet. */
+  ease: 'out' | 'drawer';
 }
+
+/** The curve `--ease-<name>` holds in the theme, as the Web Animations API takes it. */
+const themeEase = (name: MorphTiming['ease']) => getComputedStyle(document.documentElement).getPropertyValue(`--ease-${name}`).trim() || 'ease';
 
 interface SwapMorphOptions {
   dropdownKey: number;
@@ -200,7 +206,7 @@ export function useSwapMorph({ dropdownKey, content, containerRef, contentRef, a
       : current.querySelector<HTMLElement>('[data-autofocus]');
     target?.focus({ preventScroll: true });
 
-    if (!swap.from || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!swap.from || prefersReducedMotion()) return;
     return morph(container, current, swap.from, anchor(), timing, (positioned && container.parentElement) || undefined);
   }, [content]);
 }

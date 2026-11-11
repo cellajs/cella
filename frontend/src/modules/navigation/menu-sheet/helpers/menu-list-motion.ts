@@ -1,4 +1,4 @@
-import { collapseMotion } from '~/modules/common/collapse-motion';
+import { collapseMotion } from '~/modules/common/motion-presets';
 
 /** `collapseMotion` for a menu list a hide or show moves rows into: it clips only while it opens or closes, so arriving rows stay visible. */
 export const menuListMotion = {

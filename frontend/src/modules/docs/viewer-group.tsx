@@ -7,6 +7,7 @@ import { CodeCopyButton } from '~/modules/common/code-copy-button';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { hasDescriptionKeyword } from '~/modules/common/json-viewer/utils';
+import { fadeMotion } from '~/modules/common/motion-presets';
 import { CodeViewer } from '~/modules/docs/code-viewer';
 import { SpecText } from '~/modules/docs/spec-text';
 import { CodeBlock } from '~/modules/ui/code-block';
@@ -71,14 +72,7 @@ export function ViewerGroup({
       </div>
       <CodeBlock className="overflow-x-auto">
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={viewMode}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="p-3 md:py-4"
-          >
+          <motion.div key={viewMode} {...fadeMotion} className="p-3 md:py-4">
             {viewMode === 'format' && (
               <JsonViewer
                 value={schema}

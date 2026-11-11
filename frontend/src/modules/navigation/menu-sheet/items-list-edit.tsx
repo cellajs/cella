@@ -1,4 +1,4 @@
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggable-item';
 import { type MenuGroup, sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
@@ -16,7 +16,7 @@ interface MenuSheetItemsListEditProps {
 
 export function MenuSheetItemsListEdit({ items, group, options, prepareHide, isSubmenu = false }: MenuSheetItemsListEditProps) {
   // A row that mounts once the list is on screen arrived by a show or a create, and unfolds its submenu
-  const { hasStarted: isShown } = useMountedState();
+  const isShown = useDelayedFlag(true, settledAfterMountMs);
 
   if (options && items.length === 0) return <MenuSheetNoItems entityType={options.entityType} />;
 

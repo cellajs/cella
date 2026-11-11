@@ -13,14 +13,15 @@ interface IndicatorBarProps {
   style?: CSSProperties;
 }
 
+// The bar springs from row to row and settles without a bounce
+const barSpring = { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 } as const;
+
 /** Bar that marks the active row of a section list. */
 export function IndicatorBar({ layoutId, animate = true, className, style }: IndicatorBarProps) {
   const barClassName = cn('bg-primary absolute left-2 ml-px w-[0.20rem] rounded-full', className);
   if (!animate) return <span className={barClassName} style={style} />;
 
-  return (
-    <motion.span layoutId={layoutId} transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }} className={barClassName} style={style} />
-  );
+  return <motion.span layoutId={layoutId} transition={barSpring} className={barClassName} style={style} />;
 }
 
 // Tailwind reads group names from literal class strings

@@ -27,7 +27,7 @@ const lastIndex = offlineFilesTiers.length - 1;
 const budgets = offlineFilesTiers.map((tier) => offlineFilesRules(tier).budget);
 
 /** A slight overshoot, so the thumb and the caret settle on a stop. */
-const snapEase = 'ease-[cubic-bezier(0.34,1.3,0.64,1)]';
+const snapEase = 'ease-overshoot';
 
 const stopPercent = (index: number) => (index / lastIndex) * 100;
 
@@ -115,8 +115,8 @@ export function OfflineFilesSetting() {
   // Every state stays mounted in one cell; the leaving one fades out fast and the next fades in just after, so two texts never cross
   const fadeClass = (active: boolean) =>
     cn(
-      'col-start-1 row-start-1 transition-opacity motion-reduce:transition-none',
-      active ? 'opacity-100 delay-60 duration-200 ease-out' : 'pointer-events-none opacity-0 duration-120 ease-in',
+      'col-start-1 row-start-1 transition-opacity',
+      active ? 'opacity-100 delay-75 duration-200 ease-out' : 'pointer-events-none opacity-0 duration-150 ease-in',
     );
 
   return (
@@ -168,7 +168,7 @@ export function OfflineFilesSetting() {
               />
               <SliderPrimitive.Indicator
                 className={cn(
-                  'bg-primary/20 absolute inset-y-0 transition-[width] duration-400 group-data-dragging/slider:duration-150 motion-reduce:transition-none',
+                  'bg-primary/20 absolute inset-y-0 transition-[width] duration-300 group-data-dragging/slider:duration-150 motion-reduce:transition-none',
                   snapEase,
                 )}
               />

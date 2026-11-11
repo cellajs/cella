@@ -84,23 +84,13 @@ export function DrawerContent({
             'data-[swipe-direction=up]:shadow-[0_-3rem_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
             'data-[swipe-direction=right]:shadow-[3rem_0_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
             'data-[swipe-direction=left]:shadow-[-3rem_0_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
-            'data-[swipe-direction=down]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
-            'data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
-            'data-[swipe-direction=right]:transform-[translateX(var(--drawer-swipe-movement-x,0px))]',
-            'data-[swipe-direction=left]:transform-[translateX(var(--drawer-swipe-movement-x,0px))]',
-            // Enter: @starting-style natively, data-starting-style as Base UI's fallback
-            'starting:data-[swipe-direction=down]:transform-[translateY(100%)]',
-            'starting:data-[swipe-direction=up]:transform-[translateY(-100%)]',
-            'starting:data-[swipe-direction=right]:transform-[translateX(100%)]',
-            'starting:data-[swipe-direction=left]:transform-[translateX(-100%)]',
-            'data-starting-style:data-[swipe-direction=down]:transform-[translateY(100%)]',
-            'data-starting-style:data-[swipe-direction=up]:transform-[translateY(-100%)]',
-            'data-starting-style:data-[swipe-direction=right]:transform-[translateX(100%)]',
-            'data-starting-style:data-[swipe-direction=left]:transform-[translateX(-100%)]',
-            'data-ending-style:data-[swipe-direction=down]:transform-[translateY(100%)]',
-            'data-ending-style:data-[swipe-direction=up]:transform-[translateY(-100%)]',
-            'data-ending-style:data-[swipe-direction=right]:transform-[translateX(100%)]',
-            'data-ending-style:data-[swipe-direction=left]:transform-[translateX(-100%)]',
+            // Per direction: where the popup rests (a swipe moves it along), and where it comes from and goes to
+            'data-[swipe-direction=down]:[--drawer-out:translateY(100%)] data-[swipe-direction=down]:[--drawer-rest:translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
+            'data-[swipe-direction=up]:[--drawer-out:translateY(-100%)] data-[swipe-direction=up]:[--drawer-rest:translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
+            'data-[swipe-direction=right]:[--drawer-out:translateX(100%)] data-[swipe-direction=right]:[--drawer-rest:translateX(var(--drawer-swipe-movement-x,0px))]',
+            'data-[swipe-direction=left]:[--drawer-out:translateX(-100%)] data-[swipe-direction=left]:[--drawer-rest:translateX(var(--drawer-swipe-movement-x,0px))]',
+            // Enter: @starting-style natively, data-starting-style as Base UI's fallback. Under reduced motion it appears in place.
+            'transform-(--drawer-rest) motion-safe:data-ending-style:transform-(--drawer-out) motion-safe:data-starting-style:transform-(--drawer-out) motion-safe:starting:transform-(--drawer-out)',
             className,
           )}
           {...props}

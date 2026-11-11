@@ -111,6 +111,12 @@ function clearResizeHint(element: HTMLElement) {
   curtain.style.removeProperty('--hint-y');
 }
 
+/** How long a toggle glides the widths (T6), the `duration-200` on `ResizablePanel`. */
+export const panelGlideDuration = 200;
+
+// The glide plus the render after the report that swaps a panel's content in
+const swapWindowMs = panelGlideDuration + 100;
+
 const openingTimers = new WeakMap<HTMLElement, number>();
 
 // The window outlasts the render that swaps in the expanded content, so hintFadeOut content mounts while it is set
@@ -119,7 +125,7 @@ function markOpening(element: HTMLElement) {
   element.setAttribute('data-opening', '');
   openingTimers.set(
     element,
-    window.setTimeout(() => element.removeAttribute('data-opening'), 300),
+    window.setTimeout(() => element.removeAttribute('data-opening'), swapWindowMs),
   );
 }
 
@@ -133,11 +139,8 @@ function releaseAfterSwap(element: HTMLElement) {
   };
   const observer = new MutationObserver(release);
   observer.observe(element, { childList: true, subtree: true });
-  const timer = window.setTimeout(release, 300);
+  const timer = window.setTimeout(release, swapWindowMs);
 }
-
-/** How long a toggle glides the widths (T6), the `duration-200` on `ResizablePanel`. */
-export const panelGlideDuration = 200;
 
 const resizeSaveDelay = 150;
 

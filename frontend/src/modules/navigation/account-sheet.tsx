@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -47,7 +47,7 @@ export function AccountSheet() {
   const { mutate: updateUser } = useUpdateUser(user.id);
 
   const frameRef = useRef<HTMLDivElement>(null);
-  const { hasStarted } = useMountedState();
+  const hasStarted = useDelayedFlag(true, settledAfterMountMs);
 
   useEffect(() => {
     // Signing out from here shows its page at once, on a slow connection too

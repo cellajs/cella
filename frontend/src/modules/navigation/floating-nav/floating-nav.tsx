@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import { FloatingNavButton, type FloatingNavItem, floatingHiddenClass } from '~/modules/navigation/floating-nav/button';
+import { FloatingNavButton, type FloatingNavItem, floatingHiddenClass, labelCollapseDuration } from '~/modules/navigation/floating-nav/button';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
@@ -11,7 +11,8 @@ interface FloatingNavProps {
   resetTrigger?: unknown;
 }
 
-const labelCollapseMs = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
+// The label's collapse plus a margin: buttons hide only once the text is gone
+const labelCollapseMs = labelCollapseDuration + 50;
 
 export function FloatingNav({ items, resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');

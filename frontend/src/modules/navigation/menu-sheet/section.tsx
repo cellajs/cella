@@ -6,9 +6,9 @@ import { type ChannelEntityType, isChannelHideable } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
-import { collapseMotion } from '~/modules/common/collapse-motion';
 import { CountBadge } from '~/modules/common/count-badge';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { collapseMotion } from '~/modules/common/motion-presets';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
@@ -188,12 +188,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
       />
       <AnimatePresence initial={false}>
         {isEditing && (
-          <motion.div
-            key="alert"
-            {...collapseMotion}
-            transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
-            className="overflow-hidden"
-          >
+          <motion.div key="alert" {...collapseMotion} className="overflow-hidden">
             <AlertBanner id="menu_management" variant="info" className="my-2" icon={InfoIcon} animate>
               {t('c:configure_menu.text')}
             </AlertBanner>

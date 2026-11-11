@@ -8,7 +8,10 @@ import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { isTouchInteraction } from '~/utils/input-modality';
 
-const popupMorph: MorphTiming = { duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' };
+const popupMorph: MorphTiming = { duration: 200, ease: 'out' };
+
+// Positioning and the popup's enter, with margin: after it the person's own scrolling is free
+const pinReleaseMs = 400;
 
 export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
   const trigger = dropdown.triggerRef?.current;
@@ -57,8 +60,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
     const userScrollEvents = ['wheel', 'touchmove', 'keydown'] as const;
     window.addEventListener('scroll', onScroll, true);
     for (const type of userScrollEvents) window.addEventListener(type, release, true);
-    // Release after positioning + entry animation settle, so later user scrolling is free.
-    const timer = setTimeout(release, 400);
+    const timer = setTimeout(release, pinReleaseMs);
 
     return () => {
       clearTimeout(timer);

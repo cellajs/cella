@@ -11,6 +11,9 @@ export const floatingHiddenClass = tw(
   'pointer-events-none translate-y-16 scale-50 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100',
 );
 
+/** How long the label folds in or out: the `duration-300` of its wrapper and text below. */
+export const labelCollapseDuration = 300;
+
 export interface FloatingNavItem {
   id: string;
   icon: IconComponent;

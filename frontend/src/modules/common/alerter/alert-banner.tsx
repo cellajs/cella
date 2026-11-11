@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
-import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { collapseMotion } from '~/modules/common/motion-presets';
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 

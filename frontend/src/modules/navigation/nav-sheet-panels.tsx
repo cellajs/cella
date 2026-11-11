@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import type { TKey } from '~/lib/i18n-locales';
-import { collapseMotion } from '~/modules/common/collapse-motion';
 import { FocusTrap } from '~/modules/common/focus-trap';
+import { collapseMotion, fadeMotion } from '~/modules/common/motion-presets';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
@@ -94,7 +94,7 @@ function NavSheetPanelRow({ id, label, indicator, children }: NavSheetPanelProps
 }
 
 /** Same length as the panel collapse, so the bar and the panel under it arrive together. */
-const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
+const pinGlideTiming: KeyframeAnimationOptions = { duration: collapseMotion.transition.duration * 1000, easing: 'ease-in-out' };
 
 /** The panels at the end of a nav sheet: rows that open bottom drawers on a phone, a bar that expands over the sheet from `sm` up. */
 export function NavSheetPanels() {
@@ -168,16 +168,7 @@ function NavSheetPanelBar() {
   return (
     <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={handleKeyDown}>
       <AnimatePresence>
-        {hasOpenPanel && (
-          <motion.div
-            key="panel-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-overlay absolute right-0 bottom-full left-0 z-10 h-[200vh]"
-          />
-        )}
+        {hasOpenPanel && <motion.div key="panel-overlay" {...fadeMotion} className="bg-overlay absolute right-0 bottom-full left-0 z-10 h-[200vh]" />}
       </AnimatePresence>
 
       <FocusTrap active={hasOpenPanel}>

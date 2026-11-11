@@ -27,7 +27,7 @@ const toastRootClassName = cn(
   'group/toast focus-effect bg-popover text-popover-foreground shadow-floating pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-lg will-change-transform select-none',
   'group-data-[position=top]/toast-viewport:top-0 group-data-[position=top]/toast-viewport:bottom-auto group-data-[position=top]/toast-viewport:origin-top',
   '[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-dir)*-1*(var(--toast-offset-y)+var(--toast-index)*var(--gap))+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]',
-  'h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-var(--toast-dir)*(var(--toast-index)*var(--peek)+var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]',
+  'h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-var(--toast-dir)*(var(--toast-index)*var(--peek)+var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_var(--ease-drawer),opacity_500ms,height_150ms]',
   // Bridges the gap to the next toast so the expanded stack stays hovered
   'after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full group-data-[position=top]/toast-viewport:after:top-auto group-data-[position=top]/toast-viewport:after:bottom-full',
   'data-expanded:h-(--toast-height) data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]',
@@ -52,7 +52,7 @@ function ToastList({ position }: { position: ToastPosition }) {
     <ToastPrimitive.Root key={toast.id} toast={toast} swipeDirection={swipeDirection} data-slot="toast" className={toastRootClassName}>
       <ToastPrimitive.Content
         data-slot="toast-content"
-        className="flex h-full items-center gap-3 overflow-hidden p-4 transition-opacity duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] data-behind:opacity-0 data-expanded:opacity-100"
+        className="ease-drawer flex h-full items-center gap-3 overflow-hidden p-4 transition-opacity duration-250 data-behind:opacity-0 data-expanded:opacity-100"
       >
         {toast.type && toastIcons[toast.type] && (
           <span data-slot="toast-icon" className="shrink-0 [&_svg]:pointer-events-none">

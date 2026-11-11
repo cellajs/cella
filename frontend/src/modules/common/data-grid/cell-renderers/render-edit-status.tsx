@@ -2,6 +2,7 @@ import { CheckIcon } from 'lucide-react';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDelayedFlag } from '~/hooks/use-delayed-flag';
+import { spinnerDelayMs } from '~/modules/common/spinner';
 import { Spinner } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
 import type { CalculatedColumn, RowsChangeData } from '../types';
@@ -11,8 +12,6 @@ type EditStatus = 'pending' | 'saved';
 
 type Edit<R> = { row: R; columnKey: string; status: EditStatus };
 
-// A save that answers sooner shows no spinner, so a fast network never flashes one
-const spinnerDelayMs = 300;
 const savedShowMs = 1200;
 
 /** The status of the edit in a row's column, looked up by the row object a cell renders. */

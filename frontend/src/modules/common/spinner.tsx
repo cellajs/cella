@@ -1,8 +1,11 @@
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { Spinner as SpinnerIcon } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
 
 const sizes = { sm: 'size-4', md: 'size-8', lg: 'size-12' };
+
+/** How long a pending state waits before it shows a spinner: a fast answer shows none. */
+export const spinnerDelayMs = 300;
 
 interface SpinnerProps {
   /** `sm` in a button or input, `lg` alone on a screen, sheet or dialog. */
@@ -12,10 +15,10 @@ interface SpinnerProps {
 }
 
 export function Spinner({ size = 'md', className, noDelay = false }: SpinnerProps) {
-  const { hasStarted } = useMountedState();
+  const held = useDelayedFlag(true, spinnerDelayMs);
 
   return (
-    <div data-started={hasStarted} data-delay={noDelay} className="transition-opacity duration-300 data-[started=false]:data-[delay=false]:opacity-0">
+    <div data-shown={noDelay || held} className="transition-opacity duration-300 data-[shown=false]:opacity-0">
       <SpinnerIcon className={cn('text-foreground mx-auto opacity-50', sizes[size], className)} />
     </div>
   );
