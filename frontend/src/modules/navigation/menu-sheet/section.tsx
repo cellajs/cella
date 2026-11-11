@@ -11,6 +11,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { collapseMotion } from '~/modules/common/motion-presets';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
+import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { foldedToggleLabel, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
@@ -68,6 +69,7 @@ function MenuSheetSectionButton({
 
   // Cumulative over the section's non-hidden, non-muted items and their subitems.
   const sectionUnseenCount = useUnseenCount(channelIds);
+  const showsBadge = sectionUnseenCount > 0 && !isSectionVisible;
   // The rows the section lists: neither hidden nor archived, subitems left out
   const activeCount = items.filter((item) => menuGroup(item) === 'active').length;
 
@@ -82,7 +84,7 @@ function MenuSheetSectionButton({
           aria-expanded={isSectionVisible}
           aria-label={isSectionVisible ? undefined : foldedToggleLabel(t, t(options.label), activeCount, sectionUnseenCount)}
           // Open, it keeps its resting look; its ring sits inside, as the next sticky header covers one outside
-          className="group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 aria-expanded:bg-transparent"
+          className="group/chevron-host group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 gap-0 border-0 aria-expanded:bg-transparent"
           variant="ghost"
         >
           <span className="flex min-w-0 grow items-center gap-2">
@@ -91,8 +93,12 @@ function MenuSheetSectionButton({
               <span className="text-faint-foreground font-normal group-data-[visible=true]/menu-section:hidden">{activeCount}</span>
             )}
           </span>
-          {sectionUnseenCount > 0 && <CountBadge count={sectionUnseenCount} className="shrink-0 group-data-[visible=true]/menu-section:hidden" />}
-          <ChevronDownIcon className="shrink-0 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
+          {showsBadge && <CountBadge count={sectionUnseenCount} className="ml-2 shrink-0" />}
+          <FoldingChevron
+            icon={ChevronDownIcon}
+            folded={showsBadge}
+            className="ml-2 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180"
+          />
         </Button>
       ) : (
         // Matches the toggle's text box, so the label sits where a collapsible section shows it
