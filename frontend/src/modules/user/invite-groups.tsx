@@ -68,13 +68,15 @@ interface InviteChipProps {
   person?: InvitePerson;
   /** A date or reason beside the address. */
   fact?: string;
+  /** Every person in the tile shows an address, which a press on any of them turns on or off. */
+  pinned: boolean;
+  onPin: () => void;
   onRemove: () => void;
 }
 
 /** A long address wraps its fact under it. A person's chip shows the address on hover or press, as wide as the longer, so the row never moves. */
-function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
+function InviteChip({ address, person, fact, pinned, onPin, onRemove }: InviteChipProps) {
   const { t } = useTranslation();
-  const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
   // A press shows its own result until the pointer leaves, past the hover's preview
   const [pressed, setPressed] = useState(false);
@@ -93,7 +95,7 @@ function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
       onPress={
         person &&
         (() => {
-          setPinned(!pinned);
+          onPin();
           setPressed(true);
         })
       }
@@ -135,6 +137,7 @@ export function InviteGroups({ check, list, held, role }: InviteGroupsProps) {
 
   const [picked, setPicked] = useState<{ key: string | null; revision: number } | null>(null);
   const [limits, setLimits] = useState<Partial<Record<InviteGroupKey, number>>>({});
+  const [pinned, setPinned] = useState<Partial<Record<InviteGroupKey, boolean>>>({});
 
   const present = inviteTiles.filter(({ key }) => check.groups[key].length);
   // The tile a single addition lands in, once checked: a paste, a restored draft or a mode switch leaves no last one
@@ -219,6 +222,8 @@ export function InviteGroups({ check, list, held, role }: InviteGroupsProps) {
                         address={address}
                         person={list.people.get(address)}
                         fact={check.viewOf(address).fact}
+                        pinned={!!pinned[key]}
+                        onPin={() => setPinned({ ...pinned, [key]: !pinned[key] })}
                         onRemove={() => remove(key, address)}
                       />
                     ))}
