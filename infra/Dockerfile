@@ -15,7 +15,10 @@ RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').pa
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json shared/
 COPY infra/package.json infra/
-RUN pnpm install --frozen-lockfile --filter 'infra...' --filter 'shared...'
+# Production dependencies alone, which is why `tsx` is one of infra's, and without the store and cache pnpm filled to install them:
+# no run installs, and pnpm's check before a script ignores both the `--prod` choice and the store.
+RUN pnpm install --frozen-lockfile --prod --filter 'infra...' --filter 'shared...' \
+ && rm -rf "$(pnpm store path)" /root/.cache
 
 COPY shared shared
 COPY infra infra
