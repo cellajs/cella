@@ -12,7 +12,7 @@ const addressLimits = { points: 1, duration: day };
  */
 const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits });
 
-/** A tenant's invitation mails a day, against its `invitationEmailsPerDay` restriction, so admin accounts do not multiply it. */
+/** A tenant's invitation mails a day, against its `invitationEmailsPerDay` restriction. Admin accounts do not multiply it. */
 const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day });
 
 const addressKey = (tenantId: string, email: string) => subjectSegment('tenantId', tenantId) + subjectSegment('email', email);
