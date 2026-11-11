@@ -2,6 +2,7 @@ import { SearchIcon } from 'lucide-react';
 import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { countText } from '~/modules/common/search-chips/count-text';
 import { FilterChip, MoreChipsButton, WordChip } from '~/modules/common/search-chips/search-chip-items';
@@ -24,6 +25,7 @@ export function PhoneSearchChips({
   onSearch,
   onReset,
   label,
+  dialogLabel = label,
   name,
   id,
   resultCount,
@@ -77,6 +79,16 @@ export function PhoneSearchChips({
     setFieldRise(riseFromField());
     setPhase('closing');
   };
+
+  // Back changes the page behind the dialog, which then searches a state no longer shown
+  useEventListener(
+    'popstate',
+    () => {
+      search.abandonDraft();
+      close();
+    },
+    { enabled: phase === 'open' },
+  );
 
   // A render after the close, so the search it remembers holds what the pick or commit just changed
   useEffect(() => {
@@ -202,7 +214,7 @@ export function PhoneSearchChips({
           initialFocus={() => (pickingKey ? popupRef.current : inputRef.current)}
           finalFocus={triggerRef}
         >
-          <DialogTitle className="sr-only">{label}</DialogTitle>
+          <DialogTitle className="sr-only">{dialogLabel}</DialogTitle>
           {/* Puts the icon where the closed field has it: the field's edge and its pl-1.5 */}
           <div className="flex min-h-0 flex-1 flex-col [--search-icon-size:1.25rem] [--search-icon-start:calc(0.875rem+1px)]">
             <Combobox<SearchSelection>
@@ -237,8 +249,9 @@ export function PhoneSearchChips({
                 <ComboboxSearchInput
                   ref={inputRef}
                   {...{ id, name, hasSearch, isSearching }}
-                  aria-label={label}
-                  placeholder={label}
+                  aria-label={dialogLabel}
+                  placeholder={dialogLabel}
+                  truncatePlaceholder
                   enterKeyHint="search"
                   value={draft}
                   onKeyDown={handleKeyDown}

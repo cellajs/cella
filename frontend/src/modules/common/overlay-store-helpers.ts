@@ -104,14 +104,14 @@ export function useOverlayLock(source: string, active: boolean) {
   }, [active]);
 }
 
-/** Runs `callback` when a navigation to another path starts. */
-export function useOnPathChange(callback: () => void) {
+/** Runs `callback` with the target path when a navigation to another path starts. */
+export function useOnPathChange(callback: (pathname: string) => void) {
   const onPathChange = useEffectEvent(callback);
 
   useEffect(
     () =>
-      getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
-        if (pathChanged) onPathChange();
+      getRouter().subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
+        if (pathChanged) onPathChange(toLocation.pathname);
       }),
     [],
   );

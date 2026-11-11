@@ -6,6 +6,7 @@ import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { type InternalSheet, navSheetId, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
+import { getRouter } from '~/routes/-router-instance';
 
 /**
  * Keeps sheets that leave the store rendered with `open: false` until Base UI reports their exit done, so every
@@ -60,9 +61,11 @@ export function Sheeter() {
   // Dialogs opened from a sheet stack above it through this class
   useBodyClass({ 'sheeter-open': hasOpenSheet });
 
-  useOnPathChange(() => {
+  useOnPathChange((pathname) => {
     const { navSheetOpen, keepNavOpen } = navigationStore.getState();
-    sheeter.getState().removeOnRouteChange({ isCleanup: true, keepId: navSheetOpen && keepNavOpen ? navSheetId : undefined });
+    const [targetRoutes] = getRouter().getMatchedRoutes(pathname);
+    const keepsNavSheet = keepNavOpen || !!targetRoutes.at(-1)?.options.staticData?.keepNavSheet;
+    sheeter.getState().removeOnRouteChange({ isCleanup: true, keepId: navSheetOpen && keepsNavSheet ? navSheetId : undefined });
   });
 
   if (!sheets.length && !exiting.length) return null;

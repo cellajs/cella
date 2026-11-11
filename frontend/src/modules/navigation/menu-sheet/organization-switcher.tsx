@@ -11,7 +11,7 @@ import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
-import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { menuOrganizations, openOrganizationLobby } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
@@ -64,7 +64,14 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
   const renderItem = (item: UserMenuItem) => {
     const unseenCount = unseenCounts.get(item.id) ?? 0;
     return (
-      <DropdownSelectItem key={item.id} selected={item.id === organization.id} onSelect={() => showMenuOrganization(item)}>
+      <DropdownSelectItem
+        key={item.id}
+        selected={item.id === organization.id}
+        onSelect={() => {
+          showMenuOrganization(item);
+          openOrganizationLobby(item);
+        }}
+      >
         <span className={cn('flex min-w-0 items-center gap-3', item.membership.hidden && 'text-muted-foreground')}>
           <EntityAvatar
             className={cn('size-6 shrink-0', item.membership.hidden && 'opacity-70')}
@@ -74,7 +81,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
             url={item.thumbnailUrl}
           />
           <span className="truncate">{item.name}</span>
-          {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
+          {unseenCount > 0 && <CountBadge count={unseenCount} className="ml-auto shrink-0" />}
         </span>
       </DropdownSelectItem>
     );

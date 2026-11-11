@@ -32,7 +32,7 @@ export const buttonVariants = cva(
         cell: 'group/cell-button text-foreground-soft hover:text-foreground flex w-full justify-start font-normal focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',
         input: 'border-input bg-background aria-invalid:border-destructive',
         // A list row in a DrawerRowGroup, as in the menu sheet
-        row: 'text-md active:bg-accent relative w-full justify-start gap-3 font-normal aria-pressed:font-medium',
+        row: 'text-md active:bg-accent relative w-full justify-start gap-3 font-normal',
       },
       soft: { true: '', false: '' },
       // Feedback while held (the press utility); input-styled buttons stay put like the fields they sit among, rows show a fill

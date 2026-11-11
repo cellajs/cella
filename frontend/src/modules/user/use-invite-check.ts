@@ -31,7 +31,8 @@ const day = (date?: string | number) => (date ? new Date(date).toLocaleDateStrin
 /** The view of a checked address from what the check or the invite answered; `held` mails only addresses with no email yet, on publish. */
 export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, held?: boolean): InviteView => {
   if (outcome?.outcome === 'member') {
-    const word = t('c:already_member');
+    // A role's own wording, such as "Already a member", is the key's context entry in the locale
+    const word = outcome.role ? t('c:invite_state_already_role', { role: t(`c:${outcome.role}`), context: outcome.role }) : t('c:already_member');
     return { group: 'out', tone: 'muted', word, note: lowercaseLabel(t('c:invite_group_out')), fact: lowercaseLabel(word) };
   }
   if (outcome?.outcome !== 'remind') {

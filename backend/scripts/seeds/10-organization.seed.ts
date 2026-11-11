@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { hierarchy } from 'shared';
 import { getSeedDb } from '#/db/db';
 import { mockMany, setMockContext } from '#/mocks';
 import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
@@ -106,7 +107,7 @@ export const organizationsSeed = async () => {
 
   // One organization the seed admin administers starts as a draft, so publishing can be tried by hand
   const draftOrganizationId = adminMemberships[0]?.channelId;
-  if (draftOrganizationId) {
+  if (draftOrganizationId && hierarchy.canDraft('organization')) {
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, draftOrganizationId));
   }
 

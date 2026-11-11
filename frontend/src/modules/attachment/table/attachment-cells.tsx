@@ -45,22 +45,17 @@ export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
   );
 }
 
-/** What this device can tell about the file: its own upload's progress, or, without the file, that its uploader still holds it. */
+/** This device's own upload of the file; a file only another device holds shows in the download column. */
 function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
   const { t } = useTranslation();
-  const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
+  const { isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
 
-  if (hasLocalBlob && isUploaded) return null;
+  if (isUploaded) return null;
 
   let Icon: IconComponent;
   let tooltip: string;
 
-  if (!hasLocalBlob) {
-    if (!isPendingUpload(row)) return null;
-    const { key, params } = pendingUploadMessage({ uploader: row.createdBy });
-    Icon = CloudOffIcon;
-    tooltip = t(key, params);
-  } else if (isUploading) {
+  if (isUploading) {
     Icon = LoaderIcon;
     tooltip = t('c:uploading');
   } else if (isPending) {
@@ -127,13 +122,19 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       tabIndex={tabIndex}
       // Not `disabled`: a disabled button shows no tooltip saying why, and it drops focus out of the grid.
       aria-disabled={!!pending || isInProgress}
-      className="aria-disabled:hover:text-foreground-soft justify-center aria-disabled:opacity-50"
+      className="justify-center"
       aria-label={tooltip}
       data-tooltip="true"
       data-tooltip-content={tooltip}
       onClick={handleDownload}
     >
-      {isInProgress ? <Spinner size="sm" className="text-foreground-soft" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
+      {isInProgress ? (
+        <Spinner size="sm" className="text-foreground-soft" noDelay />
+      ) : pending ? (
+        <CloudOffIcon className="text-muted-foreground" />
+      ) : (
+        <DownloadIcon />
+      )}
     </Button>
   );
 }

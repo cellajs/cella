@@ -79,6 +79,8 @@ export interface SearchChipsFieldProps extends SearchFilters {
   onReset: () => void;
   /** Accessible name, and the placeholder. */
   label: string;
+  /** The phone dialog's name and placeholder, for one that can say more than the closed field, such as what it searches; else the label. */
+  dialogLabel?: string;
   name?: string;
   id?: string;
   /** What the search finds, or the whole list while nothing narrows it, for the typed word's row; left out where the bar shows it. */

@@ -56,7 +56,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
           key={option.value}
           role="option"
           aria-selected={selected.includes(option.value)}
-          className="group/language-option hover:bg-accent hover:text-accent-foreground active:bg-accent flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden select-none aria-selected:font-medium"
+          className="group/language-option hover:bg-accent hover:text-accent-foreground active:bg-accent flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden select-none"
           onClick={() => toggleLanguage(option.value)}
           onKeyDown={(event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;

@@ -11,6 +11,8 @@ import { cn } from '~/utils/cn';
 interface FloatingActionProps {
   icon: IconComponent;
   label: string;
+  /** Names the action for a screen reader where the label is short, such as a bare noun. */
+  ariaLabel?: string;
   /** Receives the button, which a dialog it opens returns focus to. */
   onClick: (triggerRef: RefObject<HTMLButtonElement | null>) => void;
 }
@@ -19,7 +21,7 @@ interface FloatingActionProps {
  * A page's main action on a phone: a button floating bottom right, across from the floating menu, that shows its label
  * at the top of the page and hides on a scroll down. One per page; renders nothing from `sm` up.
  */
-export function FloatingAction({ icon, label, onClick }: FloatingActionProps) {
+export function FloatingAction({ icon, label, ariaLabel, onClick }: FloatingActionProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible } = useScrollVisibility(isMobile);
   // iOS overscroll keeps the scroll offset at or below 0, so it counts as the top
@@ -35,6 +37,7 @@ export function FloatingAction({ icon, label, onClick }: FloatingActionProps) {
       id="floating-action"
       icon={icon}
       label={label}
+      ariaLabel={ariaLabel}
       labelVisible={isAtTop}
       variant="default"
       onClick={() => onClick(buttonRef)}

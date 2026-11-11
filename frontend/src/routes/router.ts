@@ -93,6 +93,8 @@ declare module '@tanstack/react-router' {
     errorHome?: string;
     /** Nav items floating on a phone in place of the bottom bar; `right` stays empty where a page floats its main action. */
     floatingNavButtons?: { right?: NavItemId; left?: NavItemId };
+    /** A navigation to this route leaves an open nav sheet open: the page waits behind the menu. */
+    keepNavSheet?: true;
     /** Nav tab placement for PageTabNav: default order 0, lower first, ties keep route order. */
     navTab?: PlacementDescriptor;
     /** The placement surface this route's tab bar is: its tabs resolve against `appConfig.surfaces[tabsSlot]`. A tabbed layout route must declare it. */

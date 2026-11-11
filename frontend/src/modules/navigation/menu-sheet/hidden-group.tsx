@@ -26,7 +26,14 @@ interface MenuSheetHiddenToggleProps {
 
 const emptyChannelIds: string[] = [];
 
-function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyChannelIds, dropItems }: MenuSheetHiddenToggleProps) {
+function MenuSheetHiddenToggle({
+  onToggle,
+  variant,
+  count,
+  channelIds = emptyChannelIds,
+  dropItems,
+  isOpen,
+}: MenuSheetHiddenToggleProps & { isOpen: boolean }) {
   const { t } = useTranslation();
   const unseenCount = useUnseenCount(channelIds);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -34,6 +41,11 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
 
   const isArchived = variant === 'archived';
   const Icon = isArchived ? ArchiveIcon : EyeOffIcon;
+  const label = dropAction ? t(`c:drop_to_${dropAction}`) : t(isArchived ? 'c:archived' : 'c:hidden');
+  const foldedLabel =
+    count && !dropAction
+      ? t(unseenCount ? 'c:menu_section_count_unseen' : 'c:menu_section_count', { resource: label, total: count, count: unseenCount })
+      : undefined;
 
   useEffect(() => {
     const element = dropRef.current;
@@ -57,24 +69,22 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
         onClick={onToggle}
         disabled={count < 1 && !dropAction}
         variant="ghost"
-        // Borderless, so the icon centers on the avatars and dots above it
+        aria-expanded={isOpen}
+        aria-label={isOpen ? undefined : foldedLabel}
+        // Borderless: the icon centers on the avatars and dots above it. Open, it keeps its resting look.
         className={cn(
-          'w-full gap-0 border-0 p-0 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8',
-          dropAction && 'bg-muted ring-primary ring-2',
+          'aria-expanded:hover:bg-hover w-full gap-0 border-0 p-0 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8 aria-expanded:bg-transparent',
+          dropAction && 'bg-muted aria-expanded:bg-muted ring-primary ring-2',
         )}
       >
         <div className="flex w-12 items-center justify-center py-2">
           <Icon className="ml-2 opacity-75 group-data-[submenu=true]/hidden:size-3.5" />
         </div>
-        {/* A flex row, so hiding the taller count leaves the label where it is */}
-        <div className="text-muted-foreground flex min-w-0 grow items-center p-2 text-left">
-          <span className="truncate text-sm group-data-[submenu=true]/hidden:text-xs">
-            {dropAction ? t(`c:drop_to_${dropAction}`) : t(isArchived ? 'c:archived' : 'c:hidden')}
-          </span>
-          <span className="text-faint-foreground inline-block px-2 py-1 text-xs group-data-[hidden-visible=true]/hidden:hidden">
-            {unseenCount > 0 ? <CountBadge count={unseenCount} className="inline-flex" /> : count}
-          </span>
+        <div className="text-muted-foreground flex min-w-0 grow items-center gap-2 p-2 text-left">
+          <span className="truncate text-sm group-data-[submenu=true]/hidden:text-xs">{label}</span>
+          {count > 0 && <span className="text-faint-foreground text-xs group-data-[hidden-visible=true]/hidden:hidden">{count}</span>}
         </div>
+        {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0 group-data-[hidden-visible=true]/hidden:hidden" />}
         <div className="px-3">
           <ChevronDownIcon className="opacity-50 transition-transform group-data-[has-hidden=false]/hidden:hidden group-data-[hidden-visible=true]/hidden:rotate-180 group-data-[submenu=true]/hidden:size-3.5" />
         </div>
@@ -102,7 +112,7 @@ export function MenuSheetHiddenGroup({ isSubmenu = false, isOpen, movesWithRow, 
       {/* Not a row with a layoutId, so it gets its own layout animation to travel with the rows a hide or show
           shifts; only then, so other changes of place stay instant */}
       <motion.div layout="position" layoutDependency={movesWithRow ? undefined : count}>
-        <MenuSheetHiddenToggle {...toggleProps} />
+        <MenuSheetHiddenToggle {...toggleProps} isOpen={isOpen} />
       </motion.div>
       <AnimatePresence initial={false}>
         {/* Empty, it has nothing to fold: kept open, a first hidden row moves in without waiting for it to unfold */}

@@ -4,11 +4,19 @@ import { getMenuSection } from '~/lib/entity-modules';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
+import { getRouter } from '~/routes/-router-instance';
 import { channelRouteConfig } from '~/routes-config';
 
 /** The menu's organizations, hidden ones included, whichever menu section lists them. */
 export const menuOrganizations = (menu: UserMenu): UserMenuItem[] =>
   Object.values(menu).flatMap((items) => items.filter((item) => item.entityType === 'organization'));
+
+/** Opens the lobby of `organization` in place of a page of another organization. The page then names the organization the menu shows. */
+export function openOrganizationLobby(organization: Pick<UserMenuItem, 'id' | 'slug' | 'tenantId'>) {
+  if (organization.id === getRouteOrganizationId()) return;
+  getRouter().navigate({ to: '/$tenantId/$organizationSlug', params: { tenantId: organization.tenantId, organizationSlug: organization.slug } });
+}
 
 /** The id of the organization among `organizations` whose pages are open, matched on its route param: a slug or an id. */
 export function useRouteOrganizationId(organizations: UserMenuItem[]): string | undefined {

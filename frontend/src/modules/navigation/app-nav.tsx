@@ -10,7 +10,7 @@ import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
-import { menuOrganizations, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { menuOrganizations, openOrganizationLobby, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { BottomBarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { closeNavSheet, openNavSheet } from '~/modules/navigation/nav-sheet';
@@ -113,13 +113,14 @@ export function AppNav() {
     openItemSheet(navItem, triggerRef, id === 'menu' && isMobile ? phoneMenuOrganization() : undefined);
   };
 
-  // Opens the organization's menu sheet without leaving the page; a second press on the same organization closes it
+  // Opens the organization's menu sheet, over its lobby when the page is another organization's; a second press closes it
   const triggerOrganization: TriggerOrganizationFn = (organization, triggerRef) => {
     const { navSheetOpen: openItemId, navSheetOrganizationId } = navigationStore.getState();
     if (openItemId === 'menu' && navSheetOrganizationId === organization.id) return closeNavSheet();
 
     const menuItem: NavItem | undefined = navItems.find((item) => item.id === 'menu');
     if (menuItem) openItemSheet(menuItem, triggerRef, organization);
+    openOrganizationLobby(organization);
   };
 
   // Each needs Ctrl, Alt or Meta: a letter alone or with Shift is typed by speech input and fires by accident (WCAG 2.1.4).

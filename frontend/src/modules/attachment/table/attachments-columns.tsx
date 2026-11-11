@@ -80,7 +80,6 @@ export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attach
     {
       key: 'download',
       name: '',
-      minBreakpoint: 'md',
       width: 32,
       renderCell: ({ row, tabIndex }) => <DownloadCell row={row} tabIndex={tabIndex} />,
     },
