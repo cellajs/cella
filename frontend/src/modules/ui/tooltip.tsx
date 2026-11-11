@@ -7,11 +7,11 @@ export function TooltipProvider({ delay = 200, ...props }: TooltipPrimitive.Prov
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
 }
 
-/** Escape closes the tooltip from anywhere, also inside a sheet or dialog. */
-export function Tooltip({ open, defaultOpen, onOpenChange, ...props }: TooltipPrimitive.Root.Props) {
+/** Escape closes the tooltip from anywhere, also inside a sheet or dialog. Not hoverable: a text label kept open under the pointer covers what it moves on to. */
+export function Tooltip({ open, defaultOpen, onOpenChange, disableHoverablePopup = true, ...props }: TooltipPrimitive.Root.Props) {
   const openState = useCloseOnEscape({ open, defaultOpen, onOpenChange });
 
-  return <TooltipPrimitive.Root data-slot="tooltip" {...openState} {...props} />;
+  return <TooltipPrimitive.Root data-slot="tooltip" disableHoverablePopup={disableHoverablePopup} {...openState} {...props} />;
 }
 
 export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {

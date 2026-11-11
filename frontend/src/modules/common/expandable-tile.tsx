@@ -117,20 +117,6 @@ export function ExpandableTile({ value, lead, details, actions, className, panel
   );
 }
 
-interface StatusTileProps extends TileHeadProps {
-  end?: ReactNode;
-}
-
-/** The same head as an `ExpandableTile`, for a list item with nothing to open. */
-export function StatusTile({ end, ...head }: StatusTileProps) {
-  return (
-    <Card className="min-h-14 flex-row items-center gap-3 px-3 py-2 sm:gap-3 sm:py-2">
-      <TileHead {...head} />
-      {end}
-    </Card>
-  );
-}
-
 interface ExpandableTileDetailProps {
   label: string;
   /** Full width, and wraps. */

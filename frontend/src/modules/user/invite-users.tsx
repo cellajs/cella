@@ -1,7 +1,6 @@
-import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { ChevronRightIcon, ClipboardPasteIcon, ClockIcon, MailIcon, SendIcon, UsersRoundIcon } from 'lucide-react';
-import { MotionConfig, motion } from 'motion/react';
+import { ChevronRightIcon, CircleAlertIcon, CircleCheckIcon, ClipboardPasteIcon, ClockIcon, MailIcon, SendIcon, UsersRoundIcon } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { type ComponentType, type FormEvent, Fragment, type ReactNode, type RefObject, useRef, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -15,19 +14,25 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { NamedText } from '~/modules/common/named-text';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { openPendingMembershipsSheet } from '~/modules/memberships/pending-memberships-count';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel } from '~/modules/ui/field';
 import { InviteBulkField, InviteEmailField, InviteSearchField } from '~/modules/user/invite-fields';
 import { InviteGroups } from '~/modules/user/invite-groups';
-import { focusOnMount, InviteResult, type InviteResultData } from '~/modules/user/invite-result';
-import { type InviteFieldProps, type InviteForm, inviteDialogId, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
+import {
+  type InviteFieldProps,
+  type InviteForm,
+  type InviteReport,
+  inviteDialogId,
+  useInviteFormDraft,
+  useInviteSubmit,
+} from '~/modules/user/invite-submit';
 import { useInviteCheck } from '~/modules/user/use-invite-check';
 import { useInviteList } from '~/modules/user/use-invite-list';
+import { cn } from '~/utils/cn';
+import { focusOnMount } from '~/utils/focus-on-mount';
 import { tw } from '~/utils/tw';
 
 type InviteMode = 'email' | 'search' | 'bulk';
@@ -43,7 +48,7 @@ interface OpenInviteDialogOptions {
 
 /** Opens the invite form in a dialog under a table bar, from the bar's invite button. */
 export function openInviteDialog({ channel, description, triggerRef, containerRef }: OpenInviteDialogOptions) {
-  dialoger.getState().create(<InviteUsers channel={channel} dialog description={description} />, {
+  dialoger.getState().create(<InviteUsers channel={channel} dialog />, {
     id: inviteDialogId,
     triggerRef,
     drawerOnMobile: false,
@@ -55,15 +60,52 @@ export function openInviteDialog({ channel, description, triggerRef, containerRe
   });
 }
 
-/** Per mode: its name on the chooser, its crumb in the dialog title, the situation it suits under its name, its icon and its field. */
-const inviteModes: Record<InviteMode, { label: TKey; crumb: TKey; text: TKey; icon: IconComponent; Field: ComponentType<InviteFieldProps> }> = {
-  email: { label: 'c:invite_mode_email', crumb: 'c:email', text: 'c:invite_mode_email.text', icon: MailIcon, Field: InviteEmailField },
-  search: { label: 'c:invite_mode_search', crumb: 'c:people', text: 'c:invite_mode_search.text', icon: UsersRoundIcon, Field: InviteSearchField },
-  bulk: { label: 'c:invite_mode_bulk', crumb: 'c:paste', text: 'c:invite_mode_bulk.text', icon: ClipboardPasteIcon, Field: InviteBulkField },
+/** Per mode: its name on the chooser, its crumb in the dialog title, its icon and its field. */
+const inviteModes: Record<InviteMode, { label: TKey; crumb: TKey; icon: IconComponent; Field: ComponentType<InviteFieldProps> }> = {
+  email: { label: 'c:invite_mode_email', crumb: 'c:email', icon: MailIcon, Field: InviteEmailField },
+  search: { label: 'c:invite_mode_search', crumb: 'c:people', icon: UsersRoundIcon, Field: InviteSearchField },
+  bulk: { label: 'c:invite_mode_bulk', crumb: 'c:paste', icon: ClipboardPasteIcon, Field: InviteBulkField },
 };
 
+/** The dialog title renders outside the form's MotionConfig, so both read this transition. */
 const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
 const modeEntrance = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
+
+interface InviteTitleProps {
+  mode: InviteMode | null;
+  onBack: () => void;
+}
+
+/** The dialog title. In a mode, its first crumb goes back to the chooser and the mode's crumb fades in beside it. */
+function InviteTitle({ mode, onBack }: InviteTitleProps) {
+  const { t } = useTranslation();
+
+  return (
+    <span className="flex items-center gap-2">
+      {mode ? (
+        <button type="button" className="hover:underline" onClick={onBack}>
+          {t('c:invite')}
+        </button>
+      ) : (
+        <UnsavedBadge title={t('c:invite')} />
+      )}
+      <AnimatePresence>
+        {mode && (
+          <motion.span
+            className="flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={modeTransition}
+          >
+            <ChevronRightIcon className="text-faint-foreground" />
+            <UnsavedBadge title={t(inviteModes[mode].crumb)} />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
 
 interface SubmitLabelOptions {
   invite: number;
@@ -136,10 +178,8 @@ function InviteRoleField({ form, channel, held }: InviteRoleFieldProps) {
 
 interface InviteUsersProps {
   channel?: EnrichedChannel;
-  /** Rendered in the `invite-users` dialog, which a sent invite closes. */
+  /** Rendered in the `invite-users` dialog, which a send closes once nothing is left to send again. */
   dialog?: boolean;
-  /** The dialog's line under its title, shown with the chooser only. */
-  description?: ReactNode;
   /** Skips the chooser. Without the dialog's title there is no way back to it. */
   mode?: InviteMode;
   /** Takes the place of the cancel button. */
@@ -147,63 +187,45 @@ interface InviteUsersProps {
 }
 
 /** The invite form. The mode only swaps its field, so the form, its draft and a running send outlive a switch. */
-export function InviteUsers({ channel, dialog, description, mode: initialMode, children }: InviteUsersProps) {
+export function InviteUsers({ channel, dialog, mode: initialMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
   const formRef = useRef<HTMLFormElement>(null);
 
   const [inviteMode, setInviteMode] = useState<InviteMode | null>(initialMode ?? null);
-  const [result, setResult] = useState<InviteResultData | null>(null);
+  const [report, setReport] = useState<InviteReport | null>(null);
 
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
   const list = useInviteList(form);
   const role = useWatch({ control: form.control, name: 'role' });
 
   const held = !!channel && isUnpublishedDraft(channel) && !hierarchy.getPrepareRoles(channel.entityType).includes(role);
-  const check = useInviteCheck(channel, list.emails, list.unparsed, held, list.people);
+  const check = useInviteCheck(channel, list.emails, list.unparsed, held, list.people, role);
 
   const close = () => {
     if (dialog) dialoger.getState().remove(inviteDialogId);
     nextStep();
   };
 
-  const { onSubmit, isPending } = useInviteSubmit({ channel, onSent: list.reset, onResult: setResult, onClose: close });
+  const { onSubmit, isPending } = useInviteSubmit({
+    channel,
+    shownOut: check.groups.out,
+    onDone: () => {
+      list.reset();
+      close();
+    },
+    onPartial: (next) => {
+      list.keep(next.unsent);
+      setReport(next);
+    },
+  });
 
-  // The crumb names where the form is and goes back to the chooser. The list stays.
+  // The list stays across a switch.
   const chooseMode = (mode: InviteMode | null) => {
     list.leaveField();
-    setResult(null);
     setInviteMode(mode);
-    if (!dialog) return;
-    dialoger.getState().update(inviteDialogId, {
-      description: mode ? undefined : description,
-      titleContent: mode ? (
-        <span className="flex items-center gap-2">
-          <button type="button" className="text-muted-foreground hover:text-foreground hover:underline" onClick={() => chooseMode(null)}>
-            {t('c:invite')}
-          </button>
-          <ChevronRightIcon className="text-faint-foreground size-4" />
-          <UnsavedBadge title={t(inviteModes[mode].crumb)} />
-        </span>
-      ) : (
-        <UnsavedBadge title={t('c:invite')} />
-      ),
-    });
+    if (dialog) dialoger.getState().update(inviteDialogId, { titleContent: <InviteTitle mode={mode} onBack={() => chooseMode(null)} /> });
   };
-
-  if (result) {
-    const openPending = () => {
-      const triggerRef = dialoger.getState().get(inviteDialogId)?.triggerRef;
-      if (!channel || !triggerRef) return;
-      if (!onlineManager.isOnline()) return toastOffline();
-      close();
-      openPendingMembershipsSheet(channel, triggerRef);
-    };
-
-    return (
-      <InviteResult result={result} onDone={close} onOpenPending={channel && dialog ? openPending : undefined} onInviteMore={() => setResult(null)} />
-    );
-  }
 
   // Searching people needs a channel to check them against.
   const modes: InviteMode[] = channel ? ['email', 'search', 'bulk'] : ['email', 'bulk'];
@@ -211,11 +233,13 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setReport(null);
     if (list.commitTyped() && list.commitPasted()) form.handleSubmit(onSubmit)(event);
   };
 
   const cancel = () => {
     list.reset();
+    setReport(null);
     formRef.current?.querySelector<HTMLElement>('input, textarea, button')?.focus();
   };
 
@@ -223,52 +247,74 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
   const invite = check.groups.new.length + check.groups.unchecked.length + (list.typedAddress ? 1 : 0);
   const remind = check.groups.again.length;
   const isEmpty = !list.hasList && !list.typed.trim();
+  // A report holds while the list is what its send left there
+  const shownReport = report && report.unsent.join() === list.emails.join() ? report : null;
 
   return (
     <MotionConfig transition={modeTransition} reducedMotion="user">
       <Form {...form}>
-        <form ref={formRef} noValidate onSubmit={submit} className="flex flex-col gap-6">
-          {inviteMode && Field ? (
-            <motion.div key="invite-field" {...modeEntrance}>
-              <Field channel={channel} check={check} list={list} autoFocus={!initialMode} onToEmail={() => chooseMode('email')} />
-            </motion.div>
-          ) : (
-            // What held focus is gone: the pressed crumb, or the trigger behind the dialog on arrival
-            <motion.div key="invite-initial" ref={focusOnMount} tabIndex={-1} {...modeEntrance} className="outline-hidden">
-              <div className="grid w-full gap-2 py-3 sm:auto-cols-fr sm:grid-flow-col sm:gap-3">
+        {/* popLayout takes the leaving chooser out of the flow, which needs a positioned parent */}
+        <form ref={formRef} noValidate onSubmit={submit} className="relative">
+          <AnimatePresence mode="popLayout">
+            {inviteMode && Field ? (
+              <motion.div key="invite-form" {...modeEntrance} className="flex flex-col gap-6">
+                <Field channel={channel} check={check} list={list} autoFocus={!initialMode} onToEmail={() => chooseMode('email')} />
+                {channel && <InviteRoleField form={form} channel={channel} held={held} />}
+                {/* Stays mounted, so a report is announced */}
+                <p role="status" className={cn('flex items-center gap-2 text-sm', !shownReport && 'sr-only')}>
+                  {shownReport && (
+                    <>
+                      {shownReport.anySent ? <CircleCheckIcon className="text-success" /> : <CircleAlertIcon className="text-warning" />}
+                      {shownReport.text}
+                    </>
+                  )}
+                </p>
+                {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
+                {list.hasList && <InviteGroups check={check} list={list} held={held} role={channel ? role : undefined} />}
+                <FormActions>
+                  <SubmitButton disabled={!invite && !remind} loading={isPending}>
+                    <SendIcon />
+                    {t(submitLabel({ invite, remind, isEmpty, held }))}
+                  </SubmitButton>
+                  {!children && <CancelButton dirty={form.isDirty} onClick={cancel} />}
+                  {children}
+                </FormActions>
+              </motion.div>
+            ) : (
+              // What held focus is gone: the pressed crumb, or the trigger behind the dialog on arrival
+              <motion.div
+                key="invite-initial"
+                ref={focusOnMount}
+                tabIndex={-1}
+                {...modeEntrance}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="grid w-full gap-2 py-3 outline-hidden sm:h-40 sm:auto-cols-fr sm:grid-flow-col sm:gap-3"
+              >
                 {modes.map((mode) => {
-                  const { label, text, icon: Icon } = inviteModes[mode];
+                  const { label, icon: Icon } = inviteModes[mode];
                   return (
                     <Button
                       key={mode}
                       type="button"
                       variant="outline"
                       size="auto"
-                      className="h-auto items-start justify-start rounded-xl p-4 text-left whitespace-normal max-sm:grid max-sm:grid-cols-[auto_1fr] max-sm:items-center max-sm:gap-x-2.5 max-sm:gap-y-1 sm:flex-col sm:gap-2.5"
+                      className="group/tile gap-3 rounded-xl p-3 py-6 text-left sm:py-10"
                       onClick={() => chooseMode(mode)}
                     >
-                      <Icon className="size-5 sm:size-10 sm:stroke-[1.25]" />
-                      <span>{t(label)}</span>
-                      <span className="text-muted-foreground font-normal max-sm:col-start-2">{t(text)}</span>
+                      <Icon className="size-12 stroke-1" />
+                      <span className="flex flex-col truncate">
+                        <span>{t(label)}</span>
+                        <span className="text-muted-foreground group-hover/tile:text-foreground mt-1 flex items-center truncate transition-colors">
+                          <strong>{t('c:continue')}</strong>
+                          <ChevronRightIcon className="ml-1" />
+                        </span>
+                      </span>
                     </Button>
                   );
                 })}
-              </div>
-            </motion.div>
-          )}
-          {inviteMode && channel && <InviteRoleField form={form} channel={channel} held={held} />}
-          {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
-          {inviteMode && list.hasList && <InviteGroups check={check} list={list} held={held} role={channel ? role : undefined} />}
-          {inviteMode && (
-            <FormActions>
-              <SubmitButton disabled={!invite && !remind} loading={isPending}>
-                <SendIcon />
-                {t(submitLabel({ invite, remind, isEmpty, held }))}
-              </SubmitButton>
-              {!children && <CancelButton dirty={form.isDirty} onClick={cancel} />}
-              {children}
-            </FormActions>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
       </Form>
     </MotionConfig>

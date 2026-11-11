@@ -1,3 +1,4 @@
+import { PlusIcon } from 'lucide-react';
 import { type ClipboardEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
@@ -5,14 +6,14 @@ import { tileTones } from '~/modules/common/expandable-tile';
 import { StatusDot } from '~/modules/common/status-dot';
 import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
 import { Input, skipPasswordManagers } from '~/modules/ui/input';
-import { Textarea } from '~/modules/ui/textarea';
-import { focusOnMount } from '~/modules/user/invite-result';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from '~/modules/ui/input-group';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
-import { isInviteEmail } from '~/modules/user/invite-text';
+import { isInviteEmail, parseInviteText } from '~/modules/user/invite-text';
 import type { InviteCheck } from '~/modules/user/use-invite-check';
 import type { InviteList } from '~/modules/user/use-invite-list';
 import { UserCombobox } from '~/modules/user/user-combobox';
 import { cn } from '~/utils/cn';
+import { focusOnMount } from '~/utils/focus-on-mount';
 
 // Past the press that took focus: the list growing under the pointer would move what it is pressing.
 const blurDelay = 200;
@@ -139,38 +140,57 @@ export function InviteSearchField({ channel, check, list, autoFocus, onToEmail }
   );
 }
 
-/** Any text. A paste moves its addresses below at once, typed text when the box loses focus, and the box is ready for the next. */
+/** Any text. Its bar counts the addresses in it and moves them below; a paste or leaving the box moves nothing. */
 export function InviteBulkField({ check, list, autoFocus }: InviteFieldProps) {
   const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
-    list.add(withPasted(event));
-    list.setPasted('');
+  const hasText = !!list.pasted.trim();
+  const { emails, unparsed } = parseInviteText(list.pasted);
+  const found = emails.length ? t('c:invite_paste_found', { count: emails.length }) : t('c:invite_state_no_address');
+  const count = [found, emails.length && unparsed.length && t('c:invite_paste_unparsed', { count: unparsed.length })].filter(Boolean).join(' · ');
+
+  const addToList = () => {
+    list.commitPasted();
+    textareaRef.current?.focus();
   };
 
   return (
     <FormItem name="bulk-emails">
       <FormLabel help={t('c:invite_hint_bulk')}>{t('c:invite_who')}</FormLabel>
-      <FormControl>
-        <Textarea
-          ref={(node) => {
-            textareaRef.current = node;
-            if (autoFocus) focusOnMount(node);
-          }}
-          value={list.pasted}
-          onChange={({ target }) => list.setPasted(target.value)}
-          onPaste={handlePaste}
-          onBlur={() => afterFocusLeaves(textareaRef.current, list.commitPasted)}
-          placeholder={t('c:placeholder.paste_emails')}
-          rows={4}
-          className="max-h-[40vh] min-h-26 resize-y"
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-        />
-      </FormControl>
+      <InputGroup>
+        <FormControl>
+          <InputGroupTextarea
+            ref={(node) => {
+              textareaRef.current = node;
+              if (autoFocus) focusOnMount(node);
+            }}
+            value={list.pasted}
+            onChange={({ target }) => list.setPasted(target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return;
+              event.preventDefault();
+              addToList();
+            }}
+            placeholder={t('c:placeholder.paste_emails')}
+            rows={4}
+            className="max-h-[40vh] min-h-26 resize-y"
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+          />
+        </FormControl>
+        {/* Laid out while the box is empty too: the first character moves nothing */}
+        <InputGroupAddon align="block-end" className={cn('border-t transition-opacity', !hasText && 'opacity-0')}>
+          <span role="status" className="mr-auto font-normal">
+            {hasText && count}
+          </span>
+          <InputGroupButton size="sm" variant="default" inert={!hasText} aria-keyshortcuts="Meta+Enter Control+Enter" onClick={addToList}>
+            <PlusIcon />
+            {t('c:invite_add_to_list')}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
       <InviteFieldLine list={list} check={check} />
     </FormItem>
   );
