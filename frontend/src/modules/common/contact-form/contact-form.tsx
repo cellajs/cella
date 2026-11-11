@@ -112,7 +112,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
 
   const title = t('c:contact_us');
 
-  // The dialog renders its own header, so the map can reach the dialog's edges and carry the close button
+  // The dialog renders its own header: the map can reach the dialog's edges and carry the close button
   return (
     <div className="grid lg:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-4 lg:p-6">

@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouterState } from '@tanstack/react-router';
 import { ArrowLeftIcon, MenuIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
@@ -22,6 +22,8 @@ export function OrganizationLobby() {
   const { t } = useTranslation();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const isMenuOpen = useNavigationStore((state) => state.navSheetOpen === 'menu');
+  // A menu row closes the menu in the click that starts its navigation: the button stays away while the next page loads
+  const isNavigating = useRouterState({ select: (state) => state.status === 'pending' });
   const organizationId = lobbyRouteApi.useRouteContext({ select: (context) => context.organization.id });
   const tenantId = lobbyRouteApi.useRouteContext({ select: (context) => context.tenantId });
 
@@ -58,7 +60,7 @@ export function OrganizationLobby() {
               <ArrowLeftIcon className="motion-safe:animate-nudge-left size-4" />
               {t('c:continue_in_menu')}
             </motion.p>
-          ) : (
+          ) : isNavigating ? null : (
             <motion.div key="button" {...swapMotion}>
               <Button ref={menuButtonRef} onClick={openMenu}>
                 <MenuIcon />

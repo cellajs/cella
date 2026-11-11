@@ -81,7 +81,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
             url={item.thumbnailUrl}
           />
           <span className="truncate">{item.name}</span>
-          {unseenCount > 0 && <CountBadge count={unseenCount} className="ml-auto shrink-0" />}
+          {unseenCount > 0 && <CountBadge count={unseenCount} variant={item.membership.hidden ? 'muted' : 'primary'} className="ml-auto shrink-0" />}
         </span>
       </DropdownSelectItem>
     );

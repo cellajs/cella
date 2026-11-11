@@ -76,7 +76,8 @@ export function AttachmentRender({
     : undefined;
 
   const downloadPlaceholder = (
-    <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
+    // A click beside it in a dialog reaches the backdrop, as one beside an image does.
+    <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view" className={onBackdropClick ? 'size-auto' : undefined}>
       {/* The URL is a CDN or presigned URL online, a local blob URL offline. */}
       <Button variant="secondary" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename)}>
         {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon />}

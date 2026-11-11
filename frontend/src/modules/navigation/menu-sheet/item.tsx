@@ -93,7 +93,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       >
         {item.name}
       </span>
-      {unseenCount > 0 && <CountBadge count={unseenCount} className="mr-3 shrink-0" />}
+      {unseenCount > 0 && <CountBadge count={unseenCount} variant={isActive ? 'primary' : 'muted'} className="mr-3 shrink-0" />}
     </Link>
   );
 }

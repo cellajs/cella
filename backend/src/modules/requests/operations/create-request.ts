@@ -18,7 +18,7 @@ type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 
 /**
  * Stores a waitlist, info or contact request and confirms it by mail. The caller answers every submission alike,
- * a waitlist or info one before this runs, so the form tells nobody whether an address has an account or is
+ * a waitlist or info one before this runs. The form tells nobody whether an address has an account or is
  * listed already: a waitlist request from an address with an account gets a mail pointing to sign-in and is not stored,
  * and a repeat of a waitlist or info request is dropped. An address gets one mail from the form a day. Notifying
  * the team runs in the background.

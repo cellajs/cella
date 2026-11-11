@@ -19,7 +19,7 @@ vi.mock('~/routes-config', () => ({
     },
   },
 }));
-// The hierarchy those routes belong to, so the ancestor walk reads the same channels in every app.
+// The hierarchy those routes belong to: the ancestor walk reads the same channels in every app.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const roles = actual.createRoleRegistry(['member'] as const);

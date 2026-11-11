@@ -32,13 +32,13 @@ The rule for admitting a route:
 
 A route an app adds is refused until it says otherwise, and `tests/security/anonymous-gate.test.ts` enumerates the OpenAPI document and names it.
 
-Two rules hold whatever the routes say. An account without a proven address binds no invitation and accepts none (`isProvenAccount`, 403 `anonymous_account`), so lasting access never depends on the route layer. And no mail reaches a placeholder address.
+Two rules hold whatever the routes say. An account without a proven address binds no invitation and accepts none (`isProvenAccount`, 403 `anonymous_account`). Lasting access never depends on the route layer. And no mail reaches a placeholder address.
 
 ## Lifecycle and limits
 
 The session ends at its expiry. The account goes with the last tenant that held it (`removeDueTenants` removes the anonymous accounts a removed tenant leaves with no membership) or with the orphan sweep. An app's fixture account without an `emails` row follows the same rule.
 
-What limits the minting is the flow's own business: the demo has `appConfig.demo.perDay`, a per-address limiter and the bot check. Anonymous sessions together hold a tenth of the stream cap, so throwaway accounts never crowd out a member's stream.
+What limits the minting is the flow's own business: the demo has `appConfig.demo.perDay`, a per-address limiter and the bot check. Anonymous sessions together hold a tenth of the stream cap: throwaway accounts never crowd out a member's stream.
 
 ## Extension point: an identity later
 
