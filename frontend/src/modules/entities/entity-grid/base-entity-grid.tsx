@@ -45,7 +45,7 @@ const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
 function EntityGridSkeleton({ tileHeight = 215 }: { tileHeight?: number }) {
   return (
-    <div className={cn(entityGridClass, 'fade-in animate-in mb-12 duration-300')}>
+    <div className={cn(entityGridClass, 'mount-fade mb-12 duration-300')}>
       {Array.from({ length: 6 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${tileHeight}px` }} />

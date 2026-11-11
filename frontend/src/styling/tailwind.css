@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 @import "./plus-grain.css" layer(base); /* Dithered + texture echoing the morph animation */
 @import "./app.css" layer(app); /* App-owned styles, ranked last */
@@ -32,8 +31,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 
-  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. These keyframes
-     replace tw-animate-css's same-name ones, which read the Radix variables. */
+  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
@@ -558,6 +556,18 @@
 @utility focus-gap {
   & .focus-effect:not(.focus-inner):focus-visible {
     @apply focus-ring:outline-solid focus-ring:outline-2 focus-ring:outline-offset-2 outline-ring ring-0 ring-offset-0;
+  }
+}
+
+/* Content that takes the place of nothing or of a placeholder fades in as it mounts: a skeleton, a table, a receipt, a
+   badge. `duration-*` lengthens it from the shortest tier; a fade stays under reduced motion. */
+@utility mount-fade {
+  transition-property: opacity;
+  transition-duration: var(--tw-duration, 150ms);
+  transition-timing-function: var(--tw-ease, var(--ease-out));
+
+  @starting-style {
+    opacity: 0;
   }
 }
 

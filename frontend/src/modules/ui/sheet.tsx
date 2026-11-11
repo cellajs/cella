@@ -26,9 +26,9 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        'data-closed:fade-out-0 data-open:fade-in-0 bg-overlay data-closed:animate-out data-open:animate-in fixed inset-0 z-113',
-        // Same duration as the popup, which Base UI waits on before unmounting; forwards keeps the overlay hidden until then
-        'data-closed:fill-mode-forwards data-closed:duration-300 data-open:duration-300',
+        'bg-overlay fixed inset-0 z-113 transition-opacity transition-discrete duration-300',
+        // As the drawer overlay: `starting:` is the enter of a kept sheet, which Base UI gives no data-starting-style
+        'data-closed:opacity-0 data-ending-style:opacity-0 data-starting-style:opacity-0 starting:opacity-0',
         className,
       )}
       {...props}
@@ -60,15 +60,20 @@ export function SheetContent({
       className={cn(
         // The sheet's color sits on the popup, which a bounce of the scroll area reveals. A caller sets `--sheet-bg`, not a fill on its content.
         'flex flex-col bg-(--sheet-bg) shadow-lg [--sheet-bg:var(--background)] focus-visible:outline-hidden',
-        !container && 'data-closed:animate-out data-open:animate-in fixed z-114 transition data-closed:duration-300 data-open:duration-300',
+        // Travels in from its edge as a transition; under reduced motion it appears in place
+        !container && 'fixed z-114 transition-transform transition-discrete duration-300 ease-out',
         !container &&
           side === 'right' &&
-          'data-closed:slide-out-to-right data-open:slide-in-from-right inset-y-0 right-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
+          'inset-y-0 right-0 h-full w-[95vw] motion-safe:data-ending-style:translate-x-full motion-safe:data-starting-style:translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:translate-x-full',
         !container &&
           side === 'left' &&
-          'data-closed:slide-out-to-left data-open:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
-        !container && side === 'top' && 'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
-        !container && side === 'bottom' && 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
+          'inset-y-0 left-0 h-full w-[95vw] motion-safe:data-ending-style:-translate-x-full motion-safe:data-starting-style:-translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:-translate-x-full',
+        !container &&
+          side === 'top' &&
+          'inset-x-0 top-0 h-auto motion-safe:data-ending-style:-translate-y-full motion-safe:data-starting-style:-translate-y-full motion-safe:starting:-translate-y-full',
+        !container &&
+          side === 'bottom' &&
+          'inset-x-0 bottom-0 h-auto motion-safe:data-ending-style:translate-y-full motion-safe:data-starting-style:translate-y-full motion-safe:starting:translate-y-full',
         container && 'relative size-full',
         className,
       )}

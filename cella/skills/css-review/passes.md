@@ -37,6 +37,7 @@ From `canon-check.mjs`. Apply the proven rewrites where they read better. Read e
 - `[&>*]:x` to `*:x` keeps specificity and moves the sort order, so a child's `sm:` class starts to win. `[.x_&]` to `in-[.x]` drops specificity. Both are cascade changes.
 - A collapse into a declared utility can be a coincidence of values: `group-label` heads content, a tab trigger with the same tokens does not. Each new `@utility` becomes such a target.
 - `border-(--color-border)` to `border-border` is wrong on an element that sets that variable inline, as chart indicators do.
+- Motion drift ([Motion](../../../frontend/README.md#ui-styling)): a `motion` component with a number in its `transition`, a `cubic-bezier(` outside `styling/tailwind.css`, a `setTimeout` whose delay restates a `duration-*`, an enter written as a keyframe (`animate-[`) where a transition on the state attribute does, a start or end transform without `motion-safe:`.
 
 Never pass `rem` to the canonicalizer: the root font size differs on phones, so `w-[200px]` is not `w-50`.
 

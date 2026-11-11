@@ -47,7 +47,7 @@ export function WelcomeText({ invitations, organizations, onStart }: WelcomeText
       <TextEffect text={text} className="text-foreground pb-8 text-2xl font-medium sm:text-4xl sm:leading-12 md:text-5xl md:leading-16" />
       <Button onClick={onStart} className="max-sm:w-full">
         {t('c:get_started')}
-        <ArrowDownIcon className="repeat-5 -rotate-90 animate-bounce motion-reduce:animate-none" />
+        <ArrowDownIcon className="-rotate-90 animate-bounce [animation-iteration-count:5] motion-reduce:animate-none" />
       </Button>
     </div>
   );

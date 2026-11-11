@@ -232,7 +232,7 @@ function DataTableSkeleton({ columnCount, cellHeight, cellWidths }: DataTableSke
   const columns = Array.from({ length: isMobile ? Math.min(columnCount, 3) : columnCount }, (_, i) => ({ key: i, style: { width: cellWidths[i] } }));
 
   return (
-    <div className="fade-in animate-in w-full overflow-auto duration-300">
+    <div className="mount-fade w-full overflow-auto duration-300">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">

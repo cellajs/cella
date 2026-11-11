@@ -12,14 +12,12 @@ const phoneScreenClass = tw(
   'max-sm:m-0 max-sm:h-(--visual-viewport-height,100dvh) max-sm:max-h-none max-sm:w-full max-sm:content-start max-sm:self-start max-sm:overflow-y-auto max-sm:rounded-none max-sm:border-0 max-sm:pt-[calc(1rem+env(safe-area-inset-top))] max-sm:shadow-none max-sm:ring-0',
 );
 
-// A transition, so a close during the enter reverses from where the dialog is
-const phoneMotionClass = tw(
-  'max-sm:transition-[transform,opacity] max-sm:duration-350 max-sm:ease-out max-sm:data-closed:animate-none max-sm:data-ending-style:opacity-0 max-sm:data-ending-style:duration-250 max-sm:data-open:animate-none max-sm:data-starting-style:opacity-0 max-sm:starting:opacity-0',
-);
+// Below `sm` the dialog rises in over 350ms and drops out in 250ms
+const phoneMotionClass = tw('max-sm:duration-350 max-sm:data-ending-style:duration-250');
 
 // `--phone-rise` is where the dialog comes from and goes back to; a caller's inline value wins over the 144px default
 const phoneRiseClass = tw(
-  'max-sm:[--phone-rise:144px] max-sm:data-ending-style:transform-[translateY(var(--phone-rise))] max-sm:data-starting-style:transform-[translateY(var(--phone-rise))] max-sm:motion-reduce:data-ending-style:transform-none max-sm:motion-reduce:data-starting-style:transform-none max-sm:starting:transform-[translateY(var(--phone-rise))] max-sm:motion-reduce:starting:transform-none',
+  'max-sm:[--phone-rise:144px] max-sm:motion-safe:data-ending-style:translate-y-(--phone-rise) max-sm:motion-safe:data-starting-style:translate-y-(--phone-rise) max-sm:motion-safe:starting:translate-y-(--phone-rise)',
 );
 
 /** Writes the visual viewport's height on its dialog, so a full screen dialog ends at the keyboard's edge; kept off :root, a keyboard opening restyles only that subtree. */
@@ -61,7 +59,7 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'data-closed:fade-out-0 data-open:fade-in-0 bg-overlay data-closed:animate-out data-open:animate-in data-closed:fill-mode-forwards fixed inset-0 z-115 duration-200 in-[.sheeter-open]:z-125',
+        'bg-overlay fixed inset-0 z-115 transition-opacity duration-200 in-[.sheeter-open]:z-125 data-ending-style:opacity-0 data-starting-style:opacity-0',
         className,
       )}
       {...props}
@@ -110,10 +108,12 @@ export function DialogContent({
           data-slot="dialog-content"
           data-dock={dock}
           className={cn(
-            'data-closed:fade-out-0 data-open:fade-in-0 bg-background data-closed:animate-out data-open:animate-in relative mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip overscroll-none rounded-lg p-4 shadow-lg duration-200 focus-visible:outline-hidden',
+            'bg-background relative mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip overscroll-none rounded-lg p-4 shadow-lg focus-visible:outline-hidden',
+            // A transition: a close during the enter reverses from where the dialog is. `starting:` covers a dialog mounted open
+            'transition-[opacity,translate,scale] duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 starting:opacity-0',
             dock
-              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom shadow-floating ease-drawer duration-300'
-              : 'sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
+              ? 'shadow-floating ease-drawer duration-300 motion-safe:data-ending-style:translate-y-full motion-safe:data-starting-style:translate-y-full motion-safe:starting:translate-y-full'
+              : 'sm:motion-safe:data-ending-style:scale-95 sm:motion-safe:data-starting-style:scale-95',
             // A container owns the scroll, so the popup only clips
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',
             !dock && !container && [phoneScreenClass, phoneMotionClass, phoneRiseClass],

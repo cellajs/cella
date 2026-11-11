@@ -55,7 +55,7 @@ function clearCursorOverride() {
 export const idealWidthFactor = 1.25;
 
 /** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
-export const hintFadeOut = tw('in-data-opening:fade-in in-data-opening:animate-in opacity-(--content-opacity,1) in-data-gliding:transition-opacity');
+export const hintFadeOut = tw('in-data-opening:mount-fade opacity-(--content-opacity,1) in-data-gliding:transition-opacity');
 
 /** Content only the collapsed state shows, previewed in the expanded panel: fades in with a collapse hint. */
 export const hintFadeIn = tw('opacity-[calc(1_-_var(--content-opacity,1))] in-data-gliding:transition-opacity');

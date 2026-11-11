@@ -124,7 +124,7 @@ export function SelectionActionBar({ count, onClear, receipt, onReceiptEnd, chil
                   data-receipt
                   role="status"
                   tabIndex={-1}
-                  className="animate-in fade-in flex h-10 items-center gap-2 pl-3 text-sm font-medium whitespace-nowrap duration-150 focus-visible:outline-none"
+                  className="mount-fade flex h-10 items-center gap-2 pl-3 text-sm font-medium whitespace-nowrap focus-visible:outline-none"
                   onPointerEnter={() => setHeldId(receipt.id)}
                   onPointerLeave={() => setHeldId(null)}
                   onFocus={(event) => event.target.matches(':focus-visible') && setHeldId(receipt.id)}

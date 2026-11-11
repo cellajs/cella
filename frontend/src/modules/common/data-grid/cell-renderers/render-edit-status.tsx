@@ -97,13 +97,7 @@ export function RenderEditStatus<R>({ row, column, children }: RenderEditStatusP
     <span aria-busy={status === 'pending' || undefined} className="flex min-w-0 flex-1 items-center justify-between gap-1.5">
       <span className={cn('truncate', status === 'pending' && 'text-muted-foreground')}>{content}</span>
       {slow && <Spinner className="text-muted-foreground size-4 shrink-0" />}
-      {status === 'saved' && (
-        <CheckIcon
-          role="status"
-          aria-label={t('c:saved')}
-          className="fade-in zoom-in-75 animate-in text-success size-4 shrink-0 motion-reduce:animate-none"
-        />
-      )}
+      {status === 'saved' && <CheckIcon role="status" aria-label={t('c:saved')} className="mount-fade text-success size-4 shrink-0" />}
     </span>
   );
 }

@@ -17,7 +17,11 @@ export const badgeVariants = cva(
       },
       soft: { true: '', false: '' },
       size: { micro: 'text-2xs h-4 py-0', xs: 'h-5', sm: 'h-6', md: 'h-7 text-sm', lg: 'h-10 text-base', xl: 'h-12 text-lg' },
-      context: { button: 'zoom-in animate-in absolute -top-1.5 -right-1.5 min-w-5 px-1 py-0 shadow-md', none: '' },
+      context: {
+        button:
+          'absolute -top-1.5 -right-1.5 min-w-5 px-1 py-0 shadow-md transition-transform duration-150 ease-out motion-reduce:transition-none starting:scale-0',
+        none: '',
+      },
     },
     compoundVariants: [
       { variant: ['default', 'brand', 'success', 'destructive', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },

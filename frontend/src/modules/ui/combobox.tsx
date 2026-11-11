@@ -3,6 +3,7 @@ import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { popupSideOffset } from '~/modules/ui/popover';
+import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 /** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
@@ -80,7 +81,8 @@ export function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(
-            'group/combobox-content data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 bg-popover text-popover-foreground ring-foreground/10 data-closed:animate-out data-open:animate-in *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 relative max-h-(--available-height) w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-md shadow-md ring-1 duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8',
+            popupMotionClass,
+            'group/combobox-content bg-popover text-popover-foreground ring-foreground/10 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 relative max-h-(--available-height) w-(--anchor-width) overflow-hidden rounded-md shadow-md ring-1 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8',
             className,
           )}
           {...props}

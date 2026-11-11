@@ -46,7 +46,7 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
       <Button onClick={() => toggleNavSheetPanel(id)} className="w-full justify-between" variant={isOpen ? 'secondary' : 'ghost'}>
         <span className="flex items-center gap-2">
           {t(label)}
-          {!isBodyVisible && <span className="fade-in animate-in flex items-center gap-2 duration-200">{indicator}</span>}
+          {!isBodyVisible && <span className="mount-fade flex items-center gap-2 duration-200">{indicator}</span>}
         </span>
         <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
       </Button>
