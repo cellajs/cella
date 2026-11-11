@@ -287,9 +287,7 @@ export const zUser = z.object({
   languageCode: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   contrast: z.enum(['system', 'more']),
-  userFlags: z.object({
-    finishedOnboarding: z.boolean(),
-  }),
+  userFlags: z.record(z.string(), z.unknown()),
   updatedAt: z.string().nullable(),
   isAnonymous: z.boolean(),
   lastSeenAt: z.string().nullable(),
@@ -1119,6 +1117,9 @@ export const zGetTokenDataResponse = z.object({
   invitation: z
     .object({
       entityType: z.enum(['organization']),
+      tenantId: z.string(),
+      organizationId: z.string(),
+      channelId: z.string(),
       entityName: z.string(),
       organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
@@ -1630,11 +1631,7 @@ export const zUpdateMeBody = z.object({
     .max(255)
     .regex(/^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/)
     .optional(),
-  userFlags: z
-    .object({
-      finishedOnboarding: z.boolean().nullish(),
-    })
-    .optional(),
+  userFlags: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

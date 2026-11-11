@@ -1,5 +1,4 @@
 import i18n from 'i18next';
-import type { ReactNode } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -16,7 +15,6 @@ import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { prepareRolesText } from '~/modules/entities/draft-roles';
@@ -29,9 +27,6 @@ import { formResolver } from '~/utils/form-resolver';
 interface CreateOrganizationFormProps {
   /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
-  /** Rendered in the onboarding stepper: a first organization starts published, so the draft switch is left out. */
-  onboarding?: boolean;
-  children?: ReactNode;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
@@ -41,9 +36,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const formContainerId = 'create-organization';
 
-export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboarding, children, callback }: CreateOrganizationFormProps) {
+function CreateOrganizationForm({ dialog: isDialog, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
-  const { nextStep } = useStepper();
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '', draft: false } };
 
@@ -59,7 +53,6 @@ export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboard
     toaster.success(t('c:success.create_resource', { resource: t('c:organization') }));
     if (isDialog) dialoger.getState().remove(formContainerId);
     callback?.({ data: createdOrganization, status: 'success' });
-    nextStep();
   };
 
   // The handle check needs a tenant, which a first organization lacks, so a taken handle shows only once the create answers.
@@ -78,10 +71,7 @@ export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboard
       return;
     }
 
-    createMutation.mutate(
-      { path: { tenantId }, body: [{ ...values, draft: isOnboarding ? false : values.draft, id: `temp-${generateId()}` }] },
-      { onSuccess, onError },
-    );
+    createMutation.mutate({ path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] }, { onSuccess, onError });
   };
 
   return (
@@ -103,7 +93,7 @@ export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboard
           nameValue={name}
           prefix="/~/"
         />
-        {!isOnboarding && hierarchy.canDraft('organization') && (
+        {hierarchy.canDraft('organization') && (
           <FormField
             control={form.control}
             name="draft"
@@ -122,9 +112,7 @@ export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboard
           <SubmitButton disabled={!form.isDirty} loading={selfCreateTenantMutation.isPending || createMutation.isPending}>
             {t('c:create')}
           </SubmitButton>
-          {children}
-
-          {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
         </FormActions>
       </form>
     </Form>

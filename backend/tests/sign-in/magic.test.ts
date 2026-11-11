@@ -107,7 +107,7 @@ describe('Magic link authentication', async () => {
       expect(cookieChange(res, 'magic-requested')).toBe('cleared');
     });
 
-    it('should let an explicit redirect win over the welcome page for a new user', async () => {
+    it('should follow the explicit redirect the link was requested with', async () => {
       const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
@@ -120,23 +120,7 @@ describe('Magic link authentication', async () => {
       expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme`);
     });
 
-    it('should append skipWelcome when the explicit redirect targets home', async () => {
-      const user = await createTestUser(signUpUser.email);
-      const { rawToken, requestedHere } = await createMagicToken(user, `${appConfig.defaultRedirectPath}?foo=bar`);
-
-      const { response: res } = await call(invokeToken, {
-        path: { kind: 'magic', token: rawToken },
-        headers: { ...defaultHeaders, Cookie: requestedHere },
-      });
-
-      expect(res.status).toBe(302);
-      const location = new URL(res.headers.get('location') ?? '');
-      expect(location.pathname).toBe(appConfig.defaultRedirectPath);
-      expect(location.searchParams.get('foo')).toBe('bar');
-      expect(location.searchParams.get('skipWelcome')).toBe('true');
-    });
-
-    it('should fall back to welcome for a new user without a redirect', async () => {
+    it('should land on the default path without a redirect', async () => {
       const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user);
 
@@ -146,7 +130,7 @@ describe('Magic link authentication', async () => {
       });
 
       expect(res.status).toBe(302);
-      expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}${appConfig.welcomeRedirectPath}`);
+      expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}${appConfig.defaultRedirectPath}`);
     });
 
     it('should never redirect to a stored path that fails re-validation', async () => {

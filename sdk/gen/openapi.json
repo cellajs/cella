@@ -1813,9 +1813,7 @@
             "newsletter": true,
             "contrast": "system",
             "mfaRequired": false,
-            "userFlags": {
-              "finishedOnboarding": false
-            },
+            "userFlags": {},
             "createdAt": "2024-05-02T20:53:18.498Z",
             "updatedAt": "2024-05-02T20:53:18.498Z",
             "updatedBy": null,
@@ -1888,12 +1886,7 @@
           },
           "userFlags": {
             "type": "object",
-            "properties": {
-              "finishedOnboarding": {
-                "type": "boolean"
-              }
-            },
-            "required": ["finishedOnboarding"]
+            "properties": {}
           },
           "updatedAt": {
             "type": ["string", "null"]
@@ -1947,9 +1940,7 @@
           "newsletter": false,
           "contrast": "system",
           "mfaRequired": false,
-          "userFlags": {
-            "finishedOnboarding": false
-          },
+          "userFlags": {},
           "createdAt": "2024-06-15T02:53:22.776Z",
           "updatedAt": "2024-06-15T02:53:22.776Z",
           "updatedBy": null,
@@ -5840,6 +5831,15 @@
                           "type": "string",
                           "enum": ["organization"]
                         },
+                        "tenantId": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "channelId": {
+                          "type": "string"
+                        },
                         "entityName": {
                           "type": "string"
                         },
@@ -5854,7 +5854,7 @@
                           "type": "string"
                         }
                       },
-                      "required": ["entityType", "entityName", "role", "inviterName"]
+                      "required": ["entityType", "tenantId", "organizationId", "channelId", "entityName", "role", "inviterName"]
                     }
                   },
                   "required": ["email"]
@@ -8826,11 +8826,7 @@
                   },
                   "userFlags": {
                     "type": "object",
-                    "properties": {
-                      "finishedOnboarding": {
-                        "type": ["boolean", "null"]
-                      }
-                    }
+                    "properties": {}
                   }
                 }
               }
@@ -8882,11 +8878,7 @@
                   },
                   "userFlags": {
                     "type": "object",
-                    "properties": {
-                      "finishedOnboarding": {
-                        "type": ["boolean", "null"]
-                      }
-                    }
+                    "properties": {}
                   }
                 }
               }

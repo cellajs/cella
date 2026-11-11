@@ -385,7 +385,7 @@ export type User = {
   newsletter: boolean;
   contrast: 'system' | 'more';
   userFlags: {
-    finishedOnboarding: boolean;
+    [key: string]: unknown;
   };
   updatedAt: string | null;
   /**
@@ -1761,6 +1761,9 @@ export type GetTokenDataResponses = {
     inviterName?: string;
     invitation?: {
       entityType: 'organization';
+      tenantId: string;
+      organizationId: string;
+      channelId: string;
       entityName: string;
       organizationName?: string;
       role: 'admin' | 'member';
@@ -3589,7 +3592,7 @@ export type UpdateMeData = {
     thumbnailUrl?: string | null;
     slug?: string;
     userFlags?: {
-      finishedOnboarding?: boolean | null;
+      [key: string]: unknown;
     };
   };
   path?: never;

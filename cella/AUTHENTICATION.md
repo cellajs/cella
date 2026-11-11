@@ -45,6 +45,7 @@ Holding an invitation link proves nothing, since it can be forwarded:
 - **Accepting.** The account holds the invited address, or opens a link mailed to that inbox for this account.
 - **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
 - **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
+- **Landing.** An accept opens the channel joined, from the sign-in that accepts a followed link and from the Accept button alike.
 
 An anonymous account is the exception to a proven inbox: it has no identity at all. Its placeholder address on a reserved domain has no inbox, the API serves it as `email: null` with `isAnonymous`, and only the anonymous session minted for it signs it in. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one. What such a session reaches and how an app mints one: [Anonymous sessions](./ANONYMOUS_SESSIONS.md).
 

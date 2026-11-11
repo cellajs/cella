@@ -29,6 +29,13 @@ export function AcceptInvitationStep({ tokenData, user }: { tokenData: TokenData
 
   const leave = () => navigate({ to: appConfig.defaultRedirectPath, replace: true });
 
+  // Accepted: open the channel joined, through the link that resolves its route
+  const open = () => {
+    if (!invitation) return leave();
+    const { tenantId, organizationId, channelId, entityType: channelType } = invitation;
+    navigate({ to: '/n', search: { tenantId, organizationId, channelId, channelType }, replace: true });
+  };
+
   const { mutate: accept, isPending, error } = useAcceptInvitationTokenMutation();
   const { mutate: sendLink, isPending: isSending, isSuccess: linkSent } = useConfirmInvitationAddressMutation();
   const unproven = error?.type === 'invitation_address_unproven';
@@ -100,7 +107,7 @@ export function AcceptInvitationStep({ tokenData, user }: { tokenData: TokenData
             {t('c:invite_send_link')}
           </SubmitButton>
         ) : (
-          <SubmitButton loading={isPending} icon={<CheckIcon />} size="block" onClick={() => accept(undefined, { onSuccess: leave })}>
+          <SubmitButton loading={isPending} icon={<CheckIcon />} size="block" onClick={() => accept(undefined, { onSuccess: open })}>
             {t('c:accept')}
           </SubmitButton>
         )}

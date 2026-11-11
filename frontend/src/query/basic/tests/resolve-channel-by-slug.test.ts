@@ -59,4 +59,27 @@ describe('resolveChannelBySlug', () => {
     expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored);
     expect(fetchBySlug).toHaveBeenCalledTimes(1);
   });
+
+  it('reads the detail by id when the param is an entity id no list holds, as a notification link or an accepted invitation travels', async () => {
+    const id = '019a1cb2-b564-7e5d-8bda-ee011fde4f51';
+    const joined: Channel = { id, slug: 'joined' };
+    const fetchDetail = vi.fn(async () => joined);
+    const fetchBySlug = vi.fn(async () => joined);
+
+    const resolving = resolveChannelBySlug({
+      idOrSlug: id,
+      tenantId: 'ten-1',
+      findInCache: () => undefined,
+      detailQueryOptions: () => ({ queryKey: detailKey(id), queryFn: fetchDetail }),
+      fetchBySlug,
+      params: { organizationSlug: id },
+      buildSlugOverrides: (entity) => ({ organizationSlug: entity.slug }),
+    });
+
+    // Resolved by id, the URL is rewritten to the slug the detail names
+    await expect(resolving).rejects.toMatchObject({ redirect: { params: { organizationSlug: 'joined' }, replace: true } });
+    expect(queryClient.getQueryData(detailKey(id))).toEqual(joined);
+    expect(fetchDetail).toHaveBeenCalledTimes(1);
+    expect(fetchBySlug).not.toHaveBeenCalled();
+  });
 });
