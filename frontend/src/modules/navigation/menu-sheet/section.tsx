@@ -12,7 +12,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { foldedToggleLabel, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
@@ -74,13 +74,6 @@ function MenuSheetSectionButton({
   const sectionUnseenCount = useUnseenCount(channelIds);
   // The rows the section lists: neither hidden nor archived, subitems left out
   const activeCount = items.filter((item) => menuGroup(item) === 'active').length;
-  const foldedLabel = activeCount
-    ? t(sectionUnseenCount ? 'c:menu_section_count_unseen' : 'c:menu_section_count', {
-        resource: t(options.label),
-        total: activeCount,
-        count: sectionUnseenCount,
-      })
-    : undefined;
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -90,7 +83,7 @@ function MenuSheetSectionButton({
         <Button
           onClick={() => setSectionOpen(options.entityType, !isSectionVisible)}
           aria-expanded={isSectionVisible}
-          aria-label={isSectionVisible ? undefined : foldedLabel}
+          aria-label={isSectionVisible ? undefined : foldedToggleLabel(t, t(options.label), activeCount, sectionUnseenCount)}
           // Open, it keeps its resting look; its ring sits inside, as the next sticky header covers one outside
           className="group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 aria-expanded:bg-transparent"
           variant="ghost"
