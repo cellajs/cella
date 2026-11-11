@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.45.0](https://github.com/cellajs/cella/compare/0.44.0...0.45.0) (2026-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** the release PR's apply check is its own job, release-applied, and the apply reruns it once the CI run has ended ([#1803](https://github.com/cellajs/cella/issues/1803))
+* **frontend:** one home per kind of motion: transitions for state, presets for motion/react, tw-animate-css gone ([#1805](https://github.com/cellajs/cella/issues/1805))
+* the onboarding flow goes, and a new user lands on home ([#1802](https://github.com/cellajs/cella/issues/1802))
+* **navigation:** a press on another organization opens its lobby, and menu, search and home rows say more with less ([#1799](https://github.com/cellajs/cella/issues/1799))
+* a sign-out always ends: the server decides it first, and no step on the device can hold it up ([#1798](https://github.com/cellajs/cella/issues/1798))
+* one name per field across the config, the tables and the API ([#1795](https://github.com/cellajs/cella/issues/1795))
+* the link preview image is a shot: a 1200x630 dark JPEG with its size, alt text and twitter:card ([#1796](https://github.com/cellajs/cella/issues/1796))
+* **auth:** anonymous sessions: no address served, user-level routes refuse one by default ([#1791](https://github.com/cellajs/cella/issues/1791))
+* the footer form stores an info request, and its confirmation promises a reply ([#1792](https://github.com/cellajs/cella/issues/1792))
+* company fields an app lacks stay out, a country code is a regionCode everywhere, and the contact form sits beside its map ([#1793](https://github.com/cellajs/cella/issues/1793))
+
+### 🎉 New features
+
+* an accepted invitation opens the channel joined, from the sign-in and from the Accept button ([#1804](https://github.com/cellajs/cella/issues/1804)) ([98fa772](https://github.com/cellajs/cella/commit/98fa772ee954089f61b5149f5f51dd68ca184d4e))
+* **auth:** anonymous sessions: no address served, user-level routes refuse one by default ([#1791](https://github.com/cellajs/cella/issues/1791)) ([fcd3d5e](https://github.com/cellajs/cella/commit/fcd3d5e13c24f8cba9229baff1fa3824c22c386a))
+* home invitations are alert rows, summed up from four, and the create prompt points at them ([#1800](https://github.com/cellajs/cella/issues/1800)) ([e348512](https://github.com/cellajs/cella/commit/e3485123df6467dcd80edd45547a8f52d8a77410))
+* **navigation:** a press on another organization opens its lobby, and menu, search and home rows say more with less ([#1799](https://github.com/cellajs/cella/issues/1799)) ([6f13ea0](https://github.com/cellajs/cella/commit/6f13ea0b2b40ee7299530690f1fd378db65c2838))
+* **navigation:** muted unseen badges in the menu, a solid request info field when filled, and dependencies update ([#1806](https://github.com/cellajs/cella/issues/1806)) ([78531f0](https://github.com/cellajs/cella/commit/78531f0271bf4f594aacefd62826f0b1156f58d3))
+* the invite form counts a paste and ends on one toast, and a menu row can carry a mark ([#1797](https://github.com/cellajs/cella/issues/1797)) ([44f3e18](https://github.com/cellajs/cella/commit/44f3e18f278e82289c05f7532159e60de28eddc2))
+* the link preview image is a shot: a 1200x630 dark JPEG with its size, alt text and twitter:card ([#1796](https://github.com/cellajs/cella/issues/1796)) ([21b7d9b](https://github.com/cellajs/cella/commit/21b7d9b16c01dd2cbbb900b59465e89e8ac4c9e6))
+
+
+### 🐞 Bug fixes
+
+* a sign-out always ends: the server decides it first, and no step on the device can hold it up ([#1798](https://github.com/cellajs/cella/issues/1798)) ([bd71dee](https://github.com/cellajs/cella/commit/bd71dee0128c7a6a8319ab239707664064749fe3))
+* **infra:** the release PR's apply check is its own job, release-applied, and the apply reruns it once the CI run has ended ([#1803](https://github.com/cellajs/cella/issues/1803)) ([05bfabf](https://github.com/cellajs/cella/commit/05bfabf11f82bb9ab32c9abf3277a70d66f912a2))
+* **infra:** the TUI says what happens once, in fewer words ([#1790](https://github.com/cellajs/cella/issues/1790)) ([e8405e9](https://github.com/cellajs/cella/commit/e8405e9b4939d2ade05f300f93b9c2ee4c1b1558))
+* the footer form stores an info request, and its confirmation promises a reply ([#1792](https://github.com/cellajs/cella/issues/1792)) ([12b325d](https://github.com/cellajs/cella/commit/12b325d160c19d7bc889e6bf530d6ddf79bd3a62))
+
+
+### 🔧 Small improvements
+
+* company fields an app lacks stay out, a country code is a regionCode everywhere, and the contact form sits beside its map ([#1793](https://github.com/cellajs/cella/issues/1793)) ([a4cebc5](https://github.com/cellajs/cella/commit/a4cebc59cf2c06670bfb794b2ccfb7782f18fe51))
+* **frontend:** one home per kind of motion: transitions for state, presets for motion/react, tw-animate-css gone ([#1805](https://github.com/cellajs/cella/issues/1805)) ([0631f48](https://github.com/cellajs/cella/commit/0631f48441bde94de370ee9bd32a5530376f5932))
+* one name per field across the config, the tables and the API ([#1795](https://github.com/cellajs/cella/issues/1795)) ([93e53d6](https://github.com/cellajs/cella/commit/93e53d63c4b5ab99150dfa4d611a4bf8c5ef9e4e))
+* the onboarding flow goes, and a new user lands on home ([#1802](https://github.com/cellajs/cella/issues/1802)) ([9d892bc](https://github.com/cellajs/cella/commit/9d892bc416f7bedb34d3362ce6af64fe39b99f50))
+
+
+### 🧪 Tests
+
+* the overlay providers test's router names the path a navigation goes to ([#1801](https://github.com/cellajs/cella/issues/1801)) ([dc6606e](https://github.com/cellajs/cella/commit/dc6606e5db4389ac53b8f9fe78706c12eb0ce2be))
+
 ## [0.44.0](https://github.com/cellajs/cella/compare/0.43.0...0.44.0) (2026-11-10)
 
 
