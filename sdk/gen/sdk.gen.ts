@@ -80,6 +80,9 @@ import type {
   CreateTotpData,
   CreateTotpErrors,
   CreateTotpResponses,
+  DeclineInvitationData,
+  DeclineInvitationErrors,
+  DeclineInvitationResponses,
   DeleteConnectedAppData,
   DeleteConnectedAppErrors,
   DeleteConnectedAppResponses,
@@ -259,9 +262,6 @@ import type {
   RedeemLinkTokenData,
   RedeemLinkTokenErrors,
   RedeemLinkTokenResponses,
-  RejectInvitationData,
-  RejectInvitationErrors,
-  RejectInvitationResponses,
   RemovePushSubscriptionData,
   RemovePushSubscriptionErrors,
   RemovePushSubscriptionResponses,
@@ -381,6 +381,7 @@ import {
   zCreateRequestResponse,
   zCreateServiceAccountResponse,
   zCreateTenantResponse,
+  zDeclineInvitationResponse,
   zDeleteConnectedAppResponse,
   zDeleteConnectionResponse,
   zDeleteInvitationResponse,
@@ -436,7 +437,6 @@ import {
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
   zRedeemLinkTokenResponse,
-  zRejectInvitationResponse,
   zRemovePushSubscriptionResponse,
   zResendInvitationResponse,
   zResendInvitationWithTokenResponse,
@@ -926,7 +926,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  *
  * @param {sendMagicLinkData} options
  * @param {string} options.body.email - `string`
- * @param {string=} options.body.redirect - `string` (optional)
+ * @param {string=} options.body.redirectPath - `string` (optional)
  * @returns Possible status codes: 204, 400, 403, 413, 429
  */
 export const sendMagicLink = <ThrowOnError extends boolean = true>(
@@ -1198,7 +1198,7 @@ export const startOAuthConnect = <ThrowOnError extends boolean = true>(
  *
  * @param {startGithubOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
- * @param {string=} options.query.redirectAfter - `string` (optional)
+ * @param {string=} options.query.redirectPath - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
 export const startGithubOAuth = <ThrowOnError extends boolean = true>(
@@ -1219,7 +1219,7 @@ export const startGithubOAuth = <ThrowOnError extends boolean = true>(
  *
  * @param {startGoogleOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
- * @param {string=} options.query.redirectAfter - `string` (optional)
+ * @param {string=} options.query.redirectPath - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
 export const startGoogleOAuth = <ThrowOnError extends boolean = true>(
@@ -1240,7 +1240,7 @@ export const startGoogleOAuth = <ThrowOnError extends boolean = true>(
  *
  * @param {startMicrosoftOAuthData} options
  * @param {enum=} options.query.kind - `enum` (optional)
- * @param {string=} options.query.redirectAfter - `string` (optional)
+ * @param {string=} options.query.redirectPath - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
 export const startMicrosoftOAuth = <ThrowOnError extends boolean = true>(
@@ -1358,7 +1358,7 @@ export const getSsoEntry = <ThrowOnError extends boolean = true>(
  * @param {startSsoData} options
  * @param {string} options.path.connectionId - `string`
  * @param {enum=} options.query.kind - `enum` (optional)
- * @param {string=} options.query.redirectAfter - `string` (optional)
+ * @param {string=} options.query.redirectPath - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const startSso = <ThrowOnError extends boolean = true>(
@@ -1380,7 +1380,7 @@ export const startSso = <ThrowOnError extends boolean = true>(
  * @param {startSsoFederationData} options
  * @param {string} options.path.federation - `string`
  * @param {enum=} options.query.kind - `enum` (optional)
- * @param {string=} options.query.redirectAfter - `string` (optional)
+ * @param {string=} options.query.redirectPath - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 404, 429
  */
 export const startSsoFederation = <ThrowOnError extends boolean = true>(
@@ -1866,23 +1866,23 @@ export const acceptInvitation = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Reject membership invitation
+ * Decline membership invitation
  *
  * Declines the invitation, and its emailed link stops working. Returns the invitation's organization.
  *
- * **POST /me/invitations/{invitationId}:reject** ·· [rejectInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{invitationId}:reject) ·· _me · cella_
+ * **POST /me/invitations/{invitationId}:decline** ·· [declineInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{invitationId}:decline) ·· _me · cella_
  *
- * @param {rejectInvitationData} options
+ * @param {declineInvitationData} options
  * @param {string} options.path.invitationId - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
-export const rejectInvitation = <ThrowOnError extends boolean = true>(
-  options: Options<RejectInvitationData, ThrowOnError>,
-): RequestResult<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zRejectInvitationResponse.parseAsync(data),
+export const declineInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<DeclineInvitationData, ThrowOnError>,
+): RequestResult<DeclineInvitationResponses, DeclineInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<DeclineInvitationResponses, DeclineInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeclineInvitationResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/invitations/{invitationId}:reject',
+    url: '/me/invitations/{invitationId}:decline',
     ...options,
   });
 
@@ -2050,7 +2050,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * Invite members
  *
- * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/members:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/members:invite) ·· _memberships · cella_
  *
@@ -2370,8 +2370,8 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  * **PATCH /me/notification-preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/me/notification-preferences) ·· _notifications · cella_
  *
  * @param {updateNotificationPreferencesData} options
- * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
- * @param {boolean=} options.body.commentEmail - `boolean` (optional)
+ * @param {boolean=} options.body.mentionEmails - `boolean` (optional)
+ * @param {boolean=} options.body.commentEmails - `boolean` (optional)
  * @param {enum=} options.body.digest - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 413
  */
@@ -2556,7 +2556,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
  * @param {string | null=} options.body.color - `string | null` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
- * @param {string | null=} options.body.logoUrl - `string | null` (optional)
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
  * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
  * @param {string | null=} options.body.welcomeText - `string | null` (optional)
@@ -2807,8 +2806,8 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  * @param {markSeenData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string[]} options.body.entityIds - `string[]`
- * @param {enum} options.body.entityType - `enum`
+ * @param {string[]} options.body.productIds - `string[]`
+ * @param {enum} options.body.productType - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const markSeen = <ThrowOnError extends boolean = true>(
@@ -3284,8 +3283,8 @@ export const listConnections = <ThrowOnError extends boolean = true>(
  *
  * @param {createConnectionData} options
  * @param {string} options.path.tenantId - `string`
- * @param {enum} options.body.issuer - `enum`
- * @param {string} options.body.displayName - `string`
+ * @param {enum} options.body.federation - `enum`
+ * @param {string} options.body.name - `string`
  * @param {string[]} options.body.claimValues - `string[]`
  * @param {string[]} options.body.idpEntityIds - `string[]`
  * @param {enum=} options.body.status - `enum` (optional)
@@ -3339,7 +3338,7 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
  * @param {updateConnectionData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.connectionId - `string`
- * @param {string=} options.body.displayName - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
  * @param {string[]=} options.body.claimValues - `string[]` (optional)
  * @param {string[]=} options.body.idpEntityIds - `string[]` (optional)
  * @param {enum=} options.body.status - `enum` (optional)

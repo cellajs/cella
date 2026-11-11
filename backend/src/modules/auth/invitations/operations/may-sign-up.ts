@@ -8,7 +8,7 @@ interface SignUpEmailOpts {
 }
 
 /**
- * Whether the address was invited and the invitation still stands: a membership invitation not rejected (it outlives
+ * Whether the address was invited and the invitation still stands: a membership invitation not declined (it outlives
  * its emailed token), or a live system invitation token (a system invite has no membership row).
  */
 export const hasPendingInvitation = async (ctx: DbContext, { email }: SignUpEmailOpts) => {

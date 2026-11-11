@@ -17,7 +17,7 @@ const enEmailKeys = typedEntries(enBackend)
 
 /** A missing translation is fine as long as the fallback produces real text, not a raw key. */
 describe('email translation fallback', () => {
-  for (const lng of appConfig.languages) {
+  for (const lng of appConfig.languageCodes) {
     it(`all email keys resolve to text in ${lng}`, () => {
       const broken: string[] = [];
 
@@ -40,7 +40,7 @@ describe('email template rendering', () => {
     const def = emailPreviews[preview.name];
     const { statics, recipient } = preview.data;
     const name = previewPath(preview);
-    for (const lng of appConfig.languages) {
+    for (const lng of appConfig.languageCodes) {
       it(`${name} renders without error in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
         const html = await render(def.component({ ...translated, ...recipient, frame: emailFrame(def, statics, lng, previewRequestDetails) }));

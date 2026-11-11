@@ -43,7 +43,7 @@ const sweepRules: { table: string; aged: string }[] = [
   // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
   {
     table: 'inactive_memberships',
-    aged: `rejected_at < now() - ${days(retention.invitationDays)} OR (rejected_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
+    aged: `declined_at < now() - ${days(retention.invitationDays)} OR (declined_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },

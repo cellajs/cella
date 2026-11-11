@@ -115,7 +115,11 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
                   render={({ field }) => (
                     <FormItem name="languageCode">
                       <FormLabel required>{t('c:language_code')}</FormLabel>
-                      <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
+                      <SelectLanguage
+                        options={[...appConfig.languageCodes]}
+                        value={field.value ?? appConfig.defaultLanguageCode}
+                        onChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

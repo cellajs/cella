@@ -33,14 +33,14 @@ describe('System Invitation', async () => {
       const { response: res, data } = await makeInviteRequest(['user1@example.com', 'user2@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-      expect(response.invitesSentCount).toBe(2);
+      const response = data as { results: any[]; rejectedIds: string[]; invitationCount: number };
+      expect(response.invitationCount).toBe(2);
       expect(response.rejectedIds).toHaveLength(0);
 
       const tokens = await db.select().from(tokensTable).where(eq(tokensTable.kind, 'invitation'));
       expect(tokens).toHaveLength(2);
       // The last mail carries the link of one of the minted tokens.
-      expect(tokens.map(({ secret }) => secret)).toContain(hashToken(mailedLink('inviteLink').token));
+      expect(tokens.map(({ secretHash }) => secretHash)).toContain(hashToken(mailedLink('inviteLink').token));
     });
 
     it('should filter out existing users', async () => {
@@ -49,8 +49,8 @@ describe('System Invitation', async () => {
       const { response: res, data } = await makeInviteRequest(['existing@example.com', 'newuser@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-      expect(response.invitesSentCount).toBe(1); // Only new user
+      const response = data as { results: any[]; rejectedIds: string[]; invitationCount: number };
+      expect(response.invitationCount).toBe(1); // Only new user
       expect(response.rejectedIds).toContain('existing@example.com');
     });
 
@@ -59,8 +59,8 @@ describe('System Invitation', async () => {
       const { response: res, data } = await makeInviteRequest(['user@example.com', 'user@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-      expect(response.invitesSentCount).toBe(1); // Only one invitation sent
+      const response = data as { results: any[]; rejectedIds: string[]; invitationCount: number };
+      expect(response.invitationCount).toBe(1); // Only one invitation sent
       expect(response.rejectedIds).toHaveLength(0);
     });
   });
@@ -77,8 +77,8 @@ describe('System Invitation', async () => {
       await makeInviteRequest(['waiting@example.com'], sessionCookie);
 
       const { data } = await call(listRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
-      const listed = (data as { results: { email: string; kind: string; wasInvited: boolean }[] }).results;
-      expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, kind }) => ({ email, kind }))).toEqual([
+      const listed = (data as { results: { email: string; kind: string; invited: boolean }[] }).results;
+      expect(listed.filter(({ invited }) => invited).map(({ email, kind }) => ({ email, kind }))).toEqual([
         { email: 'waiting@example.com', kind: 'waitlist' },
       ]);
 
@@ -100,8 +100,8 @@ describe('System Invitation', async () => {
       const { response: secondRes, data } = await makeInviteRequest(['user@example.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 
-      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-      expect(response.invitesSentCount).toBe(0);
+      const response = data as { results: any[]; rejectedIds: string[]; invitationCount: number };
+      expect(response.invitationCount).toBe(0);
       expect(response.rejectedIds).toContain('user@example.com');
     });
   });

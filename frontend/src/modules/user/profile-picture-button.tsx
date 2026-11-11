@@ -13,13 +13,13 @@ export function ProfilePictureButton({ user, className }: { user: Pick<UserBase,
   const { t } = useTranslation();
   const { mutate: updateUser } = useUpdateUser(user.id);
 
-  if (!appConfig.has.uploadEnabled) return null;
+  if (!appConfig.has.uploads) return null;
 
   const label = t(user.thumbnailUrl ? 'c:change_resource' : 'c:upload_resource', { resource: t('c:profile_picture') });
 
   const upload = () =>
     openImageUpload({
-      templateId: 'avatar',
+      templateId: 'thumbnail',
       title: label,
       onUploaded: (thumbnailUrl) =>
         updateUser({ thumbnailUrl }, { onSuccess: () => toaster.success(t('c:success.update_resource', { resource: t('c:profile_picture') })) }),

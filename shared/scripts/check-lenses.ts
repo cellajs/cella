@@ -25,7 +25,7 @@ const reservedFields = new Set<string>([
   'updatedBy',
   // CDC counter logic reads (cdc/src/utils/count-deltas.ts)
   'role',
-  'rejectedAt',
+  'declinedAt',
   // Declared entity-embedding host columns
   ...appConfig.productEmbeddings.map((embedding) => embedding.hostColumn),
 ]);

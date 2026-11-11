@@ -350,7 +350,7 @@ describe('magic-link sign-up', async () => {
     {
       // A decline deletes the invitation's links; one a direct write left behind still permits nothing.
       invitation: 'declined',
-      end: (id: string) => db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id)),
+      end: (id: string) => db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id)),
     },
   ])('must not sign up while registration is closed via the leftover link of a $invitation invitation', async ({ end }) => {
     const organization = await createTestOrganization();
@@ -430,7 +430,7 @@ describe('magic-link sign-up', async () => {
 
     const tokens = await tokensFor(email);
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].secret).toBe(hashToken(second.rawToken));
+    expect(tokens[0].secretHash).toBe(hashToken(second.rawToken));
 
     const { error, response } = await openLink(first.rawToken, first.requestedHere);
     await expectRefusal({ response, error }, 401, 'magic_not_found');

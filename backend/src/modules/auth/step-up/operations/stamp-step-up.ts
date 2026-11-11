@@ -13,7 +13,7 @@ import { newHashedToken } from '#/utils/hash-token';
  */
 export const stampStepUp = async (ctx: Context<Env>, via: StepUpProof): Promise<boolean> => {
   const { raw, hash } = newHashedToken();
-  const stamped = await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: ctx.var.user.id, via, secret: hash });
+  const stamped = await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: ctx.var.user.id, via, secretHash: hash });
   if (stamped) setAuthCookie(ctx, 'session-step-up', raw, stepUpWindow);
   return !!stamped;
 };

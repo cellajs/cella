@@ -12,7 +12,7 @@ const builtInLabels = {
   anonymous: 'Anonymous',
 };
 
-const federationLabels = Object.fromEntries(Object.entries(appConfig.federations).map(([key, federation]) => [key, federation.label]));
+const federationLabels = Object.fromEntries(Object.entries(appConfig.federations).map(([key, federation]) => [key, federation.name]));
 
-/** Sign-in methods as people read them; a provider identity's issuer is its strategy slug, a federation's its config label. */
+/** Sign-in methods as people read them; an identity's provider is its strategy slug, a federation's label its config name. */
 export const strategyLabels = { ...builtInLabels, ...federationLabels } as Record<AuthStrategy, string>;

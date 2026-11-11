@@ -22,7 +22,7 @@ const dbCtx = { var: { db: baseDb } };
 interface SendMagicLinkOpts {
   email: string;
   /** The page to return to after signing in. */
-  redirect?: string;
+  redirectPath?: string;
   /**
    * The connection whose institution asserted the address in this browser moments ago (`sendSsoRecoveryLinkOp`). That
    * connection's own policy does not refuse the link: the holder proved the institution account and proves the mailbox.
@@ -51,13 +51,13 @@ interface MagicLinkRequest extends Pick<SendMagicLinkOpts, 'assertedThrough'> {
  * @throws AppError 403 `sso_required` in place of that pointer mail, for a caller that knows the account: a browser that
  * signed in to it, or the recovery route right after an institution asserted the address.
  */
-export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, assertedThrough }: SendMagicLinkOpts) => {
+export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirectPath, assertedThrough }: SendMagicLinkOpts) => {
   const normalizedEmail = email.toLowerCase().trim();
   const followed = await findFollowedInvitation(ctx);
   const request: MagicLinkRequest = {
     email: normalizedEmail,
     // Validated here and re-validated at invoke; invalid input degrades to the default path.
-    redirectPath: frontendRedirectPath(redirect),
+    redirectPath: frontendRedirectPath(redirectPath),
     assertedThrough,
     knowsAccount: !!assertedThrough || (await isRecognizedBrowser(ctx, normalizedEmail)),
     tokenId: generateId(),
@@ -90,12 +90,12 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
     const governance = await findAddressGovernance(dbCtx, { email });
     const excludesMagic = governance?.status === 'active' && governance.authStrategies.length > 0 && !governance.authStrategies.includes('magic');
     if (excludesMagic && governance.connectionId !== assertedThrough) {
-      const { connectionId, displayName } = governance;
+      const { connectionId, name: institution } = governance;
       const entryPath = `/auth/sso/${connectionId}`;
       // The answer points there only for a caller that knows the account exists; a stranger gets the 204 every address
       // gets, and the pointer goes to the inbox.
       if (knowsAccount) throw new AppError(403, 'sso_required', 'warn', { meta: { connectionId, entryPath } });
-      const statics = { name: existingUser.name, institution: displayName, entryUrl: `${appConfig.frontendUrl}${entryPath}` };
+      const statics = { name: existingUser.name, institution, entryUrl: `${appConfig.frontendUrl}${entryPath}` };
       mailer
         .sendEmails(ssoRequiredEmail, statics, [{ email, lng: existingUser.languageCode }])
         .catch((err) => log.error('Failed to send SSO-required email', { err }));
@@ -119,7 +119,7 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
 
   // Only an account holder is greeted: an address alone names nobody.
   const staticProps = { magicLinkUrl, name: existingUser?.name ?? '', isNewUser: !existingUser, invited };
-  const recipients = [{ email, lng: existingUser?.languageCode ?? appConfig.defaultLanguage }];
+  const recipients = [{ email, lng: existingUser?.languageCode ?? appConfig.defaultLanguageCode }];
 
   mailer.sendEmails(magicLinkEmail, staticProps, recipients).catch((err) => log.error('Failed to send magic link email', { err }));
 

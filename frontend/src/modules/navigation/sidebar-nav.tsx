@@ -14,7 +14,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
-const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
+const { sidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
 const isMenuPerOrganization = appConfig.navigation.menu === 'perOrganization';
 
@@ -39,13 +39,13 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
 
   const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
 
-  const isExpanded = hasSidebarTextLabels && isDesktop && !navSheetOpen;
+  const isExpanded = sidebarTextLabels && isDesktop && !navSheetOpen;
   const isOverlay = !isDesktop || !keepNavOpen;
 
   // The spacer includes the sheet width when the sheet is open and not overlaying.
   const sidebarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const spacerWidth = isOverlay
-    ? hasSidebarTextLabels && isDesktop
+    ? sidebarTextLabels && isDesktop
       ? sidebarWidthExpanded
       : sidebarWidthCollapsed
     : navSheetExists

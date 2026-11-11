@@ -14,7 +14,7 @@ import { log } from '#/utils/logger';
  * The activity columns that differ between the rows of one product event: a row carries its own, its subject as
  * `rowData.id`, and no commit time.
  */
-export const ownActivityColumns = { id: true, userId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
+export const ownActivityColumns = { id: true, actorId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
 
 /** One of the `ownActivityColumns`. */
 export type OwnActivityColumns = keyof typeof ownActivityColumns;
@@ -25,7 +25,7 @@ export type OwnActivityColumns = keyof typeof ownActivityColumns;
  */
 export const messageRowSchema = z.object({
   activityId: activitySchema.shape.id,
-  userId: activitySchema.shape.userId,
+  actorId: activitySchema.shape.actorId,
   changedFields: activitySchema.shape.changedFields,
   stx: activitySchema.shape.stx,
   rowData: permissionRowDataSchema,

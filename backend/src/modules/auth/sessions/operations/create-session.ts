@@ -89,7 +89,7 @@ export const createSession = async (
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
-  const { raw: sessionToken, hash: secret } = newHashedToken();
+  const { raw: sessionToken, hash: secretHash } = newHashedToken();
   const stepUp = steppedUpVia ? newHashedToken() : null;
 
   const sessionId = generateId();
@@ -99,7 +99,7 @@ export const createSession = async (
   const timeSpan = new TimeSpan(Date.parse(expiresAt) - Date.now(), 'ms');
   const session = {
     id: sessionId,
-    secret,
+    secretHash,
     userId: user.id,
     kind,
     ...deviceColumns(device),
@@ -113,7 +113,7 @@ export const createSession = async (
     expiresAt,
     steppedUpAt: steppedUpVia ? (steppedUpAt ?? now) : null,
     steppedUpVia,
-    steppedUpSecret: stepUp?.hash ?? null,
+    steppedUpSecretHash: stepUp?.hash ?? null,
     connectionId,
   };
 

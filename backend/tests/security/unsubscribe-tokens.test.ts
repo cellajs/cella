@@ -33,7 +33,7 @@ const signUp = async (label: string) => {
 const emailSettings = async (userId: string) => {
   const [user] = await adminDb.select({ newsletter: usersTable.newsletter }).from(usersTable).where(eq(usersTable.id, userId));
   const [preferences] = await adminDb
-    .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
+    .select({ digest: notificationPreferencesTable.digest, mentionEmails: notificationPreferencesTable.mentionEmails })
     .from(notificationPreferencesTable)
     .where(eq(notificationPreferencesTable.userId, userId));
   return { ...user, ...preferences };
@@ -105,7 +105,7 @@ describe('Unsubscribe links', () => {
   });
 
   it('changes nothing when a link is only opened, turns off only its category when posted, and turns it back on', async () => {
-    const everythingOn = { newsletter: true, digest: 'weekly', mentionEmail: true };
+    const everythingOn = { newsletter: true, digest: 'weekly', mentionEmails: true };
     // The newsletter link leaves the digest on; the digest link leaves the newsletter on.
     for (const [category, expected] of [
       ['newsletter', { ...everythingOn, newsletter: false }],

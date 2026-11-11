@@ -27,12 +27,12 @@ export function UserLanguage() {
     if (user) updateSelf({ languageCode: language });
   };
 
-  if (appConfig.languages.length < 2) return null;
+  if (appConfig.languageCodes.length < 2) return null;
 
   const openDropdown = () =>
     dropdowner.getState().create(
       <div className="flex flex-col">
-        {appConfig.languages.map((language) => (
+        {appConfig.languageCodes.map((language) => (
           <DropdownSelectItem key={language} selected={currentLanguage === language} onSelect={() => changeLanguage(language)}>
             <span lang={language}>{t(`c:${language}`)}</span>
           </DropdownSelectItem>

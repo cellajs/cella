@@ -19,8 +19,8 @@ describe('a public image without cloud storage', () => {
   });
 
   it.each([
-    ['a cover', { templateId: 'cover', organizationId: 'org-1' }],
-    ['an avatar', { templateId: 'avatar' }],
+    ['a banner', { templateId: 'banner', organizationId: 'org-1' }],
+    ['a thumbnail', { templateId: 'thumbnail' }],
   ] as const)('of %s is refused with a toast, and nothing is stored on this device', async (_, tokenQuery) => {
     const uppy = await createUppy({ restrictions: appConfig.uppy.defaultRestrictions }, tokenQuery);
     const completed = vi.fn();

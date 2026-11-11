@@ -141,7 +141,7 @@ describe('apply_retention() row rules', () => {
       removed: [requests.oldContact, requests.oldWaitlist, requests.oldInfo],
     });
 
-    const invitation = async ({ rejectedAt = null, remindedAt = null }: { rejectedAt?: Date | null; remindedAt?: Date | null }) => {
+    const invitation = async ({ declinedAt = null, remindedAt = null }: { declinedAt?: Date | null; remindedAt?: Date | null }) => {
       const id = generateId();
       await db.insert(inactiveMembershipsTable).values({
         id,
@@ -153,14 +153,14 @@ describe('apply_retention() row rules', () => {
         role: memberRole,
         createdBy: user.id,
         createdAt: ago(1000).toISOString(),
-        rejectedAt: rejectedAt?.toISOString() ?? null,
+        declinedAt: declinedAt?.toISOString() ?? null,
         remindedAt: remindedAt?.toISOString() ?? null,
       });
       return id;
     };
     const invitations = {
-      rejectedLongAgo: await invitation({ rejectedAt: outside(retention.invitationDays) }),
-      rejectedRecently: await invitation({ rejectedAt: inside(retention.invitationDays) }),
+      declinedLongAgo: await invitation({ declinedAt: outside(retention.invitationDays) }),
+      declinedRecently: await invitation({ declinedAt: inside(retention.invitationDays) }),
       mailedLongAgo: await invitation({ remindedAt: outside(retention.invitationDays) }),
       mailedRecently: await invitation({ remindedAt: inside(retention.invitationDays) }),
       held: await invitation({}),
@@ -174,8 +174,8 @@ describe('apply_retention() row rules', () => {
             .from(inactiveMembershipsTable)
             .where(eq(inactiveMembershipsTable.organizationId, organization.id))
         ).map((row) => row.id),
-      kept: [invitations.rejectedRecently, invitations.mailedRecently, invitations.held],
-      removed: [invitations.rejectedLongAgo, invitations.mailedLongAgo],
+      kept: [invitations.declinedRecently, invitations.mailedRecently, invitations.held],
+      removed: [invitations.declinedLongAgo, invitations.mailedLongAgo],
     });
 
     // The counter runs ahead of every row but `newest`, which holds the organization's latest position.

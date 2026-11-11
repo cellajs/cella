@@ -9,7 +9,7 @@ import {
   deleteInactiveMembership,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
-  stampInactiveMembershipRejected,
+  stampInactiveMembershipDeclined,
 } from '#/modules/memberships/inactive-memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { isProvenAccount } from '#/modules/user/user-queries';
@@ -30,19 +30,19 @@ interface HandleMembershipInvitationOpts {
 
 /**
  * Answers an invitation for the signed-in user. Accepting makes them a member of its channel, or spends it when they
- * are one already; rejecting declines it. Either way its links go, and the answer is its organization as `ChannelBase`.
- * @throws AppError 404 `not_found` for a missing, rejected or another user's invitation alike, 409 `user_mismatch` when
+ * are one already; declining stamps it declined. Either way its links go, and the answer is its organization as `ChannelBase`.
+ * @throws AppError 404 `not_found` for a missing, declined or another user's invitation alike, 409 `user_mismatch` when
  * a token accept loses the bind to another account, 403 `channel_archived` for an accept into an archived channel, 403
  * `anonymous_account` for an accept by an account without a proven address, which binds nothing lasting to itself.
  */
 export async function handleMembershipInvitationOp(
   ctx: InvitationAnswerContext,
   inactiveMembershipId: string,
-  acceptOrReject: 'accept' | 'reject',
+  acceptOrDecline: 'accept' | 'decline',
   { viaToken = false }: HandleMembershipInvitationOpts = {},
 ) {
   const userId = ctx.var.user.id;
-  if (acceptOrReject === 'accept' && !(await isProvenAccount(ctx, { userId }))) {
+  if (acceptOrDecline === 'accept' && !(await isProvenAccount(ctx, { userId }))) {
     throw new AppError(403, 'anonymous_account', 'warn', { meta: { resource: 'invitation' } });
   }
 
@@ -54,7 +54,7 @@ export async function handleMembershipInvitationOp(
 
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    if (acceptOrReject === 'accept') {
+    if (acceptOrDecline === 'accept') {
       if (viaToken) {
         // Bind before activating: of two accounts racing for the same unbound invitation, exactly one wins.
         const [bound] = await bindInactiveMemberships(txCtx, { ids: [inactiveMembership.id], userId });
@@ -79,12 +79,12 @@ export async function handleMembershipInvitationOp(
       log.info('Membership accepted', { ids: activatedMemberships.map((m) => m.id), viaToken, alreadyMember });
     }
 
-    if (acceptOrReject === 'reject') {
-      await stampInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
+    if (acceptOrDecline === 'decline') {
+      await stampInactiveMembershipDeclined(txCtx, { id: inactiveMembership.id });
       await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
-  if (acceptOrReject === 'accept') invalidateCache.user(userId);
+  if (acceptOrDecline === 'accept') invalidateCache.user(userId);
 
   const organization = await resolveEntity(ctx, { entityType: 'organization', identifier: inactiveMembership.organizationId });
   if (!organization) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });

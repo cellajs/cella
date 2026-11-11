@@ -204,10 +204,10 @@ describe('sessions list flags sessions from a new browser', async () => {
 
     const sessions = await sessionsOf(user);
 
-    expect(sessions.find(({ id }) => id === known.sessionId)?.isNewDevice).toBe(false);
-    expect(sessions.find(({ id }) => id === recent.sessionId)?.isNewDevice).toBe(true);
+    expect(sessions.find(({ id }) => id === known.sessionId)?.newDevice).toBe(false);
+    expect(sessions.find(({ id }) => id === recent.sessionId)?.newDevice).toBe(true);
     // The requesting session carries no device id at all.
-    expect(sessions.find(({ isCurrent }) => isCurrent)?.isNewDevice).toBe(false);
+    expect(sessions.find(({ current }) => current)?.newDevice).toBe(false);
   });
 
   it('stops flagging a browser once it has been known for longer than a session lives', async () => {
@@ -224,6 +224,6 @@ describe('sessions list flags sessions from a new browser', async () => {
       .where(eq(devicesTable.deviceIdHash, aged.newDevice?.deviceIdHash ?? ''));
 
     const sessions = await sessionsOf(user);
-    expect(sessions.every(({ isNewDevice }) => !isNewDevice)).toBe(true);
+    expect(sessions.every(({ newDevice }) => !newDevice)).toBe(true);
   });
 });

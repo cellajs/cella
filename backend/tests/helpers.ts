@@ -249,14 +249,14 @@ export async function insertTestSession(
   user: { id: string },
   { kind = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
 ) {
-  const { raw: token, hash: secret } = newHashedToken();
+  const { raw: token, hash: secretHash } = newHashedToken();
   const stepUp = steppedUpVia ? newHashedToken() : null;
   const id = generateId();
   const createdAt = new Date(Date.now() - ageMs).toISOString();
 
   await db.insert(sessionsTable).values({
     id,
-    secret,
+    secretHash,
     userId: user.id,
     kind,
     authStrategy,
@@ -265,7 +265,7 @@ export async function insertTestSession(
     connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
-    steppedUpSecret: stepUp?.hash ?? null,
+    steppedUpSecretHash: stepUp?.hash ?? null,
   });
 
   // A sign-in that starts stepped up also sets the step-up cookie its stamp counts with.
@@ -304,7 +304,7 @@ export async function insertTestToken(
     .insert(tokensTable)
     .values({
       kind,
-      secret: hashToken(raw),
+      secretHash: hashToken(raw),
       email: owner.email,
       userId: owner.id ?? null,
       createdBy: owner.id ?? null,
@@ -324,7 +324,7 @@ export const tokenRowOf = async (kind: TokenKind, raw: string) =>
     await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.kind, kind), eq(tokensTable.secret, hashToken(raw))))
+      .where(and(eq(tokensTable.kind, kind), eq(tokensTable.secretHash, hashToken(raw))))
   )[0];
 
 /** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */
@@ -401,18 +401,18 @@ export const cookiesAfter = (cookieHeader: string, response: Response) => new Co
 /**
  * Opens an invitation or verification link as a browser does: the GET holds it, and its confirm page's POST redeems
  * it. `browser` keeps the cookies both answers set. Returns the last answer and where it sends the browser: the POST's
- * `redirectTo`, or the GET's `Location` when the GET held nothing.
+ * `redirectUrl`, or the GET's `Location` when the GET held nothing.
  */
 export async function openHeldLink(kind: HeldLinkKind, token: string, browser = new CookieJar()) {
   const call = await createAppClient();
   const inBrowser = () => ({ ...defaultHeaders, Cookie: browser.header() });
   const opened = await call(invokeToken, { path: { kind, token }, headers: inBrowser() });
   browser.absorb(opened.response);
-  if (cookieChange(opened.response, `${kind}-pending`) !== 'set') return { ...opened, redirectTo: opened.response.headers.get('location') };
+  if (cookieChange(opened.response, `${kind}-pending`) !== 'set') return { ...opened, redirectUrl: opened.response.headers.get('location') };
 
   const redeemed = await call(redeemLinkToken, { path: { kind }, headers: inBrowser() });
   browser.absorb(redeemed.response);
-  return { ...redeemed, redirectTo: (redeemed.data as { redirectTo?: string } | undefined)?.redirectTo ?? null };
+  return { ...redeemed, redirectUrl: (redeemed.data as { redirectUrl?: string } | undefined)?.redirectUrl ?? null };
 }
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
@@ -421,7 +421,7 @@ export async function linkIdentity(user: { id: string; email: string }, override
     .insert(identitiesTable)
     .values({
       userId: user.id,
-      issuer: 'github',
+      provider: 'github',
       subject: 'github-user-id',
       email: user.email,
       verified: true,

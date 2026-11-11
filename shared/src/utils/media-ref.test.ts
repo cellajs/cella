@@ -51,7 +51,7 @@ describe('parseMediaRef', () => {
       'https://i.imgur.com/abc123.png',
       'https://www.youtube.com/watch?v=abc123',
       `${cdn}/${ownKey}`,
-      `https://${appConfig.s3.publicBucket}.${appConfig.s3.host}/${ownKey}`,
+      `https://${appConfig.s3.publicBucketName}.${appConfig.s3.host}/${ownKey}`,
       'http://evil.example/pixel.png',
       'javascript:alert(1)',
       'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>',

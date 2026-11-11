@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { validIdSchema } from '#/schemas';
 
-/** Batch of accumulated seen entity IDs, posted by the client's seen store on a timer and on page unload. */
+/** Batch of accumulated seen product IDs, posted by the client's seen store on a timer and on page unload. */
 export const seenBatchBodySchema = z.object({
-  entityIds: validIdSchema.array().min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
-  entityType: z.enum(appConfig.seenTrackedProductTypes).describe('Entity type for all IDs in this batch'),
+  productIds: validIdSchema.array().min(1).max(500).describe('Product IDs the user has viewed since last batch'),
+  productType: z.enum(appConfig.seenTrackedProductTypes).describe('Product type for all IDs in this batch'),
 });
 
 export const seenBatchResponseSchema = z.object({ newCount: z.number().int().min(0).describe('Number of entities newly marked as seen (deduped)') });

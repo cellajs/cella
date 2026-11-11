@@ -27,19 +27,19 @@ function seedNotificationDate(subjectAt: string): string {
  * this only shapes the row.
  */
 export function mockSeedNotification(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   subject: NotificationSubjectRow & { tenantId: string; createdAt: string },
   kind: NotificationKind,
   userId: string,
   actorId: string | null,
 ): InsertNotificationModel {
-  const home = homeChannelOf(entityType, subject);
+  const home = homeChannelOf(productType, subject);
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,
     actorId,
     kind,
-    entityType,
+    productType,
     subjectId: subject.id,
     contextId: subject.id,
     channelId: home.id,

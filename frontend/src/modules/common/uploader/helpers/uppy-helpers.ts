@@ -41,10 +41,10 @@ export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: Upl
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
   // Only a server without cloud storage files the upload as local-only; offline or after a failed token request it waits as pending.
-  let localStatus: UploadStatus = appConfig.has.uploadEnabled ? 'pending' : 'local-only';
+  let localStatus: UploadStatus = appConfig.has.uploads ? 'pending' : 'local-only';
 
   try {
-    if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
+    if (appConfig.has.uploads && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Transloadit is configured only when both params and signature come back
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
@@ -217,7 +217,7 @@ const prepareFilesForOffline = async (
 };
 
 /** Templates that take one cropped image, by the aspect ratio they crop to. */
-const imageAspectRatios: Partial<Record<UploadTemplateId, number>> = { avatar: 1, cover: 3 };
+const imageAspectRatios: Partial<Record<UploadTemplateId, number>> = { thumbnail: 1, banner: 3 };
 
 export const isImageTemplate = (templateId: UploadTemplateId) => templateId in imageAspectRatios;
 

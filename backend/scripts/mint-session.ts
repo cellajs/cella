@@ -48,11 +48,11 @@ await db
   );
 
 const hours = Number(hoursArg ?? 24);
-const { raw: sessionToken, hash: secret } = newHashedToken();
+const { raw: sessionToken, hash: secretHash } = newHashedToken();
 
 await db.insert(sessionsTable).values({
   id: generateId(),
-  secret,
+  secretHash,
   userId: owner.userId,
   deviceName,
   kind: 'regular',

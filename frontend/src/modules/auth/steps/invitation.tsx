@@ -37,7 +37,7 @@ export function InvitationStep({ tokenData, federations }: { tokenData: TokenDat
   const oauth = useOAuthAlternatives('invitation');
 
   const { mutate: sendLink, isPending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email, redirect } }),
+    mutationFn: () => sendMagicLink({ body: { email, redirectPath: redirect } }),
     // An account may hold the invited address by now: the link then signs in.
     onSuccess: () => setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup'),
     // The global handler toasts an ApiError; a failure without a server answer gets this toast

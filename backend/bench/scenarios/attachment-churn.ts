@@ -36,7 +36,7 @@ export default defineScenario({
         headers: { cookie },
         name: 'POST /attachments:batch-create',
       });
-      const inserted = created.ok ? (parseBatch(created.text()).data?.length ?? 0) : 0;
+      const inserted = created.ok ? (parseBatch(created.text()).results?.length ?? 0) : 0;
       if (inserted > 0) {
         vu.counter('bench.rows_written', inserted);
         vu.counter('bench.rows_created.attachment', inserted);

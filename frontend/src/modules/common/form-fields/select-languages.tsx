@@ -26,7 +26,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
   const inDrawer = useInDropdownerDrawer();
   const [selected, setSelected] = useState<Language[]>(initialValue);
 
-  const options = appConfig.languages.map((lang) => ({
+  const options = appConfig.languageCodes.map((lang) => ({
     value: lang,
     label: (
       <span className="truncate" lang={lang}>
@@ -89,7 +89,7 @@ export function SelectLanguages({ value, onChange, id }: SelectLanguagesProps) {
     <InputTriggerButton
       ref={triggerRef}
       id={id}
-      disabled={appConfig.languages.length < 2}
+      disabled={appConfig.languageCodes.length < 2}
       aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
       className="data-dropdowner-active:ring-ring w-full data-dropdowner-active:ring-1"
       onClick={openDropdown}

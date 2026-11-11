@@ -8,7 +8,7 @@ import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
 /** The client patches every host column its own productEmbeddings config declares for the embedded product. */
 const propagationHintSchema = z.object({
-  embeddedProduct: z.enum(appConfig.productEntityTypes).describe('Embedded product type whose change triggered the propagation'),
+  embeddedProductType: z.enum(appConfig.productEntityTypes).describe('Embedded product type whose change triggered the propagation'),
   update: z.array(z.string()).describe('Embedded row IDs whose cached copies in host rows need a refresh'),
   remove: z.array(z.string()).describe('Embedded row IDs (deleted or soft deleted) that host rows drop'),
 });
@@ -140,7 +140,7 @@ export type StreamErrorPayload = z.infer<typeof streamErrorSchema>;
 /** One client view: the org-sequence cursor it has caught up to for one product type of one organization. */
 const catchupViewSchema = z.object({
   organizationId: validIdSchema,
-  entityType: z.enum(appConfig.productEntityTypes),
+  productType: z.enum(appConfig.productEntityTypes),
   cursor: z.number().int().min(0).openapi({ description: 'Org-sequence position this view has fully ingested (0 = baseline not yet established)' }),
 });
 
@@ -177,7 +177,7 @@ export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSumma
  */
 const catchupViewAnswerSchema = z.object({
   organizationId: z.string(),
-  entityType: z.enum(appConfig.productEntityTypes),
+  productType: z.enum(appConfig.productEntityTypes),
   status: z.enum(['ok', 'opaque', 'forbidden']),
   frontier: z.number().int().optional().openapi({ description: 'Newest sequence position of the type in the organization' }),
 });

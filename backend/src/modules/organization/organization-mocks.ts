@@ -27,13 +27,12 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     shortName: name.split(' ')[0],
     regionCode: faker.location.countryCode(),
     timeZone: faker.location.timeZone(),
-    defaultLanguageCode: appConfig.defaultLanguage,
-    languageCodes: [appConfig.defaultLanguage] as Language[],
+    defaultLanguageCode: appConfig.defaultLanguageCode,
+    languageCodes: [appConfig.defaultLanguageCode] as Language[],
     notificationEmail: `notifications@${slug}.example`,
     color: faker.color.rgb().toLowerCase(),
     thumbnailUrl: null,
     bannerUrl: null,
-    logoUrl: null,
     websiteUrl: `https://${slug}.example`,
     welcomeText: `Welcome to ${name}!`,
     chatSupport: faker.datatype.boolean(),
@@ -76,7 +75,7 @@ export const mockOrganizationResponse = (key = 'organization:default') =>
       included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) },
     };
   });
-export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationsSent: 12 });
+export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationCount: 12 });
 
 /** The update body a caller with a key or token sends: only the fields it changes. */
 export const mockUpdateOrganizationBody = () => {

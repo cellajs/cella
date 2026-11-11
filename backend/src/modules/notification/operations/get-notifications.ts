@@ -49,7 +49,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
       id: row.id,
       createdAt: row.createdAt,
       kind: row.kind,
-      entityType: row.entityType,
+      productType: row.productType,
       subjectId: row.subjectId,
       contextId: row.contextId,
       channelId: row.channelId,
@@ -62,7 +62,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
       channelThumbnailUrl: channel?.thumbnailUrl ?? null,
       organizationName: organization?.name ?? '',
       organizationThumbnailUrl: organization?.thumbnailUrl ?? null,
-      subjectTitle: contextNames.get(row.contextId ?? row.subjectId) ?? '',
+      subjectName: contextNames.get(row.contextId ?? row.subjectId) ?? '',
       readAt: row.readAt,
     };
   });

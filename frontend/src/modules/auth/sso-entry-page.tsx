@@ -35,19 +35,19 @@ export function SsoEntryPage() {
       <AuthHeader
         image={image && <img src={image} alt="" className="size-14 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:sso_entry', { organization: organizationName })}
-        description={t('c:sso_entry.text', { institution: institution.displayName })}
+        description={t('c:sso_entry.text', { institution: institution.name })}
       />
 
       {status === 'active' ? (
-        <Button size="block" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
-          <span className="truncate">{t('c:continue_to_institution', { institution: institution.displayName })}</span>
-          <span className="shrink-0 font-normal">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
+        <Button size="block" render={<a href={ssoStartUrl({ connectionId }, { redirectPath: redirect })} />}>
+          <span className="truncate">{t('c:continue_to_institution', { institution: institution.name })}</span>
+          <span className="shrink-0 font-normal">{t('c:sign_in_via_federation', { federation: federation.name })}</span>
         </Button>
       ) : (
         <Alert variant="warning">
           <AlertDescription>
             {t(status === 'pending' ? 'c:sso_entry_pending.text' : 'c:sso_entry_disabled.text', {
-              institution: institution.displayName,
+              institution: institution.name,
             })}
           </AlertDescription>
         </Alert>

@@ -9,7 +9,7 @@ import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
-/** A request's columns as responses carry them: `invitedAt` travels as `wasInvited`. */
+/** A request's columns as responses carry them: `invitedAt` travels as `invited`. */
 const { invitedAt, ...requestColumns } = getColumns(requestsTable);
 
 const requestOrderColumns = pick(requestsTable, ['id', 'email', 'createdAt', 'kind']);
@@ -33,7 +33,7 @@ interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuery
   offset: number;
 }
 
-/** A page of requests with `wasInvited`, and the total. */
+/** A page of requests with `invited`, and the total. */
 export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, limit, offset }: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
 
@@ -42,7 +42,7 @@ export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, li
   const orderBy = getOrderColumns({ sort, order, columns: requestOrderColumns, tieBreaker: requestsTable.id });
 
   const itemsQuery = db
-    .select({ ...requestColumns, wasInvited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('wasInvited') })
+    .select({ ...requestColumns, invited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('invited') })
     .from(requestsTable)
     .where(filter)
     .orderBy(...orderBy)

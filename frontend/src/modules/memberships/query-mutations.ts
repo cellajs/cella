@@ -93,7 +93,7 @@ export const useInviteMemberMutation = () =>
     mutationFn: async ({ body, path, query }) => {
       const { results, unsent } = await sendInBatches(body.emails, (emails) => inviteMembers({ body: { ...body, emails }, path, query }));
       return {
-        data: results.flatMap(({ data }) => data),
+        results: results.flatMap((answer) => answer.results),
         outcomes: results.flatMap(({ outcomes }) => outcomes),
         held: results.some(({ held }) => held),
         unsent,
@@ -242,7 +242,7 @@ export const useChangeEntityRoleMutation = () =>
         body: { emails: [email], role },
       });
 
-      const created = result.data?.[0];
+      const created = result.results?.[0];
       if (!created || !hasPersonalView(created)) throw new Error('Failed to create membership');
       return created;
     },

@@ -47,7 +47,7 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
 
   const { items: itemsToCreate, rejectionState } = restrictionFiltered;
 
-  if (itemsToCreate.length === 0) return { data: [], ...rejectionState };
+  if (itemsToCreate.length === 0) return { results: [], ...rejectionState };
 
   const creatorRole = 'admin' as const;
 
@@ -61,9 +61,9 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
         shortName: item.name,
         slug: item.slug,
         tenantId,
-        languageCodes: [appConfig.defaultLanguage],
+        languageCodes: [appConfig.defaultLanguageCode],
         welcomeText: defaultWelcomeText,
-        defaultLanguageCode: appConfig.defaultLanguage,
+        defaultLanguageCode: appConfig.defaultLanguageCode,
         createdBy: user.id,
         // A draft holds its invitations until it is published
         ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),
@@ -89,5 +89,5 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
     return { ...withOrganizationDefaults(org), included };
   });
 
-  return { data: organizationResponses, ...rejectionState };
+  return { results: organizationResponses, ...rejectionState };
 }

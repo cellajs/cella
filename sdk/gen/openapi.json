@@ -1644,7 +1644,7 @@
           "propagation": {
             "type": ["object", "null"],
             "properties": {
-              "embeddedProduct": {
+              "embeddedProductType": {
                 "type": "string",
                 "enum": ["attachment"],
                 "description": "Embedded product type whose change triggered the propagation"
@@ -1664,7 +1664,7 @@
                 "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
               }
             },
-            "required": ["embeddedProduct", "update", "remove"],
+            "required": ["embeddedProductType", "update", "remove"],
             "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
@@ -2012,7 +2012,7 @@
                 "connectionId": {
                   "type": "string"
                 },
-                "displayName": {
+                "name": {
                   "type": "string"
                 },
                 "federation": {
@@ -2023,11 +2023,11 @@
                       "description": "A federation key in appConfig.federations",
                       "enum": ["surfconext"]
                     },
-                    "label": {
+                    "name": {
                       "type": "string"
                     }
                   },
-                  "required": ["key", "label"]
+                  "required": ["key", "name"]
                 },
                 "identity": {
                   "anyOf": [
@@ -2067,7 +2067,7 @@
                   "description": "The identity the account holds through this connection; null when not connected"
                 }
               },
-              "required": ["connectionId", "displayName", "federation", "identity"]
+              "required": ["connectionId", "name", "federation", "identity"]
             }
           },
           "totp": {
@@ -2179,10 +2179,10 @@
                   "type": ["string", "null"],
                   "enum": ["passkey", "totp", "email", "sso", null]
                 },
-                "isCurrent": {
+                "current": {
                   "type": "boolean"
                 },
-                "isNewDevice": {
+                "newDevice": {
                   "type": "boolean",
                   "description": "The browser was first seen recently and is not the first one known."
                 }
@@ -2208,8 +2208,8 @@
                 "revocationReason",
                 "steppedUpAt",
                 "steppedUpVia",
-                "isCurrent",
-                "isNewDevice"
+                "current",
+                "newDevice"
               ]
             }
           },
@@ -2289,8 +2289,8 @@
               "revocationReason": null,
               "steppedUpAt": null,
               "steppedUpVia": null,
-              "isCurrent": true,
-              "isNewDevice": false
+              "current": true,
+              "newDevice": false
             }
           ],
           "passkeys": []
@@ -2813,10 +2813,6 @@
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "logoUrl": {
-            "type": ["string", "null"],
-            "maxLength": 2048
-          },
           "websiteUrl": {
             "type": ["string", "null"],
             "maxLength": 2048
@@ -2935,7 +2931,6 @@
           "languageCodes",
           "notificationEmail",
           "color",
-          "logoUrl",
           "websiteUrl",
           "welcomeText",
           "chatSupport",
@@ -2968,7 +2963,6 @@
           "languageCodes": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
-          "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
@@ -3039,11 +3033,11 @@
             "type": "string",
             "enum": ["waitlist", "info", "contact"]
           },
-          "wasInvited": {
+          "invited": {
             "type": "boolean"
           }
         },
-        "required": ["createdAt", "id", "message", "email", "kind", "wasInvited"],
+        "required": ["createdAt", "id", "message", "email", "kind", "invited"],
         "description": "A message from the public site: a contact message, a waitlist sign-up or an info request. Anyone can send one, signed in or not; system admins list them.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
@@ -3051,7 +3045,7 @@
           "kind": "contact",
           "message": "Amitto sapiente antiquus temptatio verus mollitia.",
           "createdAt": "2024-03-17T12:06:02.574Z",
-          "wasInvited": false
+          "invited": false
         },
         "x-tags": ["data", "requests", "cella"]
       },
@@ -3467,13 +3461,13 @@
                     "minimum": 0,
                     "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                   },
-                  "invitationMailsPerDay": {
+                  "invitationEmailsPerDay": {
                     "type": "integer",
                     "minimum": 0,
                     "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
                   }
                 },
-                "required": ["apiPointsPerHour", "invitationMailsPerDay"]
+                "required": ["apiPointsPerHour", "invitationEmailsPerDay"]
               },
               "allowUnregisteredClients": {
                 "type": "boolean",
@@ -3669,7 +3663,7 @@
             },
             "rateLimits": {
               "apiPointsPerHour": 1000,
-              "invitationMailsPerDay": 250
+              "invitationEmailsPerDay": 250
             },
             "allowUnregisteredClients": true
           },
@@ -3718,7 +3712,7 @@
             "type": "string",
             "enum": ["sso"]
           },
-          "issuer": {
+          "federation": {
             "type": "string",
             "maxLength": 255
           },
@@ -3728,7 +3722,7 @@
               "type": "string"
             }
           },
-          "displayName": {
+          "name": {
             "type": "string",
             "maxLength": 255
           },
@@ -3872,9 +3866,9 @@
           "id",
           "tenantId",
           "kind",
-          "issuer",
+          "federation",
           "claimValues",
-          "displayName",
+          "name",
           "status",
           "jitProvisioning",
           "config",
@@ -3888,9 +3882,9 @@
           "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
           "tenantId": "gc9llm",
           "kind": "sso",
-          "issuer": "surfconext",
+          "federation": "surfconext",
           "claimValues": ["uu.nl"],
-          "displayName": "Utrecht University",
+          "name": "Utrecht University",
           "status": "active",
           "jitProvisioning": true,
           "config": {
@@ -4319,7 +4313,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "results": [
                     {
                       "attachmentId": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
                       "variant": "thumbnail",
@@ -4336,7 +4330,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -4374,7 +4368,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -4802,7 +4796,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "results": [
                     {
                       "createdAt": "2024-09-10T16:55:24.272Z",
                       "id": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
@@ -4897,7 +4891,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Attachment"
@@ -4921,7 +4915,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -4931,7 +4925,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "results": [
                     {
                       "createdAt": "2024-09-10T16:55:24.272Z",
                       "id": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
@@ -5026,7 +5020,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Attachment"
@@ -5050,7 +5044,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -5314,7 +5308,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -5337,7 +5331,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -5439,7 +5433,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "results": [
                     {
                       "attachmentId": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
                       "variant": "thumbnail",
@@ -5456,7 +5450,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -5494,7 +5488,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -5544,11 +5538,11 @@
                             "description": "A federation key in appConfig.federations",
                             "enum": ["surfconext"]
                           },
-                          "label": {
+                          "name": {
                             "type": "string"
                           }
                         },
-                        "required": ["key", "label"]
+                        "required": ["key", "name"]
                       },
                       "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance"
                     },
@@ -5756,11 +5750,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "redirectTo": {
+                    "redirectUrl": {
                       "type": "string"
                     }
                   },
-                  "required": ["redirectTo"]
+                  "required": ["redirectUrl"]
                 }
               }
             }
@@ -6049,7 +6043,7 @@
                     "minLength": 4,
                     "maxLength": 255
                   },
-                  "redirect": {
+                  "redirectPath": {
                     "type": "string",
                     "maxLength": 2048
                   }
@@ -6865,7 +6859,7 @@
               "maxLength": 2048
             },
             "required": false,
-            "name": "redirectAfter",
+            "name": "redirectPath",
             "in": "query"
           }
         ],
@@ -6923,7 +6917,7 @@
               "maxLength": 2048
             },
             "required": false,
-            "name": "redirectAfter",
+            "name": "redirectPath",
             "in": "query"
           }
         ],
@@ -6981,7 +6975,7 @@
               "maxLength": 2048
             },
             "required": false,
-            "name": "redirectAfter",
+            "name": "redirectPath",
             "in": "query"
           }
         ],
@@ -7362,23 +7356,23 @@
                           "description": "A federation key in appConfig.federations",
                           "enum": ["surfconext"]
                         },
-                        "label": {
+                        "name": {
                           "type": "string"
                         }
                       },
-                      "required": ["key", "label"]
+                      "required": ["key", "name"]
                     },
                     "institution": {
                       "type": "object",
                       "properties": {
-                        "displayName": {
+                        "name": {
                           "type": "string"
                         },
                         "logoUrl": {
                           "type": ["string", "null"]
                         }
                       },
-                      "required": ["displayName", "logoUrl"]
+                      "required": ["name", "logoUrl"]
                     },
                     "organization": {
                       "type": ["object", "null"],
@@ -7406,10 +7400,10 @@
                     "status": "active",
                     "federation": {
                       "key": "surfconext",
-                      "label": "SURFconext"
+                      "name": "SURFconext"
                     },
                     "institution": {
-                      "displayName": "Utrecht University",
+                      "name": "Utrecht University",
                       "logoUrl": null
                     },
                     "organization": {
@@ -7473,7 +7467,7 @@
               "maxLength": 2048
             },
             "required": false,
-            "name": "redirectAfter",
+            "name": "redirectPath",
             "in": "query"
           }
         ],
@@ -7546,7 +7540,7 @@
               "maxLength": 2048
             },
             "required": false,
-            "name": "redirectAfter",
+            "name": "redirectPath",
             "in": "query"
           }
         ],
@@ -8137,7 +8131,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -8160,7 +8154,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -8258,7 +8252,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -8281,7 +8275,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -8384,7 +8378,7 @@
                           "type": "string",
                           "maxLength": 50
                         },
-                        "entityType": {
+                        "productType": {
                           "type": "string",
                           "enum": ["attachment"]
                         },
@@ -8394,7 +8388,7 @@
                           "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)"
                         }
                       },
-                      "required": ["organizationId", "entityType", "cursor"]
+                      "required": ["organizationId", "productType", "cursor"]
                     },
                     "maxItems": 256,
                     "description": "Client-declared views: an organization, a product type and its org-sequence cursor per view"
@@ -8440,7 +8434,7 @@
                             "items": {
                               "type": "object",
                               "properties": {
-                                "embeddedProduct": {
+                                "embeddedProductType": {
                                   "type": "string",
                                   "enum": ["attachment"],
                                   "description": "Embedded product type whose change triggered the propagation"
@@ -8468,7 +8462,7 @@
                                   "description": "Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor"
                                 }
                               },
-                              "required": ["embeddedProduct", "update", "remove"]
+                              "required": ["embeddedProductType", "update", "remove"]
                             }
                           },
                           "spreadWindow": {
@@ -8487,7 +8481,7 @@
                           "organizationId": {
                             "type": "string"
                           },
-                          "entityType": {
+                          "productType": {
                             "type": "string",
                             "enum": ["attachment"]
                           },
@@ -8500,7 +8494,7 @@
                             "description": "Newest sequence position of the type in the organization"
                           }
                         },
-                        "required": ["organizationId", "entityType", "status"]
+                        "required": ["organizationId", "productType", "status"]
                       },
                       "description": "Per-view answers for client-declared views (same order as the request)"
                     },
@@ -9133,7 +9127,7 @@
                         "email": "carolyn5@yahoo.com",
                         "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
                         "role": "member",
-                        "rejectedAt": null,
+                        "declinedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-11-13T15:29:06.546Z",
                         "createdBy": {
@@ -9168,7 +9162,7 @@
                         "email": "orion_king81@hotmail.com",
                         "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
                         "role": "admin",
-                        "rejectedAt": null,
+                        "declinedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-04-11T17:15:50.993Z",
                         "createdBy": {
@@ -9231,7 +9225,7 @@
                                 "type": "string",
                                 "enum": ["admin", "member"]
                               },
-                              "rejectedAt": {
+                              "declinedAt": {
                                 "type": ["string", "null"]
                               },
                               "remindedAt": {
@@ -9254,7 +9248,7 @@
                               "email",
                               "userId",
                               "role",
-                              "rejectedAt",
+                              "declinedAt",
                               "remindedAt",
                               "createdBy",
                               "organizationId"
@@ -9267,7 +9261,7 @@
                               "email": "dixie.ohara@gmail.com",
                               "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
                               "role": "admin",
-                              "rejectedAt": null,
+                              "declinedAt": null,
                               "remindedAt": null,
                               "createdAt": "2024-02-07T13:46:57.160Z",
                               "createdBy": {
@@ -9372,16 +9366,16 @@
         }
       }
     },
-    "/me/invitations/{invitationId}:reject": {
+    "/me/invitations/{invitationId}:decline": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "rejectInvitation",
+        "operationId": "declineInvitation",
         "tags": ["me", "cella"],
-        "summary": "Reject membership invitation",
+        "summary": "Decline membership invitation",
         "description": "Declines the invitation, and its emailed link stops working. Returns the invitation's organization.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
@@ -9471,7 +9465,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -9596,7 +9590,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -9708,7 +9702,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["avatar", "cover", "attachment", "newsletter"]
+              "enum": ["thumbnail", "banner", "attachment", "newsletter"]
             },
             "required": true,
             "name": "templateId",
@@ -10082,7 +10076,7 @@
         "operationId": "inviteMembers",
         "tags": ["memberships", "cella"],
         "summary": "Invite members",
-        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
+        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "parameters": [
@@ -10157,7 +10151,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [],
+                  "results": [],
                   "outcomes": [
                     {
                       "email": "sara.devries@example.com",
@@ -10179,7 +10173,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -10237,7 +10231,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["data", "outcomes", "held"]
+                  "required": ["results", "outcomes", "held"]
                 }
               }
             }
@@ -10481,7 +10475,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -10504,7 +10498,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -11685,7 +11679,7 @@
                             "type": "string",
                             "enum": ["mention", "comment", "reply"]
                           },
-                          "entityType": {
+                          "productType": {
                             "type": "string",
                             "enum": ["attachment"]
                           },
@@ -11761,7 +11755,7 @@
                           "organizationThumbnailUrl": {
                             "type": ["string", "null"]
                           },
-                          "subjectTitle": {
+                          "subjectName": {
                             "type": "string"
                           }
                         },
@@ -11770,7 +11764,7 @@
                           "createdAt",
                           "actorId",
                           "kind",
-                          "entityType",
+                          "productType",
                           "subjectId",
                           "contextId",
                           "channelId",
@@ -11783,7 +11777,7 @@
                           "channelThumbnailUrl",
                           "organizationName",
                           "organizationThumbnailUrl",
-                          "subjectTitle"
+                          "subjectName"
                         ]
                       }
                     },
@@ -11909,10 +11903,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "mentionEmail": {
+                    "mentionEmails": {
                       "type": "boolean"
                     },
-                    "commentEmail": {
+                    "commentEmails": {
                       "type": "boolean"
                     },
                     "digest": {
@@ -11920,7 +11914,7 @@
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
+                  "required": ["mentionEmails", "commentEmails", "digest"]
                 }
               }
             }
@@ -11956,10 +11950,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "mentionEmail": {
+                  "mentionEmails": {
                     "type": "boolean"
                   },
-                  "commentEmail": {
+                  "commentEmails": {
                     "type": "boolean"
                   },
                   "digest": {
@@ -11973,10 +11967,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "mentionEmail": {
+                  "mentionEmails": {
                     "type": "boolean"
                   },
-                  "commentEmail": {
+                  "commentEmails": {
                     "type": "boolean"
                   },
                   "digest": {
@@ -11996,10 +11990,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "mentionEmail": {
+                    "mentionEmails": {
                       "type": "boolean"
                     },
-                    "commentEmail": {
+                    "commentEmails": {
                       "type": "boolean"
                     },
                     "digest": {
@@ -12007,7 +12001,7 @@
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
+                  "required": ["mentionEmails", "commentEmails", "digest"]
                 }
               }
             }
@@ -12370,7 +12364,6 @@
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
                       "color": "#dfeb6e",
-                      "logoUrl": null,
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "chatSupport": true,
@@ -12435,7 +12428,6 @@
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
                       "color": "#a3cb87",
-                      "logoUrl": null,
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
                       "chatSupport": false,
@@ -12587,7 +12579,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "results": [
                     {
                       "createdAt": "2024-04-18T21:12:59.543Z",
                       "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
@@ -12612,7 +12604,6 @@
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
                       "color": "#dbcbc1",
-                      "logoUrl": null,
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
                       "chatSupport": false,
@@ -12677,7 +12668,6 @@
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
                       "color": "#2ad39a",
-                      "logoUrl": null,
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
                       "chatSupport": false,
@@ -12724,7 +12714,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "allOf": [
@@ -12837,7 +12827,6 @@
                           "languageCodes": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                           "color": "#cda6af",
-                          "logoUrl": null,
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                           "chatSupport": true,
@@ -12899,7 +12888,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -13174,10 +13163,6 @@
                     "type": ["string", "null"],
                     "maxLength": 2048
                   },
-                  "logoUrl": {
-                    "type": ["string", "null"],
-                    "maxLength": 2048
-                  },
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
@@ -13312,10 +13297,6 @@
                     "maxLength": 255
                   },
                   "thumbnailUrl": {
-                    "type": ["string", "null"],
-                    "maxLength": 2048
-                  },
-                  "logoUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
                   },
@@ -13512,7 +13493,6 @@
                     "languageCodes": ["en"],
                     "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                     "color": "#cda6af",
-                    "logoUrl": null,
                     "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                     "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                     "chatSupport": true,
@@ -13553,7 +13533,7 @@
                       }
                     }
                   },
-                  "invitationsSent": 12
+                  "invitationCount": 12
                 },
                 "schema": {
                   "type": "object",
@@ -13561,13 +13541,13 @@
                     "organization": {
                       "$ref": "#/components/schemas/Organization"
                     },
-                    "invitationsSent": {
+                    "invitationCount": {
                       "type": "integer",
                       "minimum": 0,
                       "description": "Invitations held while it was a draft and sent now."
                     }
                   },
-                  "required": ["organization", "invitationsSent"]
+                  "required": ["organization", "invitationCount"]
                 }
               }
             }
@@ -13647,7 +13627,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -13670,7 +13650,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -14037,7 +14017,7 @@
                       "kind": "contact",
                       "message": "Canonicus capio aedificium consequuntur velum.",
                       "createdAt": "2024-09-19T17:10:46.529Z",
-                      "wasInvited": false
+                      "invited": false
                     },
                     {
                       "id": "d772a771-fc15-4065-be63-546594859fc3",
@@ -14045,7 +14025,7 @@
                       "kind": "contact",
                       "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
                       "createdAt": "2024-03-06T02:06:40.920Z",
-                      "wasInvited": false
+                      "invited": false
                     }
                   ],
                   "totalSize": 2
@@ -14132,7 +14112,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -14155,7 +14135,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -14262,7 +14242,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "entityIds": {
+                  "productIds": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -14270,15 +14250,15 @@
                     },
                     "minItems": 1,
                     "maxItems": 500,
-                    "description": "Entity IDs the user has viewed since last batch"
+                    "description": "Product IDs the user has viewed since last batch"
                   },
-                  "entityType": {
+                  "productType": {
                     "type": "string",
                     "enum": ["attachment"],
-                    "description": "Entity type for all IDs in this batch"
+                    "description": "Product type for all IDs in this batch"
                   }
                 },
-                "required": ["entityIds", "entityType"]
+                "required": ["productIds", "productType"]
               }
             }
           }
@@ -15267,14 +15247,14 @@
             "content": {
               "application/json": {
                 "example": {
-                  "data": [],
+                  "results": [],
                   "rejectedIds": [],
-                  "invitesSentCount": 2
+                  "invitationCount": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -15296,11 +15276,11 @@
                       },
                       "description": "Map of reason code to rejected item IDs"
                     },
-                    "invitesSentCount": {
+                    "invitationCount": {
                       "type": "number"
                     }
                   },
-                  "required": ["data", "rejectedIds", "invitesSentCount"]
+                  "required": ["results", "rejectedIds", "invitationCount"]
                 }
               }
             }
@@ -15414,7 +15394,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "results": {
                       "type": "array",
                       "items": {},
                       "maxItems": 0
@@ -15437,7 +15417,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": ["data", "rejectedIds"]
+                  "required": ["results", "rejectedIds"]
                 }
               }
             }
@@ -15952,7 +15932,7 @@
                         },
                         "rateLimits": {
                           "apiPointsPerHour": 1000,
-                          "invitationMailsPerDay": 250
+                          "invitationEmailsPerDay": 250
                         },
                         "allowUnregisteredClients": true
                       },
@@ -15995,7 +15975,7 @@
                         },
                         "rateLimits": {
                           "apiPointsPerHour": 1000,
-                          "invitationMailsPerDay": 250
+                          "invitationEmailsPerDay": 250
                         },
                         "allowUnregisteredClients": true
                       },
@@ -16225,7 +16205,7 @@
                             "minimum": 0,
                             "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                           },
-                          "invitationMailsPerDay": {
+                          "invitationEmailsPerDay": {
                             "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
@@ -16318,7 +16298,7 @@
                             "minimum": 0,
                             "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                           },
-                          "invitationMailsPerDay": {
+                          "invitationEmailsPerDay": {
                             "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
@@ -16403,7 +16383,7 @@
                     },
                     "rateLimits": {
                       "apiPointsPerHour": 1000,
-                      "invitationMailsPerDay": 250
+                      "invitationEmailsPerDay": 250
                     },
                     "allowUnregisteredClients": true
                   },
@@ -16456,7 +16436,7 @@
                     },
                     "rateLimits": {
                       "apiPointsPerHour": 1000,
-                      "invitationMailsPerDay": 250
+                      "invitationEmailsPerDay": 250
                     },
                     "allowUnregisteredClients": true
                   },
@@ -16575,9 +16555,9 @@
                       "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
                       "tenantId": "gc9llm",
                       "kind": "sso",
-                      "issuer": "surfconext",
+                      "federation": "surfconext",
                       "claimValues": ["uu.nl"],
-                      "displayName": "Utrecht University",
+                      "name": "Utrecht University",
                       "status": "active",
                       "jitProvisioning": true,
                       "config": {
@@ -16668,12 +16648,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "issuer": {
+                  "federation": {
                     "type": "string",
                     "description": "A federation key in appConfig.federations",
                     "enum": ["surfconext"]
                   },
-                  "displayName": {
+                  "name": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
@@ -16716,7 +16696,7 @@
                     "maxLength": 255
                   }
                 },
-                "required": ["issuer", "displayName", "claimValues", "idpEntityIds"]
+                "required": ["federation", "name", "claimValues", "idpEntityIds"]
               }
             }
           }
@@ -16796,7 +16776,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "displayName": {
+                  "name": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
@@ -16845,7 +16825,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "displayName": {
+                  "name": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,

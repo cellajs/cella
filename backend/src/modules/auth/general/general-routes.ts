@@ -73,7 +73,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     responses: {
       200: json(
         'Link redeemed\n\nWhere the browser goes next: the app with the token session, or the provider for a verification.',
-        z.object({ redirectTo: z.string() }),
+        z.object({ redirectUrl: z.string() }),
       ),
       ...errors(401, 409),
     },

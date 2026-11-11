@@ -15,7 +15,7 @@ const { getPresignedUrlBatched, PresignRejectedError, resetPresignBatch } = awai
 /** Echo-sign every requested pair, as the server's happy path does. */
 function signAllRequested() {
   presignAttachmentUrls.mockImplementation(async ({ body }: { body: { items: { attachmentId: string; variant: string }[] } }) => ({
-    data: body.items.map((item) => ({ ...item, url: `https://signed.example/${item.attachmentId}/${item.variant}` })),
+    results: body.items.map((item) => ({ ...item, url: `https://signed.example/${item.attachmentId}/${item.variant}` })),
     rejectedIds: [],
   }));
 }
@@ -38,7 +38,7 @@ describe('presign coalescer', () => {
   it('signs through the public route while signed out', async () => {
     viewer.signedIn = false;
     presignPublicAttachmentUrls.mockResolvedValue({
-      data: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/public/att-1' }],
+      results: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/public/att-1' }],
       rejectedIds: [],
     });
 
@@ -52,7 +52,7 @@ describe('presign coalescer', () => {
 
   it('rejects server-rejected ids with PresignRejectedError and resolves the rest', async () => {
     presignAttachmentUrls.mockResolvedValue({
-      data: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/att-1/original' }],
+      results: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/att-1/original' }],
       rejectedIds: ['att-denied'],
     });
 

@@ -60,7 +60,7 @@ export const provisionSsoUser = async (
     const user = await createAccount(txCtx, { newUser: newUserFromProfile({ ...profile, email }), via: federation.key });
 
     await insertIdentity(txCtx, {
-      values: { userId: user.id, kind: 'sso', issuer: federation.key, subject, email, connectionId: connection.id, data: snapshot },
+      values: { userId: user.id, kind: 'sso', provider: federation.key, subject, email, connectionId: connection.id, data: snapshot },
       verified: true,
     });
 

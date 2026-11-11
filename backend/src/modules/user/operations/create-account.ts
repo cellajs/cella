@@ -45,7 +45,7 @@ export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAcco
           familyName: newUser.familyName || null,
           email: normalizedEmail,
           name: newUser.name,
-          languageCode: appConfig.defaultLanguage,
+          languageCode: appConfig.defaultLanguageCode,
         },
       ],
     });

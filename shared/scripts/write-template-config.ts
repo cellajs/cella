@@ -36,7 +36,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
   { path: 'senderEmail', value: `'notifications@${domain}'` },
   { path: 'supportEmail', value: `'support@${domain}'` },
   { path: 'securityEmail', value: `'security@${domain}'` },
-  { path: 'has.uploadEnabled', value: 'false', comment: 'Off until S3 is configured: files stay in the browser (IndexedDB).' },
+  { path: 'has.uploads', value: 'false', comment: 'Off until S3 is configured: files stay in the browser (IndexedDB).' },
   { path: 'cookieVersion', value: "'v1'" },
   { path: 'clientCacheVersion', value: "'v1'" },
   {
@@ -48,7 +48,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
     path: 'federations',
     value: '{} as Record<string, FederationConfig>',
     comment:
-      "Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities issuer slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is live when those are set. Every mode but production signs in through its `sandbox`. A tenant's connection names one entry and the institution behind it. A new app starts with none; the template's own config declares `surfconext` as a worked example.",
+      "Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities provider slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is live when those are set. Every mode but production signs in through its `sandbox`. A tenant's connection names one entry and the institution behind it. A new app starts with none; the template's own config declares `surfconext` as a worked example.",
   },
   { path: 's3', value: "{ region: '', host: '' } as S3ConfigInput" },
   { path: 'gleapToken', value: "''" },
@@ -161,7 +161,7 @@ export const appShapeLeaves: readonly TemplateLeaf[] = [
       "surfaces: { 'organization.tabs': { order: ['members', 'settings'], hidden: ['attachments'] }, 'user.profile': { order: ['organizations'] } } as",
     ],
   },
-  { path: 'has.commentEmail', replace: ['commentEmail: false', 'commentEmail: true'] },
+  { path: 'has.commentEmails', replace: ['commentEmails: false', 'commentEmails: true'] },
 ];
 
 /** Applied to `config.default.ts` only: the rendered template already drops `sso`. */

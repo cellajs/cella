@@ -118,11 +118,11 @@ describe('OAuth Authentication', async () => {
     });
 
     it('should handle OAuth flow with redirect parameter', async () => {
-      const redirectAfter = '/dashboard';
-      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectAfter }, headers: defaultHeaders });
+      const redirectPath = '/dashboard';
+      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectPath }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
-      expect(setCookieOf(res, 'oauth-state').line).toContain(`"redirectAfter":"${redirectAfter}"`);
+      expect(setCookieOf(res, 'oauth-state').line).toContain(`"redirectPath":"${redirectPath}"`);
     });
   });
 
@@ -161,7 +161,7 @@ describe('OAuth Authentication', async () => {
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'github-user@example.com'))).toHaveLength(0);
     });
 
-    it('never matches an identity of another kind that shares the issuer slug and subject', async () => {
+    it('never matches an identity of another kind that shares the provider slug and subject', async () => {
       const user = await createTestUser('local-account@example.com');
       const ssoIdentity = await linkIdentity(user, { kind: 'sso' });
 
@@ -289,11 +289,11 @@ describe('OAuth Authentication', async () => {
   describe('Security & Input Validation', () => {
     it('should handle very long redirect URL', async () => {
       const longRedirect = `/${'a'.repeat(2000)}`;
-      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectAfter: longRedirect }, headers: defaultHeaders });
+      const { response: res } = await call(startGithubOAuth, { query: { kind: 'auth', redirectPath: longRedirect }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       // A path the last hop would refuse is dropped at the start, so it never grows the state cookie past what a browser keeps.
-      expect(JSON.parse(mockCookieStore.get('oauth-state') ?? '{}').redirectAfter).toBeUndefined();
+      expect(JSON.parse(mockCookieStore.get('oauth-state') ?? '{}').redirectPath).toBeUndefined();
     });
   });
 
@@ -345,7 +345,7 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toContain('/auth/email-verification/connect');
 
       const [oauthAccount] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, user.id));
-      expect(oauthAccount).toMatchObject({ kind: 'oauth', issuer: 'github', email: providerEmail, verified: false });
+      expect(oauthAccount).toMatchObject({ kind: 'oauth', provider: 'github', email: providerEmail, verified: false });
 
       // Identity is the provider subject: the provider address stays on the OAuth account.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
@@ -655,13 +655,13 @@ describe('OAuth Authentication', async () => {
       return user;
     };
 
-    it('should honor a valid redirectAfter on a verified OAuth sign-in', async () => {
+    it('should honor a valid redirectPath on a verified OAuth sign-in', async () => {
       await linkVerifiedAccount();
 
       const state = 'mock-state-test';
       mockCookieStore.set(
         'oauth-state',
-        JSON.stringify({ state, provider: 'github', kind: 'auth', redirectAfter: '/orgs/acme?tab=files', codeVerifier: 'verifier' }),
+        JSON.stringify({ state, provider: 'github', kind: 'auth', redirectPath: '/orgs/acme?tab=files', codeVerifier: 'verifier' }),
       );
 
       const { response: res } = await call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
@@ -670,22 +670,22 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme?tab=files`);
     });
 
-    // An attacker-controlled redirectAfter must never become the Location. The start of the flow stores it unchecked,
+    // An attacker-controlled redirectPath must never become the Location. The start of the flow stores it unchecked,
     // so the check at sign-in is the only one: dot segments collapse to a scheme-relative path once resolved.
-    it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
+    it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectPath', async () => {
       await linkVerifiedAccount();
 
-      for (const redirectAfter of ['//evil.example', '/..//evil.example']) {
+      for (const redirectPath of ['//evil.example', '/..//evil.example']) {
         const state = 'mock-state-test';
-        mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', redirectAfter, codeVerifier: 'verifier' }));
+        mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', redirectPath, codeVerifier: 'verifier' }));
 
         const { response: res } = await call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
 
-        expect(res.status, redirectAfter).toBe(302);
+        expect(res.status, redirectPath).toBe(302);
         const location = res.headers.get('location');
-        expect(location, redirectAfter).toBeTruthy();
-        expect(location, redirectAfter).not.toContain('evil.example');
-        expect(location!.startsWith(appConfig.frontendUrl), redirectAfter).toBe(true);
+        expect(location, redirectPath).toBeTruthy();
+        expect(location, redirectPath).not.toContain('evil.example');
+        expect(location!.startsWith(appConfig.frontendUrl), redirectPath).toBe(true);
       }
     });
   });
@@ -756,7 +756,7 @@ describe('OAuth Authentication', async () => {
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'google' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
-      expect(identity).toMatchObject({ issuer: 'google', subject: 'google-user-id', verified: true });
+      expect(identity).toMatchObject({ provider: 'google', subject: 'google-user-id', verified: true });
 
       // The invitation of the opened link is accepted with the sign-up, as at a magic-link sign-in.
       expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toEqual([]);
@@ -792,7 +792,7 @@ describe('OAuth Authentication', async () => {
         expect.objectContaining({
           email: providerEmail,
           userId: null,
-          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
+          pendingSignUp: expect.objectContaining({ provider: 'github', subject: 'github-user-id' }),
         }),
       ]);
     });
@@ -881,7 +881,7 @@ describe('OAuth Authentication', async () => {
           email: providerEmail,
           userId: null,
           identityId: null,
-          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id', givenName: 'Test', familyName: 'User' }),
+          pendingSignUp: expect.objectContaining({ provider: 'github', subject: 'github-user-id', givenName: 'Test', familyName: 'User' }),
         }),
       ]);
       // The mail asks to finish signing up, not to connect a provider to an account the visitor does not have.
@@ -894,7 +894,7 @@ describe('OAuth Authentication', async () => {
       expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/oauth-verification/${token}`);
       const opened = await openVerificationLink(token);
       expect(opened.response.status).toBe(200);
-      const verifyStart = new URL(opened.redirectTo ?? '');
+      const verifyStart = new URL(opened.redirectUrl ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
       expect(verifyStart.searchParams.get('kind')).toBe('verify');
       expect(await accountsFor(providerEmail)).toHaveLength(0);
@@ -914,7 +914,7 @@ describe('OAuth Authentication', async () => {
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
-      expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
+      expect(identity).toMatchObject({ provider: 'github', subject: 'github-user-id', verified: true });
       // The verification is spent with the sign-up, and this browser's cookie for it goes once that has committed.
       expect(await verificationTokens()).toHaveLength(0);
       expect(mockCookieStore.has('oauth-verification')).toBe(false);

@@ -26,7 +26,7 @@ type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
   // The body schema trims and lowercases the address.
   const { email: normalizedEmail, kind, message } = input;
-  const lng = appConfig.defaultLanguage;
+  const lng = appConfig.defaultLanguageCode;
 
   if (kind === 'waitlist') {
     const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });

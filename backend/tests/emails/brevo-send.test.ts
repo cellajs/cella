@@ -83,7 +83,7 @@ describe('Mails as Brevo fills them', () => {
     email: 'mentioned@example.test',
     lng: 'en',
     name: 'Mia',
-    subjectTitle: 'Roadmap',
+    subjectName: 'Roadmap',
     excerpt: 'See this',
     link,
     unsubscribeLink,
@@ -108,7 +108,7 @@ describe('Mails as Brevo fills them', () => {
     const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';
     const { body } = await send(mentionEmail, { actorName: hostileName, channelName: hostileName }, mentionRecipient);
 
-    const ownPlaceholders = /\{\{params\.(?:name|email|subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
+    const ownPlaceholders = /\{\{params\.(?:name|email|subjectName|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
     expect(body.htmlContent.replace(ownPlaceholders, '')).not.toMatch(tagOpener);
     expect(body.subject).not.toMatch(tagOpener);
     // The name still reads as typed: only the brace that opens a tag is written as a character reference.
@@ -200,7 +200,7 @@ describe('Mails as Brevo fills them', () => {
   it("keeps the mailer's own placeholders for Brevo to fill and escape (positive control)", async () => {
     const { body, params } = await send(mentionEmail, { actorName: 'Jane', channelName: 'Design 101' }, mentionRecipient);
 
-    for (const key of ['subjectTitle', 'excerpt', 'link']) {
+    for (const key of ['subjectName', 'excerpt', 'link']) {
       expect(body.htmlContent).toMatch(new RegExp(`\\{\\{params\\.${key}_[0-9a-f]{16}\\}\\}`));
     }
     expect(body.subject).toBe('Jane mentioned you in Design 101');

@@ -39,7 +39,7 @@ describe('Deleted storage', async () => {
       return insertAttachmentIn(plan, {
         id,
         tenantId: tenant.tenantId,
-        bucketName: appConfig.s3.privateBucket,
+        bucketName: appConfig.s3.privateBucketName,
         keys,
         createdBy: tenant.user.id,
         deletedBy: fields.deletedAt ? tenant.user.id : null,
@@ -98,7 +98,7 @@ describe('Deleted storage', async () => {
         .where(inArray(attachmentsTable.id, [attachment])),
     ).toHaveLength(0);
     expect(deletedKeys()).toContain(keyOf('cascaded.pdf'));
-    for (const bucket of [appConfig.s3.privateBucket, appConfig.s3.publicBucket]) {
+    for (const bucket of [appConfig.s3.privateBucketName, appConfig.s3.publicBucketName]) {
       expect(deletedPrefixes()).toContain(`${bucket}:${tenant.organization.id}/`);
     }
   });
@@ -109,7 +109,7 @@ describe('Deleted storage', async () => {
     const bannerUrl = `${appConfig.s3.publicCDNUrl}/${banner}`;
     await db.update(organizationsTable).set({ bannerUrl }).where(eq(organizationsTable.id, tenant.organization.id));
     // An attachment stands in for any row of the organization that names its banner, a sub-channel's image included.
-    const attachment = await insert({ original: banner, thumbnail: keyOf('thumbnail.webp') }, { bucketName: appConfig.s3.publicBucket });
+    const attachment = await insert({ original: banner, thumbnail: keyOf('thumbnail.webp') }, { bucketName: appConfig.s3.publicBucketName });
 
     await db.delete(attachmentsTable).where(eq(attachmentsTable.id, attachment));
     await clearDeletedStorage();

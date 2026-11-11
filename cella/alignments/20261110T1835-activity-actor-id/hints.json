@@ -1,0 +1,3 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "activities", "user_id"], "to": ["public", "activities", "actor_id"] }
+]

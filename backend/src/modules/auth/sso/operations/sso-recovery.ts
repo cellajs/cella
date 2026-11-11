@@ -45,7 +45,7 @@ export const sendSsoRecoveryLinkOp = async (ctx: Context<Env>) => {
   deleteAuthCookie(ctx, 'sso-recovery');
 
   const { email, connectionId } = collision;
-  await sendMagicLinkOp(ctx, { email, redirect: ssoConnectPath(connectionId), assertedThrough: connectionId });
+  await sendMagicLinkOp(ctx, { email, redirectPath: ssoConnectPath(connectionId), assertedThrough: connectionId });
 
   return { email };
 };

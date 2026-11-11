@@ -130,7 +130,7 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
       email: faker.internet.email().toLowerCase(),
       userId: base.userId,
       role: base.role,
-      rejectedAt: null,
+      declinedAt: null,
       remindedAt: null,
       createdAt,
       createdBy: mockUuid(),
@@ -171,4 +171,4 @@ const mockInviteOutcomes = () => [
 
 export const mockMembershipCheckResponse = () => ({ outcomes: mockInviteOutcomes() });
 
-export const mockMembershipInviteResponse = () => ({ data: [], outcomes: mockInviteOutcomes(), held: false });
+export const mockMembershipInviteResponse = () => ({ results: [], outcomes: mockInviteOutcomes(), held: false });

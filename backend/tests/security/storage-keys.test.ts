@@ -58,7 +58,7 @@ describe('Attachment storage keys', async () => {
         .where(eq(attachmentsTable.id, id))
     )[0];
 
-  const privateStorage = { publicBucket: false, bucketName: appConfig.s3.privateBucket };
+  const privateStorage = { publicBucket: false, bucketName: appConfig.s3.privateBucketName };
 
   beforeAll(async () => {
     victim = await createTestTenant(call, 'storage-victim');
@@ -122,7 +122,7 @@ describe('Attachment storage keys', async () => {
       const { data, response } = await presign(id);
       expect(response.status).toBe(200);
       const result = data as PresignAttachmentUrlsResponse;
-      expect(result.data, planted).toEqual([]);
+      expect(result.results, planted).toEqual([]);
       expect(result.rejectedIds, planted).toEqual([id]);
     }
   });
@@ -145,7 +145,7 @@ describe('Attachment storage keys', async () => {
 
   it('must not store an attachment as public via claiming the public bucket', async () => {
     const id = generateId();
-    const claims = { publicBucket: true, bucketName: appConfig.s3.publicBucket };
+    const claims = { publicBucket: true, bucketName: appConfig.s3.publicBucketName };
     const { response } = await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }, claims));
     expect(response.status).toBe(201);
     expect(await storageOf(id)).toEqual(privateStorage);
@@ -165,7 +165,7 @@ describe('Attachment storage keys', async () => {
     const { data, response } = await presign(id);
     expect(response.status).toBe(200);
     const result = data as PresignAttachmentUrlsResponse;
-    expect(result.data).toEqual([]);
+    expect(result.results).toEqual([]);
     expect(result.rejectedIds).toEqual([id]);
   });
 
@@ -179,7 +179,7 @@ describe('Attachment storage keys', async () => {
     expect(response.status).toBe(200);
     const result = data as PresignAttachmentUrlsResponse;
     expect(result.rejectedIds).toEqual([]);
-    expect(result.data[0]?.url).toContain(key);
+    expect(result.results[0]?.url).toContain(key);
   });
 
   it('must not issue an upload token into another organization via organizationId', async () => {

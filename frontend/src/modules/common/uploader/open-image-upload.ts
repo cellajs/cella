@@ -5,7 +5,7 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import { uploader } from '~/modules/common/uploader/use-uploader';
 
 interface ImageUploadOptions {
-  templateId: 'avatar' | 'cover';
+  templateId: 'thumbnail' | 'banner';
   /** The organization the image belongs to; without one the upload is personal. */
   organizationId?: string;
   /** The uploader dialog's title. */

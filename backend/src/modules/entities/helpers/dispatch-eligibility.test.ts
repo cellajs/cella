@@ -72,7 +72,7 @@ const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]
     organizationId,
     ...nullAncestorScopes,
     rowData: null,
-    rows: rows.map((rowData, index) => ({ activityId: `act-${index}`, userId: null, changedFields: null, stx: null, seq: index + 1, rowData })),
+    rows: rows.map((rowData, index) => ({ activityId: `act-${index}`, actorId: null, changedFields: null, stx: null, seq: index + 1, rowData })),
     trace: null,
   }) as unknown as StreamProductEvent;
 

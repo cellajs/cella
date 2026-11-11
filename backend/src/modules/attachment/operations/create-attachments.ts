@@ -37,7 +37,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const replayed = await checkIdempotency(ctx, attachmentsTable, ids);
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
-  if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
+  if (fresh.length === 0) return { results: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
 
   const now = getIsoDate();
   // The attachment upload template decides the bucket; the server stamps it on every row and ignores what a client
@@ -94,5 +94,5 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   const attachmentResponses = await withActorRefs(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
 
-  return { data: attachmentResponses, rejectedIds: missingIds.filter((id) => !committedIds.has(id)), created: createdAttachments.length > 0 };
+  return { results: attachmentResponses, rejectedIds: missingIds.filter((id) => !committedIds.has(id)), created: createdAttachments.length > 0 };
 }

@@ -28,14 +28,14 @@ export function AccountNotificationsCard() {
     <ToolCard label="c:notifications" description={t('c:notifications.text')}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <Switch id="mentionEmail" checked={data.mentionEmail} onCheckedChange={(mentionEmail) => updatePreferences({ mentionEmail })} />
-          <Label htmlFor="mentionEmail">{t('c:notifications.mention_email')}</Label>
+          <Switch id="mentionEmails" checked={data.mentionEmails} onCheckedChange={(mentionEmails) => updatePreferences({ mentionEmails })} />
+          <Label htmlFor="mentionEmails">{t('c:notifications.mention_email')}</Label>
         </div>
 
-        {appConfig.has.commentEmail && (
+        {appConfig.has.commentEmails && (
           <div className="flex items-center gap-4">
-            <Switch id="commentEmail" checked={data.commentEmail} onCheckedChange={(commentEmail) => updatePreferences({ commentEmail })} />
-            <Label htmlFor="commentEmail">{t('c:notifications.comment_email')}</Label>
+            <Switch id="commentEmails" checked={data.commentEmails} onCheckedChange={(commentEmails) => updatePreferences({ commentEmails })} />
+            <Label htmlFor="commentEmails">{t('c:notifications.comment_email')}</Label>
           </div>
         )}
 

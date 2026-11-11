@@ -127,7 +127,7 @@ describe('entities listeners: a product change on open streams', () => {
       tenantId: 'tenant-1',
       organizationId: org,
       rowData: null,
-      rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
+      rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, actorId: null, changedFields: null, stx: null, ...row })),
       trace: null,
     }) as unknown as ActivityEvent;
 

@@ -65,7 +65,7 @@ const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[])
     rowData: null,
     rows: rows.map((row) => ({
       activityId: `act-${row.rowData.id}`,
-      userId: 'writer-user',
+      actorId: 'writer-user',
       changedFields: null,
       stx: { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} },
       ...row,

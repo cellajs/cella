@@ -21,8 +21,8 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
     s3: {
       host: 's3.nl-ams.scw.cloud',
       region: 'nl-ams',
-      publicBucket: 'cella-public',
-      privateBucket: 'cella-private',
+      publicBucketName: 'cella-public',
+      privateBucketName: 'cella-private',
       publicCDNUrl: 'https://cella-public.s3.nl-ams.scw.cloud',
       privateCDNUrl: 'https://cella-private.s3.nl-ams.scw.cloud',
     },

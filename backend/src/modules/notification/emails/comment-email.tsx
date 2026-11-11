@@ -11,7 +11,7 @@ interface CommentStatic {
 }
 
 /**
- * Instant email for a comment or reply notification. Off unless the app sets `has.commentEmail` and
+ * Instant email for a comment or reply notification. Off unless the app sets `has.commentEmails` and
  * the recipient turns comment emails on; a mention on the same subject is mailed as a mention.
  */
 export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecipient>()({
@@ -20,7 +20,7 @@ export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecip
     return {
       subject: i18n.t(`c:email.${key}.subject`, { lng, actorName, channelName, ...plainText }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      previewText: param('subjectTitle'),
+      previewText: param('subjectName'),
       headerHtml: i18n.t(`c:email.${key}.title`, { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
       buttonText: i18n.t('c:email.mention.button', { lng }),
@@ -36,7 +36,7 @@ export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecip
     statics: { actorName: 'John', channelName: 'Design 101', reply: false },
     recipient: {
       name: 'Emily',
-      subjectTitle: 'Roadmap review',
+      subjectName: 'Roadmap review',
       excerpt: 'I added the dates we discussed.',
       link: 'https://example.com/acme',
       unsubscribeLink: 'https://example.com/unsubscribe',

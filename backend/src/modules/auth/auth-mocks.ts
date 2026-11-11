@@ -41,8 +41,8 @@ export const mockSsoEntryResponse = (key = 'sso-entry:default') =>
     return {
       id: mockUuid(),
       status: 'active' as const,
-      federation: { key: 'surfconext', label: 'SURFconext' },
-      institution: { displayName: 'Utrecht University', logoUrl: null },
+      federation: { key: 'surfconext', name: 'SURFconext' },
+      institution: { name: 'Utrecht University', logoUrl: null },
       organization: { id: mockUuid(), name, slug: faker.helpers.slugify(name).toLowerCase(), thumbnailUrl: null },
     };
   });

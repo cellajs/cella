@@ -88,7 +88,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
     q = attachmentsSearchDefaults.q,
     sort = attachmentsSearchDefaults.sort,
     order = attachmentsSearchDefaults.order,
-    limit = appConfig.requestLimits.attachments,
+    limit = appConfig.pageSizes.attachments,
   } = params;
 
   const filters = { q, sort, order };
@@ -177,7 +177,7 @@ export const attachmentCreateOptions = (
   onSuccess: (result, variables, context) => {
     const orgKey = keys.list.org(variables.organizationId);
     if (context?.optimisticAttachments) cacheRemove(orgKey, context.optimisticAttachments);
-    insertEntitiesIntoHome(queryClient, result.data);
+    insertEntitiesIntoHome(queryClient, result.results);
     // The own-create echo only patches rows already cached, so a list that spans homes refetches here.
     if (orgListSpansHomes) queryClient.invalidateQueries({ queryKey: attachmentsCanonicalOptions(variables).queryKey });
   },

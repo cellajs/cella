@@ -11,7 +11,7 @@ type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
-  embeddedProduct: ProductEntityType;
+  embeddedProductType: ProductEntityType;
   hostTable: AnyPgTable;
   hostColumn: AnyPgColumn;
   hostColumnName: string;
@@ -27,8 +27,8 @@ type CleanupExecutor = Pick<typeof cdcDb, 'transaction'>;
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
   const resolved: ResolvedEmbedding[] = [];
 
-  for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
-    const hostTable = getEntityTable(hostProduct);
+  for (const { embeddedProductType, hostProductType, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
+    const hostTable = getEntityTable(hostProductType);
     const hostColumns = getColumns(hostTable);
     // Widened for the columns named at runtime: the host column from the config, the scope column from the hierarchy.
     const columns: Record<string, AnyPgColumn> = hostColumns;
@@ -38,22 +38,22 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
       // Hydrated single-reference embedding: only a `${hostColumnName}Id` column exists, and delete
       // flows reassign it synchronously, so there is no array to clean.
       if (columns[`${hostColumnName}Id`]) continue;
-      throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
+      throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProductType}" table`);
     }
 
     // Scope by the deepest strict ancestor, not the parent: a nullable placement column may be null on the deleted row,
     // which would skip the cleanup with no error, while the strict ancestor (ultimately the organization) is present on
     // the row and on every host table.
-    const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProduct));
-    const parentType = hierarchy.getOrderedAncestors(embeddedProduct).find((ancestor) => !nullableAncestors.has(ancestor));
-    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent channel: cleanup requires a scoping column`);
+    const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProductType));
+    const parentType = hierarchy.getOrderedAncestors(embeddedProductType).find((ancestor) => !nullableAncestors.has(ancestor));
+    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProductType}" has no parent channel: cleanup requires a scoping column`);
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
-    if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
+    if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProductType}" table`);
 
     resolved.push({
-      embeddedProduct,
+      embeddedProductType,
       hostTable,
       hostColumn,
       hostColumnName,
@@ -63,7 +63,7 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     });
   }
 
-  return Map.groupBy(resolved, (embedding) => embedding.embeddedProduct);
+  return Map.groupBy(resolved, (embedding) => embedding.embeddedProductType);
 }
 
 /** Pre-resolved embedding lookups, keyed by embedded entity type. */
@@ -132,16 +132,16 @@ export async function cleanupEmbeddingReferences(
 
 /** Per host product: the embedding columns it declares. */
 const embeddingColumnsByHost = new Map<string, Set<string>>();
-for (const { hostProduct, hostColumn } of appConfig.productEmbeddings) {
-  embeddingColumnsByHost.set(hostProduct, (embeddingColumnsByHost.get(hostProduct) ?? new Set<string>()).add(hostColumn));
+for (const { hostProductType, hostColumn } of appConfig.productEmbeddings) {
+  embeddingColumnsByHost.set(hostProductType, (embeddingColumnsByHost.get(hostProductType) ?? new Set<string>()).add(hostColumn));
 }
 
 /**
- * Whether an update of a `hostProduct` row is the one `cleanupEmbeddingReferences` writes: its embedding columns only,
+ * Whether an update of a `hostProductType` row is the one `cleanupEmbeddingReferences` writes: its embedding columns only,
  * and no `updatedAt`, which every other write moves. The same column name on another table is no such column.
  */
-export function isReferenceCleanupWrite(hostProduct: string, changedFields: string[]): boolean {
-  const columns = embeddingColumnsByHost.get(hostProduct);
+export function isReferenceCleanupWrite(hostProductType: string, changedFields: string[]): boolean {
+  const columns = embeddingColumnsByHost.get(hostProductType);
   if (!columns || changedFields.length === 0 || changedFields.includes('updatedAt')) return false;
   return changedFields.every((field) => columns.has(field));
 }

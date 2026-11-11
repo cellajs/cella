@@ -37,7 +37,7 @@ describe('security inbox mails', async () => {
       {
         name: 'Security',
         type: 'sysadmin-fail',
-        lng: appConfig.defaultLanguage,
+        lng: appConfig.defaultLanguageCode,
         details: { ip: expect.any(String), route: '/requests' },
       },
     ]);
@@ -72,7 +72,7 @@ describe('security inbox mails', async () => {
       {
         name: 'Security',
         type: 'tenant-created',
-        lng: appConfig.defaultLanguage,
+        lng: appConfig.defaultLanguageCode,
         details: { tenantName: 'Acme', userEmail: user.email },
       },
     ]);
@@ -96,7 +96,7 @@ describe('security inbox mails', async () => {
         {
           name: 'Security',
           type: 'system-role-granted',
-          lng: appConfig.defaultLanguage,
+          lng: appConfig.defaultLanguageCode,
           details: { role: 'admin', userEmail: user.email, timestamp: expect.stringMatching(isoTime) },
         },
       ]),

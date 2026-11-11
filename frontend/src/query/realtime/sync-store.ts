@@ -174,12 +174,12 @@ export const syncStore = createStore<SyncStoreState>()(
         getCatchupViews: (entityTypes) => {
           const views: CatchupView[] = [];
           for (const [organizationId, org] of Object.entries(get().orgs)) {
-            for (const entityType of entityTypes) {
+            for (const productType of entityTypes) {
               views.push({
                 organizationId,
-                entityType,
+                productType,
                 // Only the org slot proves org-wide ingestion, since child-channel cursors cover their own subtree; 0 means no baseline, so catchup stores the frontier and route loaders supply data.
-                cursor: org.seqs[entityType] ?? 0,
+                cursor: org.seqs[productType] ?? 0,
               });
             }
           }

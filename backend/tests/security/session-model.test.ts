@@ -55,10 +55,10 @@ describe('session model', async () => {
   it("must not authenticate via a sessions row's stored hash replayed as a cookie", async () => {
     const user = await createTestUser('stored-hash@security-test.com');
     const session = await insertSession(user);
-    const { secret, id } = await sessionRow(session.id);
+    const { secretHash, id } = await sessionRow(session.id);
 
-    await expectSignedOut(authCookie('session', `${secret}.${id}.`), 'no_session');
-    await expectSignedOut(authCookie('session', secret), 'no_session');
+    await expectSignedOut(authCookie('session', `${secretHash}.${id}.`), 'no_session');
+    await expectSignedOut(authCookie('session', secretHash), 'no_session');
 
     await warmSession(session);
   });

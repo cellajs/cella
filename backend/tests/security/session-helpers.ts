@@ -34,7 +34,7 @@ export const insertStaleSession = (user: { id: string }) => insertSession(user, 
 /** Stamps a session stepped up by `via`, as a step-up does; returns it with the step-up cookie the stamp counts with. */
 export async function stampSteppedUp(user: { id: string }, session: TestSession, via: StepUpProof): Promise<TestSession> {
   const { raw, hash } = newHashedToken();
-  await updateSessionSteppedUp({ var: { db } }, { id: session.id, userId: user.id, via, secret: hash });
+  await updateSessionSteppedUp({ var: { db } }, { id: session.id, userId: user.id, via, secretHash: hash });
   return asSession(session.id, new CookieJar([session.cookie, authCookie('session-step-up', raw)]).header());
 }
 
@@ -78,7 +78,7 @@ const sessionIdFor = async (token: string) => {
   const [row] = await db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(eq(sessionsTable.secret, hashToken(token)));
+    .where(eq(sessionsTable.secretHash, hashToken(token)));
   if (!row) throw new Error('No session stores this token');
   return row.id;
 };

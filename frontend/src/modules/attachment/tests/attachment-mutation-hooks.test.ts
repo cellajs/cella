@@ -5,7 +5,7 @@ import { callHook, goOffline, goOnline, mutationsOf, queryClient, resetMutationH
 
 type Req = { path: Record<string, string | undefined>; body: Record<string, unknown> | Array<Record<string, unknown>> };
 const { batchCreateAttachments, updateAttachment } = vi.hoisted(() => ({
-  batchCreateAttachments: vi.fn(async (_req: Req): Promise<{ data: unknown[]; rejectedIds: string[] }> => ({ data: [], rejectedIds: [] })),
+  batchCreateAttachments: vi.fn(async (_req: Req): Promise<{ results: unknown[]; rejectedIds: string[] }> => ({ results: [], rejectedIds: [] })),
   updateAttachment: vi.fn(async (_req: Req): Promise<unknown> => ({})),
 }));
 
@@ -54,7 +54,7 @@ describe('attachment mutation hooks', () => {
     expect(detail(att1)).toMatchObject({ name: 'Renamed', _optimistic: true });
 
     batchCreateAttachments.mockImplementation(async ({ body }) => ({
-      data: (body as Attachment[]).map(({ id, name }) => attachment(id, { name, keywords: 'stored' })),
+      results: (body as Attachment[]).map(({ id, name }) => attachment(id, { name, keywords: 'stored' })),
       rejectedIds: [],
     }));
     await goOnline();

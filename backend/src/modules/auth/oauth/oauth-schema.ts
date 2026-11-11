@@ -7,7 +7,7 @@ import { maxLength } from '#/schemas';
 
 const oauthFlowKinds = ['auth', 'connect', 'invite', 'verify'] as const;
 
-export const oauthQuerySchema = z.object({ kind: z.enum(oauthFlowKinds).default('auth'), redirectAfter: z.string().max(maxLength.url).optional() });
+export const oauthQuerySchema = z.object({ kind: z.enum(oauthFlowKinds).default('auth'), redirectPath: z.string().max(maxLength.url).optional() });
 
 /** The request of a route that starts a round trip, its query validated by `oauthQuerySchema`. */
 export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
@@ -20,7 +20,7 @@ export const oauthCookiePayloadSchema = z.object({
   state: z.string(),
   provider: z.enum([...oauthProviders, ...federationKeys]),
   kind: z.enum(oauthFlowKinds).default('auth'),
-  redirectAfter: z.string().optional(),
+  redirectPath: z.string().optional(),
   codeVerifier: z.string().optional(),
   nonce: z.string().optional(),
   connectionId: z.string().optional(),

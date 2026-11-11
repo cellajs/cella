@@ -6,7 +6,7 @@ import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const { hasSidebarTextLabels } = appConfig.theme.navigation;
+const { sidebarTextLabels } = appConfig.theme.navigation;
 
 interface NavItemButtonProps {
   navItem: NavItem;
@@ -66,7 +66,7 @@ export function SidebarNavButton({
   children,
   badge,
 }: SidebarNavButtonProps) {
-  const showTooltip = isCollapsed || !hasSidebarTextLabels;
+  const showTooltip = isCollapsed || !sidebarTextLabels;
 
   return (
     <SidebarMenuItem className={cn('flex', itemClassName)}>
@@ -85,9 +85,9 @@ export function SidebarNavButton({
         )}
       >
         {children}
-        {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
+        {!sidebarTextLabels && <span className="sr-only">{label}</span>}
         {badge}
-        {hasSidebarTextLabels && (
+        {sidebarTextLabels && (
           <span className="overflow-hidden pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
             {label}
           </span>

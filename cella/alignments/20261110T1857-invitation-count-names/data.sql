@@ -1,0 +1,2 @@
+-- Below the generated statements: a stored tenant keeps its daily invitation cap under the key the code reads.
+UPDATE "tenants" SET "restrictions" = jsonb_set("restrictions" #- '{rateLimits,invitationMailsPerDay}', '{rateLimits,invitationEmailsPerDay}', "restrictions" -> 'rateLimits' -> 'invitationMailsPerDay') WHERE "restrictions" -> 'rateLimits' ? 'invitationMailsPerDay';--> statement-breakpoint

@@ -303,7 +303,7 @@ export type StreamChange = {
     /**
      * Embedded product type whose change triggered the propagation
      */
-    embeddedProduct: 'attachment';
+    embeddedProductType: 'attachment';
     /**
      * Embedded row IDs whose cached copies in host rows need a refresh
      */
@@ -408,13 +408,13 @@ export type MeAuthData = {
   }>;
   institutions: Array<{
     connectionId: string;
-    displayName: string;
+    name: string;
     federation: {
       /**
        * A federation key in appConfig.federations
        */
       key: 'surfconext';
-      label: string;
+      name: string;
     };
     /**
      * The identity the account holds through this connection; null when not connected
@@ -453,11 +453,11 @@ export type MeAuthData = {
     revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
     steppedUpAt: string | null;
     steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
-    isCurrent: boolean;
+    current: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
      */
-    isNewDevice: boolean;
+    newDevice: boolean;
   }>;
   passkeys: Array<{
     id: string;
@@ -636,7 +636,6 @@ export type Organization = {
   languageCodes: Array<'en' | 'nl'>;
   notificationEmail: string | null;
   color: string | null;
-  logoUrl: string | null;
   websiteUrl: string | null;
   welcomeText: string | null;
   chatSupport: boolean;
@@ -681,7 +680,7 @@ export type Request = {
   message: string | null;
   email: string;
   kind: 'waitlist' | 'info' | 'contact';
-  wasInvited: boolean;
+  invited: boolean;
 };
 
 /**
@@ -804,7 +803,7 @@ export type Tenant = {
       /**
        * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
        */
-      invitationMailsPerDay: number;
+      invitationEmailsPerDay: number;
     };
     /**
      * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -868,9 +867,9 @@ export type Connection = {
   id: string;
   tenantId: string;
   kind: 'sso';
-  issuer: string;
+  federation: string;
   claimValues: Array<string>;
-  displayName: string;
+  name: string;
   status: 'pending' | 'active' | 'disabled';
   jitProvisioning: boolean;
   config: {
@@ -1070,7 +1069,7 @@ export type PresignAttachmentUrlsResponses = {
    * Presigned URLs
    */
   200: {
-    data: Array<{
+    results: Array<{
       attachmentId: string;
       variant: 'original' | 'preview' | 'thumbnail' | 'converted';
       url: string;
@@ -1284,7 +1283,7 @@ export type BatchCreateAttachmentsResponses = {
    * This request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.
    */
   200: {
-    data: Array<Attachment>;
+    results: Array<Attachment>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -1300,7 +1299,7 @@ export type BatchCreateAttachmentsResponses = {
    * Attachments created
    */
   201: {
-    data: Array<Attachment>;
+    results: Array<Attachment>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -1443,7 +1442,7 @@ export type BatchDeleteAttachmentsResponses = {
    * Success
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -1496,7 +1495,7 @@ export type PresignPublicAttachmentUrlsResponses = {
    * Presigned URLs
    */
   200: {
-    data: Array<{
+    results: Array<{
       attachmentId: string;
       variant: 'original' | 'preview' | 'thumbnail' | 'converted';
       url: string;
@@ -1551,7 +1550,7 @@ export type GetAuthHealthResponses = {
        * A federation key in appConfig.federations
        */
       key: 'surfconext';
-      label: string;
+      name: string;
     }>;
     /**
      * Whether the server has an email key: without one no email goes out
@@ -1714,7 +1713,7 @@ export type RedeemLinkTokenResponses = {
    * Where the browser goes next: the app with the token session, or the provider for a verification.
    */
   200: {
-    redirectTo: string;
+    redirectUrl: string;
   };
 };
 
@@ -1929,7 +1928,7 @@ export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 export type SendMagicLinkData = {
   body: {
     email: string;
-    redirect?: string;
+    redirectPath?: string;
   };
   path?: never;
   query?: never;
@@ -2475,7 +2474,7 @@ export type StartGithubOAuthData = {
   path?: never;
   query?: {
     kind?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirectAfter?: string;
+    redirectPath?: string;
   };
   url: '/auth/github';
 };
@@ -2502,7 +2501,7 @@ export type StartGoogleOAuthData = {
   path?: never;
   query?: {
     kind?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirectAfter?: string;
+    redirectPath?: string;
   };
   url: '/auth/google';
 };
@@ -2529,7 +2528,7 @@ export type StartMicrosoftOAuthData = {
   path?: never;
   query?: {
     kind?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirectAfter?: string;
+    redirectPath?: string;
   };
   url: '/auth/microsoft';
 };
@@ -2721,10 +2720,10 @@ export type GetSsoEntryResponses = {
        * A federation key in appConfig.federations
        */
       key: 'surfconext';
-      label: string;
+      name: string;
     };
     institution: {
-      displayName: string;
+      name: string;
       logoUrl: string | null;
     };
     organization: {
@@ -2745,7 +2744,7 @@ export type StartSsoData = {
   };
   query?: {
     kind?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirectAfter?: string;
+    redirectPath?: string;
   };
   url: '/auth/sso/connections/{connectionId}/start';
 };
@@ -2782,7 +2781,7 @@ export type StartSsoFederationData = {
   };
   query?: {
     kind?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirectAfter?: string;
+    redirectPath?: string;
   };
   url: '/auth/sso/federations/{federation}/start';
 };
@@ -3187,7 +3186,7 @@ export type ArchiveChannelResponses = {
    * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -3256,7 +3255,7 @@ export type UnarchiveChannelResponses = {
    * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -3314,7 +3313,7 @@ export type CatchUpMyStreamData = {
      */
     views?: Array<{
       organizationId: string;
-      entityType: 'attachment';
+      productType: 'attachment';
       /**
        * Org-sequence position this view has fully ingested (0 = baseline not yet established)
        */
@@ -3367,7 +3366,7 @@ export type CatchUpMyStreamResponses = {
           /**
            * Embedded product type whose change triggered the propagation
            */
-          embeddedProduct: 'attachment';
+          embeddedProductType: 'attachment';
           /**
            * Embedded row IDs whose cached copies in host rows need a refresh
            */
@@ -3396,7 +3395,7 @@ export type CatchUpMyStreamResponses = {
      */
     views: Array<{
       organizationId: string;
-      entityType: 'attachment';
+      productType: 'attachment';
       status: 'ok' | 'opaque' | 'forbidden';
       /**
        * Newest sequence position of the type in the organization
@@ -3764,7 +3763,7 @@ export type ListMyInvitationsResponses = {
         email: string;
         userId: string | null;
         role: 'admin' | 'member';
-        rejectedAt: string | null;
+        declinedAt: string | null;
         remindedAt: string | null;
         createdBy: ActorRef;
         organizationId: string;
@@ -3834,16 +3833,16 @@ export type AcceptInvitationResponses = {
 
 export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
 
-export type RejectInvitationData = {
+export type DeclineInvitationData = {
   body?: never;
   path: {
     invitationId: string;
   };
   query?: never;
-  url: '/me/invitations/{invitationId}:reject';
+  url: '/me/invitations/{invitationId}:decline';
 };
 
-export type RejectInvitationErrors = {
+export type DeclineInvitationErrors = {
   /**
    * Bad request
    */
@@ -3870,16 +3869,16 @@ export type RejectInvitationErrors = {
   429: TooManyRequestsError;
 };
 
-export type RejectInvitationError = RejectInvitationErrors[keyof RejectInvitationErrors];
+export type DeclineInvitationError = DeclineInvitationErrors[keyof DeclineInvitationErrors];
 
-export type RejectInvitationResponses = {
+export type DeclineInvitationResponses = {
   /**
    * The invitation's organization
    */
   200: ChannelBase;
 };
 
-export type RejectInvitationResponse = RejectInvitationResponses[keyof RejectInvitationResponses];
+export type DeclineInvitationResponse = DeclineInvitationResponses[keyof DeclineInvitationResponses];
 
 export type RevokeMySessionsData = {
   body: {
@@ -3920,7 +3919,7 @@ export type RevokeMySessionsResponses = {
    * Sessions were revoked
    */
   200: {
-    data: Array<{
+    results: Array<{
       id: string;
       kind: 'regular' | 'mfa';
       userId: string;
@@ -4014,7 +4013,7 @@ export type GetUploadTokenData = {
   path?: never;
   query: {
     organizationId?: string;
-    templateId: 'avatar' | 'cover' | 'attachment' | 'newsletter';
+    templateId: 'thumbnail' | 'banner' | 'attachment' | 'newsletter';
   };
   url: '/me/upload-token';
 };
@@ -4307,7 +4306,7 @@ export type InviteMembersResponses = {
    * What happened to each address
    */
   200: {
-    data: Array<{
+    results: Array<{
       id: string;
       tenantId: string;
       channelType: 'organization';
@@ -4436,7 +4435,7 @@ export type BatchDeleteMembersResponses = {
    * Success
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -4947,7 +4946,7 @@ export type ListNotificationsResponses = {
       createdAt: string;
       actorId: string | null;
       kind: 'mention' | 'comment' | 'reply';
-      entityType: 'attachment';
+      productType: 'attachment';
       subjectId: string;
       contextId: string | null;
       channelId: string;
@@ -4964,7 +4963,7 @@ export type ListNotificationsResponses = {
       channelThumbnailUrl: string | null;
       organizationName: string;
       organizationThumbnailUrl: string | null;
-      subjectTitle: string;
+      subjectName: string;
     }>;
     /**
      * Pass as `pageToken` to read the next page. Absent on the last page.
@@ -5052,8 +5051,8 @@ export type GetNotificationPreferencesResponses = {
    * Notification preferences
    */
   200: {
-    mentionEmail: boolean;
-    commentEmail: boolean;
+    mentionEmails: boolean;
+    commentEmails: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -5062,8 +5061,8 @@ export type GetNotificationPreferencesResponse = GetNotificationPreferencesRespo
 
 export type UpdateNotificationPreferencesData = {
   body: {
-    mentionEmail?: boolean;
-    commentEmail?: boolean;
+    mentionEmails?: boolean;
+    commentEmails?: boolean;
     digest?: 'off' | 'daily' | 'weekly';
   };
   path?: never;
@@ -5093,8 +5092,8 @@ export type UpdateNotificationPreferencesResponses = {
    * Preferences updated
    */
   200: {
-    mentionEmail: boolean;
-    commentEmail: boolean;
+    mentionEmails: boolean;
+    commentEmails: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -5352,7 +5351,7 @@ export type BatchCreateOrganizationsResponses = {
     /**
      * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
      */
-    data: Array<
+    results: Array<
       Organization & {
         included?: {
           membership: MembershipBase;
@@ -5477,7 +5476,6 @@ export type UpdateOrganizationData = {
     notificationEmail?: string | null;
     color?: string | null;
     thumbnailUrl?: string | null;
-    logoUrl?: string | null;
     bannerUrl?: string | null;
     websiteUrl?: string | null;
     welcomeText?: string | null;
@@ -5613,7 +5611,7 @@ export type PublishOrganizationResponses = {
     /**
      * Invitations held while it was a draft and sent now.
      */
-    invitationsSent: number;
+    invitationCount: number;
   };
 };
 
@@ -5660,7 +5658,7 @@ export type BatchDeleteOrganizationsResponses = {
    * Success
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -5965,7 +5963,7 @@ export type BatchDeleteRequestsResponses = {
    * Success
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -6023,13 +6021,13 @@ export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCo
 export type MarkSeenData = {
   body: {
     /**
-     * Entity IDs the user has viewed since last batch
+     * Product IDs the user has viewed since last batch
      */
-    entityIds: Array<string>;
+    productIds: Array<string>;
     /**
-     * Entity type for all IDs in this batch
+     * Product type for all IDs in this batch
      */
-    entityType: 'attachment';
+    productType: 'attachment';
   };
   path: {
     tenantId: string;
@@ -6485,7 +6483,7 @@ export type InviteUsersResponses = {
    * Invitations are sent
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -6496,7 +6494,7 @@ export type InviteUsersResponses = {
     rejectionReasons?: {
       [key: string]: Array<string>;
     };
-    invitesSentCount: number;
+    invitationCount: number;
   };
 };
 
@@ -6588,7 +6586,7 @@ export type BatchDeleteUsersResponses = {
    * Success
    */
   200: {
-    data: Array<unknown>;
+    results: Array<unknown>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -6917,7 +6915,7 @@ export type UpdateTenantData = {
         /**
          * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
          */
-        invitationMailsPerDay?: number | null;
+        invitationEmailsPerDay?: number | null;
       } | null;
       /**
        * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -7078,11 +7076,11 @@ export type CreateConnectionData = {
     /**
      * A federation key in appConfig.federations
      */
-    issuer: 'surfconext';
+    federation: 'surfconext';
     /**
      * The institution's name, as the federation's metadata lists it
      */
-    displayName: string;
+    name: string;
     /**
      * The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them
      */
@@ -7189,7 +7187,7 @@ export type UpdateConnectionData = {
     /**
      * The institution's name, as the federation's metadata lists it
      */
-    displayName?: string;
+    name?: string;
     /**
      * The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them
      */

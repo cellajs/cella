@@ -176,6 +176,6 @@ describe("Public cascade: a channel's `public` reaches the products homed there"
     });
 
     expect(result.response.status).toBe(200);
-    expect(result.data).toEqual({ data: [], rejectedIds: [id] });
+    expect(result.data).toEqual({ results: [], rejectedIds: [id] });
   });
 });

@@ -77,7 +77,7 @@ describe('Revoke my sessions', async () => {
     const { data, response } = await call(revokeMySessions, { body: { ids: [other.id, strangerSession.id] }, headers });
     expect(response.status).toBe(200);
     expect(data).toMatchObject({
-      data: [{ id: other.id, revokedBy: user.id, revocationReason: 'other_session' }],
+      results: [{ id: other.id, revokedBy: user.id, revocationReason: 'other_session' }],
       rejectedIds: [strangerSession.id],
     });
 
@@ -92,7 +92,7 @@ describe('Revoke my sessions', async () => {
 
     // A second revoke finds no live row for that id and rejects it: the first stamp stays.
     const again = await call(revokeMySessions, { body: { ids: [other.id] }, headers });
-    expect(again.data).toMatchObject({ data: [], rejectedIds: [other.id] });
+    expect(again.data).toMatchObject({ results: [], rejectedIds: [other.id] });
   });
 
   it('revoking the current session is a sign-out', async () => {

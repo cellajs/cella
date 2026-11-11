@@ -74,7 +74,7 @@ const fetchOrganizationsPage = async (
 ): Promise<QueryData<EnrichedOrganization>> =>
   listOrganizations({ query: { ...query, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...page }, signal });
 
-export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
+export const organizationsListQueryOptions = ({ include, limit = appConfig.pageSizes.organizations, ...params }: OrganizationsListParams) => {
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({
@@ -88,14 +88,14 @@ export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
 
-  return useMutation<BatchCreateOrganizationsResponse['data'][number], ApiError, MutationData<BatchCreateOrganizationsData>>({
+  return useMutation<BatchCreateOrganizationsResponse['results'][number], ApiError, MutationData<BatchCreateOrganizationsData>>({
     mutationKey: keys.create,
     // The create form shows a taken handle on its field.
     meta: { suppressGlobalErrorToast: (error) => error.type === 'slug_exists' },
     mutationFn: async ({ path, body }) => {
-      const { data, rejectionReasons } = await batchCreateOrganizations({ path, body });
+      const { results, rejectionReasons } = await batchCreateOrganizations({ path, body });
       // A tenant without a free slot is refused with a 403, so a single create comes back empty when its slug is taken.
-      const [created] = data;
+      const [created] = results;
       if (created) return created;
       if (rejectionReasons?.slug_exists) throw new ApiError({ status: 409, type: 'slug_exists', entityType: 'organization', severity: 'warn' });
       throw new ApiError({ status: 422, type: 'create_resource', entityType: 'organization', severity: 'error' });

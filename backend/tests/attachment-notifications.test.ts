@@ -116,7 +116,7 @@ describe('Attachment mentions (template notification source)', async () => {
   /** One row's change as a message carries it: the activity of its write, by `writer`, and the row's id. */
   const changedRow = (subjectId: string, writer: string, changedFields: string[] | null = ['description']): ActivityRow => ({
     activityId: `act:${generateId()}`,
-    userId: writer,
+    actorId: writer,
     changedFields,
     stx: null,
     rowData: { id: subjectId, organizationId: tenant.organization.id },
@@ -258,7 +258,7 @@ describe('Attachment mentions (template notification source)', async () => {
     const [{ name }] = await db.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     const mails = mailsTo(member.email);
     expect(mails).toHaveLength(1);
-    expect(mails[0]?.recipient).toMatchObject({ subjectTitle: name, excerpt: expect.stringContaining('please sign the contract') });
+    expect(mails[0]?.recipient).toMatchObject({ subjectName: name, excerpt: expect.stringContaining('please sign the contract') });
     // The push link opens the notification's context, which defaults to the row itself.
     const [, payload] = vi.mocked(sendNotificationPush).mock.calls.at(-1) ?? [];
     expect(linkedContextId(payload?.url)).toBe(attachmentId);
@@ -278,7 +278,7 @@ describe('Attachment mentions (template notification source)', async () => {
     await fanOutNotifications(createdEvent(subjectId));
     const [mail] = mailsTo(member.email);
     expect(linkedContextId(mail?.recipient.link)).toBe(hostId);
-    expect(mail?.recipient.subjectTitle).toBe('Host item');
+    expect(mail?.recipient.subjectName).toBe('Host item');
   });
 
   it('leaves a mention whose mail failed unstamped, for the digest', async () => {
@@ -305,10 +305,10 @@ describe('Attachment mentions (template notification source)', async () => {
     // The test client types the body loosely; the SDK response type names the fields under test.
     const items = (result.data as ListNotificationsResponse | undefined)?.results ?? [];
     const row = items.find((item) => item.subjectId === attachmentId);
-    expect(row).toMatchObject({ kind: 'mention', subjectId: attachmentId, entityType: 'attachment' });
+    expect(row).toMatchObject({ kind: 'mention', subjectId: attachmentId, productType: 'attachment' });
     expect(row?.actor?.id).toBe(tenant.user.id);
     expect(row?.channelName).not.toBe('');
-    expect(row?.subjectTitle).not.toBe('');
+    expect(row?.subjectName).not.toBe('');
   });
 
   it('lists the newest rows on the first page of an inbox longer than one page', async () => {
@@ -318,7 +318,7 @@ describe('Attachment mentions (template notification source)', async () => {
       userId: reader.id,
       actorId: tenant.user.id,
       kind: 'mention' as const,
-      entityType: 'attachment' as const,
+      productType: 'attachment' as const,
       subjectId: attachmentId,
       contextId: attachmentId,
       channelId: tenant.organization.id,
@@ -348,7 +348,7 @@ describe('Attachment mentions (template notification source)', async () => {
           userId: member.id,
           actorId: tenant.user.id,
           kind: 'mention' as const,
-          entityType: 'attachment' as const,
+          productType: 'attachment' as const,
           subjectId: attachmentId,
           contextId: attachmentId,
           channelId: tenant.organization.id,
@@ -498,7 +498,7 @@ describe('Attachment mentions (template notification source)', async () => {
           .map(({ userId, actorId, activityId }) => ({ userId, actorId, activityId }))
           .sort((a, b) => a.userId.localeCompare(b.userId));
       const expected = (row: ActivityRow, userIds: string[]) =>
-        userIds.map((userId) => ({ userId, actorId: row.userId, activityId: row.activityId })).sort((a, b) => a.userId.localeCompare(b.userId));
+        userIds.map((userId) => ({ userId, actorId: row.actorId, activityId: row.activityId })).sort((a, b) => a.userId.localeCompare(b.userId));
 
       // One user mentioned in both rows hears of both; the second writer's mention of the first is no self-mention.
       expect(byWrite(first)).toEqual(expected(rows[0], [member.id, other.id]));
@@ -547,18 +547,18 @@ describe('Attachment mentions (template notification source)', async () => {
           .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, subjectId)))
       ).map(({ kind, emailedAt }) => ({ kind, emailed: emailedAt !== null }));
 
-    const setCommentEmail = (commentEmail: boolean) =>
+    const setCommentEmail = (commentEmails: boolean) =>
       db
         .insert(notificationPreferencesTable)
-        .values({ userId: member.id, commentEmail })
-        .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { commentEmail } });
+        .values({ userId: member.id, commentEmails })
+        .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { commentEmails } });
 
-    const offerCommentEmail = () => onTestFinished(overrideConfig(appConfig.has, { commentEmail: true }));
+    const offerCommentEmail = () => onTestFinished(overrideConfig(appConfig.has, { commentEmails: true }));
     // Each case starts with comment email not offered, whatever the app's default is.
     let restoreCommentEmail: () => void;
 
     beforeAll(() => {
-      restoreCommentEmail = overrideConfig(appConfig.has, { commentEmail: false });
+      restoreCommentEmail = overrideConfig(appConfig.has, { commentEmails: false });
     });
 
     afterAll(async () => {
@@ -596,7 +596,7 @@ describe('Attachment mentions (template notification source)', async () => {
     });
 
     it('mails no comment row while the app does not offer comment email', async () => {
-      expect(appConfig.has.commentEmail).toBe(false);
+      expect(appConfig.has.commentEmails).toBe(false);
       await setCommentEmail(true);
       const subjectId = await fanOutAs('comment');
 

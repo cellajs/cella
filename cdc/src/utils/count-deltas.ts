@@ -119,24 +119,24 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
   return null;
 }
 
-/** Inactive membership m:c:pending delta; only rows with rejectedAt null count as pending. */
+/** Inactive membership m:c:pending delta; only rows with declinedAt null count as pending. */
 function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
   if (!channelId) return null;
 
   if (action === 'create') {
-    if (newRow.rejectedAt != null) return null;
+    if (newRow.declinedAt != null) return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
   }
 
   if (action === 'delete') {
-    if (newRow.rejectedAt != null) return null;
+    if (newRow.declinedAt != null) return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
-    const wasNull = oldRow.rejectedAt == null;
-    const isNull = newRow.rejectedAt == null;
+    const wasNull = oldRow.declinedAt == null;
+    const isNull = newRow.declinedAt == null;
     if (wasNull && !isNull) {
       return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
     }

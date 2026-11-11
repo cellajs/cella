@@ -62,13 +62,13 @@ describe('Catchup (view-driven, sequence)', async () => {
   it('answers an org view with its frontier (org member, unconditional read)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(catchUpMyStream, {
-      body: { views: [{ organizationId: orgId, entityType: 'attachment', cursor: 40 }] },
+      body: { views: [{ organizationId: orgId, productType: 'attachment', cursor: 40 }] },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(result.response.status).toBe(200);
     const { views } = result.data as StreamCatchupResponse;
-    expect(views).toEqual([{ organizationId: orgId, entityType: 'attachment', status: 'ok', frontier: 42 }]);
+    expect(views).toEqual([{ organizationId: orgId, productType: 'attachment', status: 'ok', frontier: 42 }]);
   });
 
   it('answers a view on an org the caller is no part of, without leaking numbers', async () => {
@@ -76,8 +76,8 @@ describe('Catchup (view-driven, sequence)', async () => {
     const result = await call(catchUpMyStream, {
       body: {
         views: [
-          { organizationId: otherOrgId, entityType: 'attachment', cursor: 0 },
-          { organizationId: orgId, entityType: 'attachment', cursor: 42 },
+          { organizationId: otherOrgId, productType: 'attachment', cursor: 0 },
+          { organizationId: orgId, productType: 'attachment', cursor: 42 },
         ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },

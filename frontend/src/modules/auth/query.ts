@@ -90,7 +90,7 @@ export const useDecideConsentMutation = (uid: string) =>
   useMutation({
     mutationKey: authKeys.consent.decide,
     mutationFn: (accept: boolean) => (accept ? withStepUp(() => decideConsent(uid, true)) : decideConsent(uid, false)),
-    onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
+    onSuccess: ({ redirectUrl }) => window.location.assign(redirectUrl),
   });
 
 /** Mails the address a link from a step of the authenticate page; the server decides whether it signs in or signs up. */
@@ -102,7 +102,7 @@ export const useSendMagicLinkMutation = () => {
   return useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
     mutationFn: ({ email }: { email: string; mode: MagicLinkMode }) =>
-      sendMagicLink({ body: { email, redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
+      sendMagicLink({ body: { email, redirectPath: tokenId ? invitationResumePath(tokenId) : redirect } }),
     onSuccess: (_, { email, mode }) => setMagicLinkSent(email, mode),
     // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
     onError: (error) => {
@@ -118,6 +118,6 @@ export const useRedeemHeldLinkMutation = () =>
   useMutation({
     mutationKey: authKeys.redeemLink,
     mutationFn: (kind: RedeemLinkTokenData['path']['kind']) => redeemLinkToken({ path: { kind } }),
-    onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
+    onSuccess: ({ redirectUrl }) => window.location.assign(redirectUrl),
     meta: { suppressGlobalErrorToast: true },
   });

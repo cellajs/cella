@@ -39,8 +39,8 @@ describe('declareViewsFromMemberships', () => {
     declareViewsFromMemberships();
 
     expect(syncStore.getState().getCatchupViews(['attachment'])).toEqual([
-      { organizationId: 'org-1', entityType: 'attachment', cursor: 0 },
-      { organizationId: 'org-2', entityType: 'attachment', cursor: 0 },
+      { organizationId: 'org-1', productType: 'attachment', cursor: 0 },
+      { organizationId: 'org-2', productType: 'attachment', cursor: 0 },
     ]);
   });
 

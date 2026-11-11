@@ -25,7 +25,7 @@ export function AvatarFormField({ form, label, name, entity, type, organizationI
 
   const openUploadDialog = () => {
     const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
-    openImageUpload({ templateId: 'avatar', organizationId, title: t('c:upload_resource', { resource: imageName }), onUploaded: setUrl });
+    openImageUpload({ templateId: 'thumbnail', organizationId, title: t('c:upload_resource', { resource: imageName }), onUploaded: setUrl });
   };
 
   return (
@@ -39,13 +39,13 @@ export function AvatarFormField({ form, label, name, entity, type, organizationI
             <EntityAvatar type={type} className="size-16" id={entity.id} name={entity.name} url={url} />
 
             <div className="flex flex-col gap-2">
-              {appConfig.has.uploadEnabled ? (
+              {appConfig.has.uploads ? (
                 <p className="text-xs sm:text-sm">{t('c:upload_img_max_10mb.text')}</p>
               ) : (
                 appConfig.mode === 'development' && <p className="text-muted-foreground text-xs sm:text-sm">{t('c:restrict_image_upload')}</p>
               )}
               <div className="flex items-center gap-2">
-                {appConfig.has.uploadEnabled && (
+                {appConfig.has.uploads && (
                   <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
                     <UploadIcon />
                     <span>{t('c:upload')}</span>

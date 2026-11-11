@@ -28,10 +28,10 @@ export const productListResponseSchema = <T extends z.ZodObject>(entityType: Pro
   return paginationSchema(z.union([schema, tombstone]), totalSize);
 };
 
-/** Passing an item schema produces `data: T[]`; omitting it requires an empty data array. */
+/** Passing an item schema produces `results: T[]`, as a list page names its rows; omitting it requires an empty array. */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   z.object({
-    data: itemSchema ? z.array(itemSchema) : z.array(z.unknown()).max(0),
+    results: itemSchema ? z.array(itemSchema) : z.array(z.unknown()).max(0),
     rejectedIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
     rejectionReasons: z.record(z.string(), z.array(z.string())).optional().describe('Map of reason code to rejected item IDs'),
   });

@@ -107,7 +107,7 @@ export async function findPreferences(ctx: DbContext, { userId }: { userId: stri
 
 interface UpdatePreferencesOpts {
   userId: string;
-  values: Partial<Pick<NotificationPreferencesModel, 'mentionEmail' | 'commentEmail' | 'digest'>>;
+  values: Partial<Pick<NotificationPreferencesModel, 'mentionEmails' | 'commentEmails' | 'digest'>>;
 }
 
 /** Writes the given preferences; a user without a row gets one with the defaults for the rest. */
@@ -128,7 +128,7 @@ export type NotificationInsert = Required<
     InsertNotificationModel,
     | 'userId'
     | 'kind'
-    | 'entityType'
+    | 'productType'
     | 'subjectId'
     | 'contextId'
     | 'channelId'
@@ -160,7 +160,7 @@ export async function insertNotificationsIgnoringDuplicates(
   const values = sql.join(
     candidates.map(
       (row) =>
-        sql`(${row.id}::uuid, now(), ${row.userId}::uuid, ${row.actorId}::uuid, ${row.kind}, ${row.entityType}, ${row.subjectId}::uuid, ${row.contextId}::uuid, ${row.channelId}::uuid, ${row.channelType}, ${row.organizationId}::uuid, ${row.tenantId}, ${row.activityId})`,
+        sql`(${row.id}::uuid, now(), ${row.userId}::uuid, ${row.actorId}::uuid, ${row.kind}, ${row.productType}, ${row.subjectId}::uuid, ${row.contextId}::uuid, ${row.channelId}::uuid, ${row.channelType}, ${row.organizationId}::uuid, ${row.tenantId}, ${row.activityId})`,
     ),
     sql`, `,
   );
@@ -172,11 +172,11 @@ export async function insertNotificationsIgnoringDuplicates(
     }
 
     const result = await tx.execute<{ id: string }>(sql`
-    WITH candidate (id, created_at, user_id, actor_id, kind, entity_type, subject_id, context_id, channel_id, channel_type, organization_id, tenant_id, activity_id) AS (
+    WITH candidate (id, created_at, user_id, actor_id, kind, product_type, subject_id, context_id, channel_id, channel_type, organization_id, tenant_id, activity_id) AS (
       VALUES ${values}
     )
-    INSERT INTO notifications (id, created_at, user_id, actor_id, kind, entity_type, subject_id, context_id, channel_id, channel_type, organization_id, tenant_id, activity_id)
-    SELECT c.id, c.created_at, c.user_id, c.actor_id, c.kind, c.entity_type, c.subject_id, c.context_id, c.channel_id, c.channel_type, c.organization_id, c.tenant_id, c.activity_id
+    INSERT INTO notifications (id, created_at, user_id, actor_id, kind, product_type, subject_id, context_id, channel_id, channel_type, organization_id, tenant_id, activity_id)
+    SELECT c.id, c.created_at, c.user_id, c.actor_id, c.kind, c.product_type, c.subject_id, c.context_id, c.channel_id, c.channel_type, c.organization_id, c.tenant_id, c.activity_id
     FROM candidate c
     WHERE NOT EXISTS (
       SELECT 1 FROM notifications n
@@ -281,8 +281,8 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
       email: usersTable.email,
       name: usersTable.name,
       languageCode: usersTable.languageCode,
-      mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, ${defaultPreferences.mentionEmail})`,
-      commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, ${defaultPreferences.commentEmail})`,
+      mentionEmails: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmails}, ${defaultPreferences.mentionEmails})`,
+      commentEmails: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmails}, ${defaultPreferences.commentEmails})`,
     })
     .from(usersTable)
     .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))
@@ -387,7 +387,7 @@ export interface FindUndigestedNotificationsOpts {
 /** The rows of a user's digest window, oldest first. */
 export async function findUndigestedNotifications(ctx: DbContext, { userId, since, before, limit }: FindUndigestedNotificationsOpts) {
   return ctx.var.db
-    .select(pick(notificationsTable, ['kind', 'entityType', 'subjectId', 'channelId', 'contextId', 'tenantId']))
+    .select(pick(notificationsTable, ['kind', 'productType', 'subjectId', 'channelId', 'contextId', 'tenantId']))
     .from(notificationsTable)
     .where(and(eq(notificationsTable.userId, userId), undigestedRows(since, before)))
     .orderBy(asc(notificationsTable.createdAt))

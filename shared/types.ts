@@ -37,12 +37,12 @@ export type MenuSection = MenuStructureItem<MenuStructureEntry['entityType'], No
 export const menuSections: readonly MenuSection[] = appConfig.menuStructure;
 
 export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
-/** A federation in `appConfig.federations`: a session strategy, an identities issuer slug and an env prefix. */
+/** A federation in `appConfig.federations`: a session strategy, an identities provider slug and an env prefix. */
 export type FederationKey = keyof typeof appConfig.federations & string;
 
 export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 
-export type Language = (typeof appConfig.languages)[number];
+export type Language = (typeof appConfig.languageCodes)[number];
 
 export type UserFlags = typeof appConfig.defaultUserFlags;
 

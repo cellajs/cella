@@ -29,13 +29,13 @@ export const startSso = async (ctx: OAuthStartContext, target: SsoTarget) => {
 
   if ('connectionId' in target) {
     const connection = await findConnectionById(dbCtx, { id: target.connectionId });
-    if (connection?.kind !== 'sso' || !isFederationKey(connection.issuer)) {
+    if (connection?.kind !== 'sso' || !isFederationKey(connection.federation)) {
       throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
     }
     // Refused here, before the redirect: the federation's own refusal pages never return to the app.
     if (connection.status !== 'active') throw new AppError(403, 'sso_not_active', 'warn', { meta: { connectionId: connection.id } });
 
-    federation = getFederation(connection.issuer);
+    federation = getFederation(connection.federation);
     connectionId = connection.id;
     loginHint = connection.config.idpEntityIds?.join(',') || undefined;
   } else {

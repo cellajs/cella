@@ -28,7 +28,7 @@ import { soleTimeZone } from '~/utils/time-zones';
 
 // welcomeText belongs to the details form
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
-  languageCodes: z.array(z.enum(appConfig.languages)).min(1),
+  languageCodes: z.array(z.enum(appConfig.languageCodes)).min(1),
   websiteUrl: z.string().max(2048).startsWith('https://').nullish(),
 });
 
@@ -142,7 +142,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
                   field.onChange(codes);
                   const defaultLanguageCode = form.getValues('defaultLanguageCode');
                   if (!defaultLanguageCode || !codes.includes(defaultLanguageCode)) {
-                    form.setValue('defaultLanguageCode', codes[0] ?? appConfig.defaultLanguage, { shouldDirty: true });
+                    form.setValue('defaultLanguageCode', codes[0] ?? appConfig.defaultLanguageCode, { shouldDirty: true });
                   }
                 }}
               />
@@ -182,7 +182,7 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
             <FormLabel help={t('c:default_language_code.text')} required>
               {t('c:default_language_code')}
             </FormLabel>
-            <SelectLanguage options={languages} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
+            <SelectLanguage options={languages} value={field.value ?? appConfig.defaultLanguageCode} onChange={field.onChange} />
             <FormMessage />
           </FormItem>
         );

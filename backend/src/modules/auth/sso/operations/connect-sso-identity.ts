@@ -62,7 +62,7 @@ export const connectSsoIdentity = async (
       values: {
         userId: user.id,
         kind: 'sso',
-        issuer: federation.key,
+        provider: federation.key,
         subject,
         email: profile.email ?? null,
         connectionId: connection.id,
@@ -82,7 +82,7 @@ export const connectSsoIdentity = async (
   });
 
   invalidateCache.user(user.id);
-  sendAccountSecurityEmail(user, 'provider-connected', { provider: federation.label });
+  sendAccountSecurityEmail(user, 'provider-connected', { provider: federation.name });
   log.info('SSO identity connected', { userId: user.id, strategy: federation.key, connectionId: connection.id });
 
   return user;

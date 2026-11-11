@@ -33,7 +33,7 @@ export interface ResolvedSession {
 export const readSession = async (sessionToken: string): Promise<ResolvedSession> => {
   const secretHash = hashToken(sessionToken);
   const entry = await loadCachedSession(secretHash, async () => {
-    const result = await findSessionBySecret(dbCtx, { secret: secretHash });
+    const result = await findSessionBySecret(dbCtx, { secretHash });
 
     if (!result) throw new AppError(401, 'no_session', 'warn');
     if (result.revokedAt) throw new AppError(401, 'session_revoked', 'warn');

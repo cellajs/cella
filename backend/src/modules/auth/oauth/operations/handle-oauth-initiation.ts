@@ -22,10 +22,10 @@ type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVeri
  * @throws AppError 401 for a connect or a verify whose pin or token this browser does not hold.
  */
 export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
-  const { kind, redirectAfter: requestedPath } = ctx.req.valid('query');
+  const { kind, redirectPath: requestedPath } = ctx.req.valid('query');
   // Normalized now, as the last hop would: a raw path can percent-encode past the 4096 octets a browser keeps of a cookie.
-  const redirectAfter = frontendRedirectPath(requestedPath) ?? undefined;
-  const cookieContent: OAuthCookiePayload = { state, provider, codeVerifier, nonce, kind, redirectAfter, connectionId };
+  const redirectPath = frontendRedirectPath(requestedPath) ?? undefined;
+  const cookieContent: OAuthCookiePayload = { state, provider, codeVerifier, nonce, kind, redirectPath, connectionId };
 
   if (kind === 'connect') {
     // A connect starts from the account page, which explains its refusals.
@@ -39,7 +39,7 @@ export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, 
   if (kind === 'verify') {
     // Fails early on a missing or expired verification token; the callback re-validates. The post-auth redirect travels on the token row.
     const tokenRecord = await readBoundToken(ctx, 'oauth-verification');
-    cookieContent.redirectAfter = tokenRecord.redirectPath ?? undefined;
+    cookieContent.redirectPath = tokenRecord.redirectPath ?? undefined;
   }
 
   const stringifiedContent = JSON.stringify(cookieContent);

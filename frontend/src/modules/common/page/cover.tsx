@@ -26,7 +26,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
 
   const openUploadDialog = () => {
     openImageUpload({
-      templateId: 'cover',
+      templateId: 'banner',
       organizationId,
       title: uploadLabel,
       onUploaded: (bannerUrl) => {
@@ -50,7 +50,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
       className={cn('relative flex h-32 min-h-40 bg-cover bg-center data-[url=true]:h-[20vw] sm:min-w-52', !coverUrl && placeholderCoverClass(id))}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
-      {canUpdate && appConfig.has.uploadEnabled && (
+      {canUpdate && appConfig.has.uploads && (
         <Button
           variant="outline-ghost"
           size="xs"

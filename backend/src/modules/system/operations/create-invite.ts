@@ -27,7 +27,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const recipientEmails = uniqueEmails.filter((email) => !taken.has(email));
   const rejectedIds = uniqueEmails.filter((email) => taken.has(email));
 
-  if (recipientEmails.length === 0) return { data: [], rejectedIds, invitesSentCount: 0 };
+  if (recipientEmails.length === 0) return { results: [], rejectedIds, invitationCount: 0 };
 
   // One independent random secret per recipient, so one link never authenticates another's invitation.
   const issued = await issueTokens(
@@ -44,5 +44,5 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
 
   log.info('Users invited on system level', { count: issued.length });
 
-  return { data: [], rejectedIds, invitesSentCount: issued.length };
+  return { results: [], rejectedIds, invitationCount: issued.length };
 }

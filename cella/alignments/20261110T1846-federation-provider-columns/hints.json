@@ -1,0 +1,5 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "connections", "issuer"], "to": ["public", "connections", "federation"] },
+  { "type": "rename", "kind": "column", "from": ["public", "identities", "issuer"], "to": ["public", "identities", "provider"] },
+  { "type": "rename", "kind": "index", "from": ["public", "identities", "identities_kind_issuer_subject_idx"], "to": ["public", "identities", "identities_kind_provider_subject_idx"] }
+]

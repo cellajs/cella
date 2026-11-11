@@ -48,7 +48,7 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
   return uniqueEmails.map((email): PlannedAddress => {
     // A pending invitation goes out again, and a declined one opens again once its decline stops holding.
     const invitation = invitationByEmail.get(email);
-    if (invitation && declineHolds(invitation.rejectedAt)) return { email, outcome: 'declined', invitation };
+    if (invitation && declineHolds(invitation.declinedAt)) return { email, outcome: 'declined', invitation };
     if (invitation) return { email, outcome: 'remind', invitation };
 
     const account = accountByEmail.get(email);
@@ -71,6 +71,6 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
 export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
   if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role };
   if (planned.outcome === 'invite' || planned.outcome === 'add') return { email: planned.email, outcome: planned.outcome };
-  const { createdAt, rejectedAt } = planned.invitation;
-  return { email: planned.email, outcome: 'remind', invitedAt: createdAt, ...(rejectedAt && { declinedAt: rejectedAt }) };
+  const { createdAt, declinedAt } = planned.invitation;
+  return { email: planned.email, outcome: 'remind', invitedAt: createdAt, ...(declinedAt && { declinedAt }) };
 }

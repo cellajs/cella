@@ -113,7 +113,7 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
     const { user } = await openMagicLink({ email: invitedEmail });
 
     expect(await membershipsOf(user.id)).toEqual([]);
-    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, rejectedAt: null });
+    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, declinedAt: null });
   });
 
   it.each([
@@ -129,8 +129,8 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
     const { user } = await openMagicLink({ email: invitedEmail }, [opened?.invitationCookie ?? authCookie('invitation', nanoid(40))]);
 
     expect(await membershipsOf(user.id)).toEqual([]);
-    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, rejectedAt: null });
-    if (opened) expect(await invitationRow(opened.inactiveMembership.id)).toMatchObject({ userId: null, rejectedAt: null });
+    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, declinedAt: null });
+    if (opened) expect(await invitationRow(opened.inactiveMembership.id)).toMatchObject({ userId: null, declinedAt: null });
   });
 
   it('must not accept the invitation before the second factor of an account with MFA', async () => {
@@ -148,6 +148,6 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
     expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/auth/mfa');
 
     expect(await membershipsOf(user.id)).toEqual([]);
-    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, rejectedAt: null });
+    expect(await invitationRow(inactiveMembership.id)).toMatchObject({ userId: user.id, declinedAt: null });
   });
 });

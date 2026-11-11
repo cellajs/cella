@@ -6,9 +6,9 @@ import { callHook, goOffline, goOnline, mutationsOf, queryClient, resetMutationH
 
 type Req = { path: Record<string, string | undefined>; body: Record<string, unknown> | Array<Record<string, unknown>> };
 const { batchCreateAttachments, updateAttachment, batchDeleteAttachments, listAttachments } = vi.hoisted(() => ({
-  batchCreateAttachments: vi.fn(async (_req: Req): Promise<{ data: unknown[]; rejectedIds: string[] }> => ({ data: [], rejectedIds: [] })),
+  batchCreateAttachments: vi.fn(async (_req: Req): Promise<{ results: unknown[]; rejectedIds: string[] }> => ({ results: [], rejectedIds: [] })),
   updateAttachment: vi.fn(async (_req: Req): Promise<unknown> => ({})),
-  batchDeleteAttachments: vi.fn(async (_req: Req): Promise<unknown> => ({ data: [], rejectedIds: [] })),
+  batchDeleteAttachments: vi.fn(async (_req: Req): Promise<unknown> => ({ results: [], rejectedIds: [] })),
   listAttachments: vi.fn(async (_req: unknown): Promise<unknown> => ({ results: [], totalSize: 0 })),
 }));
 
@@ -64,7 +64,7 @@ const hooks = () => ({
 /** The server stores what a create sends and answers an update with the changed row. */
 const serverStores = () => {
   batchCreateAttachments.mockImplementation(async ({ body }) => ({
-    data: (body as Attachment[]).map((row) => attachment(row.id, row)),
+    results: (body as Attachment[]).map((row) => attachment(row.id, row)),
     rejectedIds: [],
   }));
   updateAttachment.mockImplementation(async ({ path, body }) => attachment(String(path.attachmentId), (body as { ops: Partial<Attachment> }).ops));
@@ -93,7 +93,7 @@ describe('an edit of a row whose create is queued offline', () => {
     serverStores();
     batchCreateAttachments.mockImplementation(async ({ body }) => {
       order.push('create');
-      return { data: (body as Attachment[]).map((row) => attachment(row.id, row)), rejectedIds: [] };
+      return { results: (body as Attachment[]).map((row) => attachment(row.id, row)), rejectedIds: [] };
     });
     updateAttachment.mockImplementation(async ({ path, body }) => {
       order.push('update');
@@ -130,11 +130,11 @@ describe('a delete of a row whose create is queued offline', () => {
     const order: string[] = [];
     batchCreateAttachments.mockImplementation(async ({ body }) => {
       order.push('create');
-      return { data: (body as Attachment[]).map((row) => attachment(row.id, row)), rejectedIds: [] };
+      return { results: (body as Attachment[]).map((row) => attachment(row.id, row)), rejectedIds: [] };
     });
     batchDeleteAttachments.mockImplementation(async () => {
       order.push('delete');
-      return { data: [], rejectedIds: [] };
+      return { results: [], rejectedIds: [] };
     });
     await goOnline();
     await settled('delete');
@@ -159,7 +159,7 @@ describe('a remote change of a row with a pending mutation', () => {
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
     expect(homeList().map(({ id }) => id)).toEqual([att2]);
 
-    batchDeleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
+    batchDeleteAttachments.mockImplementation(async () => ({ results: [], rejectedIds: [] }));
     await goOnline();
     await settled('delete');
 
@@ -182,7 +182,7 @@ describe('a remote change of a row with a pending mutation', () => {
     listAttachments.mockResolvedValue({ results: [renamed], totalSize: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
-    batchDeleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [att1] }));
+    batchDeleteAttachments.mockImplementation(async () => ({ results: [], rejectedIds: [att1] }));
     // The list read answers the stored rows, live ones only (`liveItems`).
     listAttachments.mockResolvedValue({ results: [renamed, attachment(att2, { deletedAt: null })], totalSize: 2 });
     await goOnline();

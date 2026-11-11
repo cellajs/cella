@@ -250,7 +250,7 @@ The members an answer names beside its type, such as `resource`, are top-level m
 | An address the provider verified, or a provider account, that another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app. An unverified address answers as a free one, so the answer tells nobody whether an account holds it |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend sends a person to sign-in on these four alone |
 | A tenant quota that is full | 403 `restrict_by_app` with `resource` and `quota`, or `restrict_by_org` for member seats | The tenant's policy, not a rate. Waiting does not lift it, so never a 429 |
-| A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationMailsPerDay` |
+| A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationEmailsPerDay` |
 | An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | `withStepUp` opens the proof dialog on it and runs the action again |
 | A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | The tenant decides how the people it knows through a connection sign in |
 

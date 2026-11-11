@@ -40,7 +40,7 @@ describe('Draft context invite deferral', async () => {
 
   const dbContext = { var: { db } };
   /** A language other than the app's default, where the app has one. */
-  const otherLanguage = appConfig.languages.find((language) => language !== appConfig.defaultLanguage);
+  const otherLanguage = appConfig.languageCodes.find((language) => language !== appConfig.defaultLanguageCode);
 
   const createDraftOrgWorld = async () => {
     const organization = await createTestOrganization({ publishedAt: null });
@@ -128,7 +128,7 @@ describe('Draft context invite deferral', async () => {
     expect((before.data as { results: unknown[] }).results).toHaveLength(0);
 
     const { data: published } = await publish(organization, sessionCookie);
-    expect(published).toMatchObject({ invitationsSent: 1, organization: { id: organization.id, publishedAt: expect.any(String) } });
+    expect(published).toMatchObject({ invitationCount: 1, organization: { id: organization.id, publishedAt: expect.any(String) } });
 
     const after = await myInvitations();
     expect((after.data as { results: unknown[] }).results).toHaveLength(1);
@@ -147,7 +147,7 @@ describe('Draft context invite deferral', async () => {
     expect(mailsTo('held@example.com')).toHaveLength(0);
 
     const { data } = await publish(organization, sessionCookie);
-    expect(data).toMatchObject({ invitationsSent: 1 });
+    expect(data).toMatchObject({ invitationCount: 1 });
     expect(mailsTo('held@example.com')).toHaveLength(1);
   });
 
@@ -191,7 +191,7 @@ describe('Draft context invite deferral', async () => {
     expect(await waitlistInvitedAt()).not.toBeNull();
     const [link, ...more] = await linksOf(afterRow.id);
     expect(more).toEqual([]);
-    expect(link.secret).toBe(hashToken(mailedLink('inviteLink').token));
+    expect(link.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
 
     // Second dispatch: the invitation is no longer held, so no re-send and no token churn
     const second = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
@@ -213,7 +213,7 @@ describe('Draft context invite deferral', async () => {
     expect(await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization })).toEqual({ dispatched: 1 });
     const [link, ...more] = await linksOf(failed.id);
     expect(more).toEqual([]);
-    expect(link.secret).toBe(hashToken(mailedLink('inviteLink').token));
+    expect(link.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('dispatches the held invitations alone: one mailed when it was made keeps its link', async () => {
@@ -307,7 +307,7 @@ describe('Draft context invite deferral', async () => {
     const links = await linksOf(initial.id);
     expect(links).toHaveLength(1);
     expect(links[0].id).not.toBe(initialLink.id);
-    expect(links[0].secret).toBe(hashToken(mailedLink('inviteLink').token));
+    expect(links[0].secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {

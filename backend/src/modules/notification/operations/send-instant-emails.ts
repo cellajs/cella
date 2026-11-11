@@ -27,7 +27,7 @@ const excerptLength = 250;
 const dbCtx = { var: { db: baseDb } };
 
 /**
- * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmail`
+ * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmails`
  * (`instantEmailKinds`), each to a recipient with a verified address who keeps that category on (comment email is
  * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row is stamped
  * `emailedAt` right after its mail went out, so the digest skips it; any other row, a failed send included, stays for
@@ -43,13 +43,13 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const mailable = instant.filter((row) => {
     const user = byUser.get(row.userId);
-    return row.kind === 'mention' ? user?.mentionEmail : user?.commentEmail;
+    return row.kind === 'mention' ? user?.mentionEmails : user?.commentEmails;
   });
   if (mailable.length === 0) return;
 
   const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
   const channels = await findChannelLabels(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
-  const titles = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
+  const contextNames = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
 
   let mailed = 0;
 
@@ -67,10 +67,10 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
         email: user.email,
         lng: user.languageCode,
         name: user.name,
-        subjectTitle: titles.get(contextOf(notification)) ?? '',
+        subjectName: contextNames.get(contextOf(notification)) ?? '',
         excerpt: htmlToExcerpt(descriptionText(subject.description), excerptLength),
         link: buildNotificationLink(appConfig.frontendUrl, {
-          ...pick(notification, ['tenantId', 'organizationId', 'channelId', 'channelType', 'entityType', 'subjectId']),
+          ...pick(notification, ['tenantId', 'organizationId', 'channelId', 'channelType', 'productType', 'subjectId']),
           contextId: notification.contextId ?? undefined,
           nid: notification.id,
         }),

@@ -11,13 +11,13 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
  * Resends the invitation email for a pending membership, named by the pending row's own id; the caller needs `update`
  * on the invited channel. Every pending invitation answers 204 alike: one no account holds gets a fresh link that
  * retires the older ones, one an account holds gets its invitation email again, and a held one stays held until its
- * channel is published. A missing, foreign or rejected row is 404.
+ * channel is published. A missing, foreign or declined row is 404.
  * @throws AppError 403 `restrict_by_tenant_kind` in a tenant whose kind invites no one.
  * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from {@link resendInvitation}.
  */
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const invitation = await findInactiveMembershipInOrg(ctx, { id });
-  if (!invitation || invitation.rejectedAt) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
+  if (!invitation || invitation.declinedAt) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 
   const { entity } = await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
   assertTenantInvites(ctx.var.tenant);

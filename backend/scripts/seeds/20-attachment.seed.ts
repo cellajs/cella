@@ -80,7 +80,7 @@ export const seedAttachmentRecord = (
     size: asset.size,
     keys: asset.keys,
     publicBucket: true,
-    bucketName: appConfig.s3.publicBucket,
+    bucketName: appConfig.s3.publicBucketName,
   };
 };
 

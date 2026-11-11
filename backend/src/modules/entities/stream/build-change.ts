@@ -36,12 +36,12 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
 
-  const named = rows.map(({ rowData, seq, stx, userId }) => ({ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId: userId } }));
+  const named = rows.map(({ rowData, seq, stx, actorId }) => ({ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId } }));
   const entries = named.map(({ entry }) => entry);
   const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
-  const embedded = appConfig.productEmbeddings.some(({ embeddedProduct }) => embeddedProduct === entityType);
+  const embedded = appConfig.productEmbeddings.some(({ embeddedProductType }) => embeddedProductType === entityType);
   if (embedded && !overflowed) {
     // Every row the frame names is in the hint: a host learns of an embedded change by it, or past the cap by its lists'
     // refetch. A soft delete arrives as an update, and the host drops its copy of that row.
@@ -51,7 +51,7 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
       if (event.action === 'delete' || rowData.deletedAt != null) remove.push(entry.subjectId);
       else update.push(entry.subjectId);
     }
-    propagation = { embeddedProduct: entityType, update, remove };
+    propagation = { embeddedProductType: entityType, update, remove };
   }
 
   return {

@@ -16,5 +16,5 @@ export const development = {
 
   // The template's shared development buckets hold the seed files and the GeoIP databases, so seeded attachments
   // render before the app has storage of its own.
-  s3: { region: 'nl-ams', host: 's3.nl-ams.scw.cloud', publicBucket: 'cella-shared-public', privateBucket: 'cella-shared-private' },
+  s3: { region: 'nl-ams', host: 's3.nl-ams.scw.cloud', publicBucketName: 'cella-shared-public', privateBucketName: 'cella-shared-private' },
 } satisfies DeepPartial<typeof config>;

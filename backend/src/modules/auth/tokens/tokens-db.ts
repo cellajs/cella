@@ -16,8 +16,8 @@ import { usersTable } from '#/modules/user/user-db';
  * account exists until the mailed link is clicked and the same provider account signs in again.
  */
 export type PendingSignUp = {
-  /** The identity's issuer slug: the OAuth provider. */
-  issuer: string;
+  /** The identity's provider slug: the OAuth provider. */
+  provider: string;
   /** The provider's subject for the account that signed up. */
   subject: string;
   name: string;
@@ -32,7 +32,7 @@ export const tokensTable = snakeCase.table(
   'tokens',
   {
     id: uuid().primaryKey().$defaultFn(generateId),
-    secret: varchar({ length: maxLength.field }).notNull(),
+    secretHash: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
     kind: varchar({ enum: appConfig.tokenKinds }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
@@ -60,7 +60,7 @@ export const tokensTable = snakeCase.table(
     invokedAt: isoTimestamp(),
   },
   (table) => [
-    index('tokens_secret_kind_idx').on(table.secret, table.kind),
+    index('tokens_secret_hash_kind_idx').on(table.secretHash, table.kind),
     index('tokens_user_id_idx').on(table.userId),
     index('tokens_created_by_idx').on(table.createdBy),
     index('tokens_single_use_token_idx').on(table.kind, table.singleUseToken),

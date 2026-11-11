@@ -32,7 +32,7 @@ export const usersTable = snakeCase.table(
     mfaRequired: boolean().notNull().default(false),
     givenName: varchar({ length: maxLength.field }),
     familyName: varchar({ length: maxLength.field }),
-    languageCode: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
+    languageCode: varchar({ enum: appConfig.languageCodes }).notNull().default(appConfig.defaultLanguageCode),
     newsletter: boolean().notNull().default(false),
     /** How much non-text contrast the UI draws. `system` follows the browser's `prefers-contrast`, `more` forces it on. */
     contrast: varchar({ enum: ['system', 'more'] })

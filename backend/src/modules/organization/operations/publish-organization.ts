@@ -46,5 +46,5 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);
   const response = await toOrganizationResponse(ctx, current, membership, { counts: true, membership: true });
 
-  return { organization: response, invitationsSent: dispatched };
+  return { organization: response, invitationCount: dispatched };
 }

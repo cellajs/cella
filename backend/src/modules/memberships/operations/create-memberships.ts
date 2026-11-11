@@ -58,7 +58,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const invites = planned('invite');
   const adds = planned('add');
   const reminders = planned('remind');
-  const reopened = reminders.filter(({ invitation }) => invitation.rejectedAt);
+  const reopened = reminders.filter(({ invitation }) => invitation.declinedAt);
 
   // Seats: new invitations, declined ones that open again and, at the organization, members added at once. A reminder
   // and a member take none.
@@ -108,7 +108,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const raised = reminders.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
   await updateInactiveMemberships(ctx, {
     ids: reopened.map(({ invitation }) => invitation.id),
-    values: { rejectedAt: null, ...(held && { remindedAt: null }) },
+    values: { declinedAt: null, ...(held && { remindedAt: null }) },
   });
   await updateInactiveMemberships(ctx, { ids: raised.map(({ invitation }) => invitation.id), values: { role } });
 
@@ -133,5 +133,5 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
     entityId,
   });
 
-  return { data: createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id)), outcomes: plan.map(toInviteOutcome), held };
+  return { results: createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id)), outcomes: plan.map(toInviteOutcome), held };
 }

@@ -52,18 +52,18 @@ export interface SsoSignInFacts {
  *   institution, and what provisioning and connecting throw.
  */
 export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims, payload }: SsoSignIn) => {
-  const { kind, redirectAfter, connectionId } = payload;
+  const { kind, redirectPath, connectionId } = payload;
 
   const claimed = assertedInstitution(federation, claims);
   const connection = connectionId
     ? await findConnectionById(dbCtx, { id: connectionId })
     : claimed
-      ? await findActiveSsoConnectionByClaim(dbCtx, { issuer: federation.key, claimValue: claimed })
+      ? await findActiveSsoConnectionByClaim(dbCtx, { federation: federation.key, claimValue: claimed })
       : undefined;
 
   if (
     connection?.kind !== 'sso' ||
-    connection.issuer !== federation.key ||
+    connection.federation !== federation.key ||
     connection.status !== 'active' ||
     !claimed ||
     !connection.claimValues.includes(claimed)
@@ -73,7 +73,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
 
   const profile = transformSsoClaims(claims);
   const snapshot = snapshotOf(federation, claims);
-  const identity = await findIdentityBySubject(dbCtx, { kind: 'sso', issuer: federation.key, subject: claims.sub });
+  const identity = await findIdentityBySubject(dbCtx, { kind: 'sso', provider: federation.key, subject: claims.sub });
   const facts = { federation, connection, claims, profile, snapshot, subject: claims.sub, identity };
   const mfaAt = assertedMfaAt(federation, claims);
 
@@ -84,7 +84,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
         ? await signInSsoIdentity(identity, facts)
         : await provisionSsoUser(ctx, facts);
 
-  return finishSignIn(ctx, user, federation.key, redirectAfter, {
+  return finishSignIn(ctx, user, federation.key, redirectPath, {
     connectionId: connection.id,
     ...(mfaAt && { steppedUpVia: 'sso' as const, steppedUpAt: mfaAt }),
   });

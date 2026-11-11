@@ -67,13 +67,13 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
     const { accept } = decision.data;
 
     if (!accept || details.refusal) {
-      const redirectTo = await provider.interactionResult(
+      const redirectUrl = await provider.interactionResult(
         c.env.incoming,
         c.env.outgoing,
         { error: 'access_denied', error_description: details.refusal ?? 'The user refused' },
         { mergeWithLastSubmission: false },
       );
-      return c.json({ redirectTo });
+      return c.json({ redirectUrl });
     }
 
     // A grant hands a client lasting access: it needs a second factor proven on this session.
@@ -99,13 +99,13 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
     // The tokens issued under this grant carry how this session signed in.
     await stampGrantSignIn({ var: { db: baseDb } }, { grantId, authStrategy: session.authStrategy, connectionId: session.connectionId });
 
-    const redirectTo = await provider.interactionResult(
+    const redirectUrl = await provider.interactionResult(
       c.env.incoming,
       c.env.outgoing,
       { login: { accountId: user.id, remember: false }, consent: { grantId } },
       { mergeWithLastSubmission: true },
     );
-    return c.json({ redirectTo });
+    return c.json({ redirectUrl });
   });
 
   return app;

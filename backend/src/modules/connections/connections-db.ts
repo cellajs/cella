@@ -25,11 +25,11 @@ export const connectionsTable = snakeCase.table(
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
     kind: varchar({ enum: connectionKinds }).notNull().default('sso'),
     /** The federation key in `appConfig.federations`. */
-    issuer: varchar({ length: maxLength.field }).notNull(),
+    federation: varchar({ length: maxLength.field }).notNull(),
     /** The values of the federation's `tenantClaim` this institution asserts (its domains, lower case); the assertion key. */
     claimValues: varchar({ length: maxLength.field }).array().notNull().default([]),
     /** The institution's name, from the federation's metadata feed. */
-    displayName: varchar({ length: maxLength.field }).notNull(),
+    name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: connectionStatuses }).notNull().default('pending'),
     /** An active connection admits the institution's members without an invitation; off, invited addresses only. */
     jitProvisioning: boolean().notNull().default(true),

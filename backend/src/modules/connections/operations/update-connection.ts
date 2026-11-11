@@ -18,9 +18,9 @@ export async function updateConnectionOp(ctx: UserContext, id: string, input: Up
   const existing = await findConnectionById(ctx, { id, tenantId: ctx.var.tenantId });
   if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
 
-  const { displayName, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
+  const { name, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
 
-  if (claimValues) await assertClaimValuesFree(ctx, { issuer: existing.issuer, claimValues, excludeId: existing.id });
+  if (claimValues) await assertClaimValuesFree(ctx, { federation: existing.federation, claimValues, excludeId: existing.id });
 
   const config =
     idpEntityIds || logoUrl ? { ...existing.config, ...(idpEntityIds ? { idpEntityIds } : {}), ...(logoUrl ? { logoUrl } : {}) } : undefined;
@@ -28,7 +28,7 @@ export async function updateConnectionOp(ctx: UserContext, id: string, input: Up
   const updated = await updateConnection(ctx, {
     id: existing.id,
     tenantId: ctx.var.tenantId,
-    values: { displayName, claimValues, status, jitProvisioning, config, ...updateStamps(ctx.var.actor.id) },
+    values: { name, claimValues, status, jitProvisioning, config, ...updateStamps(ctx.var.actor.id) },
   });
 
   log.info('Connection updated', { connectionId: id, tenantId: ctx.var.tenantId, status });

@@ -16,7 +16,7 @@ vi.mock('../pipeline/parse-message', () => ({
       tableName: 'tasks',
       type: 'task.updated',
       tenantId: 'tenant-1',
-      userId: 'user-1',
+      actorId: 'user-1',
       changedFields: null,
       stx: null,
     },

@@ -86,7 +86,7 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
     if (!notification.readAt) onOpen({ ids: [notification.id] });
   };
 
-  const { actor, channelName, subjectTitle } = notification;
+  const { actor, channelName, subjectName } = notification;
   // A subject homed in the organization names no channel; the avatar's mark names the organization where it helps
   const hasChannel = notification.channelType !== 'organization';
   const mark = hasChannel
@@ -113,7 +113,7 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
       <span className={cn('min-w-0 text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
         {t(hasChannel ? `c:notification.${notification.kind}` : `c:notification.${notification.kind}.no_channel`, {
           actor: actor?.givenName || actor?.name || t('c:someone'),
-          subject: subjectTitle || t('c:unknown'),
+          subject: subjectName || t('c:unknown'),
           channel: channelName || t('c:unknown'),
         })}{' '}
         <span className="text-muted-foreground text-xs whitespace-nowrap">

@@ -47,7 +47,7 @@ describe('invitation and verification links fetched by a scanner', () => {
     // Positive control: the invitee opens the link and confirms it on the page it leads to.
     const opened = await openHeldLink('invitation', rawToken);
     expect(opened.response.status).toBe(200);
-    expect(opened.redirectTo).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`);
+    expect(opened.redirectUrl).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`);
     expect(cookieChange(opened.response, 'invitation')).toBe('set');
   });
 
@@ -62,7 +62,7 @@ describe('invitation and verification links fetched by a scanner', () => {
     // Positive control: the owner's confirmation redeems the link and goes on to the provider.
     const opened = await openHeldLink('oauth-verification', raw);
     expect(opened.response.status).toBe(200);
-    expect(new URL(opened.redirectTo ?? '').pathname).toBe(new URL(`${appConfig.backendAuthUrl}/github`).pathname);
+    expect(new URL(opened.redirectUrl ?? '').pathname).toBe(new URL(`${appConfig.backendAuthUrl}/github`).pathname);
     expect(cookieChange(opened.response, 'oauth-verification')).toBe('set');
   });
 });

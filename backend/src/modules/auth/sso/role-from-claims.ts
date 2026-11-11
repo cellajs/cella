@@ -5,7 +5,7 @@ import type { MembershipModel } from '#/modules/memberships/memberships-db';
 
 /** What an institution sign-in hands `roleFromClaims`. */
 export interface SsoRoleFacts {
-  /** The federation's config key, which is also the identity's issuer. */
+  /** The federation's config key, which is also the identity's provider. */
   federation: string;
   /** The connection the sign-in came through: its tenant owns the organization the membership is in. */
   connection: ConnectionModel;

@@ -14,7 +14,9 @@ export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
 export type DigestFrequency = (typeof digestFrequencies)[number];
 
 /** The preferences of a user without a row, and the column defaults: every reader answers a missing row with these. */
-export const defaultPreferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' } as const satisfies z.infer<typeof preferencesSchema>;
+export const defaultPreferences = { mentionEmails: true, commentEmails: false, digest: 'weekly' } as const satisfies z.infer<
+  typeof preferencesSchema
+>;
 
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product
@@ -35,7 +37,7 @@ export const notificationsTable = snakeCase.table(
     actorId: uuid().$type<ActorId>(),
     kind: varchar({ enum: notificationKinds }).notNull(),
     /** Product type of the row the notification is about (`subjectId`). */
-    entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
+    productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     subjectId: uuid().notNull(),
     /** Grouping/deep-link context (e.g. the host thread), from the source's `resolveContextId`; equals `subjectId` by default. */
     contextId: uuid(),
@@ -69,8 +71,8 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .$type<UserId>(),
   /** In-app delivery is never opt-out; only email is. */
-  mentionEmail: boolean().notNull().default(defaultPreferences.mentionEmail),
-  commentEmail: boolean().notNull().default(defaultPreferences.commentEmail),
+  mentionEmails: boolean().notNull().default(defaultPreferences.mentionEmails),
+  commentEmails: boolean().notNull().default(defaultPreferences.commentEmails),
   digest: varchar({ enum: digestFrequencies }).notNull().default(defaultPreferences.digest),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: isoTimestamp(),

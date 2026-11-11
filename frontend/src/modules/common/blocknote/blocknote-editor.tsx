@@ -127,7 +127,7 @@ export function BlockNote({
   const collaborative = !!collaboration;
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const uppyPanelProps = appConfig.has.uploadEnabled ? baseFilePanelProps : undefined;
+  const uppyPanelProps = appConfig.has.uploads ? baseFilePanelProps : undefined;
   // Without an upload path the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
   const canUpload = !!filePanel || !!uppyPanelProps;
   const allowedBlockTypes = blockTypes.filter((type) =>

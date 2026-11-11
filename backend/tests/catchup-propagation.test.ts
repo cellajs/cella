@@ -20,8 +20,8 @@ import { setTestConfig } from './test-utils';
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const productEmbeddings = [
-    { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'attachments' },
-    { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'cover' },
+    { embeddedProductType: 'attachment', hostProductType: 'attachment', hostColumn: 'attachments' },
+    { embeddedProductType: 'attachment', hostProductType: 'attachment', hostColumn: 'cover' },
   ];
   return { ...actual, appConfig: { ...actual.appConfig, productEmbeddings } };
 });
@@ -60,7 +60,7 @@ describe('Catchup propagation hints', async () => {
   };
 
   const hintsOf = async (as: { sessionCookie: string }, organizationId = organization.id) => {
-    const view = { organizationId, entityType: 'attachment' as const, cursor };
+    const view = { organizationId, productType: 'attachment' as const, cursor };
     const { data, response } = await call(catchUpMyStream, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
     return (data as StreamCatchupResponse).organizations[organizationId]?.propagation;
@@ -90,7 +90,7 @@ describe('Catchup propagation hints', async () => {
 
   // The client patches every host column its own config declares, so one hint per embedded product is the contract it reads.
   it('must not name a changed row the caller cannot read in a hint, and names the embedded product once however many hosts embed it', async () => {
-    expect(await hintsOf(member)).toEqual([{ embeddedProduct: 'attachment', update: [readable], remove: [removed], untilSeq: cursor + 3 }]);
+    expect(await hintsOf(member)).toEqual([{ embeddedProductType: 'attachment', update: [readable], remove: [removed], untilSeq: cursor + 3 }]);
   });
 
   it('names every changed row, the soft-deleted one as removed, to a caller who reads them all (positive control)', async () => {
@@ -123,7 +123,7 @@ describe('Catchup propagation hints', async () => {
     await adminDb.insert(channelCountersTable).values({ channelKey: bulk.id, counts: { 'e:f:attachment': cursor + rows.length } });
 
     expect(await hintsOf(bulkAdmin, bulk.id)).toEqual([
-      { embeddedProduct: 'attachment', update: [], remove: [], overflow: true, untilSeq: expect.any(Number) },
+      { embeddedProductType: 'attachment', update: [], remove: [], overflow: true, untilSeq: expect.any(Number) },
     ]);
   });
 });

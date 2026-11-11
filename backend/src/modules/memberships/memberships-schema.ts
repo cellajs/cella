@@ -98,7 +98,7 @@ export const membershipCheckResponseSchema = z.object({ outcomes: inviteOutcomeS
 
 export const membershipInviteResponseSchema = z.object({
   /** Memberships of organization members added at once. */
-  data: memberMembershipSchema.array(),
+  results: memberMembershipSchema.array(),
   outcomes: inviteOutcomeSchema.array(),
   /** The channel is a draft and the role waits for its publish: the invitations are saved, their emails held. */
   held: z.boolean(),

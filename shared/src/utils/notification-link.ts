@@ -14,7 +14,7 @@ export const notificationLinkSearchSchema = z.object({
   organizationId: z.string(),
   channelId: z.string(),
   channelType: z.enum(appConfig.channelEntityTypes),
-  entityType: z.enum(appConfig.productEntityTypes).optional(),
+  productType: z.enum(appConfig.productEntityTypes).optional(),
   subjectId: z.string().optional(),
   /** Grouping context of the subject (a comment's host item), so the link can open the item that hosts it. */
   contextId: z.string().optional(),

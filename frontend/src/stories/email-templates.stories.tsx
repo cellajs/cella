@@ -56,10 +56,10 @@ const meta = {
   argTypes: {
     name: { table: { disable: true } },
     variant: { table: { disable: true } },
-    lng: { options: appConfig.languages, control: { type: 'radio' } },
+    lng: { options: appConfig.languageCodes, control: { type: 'radio' } },
     placeholders: { control: 'boolean' },
   },
-  args: { lng: appConfig.languages[0], placeholders: false },
+  args: { lng: appConfig.languageCodes[0], placeholders: false },
 } satisfies Meta<typeof EmailPreview>;
 
 export default meta;

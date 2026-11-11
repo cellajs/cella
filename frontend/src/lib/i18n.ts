@@ -14,9 +14,9 @@ const initOptions: InitOptions = {
   debug: env.VITE_DEBUG_I18N,
   ns: ['c', 'about', 'error', 'appError'],
   partialBundledLanguages: true,
-  supportedLngs: appConfig.languages,
+  supportedLngs: appConfig.languageCodes,
   load: 'languageOnly',
-  fallbackLng: appConfig.defaultLanguage,
+  fallbackLng: appConfig.defaultLanguageCode,
   interpolation: {
     escapeValue: false, // `t()` returns text, which React escapes
     defaultVariables: i18nDefaultVariables,

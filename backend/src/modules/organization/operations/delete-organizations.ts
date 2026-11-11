@@ -26,5 +26,5 @@ export async function deleteOrganizationsOp(ctx: ActorContext, ids: string[]) {
 
   log.info('Organizations archived', { count: allowedIds.length, ids: allowedIds });
 
-  return { data: [], rejectedIds };
+  return { results: [], rejectedIds };
 }

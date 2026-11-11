@@ -14,7 +14,7 @@ for (const key of ['DATABASE_URL', 'DATABASE_ADMIN_URL'] as const) {
 // added before any app module loads: schemas list the federation keys when they are imported.
 const federations: Record<string, FederationConfig> = appConfig.federations;
 federations.surfconext ??= {
-  label: 'SURFconext',
+  name: 'SURFconext',
   issuer: 'https://connect.test.surfconext.nl',
   idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml',
   scopes: ['openid'],

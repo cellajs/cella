@@ -69,7 +69,7 @@ async function loadContextNames(source: NotificationSource, tx: DbOrTx, ids: str
 
 interface SubjectRef {
   tenantId: string;
-  entityType: ProductEntityType;
+  productType: ProductEntityType;
   /** The subject or context id; a ref without one is skipped. */
   id: string | null;
 }
@@ -77,8 +77,8 @@ interface SubjectRef {
 /** Display names for the refs' ids, keyed by id. */
 export async function findContextNames(refs: SubjectRef[]): Promise<Map<string, string>> {
   const names = new Map<string, string>();
-  for (const { tenantId, entityType, ids } of groupByTenantAndType(refs)) {
-    const source = getNotificationSource(entityType);
+  for (const { tenantId, productType, ids } of groupByTenantAndType(refs)) {
+    const source = getNotificationSource(productType);
     if (!source) continue;
     const found = await tenantReadById(tenantId, (tx) => loadContextNames(source, tx, ids));
     for (const [id, name] of found) names.set(id, name);
@@ -88,11 +88,11 @@ export async function findContextNames(refs: SubjectRef[]): Promise<Map<string, 
 
 /** The refs' ids per tenant and entity type: one tenant transaction and source read each. */
 export function groupByTenantAndType(refs: SubjectRef[]) {
-  const groups = new Map<string, { tenantId: string; entityType: ProductEntityType; ids: Set<string> }>();
-  for (const { tenantId, entityType, id } of refs) {
+  const groups = new Map<string, { tenantId: string; productType: ProductEntityType; ids: Set<string> }>();
+  for (const { tenantId, productType, id } of refs) {
     if (!id) continue;
-    const key = `${tenantId}:${entityType}`;
-    const group = groups.get(key) ?? { tenantId, entityType, ids: new Set<string>() };
+    const key = `${tenantId}:${productType}`;
+    const group = groups.get(key) ?? { tenantId, productType, ids: new Set<string>() };
     group.ids.add(id);
     groups.set(key, group);
   }

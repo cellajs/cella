@@ -1,0 +1,437 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "20bd4ae4-ea6b-4852-871e-41bf5f9b50ce",
+  "prevIds": [
+    "4f69ed7c-8ffb-40c9-a577-2d7155d8e0af",
+    "c69eaba7-e1e9-41b4-a7b8-c47d4f4831cb"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "activities",
+        "user_id"
+      ],
+      "writes": [
+        "s|col|public.activities.user_id",
+        "n|col|public.activities.user_id",
+        "s|col|public.activities.actor_id",
+        "n|col|public.activities.actor_id"
+      ],
+      "reads": [
+        "n|tbl|public.activities",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "issuer"
+      ],
+      "writes": [
+        "s|col|public.identities.issuer",
+        "n|col|public.identities.issuer",
+        "s|col|public.identities.provider",
+        "n|col|public.identities.provider"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "secret"
+      ],
+      "writes": [
+        "s|col|public.sessions.secret",
+        "n|col|public.sessions.secret",
+        "s|col|public.sessions.secret_hash",
+        "n|col|public.sessions.secret_hash"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "stepped_up_secret"
+      ],
+      "writes": [
+        "s|col|public.sessions.stepped_up_secret",
+        "n|col|public.sessions.stepped_up_secret",
+        "s|col|public.sessions.stepped_up_secret_hash",
+        "n|col|public.sessions.stepped_up_secret_hash"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "secret"
+      ],
+      "writes": [
+        "s|col|public.tokens.secret",
+        "n|col|public.tokens.secret",
+        "s|col|public.tokens.secret_hash",
+        "n|col|public.tokens.secret_hash"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "issuer"
+      ],
+      "writes": [
+        "s|col|public.connections.issuer",
+        "n|col|public.connections.issuer",
+        "s|col|public.connections.federation",
+        "n|col|public.connections.federation"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "display_name"
+      ],
+      "writes": [
+        "s|col|public.connections.display_name",
+        "n|col|public.connections.display_name",
+        "s|col|public.connections.name",
+        "n|col|public.connections.name"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "inactive_memberships",
+        "rejected_at"
+      ],
+      "writes": [
+        "s|col|public.inactive_memberships.rejected_at",
+        "n|col|public.inactive_memberships.rejected_at",
+        "s|col|public.inactive_memberships.declined_at",
+        "n|col|public.inactive_memberships.declined_at"
+      ],
+      "reads": [
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "mention_email"
+      ],
+      "writes": [
+        "s|col|public.notification_preferences.mention_email",
+        "n|col|public.notification_preferences.mention_email",
+        "s|col|public.notification_preferences.mention_emails",
+        "n|col|public.notification_preferences.mention_emails"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "comment_email"
+      ],
+      "writes": [
+        "s|col|public.notification_preferences.comment_email",
+        "n|col|public.notification_preferences.comment_email",
+        "s|col|public.notification_preferences.comment_emails",
+        "n|col|public.notification_preferences.comment_emails"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "entity_type"
+      ],
+      "writes": [
+        "s|col|public.notifications.entity_type",
+        "n|col|public.notifications.entity_type",
+        "s|col|public.notifications.product_type",
+        "n|col|public.notifications.product_type"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "identities",
+        "identities_kind_issuer_subject_idx"
+      ],
+      "writes": [
+        "s|idx|public.identities_kind_issuer_subject_idx",
+        "n|idx|public.identities_kind_issuer_subject_idx",
+        "n|rel|public.identities_kind_issuer_subject_idx",
+        "s|idx|public.identities_kind_provider_subject_idx",
+        "n|idx|public.identities_kind_provider_subject_idx",
+        "n|rel|public.identities_kind_provider_subject_idx"
+      ],
+      "reads": [
+        "e|tbl|public.identities",
+        "n|sch|public",
+        "e|col|public.identities.kind",
+        "e|col|public.identities.provider",
+        "e|col|public.identities.subject"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "sessions",
+        "sessions_secret_idx"
+      ],
+      "writes": [
+        "s|idx|public.sessions_secret_idx",
+        "n|idx|public.sessions_secret_idx",
+        "n|rel|public.sessions_secret_idx",
+        "s|idx|public.sessions_secret_hash_idx",
+        "n|idx|public.sessions_secret_hash_idx",
+        "n|rel|public.sessions_secret_hash_idx"
+      ],
+      "reads": [
+        "e|tbl|public.sessions",
+        "n|sch|public",
+        "e|col|public.sessions.secret_hash"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_secret_kind_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_secret_kind_idx",
+        "n|idx|public.tokens_secret_kind_idx",
+        "n|rel|public.tokens_secret_kind_idx",
+        "s|idx|public.tokens_secret_hash_kind_idx",
+        "n|idx|public.tokens_secret_hash_kind_idx",
+        "n|rel|public.tokens_secret_hash_kind_idx"
+      ],
+      "reads": [
+        "e|tbl|public.tokens",
+        "n|sch|public",
+        "e|col|public.tokens.secret_hash",
+        "e|col|public.tokens.kind"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "logo_url"
+      ],
+      "writes": [
+        "s|col|public.organizations.logo_url",
+        "n|col|public.organizations.logo_url",
+        "e|col|public.organizations.logo_url"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "restrictions"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.restrictions.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.restrictions"
+      ],
+      "sqlHash": "f0239e3a9149f834"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"activities\",\"user_id\"]",
+      "set": {
+        "name": "actor_id"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"identities\",\"issuer\"]",
+      "set": {
+        "name": "provider"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"sessions\",\"secret\"]",
+      "set": {
+        "name": "secret_hash"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"sessions\",\"stepped_up_secret\"]",
+      "set": {
+        "name": "stepped_up_secret_hash"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"tokens\",\"secret\"]",
+      "set": {
+        "name": "secret_hash"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"connections\",\"issuer\"]",
+      "set": {
+        "name": "federation"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"connections\",\"display_name\"]",
+      "set": {
+        "name": "name"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"inactive_memberships\",\"rejected_at\"]",
+      "set": {
+        "name": "declined_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"notification_preferences\",\"mention_email\"]",
+      "set": {
+        "name": "mention_emails"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"notification_preferences\",\"comment_email\"]",
+      "set": {
+        "name": "comment_emails"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"notifications\",\"entity_type\"]",
+      "set": {
+        "name": "product_type"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"identities_kind_issuer_subject_idx\"]",
+      "set": {
+        "name": "identities_kind_provider_subject_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"sessions_secret_idx\"]",
+      "set": {
+        "name": "sessions_secret_hash_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"tokens_secret_kind_idx\"]",
+      "set": {
+        "name": "tokens_secret_hash_kind_idx"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"organizations\",\"logo_url\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"restrictions\"]",
+      "set": {
+        "default": "'{\"quotas\":{\"user\":1000,\"organization\":1,\"attachment\":100,\"serviceAccount\":20,\"apiKey\":100},\"rateLimits\":{\"apiPointsPerHour\":1000,\"invitationEmailsPerDay\":250},\"allowUnregisteredClients\":true}'"
+      }
+    }
+  ]
+}

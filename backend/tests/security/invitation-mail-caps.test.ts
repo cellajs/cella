@@ -59,7 +59,7 @@ describe('Invitation mail caps', async () => {
     const restrictions = defaultRestrictions();
     await db
       .update(tenantsTable)
-      .set({ restrictions: { ...restrictions, rateLimits: { ...restrictions.rateLimits, invitationMailsPerDay: 3 } } })
+      .set({ restrictions: { ...restrictions, rateLimits: { ...restrictions.rateLimits, invitationEmailsPerDay: 3 } } })
       .where(eq(tenantsTable.id, organization.tenantId));
     const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((name) => `tenant-cap-${name}@security-test.com`);
 

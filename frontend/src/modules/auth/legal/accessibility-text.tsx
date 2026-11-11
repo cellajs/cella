@@ -39,7 +39,7 @@ export function AccessibilityText() {
   const notEvaluated = results?.notEvaluated ?? [];
   const conforms = limitations.length === 0 && notEvaluated.length === 0;
 
-  const languages = appConfig.languages.map((lang) => (
+  const languages = appConfig.languageCodes.map((lang) => (
     <span key={lang} lang={lang}>
       {t(`c:${lang}`)}
     </span>

@@ -48,13 +48,13 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
     const params = new URLSearchParams();
 
     // Only forward an explicit deep link: a default reads as explicit server-side and skips the welcome page for new users.
-    const redirectAfter = safeRedirectPath(redirect);
-    if (redirectAfter) params.set('redirectAfter', redirectAfter);
+    const redirectPath = safeRedirectPath(redirect);
+    if (redirectPath) params.set('redirectPath', redirectPath);
 
     if (tokenId && inviteOtherAccount) {
       // Another account: a plain sign-in back to the confirm step, since the invite flow requires the invited address.
       params.set('kind', 'auth');
-      params.set('redirectAfter', invitationResumePath(tokenId));
+      params.set('redirectPath', invitationResumePath(tokenId));
     } else if (tokenId) {
       params.set('tokenId', tokenId);
       params.set('kind', 'invite');

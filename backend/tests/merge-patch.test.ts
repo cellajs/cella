@@ -66,16 +66,16 @@ describe('Merge patch updates', async () => {
       return row.restrictions;
     };
 
-    expect(await patch({ quotas: { organization: 7 }, rateLimits: { invitationMailsPerDay: 3 } })).toBe(200);
+    expect(await patch({ quotas: { organization: 7 }, rateLimits: { invitationEmailsPerDay: 3 } })).toBe(200);
     expect(await patch({ quotas: { user: 9 } })).toBe(200);
     expect(await stored()).toEqual({
       ...defaults,
       quotas: { ...defaults.quotas, organization: 7, user: 9 },
-      rateLimits: { ...defaults.rateLimits, invitationMailsPerDay: 3 },
+      rateLimits: { ...defaults.rateLimits, invitationEmailsPerDay: 3 },
     });
 
     expect(await patch({ quotas: { organization: null } })).toBe(200);
     const { organization: _removed, ...quotas } = { ...defaults.quotas, user: 9 };
-    expect(await stored()).toEqual({ ...defaults, quotas, rateLimits: { ...defaults.rateLimits, invitationMailsPerDay: 3 } });
+    expect(await stored()).toEqual({ ...defaults, quotas, rateLimits: { ...defaults.rateLimits, invitationEmailsPerDay: 3 } });
   });
 });

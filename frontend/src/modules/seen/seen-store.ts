@@ -88,7 +88,7 @@ export const seenStore = createStore<SeenStoreState>()(
             const { tenantId, organizationId, productType } = batch;
             try {
               const productIds = [...batch.productIds];
-              await markSeen({ path: { tenantId, organizationId }, body: { entityIds: productIds, entityType: productType } });
+              await markSeen({ path: { tenantId, organizationId }, body: { productIds, productType } });
 
               const flushedIds = new Set(get().flushedIds);
               for (const id of productIds) flushedIds.add(id);
@@ -148,7 +148,7 @@ export function isSeenLocally(entityId: string): boolean {
 export function setupSeenBeaconFlush() {
   const handler = () => {
     for (const batch of pending.values()) {
-      const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType } satisfies MarkSeenData['body']);
+      const body = JSON.stringify({ productIds: [...batch.productIds], productType: batch.productType } satisfies MarkSeenData['body']);
       navigator.sendBeacon(
         `/api/tenants/${batch.tenantId}/organizations/${batch.organizationId}:mark-seen`,
         new Blob([body], { type: 'application/json' }),

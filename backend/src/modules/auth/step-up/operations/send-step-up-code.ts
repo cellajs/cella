@@ -25,7 +25,7 @@ export const sendStepUpCodeOp = async (ctx: Context<Env>) => {
 
   const statics = { code, name: user.name };
   mailer
-    .sendEmails(stepUpEmail, statics, [{ email: user.email, lng: user.languageCode ?? appConfig.defaultLanguage }])
+    .sendEmails(stepUpEmail, statics, [{ email: user.email, lng: user.languageCode ?? appConfig.defaultLanguageCode }])
     .catch((err) => log.error('Failed to send step-up email', { err }));
 
   if (appConfig.mode === 'development') console.info(`[step-up] ${user.email} ${code}`);

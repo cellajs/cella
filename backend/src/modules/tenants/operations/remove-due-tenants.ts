@@ -65,7 +65,7 @@ export async function removeDueTenants(): Promise<number> {
       const archivedAt = tenant.status === 'archived' ? tenant.statusChangedAt : (tenant.expiresAt ?? due.now);
       const statics = { tenantId: tenant.id, tenantName: tenant.name, archivedAt, removedAt: getIsoDate(), counts };
       await mailer
-        .sendEmails(tenantRemovedEmail, statics, [{ email: appConfig.company.email, lng: appConfig.defaultLanguage }])
+        .sendEmails(tenantRemovedEmail, statics, [{ email: appConfig.company.email, lng: appConfig.defaultLanguageCode }])
         .catch((err) => log.error('Failed to mail the removal of a tenant', { tenantId: tenant.id, err }));
     } catch (error) {
       failed.push(tenant.id);

@@ -13,8 +13,8 @@ import { defaultHook } from '#/utils/default-hook';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
-  const { email, redirect } = ctx.req.valid('json');
-  await sendMagicLinkOp(ctx, { email, redirect });
+  const { email, redirectPath } = ctx.req.valid('json');
+  await sendMagicLinkOp(ctx, { email, redirectPath });
   return ctx.body(null, 204);
 });
 

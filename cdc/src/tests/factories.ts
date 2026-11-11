@@ -43,7 +43,7 @@ export function mockCdcActivity(overrides: Partial<CdcActivity> = {}): CdcActivi
       tableName: defaultTable,
       type: `${defaultEntity}.created` as CdcActivity['type'],
       tenantId: 'tenant-1',
-      userId: 'user-1',
+      actorId: 'user-1',
       organizationId: 'org-1',
       changedFields: null,
       stx: null,

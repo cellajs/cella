@@ -53,10 +53,10 @@ export const handleOAuthCallback = async (
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
 ): Promise<Response> => {
-  const { kind, redirectAfter } = oauthPayload;
+  const { kind, redirectPath } = oauthPayload;
 
   // The provider's subject is the identity; the asserted address is a snapshot that may have changed since linking.
-  const identity = await findIdentityBySubject(dbCtx, { issuer: provider, subject: providerUser.id });
+  const identity = await findIdentityBySubject(dbCtx, { provider, subject: providerUser.id });
 
   const baseCallbackProps = { providerUser, provider, identity };
 
@@ -77,7 +77,7 @@ export const handleOAuthCallback = async (
       break;
   }
 
-  return processCallbackResult({ ctx, redirectAfter, provider, ...result });
+  return processCallbackResult({ ctx, redirectPath, provider, ...result });
 };
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
@@ -119,7 +119,7 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
 /** No account until the provider's address is proven: the sign-up waits on its verification mail. */
 const pendingSignUp = (providerUser: TransformedUser, provider: EnabledOAuthProvider): OAuthFlowResult => {
   const { name, slug, givenName, familyName } = providerUser;
-  const signUp = { issuer: provider, subject: providerUser.id, name, slug, givenName, familyName: familyName || undefined };
+  const signUp = { provider, subject: providerUser.id, name, slug, givenName, familyName: familyName || undefined };
   return { type: 'pending', signUp, email: providerUser.email };
 };
 
@@ -156,7 +156,7 @@ const connectCallbackFlow = async ({
   }
 
   const newIdentity = await insertIdentity(dbCtx, {
-    values: { userId: user.id, issuer: provider, subject: providerUser.id, email: providerUser.email },
+    values: { userId: user.id, provider, subject: providerUser.id, email: providerUser.email },
   });
   sendAccountSecurityEmail(user, 'provider-connected', { provider: strategyLabels[provider] });
   return { type: 'unverified', identity: newIdentity };
@@ -194,7 +194,7 @@ const inviteCallbackFlow = async ({
   const created = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const user = await createAccount(txCtx, { newUser: providerUser, via: provider });
-    const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
+    const values = { userId: user.id, provider, subject: providerUser.id, email };
     const identity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity };
   });
@@ -224,7 +224,7 @@ const verifyCallbackFlow = async ({
 
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
-  if (verifyToken.email !== providerUser.email || verifyToken.identityId !== identity.id || identity.issuer !== provider) {
+  if (verifyToken.email !== providerUser.email || verifyToken.identityId !== identity.id || identity.provider !== provider) {
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
@@ -274,7 +274,7 @@ const completeSignUp = async ({
   identity: IdentityModel | null;
 }): Promise<OAuthFlowResult> => {
   const { email } = verifyToken;
-  if (signUp.issuer !== provider || signUp.subject !== providerUser.id || email !== providerUser.email) {
+  if (signUp.provider !== provider || signUp.subject !== providerUser.id || email !== providerUser.email) {
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
@@ -293,7 +293,7 @@ const completeSignUp = async ({
 
     const { name, slug, givenName, familyName } = signUp;
     const user = await createAccount(txCtx, { newUser: { email, name, slug, givenName, familyName }, via: provider });
-    const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
+    const values = { userId: user.id, provider, subject: signUp.subject, email };
     const identity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity };
   });
@@ -333,19 +333,19 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
  * Unverified identities and pending sign-ups get a verification email and are sent to the email-verification page.
  */
-const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
-  const { ctx, provider, redirectAfter } = info;
+const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectPath?: string }) => {
+  const { ctx, provider, redirectPath } = info;
 
-  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectAfter);
+  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectPath);
 
   // Stored on the verification token; null means "use the default path" at the final hop.
-  const redirectAfterPath = frontendRedirectPath(redirectAfter);
+  const tokenRedirectPath = frontendRedirectPath(redirectPath);
 
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   if (info.type === 'pending') {
-    await sendOAuthVerificationEmail({ signUp: info.signUp, email: info.email, redirectPath: redirectAfterPath });
+    await sendOAuthVerificationEmail({ signUp: info.signUp, email: info.email, redirectPath: tokenRedirectPath });
   } else {
-    await sendOAuthVerificationEmail({ userId: info.identity.userId, identityId: info.identity.id, redirectPath: redirectAfterPath });
+    await sendOAuthVerificationEmail({ userId: info.identity.userId, identityId: info.identity.id, redirectPath: tokenRedirectPath });
   }
 
   const reason = info.type === 'pending' ? 'signup' : 'connect';

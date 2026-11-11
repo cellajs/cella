@@ -24,7 +24,7 @@ export function useUppyUpload() {
     const { templateId, organizationId, restrictions, plugins = [], onComplete } = uploadData;
 
     const isOnline = onlineManager.isOnline();
-    const isUploadFullyEnabled = appConfig.has.uploadEnabled && isOnline;
+    const isUploadFullyEnabled = appConfig.has.uploads && isOnline;
 
     const allowedFileTypes = isOnline ? (restrictions?.allowedFileTypes ?? defaultRestrictions.allowedFileTypes) : ['image/*'];
 

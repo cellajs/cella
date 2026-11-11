@@ -22,7 +22,7 @@ vi.mock('shared', async (importOriginal) => {
       channelEntityTypes: hierarchy.channelTypes,
       entityIdColumnKeys: hierarchy.idColumnKeys,
       seenTrackedProductTypes: [],
-      productEmbeddings: [{ embeddedProduct: 'label', hostProduct: 'attachment', hostColumn: 'labels' }],
+      productEmbeddings: [{ embeddedProductType: 'label', hostProductType: 'attachment', hostColumn: 'labels' }],
       retention: { activityDays: 90 },
     },
     hierarchy,
@@ -101,7 +101,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 /** Views-contract response with one org view answer for attachment. */
 const okViewResponse = (frontier: number): CatchUpMyStreamResponse => ({
   organizations: {},
-  views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'ok', frontier }],
+  views: [{ organizationId: 'org-1', productType: 'attachment', status: 'ok', frontier }],
   generation: 1,
 });
 
@@ -195,7 +195,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processStreamCatchup({
       organizations: {},
-      views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }],
+      views: [{ organizationId: 'org-1', productType: 'attachment', status: 'opaque' }],
       generation: 1,
     });
 
@@ -221,8 +221,8 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(labelKeys.detail.byId('label-1'), { id: 'label-1', name: 'old' });
 
     await processStreamCatchup({
-      organizations: { 'org-1': { propagation: [{ embeddedProduct: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
-      views: [{ organizationId: 'org-1', entityType: label, status: 'opaque' }],
+      organizations: { 'org-1': { propagation: [{ embeddedProductType: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
+      views: [{ organizationId: 'org-1', productType: label, status: 'opaque' }],
       generation: 1,
     });
 
@@ -342,7 +342,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
-    const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
+    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
     await processStreamCatchup(response);
 
@@ -368,7 +368,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
-    const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
+    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
     await processStreamCatchup(response);
 

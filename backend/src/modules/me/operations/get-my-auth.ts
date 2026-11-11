@@ -22,7 +22,7 @@ const isEnabledProvider = (provider: string): provider is EnabledOAuthProvider =
 
 /**
  * The user's sessions, newest first and without their secret: the live and expired ones and those revoked within
- * {@link revokedSessionWindow}, each flagged with `isCurrent` and `isNewDevice`. A device is new when it was first seen
+ * {@link revokedSessionWindow}, each flagged with `current` and `newDevice`. A device is new when it was first seen
  * within {@link newDeviceWindow} and the user has an older device, so an account's first browser never counts.
  */
 const readSessions = async (ctx: UserContext) => {
@@ -38,8 +38,8 @@ const readSessions = async (ctx: UserContext) => {
 
   return sessions.map((session) => ({
     ...session,
-    isCurrent: session.id === ctx.var.session.id,
-    isNewDevice: session.deviceIdHash !== null && newDeviceHashes.has(session.deviceIdHash),
+    current: session.id === ctx.var.session.id,
+    newDevice: session.deviceIdHash !== null && newDeviceHashes.has(session.deviceIdHash),
   }));
 };
 
@@ -76,9 +76,9 @@ export async function getMyAuthOp(ctx: UserContext) {
     return identity ? { email: identity.email, createdAt: identity.createdAt, lastUsedAt: identity.lastUsedAt } : null;
   };
   const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants(ctx, { tenantIds }) : [];
-  const institutions = connections.flatMap(({ id, displayName, issuer }) =>
-    isFederationKey(issuer) && isFederationConfigured(issuer)
-      ? [{ connectionId: id, displayName, federation: { key: issuer, label: appConfig.federations[issuer].label }, identity: identityAt(id) }]
+  const institutions = connections.flatMap(({ id, name, federation }) =>
+    isFederationKey(federation) && isFederationConfigured(federation)
+      ? [{ connectionId: id, name, federation: { key: federation, name: appConfig.federations[federation].name }, identity: identityAt(id) }]
       : [],
   );
 

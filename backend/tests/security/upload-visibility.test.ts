@@ -83,8 +83,8 @@ describe('Upload visibility', async () => {
     expect(full.status).toBe(403);
     expect(full.body.type).toBe('restrict_by_app');
 
-    // The quota binds attachments alone: an avatar still uploads.
-    expect((await token('avatar')).status).toBe(200);
+    // The quota binds attachments alone: a thumbnail still uploads.
+    expect((await token('thumbnail')).status).toBe(200);
   });
 
   it('must not store a public file via choosing the public bucket for an attachment', async () => {
@@ -92,16 +92,16 @@ describe('Upload visibility', async () => {
 
     expect(status).toBe(200);
     expect(body.publicBucket).toBe(false);
-    expect(body.params?.steps.exported).toMatchObject({ acl: 'private', credentials: appConfig.s3.privateBucket });
+    expect(body.params?.steps.exported).toMatchObject({ acl: 'private', credentials: appConfig.s3.privateBucketName });
   });
 
-  it('stores avatars and covers public, whatever the client asks (positive control)', async () => {
-    for (const templateId of ['avatar', 'cover']) {
+  it('stores thumbnails and banners public, whatever the client asks (positive control)', async () => {
+    for (const templateId of ['thumbnail', 'banner']) {
       const { status, body } = await requestToken({ templateId, publicBucket: 'false' });
 
       expect(status, templateId).toBe(200);
       expect(body.publicBucket, templateId).toBe(true);
-      expect(body.params?.steps.exported, templateId).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucket });
+      expect(body.params?.steps.exported, templateId).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucketName });
     }
   });
 
@@ -151,7 +151,7 @@ describe('Upload visibility', async () => {
         expect(body.sub).toBe(`system/${admin.id}`);
 
         const steps = body.params?.steps ?? {};
-        expect(steps.exported).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucket });
+        expect(steps.exported).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucketName });
         expect(steps.exported?.path?.startsWith(`/system/${admin.id}/`)).toBe(true);
         // Every stored file is an image the pipeline re-encoded, never the upload as sent.
         const stored = [steps.exported?.use ?? []].flat();

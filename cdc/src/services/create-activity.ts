@@ -59,7 +59,7 @@ export function createActivity(
   return {
     tenantId,
     // The actor: whoever last touched the row. `revokedBy` is the api_keys update column.
-    userId:
+    actorId:
       getStringValue(row, 'updatedBy') ??
       getStringValue(row, 'revokedBy') ??
       getStringValue(row, 'createdBy') ??
