@@ -88,6 +88,13 @@ function createTabIndicator() {
       tab.scrollIntoView({ behavior: revealed ? 'smooth' : 'instant', inline: revealed ? 'center' : 'nearest', block: 'nearest' });
       revealed = true;
     },
+    // Scrolls the row alone: scrollIntoView on a tab of a sticky bar can also move the page
+    center: (animate: boolean) => {
+      const tab = shown.at(-1)?.parentElement;
+      const row = bar?.parentElement?.parentElement;
+      if (!tab || !row) return;
+      row.scrollTo({ left: tab.offsetLeft + tab.offsetWidth / 2 - row.clientWidth / 2, behavior: animate ? 'smooth' : 'instant' });
+    },
   };
 }
 

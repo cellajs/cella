@@ -199,10 +199,24 @@ interface PageTabNavProps extends ResolvePlacementOptions {
   avatar?: TabNavAvatar;
   /** Marks the first tab active as well, for a location that matches none of the tabs. */
   fallbackToFirst?: boolean;
+  /** The active tab, in place of the links' own match. A link never matches a search holding a list: the URL reads it back as text. */
+  activeId?: string;
+  /** While set, each change puts the active tab in the middle of the row, such as a search that narrows the page to it. */
+  centerKey?: string;
   className?: string;
 }
 
-export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, fallbackToFirst, className, ...placementOptions }: PageTabNavProps) {
+export function PageTabNav({
+  tabs: explicitTabs,
+  parentRouteId,
+  title,
+  avatar,
+  fallbackToFirst,
+  activeId,
+  centerKey,
+  className,
+  ...placementOptions
+}: PageTabNavProps) {
   const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
 
@@ -218,6 +232,14 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
     if (!isMobile && hasStarted && getHasNavigated()) firstTabRef.current?.focus();
   }, [hasStarted]);
 
+  // The active tab has revealed itself by now, as child effects run first. On mount the row jumps, as a reveal does.
+  const hasCenteredRef = useRef(false);
+  useEffect(() => {
+    if (centerKey === undefined) return;
+    indicator.center(hasCenteredRef.current);
+    hasCenteredRef.current = true;
+  }, [centerKey, indicator]);
+
   const scrollToResetOnNavigate = useScrollResetOnNavigate();
 
   // The menu lists these tabs; the redirect above still keeps the page off a disabled tab
@@ -226,34 +248,35 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
 
   return (
     <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
-      {tabs.map(({ id, path, icon, search = {}, params = true, activeOptions = { exact: true, includeSearch: false }, ...caption }, index) => (
-        <Link
-          key={id}
-          id={`tab-${id}`}
-          ref={index === 0 ? firstTabRef : undefined}
-          resetScroll={false}
-          className={tabNavItemClass}
-          to={path}
-          draggable={false}
-          data-active={fallbackToFirst && index === 0 ? true : undefined}
-          params={params}
-          search={search}
-          activeOptions={activeOptions}
-          activeProps={{ 'data-active': true }}
-          onClick={scrollToResetOnNavigate}
-        >
-          {({ isActive }) => {
-            const showAsActive = isActive || (fallbackToFirst && index === 0);
+      {tabs.map(({ id, path, icon, search = {}, params = true, activeOptions = { exact: true, includeSearch: false }, ...caption }, index) => {
+        const isMarked = activeId === undefined ? fallbackToFirst && index === 0 : activeId === id;
 
-            return (
+        return (
+          <Link
+            key={id}
+            id={`tab-${id}`}
+            ref={index === 0 ? firstTabRef : undefined}
+            resetScroll={false}
+            className={tabNavItemClass}
+            to={path}
+            draggable={false}
+            data-active={isMarked || undefined}
+            aria-current={isMarked ? 'page' : undefined}
+            params={params}
+            search={search}
+            activeOptions={activeOptions}
+            activeProps={activeId === undefined ? { 'data-active': true } : {}}
+            onClick={scrollToResetOnNavigate}
+          >
+            {({ isActive }) => (
               <>
                 <TabNavLabel {...caption} icon={icon} />
-                {showAsActive && <ActiveTabMarker indicator={indicator} />}
+                {(activeId === undefined ? isActive || isMarked : isMarked) && <ActiveTabMarker indicator={indicator} />}
               </>
-            );
-          }}
-        </Link>
-      ))}
+            )}
+          </Link>
+        );
+      })}
     </TabNavShell>
   );
 }
