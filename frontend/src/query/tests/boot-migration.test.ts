@@ -40,7 +40,7 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { persister } = await import('~/query/persister');
-const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
+const { bindLocalUserDb, getLocalUserDb, sweepLocalUserDbs } = await import('~/query/local-user-db');
 const { isBundleStale, resetBundleStale } = await import('~/query/schema-version-guard');
 const { migrateCachedEntity } = await import('shared/schema-evolution');
 
@@ -90,7 +90,7 @@ describe('persister lens boot migration', () => {
   });
 
   afterEach(async () => {
-    await deleteLocalUserDb();
+    await sweepLocalUserDbs(() => []);
   });
 
   it('migrates cached rows + queued mutations and advances the pointer', async () => {

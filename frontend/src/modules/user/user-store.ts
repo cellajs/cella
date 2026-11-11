@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import type { Me, User } from 'sdk';
 import { appConfig } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -10,6 +11,21 @@ import { uiStore } from '~/modules/ui/ui-store';
 
 /** The `localStorage` key the store persists to, which every tab of the browser shares. */
 export const userStorageKey = `${appConfig.slug}-user`;
+
+/**
+ * Who a persisted value of the store names, each `null` when absent or unreadable. The default is what `localStorage`
+ * holds now: another tab may have written it since this tab's memory last changed.
+ */
+export function storedUserIds(value?: string | null): { userId: string | null; lastUserId: string | null } {
+  const idOf = (entry: unknown) => (isRecord(entry) && typeof entry.id === 'string' ? entry.id : null);
+  try {
+    const stored: unknown = JSON.parse((value === undefined ? localStorage.getItem(userStorageKey) : value) ?? 'null');
+    const state = isRecord(stored) && isRecord(stored.state) ? stored.state : {};
+    return { userId: idOf(state.user), lastUserId: idOf(state.lastUser) };
+  } catch {
+    return { userId: null, lastUserId: null };
+  }
+}
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
 const mirrorLanguage = (language?: User['languageCode']) => {

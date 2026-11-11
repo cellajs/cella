@@ -106,17 +106,20 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 The database follows authentication, not routes:
 
 - **Sign-in** binds it.
-- **Sign-out** deletes it, after asking when it holds edits no server has.
+- **Sign-out** ends the session on the server, then deletes it, after asking when it holds edits no server has.
 - **A lost session** only closes it, so offline work survives signing back in.
+- **A load** deletes the database of every user but the signed-in one and the last one.
 
-Signing out in one tab signs out every tab of that user. A tab whose signed-in user changes in another tab reloads before it resumes queued writes. Those writes stay on disk for their user's next session.
+Only the server's answer decides a sign-out. A step on the device that does not answer in time is skipped, and a database another tab still holds open is deleted at the next load.
+
+Signing out in one tab signs out every tab of that user. A tab whose signed-in user changes in another tab reloads before it resumes queued writes. Those writes stay on disk for their user's next session, until another user signs in on this browser.
 
 ## Cold start to live
 
 Boot order, cached data first:
 
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
-2. The app route waits until the per-user database is bound and its stores hydrated.
+2. The app route waits until the per-user database is bound and its stores hydrated. A database that does not answer in time is closed: the tab runs online without it until its next load.
 3. The persister restores the cache scope.
 4. The app reads the memberships, so the first catchup declares every organization.
 5. One tab is elected leader. It performs catchup and owns the live connection.

@@ -1,4 +1,5 @@
 import type { ConfigMode } from 'shared';
+import { settleWithin } from '~/utils/wait-for';
 
 type PageLocation = Pick<Location, 'origin' | 'hostname' | 'pathname' | 'search' | 'hash'>;
 
@@ -30,6 +31,6 @@ export const leaveForCanonicalOrigin = async (url: string, timeoutMs = 2000): Pr
     await Promise.all(names.map((name) => caches.delete(name)));
   };
 
-  await Promise.race([cleanup().catch(() => {}), new Promise((resolve) => setTimeout(resolve, timeoutMs))]);
+  await settleWithin(timeoutMs, cleanup());
   window.location.replace(url);
 };

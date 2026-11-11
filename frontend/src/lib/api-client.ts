@@ -24,6 +24,12 @@ const failedResponseError = async (response: Response) => {
 /** A request without a response by then starts the connectivity probe, or fails when offline: a link that drops packets leaves requests waiting. */
 const responseWaitMs = 8000;
 
+/**
+ * A read without a response by then fails as unreachable, whatever the probe found: the API answers while this request's
+ * own connection does not. A write keeps waiting: its upload is part of the wait, and one cut off may have been applied.
+ */
+const readLimitMs = 30_000;
+
 /** One abort per request still waiting for its response. */
 const waitingRequests = new Set<AbortController>();
 
@@ -41,6 +47,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   request.headers.set('x-client-version', String(currentSchemaVersion));
   const unreachable = new AbortController();
   const slowResponse = setTimeout(() => (onlineManager.isOnline() ? void reportNetworkFailure() : abortUnreachable(unreachable)), responseWaitMs);
+  const noResponse = ['GET', 'HEAD'].includes(request.method) ? setTimeout(() => abortUnreachable(unreachable), readLimitMs) : undefined;
   waitingRequests.add(unreachable);
   let response: Response;
 
@@ -52,6 +59,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
     throw error;
   } finally {
     clearTimeout(slowResponse);
+    clearTimeout(noResponse);
     waitingRequests.delete(unreachable);
   }
   // A gateway answering for an absent API proves nothing, as the probe also reads it.

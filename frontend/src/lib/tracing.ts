@@ -2,6 +2,7 @@ import { type Span, SpanStatusCode } from '@opentelemetry/api';
 import type { CleanSpanAttributes, SpanData, TraceContext } from 'shared/tracing';
 import { isDebugMode } from '~/env';
 import { spanStore, tracer } from '~/lib/otel';
+import { settleWithin } from '~/utils/wait-for';
 
 export type { SpanData };
 
@@ -75,6 +76,26 @@ export const reportCriticalError = (name: string, error: unknown, attributes: Cl
   applyAttributes(span, attributes);
   failSpan(span, error);
   span.end();
+};
+
+/** Logs a step that did not answer in time and records it as an error span naming the step. */
+export const reportUnanswered = (step: string, ms: number): void => {
+  console.warn(`[${step}] No answer within ${ms} ms`);
+  reportCriticalError('unanswered', new Error(`${step} did not answer within ${ms} ms`), { step });
+};
+
+/** Waits for a step at most `ms` and never rejects: resolves whether it succeeded by then. A failure is logged, a wait that ran out reported. */
+export const settleOrReport = async (step: string, ms: number, promise: Promise<unknown>): Promise<boolean> => {
+  const succeeded = promise.then(
+    () => true,
+    (error) => {
+      console.error(`[${step}]`, error);
+      return false;
+    },
+  );
+  if (await settleWithin(ms, succeeded)) return succeeded;
+  reportUnanswered(step, ms);
+  return false;
 };
 
 if (isDebugMode) console.debug('[tracing] Frontend OTel tracing initialized');

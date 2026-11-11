@@ -50,6 +50,8 @@ export function AccountSheet() {
   const { hasStarted } = useMountedState();
 
   useEffect(() => {
+    // Signing out from here shows its page at once, on a slow connection too
+    void router.preloadRoute({ to: '/auth/sign-out' }).catch(() => {});
     if (isMobile) return;
     const firstRow = frameRef.current?.querySelector<HTMLElement>('#btn-profile');
     firstRow?.focus();

@@ -39,8 +39,10 @@ export function idbKvStorage(key: string): StateStorage {
     getItem: async () => {
       // A write still in the debounce window is newer than the disk.
       if (pending) return pending.value;
-      const row = await getLocalUserDb()?.kv.get(key);
-      return row?.value ?? null;
+      const db = getLocalUserDb();
+      const row = await db?.kv.get(key);
+      // Unbound or rebound while the read ran: the row is not this binding's.
+      return getLocalUserDb() === db ? (row?.value ?? null) : null;
     },
     setItem: (_name, value) => {
       const db = getLocalUserDb();

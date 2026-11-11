@@ -78,8 +78,13 @@ export interface UnsaveableYDocRecord extends YjsDocScope {
   at: number;
 }
 
+/** A user's database name; with no id, the prefix every per-user database of this app shares. */
+const dbName = (userId: string) => `${appConfig.slug}:${userId}`;
+
 let currentDb: LocalUserDatabase | null = null;
 let localUserId: string | null = null;
+/** The databases this tab bound: one whose first open is still under way is in no listing yet. */
+const boundNames = new Set<string>();
 
 /** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
 export const deletedElsewhereListeners = new Set<() => void>();
@@ -116,7 +121,7 @@ export class LocalUserDatabase extends Dexie {
   unsaveableYDocs!: Dexie.Table<UnsaveableYDocRecord, number>;
 
   constructor(userId: string) {
-    super(`${appConfig.slug}:${userId}`);
+    super(dbName(userId));
     // An older database upgrades in place: Dexie adds the missing tables and indexes, drops the undeclared ones and keeps every other row.
     this.version(3)
       .stores({
@@ -162,6 +167,7 @@ export function bindLocalUserDb(userId: string): LocalUserDatabase {
   if (currentDb) closeLocalUserDb();
   currentDb = new LocalUserDatabase(userId);
   localUserId = userId;
+  boundNames.add(currentDb.name);
   return currentDb;
 }
 
@@ -172,13 +178,15 @@ export function closeLocalUserDb(): void {
   localUserId = null;
 }
 
-/** Close the current per-user DB and delete it from disk: a hard sign-out. */
-export async function deleteLocalUserDb(): Promise<void> {
-  if (localUserId) await deleteLocalUserDbOf(localUserId);
-}
-
-/** Deletes a user's database by id, closing it first when it is the bound one: for an account the page forgets before it binds it. */
-export async function deleteLocalUserDbOf(userId: string): Promise<void> {
-  if (localUserId === userId) closeLocalUserDb();
-  await Dexie.delete(`${appConfig.slug}:${userId}`);
+/**
+ * Deletes every per-user database of this app but those of the users `keep` names, closing the bound one first when it
+ * goes. `keep` is read once the listing answered, in the tick of the deletes: a sign-in in another tab stores its user
+ * before it opens their database, which is then kept.
+ */
+export async function sweepLocalUserDbs(keep: () => (string | null)[]): Promise<void> {
+  const listed = (await indexedDB.databases()).flatMap(({ name }) => (name?.startsWith(dbName('')) ? [name] : []));
+  const kept = new Set(keep().flatMap((userId) => (userId ? [dbName(userId)] : [])));
+  if (localUserId && !kept.has(dbName(localUserId))) closeLocalUserDb();
+  const gone = [...new Set([...listed, ...boundNames])].filter((name) => !kept.has(name));
+  await Promise.all(gone.map((name) => Dexie.delete(name)));
 }

@@ -1,15 +1,17 @@
 import 'fake-indexeddb/auto';
-import '~/query/tests/query-client-env';
 import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
+
+stubLocalStorage();
 
 const { queryClient } = await import('~/query/query-client');
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { userStore } = await import('~/modules/user/user-store');
-const { isTearingDown, teardownUserState } = await import('~/utils/teardown-user-state');
+const { isTearingDown, sweepForgottenUserDbs, teardownUserState } = await import('~/utils/teardown-user-state');
 const { createYDocWriter } = await import('~/modules/common/blocknote/yjs-store');
 
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
@@ -89,6 +91,20 @@ describe('teardownUserState', () => {
     expect(atLeave).toEqual({ user, lastUser: wipe ? null : user, queries: 0, tearingDown: true });
     expect(userStore.getState().user).toBeNull();
     expect(isTearingDown()).toBe(false);
+  });
+
+  it('must leave no database of a user this browser has forgotten: the signed-in and the last user keep theirs', async () => {
+    const keep = { id: 'user-a', email: 'a@example.test' };
+    userStore.setState({ user: null, lastUser: keep });
+    for (const owner of ['user-a', 'user-b']) {
+      await bindLocalUserDb(owner).kv.put({ key: 'k', value: 'v' });
+      closeLocalUserDb();
+    }
+
+    await sweepForgottenUserDbs();
+
+    expect(await Dexie.exists(dbName('user-a'))).toBe(true);
+    expect(await Dexie.exists(dbName('user-b'))).toBe(false);
   });
 
   it("must not lose a collaborative edit still queued at a lost session: it is stored first, unsynced, for the user's next one", async () => {
