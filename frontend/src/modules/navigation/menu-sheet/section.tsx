@@ -34,11 +34,12 @@ export type MenuSectionOptions = {
   rowMark?: (item: UserMenuItem) => { icon: IconComponent; label: TKey } | undefined;
 };
 
-// The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them
+// The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them to the
+// icon button's size-10. Their focus ring sits inside, as the clip would cut one outside.
 const widenClass = tw(
-  'grid shrink-0 grid-cols-[0fr] opacity-0 transition-[grid-template-columns,margin-left,opacity] duration-200 ease-out *:min-w-0 *:overflow-hidden motion-reduce:transition-opacity',
+  'flex w-0 shrink-0 overflow-hidden opacity-0 transition-[width,margin-left,opacity] duration-200 ease-out motion-reduce:transition-opacity',
 );
-const widenOpenClass = tw('ml-2 grid-cols-[1fr] opacity-100');
+const widenOpenClass = tw('ml-2 w-10 opacity-100');
 
 interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;
@@ -100,7 +101,7 @@ function MenuSheetSectionButton({
 
       <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:hidden')}>
         <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
-          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" onClick={onToggleEditing}>
+          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className="focus-inset" onClick={onToggleEditing}>
             <Settings2Icon className="size-5" />
           </Button>
         </TooltipButton>
@@ -108,7 +109,7 @@ function MenuSheetSectionButton({
       {onCreate && (
         <div inert={!isSectionVisible} className={cn(widenClass, isSectionVisible && widenOpenClass)}>
           <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-            <Button ref={createButtonRef} variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
+            <Button ref={createButtonRef} variant="ghost" size="icon" className="focus-inset" onClick={() => onCreate(createButtonRef)}>
               <PlusIcon className="size-5" />
             </Button>
           </TooltipButton>
