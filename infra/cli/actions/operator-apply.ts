@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
+import { rerunReleaseCheck } from '../../lib/deploy/release-gate';
 import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { describeKey } from '../../lib/scaleway/operator-identity';
@@ -305,6 +306,8 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     if (completed && opts.afterUp) {
       await opts.afterUp(env).catch((error) => console.warn(`${warningMark} ${errorMessage(error)}`));
     }
+    // Last, as it may wait minutes for the release PR's CI run to end.
+    if (completed && opts.engine) await rerunReleaseCheck();
   } finally {
   }
 
