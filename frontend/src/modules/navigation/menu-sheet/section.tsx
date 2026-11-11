@@ -70,8 +70,17 @@ function MenuSheetSectionButton({
   const { t } = useTranslation();
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
-  // Cumulative over the section's non-hidden, non-muted items.
+  // Cumulative over the section's non-hidden, non-muted items and their subitems.
   const sectionUnseenCount = useUnseenCount(channelIds);
+  // The rows the section lists: neither hidden nor archived, subitems left out
+  const activeCount = items.filter((item) => menuGroup(item) === 'active').length;
+  const foldedLabel = activeCount
+    ? t(sectionUnseenCount ? 'c:menu_section_count_unseen' : 'c:menu_section_count', {
+        resource: t(options.label),
+        total: activeCount,
+        count: sectionUnseenCount,
+      })
+    : undefined;
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -80,27 +89,20 @@ function MenuSheetSectionButton({
       {isCollapsible ? (
         <Button
           onClick={() => setSectionOpen(options.entityType, !isSectionVisible)}
-          className="group-label min-w-0 flex-1 justify-between"
+          aria-expanded={isSectionVisible}
+          aria-label={isSectionVisible ? undefined : foldedLabel}
+          // Open, it keeps its resting look; its ring sits inside, as the next sticky header covers one outside
+          className="group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 aria-expanded:bg-transparent"
           variant="ghost"
         >
-          <div className="flex items-center">
-            <span className="mr-1 flex items-center">{t(options.label)}</span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="text-faint-foreground inline-block px-2 py-1 font-normal group-data-[visible=true]/menu-section:hidden"
-            >
-              {sectionUnseenCount > 0 ? (
-                <CountBadge count={sectionUnseenCount} className="inline-flex" />
-              ) : (
-                items.filter((item) => menuGroup(item) === 'active').length
-              )}
-            </motion.span>
-          </div>
-
-          <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
+          <span className="flex min-w-0 grow items-center gap-2">
+            <span className="truncate">{t(options.label)}</span>
+            {activeCount > 0 && (
+              <span className="text-faint-foreground font-normal group-data-[visible=true]/menu-section:hidden">{activeCount}</span>
+            )}
+          </span>
+          {sectionUnseenCount > 0 && <CountBadge count={sectionUnseenCount} className="shrink-0 group-data-[visible=true]/menu-section:hidden" />}
+          <ChevronDownIcon className="shrink-0 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
         </Button>
       ) : (
         // Matches the toggle's text box, so the label sits where a collapsible section shows it

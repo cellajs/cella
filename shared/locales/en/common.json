@@ -510,6 +510,8 @@
   "membership": "Membership",
   "menu": "Menu",
   "menu_order": "Menu order",
+  "menu_section_count": "{{resource}}, {{total, number}}",
+  "menu_section_count_unseen": "{{resource}}, {{total, number}}, {{count, number}} new",
   "message": "Message",
   "method": "Method",
   "metrics": "Metrics",
