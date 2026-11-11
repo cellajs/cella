@@ -24,6 +24,10 @@ export const tokenWithDataSchema = z.object({
   invitation: z
     .object({
       entityType: z.enum(appConfig.channelEntityTypes),
+      /** Where the channel is, so an accept opens it through the notification link. */
+      tenantId: z.string(),
+      organizationId: z.string(),
+      channelId: z.string(),
       entityName: z.string(),
       /** The organization of a channel below it; absent for an organization. */
       organizationName: z.string().optional(),

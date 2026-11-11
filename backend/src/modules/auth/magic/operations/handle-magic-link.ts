@@ -1,4 +1,5 @@
 import type { Context } from 'hono';
+import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -28,7 +29,8 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, fol
   if (!verified) log.error('Magic link address is not on the account', { userId: user.id });
 
   const asked = token.followedInvitationId ? { inactiveMembershipId: token.followedInvitationId, email: token.email } : null;
-  await acceptFollowedInvitation(user, { provenEmail: token.email, followed: followed ?? asked });
+  const joined = await acceptFollowedInvitation(user, { provenEmail: token.email, followed: followed ?? asked });
 
-  return finishSignIn(ctx, user, 'magic', token.redirectPath);
+  // A link requested with a path keeps it; a sign-in that joined a channel lands there
+  return finishSignIn(ctx, user, 'magic', token.redirectPath ?? (joined && buildNotificationPath(joined)));
 };

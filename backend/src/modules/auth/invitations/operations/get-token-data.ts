@@ -42,6 +42,9 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     if (entity) {
       tokenData.invitation = {
         entityType: channelType,
+        tenantId: inactiveMembership.tenantId,
+        organizationId,
+        channelId,
         entityName: entity.name,
         organizationName: organization?.name,
         role: inactiveMembership.role,

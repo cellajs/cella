@@ -1761,6 +1761,9 @@ export type GetTokenDataResponses = {
     inviterName?: string;
     invitation?: {
       entityType: 'organization';
+      tenantId: string;
+      organizationId: string;
+      channelId: string;
       entityName: string;
       organizationName?: string;
       role: 'admin' | 'member';
