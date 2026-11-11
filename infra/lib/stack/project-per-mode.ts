@@ -10,7 +10,8 @@ export const environments: readonly Environment[] = ['production', 'staging'];
 /** Where a mode's project id comes from: its stack file, an env file that still names it, the shell, or nowhere. */
 export type ProjectIdSource = 'stack-file' | 'env-file' | 'shell' | 'none';
 
-const stackFilePath = (mode: string) => resolve(infraDir, `Pulumi.${mode}.yaml`);
+/** A mode's committed stack file, which exists once the mode is set up. */
+export const stackFilePath = (mode: string) => resolve(infraDir, `Pulumi.${mode}.yaml`);
 
 /** The project id a stack file names under `infra:projectId`, in plain text: it is no secret, and every checkout needs it. */
 export function stackFileProjectId(yamlText?: string): string | undefined {

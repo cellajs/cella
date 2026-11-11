@@ -9,6 +9,7 @@ permissions: {}
 #   • Release PR and an app's upgrade PR only: the heavy suites (every test suite, every docker-images target). Every
 #     merge to main refreshes the release-please PR, and merging it cuts the release + deploy, so gating its merge gates
 #     production. On feature PRs these jobs are skipped.
+#   • Release PR only: release-applied, red while an environment that follows the releases owes an apply.
 # The required status check is `ci-passed`, the last job, which waits for all the others. The PR title has its
 # own workflow and check (pr-title.yml). Every job installs the workspace through .github/actions/install-workspace.
 on:
@@ -224,9 +225,7 @@ jobs:
 
   # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
   # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
-  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it. On the release
-  # PR it fails while the release describes the app otherwise than an environment's last apply, which each apply publishes as a repository
-  # variable: merged, its deploy would stop at apply needed.
+  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it.
   privileged-changes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -255,10 +254,33 @@ jobs:
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
       - name: Say what the change owes
+        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
+
+  # Whether merging the release deploys (infra/tasks/release-applied-check.ts), on the release PR alone: the head's description of the app,
+  # per environment that follows the releases, against the hash that environment's last apply published as a repository variable. It holds
+  # no secret. Equal, merging deploys. Otherwise the deploy would end at apply needed: the job fails, and `ci-passed` with it, until the
+  # apply from main publishes the hash and runs this job again once the run has ended.
+  release-applied:
+    if: startsWith(github.head_ref, 'release-please--branches--main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Install the workspace
+        uses: ./.github/actions/install-workspace
+        with:
+          filter: --filter infra... --filter shared...
+
+      - name: Compare the release with the last apply
         env:
           REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
-          RELEASE_FLAG: ${{ startsWith(github.head_ref, 'release-please--branches--main') && '--release' || '' }}
-        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base" $RELEASE_FLAG
+        run: pnpm --silent --filter infra exec tsx tasks/release-applied-check.ts
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
@@ -326,7 +348,7 @@ jobs:
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
   ci-passed:
     if: always()
-    needs: [lint, frontend-build, build-services, test, docker-images, privileged-changes, schema-bust-gate]
+    needs: [lint, frontend-build, build-services, test, docker-images, privileged-changes, release-applied, schema-bust-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
