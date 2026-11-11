@@ -1,3 +1,34 @@
+/* The mark pops in on the overshoot curve; then the ring draws, the disc fills and the check draws, one after the other. */
+.success-checkmark {
+  animation: checkmark-enter 700ms var(--ease-overshoot);
+}
+.success-checkmark svg {
+  animation:
+    checkmark-fill 400ms ease-in-out 700ms forwards,
+    checkmark-scale 300ms ease-in-out 1.2s both;
+}
+.success-checkmark circle {
+  animation: checkmark-stroke 600ms ease-in-out 300ms forwards;
+}
+.success-checkmark path {
+  animation: checkmark-stroke 300ms ease-in-out 1.1s forwards;
+}
+
+/* The draws stay under reduced motion: they are the message. The pop and the bounce go. */
+@media (prefers-reduced-motion: reduce) {
+  .success-checkmark,
+  .success-checkmark svg {
+    animation: none;
+  }
+}
+
+@keyframes checkmark-enter {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
 @keyframes checkmark-stroke {
   100% {
     stroke-dashoffset: 0;

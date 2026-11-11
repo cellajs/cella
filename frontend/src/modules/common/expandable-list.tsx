@@ -2,7 +2,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { collapseMotion } from '~/modules/common/collapse-motion';
+import { collapseMotion } from '~/modules/common/motion-presets';
 import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps<T extends { id: string }> {

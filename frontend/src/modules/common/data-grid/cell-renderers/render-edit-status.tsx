@@ -2,6 +2,7 @@ import { CheckIcon } from 'lucide-react';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDelayedFlag } from '~/hooks/use-delayed-flag';
+import { spinnerDelayMs } from '~/modules/common/spinner';
 import { Spinner } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
 import type { CalculatedColumn, RowsChangeData } from '../types';
@@ -11,8 +12,6 @@ type EditStatus = 'pending' | 'saved';
 
 type Edit<R> = { row: R; columnKey: string; status: EditStatus };
 
-// A save that answers sooner shows no spinner, so a fast network never flashes one
-const spinnerDelayMs = 300;
 const savedShowMs = 1200;
 
 /** The status of the edit in a row's column, looked up by the row object a cell renders. */
@@ -98,13 +97,7 @@ export function RenderEditStatus<R>({ row, column, children }: RenderEditStatusP
     <span aria-busy={status === 'pending' || undefined} className="flex min-w-0 flex-1 items-center justify-between gap-1.5">
       <span className={cn('truncate', status === 'pending' && 'text-muted-foreground')}>{content}</span>
       {slow && <Spinner className="text-muted-foreground size-4 shrink-0" />}
-      {status === 'saved' && (
-        <CheckIcon
-          role="status"
-          aria-label={t('c:saved')}
-          className="fade-in zoom-in-75 animate-in text-success size-4 shrink-0 motion-reduce:animate-none"
-        />
-      )}
+      {status === 'saved' && <CheckIcon role="status" aria-label={t('c:saved')} className="mount-fade text-success size-4 shrink-0" />}
     </span>
   );
 }

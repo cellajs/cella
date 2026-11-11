@@ -26,6 +26,10 @@ interface SelectionReceipt {
 
 const receiptHoldMs = 2600;
 
+// The bar rises in from below and sinks back out; a confirmation hides it the same way
+const barHidden = { opacity: 0, y: 16 };
+const barTransition = { duration: 0.2, ease: 'easeOut' } as const;
+
 interface SelectionActionBarProps {
   /** The bar hides while zero. */
   count: number;
@@ -102,10 +106,10 @@ export function SelectionActionBar({ count, onClear, receipt, onReceiptEnd, chil
               onBlur={(event) => {
                 hadFocusRef.current = !!barRef.current?.contains(event.relatedTarget);
               }}
-              initial={{ opacity: 0, y: 16 }}
-              animate={confirming ? { opacity: 0, y: 16 } : { opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
+              initial={barHidden}
+              animate={confirming ? barHidden : { opacity: 1, y: 0 }}
+              exit={barHidden}
+              transition={barTransition}
               // z-108 keeps it under the spotlight's dim (110), with the rest of the page
               className={cn(
                 'text-editing:invisible bg-background shadow-floating inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg p-2',
@@ -120,7 +124,7 @@ export function SelectionActionBar({ count, onClear, receipt, onReceiptEnd, chil
                   data-receipt
                   role="status"
                   tabIndex={-1}
-                  className="animate-in fade-in flex h-10 items-center gap-2 pl-3 text-sm font-medium whitespace-nowrap duration-150 focus-visible:outline-none"
+                  className="mount-fade flex h-10 items-center gap-2 pl-3 text-sm font-medium whitespace-nowrap focus-visible:outline-none"
                   onPointerEnter={() => setHeldId(receipt.id)}
                   onPointerLeave={() => setHeldId(null)}
                   onFocus={(event) => event.target.matches(':focus-visible') && setHeldId(receipt.id)}

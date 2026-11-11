@@ -10,7 +10,7 @@ export const useInDropdownerDrawer = () => useDropdownerSurface() === 'drawer';
 
 // The rows stay at the bottom while the sheet's top edge glides, so what the finger just pressed is replaced in place
 const drawerAnchor: MorphAnchor = { x: 'stretch', y: 'bottom' };
-const drawerMorph: MorphTiming = { duration: 380, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' };
+const drawerMorph: MorphTiming = { duration: 300, ease: 'drawer' };
 
 export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   const { id, content, triggerLabel, kind, lead, history } = dropdown;

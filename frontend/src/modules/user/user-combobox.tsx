@@ -133,7 +133,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
         // Visual only: the option's selected state already tells a screen reader
         detail={
           notice && (
-            <Badge key={notice.count} aria-hidden variant={notice.added ? 'success' : 'secondary'} soft className="fade-in-0 zoom-in-95 animate-in">
+            <Badge key={notice.count} aria-hidden variant={notice.added ? 'success' : 'secondary'} soft className="mount-fade">
               {t(notice.added ? 'c:invite_person_added' : 'c:invite_person_removed')}
             </Badge>
           )

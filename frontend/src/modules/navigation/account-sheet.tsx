@@ -1,12 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { ImageUpIcon, LogOutIcon, RefreshCwIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -47,7 +45,6 @@ export function AccountSheet() {
   const { mutate: updateUser } = useUpdateUser(user.id);
 
   const frameRef = useRef<HTMLDivElement>(null);
-  const { hasStarted } = useMountedState();
 
   useEffect(() => {
     // Signing out from here shows its page at once, on a slow connection too
@@ -104,13 +101,10 @@ export function AccountSheet() {
         {/* Cover and bar line up with a page header without an uploaded cover */}
         <div className="bg-background/50 dark:bg-background/75 pointer-events-none absolute inset-x-0 bottom-0 h-16 px-3 pt-7 text-center backdrop-blur-xs">
           <div className="absolute -top-15 left-1/2 -translate-x-1/2">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
+            {/* Pops in once the sheet has landed */}
+            <div className="transition-[opacity,scale] delay-200 duration-300 ease-out starting:opacity-0 motion-safe:starting:scale-80">
               <EntityAvatar className="size-20 ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
-            </motion.div>
+            </div>
             <ProfilePictureButton user={user} className={revealOnCoverHover} />
           </div>
           <p className="max-w-full truncate text-base font-semibold">{user.name}</p>

@@ -19,10 +19,7 @@ export function DropdownerTriggerIcon({ icon: Icon, className }: { icon: IconCom
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={cn(
-          'text-success col-start-1 row-start-1 opacity-0 transition-opacity in-data-dropdowner-done:opacity-100 motion-reduce:transition-none',
-          className,
-        )}
+        className={cn('text-success col-start-1 row-start-1 opacity-0 transition-opacity in-data-dropdowner-done:opacity-100', className)}
       >
         <path
           pathLength={1}

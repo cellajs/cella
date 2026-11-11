@@ -1,7 +1,7 @@
 import { type CSSProperties, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
@@ -30,7 +30,7 @@ interface SidebarNavProps {
 }
 
 export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavProps) {
-  const { hasStarted } = useMountedState();
+  const hasStarted = useDelayedFlag(true, settledAfterMountMs);
   const isDesktop = useBreakpointAbove('2xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);

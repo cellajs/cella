@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { useHotkeys } from '~/hooks/use-hotkeys';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
@@ -19,6 +19,7 @@ import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
+import { scrollBehavior } from '~/utils/reduced-motion';
 
 const { navBar, menu } = appConfig.navigation;
 const { sheetPanelWidth } = appConfig.theme.navigation;
@@ -48,7 +49,7 @@ const serializeFloatingNavConfig = (matches: { pathname: string; staticData: Sta
 const barNavItems: NavItem[] = navItems.filter((item: NavItem) => (item.type === 'base' && item.id !== 'home') || item.type === 'footer');
 
 function BottomBarNav({ onNavItemClick }: { onNavItemClick: TriggerNavItemFn }) {
-  const { hasStarted } = useMountedState();
+  const hasStarted = useDelayedFlag(true, settledAfterMountMs);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const floatingNavActive = useNavigationStore((state) => state.floatingNavActive);
 
@@ -105,7 +106,7 @@ export function AppNav() {
     if (navItem.href) {
       if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       // On the page already, the press takes it back to the top
-      if (router.state.location.pathname === navItem.href) return window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (router.state.location.pathname === navItem.href) return window.scrollTo({ top: 0, behavior: scrollBehavior() });
       return navigate({ to: navItem.href });
     }
 

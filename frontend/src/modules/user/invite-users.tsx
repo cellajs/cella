@@ -12,6 +12,7 @@ import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { fadeMotion, scaleInMotion } from '~/modules/common/motion-presets';
 import { NamedText } from '~/modules/common/named-text';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -66,10 +67,6 @@ const inviteModes: Record<InviteMode, { label: TKey; crumb: TKey; icon: IconComp
   bulk: { label: 'c:invite_mode_bulk', crumb: 'c:paste', icon: ClipboardPasteIcon, Field: InviteBulkField },
 };
 
-/** The dialog title renders outside the form's MotionConfig, so both read this transition. */
-const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
-const modeEntrance = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
-
 interface InviteTitleProps {
   mode: InviteMode | null;
   onBack: () => void;
@@ -90,13 +87,7 @@ function InviteTitle({ mode, onBack }: InviteTitleProps) {
       )}
       <AnimatePresence>
         {mode && (
-          <motion.span
-            className="flex items-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={modeTransition}
-          >
+          <motion.span className="flex items-center gap-2" {...fadeMotion}>
             <ChevronRightIcon className="text-faint-foreground" />
             <UnsavedBadge title={t(inviteModes[mode].crumb)} />
           </motion.span>
@@ -246,13 +237,13 @@ export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersP
   const shownReport = report && report.unsent.join() === list.emails.join() ? report : null;
 
   return (
-    <MotionConfig transition={modeTransition} reducedMotion="user">
+    <MotionConfig transition={scaleInMotion.transition}>
       <Form {...form}>
         {/* popLayout takes the leaving chooser out of the flow, which needs a positioned parent */}
         <form ref={formRef} noValidate onSubmit={submit} className="relative">
           <AnimatePresence mode="popLayout">
             {inviteMode && Field ? (
-              <motion.div key="invite-form" {...modeEntrance} className="flex flex-col gap-6">
+              <motion.div key="invite-form" {...scaleInMotion} className="flex flex-col gap-6">
                 <Field channel={channel} check={check} list={list} autoFocus={!initialMode} onToEmail={() => chooseMode('email')} />
                 {channel && <InviteRoleField form={form} channel={channel} held={held} />}
                 {/* Stays mounted, so a report is announced */}
@@ -280,7 +271,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersP
                 key="invite-initial"
                 ref={focusOnMount}
                 tabIndex={-1}
-                {...modeEntrance}
+                {...scaleInMotion}
                 exit={{ scale: 0.9, opacity: 0 }}
                 className="grid w-full gap-2 py-3 outline-hidden sm:h-40 sm:auto-cols-fr sm:grid-flow-col sm:gap-3"
               >

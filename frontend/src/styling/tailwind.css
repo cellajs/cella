@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 @import "./plus-grain.css" layer(base); /* Dithered + texture echoing the morph animation */
 @import "./app.css" layer(app); /* App-owned styles, ranked last */
@@ -32,16 +31,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 
-  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. These keyframes
-     replace tw-animate-css's same-name ones, which read the Radix variables. */
+  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
-  --animate-status-pulse: status-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
-  --animate-ring-cut: ring-cut 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-status-pulse: status-pulse 1.6s ease-out infinite;
+  --animate-ring-cut: ring-cut 240ms ease-out;
   /* Something landing in a tile: a disc in its status dot's color spreads 12px past the dot and fades, twice */
-  --animate-dot-landed: dot-landed 1.2s cubic-bezier(0, 0, 0.2, 1) 2;
+  --animate-dot-landed: dot-landed 1.2s ease-out 2;
   /* An arrow pointing at something beside it nudges that way three times: moving content past 5s needs a pause control (WCAG 2.2.2) */
   --animate-nudge-left: nudge-left 1s ease-in-out 3;
 
@@ -105,6 +103,15 @@
       box-shadow: 0 0 0 6px transparent;
     }
   }
+}
+
+/* The two curves beside Tailwind's `ease-in`, `ease-out` and `ease-in-out`, which every transition and keyframe takes from
+   ([Motion](../../README.md#ui-styling)). Static: plain CSS files read them with `var()`, which the emit tracking does not see. */
+@theme static {
+  /* A sheet, drawer or toast travelling: fast off its edge, long settle (Vaul's curve). */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* A mark popping in or a thumb landing on a stop: past the end, then back. */
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Inline: utilities read the token itself, so a nested .dark scope recolors them. */
@@ -421,8 +428,8 @@
       margin: -0.25rem -0.25rem -0.25rem -0.75rem;
       opacity: 0;
       transition:
-        grid-template-columns 160ms cubic-bezier(0.4, 0, 0.2, 1),
-        margin-left 160ms cubic-bezier(0.4, 0, 0.2, 1),
+        grid-template-columns 160ms var(--ease-in-out),
+        margin-left 160ms var(--ease-in-out),
         opacity 100ms linear,
         visibility 160ms;
 
@@ -431,8 +438,8 @@
         margin-left: -0.25rem;
         opacity: 1;
         transition:
-          grid-template-columns 220ms cubic-bezier(0.32, 0.72, 0, 1),
-          margin-left 220ms cubic-bezier(0.32, 0.72, 0, 1),
+          grid-template-columns 220ms var(--ease-drawer),
+          margin-left 220ms var(--ease-drawer),
           opacity 120ms linear;
       }
 
@@ -549,6 +556,18 @@
 @utility focus-gap {
   & .focus-effect:not(.focus-inner):focus-visible {
     @apply focus-ring:outline-solid focus-ring:outline-2 focus-ring:outline-offset-2 outline-ring ring-0 ring-offset-0;
+  }
+}
+
+/* Content that takes the place of nothing or of a placeholder fades in as it mounts: a skeleton, a table, a receipt, a
+   badge. `duration-*` lengthens it from the shortest tier; a fade stays under reduced motion. */
+@utility mount-fade {
+  transition-property: opacity;
+  transition-duration: var(--tw-duration, 150ms);
+  transition-timing-function: var(--tw-ease, var(--ease-out));
+
+  @starting-style {
+    opacity: 0;
   }
 }
 

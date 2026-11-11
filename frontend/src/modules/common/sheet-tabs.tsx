@@ -5,6 +5,9 @@ import type { TKey } from '~/lib/i18n-locales';
 
 export type SheetTab = { id: string; label: TKey; element: ReactNode };
 
+// The underline glides to the pressed tab once that tab's content has started to render
+const glideTransition = { type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 } as const;
+
 export function SheetTabs({ tabs }: { tabs: SheetTab[] }) {
   // Stable per instance, so the underline animates between tabs
   const layoutId = useId();
@@ -31,7 +34,7 @@ export function SheetTabs({ tabs }: { tabs: SheetTab[] }) {
                 <motion.span
                   initial={false}
                   layoutId={layoutId}
-                  transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                  transition={glideTransition}
                   className="bg-primary absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm"
                 />
               )}

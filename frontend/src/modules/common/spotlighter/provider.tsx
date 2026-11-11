@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -26,20 +25,17 @@ export function Spotlighter() {
     { enabled: hasSpotlight },
   );
 
+  // Stays mounted: `hidden` fades it out through a discrete transition and @starting-style fades it back in
   const layer = (
-    <AnimatePresence>
-      {hasSpotlight && (
-        <motion.div
-          className={cn('bg-overlay inset-0 z-110', shownScope ? 'absolute' : 'fixed')}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={closeTop}
-          aria-hidden="true"
-        />
+    <div
+      hidden={!hasSpotlight}
+      className={cn(
+        'bg-overlay inset-0 z-110 transition-[opacity,display] transition-discrete duration-200 starting:opacity-0 [&[hidden]]:opacity-0',
+        shownScope ? 'absolute' : 'fixed',
       )}
-    </AnimatePresence>
+      onClick={closeTop}
+      aria-hidden="true"
+    />
   );
 
   return shownScope ? createPortal(layer, shownScope) : layer;

@@ -2,6 +2,7 @@ import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { type PositionedContentProps, popupSideOffset } from '~/modules/ui/popover';
+import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 export function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -36,7 +37,8 @@ export function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 bg-popover text-popover-foreground data-closed:animate-out data-open:animate-in max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md outline-hidden',
+            popupMotionClass,
+            'bg-popover text-popover-foreground max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md outline-hidden',
             className,
           )}
           {...props}

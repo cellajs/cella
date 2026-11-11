@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import type { FloatingNavItem } from '~/modules/navigation/floating-nav/button';
+import { scrollBehavior } from '~/utils/reduced-motion';
 
 interface FloatingNavItemsOptions {
   /** Prefix of the two item ids, `<idPrefix>-menu` and `<idPrefix>-scroll-top`. */
@@ -41,7 +42,7 @@ export function useFloatingNavItems({ idPrefix, hintKey, enabled, onToggleMenu }
     {
       id: `${idPrefix}-scroll-top`,
       icon: ArrowUpIcon,
-      onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      onClick: () => window.scrollTo({ top: 0, behavior: scrollBehavior() }),
       ariaLabel: t('c:scroll_to_top'),
       visible: showScrollTop,
       direction: 'right',
