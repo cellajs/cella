@@ -1,6 +1,6 @@
 import { ChevronDownIcon, InfoIcon, PlusIcon, Settings2Icon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type RefObject, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ChannelEntityType, isChannelHideable } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -31,8 +31,8 @@ export type MenuSectionOptions = {
   /** Opens the create flow; `organizationId` is set when it starts from one organization's menu sheet. */
   createAction?: (ref: RefObject<HTMLButtonElement | null>, organizationId?: string) => void;
   icon?: IconComponent;
-  /** A glyph in the corner of a row's avatar with its accessible name, such as a read-only mark for a role that cannot write. */
-  rowMark?: (item: UserMenuItem) => { icon: IconComponent; label: TKey } | undefined;
+  /** A badge rendered as the sibling of a row's avatar, with the words it adds to the row's accessible name; a sub-row's avatar is smaller. */
+  rowMark?: (item: UserMenuItem, isSubitem: boolean) => { badge: ReactNode; label: TKey } | undefined;
 };
 
 // The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them to the
