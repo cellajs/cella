@@ -4,14 +4,13 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { quotaKeys } from '#/modules/tenants/tenant-restrictions';
-import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
+import { tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockTenantResponse } from '#/modules/tenants/tenants-mocks';
 import { csvQuerySchema, listQuerySchema, minimalBaseSchema, orderByQuerySchema, validNameSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
 import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 
 const tenantStatusSchema = z.enum(tenantStatusValues);
-const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 const tenantKindSchema = z.enum(tenantKindValues);
 
 const countSchema = z.number().int().min(0);
@@ -62,10 +61,9 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
   kind: tenantKindSchema.describe('`live` or `test`: a demo is never made or unmade by an update.'),
   status: tenantStatusSchema,
-  subscriptionStatus: subscriptionStatusSchema,
   authStrategies: z.array(z.enum(authStrategiesEnum)).max(authStrategiesEnum.length),
 })
-  .pick({ name: true, kind: true, status: true, subscriptionId: true, subscriptionStatus: true, subscriptionPlan: true, authStrategies: true })
+  .pick({ name: true, kind: true, status: true, authStrategies: true })
   .partial()
   .extend({
     restrictions: mergePatchSchema(restrictionsSchema)

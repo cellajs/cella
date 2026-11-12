@@ -811,9 +811,6 @@ export type Tenant = {
     allowUnregisteredClients: boolean;
   };
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
-  subscriptionId: string | null;
-  subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
-  subscriptionPlan: string | null;
   createdAt: string;
   createdBy:
     | {
@@ -6892,9 +6889,6 @@ export type UpdateTenantData = {
      */
     kind?: 'live' | 'test' | 'demo';
     status?: 'active' | 'suspended' | 'archived';
-    subscriptionId?: string | null;
-    subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
-    subscriptionPlan?: string | null;
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.

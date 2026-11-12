@@ -3209,9 +3209,6 @@ export const createTenant = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.kind - `enum` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
- * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
- * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
- * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
  * @param {enum[]=} options.body.authStrategies - `enum[]` (optional)
  * @param {object=} options.body.restrictions - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429

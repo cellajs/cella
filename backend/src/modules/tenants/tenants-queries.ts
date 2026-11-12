@@ -25,9 +25,6 @@ const tenantColumns = pick(tenantsTable, [
   'restrictions',
   'authStrategies',
   'createdBy',
-  'subscriptionId',
-  'subscriptionStatus',
-  'subscriptionPlan',
   'createdAt',
   'updatedAt',
   'updatedBy',
@@ -166,7 +163,7 @@ export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: 
   return total;
 };
 
-/** Inserts a tenant; kind, status, restrictions and subscription take their column defaults. */
+/** Inserts a tenant; kind, status and restrictions take their column defaults. */
 export const insertTenant = async (ctx: DbContext, { values }: { values: InsertTenantModel }): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
   return tenant;

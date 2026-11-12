@@ -3474,18 +3474,6 @@
               "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
             }
           },
-          "subscriptionId": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "subscriptionStatus": {
-            "type": "string",
-            "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
-          },
-          "subscriptionPlan": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
           "createdAt": {
             "type": "string"
           },
@@ -3627,9 +3615,6 @@
           "expiresAt",
           "restrictions",
           "authStrategies",
-          "subscriptionId",
-          "subscriptionStatus",
-          "subscriptionPlan",
           "createdAt",
           "createdBy",
           "updatedAt",
@@ -3667,9 +3652,6 @@
             "thumbnailUrl": null
           },
           "updatedBy": null,
-          "subscriptionId": null,
-          "subscriptionStatus": "none",
-          "subscriptionPlan": null,
           "createdAt": "2024-08-10T00:42:04.704Z",
           "updatedAt": "2024-09-06T23:31:09.985Z",
           "organization": {
@@ -15937,9 +15919,6 @@
                         "thumbnailUrl": null
                       },
                       "updatedBy": null,
-                      "subscriptionId": null,
-                      "subscriptionStatus": "none",
-                      "subscriptionPlan": null,
                       "createdAt": "2024-10-17T20:38:21.060Z",
                       "updatedAt": "2024-12-22T17:47:41.093Z",
                       "organization": {
@@ -15980,9 +15959,6 @@
                         "thumbnailUrl": null
                       },
                       "updatedBy": null,
-                      "subscriptionId": null,
-                      "subscriptionStatus": "none",
-                      "subscriptionPlan": null,
                       "createdAt": "2024-04-30T09:09:16.797Z",
                       "updatedAt": "2024-05-14T23:22:54.193Z",
                       "organization": {
@@ -16140,18 +16116,6 @@
                     "type": "string",
                     "enum": ["active", "suspended", "archived"]
                   },
-                  "subscriptionId": {
-                    "type": ["string", "null"],
-                    "maxLength": 255
-                  },
-                  "subscriptionStatus": {
-                    "type": "string",
-                    "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
-                  },
-                  "subscriptionPlan": {
-                    "type": ["string", "null"],
-                    "maxLength": 255
-                  },
                   "authStrategies": {
                     "type": "array",
                     "items": {
@@ -16232,18 +16196,6 @@
                   "status": {
                     "type": "string",
                     "enum": ["active", "suspended", "archived"]
-                  },
-                  "subscriptionId": {
-                    "type": ["string", "null"],
-                    "maxLength": 255
-                  },
-                  "subscriptionStatus": {
-                    "type": "string",
-                    "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
-                  },
-                  "subscriptionPlan": {
-                    "type": ["string", "null"],
-                    "maxLength": 255
                   },
                   "authStrategies": {
                     "type": "array",
@@ -16388,9 +16340,6 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "subscriptionId": null,
-                  "subscriptionStatus": "none",
-                  "subscriptionPlan": null,
                   "createdAt": "2024-12-04T09:29:12.309Z",
                   "updatedAt": "2024-12-18T15:41:18.821Z",
                   "organization": {
@@ -16441,9 +16390,6 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "subscriptionId": null,
-                  "subscriptionStatus": "none",
-                  "subscriptionPlan": null,
                   "createdAt": "2024-12-04T09:29:12.309Z",
                   "updatedAt": "2024-12-18T15:41:18.821Z",
                   "organization": {

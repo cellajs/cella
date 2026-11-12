@@ -1,0 +1,104 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e3ac6024-453e-473c-b37f-18aada4a0234",
+  "prevIds": [
+    "20bd4ae4-ea6b-4852-871e-41bf5f9b50ce"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tenants",
+        "tenants_subscription_status_index"
+      ],
+      "writes": [
+        "s|idx|public.tenants_subscription_status_index",
+        "n|idx|public.tenants_subscription_status_index",
+        "e|idx|public.tenants_subscription_status_index",
+        "n|rel|public.tenants_subscription_status_index"
+      ],
+      "reads": [
+        "e|tbl|public.tenants",
+        "n|sch|public",
+        "e|col|public.tenants.subscription_status"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "subscription_id"
+      ],
+      "writes": [
+        "s|col|public.tenants.subscription_id",
+        "n|col|public.tenants.subscription_id",
+        "e|col|public.tenants.subscription_id"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "subscription_status"
+      ],
+      "writes": [
+        "s|col|public.tenants.subscription_status",
+        "n|col|public.tenants.subscription_status",
+        "e|col|public.tenants.subscription_status"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "subscription_plan"
+      ],
+      "writes": [
+        "s|col|public.tenants.subscription_plan",
+        "n|col|public.tenants.subscription_plan",
+        "e|col|public.tenants.subscription_plan"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"tenants\",\"subscription_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"tenants\",\"subscription_status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"tenants\",\"subscription_plan\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"tenants_subscription_status_index\"]"
+    }
+  ]
+}

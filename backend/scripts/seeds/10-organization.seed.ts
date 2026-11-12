@@ -47,12 +47,6 @@ export const organizationsSeed = async () => {
   const tenantRecords = Array.from({ length: tenantCount }, (_, i) => ({
     name: `Tenant ${i + 1}`,
     createdBy: defaultAdminUser.id,
-    // Give first 2 tenants an active subscription for dev testing
-    ...(i < 2 && {
-      subscriptionId: `sub_seed_${i + 1}`,
-      subscriptionStatus: 'active' as const,
-      subscriptionPlan: 'pro',
-    }),
   }));
   const tenants = await db.insert(tenantsTable).values(tenantRecords).returning().onConflictDoNothing();
 
