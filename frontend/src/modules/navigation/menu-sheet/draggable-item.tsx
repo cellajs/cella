@@ -6,6 +6,7 @@ import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/prag
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getMenuSection } from '~/lib/entity-modules';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -16,7 +17,6 @@ import { useMenuRowMoves } from '~/modules/navigation/menu-sheet/helpers/use-men
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
-import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 
@@ -28,11 +28,10 @@ interface MenuSheetDraggableItemProps {
   isSubitem: boolean;
   /** Its list is already on screen; read at mount, when it tells a shown row from one the list opened with. */
   isArriving: boolean;
-  options?: MenuSectionOptions;
   prepareHide?: () => boolean;
 }
 
-export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, options, isArriving, prepareHide }: MenuSheetDraggableItemProps) {
+export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, isArriving, prepareHide }: MenuSheetDraggableItemProps) {
   const dragRef = useRef<HTMLDivElement>(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
@@ -113,9 +112,9 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
   }, [item, siblings, listItems]);
 
   return (
-    <li className="relative">
+    <li className={cn('relative', isSubitem ? 'group/row' : 'group/parent')} data-icon={!!getMenuSection(item.entityType)?.icon}>
       <div ref={dragRef}>
-        <MenuSheetItemEdit item={item} siblings={siblings} isSubitem={isSubitem} icon={options?.icon} isArriving={hasArrived} moves={moves} />
+        <MenuSheetItemEdit item={item} siblings={siblings} isSubitem={isSubitem} isArriving={hasArrived} moves={moves} />
         <AnimatePresence initial={hasArrived}>
           {hasSubmenu && (
             <motion.div
@@ -131,6 +130,7 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
                   <MenuSheetItemsListEdit items={item.submenu ?? []} group="active" prepareHide={prepareSubitemHide} isSubmenu />
                 </ul>
                 <MenuSheetHiddenGroup
+                  entityType={item.submenu[0].entityType}
                   isSubmenu
                   isOpen={isSubmenuHiddenVisible}
                   onToggle={() => setSubmenuHiddenVisible(!isSubmenuHiddenVisible)}
@@ -142,6 +142,7 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
                 </MenuSheetHiddenGroup>
                 {!!archivedSubitemCount && (
                   <MenuSheetHiddenGroup
+                    entityType={item.submenu[0].entityType}
                     variant="archived"
                     isSubmenu
                     isOpen={isSubmenuArchivedVisible}
@@ -162,7 +163,7 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, o
       {previewContainer &&
         createPortal(
           <div className="max-w-64">
-            <EntityChip type={item.entityType} id={item.id} name={item.name} url={item.thumbnailUrl} icon={options?.icon} />
+            <EntityChip type={item.entityType} id={item.id} name={item.name} url={item.thumbnailUrl} icon={getMenuSection(item.entityType)?.icon} />
           </div>,
           previewContainer,
         )}

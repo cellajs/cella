@@ -20,7 +20,7 @@ export function FoldingChevron({ icon: Icon, folded, className }: FoldingChevron
       )}
     >
       <span className="flex min-w-0 overflow-hidden">
-        <Icon className={cn('shrink-0', className)} />
+        <Icon className={cn('text-faint-foreground shrink-0', className)} />
       </span>
     </span>
   );

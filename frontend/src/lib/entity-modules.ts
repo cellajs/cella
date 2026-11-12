@@ -3,6 +3,7 @@ import { onFrontendModuleRegister } from '~/lib/module';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import type { ChannelListParams, ChannelListQuery, ChannelListQueryMap, ChannelListQueryOptions, QueryOptionsWithKey } from '~/query/types';
+import type { ChannelRoute, ProductLocation } from '~/utils/channel-route';
 
 /** A channel entity's frontend registration, declared by its module: an app adding a channel edits no central map. */
 export interface ChannelModuleConfig {
@@ -14,6 +15,8 @@ export interface ChannelModuleConfig {
    * call time: a direct reference throws "Cannot access X before initialization" when the file evaluates mid-cycle (Vite HMR).
    */
   listQuery?: (params: ChannelListParams) => QueryOptionsWithKey;
+  /** The page a product homed in this channel opens on when the app shows it on another channel's page; undefined opens this channel's own. */
+  productRoute?: (location: ProductLocation) => ChannelRoute | undefined;
   /** Keeps this channel's member-count column out of the members table until a user toggles it on. */
   hiddenMemberCount?: boolean;
 }
@@ -81,6 +84,9 @@ export function getChannelListQueries(): ChannelListQueryMap {
   listQueries = map;
   return map;
 }
+
+/** The page products homed in this channel open on, undefined when its module names none. */
+export const getChannelProductRoute = (entityType: ChannelEntityType) => channels.get(entityType)?.productRoute;
 
 /** Search params that open this product: its own and its on-screen host's. A deep link may send both: a route that declares neither strips both. */
 export function getProductDeepLink(entityType: ProductEntityType): { param?: string; hostParam?: string } {

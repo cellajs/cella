@@ -47,7 +47,8 @@ export function MenuSheet() {
 
   // The header, switcher and panels stay while the organization, or the full menu, fades in between them
   return (
-    <NavSheetFrame panels>
+    // The open page's row takes the hover fill until another control in the sheet has the pointer: one fill at a time
+    <NavSheetFrame panels className="group/menu-sheet">
       <MenuSheetHeader />
       {organization && !hasOrganizationButtons && <OrganizationSwitcher organization={organization} />}
       <ContentKeyTransition contentKey={organization?.id ?? 'all'}>

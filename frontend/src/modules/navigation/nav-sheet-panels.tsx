@@ -43,12 +43,17 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
 
   return (
     <div>
-      <Button onClick={() => toggleNavSheetPanel(id)} className="w-full justify-between" variant={isOpen ? 'secondary' : 'ghost'}>
+      <Button
+        onClick={() => toggleNavSheetPanel(id)}
+        aria-expanded={isOpen}
+        className="w-full justify-between border-0"
+        variant={isOpen ? 'secondary' : 'quiet'}
+      >
         <span className="flex items-center gap-2">
           {t(label)}
           {!isBodyVisible && <span className="mount-fade flex items-center gap-2 duration-200">{indicator}</span>}
         </span>
-        <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
+        <ChevronDownIcon className={cn('text-faint-foreground transition-transform duration-200', isOpen && 'rotate-180')} />
       </Button>
 
       <motion.div
@@ -83,12 +88,12 @@ function NavSheetPanelRow({ id, label, indicator, children }: NavSheetPanelProps
     );
 
   return (
-    <Button ref={triggerRef} onClick={openDrawer} className="w-full justify-between" variant="ghost">
+    <Button ref={triggerRef} onClick={openDrawer} className="w-full justify-between border-0" variant="quiet">
       <span className="flex items-center gap-2">
         {t(label)}
         {indicator}
       </span>
-      <ChevronRightIcon className="opacity-50" />
+      <ChevronRightIcon className="text-faint-foreground" />
     </Button>
   );
 }

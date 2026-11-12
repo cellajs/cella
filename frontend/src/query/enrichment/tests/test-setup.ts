@@ -9,30 +9,6 @@ export function mockGetRegisteredEntityTypes(): string[] {
   return [...wideHierarchy.channelTypes];
 }
 
-interface TestMembership {
-  organizationId: string;
-  channelType: string;
-  channelId: string;
-  hidden: boolean;
-  muted: boolean;
-  displayOrder: number;
-  role: string;
-  [key: string]: unknown;
-}
-
-export function makeMembership(entityId: string, overrides?: Partial<TestMembership>): TestMembership {
-  return {
-    organizationId: entityId,
-    channelType: 'organization',
-    channelId: entityId,
-    hidden: false,
-    muted: false,
-    displayOrder: 0,
-    role: 'member',
-    ...overrides,
-  };
-}
-
 export function makeInfiniteData(items: { id: string; slug?: string; organizationId?: string }[]) {
   return { pages: [{ results: items }], pageParams: [undefined] };
 }
@@ -43,8 +19,4 @@ export const mockHierarchy = wideHierarchy;
 export const mockAppConfig = {
   channelEntityTypes: [...wideHierarchy.channelTypes] as string[],
   entityIdColumnKeys: wideHierarchy.idColumnKeys as Record<string, string>,
-  menuStructure: [
-    { entityType: 'organization', subentityType: null },
-    { entityType: 'workspace', subentityType: 'project' },
-  ] as { entityType: string; subentityType: string | null }[],
 };

@@ -3,18 +3,22 @@ import { ArchiveIcon, ChevronDownIcon, EyeOffIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isChannelHideable } from 'shared';
+import { type ChannelEntityType, isChannelHideable } from 'shared';
 import { CountBadge } from '~/modules/common/count-badge';
 import type { UserMenuItem } from '~/modules/me/types';
 import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { foldedToggleLabel, hiddenDropData, isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { foldedToggleLabel, hiddenDropData, isCompactRow, isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { RowEndSlot } from '~/modules/navigation/menu-sheet/row-end-slot';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetHiddenToggleProps {
+  /** The type of the rows it folds: its label takes their size and weight. */
+  entityType: ChannelEntityType;
+  isSubmenu?: boolean;
   onToggle: () => void;
   /** Which rows it folds: the hidden ones, or the archived ones, which nothing drops on. */
   variant?: 'hidden' | 'archived';
@@ -28,7 +32,16 @@ interface MenuSheetHiddenToggleProps {
 
 const emptyChannelIds: string[] = [];
 
-function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyChannelIds, dropItems, isOpen }: MenuSheetHiddenToggleProps) {
+function MenuSheetHiddenToggle({
+  entityType,
+  isSubmenu = false,
+  onToggle,
+  variant,
+  count,
+  channelIds = emptyChannelIds,
+  dropItems,
+  isOpen,
+}: MenuSheetHiddenToggleProps) {
   const { t } = useTranslation();
   const unseenCount = useUnseenCount(channelIds);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -38,6 +51,7 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
   const Icon = isArchived ? ArchiveIcon : EyeOffIcon;
   const label = dropAction ? t(`c:drop_to_${dropAction}`) : t(isArchived ? 'c:archived' : 'c:hidden');
   const showsBadge = unseenCount > 0 && !isOpen;
+  const isCompact = isCompactRow(entityType, isSubmenu);
 
   useEffect(() => {
     const element = dropRef.current;
@@ -56,31 +70,42 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
   }, [dropItems, isArchived]);
 
   return (
-    <div ref={dropRef} className="relative">
+    <div
+      ref={dropRef}
+      className="group/hidden relative"
+      data-submenu={isSubmenu}
+      data-compact={isCompact}
+      data-has-hidden={count > 0}
+      data-hidden-visible={isOpen}
+    >
       <Button
         onClick={onToggle}
         disabled={count < 1 && !dropAction}
         variant="ghost"
         aria-expanded={isOpen}
         aria-label={isOpen || dropAction ? undefined : foldedToggleLabel(t, label, count, unseenCount)}
-        // Borderless: the icon centers on the avatars and dots above it. Open, it keeps its resting look.
+        // Borderless: the icon centers on the avatars and dots above it, the label starts where their names do. Open, it
+        // keeps its resting look.
         className={cn(
-          'group/chevron-host aria-expanded:hover:bg-hover w-full gap-0 border-0 p-0 pr-3 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8 aria-expanded:bg-transparent',
+          'group/chevron-host text-faint-foreground hover:text-faint-foreground aria-expanded:text-faint-foreground aria-expanded:hover:bg-hover w-full gap-0 border-0 p-0 pr-3 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8 aria-expanded:bg-transparent',
           dropAction && 'bg-muted aria-expanded:bg-muted ring-primary ring-2',
         )}
       >
-        <div className="flex w-12 items-center justify-center py-2">
-          <Icon className="ml-2 opacity-75 group-data-[submenu=true]/hidden:size-3.5" />
+        <div className="flex w-14 items-center justify-center py-2">
+          <Icon className="group-data-[submenu=true]/hidden:size-3.5" />
         </div>
-        <div className="text-muted-foreground flex min-w-0 grow items-center gap-2 p-2 text-left">
-          <span className="truncate text-sm group-data-[submenu=true]/hidden:text-xs">{label}</span>
-          {count > 0 && <span className="text-faint-foreground text-xs group-data-[hidden-visible=true]/hidden:hidden">{count}</span>}
-        </div>
-        {showsBadge && <CountBadge count={unseenCount} variant="muted" className="shrink-0" />}
+        <span className="text-md min-w-0 grow truncate py-2 pr-2 pl-1 text-left leading-5 font-medium group-data-[compact=true]/hidden:text-sm group-data-[compact=true]/hidden:font-normal">
+          {label}
+        </span>
+        {showsBadge && (
+          <RowEndSlot>
+            <CountBadge count={unseenCount} variant="muted" className="shrink-0" />
+          </RowEndSlot>
+        )}
         <FoldingChevron
           icon={ChevronDownIcon}
           folded={showsBadge}
-          className="ml-3 opacity-50 transition duration-200 group-data-[has-hidden=false]/hidden:hidden group-data-[hidden-visible=true]/hidden:rotate-180 group-data-[submenu=true]/hidden:size-3.5 motion-reduce:transition-none"
+          className="ml-3 transition duration-200 group-data-[has-hidden=false]/hidden:hidden group-data-[hidden-visible=true]/hidden:rotate-180 motion-reduce:transition-none"
         />
       </Button>
       {/* In a submenu it joins the last row above, down to 0.5625rem above the icon */}
@@ -90,18 +115,19 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
 }
 
 interface MenuSheetHiddenGroupProps extends MenuSheetHiddenToggleProps {
-  isSubmenu?: boolean;
   /** Travels with the moving row it sits under. */
   movesWithRow?: boolean;
   children: ReactNode;
 }
 
 /** The Hidden row with the hidden rows behind it, or the Archived row with the archived ones, for a section or a row's submenu. */
-export function MenuSheetHiddenGroup({ isSubmenu = false, movesWithRow, children, ...toggleProps }: MenuSheetHiddenGroupProps) {
+export function MenuSheetHiddenGroup({ movesWithRow, children, ...toggleProps }: MenuSheetHiddenGroupProps) {
   const { count, isOpen } = toggleProps;
 
+  // The toggle carries its own state attributes: on this wrapper, a submenu's toggle inside an open Hidden list would
+  // also match the list's attributes
   return (
-    <div className="group/hidden" data-has-hidden={!!count} data-submenu={isSubmenu} data-hidden-visible={isOpen}>
+    <div>
       {/* Not a row with a layoutId, so it gets its own layout animation to travel with the rows a hide or show
           shifts; only then, so other changes of place stay instant */}
       <motion.div layout="position" layoutDependency={movesWithRow ? undefined : count}>

@@ -52,7 +52,7 @@ export function invalidateChannelDetails(organizationId: string | null): void {
   }
 }
 
-/** The channel enrichment subscriber reruns on this, and useMenu rebuilds. */
+/** useMenu rebuilds on this. */
 export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }

@@ -8,6 +8,7 @@ import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-ta
 import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
+import { RowEndSlot } from '~/modules/navigation/menu-sheet/row-end-slot';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { getChannelRoute } from '~/utils/channel-route';
@@ -28,7 +29,11 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
   const unseenCount = useMenuItemUnseenCount(organization, true);
   const sections = organizationSections(organization, menu);
 
-  const badge = unseenCount > 0 && <CountBadge count={unseenCount} className="ml-3 shrink-0" />;
+  const badge = unseenCount > 0 && (
+    <RowEndSlot className="ml-3">
+      <CountBadge count={unseenCount} className="shrink-0" />
+    </RowEndSlot>
+  );
 
   return (
     <>
@@ -57,7 +62,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
                 </span>
               </span>
               {badge}
-              <FoldingChevron icon={ChevronRightIcon} folded={unseenCount > 0} className="text-muted-foreground ml-3 size-4" />
+              <FoldingChevron icon={ChevronRightIcon} folded={unseenCount > 0} className="ml-3 size-4" />
             </Link>
           </div>
         ))}
