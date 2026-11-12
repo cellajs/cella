@@ -128,5 +128,5 @@ export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) 
 }
 
 export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props) {
-  return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
+  return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground px-4 pb-4 text-sm', className)} {...props} />;
 }

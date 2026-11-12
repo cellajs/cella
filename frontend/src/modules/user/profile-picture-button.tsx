@@ -35,12 +35,12 @@ export function ProfilePictureButton({ user, className }: { user: Pick<UserBase,
   return (
     <Button
       variant="outline-ghost"
-      size="icon"
+      size="icon-xs"
       aria-label={label}
       onClick={upload}
       // Frosted like the bar behind the name
       className={cn(
-        'bg-background/50 hover:bg-background/75 dark:bg-background/75 pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full backdrop-blur-xs max-sm:size-8',
+        'bg-background/50 hover:bg-background/75 dark:bg-background/75 pointer-events-auto absolute -right-1 -bottom-1 rounded-full backdrop-blur-xs',
         className,
       )}
     >

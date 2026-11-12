@@ -19,13 +19,13 @@ export function HelpToggle({ open, onToggle, className, tabIndex }: HelpTogglePr
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size="icon-micro"
       aria-label={t('c:help')}
       aria-expanded={open}
       tabIndex={tabIndex}
       onClick={onToggle}
       press={false}
-      className={cn('text-muted-foreground focus-visible:text-foreground size-6', className)}
+      className={cn('text-muted-foreground focus-visible:text-foreground', className)}
     >
       <HelpToggleIcon open={open} />
     </Button>

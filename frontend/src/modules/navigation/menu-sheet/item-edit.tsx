@@ -119,8 +119,8 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <TooltipButton toolTipContent={muted ? t('c:unmute') : t('c:mute')} side="top">
           <Button
             variant={muted ? 'outline' : 'ghost'}
-            size="icon"
-            className={cn('relative size-8 shrink-0 group-data-[subitem=true]/options-item:size-7', !muted && 'text-faint-foreground')}
+            size="icon-xs"
+            className={cn('relative shrink-0 group-data-[subitem=true]/options-item:size-7', !muted && 'text-faint-foreground')}
             onClick={moves.toggleMuted}
           >
             {muted ? <BellOffIcon className="size-4" /> : <BellIcon className="size-4" />}

@@ -5,6 +5,7 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { getNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import type { CustomBlockNoteEditor, CustomBlockNoteMenuProps, CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
+import { Separator } from '~/modules/ui/separator';
 
 const baseBlockNoteTypeToKeys = {
   table: ['table'],
@@ -124,7 +125,7 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
     >
       {items.map((item, index) => (
         <div key={item.title}>
-          {hasDigitShortcuts && index === indexedItemCount && <hr className="my-1" />}
+          {hasDigitShortcuts && index === indexedItemCount && <Separator className="my-1" />}
           <button
             ref={(element) => {
               itemRefs.current[index] = element;

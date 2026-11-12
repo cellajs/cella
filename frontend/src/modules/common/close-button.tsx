@@ -2,9 +2,8 @@ import { XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
-const sizeConfig = { sm: { icon: 'size-4', button: 'size-6' }, md: { icon: 'size-5', button: 'size-7' } } as const;
+const sizeConfig = { sm: { icon: 'size-4', button: 'icon-micro' }, md: { icon: 'size-5', button: 'icon-xs' } } as const;
 
 interface CloseButtonProps {
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -17,7 +16,7 @@ export function CloseButton({ onClick, size = 'md', className }: CloseButtonProp
   const { icon, button } = sizeConfig[size];
 
   return (
-    <Button variant="ghost" size="icon" aria-label={t('c:close')} className={cn(button, className)} onClick={onClick}>
+    <Button variant="ghost" size={button} aria-label={t('c:close')} className={className} onClick={onClick}>
       <XIcon className={icon} />
     </Button>
   );

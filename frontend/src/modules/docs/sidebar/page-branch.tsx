@@ -131,8 +131,8 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
 function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="nav"
+      size="xs"
       className={cn(sidebarLeafClass, 'data-[active=true]:bg-accent')}
       render={<Link to="/docs/page/$" params={{ _splat: page.id }} preload="intent" data-active={isActive} onClick={closeSidebarSheetAndNavigate} />}
     >

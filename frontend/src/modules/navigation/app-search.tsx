@@ -59,7 +59,7 @@ function SearchResultBlock({ results, entityType, label, hideSeparator, collapse
 
   return (
     <div className="flex w-full flex-col gap-1">
-      {!hideSeparator && <ComboboxSeparator className="h-0 border-t border-dashed bg-transparent" />}
+      {!hideSeparator && <ComboboxSeparator dashed />}
       <ComboboxGroup>
         <button
           type="button"
@@ -233,7 +233,7 @@ export function AppSearch() {
                     onRemove={(item) => removeRecentSelection(item.id)}
                   />
                 ))}
-                {recentSearches.length > 0 && <ComboboxSeparator className="h-0 border-t border-dashed bg-transparent" />}
+                {recentSearches.length > 0 && <ComboboxSeparator dashed />}
               </div>
             )}
             {notFound && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}

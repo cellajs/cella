@@ -104,9 +104,9 @@ function StatusTile() {
         {hasStatusPage && (
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             aria-label={t('c:details')}
-            className="text-muted-foreground -my-1 -mr-1.5 size-7"
+            className="text-muted-foreground -my-1.5 -mr-2"
             onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
           >
             <ExternalLinkIcon className="size-4" />

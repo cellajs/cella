@@ -21,11 +21,11 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
         {/* Above a confirmation's rows the question alone heads the sheet, as in a menu's confirmation; the title it repeats stays for screen readers */}
         {title && (
           <DrawerHeader sticky className={cn(description && 'group-has-data-[slot=drawer-row-group]/drawer-content:sr-only', headerClassName)}>
-            <DrawerTitle className="min-w-0 truncate">{titleContent}</DrawerTitle>
+            <DrawerTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</DrawerTitle>
           </DrawerHeader>
         )}
         {description && (
-          <DrawerDescription className="group-has-data-[slot=drawer-row-group]/drawer-content:text-foreground px-3 pb-6 group-has-data-[slot=drawer-row-group]/drawer-content:pt-4 group-has-data-[slot=drawer-row-group]/drawer-content:text-balance">
+          <DrawerDescription className="group-has-data-[slot=drawer-row-group]/drawer-content:text-foreground pb-6 group-has-data-[slot=drawer-row-group]/drawer-content:pt-4 group-has-data-[slot=drawer-row-group]/drawer-content:text-balance">
             {description}
           </DrawerDescription>
         )}

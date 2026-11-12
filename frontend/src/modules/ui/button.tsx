@@ -15,7 +15,7 @@ export const buttonVariants = cva(
       // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega; the neutral hovers take the one
       // hover tint, which an opaque fill takes premixed. Outline keeps the input edge, rests flat and keeps its opaque page
       // fill in dark mode, so an edgeless scope, an open state and media behind it leave it intact; link stays underlined.
-      // The intents, `soft`, outline-ghost and glass (over media), cell, input and row are additions.
+      // The intents, `soft`, outline-ghost and glass (over media), cell, input, row and nav are additions.
       variant: {
         default: 'intent-primary',
         brand: 'intent-brand',
@@ -33,6 +33,8 @@ export const buttonVariants = cva(
         input: 'border-input bg-background aria-invalid:border-destructive',
         // A list row in a DrawerRowGroup, as in the menu sheet
         row: 'text-md active:bg-accent relative w-full justify-start gap-3 font-normal',
+        // A row of a navigation list or aside, under its group's label; each list marks its active row its own way
+        nav: 'focus-inset text-muted-foreground hover:bg-hover hover:text-foreground justify-start font-normal',
       },
       soft: { true: '', false: '' },
       // Feedback while held (the press utility); input-styled buttons stay put like the fields they sit among, rows show a fill
@@ -45,6 +47,10 @@ export const buttonVariants = cva(
         lg: 'h-11 px-4',
         block: 'h-12 w-full rounded-xl px-4',
         xl: 'h-14 rounded-lg px-6 text-lg',
+        // An icon size is the height of the size it is named after
+        'icon-micro': 'size-6',
+        'icon-xs': 'size-8',
+        'icon-sm': 'size-9',
         icon: 'size-10',
         cell: 'h-full px-0 py-0',
         auto: 'h-auto',

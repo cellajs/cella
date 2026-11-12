@@ -1,6 +1,7 @@
 import { cn } from '~/utils/cn';
 
 const variantClasses = {
+  primary: 'bg-primary [--status-pulse-color:color-mix(in_oklch,var(--primary)_30%,transparent)]',
   success: 'bg-success [--status-pulse-color:color-mix(in_oklch,var(--success)_30%,transparent)]',
   info: 'bg-info [--status-pulse-color:color-mix(in_oklch,var(--info)_30%,transparent)]',
   warning: 'bg-warning [--status-pulse-color:color-mix(in_oklch,var(--warning)_30%,transparent)]',

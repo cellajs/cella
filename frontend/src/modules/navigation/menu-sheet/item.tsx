@@ -60,7 +60,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
-      className="group/menu-sheet-item standalone:[-webkit-touch-callout:none] focus-visible:ring-ring active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-center gap-1 rounded-sm ring-2 ring-transparent select-none ring-inset focus:outline-hidden data-[subitem=true]:h-10"
+      className="group/menu-sheet-item standalone:[-webkit-touch-callout:none] focus-effect focus-inset active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-center gap-1 rounded-sm select-none data-[subitem=true]:h-10"
     >
       <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}

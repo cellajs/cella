@@ -166,7 +166,7 @@ export function HeaderClose() {
   const { t } = useTranslation();
 
   return (
-    <DialogPrimitive.Close data-slot="dialog-close" render={<Button variant="ghost" size="icon" />} className="-my-1 ml-auto size-7 shrink-0">
+    <DialogPrimitive.Close data-slot="dialog-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
       <XIcon className="size-5" />
       <span className="sr-only">{t('c:close')}</span>
     </DialogPrimitive.Close>
@@ -178,7 +178,7 @@ export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
 }
 
 export function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
-  return <DialogPrimitive.Title data-slot="dialog-title" className={cn('leading-none font-semibold', className)} {...props} />;
+  return <DialogPrimitive.Title data-slot="dialog-title" className={cn('text-foreground font-semibold', className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {

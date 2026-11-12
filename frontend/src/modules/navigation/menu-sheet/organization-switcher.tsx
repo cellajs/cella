@@ -9,6 +9,7 @@ import { DropdownActionItem, DropdownActionSeparator } from '~/modules/common/dr
 import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { StatusDot } from '~/modules/common/status-dot';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations, openOrganizationLobby } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
@@ -153,7 +154,7 @@ export function OrganizationSwitcher({ organization }: { organization: UserMenuI
             url={organization.thumbnailUrl}
           />
           <span className="min-w-0 grow truncate text-left">{organization.name}</span>
-          {hasUnseenElsewhere && <span className="bg-primary -mr-2 size-2 shrink-0 rounded-full" />}
+          {hasUnseenElsewhere && <StatusDot variant="primary" pulse={false} className="-mr-2" />}
           <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
         </Button>
       </div>

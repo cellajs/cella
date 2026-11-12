@@ -112,7 +112,7 @@ export function DocsSidebar() {
         </TooltipButton>
         <div className="ml-auto flex items-center gap-1">
           <TooltipButton toolTipContent={t('c:search')}>
-            <Button ref={searchTriggerRef} variant="ghost" size="icon" className="size-9" onClick={() => openDocsSearch(searchTriggerRef)}>
+            <Button ref={searchTriggerRef} variant="ghost" size="icon-sm" onClick={() => openDocsSearch(searchTriggerRef)}>
               <SearchIcon className="size-5" />
             </Button>
           </TooltipButton>

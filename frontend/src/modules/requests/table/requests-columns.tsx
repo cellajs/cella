@@ -4,8 +4,8 @@ import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
+import { StatusDot } from '~/modules/common/status-dot';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { cn } from '~/utils/cn';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -25,9 +25,7 @@ export const useColumns = () => {
             {t(`c:${kind}`)}
             {kind === 'waitlist' && (
               <TooltipButton toolTipContent={status}>
-                <span className={cn('inline-block size-2 rounded-full', invited ? 'bg-warning' : 'bg-muted-foreground/70')}>
-                  <span className="sr-only">{status}</span>
-                </span>
+                <StatusDot variant={invited ? 'warning' : 'muted'} pulse={false} label={status} />
               </TooltipButton>
             )}
           </div>

@@ -130,7 +130,7 @@ export function DrawerHeader({ className, sticky, closeButton, children, ...prop
     >
       {children}
       {closeButton && (
-        <DrawerPrimitive.Close data-slot="drawer-close" render={<Button variant="ghost" size="icon" />} className="-my-1 ml-auto size-7 shrink-0">
+        <DrawerPrimitive.Close data-slot="drawer-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
           <XIcon className="size-5" />
           <span className="sr-only">{t('c:close')}</span>
         </DrawerPrimitive.Close>
@@ -178,7 +178,7 @@ export function DrawerDescription({ className, ...props }: DrawerPrimitive.Descr
     <DrawerPrimitive.Description
       data-slot="drawer-description"
       className={cn(
-        'text-muted-foreground text-sm group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center',
+        'text-muted-foreground px-3 pb-4 text-sm group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center',
         className,
       )}
       {...props}

@@ -35,7 +35,7 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
             {sheet.titleAside}
           </DrawerHeader>
         )}
-        {description && <DrawerDescription className="px-3 pb-4">{description}</DrawerDescription>}
+        {description && <DrawerDescription>{description}</DrawerDescription>}
         <ContentKeyTransition contentKey={sheet.contentKey}>{sheet.content}</ContentKeyTransition>
       </DrawerContent>
     </Drawer>
