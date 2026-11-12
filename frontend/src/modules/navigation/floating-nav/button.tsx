@@ -2,14 +2,8 @@ import { type ReactNode, type Ref, type TouchEvent, useRef } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 const tapSlopPx = 12; // Max finger travel for a touchend to still count as a tap
-
-/** A floating button scrolled out of view: focus brings it back, since it is how the keyboard reaches its action. */
-export const floatingHiddenClass = tw(
-  'pointer-events-none translate-y-16 scale-50 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100',
-);
 
 /** How long the label folds in or out: the `duration-300` of its wrapper and text below. */
 export const labelCollapseDuration = 300;
@@ -33,6 +27,8 @@ interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'aria
   /** 'default' for a page's main action. */
   variant?: 'default' | 'secondary';
   className?: string;
+  /** Scrolled out of view: focus brings it back, since it is how the keyboard reaches its action. */
+  concealed?: boolean;
   tabIndex?: number;
   ref?: Ref<HTMLButtonElement>;
   children?: ReactNode;
@@ -44,6 +40,7 @@ export function FloatingNavButton({
   onClick,
   ariaLabel,
   className,
+  concealed,
   tabIndex,
   direction = 'right',
   label,
@@ -99,6 +96,8 @@ export function FloatingNavButton({
         label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
         // Hiding moves by translate, which skips layout
         'chrome-hidden:pointer-events-none chrome-hidden:translate-y-16 chrome-hidden:scale-50 chrome-hidden:opacity-0',
+        concealed &&
+          'pointer-events-none translate-y-16 scale-50 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100',
         className,
       )}
       aria-label={ariaLabel}

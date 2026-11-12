@@ -6,10 +6,10 @@ import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
 import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
-import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { getChannelRoute } from '~/utils/channel-route';
 
 const hasTabsInMenu = channelTabsInMenu('organization');
@@ -61,7 +61,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             </Link>
           </div>
         ))}
-      {!hasSwitcher && <div className={menuHairlineClass} />}
+      {!hasSwitcher && <NavSheetDivider />}
       {hasTabsInMenu && <MenuSheetChannelTabs channel={organization} className="px-3 pb-2" />}
       {sections.map((section) => (
         <MenuSheetSection key={section.options.entityType} {...section} isCollapsible={sections.length > 1} organizationId={organization.id} />

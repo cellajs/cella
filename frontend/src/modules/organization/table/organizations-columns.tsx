@@ -6,7 +6,7 @@ import type { Organization } from 'sdk';
 import { hierarchy, isChannel, isProduct } from 'shared';
 import { enumSelectEditorOptions, RenderEditStatus, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { cellLinkTextClass, countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
+import { CellLabel, countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -22,7 +22,6 @@ import { UpdateOrganizationForm } from '~/modules/organization/update-organizati
 import { Button } from '~/modules/ui/button';
 import { ActorCell } from '~/modules/user/actor-cell';
 import { findMembership } from '~/query/enrichment/helpers';
-import { cn } from '~/utils/cn';
 
 const descendants = hierarchy.getOrderedDescendants('organization');
 const organizationRoles = hierarchy.getRoles('organization');
@@ -66,9 +65,9 @@ export const useColumns = () => {
           }
         >
           <EntityAvatar type="organization" className="size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-          <span className={cn(cellLinkTextClass, 'font-medium')}>
+          <CellLabel className="font-medium">
             <HighlightText text={row.name || '-'} />
-          </span>
+          </CellLabel>
         </Button>
       ),
     },

@@ -1,4 +1,5 @@
 import { BoxIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { exportDate } from '~/lib/export';
@@ -9,12 +10,19 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
-import { tw } from '~/utils/tw';
 
-/** The label inside a `cell` Button */
-export const cellLinkTextClass = tw('link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline');
+/** The label inside a `cell` Button: its underline shows while the button is hovered and darkens while it is pressed. */
+export function CellLabel({ className, ...props }: ComponentProps<'span'>) {
+  return (
+    <span
+      className={cn('link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline', className)}
+      {...props}
+    />
+  );
+}
 
 type DateValue = string | Date | null | undefined;
 

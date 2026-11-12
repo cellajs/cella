@@ -15,6 +15,10 @@ import { closeNavSheet } from '~/modules/navigation/nav-sheet';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
+
+/** Puts a `size-8` icon and the text after it on the columns of a `MenuSheetItem`, in a row at the menu's own inset: `px-3`, `size-8` and `gap-4` match the item's `mx-3 size-8` avatar box and `gap-1`. */
+export const menuColumnsClass = tw('gap-4 px-3');
 
 interface MenuSheetItemProps {
   item: UserMenuItem;

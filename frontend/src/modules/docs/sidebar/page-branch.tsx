@@ -6,12 +6,12 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
-import { sidebarBulletClass, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
+import { SidebarRail, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
@@ -102,13 +102,10 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           </>
         )}
       </div>
-      {!isRoot && hasChildren && (
-        <div className="no-focus-ring:top-5 bg-muted-foreground/30 pointer-events-none absolute top-4.5 bottom-2 left-2.5 hidden w-px group-data-[expanded=true]/page-parent:block" />
-      )}
-      {!isRoot && <div className={sidebarBulletClass} />}
+      {!isRoot && <SidebarRail expanded={isExpanded} line={hasChildren} lineClassName="bottom-2" />}
 
       {hasChildren && (
-        <CollapsibleContent className={collapsiblePanelClass}>
+        <CollapsibleContent>
           {isRoot ? (
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
             <ul className="no-focus-ring:gap-0 flex flex-col gap-1 py-1">

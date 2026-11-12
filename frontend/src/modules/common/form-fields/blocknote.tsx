@@ -4,6 +4,7 @@ import { BlockNote, type BlockNoteContentApi } from '~/modules/common/blocknote/
 import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { cn } from '~/utils/cn';
 
 export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   /** `media.upload` turns uploads on. */
@@ -33,7 +34,7 @@ export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field: { onChange, value } }) => (
+      render={({ field: { onChange, value }, fieldState: { invalid } }) => (
         <FormItem name={name} disabled={disabled} className={containerClassName}>
           {label && (
             <FormLabel required={required} onClick={focusEditor}>
@@ -49,6 +50,12 @@ export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
             ariaLabel={label}
             contentApiRef={contentApiRef}
             {...baseBlockNoteProps}
+            // The input frame, ringed while focus is inside; a form sets the side-menu gutter with `--bn-field-inset`
+            className={cn(
+              'bn-field focus-within-effect border-input bg-background rounded-md border text-sm',
+              invalid && 'border-destructive',
+              baseBlockNoteProps.className,
+            )}
           />
           <FormMessage />
         </FormItem>

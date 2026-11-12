@@ -148,7 +148,7 @@ export function DialogHeader({ className, sticky, closeButton = true, children, 
         'relative flex shrink-0 items-center gap-2 text-left',
         // 1rem shadows cover the scroller's padding and the popup's gap; a description starts after that gap, so they never cover it
         sticky && [
-          'bg-background sticky top-0 z-10 shadow-[0_-1rem_var(--color-background),0_1rem_var(--color-background)] stuck-edge',
+          'bg-background stuck-edge sticky top-0 z-10 shadow-[0_-1rem_var(--color-background),0_1rem_var(--color-background)]',
           'after:-inset-x-4 after:-bottom-4',
         ],
         className,

@@ -1,5 +1,5 @@
 import type { UserMinimalBase } from 'sdk';
-import { cellLinkTextClass } from '~/modules/common/data-table/columns';
+import { CellLabel } from '~/modules/common/data-table/columns';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { HighlightText, MatchReason } from '~/modules/common/match-highlight/highlight-text';
 import { Button } from '~/modules/ui/button';
@@ -53,9 +53,9 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly, ema
     >
       <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span className={cn('min-w-0 text-start', compactable && compactUserNameClass)}>
-        <span className={cn(cellLinkTextClass, 'block')}>
+        <CellLabel className="block">
           <HighlightText text={user.name || '-'} />
-        </span>
+        </CellLabel>
         <MatchReason text={email} shownText={user.name} />
       </span>
     </Button>

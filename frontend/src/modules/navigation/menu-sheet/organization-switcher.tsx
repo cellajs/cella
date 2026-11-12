@@ -10,12 +10,13 @@ import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
-import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { menuOrganizations, openOrganizationLobby } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
+import { menuColumnsClass } from '~/modules/navigation/menu-sheet/item';
 import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
@@ -156,7 +157,7 @@ export function OrganizationSwitcher({ organization }: { organization: UserMenuI
           <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
         </Button>
       </div>
-      <div className={menuHairlineClass} />
+      <NavSheetDivider />
     </>
   );
 }

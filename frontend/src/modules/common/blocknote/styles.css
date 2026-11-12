@@ -232,7 +232,7 @@
   width: 100%;
 }
 
-/* A form field (`blockNoteFieldClass`): the contenteditable fills the frame, so a press anywhere inside the border starts editing. */
+/* A form field (`BlockNoteContentFormField`): the contenteditable fills the frame, so a press anywhere inside the border starts editing. */
 .bn-shadcn.bn-field .bn-editor {
   min-height: 5rem;
   padding: 0.75rem 1.5rem 0.75rem var(--bn-field-inset, 2rem);

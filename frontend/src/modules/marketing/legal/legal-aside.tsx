@@ -10,7 +10,7 @@ import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import { type LegalSectionConfig, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
-import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
 interface LegalSubjectConfig {
@@ -91,7 +91,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                 <div className="bg-muted-foreground/30 w-px flex-1" />
               </div>
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
-              <CollapsibleContent keepMounted className={collapsiblePanelClass}>
+              <CollapsibleContent keepMounted>
                 <div className="flex flex-col py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
                     <SpyNavItem

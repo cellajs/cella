@@ -15,7 +15,7 @@ import { blocknoteHasContent } from '~/modules/common/blocknote/helpers/blocknot
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
+import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -24,7 +24,6 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Label } from '~/modules/ui/label';
 import type { MutationData } from '~/query/types';
-import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
 
 // Imported on submit, so @blocknote/core stays off the boot path.
@@ -101,7 +100,7 @@ export function CreateNewsletterForm({ organizationIds }: { organizationIds: str
           baseBlockNoteProps={{
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
-            className: cn(blockNoteFieldClass, '[--bn-field-inset:2.5rem]'),
+            className: '[--bn-field-inset:2.5rem]',
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             media: { organizationId: systemUploadPrefix, upload: { mediaMode: 'public-no-attachment', templateId: 'newsletter' } },
             excludeMediaBlockTypes: ['video', 'audio', 'file'],
