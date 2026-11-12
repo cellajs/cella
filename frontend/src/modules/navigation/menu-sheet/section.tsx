@@ -11,6 +11,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { collapseMotion } from '~/modules/common/motion-presets';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
+import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { foldedToggleLabel, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
@@ -34,11 +35,12 @@ export type MenuSectionOptions = {
   rowMark?: (item: UserMenuItem) => { icon: IconComponent; label: TKey } | undefined;
 };
 
-// The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them
+// The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them to the
+// icon button's size-10. Their focus ring sits inside, as the clip would cut one outside.
 const widenClass = tw(
-  'grid shrink-0 grid-cols-[0fr] opacity-0 transition-[grid-template-columns,margin-left,opacity] duration-200 ease-out *:min-w-0 *:overflow-hidden motion-reduce:transition-opacity',
+  'flex w-0 shrink-0 overflow-hidden opacity-0 transition-[width,margin-left,opacity] duration-200 ease-out motion-reduce:transition-opacity',
 );
-const widenOpenClass = tw('ml-2 grid-cols-[1fr] opacity-100');
+const widenOpenClass = tw('ml-2 w-10 opacity-100');
 
 interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;
@@ -67,6 +69,7 @@ function MenuSheetSectionButton({
 
   // Cumulative over the section's non-hidden, non-muted items and their subitems.
   const sectionUnseenCount = useUnseenCount(channelIds);
+  const showsBadge = sectionUnseenCount > 0 && !isSectionVisible;
   // The rows the section lists: neither hidden nor archived, subitems left out
   const activeCount = items.filter((item) => menuGroup(item) === 'active').length;
 
@@ -81,7 +84,7 @@ function MenuSheetSectionButton({
           aria-expanded={isSectionVisible}
           aria-label={isSectionVisible ? undefined : foldedToggleLabel(t, t(options.label), activeCount, sectionUnseenCount)}
           // Open, it keeps its resting look; its ring sits inside, as the next sticky header covers one outside
-          className="group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 aria-expanded:bg-transparent"
+          className="group/chevron-host group-label focus-inset aria-expanded:text-muted-foreground aria-expanded:hover:bg-hover aria-expanded:hover:text-foreground min-w-0 flex-1 gap-0 border-0 aria-expanded:bg-transparent"
           variant="ghost"
         >
           <span className="flex min-w-0 grow items-center gap-2">
@@ -90,8 +93,12 @@ function MenuSheetSectionButton({
               <span className="text-faint-foreground font-normal group-data-[visible=true]/menu-section:hidden">{activeCount}</span>
             )}
           </span>
-          {sectionUnseenCount > 0 && <CountBadge count={sectionUnseenCount} className="shrink-0 group-data-[visible=true]/menu-section:hidden" />}
-          <ChevronDownIcon className="shrink-0 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
+          {showsBadge && <CountBadge count={sectionUnseenCount} className="ml-2 shrink-0" />}
+          <FoldingChevron
+            icon={ChevronDownIcon}
+            folded={showsBadge}
+            className="ml-2 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180"
+          />
         </Button>
       ) : (
         // Matches the toggle's text box, so the label sits where a collapsible section shows it
@@ -100,7 +107,7 @@ function MenuSheetSectionButton({
 
       <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:hidden')}>
         <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
-          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" onClick={onToggleEditing}>
+          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className="focus-inset" onClick={onToggleEditing}>
             <Settings2Icon className="size-5" />
           </Button>
         </TooltipButton>
@@ -108,7 +115,7 @@ function MenuSheetSectionButton({
       {onCreate && (
         <div inert={!isSectionVisible} className={cn(widenClass, isSectionVisible && widenOpenClass)}>
           <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-            <Button ref={createButtonRef} variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
+            <Button ref={createButtonRef} variant="ghost" size="icon" className="focus-inset" onClick={() => onCreate(createButtonRef)}>
               <PlusIcon className="size-5" />
             </Button>
           </TooltipButton>

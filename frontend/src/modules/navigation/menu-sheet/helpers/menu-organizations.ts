@@ -14,7 +14,8 @@ export const menuOrganizations = (menu: UserMenu): UserMenuItem[] =>
 
 /** Opens the lobby of `organization` in place of a page of another organization. The page then names the organization the menu shows. */
 export function openOrganizationLobby(organization: Pick<UserMenuItem, 'id' | 'slug' | 'tenantId'>) {
-  if (organization.id === getRouteOrganizationId()) return;
+  const routeOrganizationId = getRouteOrganizationId();
+  if (!routeOrganizationId || routeOrganizationId === organization.id) return;
   getRouter().navigate({ to: '/$tenantId/$organizationSlug', params: { tenantId: organization.tenantId, organizationSlug: organization.slug } });
 }
 

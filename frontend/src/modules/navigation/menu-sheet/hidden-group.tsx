@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { isChannelHideable } from 'shared';
 import { CountBadge } from '~/modules/common/count-badge';
 import type { UserMenuItem } from '~/modules/me/types';
+import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { foldedToggleLabel, hiddenDropData, isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
@@ -64,7 +65,7 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
         aria-label={isOpen || dropAction ? undefined : foldedToggleLabel(t, label, count, unseenCount)}
         // Borderless: the icon centers on the avatars and dots above it. Open, it keeps its resting look.
         className={cn(
-          'group/hidden-toggle aria-expanded:hover:bg-hover w-full gap-0 border-0 p-0 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8 aria-expanded:bg-transparent',
+          'group/chevron-host aria-expanded:hover:bg-hover w-full gap-0 border-0 p-0 pr-3 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/hidden:h-8 aria-expanded:bg-transparent',
           dropAction && 'bg-muted aria-expanded:bg-muted ring-primary ring-2',
         )}
       >
@@ -76,24 +77,11 @@ function MenuSheetHiddenToggle({ onToggle, variant, count, channelIds = emptyCha
           {count > 0 && <span className="text-faint-foreground text-xs group-data-[hidden-visible=true]/hidden:hidden">{count}</span>}
         </div>
         {showsBadge && <CountBadge count={unseenCount} variant="muted" className="shrink-0" />}
-        {/* A badge takes the chevron's place; on hover the chevron widens in from the right as the section's buttons do, moving the badge aside */}
-        <div
-          className={cn(
-            'grid justify-end pr-3 transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none',
-            showsBadge
-              ? 'grid-cols-[0fr] group-hover/hidden-toggle:grid-cols-[1fr] group-focus-visible/hidden-toggle:grid-cols-[1fr]'
-              : 'grid-cols-[1fr]',
-          )}
-        >
-          <div className="flex min-w-0 justify-end overflow-hidden">
-            <ChevronDownIcon
-              className={cn(
-                'ml-3 shrink-0 opacity-50 transition duration-200 group-data-[has-hidden=false]/hidden:hidden group-data-[hidden-visible=true]/hidden:rotate-180 group-data-[submenu=true]/hidden:size-3.5 motion-reduce:transition-none',
-                showsBadge && 'opacity-0 group-hover/hidden-toggle:opacity-50 group-focus-visible/hidden-toggle:opacity-50',
-              )}
-            />
-          </div>
-        </div>
+        <FoldingChevron
+          icon={ChevronDownIcon}
+          folded={showsBadge}
+          className="ml-3 opacity-50 transition duration-200 group-data-[has-hidden=false]/hidden:hidden group-data-[hidden-visible=true]/hidden:rotate-180 group-data-[submenu=true]/hidden:size-3.5 motion-reduce:transition-none"
+        />
       </Button>
       {/* In a submenu it joins the last row above, down to 0.5625rem above the icon */}
       <SubmenuConnector className="-top-2 hidden h-4.25 group-data-[submenu=true]/hidden:flex" />

@@ -4,7 +4,7 @@ import { formatCount } from '~/utils/format-count';
 const variantClasses = {
   primary: 'bg-primary text-primary-foreground',
   // For a count of rows the person put out of the way, such as hidden or archived ones
-  muted: 'bg-muted-foreground text-background',
+  muted: 'bg-muted text-muted-foreground',
   destructive: 'bg-destructive text-destructive-foreground',
 };
 

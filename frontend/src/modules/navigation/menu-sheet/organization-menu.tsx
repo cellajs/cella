@@ -5,6 +5,7 @@ import { CountBadge } from '~/modules/common/count-badge';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
+import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
@@ -27,14 +28,14 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
   const unseenCount = useMenuItemUnseenCount(organization, true);
   const sections = organizationSections(organization, menu);
 
-  const badge = unseenCount > 0 && <CountBadge count={unseenCount} className="ml-auto shrink-0" />;
+  const badge = unseenCount > 0 && <CountBadge count={unseenCount} className="ml-3 shrink-0" />;
 
   return (
     <>
       {!hasSwitcher &&
         (hasTabsInMenu ? (
-          <div className="flex items-center gap-2 px-6 pt-3 pb-2">
-            <h2 className="truncate text-base font-semibold">{organization.name}</h2>
+          <div className="flex items-center px-6 pt-3 pb-2">
+            <h2 className="grow truncate text-base font-semibold">{organization.name}</h2>
             {badge}
           </div>
         ) : (
@@ -42,7 +43,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             <Link
               {...getChannelRoute(organization)}
               draggable={false}
-              className="group/organization-link focus-effect focus-inset hover:bg-hover flex h-12 items-center gap-3 rounded-md px-3 transition-colors"
+              className="group/organization-link group/chevron-host focus-effect focus-inset hover:bg-hover flex h-12 items-center rounded-md px-3 transition-colors"
             >
               <span className="flex min-w-0 grow flex-col gap-0.5">
                 <h2 className="truncate text-base leading-5 font-semibold">{organization.name}</h2>
@@ -56,7 +57,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
                 </span>
               </span>
               {badge}
-              <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
+              <FoldingChevron icon={ChevronRightIcon} folded={unseenCount > 0} className="text-muted-foreground ml-3 size-4" />
             </Link>
           </div>
         ))}
