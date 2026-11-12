@@ -15,6 +15,7 @@ const checklist = (checked: boolean, text = 'todo'): DescriptionBlock => ({
 });
 
 const media = (type: string, url: string, attachmentId = ''): DescriptionBlock => ({ type, props: { url, attachmentId, name: 'file' } });
+const [a1, a2, a9] = ['0199a1b2-c3d4-7e5f-8a6b-000000000001', '0199a1b2-c3d4-7e5f-8a6b-000000000002', '0199a1b2-c3d4-7e5f-8a6b-000000000009'];
 
 describe('countDescriptionBlocks', () => {
   it('counts checkboxes, media blocks, and collects unique attachment ids in document order', () => {
@@ -22,26 +23,31 @@ describe('countDescriptionBlocks', () => {
       paragraph('intro'),
       checklist(true),
       checklist(false),
-      media('image', 'a-1', 'a-1'),
-      media('file', 'seed/doc.pdf', 'a-2'),
+      media('image', a1, a1),
+      media('file', 'seed/doc.pdf', a2),
       // External media URL: counted, but contributes no attachment id
       media('video', 'https://example.com/clip.mp4'),
       // Duplicate reference stays unique
-      media('image', 'a-1', 'a-1'),
+      media('image', a1, a1),
     ]);
 
     expect(counts.checkboxCount).toBe(2);
     expect(counts.checkedCount).toBe(1);
     expect(counts.attachmentCount).toBe(4);
-    expect(counts.attachments).toEqual(['a-1', 'a-2']);
+    expect(counts.attachments).toEqual([a1, a2]);
     expect(counts.expandable).toBe(true);
   });
 
   it('walks nested children', () => {
-    const counts = countDescriptionBlocks([{ ...paragraph('parent'), children: [media('image', 'a-9', 'a-9'), checklist(true)] }]);
-    expect(counts.attachments).toEqual(['a-9']);
+    const counts = countDescriptionBlocks([{ ...paragraph('parent'), children: [media('image', a9, a9), checklist(true)] }]);
+    expect(counts.attachments).toEqual([a9]);
     expect(counts.checkboxCount).toBe(1);
     expect(counts.expandable).toBe(false);
+  });
+
+  it('must not collect an attachment id that is no UUID, and takes the id-shaped url of a block from before the prop', () => {
+    const counts = countDescriptionBlocks([media('image', 'seed/a.png', '../not-an-id'), media('image', a9)]);
+    expect(counts.attachments).toEqual([a9]);
   });
 
   it('ignores media blocks with empty or blank references', () => {
@@ -75,7 +81,7 @@ describe('deriveDocument', () => {
       JSON.stringify([
         { type: 'heading', props: { level: 2 }, content: [{ type: 'text', text: '  Sprint retro ' }] },
         paragraph('went   well'),
-        media('image', 'https://example.com/docs/plan.png', 'a-1'),
+        media('image', 'https://example.com/docs/plan.png', a1),
       ]),
     );
     expect(derived.name).toBe('Sprint retro');
@@ -96,13 +102,13 @@ describe('deriveDocument', () => {
   it('collects media attachment ids into attachments and counts', () => {
     const derived = deriveDocument(
       JSON.stringify([
-        media('image', 'a-1', 'a-1'),
-        { ...paragraph('parent'), children: [media('file', 'seed/doc.pdf', 'a-2'), media('image', 'a-1', 'a-1')] },
+        media('image', a1, a1),
+        { ...paragraph('parent'), children: [media('file', 'seed/doc.pdf', a2), media('image', a1, a1)] },
         media('video', 'https://example.com/clip.mp4'),
       ]),
     );
-    expect(derived.attachments).toEqual(['a-1', 'a-2']);
-    expect(derived.counts).toEqual({ expandable: true, checkboxCount: 0, checkedCount: 0, attachmentCount: 4, attachments: ['a-1', 'a-2'] });
+    expect(derived.attachments).toEqual([a1, a2]);
+    expect(derived.counts).toEqual({ expandable: true, checkboxCount: 0, checkedCount: 0, attachmentCount: 4, attachments: [a1, a2] });
   });
 
   it('counts checklist items, nested ones included', () => {

@@ -4,13 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { getNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
-import type {
-  CustomBlockNoteEditor,
-  CustomBlockNoteMenuProps,
-  CustomBlockTypes,
-  SlashIndexedItems,
-  SlashItemKeys,
-} from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor, CustomBlockNoteMenuProps, CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
 
 const baseBlockNoteTypeToKeys = {
   table: ['table'],
@@ -32,8 +26,8 @@ const baseBlockNoteTypeToKeys = {
   divider: ['divider'],
 } satisfies Record<CustomBlockTypes, SlashItemKeys[]>;
 
-/** The slash items a digit key picks, in order. */
-const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
+/** The slash items a digit key picks, in order: at most nine. */
+const customSlashIndexedItems: CustomBlockTypes[] = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
 
 const getSlashMenuItems = (
   editor: CustomBlockNoteEditor,

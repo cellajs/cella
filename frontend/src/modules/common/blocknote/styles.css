@@ -1,9 +1,5 @@
-/* Serves an app's task board (raak): lift the editing task card above sibling virtualizer items so BlockNote floating UI
-   (slash menu, toolbar) isn't clipped. */
-li:has([data-state="editing"]),
-li:has(.is-focused) {
-  z-index: 10;
-}
+@import "./custom-elements/checklist/checklist-styles.css";
+@import "./custom-elements/media/media-styles.css";
 
 /* BlockNote copies the editor class onto its floating-UI portal root; this selector outranks Tailwind utilities. */
 .bn-root:not(.bn-container) {
@@ -37,7 +33,7 @@ li:has(.is-focused) {
 .bn-editor[contenteditable="false"] .bn-add-file-button {
   pointer-events: none;
 }
-.bn-editor[contenteditable="false"] p.bn-add-file-button-text {
+.bn-editor[contenteditable="false"] .bn-add-file-button-text {
   display: none;
 }
 

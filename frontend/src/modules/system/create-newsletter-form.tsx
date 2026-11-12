@@ -103,7 +103,7 @@ export function CreateNewsletterForm({ organizationIds }: { organizationIds: str
             trailingBlock: false,
             className: cn(blockNoteFieldClass, '[--bn-field-inset:2.5rem]'),
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
-            baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
+            media: { organizationId: systemUploadPrefix, upload: { mediaMode: 'public-no-attachment', templateId: 'newsletter' } },
             excludeMediaBlockTypes: ['video', 'audio', 'file'],
           }}
         />

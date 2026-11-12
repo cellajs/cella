@@ -1,4 +1,4 @@
-import { type MouseEvent, Suspense, useState } from 'react';
+import { type MouseEvent, Suspense, useRef, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -8,6 +8,8 @@ import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import { useCanUploadAttachments } from '~/modules/attachment/helpers/use-can-upload-attachments';
+import { AddFilesButton } from '~/modules/common/blocknote/add-files-button';
+import type { BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -38,6 +40,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const canUpload = useCanUploadAttachments(organization);
+  const editorApiRef = useRef<BlockNoteContentApi | null>(null);
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(organization) };
 
@@ -96,21 +99,23 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             control={form.control}
             name="welcomeText"
             label={t('c:introduction')}
+            contentApiRef={editorApiRef}
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               excludeBlockTypes: ['checklistItem', 'notify'],
               className: cn(blockNoteFieldClass, 'bg-background max-h-[50vh] overflow-auto'),
-              baseFilePanelProps: canUpload
-                ? {
-                    mediaMode: 'private-attachment',
-                    tenantId: organization.tenantId,
-                    organizationId: organization.id,
-                    // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
-                    onComplete: (attachments) =>
-                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }),
-                  }
-                : undefined,
+              media: {
+                tenantId: organization.tenantId,
+                organizationId: organization.id,
+                // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
+                upload: canUpload
+                  ? {
+                      mediaMode: 'private-attachment',
+                      persist: (attachments) => persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }),
+                    }
+                  : undefined,
+              },
             }}
           />
         </Suspense>
@@ -120,6 +125,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             {t('c:save_changes')}
           </SubmitButton>
           <CancelButton type="button" dirty={form.isDirty} onClick={openDiscardConfirm} />
+          {canUpload && <AddFilesButton apiRef={editorApiRef} className="ml-auto" />}
         </FormActions>
       </form>
     </Form>

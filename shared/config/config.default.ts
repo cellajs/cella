@@ -57,8 +57,8 @@ export const config = {
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
    * other product entities. Apps extend when adding new embedding relationships.
-   * `lifecycle: 'owned'` additionally lets CDC garbage-collect embedded rows that no live
-   * host references; the default 'shared' only strips references to dead rows.
+   * `lifecycle: 'owned'` additionally lets the nightly retention run delete embedded rows that
+   * no live host references; the default 'shared' only strips references to dead rows.
    */
   productEmbeddings: [] as readonly ProductEmbedding<(typeof hierarchy.productTypes)[number]>[],
 
@@ -124,6 +124,7 @@ export const config = {
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
+    unreferencedItemsDays: 30,
     archivedTenantDays: 120,
     demoTenantDays: 2,
     sessionDaysAfterExpiry: 30,

@@ -1,10 +1,8 @@
 import type { BlockNoteEditor, ExtensionFactoryInstance, HeadingOptions } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
-import type { FilePanelProps } from '@blocknote/react';
-import type { ReactElement } from 'react';
 import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
-import { mediaBlockTypes } from 'shared/blocknote';
+import { type MediaBlockType, mediaBlockTypes } from 'shared/blocknote';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { Member } from '~/modules/memberships/types';
 
@@ -16,8 +14,7 @@ export type CustomBlock = typeof customSchema.Block;
 export type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
 export type CustomBlockTypes = CustomBlock['type'];
-export type CustomBlockMediaTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
-export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockMediaTypes>;
+export type CustomBlockMediaTypes = Extract<CustomBlockTypes, MediaBlockType>;
 
 export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockMediaTypes => mediaBlockTypes.has(type);
 
@@ -25,34 +22,27 @@ export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, 
 
 export type SlashItemKeys = DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 
-type MaxNineItems<T extends string> =
-  | [T]
-  | [T, T]
-  | [T, T, T]
-  | [T, T, T, T]
-  | [T, T, T, T, T]
-  | [T, T, T, T, T, T]
-  | [T, T, T, T, T, T, T]
-  | [T, T, T, T, T, T, T, T]
-  | [T, T, T, T, T, T, T, T, T];
-export type SlashIndexedItems = MaxNineItems<CustomBlockTypes>;
-
 /** How an upload is referenced: by attachment id, or by cloud key when its upload template stores publicly (the template decides). */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
 
-/**
- * Attachment modes upload through the attachment template and require a tenantId for persistence and private reads.
- * `public-no-attachment` persists no row: it uploads through its own public `templateId` and the block keeps the key.
- */
-export type BaseUppyFilePanelProps = {
+/** An attachment mode makes a row per file, which `persist` creates; `public-no-attachment` uploads through its own public template and the block keeps the stored key. */
+export type MediaUpload =
+  | { mediaMode: 'public-no-attachment'; templateId: UploadTemplateId }
+  | {
+      mediaMode: 'public-attachment' | 'private-attachment';
+      /** Creates the rows of the uploaded files. The editor awaits it before a block names a row. */
+      persist: (attachments: Attachment[]) => void | Promise<void>;
+    };
+
+/** Where a document's files live. */
+export type EditorMedia = {
   /** Storage prefix of the document's media: its organization id, or `systemUploadPrefix` for a system document. */
   organizationId: string;
-  onComplete?: (attachments: Attachment[]) => void | Promise<void>;
-  onError?: (error: Error) => void;
-} & (
-  | { mediaMode: 'public-no-attachment'; templateId: UploadTemplateId; tenantId?: string }
-  | { mediaMode: 'public-attachment' | 'private-attachment'; templateId?: never; tenantId: string }
-);
+  /** Resolves private files; an attachment upload mode needs it. */
+  tenantId?: string;
+  /** With it the editor adds files: the upload dialog, paste and drop. Without it the menus offer no media blocks. */
+  upload?: MediaUpload;
+};
 
 export type CommonBlockNoteProps = {
   id: string;
@@ -75,19 +65,21 @@ export type CommonBlockNoteProps = {
   clickOpensPreview?: boolean;
   /** Tighter line height (`bn-dense`), default false. */
   dense?: boolean;
-  /** The `:` emoji picker, default true. */
-  emojis?: boolean;
-  excludeBlockTypes?: CustomBlockRegularTypes[];
+  excludeBlockTypes?: Exclude<CustomBlockTypes, CustomBlockMediaTypes>[];
   excludeMediaBlockTypes?: CustomBlockMediaTypes[];
   /** Labels an empty heading in block 0, the title of a title document (helpers/title-document). */
   titlePlaceholder?: string;
-  /** Keeps block 0 first: no drag handle on it, no drop above it, and no move or drop that would displace it. */
-  pinTitleBlock?: boolean;
   /** Accessible name of the editing area, such as the label of the form field it fills. */
   ariaLabel?: string;
   extensions?: ExtensionFactoryInstance[];
   /** The members the `@` menu offers; without any there is no `@` menu. */
   members?: Member[];
+  media?: EditorMedia;
+  /**
+   * Pasted text that would add more lines than this becomes a file in the document, counted at the editor's current
+   * width; structured data (JSON) always does. Only with an attachment upload mode. Default `pastedTextMaxLines`.
+   */
+  pastedTextMaxLines?: number;
   onFocus?: () => void;
   /** Called on Escape, after the commit. */
   onEscape?: () => void;
@@ -95,11 +87,7 @@ export type CommonBlockNoteProps = {
   onCmdEnter?: () => void;
   /** Runs before a route loads, once the user changed the document since the editor mounted. */
   onBeforeLoad?: (editor: CustomBlockNoteEditor) => void;
-} & (
-  | { filePanel: (props: FilePanelProps) => ReactElement; baseFilePanelProps?: never }
-  | { filePanel?: never; baseFilePanelProps: BaseUppyFilePanelProps }
-  | { filePanel?: never; baseFilePanelProps?: never }
-);
+};
 
 export interface CustomBlockNoteMenuProps {
   editor: CustomBlockNoteEditor;

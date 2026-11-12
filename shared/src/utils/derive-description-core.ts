@@ -1,6 +1,6 @@
 import { isRecord } from './as-record.ts';
 import { isUuid } from './entity-id.ts';
-import { type DescriptionBlock, getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
+import { attachmentIdOf, type DescriptionBlock, getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
 
 export type DescriptionCounts = {
   /** True with more than one top-level block. */
@@ -23,7 +23,7 @@ const emptyDescriptionCounts = (): DescriptionCounts => ({
 /**
  * One depth-first walk gathering every count-based derived property, shared by backend and
  * frontend derivation so the two cannot drift. `attachmentCount` counts media blocks with any
- * reference, external URLs included; `attachments` collects attachment entity ids only.
+ * reference, a stored key included; `attachments` collects attachment entity ids only (`attachmentIdOf`).
  */
 export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionCounts => {
   const counts = emptyDescriptionCounts();
@@ -39,8 +39,8 @@ export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionC
       if (mediaBlockTypes.has(block.type) && block.props) {
         const url = block.props.url;
         if (typeof url === 'string' && url.trim().length > 0) counts.attachmentCount++;
-        const attachmentId = block.props.attachmentId;
-        if (typeof attachmentId === 'string' && attachmentId.length > 0 && !seen.has(attachmentId)) {
+        const attachmentId = attachmentIdOf(block.props);
+        if (attachmentId && !seen.has(attachmentId)) {
           seen.add(attachmentId);
           counts.attachments.push(attachmentId);
         }

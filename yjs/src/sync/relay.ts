@@ -6,7 +6,7 @@ import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { z } from 'zod';
 import { maxLength } from '#/db/utils/constraints';
-import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
+import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice, LogRow } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import {
@@ -297,14 +297,26 @@ export function handleLeave(doc: YjsDocKey, ws: WebSocket): void {
 }
 
 /**
- * The seed of a new document: its stored description, and one empty paragraph for none. A description that does not
- * convert is logged and seeds the empty document too: the session opens, and the next write replaces the description.
+ * Seeds a new document from its stored description, one empty paragraph for none. `unconvertible` for a description
+ * the server's schema cannot convert, such as one with a block type a newer client wrote: nothing is seeded, since an
+ * empty document in its place would replace the description at the next write. Null as `seedDocument`.
  */
-function seedFrom(scope: YjsDocScope): (description: string | null) => Uint8Array {
-  return (description) =>
-    descriptionToSeedOrEmpty(description, (err) =>
-      log.warn(`The description of ${docKey(scope)} does not convert: seeding an empty document`, { err }),
-    );
+async function seedFromDescription(scope: YjsDocScope): Promise<Awaited<ReturnType<typeof seedDocument>> | 'unconvertible'> {
+  let unconvertible = false;
+  try {
+    return await seedDocument(scope, (description) => {
+      try {
+        return descriptionToSeed(description);
+      } catch (err) {
+        unconvertible = true;
+        log.warn(`The description of ${docKey(scope)} does not convert: its document does not open`, { err });
+        throw err;
+      }
+    });
+  } catch (err) {
+    if (unconvertible) return 'unconvertible';
+    throw err;
+  }
 }
 
 /**
@@ -339,7 +351,15 @@ async function loadDocumentState(collab: CollabSession, ws?: WebSocket): Promise
     return null;
   }
   // Fresh document: the server seeds it from the stored description, so clients never seed it.
-  document ??= await seedDocument(scope, seedFrom(scope));
+  if (!document) {
+    const seeded = await seedFromDescription(scope);
+    if (seeded === 'unconvertible') {
+      // Refused, as a frame the relay cannot take: a reconnect would find the same description.
+      for (const client of collab.clients) client.close(yjsCloseCodes.BadRequest, 'Description does not convert');
+      return null;
+    }
+    document = seeded;
+  }
   // Deleted since the socket was authorized: its reconnect is told so.
   if (!document) {
     endCollab(collab);

@@ -1,7 +1,21 @@
 import { isRecord } from './as-record.ts';
+import { isUuid } from './entity-id.ts';
 
 /** Block types that hold one file: its reference in the `url` prop, its file name in `name`. */
-export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
+const mediaBlockTypeNames = ['audio', 'video', 'image', 'file'] as const;
+
+export type MediaBlockType = (typeof mediaBlockTypeNames)[number];
+
+export const mediaBlockTypes: ReadonlySet<string> = new Set(mediaBlockTypeNames);
+
+/**
+ * The attachment a media block names: its `attachmentId` prop, else an id-shaped `url` from before that prop.
+ * Undefined for a block without a row, and for an id that is no UUID.
+ */
+export const attachmentIdOf = (props: { attachmentId?: unknown; url?: unknown } | undefined): string | undefined => {
+  for (const ref of [props?.attachmentId, props?.url]) if (typeof ref === 'string' && isUuid(ref)) return ref;
+  return undefined;
+};
 
 /** One inline item of a stored block: styled text, a link with its words in `content`, or a custom node such as a mention. */
 export type DescriptionInline = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: Record<string, unknown> };

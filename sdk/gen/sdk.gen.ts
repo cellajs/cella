@@ -3411,7 +3411,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
 /**
  * Pull Yjs document
  *
- * Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.
+ * Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it; a description the server cannot convert answers 400 `invalid_request`, and its document stays unopened. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/yjs/pull** ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/tenants/{tenantId}/organizations/{organizationId}/yjs/pull) ·· _yjs · cella_
  *

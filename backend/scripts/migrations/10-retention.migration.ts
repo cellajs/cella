@@ -1,4 +1,5 @@
-import { getTableName } from 'drizzle-orm';
+import { getColumns, getTableName } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { appPartitionConfigs, productTables } from '#/db/product-tables';
 import type { PartitionConfig } from '#/tables';
@@ -54,6 +55,82 @@ const tombstoneTables = Object.values(productTables).map((table) => getTableName
 
 /** Tombstones one batch removes; a commit between batches keeps each transaction small for the CDC worker. */
 const tombstoneBatchSize = 1000;
+
+/** A host column through which a live host row keeps an embedded row: an id array, or the one id of a hydrated reference. */
+interface HostReference {
+  table: string;
+  column: string;
+  isArray: boolean;
+}
+
+/** The table of an owned embedding with every host column that names its rows: an embedding of any lifecycle keeps a row. */
+export interface UnreferencedRule {
+  table: string;
+  hosts: HostReference[];
+}
+
+/** One rule per product type that `appConfig.productEmbeddings` embeds with lifecycle `owned`; throws on a host column no table holds. */
+function resolveUnreferencedRules(): UnreferencedRule[] {
+  const embeddings = appConfig.productEmbeddings;
+  const ownedTypes = new Set(embeddings.filter(({ lifecycle }) => lifecycle === 'owned').map(({ embeddedProductType }) => embeddedProductType));
+
+  return [...ownedTypes].map((embeddedType) => ({
+    table: getTableName(productTables[embeddedType]()),
+    hosts: embeddings
+      .filter(({ embeddedProductType }) => embeddedProductType === embeddedType)
+      .map(({ hostProductType, hostColumn }) => {
+        const hostTable = productTables[hostProductType]();
+        // Widened for the column the config names.
+        const columns: Record<string, AnyPgColumn> = getColumns(hostTable);
+        // A hydrated single reference keeps `<hostColumn>Id` and no array.
+        const column = columns[hostColumn] ?? columns[`${hostColumn}Id`];
+        if (!column) throw new Error(`productEmbeddings: column "${hostColumn}" not found on "${hostProductType}" table`);
+        return { table: getTableName(hostTable), column: column.name, isArray: hostColumn in columns };
+      }),
+  }));
+}
+
+const unreferencedRules = resolveUnreferencedRules();
+
+/** The condition under which no live row of one host names the embedded row `e`, in its organization. */
+const notNamedBy = ({ table, column, isArray }: HostReference): string =>
+  isArray
+    ? `AND NOT EXISTS (SELECT 1 FROM ${table} h, unnest(h.${column}) AS named(id)
+          WHERE h.deleted_at IS NULL AND h.organization_id = e.organization_id AND named.id = e.id)`
+    : `AND NOT EXISTS (SELECT 1 FROM ${table} h
+          WHERE h.deleted_at IS NULL AND h.organization_id = e.organization_id AND h.${column} = e.id)`;
+
+/**
+ * The soft delete of one batch of rows of an owned embedding that no live host names. A row inside the
+ * unreferenced-items period stays: its host may not be written yet, as with a file uploaded into a form. The
+ * tombstone takes ids of its own in `stx`: with the last writer's, that writer's tab takes the delete for an echo.
+ */
+export const unreferencedBatchSql = ({ table, hosts }: UnreferencedRule): string => `UPDATE ${table} t
+    SET deleted_at = now(), deleted_by = NULL, updated_at = now(), updated_by = NULL,
+        stx = t.stx || jsonb_build_object('mutationId', gen_random_uuid()::text, 'sourceId', 'retention')
+    WHERE t.deleted_at IS NULL AND t.id IN (
+      SELECT e.id FROM ${table} e
+      WHERE e.deleted_at IS NULL AND e.created_at < now() - ${days(retention.unreferencedItemsDays)}
+        ${hosts.map(notNamedBy).join('\n        ')}
+      LIMIT ${tombstoneBatchSize}
+    )`;
+
+/** One owned embedding's loop inside the procedure, a commit between batches as for the tombstones. */
+const generateUnreferencedSql = (rule: UnreferencedRule): string => `LOOP
+    ${unreferencedBatchSql(rule)};
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    EXIT WHEN removed = 0;
+    IF commit_batches THEN COMMIT; END IF;
+  END LOOP;`;
+
+/** The procedure's block for the owned embeddings; empty without one, which leaves the procedure of such an app as it was. */
+const unreferencedBlock =
+  unreferencedRules.length === 0
+    ? ''
+    : `-- Owned embedded rows: one no live host names is soft-deleted past the unreferenced-items period, a batch at a time.
+  ${unreferencedRules.map(generateUnreferencedSql).join('\n  ')}
+
+  `;
 
 /** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-retention.ts). */
 export const retentionProcedure = 'apply_retention';
@@ -155,8 +232,8 @@ const generateTombstoneSql = (table: string): string => `LOOP
  * The retention procedure: drops partitions older than the retention window, trims the DEFAULT
  * partition, then creates partitions from the newest upper bound through two intervals ahead.
  * Rows that landed in DEFAULT for a new range are moved out first, because Postgres refuses a
- * partition whose range the DEFAULT partition already holds rows for. Then removes tombstones past the deleted-items
- * period and ends with the row sweeps. `commit_batches` is false only inside a transaction, where a COMMIT is refused.
+ * partition whose range the DEFAULT partition already holds rows for. Then soft-deletes the rows of an owned embedding
+ * that no live host names, removes tombstones past the deleted-items period and ends with the row sweeps. `commit_batches` is false only inside a transaction, where a COMMIT is refused.
  */
 function generateRetentionProcedureSql(): string {
   return `CREATE OR REPLACE PROCEDURE public.${retentionProcedure}(commit_batches boolean DEFAULT true) LANGUAGE plpgsql AS $proc$
@@ -210,7 +287,7 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  -- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time. The row
+  ${unreferencedBlock}-- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time. The row
   -- holding its organization's newest sequence position stays: a counter rebuild takes MAX(seq) over the rows.
   ${tombstoneTables.map(generateTombstoneSql).join('\n  ')}
 
@@ -278,6 +355,7 @@ END $$;
     notes: [
       ...partitionConfigs.map((config) => `${config.name}: ${config.interval} partitions, ${config.retention ?? 'indefinite'} retention`),
       ...sweepRules.map(({ table, aged }) => `${table}: swept where ${aged.replace(/\s+/g, ' ')}`),
+      ...unreferencedRules.map(({ table }) => `${table}: a row no live host names is soft-deleted after ${retention.unreferencedItemsDays} days`),
     ],
   };
 }

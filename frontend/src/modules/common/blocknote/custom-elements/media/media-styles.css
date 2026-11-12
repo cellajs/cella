@@ -1,0 +1,131 @@
+/* The frame of a media block: its file actions sit in its top right corner. */
+.bn-file-block-content-wrapper {
+  position: relative;
+}
+
+/* A row and the add-file button take the block's width: BlockNote sizes a file block to its content. */
+.bn-block-content[data-file-block]:has(.bn-file-row),
+.bn-file-block-content-wrapper:has(> .bn-file-row) {
+  width: 100%;
+}
+.bn-add-file-button {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* A file as a row: the icon of its kind, its name, then kind and size. */
+.bn-file-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.bn-file-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  /* Room for the file's actions, which sit over the row's end. */
+  padding-right: 2rem;
+}
+.bn-file-block-content-wrapper:has(> .bn-file-actions[data-pinned]) .bn-file-row-main {
+  padding-right: 9rem;
+}
+.bn-file-row-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bn-file-row-meta {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+/* A text file's first lines, three at most. */
+.bn-file-row-excerpt {
+  max-height: 3.75rem;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* A file's own actions. A pointer shows them on hover or focus; a touch screen always does. */
+.bn-file-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.bn-file-block-content-wrapper:hover > .bn-file-actions,
+.bn-file-actions:focus-within,
+.bn-file-actions:has([data-popup-open]),
+.bn-file-actions[data-pinned] {
+  opacity: 1;
+}
+@media (hover: none) {
+  .bn-file-actions {
+    opacity: 1;
+  }
+}
+.bn-file-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.75rem;
+  padding: 0 0.375rem;
+  border: 1px solid var(--input);
+  border-radius: 0.375rem;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .bn-file-action:hover {
+    background-color: var(--hover);
+  }
+}
+
+/* The file's name or caption, edited in place. */
+.bn-file-field {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--input);
+  border-radius: 0.375rem;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  user-select: text;
+}
+
+/* The handles that resize an image or a video show while the pointer is on it. */
+.bn-resize-handle {
+  display: none;
+  touch-action: none;
+}
+.bn-file-block-content-wrapper:hover .bn-resize-handle {
+  display: block;
+}

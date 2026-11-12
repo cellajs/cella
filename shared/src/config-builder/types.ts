@@ -174,6 +174,8 @@ export interface RetentionConfig {
   activityDays: number;
   /** A deleted row, its files and its collaborative document, from the delete; at least `activityDays` + 30. */
   deletedItemsDays: number;
+  /** A row of an owned embedding that no live host names, from its creation: a file uploaded into a form waits this long for its host, and a removed one counts toward the quota as long. At least 1. */
+  unreferencedItemsDays: number;
   /** An archived tenant (an organization deleted, or a contract ended), from the archiving; a system admin can restore it until then. */
   archivedTenantDays: number;
   /** A demo tenant, from its creation; it goes with everything in it and the account that took it. */
@@ -251,8 +253,8 @@ export interface CompanyConfig {
 
 /**
  * A product entity embedded as an id array inside a host product entity. `lifecycle: 'owned'`
- * lets CDC delete embedded rows no live host references; the default 'shared' only strips
- * references to dead rows.
+ * lets the nightly retention run delete embedded rows no live host references, once they are past
+ * `retention.unreferencedItemsDays`; the default 'shared' only strips references to dead rows.
  */
 export interface ProductEmbedding<P extends string = string> {
   readonly embeddedProductType: P;

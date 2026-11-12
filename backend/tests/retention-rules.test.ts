@@ -14,6 +14,7 @@ import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
+import { unreferencedBatchSql } from '../scripts/migrations/10-retention.migration';
 import { memberRole } from './fixtures';
 import { createTestOrganization, createTestUser, adminDb as db, insertTestSession, insertTestToken } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
@@ -271,5 +272,80 @@ describe('apply_retention() row rules', () => {
       expect(ids, rule).toEqual(expect.arrayContaining(kept));
       for (const id of removed) expect(ids, rule).not.toContain(id);
     }
+  });
+});
+
+/**
+ * The rule of an owned embedding (`appConfig.productEmbeddings`), which the template declares none of: the statement
+ * the procedure runs for one, against a host table of this test. It soft-deletes files, so it is checked against rows.
+ */
+describe('apply_retention() collection of unreferenced owned rows', () => {
+  const rule = {
+    table: 'attachments',
+    hosts: [
+      { table: 'retention_test_hosts', column: 'files', isArray: true },
+      { table: 'retention_test_hosts', column: 'cover_id', isArray: false },
+    ],
+  };
+  const cleanups: (() => Promise<void>)[] = [];
+
+  afterAll(async () => {
+    for (const cleanup of cleanups.reverse()) await cleanup();
+    await clearDatabase();
+  });
+
+  it('soft-deletes a row past its period that no live host of its organization names, and keeps every other', async () => {
+    const user = await createTestUser('retention-unreferenced@example.com');
+    const organization = await createTestOrganization();
+    const elsewhere = await createTestOrganization();
+    const plan = await seedAttachmentHome({ id: organization.id, tenantId: organization.tenantId }, user.id);
+    cleanups.push(() => cleanupEntityHierarchy(db, plan));
+
+    const attachment = async (createdAt: Date, deletedAt: string | null = null) => {
+      const id = generateId();
+      const row = { id, tenantId: organization.tenantId, ...plan.channelIdColumns, keys: {}, createdBy: user.id, updatedBy: null };
+      const stamps = { createdAt: createdAt.toISOString(), deletedAt, deletedBy: deletedAt ? user.id : null };
+      await insertAttachmentRow(buildInsertableProduct('attachment', { ...row, ...stamps }, id));
+      return id;
+    };
+    const old = outside(retention.unreferencedItemsDays);
+    const deletedBefore = ago(3).toISOString();
+    const rows = {
+      named: await attachment(old),
+      namedOnce: await attachment(old),
+      young: await attachment(inside(retention.unreferencedItemsDays)),
+      unnamed: await attachment(old),
+      namedByDeletedHost: await attachment(old),
+      namedElsewhere: await attachment(old),
+      deletedByAPerson: await attachment(old, deletedBefore),
+    };
+    cleanups.push(async () => {
+      await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, Object.values(rows)));
+    });
+
+    // A temporary table lives on one connection, which the transaction keeps.
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`CREATE TEMP TABLE retention_test_hosts
+        (organization_id uuid, deleted_at timestamptz, files uuid[], cover_id uuid) ON COMMIT DROP`);
+      await tx.execute(sql`INSERT INTO retention_test_hosts (organization_id, deleted_at, files, cover_id) VALUES
+        (${organization.id}, NULL, ARRAY[${rows.named}]::uuid[], ${rows.namedOnce}),
+        (${organization.id}, now(), ARRAY[${rows.namedByDeletedHost}]::uuid[], NULL),
+        (${elsewhere.id}, NULL, ARRAY[${rows.namedElsewhere}]::uuid[], NULL)`);
+      await tx.execute(sql.raw(unreferencedBatchSql(rule)));
+    });
+
+    const stored = await db
+      .select({ id: attachmentsTable.id, deletedAt: attachmentsTable.deletedAt, deletedBy: attachmentsTable.deletedBy, stx: attachmentsTable.stx })
+      .from(attachmentsTable)
+      .where(inArray(attachmentsTable.id, Object.values(rows)));
+    // A tombstone a person made keeps its stamps: a run that moved them would put off its removal night after night.
+    const earlier = stored.find((row) => row.id === rows.deletedByAPerson);
+    expect(earlier).toMatchObject({ deletedBy: user.id });
+    expect(Date.parse(earlier?.deletedAt ?? '')).toBe(Date.parse(deletedBefore));
+    const collected = stored.filter((row) => row.deletedAt !== null && row.id !== rows.deletedByAPerson);
+
+    expect(collected.map((row) => row.id).sort()).toEqual([rows.unnamed, rows.namedByDeletedHost, rows.namedElsewhere].sort());
+    // Ids of its own: the tab of a row's last writer takes a delete with that writer's ids for an echo.
+    for (const row of collected) expect(row.stx).toMatchObject({ sourceId: 'retention' });
   });
 });

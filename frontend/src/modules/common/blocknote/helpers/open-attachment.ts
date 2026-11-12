@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { attachmentIdOf } from 'shared/blocknote';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
@@ -21,9 +22,16 @@ export const openAttachment = async (editor: CustomBlockNoteEditor, blockId?: st
   editor.forEachBlock((block) => {
     if (!isMediaBlock(block) || !block.props.url) return true;
 
-    const { id, type: contentType, props } = block;
-    const attachmentId = 'attachmentId' in props && typeof props.attachmentId === 'string' ? props.attachmentId : undefined;
-    slides.push({ id, url: props.url, filename: props.name, name: props.name, contentType, attachmentId });
+    const { id, type, props } = block;
+    // The file's own content type picks the viewer; a block from before that prop has only its block type.
+    slides.push({
+      id,
+      url: props.url,
+      filename: props.name,
+      name: props.name,
+      contentType: props.mimeType || type,
+      attachmentId: attachmentIdOf(props),
+    });
 
     return true;
   });

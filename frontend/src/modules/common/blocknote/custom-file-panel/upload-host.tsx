@@ -2,9 +2,9 @@ import { FilePanelExtension } from '@blocknote/core/extensions';
 import { useBlockNoteEditor, useExtension, useExtensionState } from '@blocknote/react';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
-import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
+import { type UploadingMedia, UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
-import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 /** Live editor handle the bridge keeps current, so the host targets the latest editor after a remount. */
 interface EditorHandle {
@@ -41,7 +41,7 @@ export function FilePanelBridge({ host }: { host: UploadHostApi }) {
 }
 
 /** Owns the Uppy dialog outside the editor subtree, so a mid-upload remount cannot tear it down; a `FilePanelBridge` reports the block and editor. */
-export function UploadHostProvider({ baseFilePanelProps, children }: { baseFilePanelProps: BaseUppyFilePanelProps; children: ReactNode }) {
+export function UploadHostProvider({ media, children }: { media: UploadingMedia; children: ReactNode }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 
@@ -57,7 +57,7 @@ export function UploadHostProvider({ baseFilePanelProps, children }: { baseFileP
   return (
     <UploadHostContext.Provider value={api}>
       {children}
-      {handle && activeBlockId !== null && <UppyFilePanel {...baseFilePanelProps} blockId={activeBlockId} editor={handle.editor} onClose={close} />}
+      {handle && activeBlockId !== null && <UppyFilePanel media={media} blockId={activeBlockId} editor={handle.editor} onClose={close} />}
     </UploadHostContext.Provider>
   );
 }

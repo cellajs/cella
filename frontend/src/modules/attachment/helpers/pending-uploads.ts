@@ -1,4 +1,5 @@
 import type { Attachment } from 'sdk';
+import { attachmentIdOf } from 'shared/blocknote';
 import { getFirstName } from 'shared/utils/get-first-name';
 import { hasCloudFile } from 'shared/utils/storage-key';
 import type { TKey } from '~/lib/i18n-locales';
@@ -28,10 +29,10 @@ export const markPendingUpload = (attachmentId: string, uploader: Attachment['cr
 
 export const getPendingUpload = (attachmentId: string) => pendingUploads.get(attachmentId);
 
-/** The pending upload a media block names: by its `attachmentId` prop, or by an id-shaped `url` from before that prop. */
-export const getBlockPendingUpload = (props: Record<string, unknown>) => {
-  const ref = (typeof props.attachmentId === 'string' && props.attachmentId) || (typeof props.url === 'string' && props.url);
-  return ref ? pendingUploads.get(ref) : undefined;
+/** The pending upload of the attachment a media block names (`attachmentIdOf`). */
+export const getBlockPendingUpload = (props: { attachmentId?: unknown; url?: unknown }) => {
+  const attachmentId = attachmentIdOf(props);
+  return attachmentId ? pendingUploads.get(attachmentId) : undefined;
 };
 
 /** Drops the attachments whose file `isStored` now finds in storage and tells subscribers, so placeholders turn into files. */

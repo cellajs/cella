@@ -4,6 +4,8 @@
 
 React-free BlockNote schema configs shared by the frontend editor and the backend's Y.Doc conversion, so the ProseMirror node specs (names, attributes, content) stay identical and a document converted on the server round-trips through the client editor without loss. Render implementations stay in the frontend; the server schema pairs these configs with minimal renders, which converting between blocks and a Y.Doc never invokes.
 
+The four file-carrying blocks share what a block knows of its file: the attachment it names, an image's pixel size, the file's MIME type and size, and a text file's first characters.
+
 ## Media references: [media-ref.ts](./media-ref.ts)
 
 One grammar for what a media block's `url` may hold: an attachment id, a storage key under the document's organization, or an asset URL on the configured `mediaAssetOrigin`. Everything else is `invalid`, external URLs included. Client writes refuse it, materializing a collaborative description blanks it, and the renderers (the editor and the static document render) show nothing for it, so a check at write time and one at render time cannot disagree.

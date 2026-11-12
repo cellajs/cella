@@ -106,6 +106,7 @@ What a delete or an archive does depends on the entity:
 - **Nested channel**: removed at once, with the channels and products in it.
 - **Nested channel, archived**: readable, listed on request and closed to writes until unarchived.
 - **Rows with a period**: sessions, tokens, devices and invitations are swept nightly after it.
+- **Row of an owned embedding**: deleted as a product once no host references it and its period has passed.
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 

@@ -7,7 +7,14 @@ import {
   defaultBlockSpecs,
   type StyleSchema,
 } from '@blocknote/core';
-import { checklistItemConfig, codeBlockConfig, mentionConfig, notifyConfig, withAttachmentRef } from './blocknote-schema-configs.ts';
+import {
+  type CustomBlockType,
+  checklistItemConfig,
+  codeBlockConfig,
+  mediaBlockConfigs,
+  mentionConfig,
+  notifyConfig,
+} from './blocknote-schema-configs.ts';
 
 type MentionImplementation = CustomInlineContentImplementation<typeof mentionConfig, StyleSchema>;
 /** BlockNote's `HTMLElement` plus the two members used here, spelled out because workers compile without the DOM lib. */
@@ -53,14 +60,14 @@ const renderMention: MentionImplementation['render'] = (inlineContent) => {
  */
 export const serverBlockNoteSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
-    audio: withAttachmentRef(defaultBlockSpecs.audio),
-    file: withAttachmentRef(defaultBlockSpecs.file),
-    image: withAttachmentRef(defaultBlockSpecs.image),
-    video: withAttachmentRef(defaultBlockSpecs.video),
+    audio: { ...defaultBlockSpecs.audio, config: mediaBlockConfigs.audio },
+    file: { ...defaultBlockSpecs.file, config: mediaBlockConfigs.file },
+    image: { ...defaultBlockSpecs.image, config: mediaBlockConfigs.image },
+    video: { ...defaultBlockSpecs.video, config: mediaBlockConfigs.video },
     checklistItem: createBlockSpec(checklistItemConfig, { render: renderInlineBlock })(),
     notify: createBlockSpec(notifyConfig, { render: renderInlineBlock })(),
     // No highlighter server-side: only the node spec matters.
     codeBlock: createCodeBlockSpec(codeBlockConfig),
-  },
+  } satisfies Record<CustomBlockType, unknown>,
   inlineContentSpecs: { mention: createInlineContentSpec(mentionConfig, { render: renderMention }) },
 });

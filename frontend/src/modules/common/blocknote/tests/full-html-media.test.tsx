@@ -41,7 +41,13 @@ const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
 const cdn = appConfig.s3.publicCDNUrl;
 const ownKey = `${organizationId}/user-1/photo.webp`;
 
-const image = (url: string, id: string) => ({ id, type: 'image', props: { url, name: 'image.png' }, children: [] });
+// With the file's own type and size, as an upload writes them: the block's element still names the block type.
+const image = (url: string, id: string) => ({
+  id,
+  type: 'image',
+  props: { url, name: 'image.png', mimeType: 'image/png', size: 2048 },
+  children: [],
+});
 const paragraph = (text: string) => ({
   id: 'text',
   type: 'paragraph',
@@ -91,9 +97,9 @@ describe('BlockNoteFullHtml media', () => {
     const imageBlockCount = () => container.querySelectorAll('[data-content-type="image"]').length;
 
     await act(async () => root.render(<BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />));
-    // First pass: the unresolved blocks, painted while the presign is pending.
+    // First pass: the unresolved blocks, painted while the presign is pending. Their boxes hold no source: an id or a key is no URL.
     await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
-    expect(sourcesNow()).toEqual([ownKey, attachmentId]);
+    expect(sourcesNow()).toEqual([null, null]);
     expect(imageBlockCount()).toBe(2);
 
     // The resolved pass swaps in the presigned URL, the last source to arrive.
