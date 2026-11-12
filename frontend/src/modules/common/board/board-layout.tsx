@@ -7,7 +7,6 @@ import { motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { PanelCollapseContext, PanelDragHandleContext } from '~/modules/common/board/board-drag';
-import { BoardFitToggle } from '~/modules/common/board/board-fit-toggle';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -89,14 +88,7 @@ export function BoardLayout({
   ref,
 }: BoardLayoutProps) {
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
-  const fit = useBoardStore((state) => state.boardFits[boardId] ?? false);
-  const setBoardFit = useBoardStore((state) => state.setBoardFit);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
-  // A must-fit row never enters the band
-  const [inFitBand, setInFitBand] = useState(false);
-
-  const handleFitChange = useCallback((next: boolean) => setBoardFit(boardId, next), [boardId, setBoardFit]);
-  const handleFitToggle = useCallback(() => panelGroupApiRef.current?.setFit(!fit), [fit]);
 
   const handleReady = useCallback((api: PanelGroupApi) => {
     panelGroupApiRef.current = api;
@@ -164,12 +156,10 @@ export function BoardLayout({
   const panelGroup = (
     <ResizablePanelGroup
       id={`panels-${boardId}`}
-      {...{ defaultLayout, mustFit, fit }}
+      {...{ defaultLayout, mustFit }}
       onLayoutChanged={handleLayoutChanged}
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
-      onFitChange={handleFitChange}
-      onFitBandChange={setInFitBand}
       className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
       {panels.map(({ panelId, label }, i) => (
@@ -219,17 +209,14 @@ export function BoardLayout({
 
   // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
-    <>
-      <ScrollArea
-        className="isolate transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
-        viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto"
-        horizontalScroll
-        autoScrollOnDrag="horizontal"
-      >
-        {panelGroup}
-      </ScrollArea>
-      {inFitBand && <BoardFitToggle fit={fit} onToggle={handleFitToggle} />}
-    </>
+    <ScrollArea
+      className="isolate transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
+      viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto"
+      horizontalScroll
+      autoScrollOnDrag="horizontal"
+    >
+      {panelGroup}
+    </ScrollArea>
   );
 }
 
