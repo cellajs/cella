@@ -251,8 +251,8 @@ export interface CompanyConfig {
 
 /**
  * A product entity embedded as an id array inside a host product entity. `lifecycle: 'owned'`
- * lets CDC delete embedded rows no live host references; the default 'shared' only strips
- * references to dead rows.
+ * lets CDC delete embedded rows no live host references, and a host write that names such a row
+ * again brings it back; the default 'shared' only strips references to dead rows.
  */
 export interface ProductEmbedding<P extends string = string> {
   readonly embeddedProductType: P;

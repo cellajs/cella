@@ -1,6 +1,8 @@
 import { and, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig, type ProductEntityType } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
+import { stxCollected } from '#/db/utils/stx-ids';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { cdcDb } from '../lib/db';
@@ -13,7 +15,7 @@ interface ResolvedOwnedEmbedding {
   hostProductType: ProductEntityType;
   embeddedProductType: ProductEntityType;
   embeddedTable: AnyPgTable;
-  /** The columns the GC reads; it writes the tombstone and audit columns `productColumns` gives every product table. */
+  /** The columns the GC reads and `stx`, which it marks; it also writes the tombstone and audit columns `productColumns` gives every product table. */
   embeddedColumns: Record<'id' | 'stx' | 'deletedAt', AnyPgColumn>;
   embeddedScopeColumn: AnyPgColumn;
   hostTable: AnyPgTable;
@@ -83,8 +85,11 @@ interface ScopeCandidates {
  * of a registered owned-embedding host. Candidates are ids observed leaving a host array (a
  * soft-deleted host surrenders its whole array), and a candidate is soft-deleted only when no live
  * host row in the same organization still references it, so rows never referenced stay exempt. The
- * soft-delete is a plain product UPDATE and flows through the normal pipeline. A query that fails rejects,
- * and with it the flush: its changes are read again, and the collection runs again with them.
+ * soft-delete is a plain product UPDATE and flows through the normal pipeline. Its `stx` carries the worker's
+ * mark (`stxCollected`): a host that names the row again gets it back, as after an undo. A host write that
+ * commits between the reference read and the soft-delete loses the id to the reference cleanup, and the next
+ * write of that host that names the row brings it back. A query that fails rejects, and with it the flush: its
+ * changes are read again, and the collection runs again with them.
  */
 export async function gcOwnedEmbeddedRows(
   hostProductType: ProductEntityType,
@@ -145,6 +150,7 @@ export async function gcOwnedEmbeddedRows(
             deletedBy: actorId,
             updatedAt: now,
             updatedBy: actorId,
+            stx: stxCollected(embeddedColumns.stx, generateId()),
           })
           .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
           .returning({ id: embeddedColumns.id });

@@ -164,7 +164,7 @@ Host and embedded rows sync independently. An embedded row's change patches its 
 The embedding's `lifecycle` decides what a deletion does:
 
 - `shared`: embedded rows live on their own. The CDC worker strips a deleted one's id from the hosts.
-- `owned`: the CDC worker also soft-deletes an embedded row once no live host references it.
+- `owned`: the CDC worker also soft-deletes an embedded row once no live host references it. A host write that names the row again brings it back when its writer may create such a row there, as an undo needs; a row a person deleted stays deleted.
 
 The engine keeps no usage counts. Derive one on the client from the synced host rows, such as the tasks with a label. Count on the server when the hosts are not synced. Count there too when a decision must not rest on what this viewer reads, such as deleting an unused label.
 

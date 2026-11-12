@@ -9,8 +9,8 @@ import type { PendingEvent, TableMeta } from '../types';
 /** Strips the mocked database was asked to run: the table, which hosts were looked up, the set() values and which rows it wrote. */
 const statements: Array<{ table: AnyPgTable; lookup: SQL; values: Record<string, SQL>; written: SQL }> = [];
 
-/** The hosts the lookup of a strip finds. */
-const world: { hosts: Array<{ id: string }> } = { hosts: [] };
+/** The hosts the lookup of a strip finds, and the embedded rows it finds live. */
+const world: { hosts: Array<{ id: string }>; liveItems: Array<{ id: string }> } = { hosts: [], liveItems: [] };
 
 // A host `task` that holds `item` ids in its `items` column, on synthetic tables.
 vi.mock('#/tables', async () => {
@@ -62,15 +62,19 @@ vi.mock('../lib/db', () => {
     let lookup: SQL | undefined;
     const tx = {
       select: () => ({
-        from: () => ({
-          where: (condition: SQL) => ({
-            orderBy: () => ({
-              for: async () => {
-                lookup = condition;
-                return world.hosts;
-              },
-            }),
-          }),
+        from: (table: AnyPgTable) => ({
+          where: (condition: SQL) => {
+            // The read of embedded rows that are live again is awaited as it stands.
+            if (getTableName(table) === 'items') return Promise.resolve(world.liveItems);
+            return {
+              orderBy: () => ({
+                for: async () => {
+                  lookup = condition;
+                  return world.hosts;
+                },
+              }),
+            };
+          },
         }),
       }),
       update: (table: AnyPgTable) => ({
@@ -149,6 +153,7 @@ beforeEach(() => {
   statements.length = 0;
   // One host that holds every id a case strips, unless the case says otherwise.
   world.hosts = [{ id: 't1' }];
+  world.liveItems = [];
 });
 
 describe('isReferenceCleanupWrite: in the update handler', () => {
@@ -226,6 +231,26 @@ describe('cleanupEmbeddingReferences', () => {
 
     statements.length = 0;
     await cleanupEmbeddingReferences(productOf('item'), 'update', [{ result: change('item', 'update', live, itemRow('i1')) }]);
+
+    expect(statements).toHaveLength(0);
+  });
+
+  it('keeps the id of a soft-deleted row that a host write brought back before the strip ran', async () => {
+    const deletedAt = '2026-10-01T10:00:00.000Z';
+    world.liveItems = [{ id: 'i1' }];
+
+    await cleanupEmbeddingReferences(productOf('item'), 'update', [
+      { result: change('item', 'update', itemRow('i1', { deletedAt }), itemRow('i1')) },
+      { result: change('item', 'update', itemRow('i2', { deletedAt }), itemRow('i2')) },
+    ]);
+
+    expect(statements).toHaveLength(1);
+    expect(rendered(statements[0]).strippedIds).toEqual(['i2']);
+
+    statements.length = 0;
+    await cleanupEmbeddingReferences(productOf('item'), 'update', [
+      { result: change('item', 'update', itemRow('i1', { deletedAt }), itemRow('i1')) },
+    ]);
 
     expect(statements).toHaveLength(0);
   });
