@@ -11,8 +11,6 @@ import { isTouchInteraction } from '~/utils/input-modality';
 export const emailFormSchema = zCheckEmailBody;
 export type EmailFormValues = z.infer<typeof emailFormSchema>;
 
-export const authFieldClass = cn('h-12 rounded-xl', glassClass);
-
 interface EmailFieldProps {
   control: Control<EmailFormValues>;
   /** The address of an earlier step, kept in the form but out of view, the tab order and autofill. */
@@ -37,7 +35,7 @@ export function EmailField({ control, hidden = false }: EmailFieldProps) {
               {...field}
               disabled={hidden}
               type="email"
-              className={authFieldClass}
+              className={cn('h-12 rounded-xl', glassClass)}
               autoFocus={!hidden && !isTouchInteraction()}
               autoComplete={hidden ? 'off' : 'email'}
               placeholder={t('c:your_email_address')}

@@ -9,7 +9,7 @@ import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useDownloader } from '~/hooks/use-downloader';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import { attachmentDialogParam, attachmentDialogStageClassName, clearAttachmentDialogFromUrl } from '~/modules/attachment/dialog/params';
+import { attachmentDialogParam, clearAttachmentDialogFromUrl } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import type { PendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
@@ -216,7 +216,8 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             <AttachmentRender
               containerClassName={cn(
                 'relative flex h-full items-center justify-center overflow-hidden',
-                isDialog && attachmentDialogStageClassName,
+                // A fitted image clears the 3rem header and, from sm up, the zoom controls; zoomed content still slides under the chrome, since overflow clips at the padding edge
+                isDialog && 'pt-12 sm:pb-14',
                 containerClassName,
               )}
               itemClassName={isDialog ? 'object-contain' : undefined}

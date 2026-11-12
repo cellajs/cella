@@ -16,7 +16,6 @@ import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
-import { tw } from '~/utils/tw';
 
 /** Sidebar section with the docs pages tree (plus the admin manage-pages shortcut). */
 function PagesSection({ label }: { label: string }) {
@@ -41,8 +40,6 @@ function PagesSection({ label }: { label: string }) {
   );
 }
 
-const rowClass = tw('w-full justify-start');
-
 function LinksSection({ label }: { label: string }) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement>(null);
@@ -52,27 +49,27 @@ function LinksSection({ label }: { label: string }) {
     <DocsSidebarSection label={label}>
       <Button
         variant="ghost"
-        className={rowClass}
+        className="w-full justify-start"
         render={<Link to="/docs/page/$" params={{ _splat: 'changelog' }} onClick={closeSidebarSheetAndNavigate} />}
       >
         {t('c:changelog')}
       </Button>
 
       {hasStatusPage && (
-        <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
+        <Button variant="ghost" className="w-full justify-start" onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
           {t('c:status')}
         </Button>
       )}
 
-      <Button ref={contactRef} variant="ghost" className={rowClass} onClick={() => contactFormHandler(contactRef)}>
+      <Button ref={contactRef} variant="ghost" className="w-full justify-start" onClick={() => contactFormHandler(contactRef)}>
         {t('c:contact_us')}
       </Button>
 
-      <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" onClick={closeSidebarSheetAndNavigate} />}>
+      <Button variant="ghost" className="w-full justify-start" render={<Link to="/docs/overview" onClick={closeSidebarSheetAndNavigate} />}>
         openapi.json
       </Button>
 
-      <Button variant="ghost" className={rowClass} render={<a href="/llms.txt" target="_blank" rel="noreferrer" />}>
+      <Button variant="ghost" className="w-full justify-start" render={<a href="/llms.txt" target="_blank" rel="noreferrer" />}>
         llms.txt
       </Button>
     </DocsSidebarSection>

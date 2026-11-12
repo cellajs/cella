@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { AuthEmailButton, AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
-import { authFieldClass } from '~/modules/auth/steps/email-field';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
+import { glassClass } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 export function WaitlistStep() {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ export function WaitlistStep() {
       <WaitlistForm
         email={email}
         className="flex-col items-stretch"
-        inputClassName={authFieldClass}
+        inputClassName={cn('h-12 rounded-xl', glassClass)}
         buttonSize="block"
         buttonContent={
           <>

@@ -7,12 +7,8 @@ import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { RequestInfoForm } from '~/modules/marketing/request-info-form';
 import { useIsAboutPage } from '~/modules/marketing/use-is-about-page';
-import { tw } from '~/utils/tw';
 
 const currentYear = new Date().getFullYear();
-
-const headingClass = tw('font-heading text-sm font-semibold tracking-wider text-white/60');
-const textClass = tw('mt-4 text-sm text-white/90');
 
 export interface FooterLinkProps {
   title: TKey;
@@ -52,9 +48,9 @@ function FooterLinks() {
       <ul className="columns-2 gap-8 sm:grid sm:columns-auto sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className="break-inside-avoid max-sm:mb-8 max-sm:last:mb-0">
-            <div className={headingClass}>{t(section.title)}</div>
+            <div className="font-heading text-sm font-semibold tracking-wider text-white/60">{t(section.title)}</div>
 
-            <ul className={textClass}>
+            <ul className="mt-4 text-sm text-white/90">
               {section.links.filter(isShown).map((link) => (
                 <li key={link.title} className="-mx-1 mt-4">
                   <FooterLink title={link.title} href={link.href} />
@@ -81,8 +77,8 @@ export function MarketingFooter() {
         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
           <FooterLinks />
           <div>
-            <div className={headingClass}>{t('c:request_info')}</div>
-            <div className={textClass}>{t('c:request_info.text')}</div>
+            <div className="font-heading text-sm font-semibold tracking-wider text-white/60">{t('c:request_info')}</div>
+            <div className="mt-4 text-sm text-white/90">{t('c:request_info.text')}</div>
             <RequestInfoForm />
           </div>
         </div>
