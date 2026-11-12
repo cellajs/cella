@@ -168,6 +168,16 @@ if (merged.retention.deletedItemsDays < merged.retention.activityDays + 30) {
   throw new Error('[Config] retention.deletedItemsDays must be at least retention.activityDays + 30.');
 }
 
+// A row is created before the host write that names it, and the nightly run must not fall between the two.
+if (merged.retention.unreferencedItemsDays < 1) {
+  throw new Error('[Config] retention.unreferencedItemsDays must be at least 1.');
+}
+
+// The nightly run deletes a row of an owned embedding that no live host names: every row no row of its own type names.
+if (merged.productEmbeddings.some((embedding) => embedding.lifecycle === 'owned' && embedding.hostProductType === embedding.embeddedProductType)) {
+  throw new Error('[Config] productEmbeddings: an owned embedding cannot embed a product type in itself.');
+}
+
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage
 // across applications.
 const s3 = merged.s3 as S3Config;

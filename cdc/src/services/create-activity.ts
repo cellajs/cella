@@ -58,13 +58,15 @@ export function createActivity(
 
   return {
     tenantId,
-    // The actor: whoever last touched the row. `revokedBy` is the api_keys update column.
-    actorId:
-      getStringValue(row, 'updatedBy') ??
-      getStringValue(row, 'revokedBy') ??
-      getStringValue(row, 'createdBy') ??
-      getStringValue(row, 'userId') ??
-      null,
+    // The actor: whoever last touched the row, and for a tombstone whoever deleted it, which is no one when the
+    // retention run did. `revokedBy` is the api_keys update column.
+    actorId: getStringValue(row, 'deletedAt')
+      ? (getStringValue(row, 'deletedBy') ?? null)
+      : (getStringValue(row, 'updatedBy') ??
+        getStringValue(row, 'revokedBy') ??
+        getStringValue(row, 'createdBy') ??
+        getStringValue(row, 'userId') ??
+        null),
     entityType,
     resourceType,
     action,

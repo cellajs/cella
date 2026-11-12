@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, asc, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, asc, eq, getColumns, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
@@ -12,9 +12,6 @@ type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
   embeddedProductType: ProductEntityType;
-  embeddedTable: AnyPgTable;
-  embeddedIdColumn: AnyPgColumn;
-  embeddedDeletedAtColumn: AnyPgColumn;
   hostTable: AnyPgTable;
   hostColumn: AnyPgColumn;
   hostColumnName: string;
@@ -55,14 +52,8 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     const parentColumn = columns[parentColumnName];
     if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProductType}" table`);
 
-    const embeddedTable = getEntityTable(embeddedProductType);
-    const embeddedColumns = getColumns(embeddedTable);
-
     resolved.push({
       embeddedProductType,
-      embeddedTable,
-      embeddedIdColumn: embeddedColumns.id,
-      embeddedDeletedAtColumn: embeddedColumns.deletedAt,
       hostTable,
       hostColumn,
       hostColumnName,
@@ -96,9 +87,7 @@ export async function cleanupEmbeddingReferences(
 
   if (relevantEvents.length === 0) return;
 
-  for (const embedding of embeddings) {
-    const { embeddedTable, embeddedIdColumn, embeddedDeletedAtColumn } = embedding;
-    const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } = embedding;
+  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } of embeddings) {
     const references = relevantEvents.flatMap(({ result: { rowData } }) => {
       const parentId = rowData[parentColumnName];
       if (typeof parentId === 'string') return [{ parentId, id: rowData.id }];
@@ -121,25 +110,13 @@ export async function cleanupEmbeddingReferences(
           .for('no key update');
         if (hosts.length === 0) return;
 
-        // A host write brings back a row the worker collected (`filterExistingProductIds`), and may commit before
-        // that row's soft delete is read here: the id of a row that is live again stays in its hosts.
-        const liveAgain =
-          action === 'delete'
-            ? []
-            : await tx
-                .select({ id: embeddedIdColumn })
-                .from(embeddedTable)
-                .where(and(inArray(embeddedIdColumn, embeddedIds), isNull(embeddedDeletedAtColumn)));
-        const goneIds = embeddedIds.filter((id) => !liveAgain.some((row) => row.id === id));
-        if (goneIds.length === 0) return;
-
         await tx
           .update(hostTable)
           .set({
             [hostColumnName]: sql`(
             SELECT coalesce(array_agg(elem), '{}')
             FROM unnest(${hostColumn}) AS elem
-            WHERE elem NOT IN ${goneIds}
+            WHERE elem NOT IN ${embeddedIds}
           )`,
           })
           .where(

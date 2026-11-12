@@ -79,7 +79,7 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 
 Relationships between products are data, never permission indirection: permissions and public read flow through the hierarchy's channel columns. Exactly two mechanisms exist ([Embeddings](./SYNC_ENGINE.md#embeddings)): a host id array declared in `appConfig.productEmbeddings`, whose config-driven machinery never needs engine code, and the mutation bus (`onMutation`/`dispatchMutation`) for lifecycle side effects an embedding cannot express.
 
-Derive usage counts on the client from synced host rows, and let a host write keep only ids of live rows in its organization (`filterExistingProductIds`, which brings back a row the owned lifecycle collected). A child-side host FK (a nullable `<host>Id` column pointing at another product) is deprecated: sync views, CDC, propagation hints and counters do not see it ([conversion guide](https://github.com/cellajs/cella/blob/0.23.0/cella/migrations/20260730T1009-owned-host-embedding/README.md)).
+Derive usage counts on the client from synced host rows, and let a host write keep only ids of live rows in its organization (`filterExistingProductIds`). A child-side host FK (a nullable `<host>Id` column pointing at another product) is deprecated: sync views, CDC, propagation hints and counters do not see it ([conversion guide](https://github.com/cellajs/cella/blob/0.23.0/cella/migrations/20260730T1009-owned-host-embedding/README.md)).
 
 ## Coding patterns
 

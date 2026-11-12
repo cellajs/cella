@@ -97,6 +97,3 @@ export const tenantContext = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) =>
 /** `tenantContext` that also reaches soft-deleted rows (`app.include_deleted`): the select policy filters an UPDATE's WHERE too. */
 export const tenantContextIncludingDeleted = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> =>
   requestTransaction(ctx, ctx.var.tenantId, true, false, fn);
-
-/** Whether the context's connection is a read-write tenant transaction: a write made on it commits or rolls back with the caller's own. */
-export const inWriteTransaction = (ctx: ActorContext): boolean => openTransactions.get(ctx.var.db)?.readOnly === false;
