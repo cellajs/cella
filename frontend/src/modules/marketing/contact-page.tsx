@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ContactForm } from '~/modules/common/contact-form/contact-form';
 import { ContactMethodRows, contactMethods, isWebPage } from '~/modules/common/contact-form/contact-methods';
-import { ExternalArrow } from '~/modules/marketing/external-arrow';
+import { ExternalArrow } from '~/modules/common/external-arrow';
 import { MarketingLayout } from '~/modules/marketing/layout';
 
 export function ContactPage() {
