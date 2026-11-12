@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArchiveIcon, ArchiveRestoreIcon, CircleAlertIcon, EyeIcon, EyeOffIcon, TrashIcon } from 'lucide-react';
 import { type ReactNode, Suspense, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ChannelEntityType, hierarchy, isChannelHideable } from 'shared';
+import { type ChannelEntityType, hierarchy, isChannelHideable, type ProductEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
 import { ConfirmForm } from '~/modules/common/confirm-form';
@@ -74,7 +74,7 @@ function ArchiveChannelForm({ channel, descendants, close }: ArchiveChannelFormP
 }
 
 /** A channel as the archive card reads it; with `include=counts` it tells how many channels are inside it. */
-type ArchiveCardChannel = EnrichedChannel & { included?: { counts?: { entities?: Partial<Record<ChannelEntityType, number>> } } };
+type ArchiveCardChannel = EnrichedChannel & { included?: { counts?: { entities?: Partial<Record<ChannelEntityType | ProductEntityType, number>> } } };
 
 interface ArchiveToolCardProps {
   channel: ArchiveCardChannel;
