@@ -557,7 +557,7 @@
   "no_notifications": "No notifications yet",
   "no_organization_yet": "You are not in an organization yet",
   "no_organization_yet.text": "Create one to start or ask a colleague to invite you.",
-  "no_organization_yet.text_invited": "Accept an invitation below or create an organization of your own.",
+  "no_organization_yet.text_invited": "Answer an invitation above before you create an organization of your own.",
   "no_resource_found": "No {{resource, lowercase}} found",
   "no_resource_yet": "No {{resource, lowercase}} yet",
   "no_results": "No results",
