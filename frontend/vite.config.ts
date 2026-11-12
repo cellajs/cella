@@ -163,7 +163,8 @@ const viteConfig = {
     // Host header and point HMR websockets back at the public origin.
     ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
     // sdk/src stays unwatched (the generator churns temp folders and lock files there); a finished write to sdk/gen reloads.
-    watch: { ignored: ['**/backend/**', '**/sdk/src/**'] },
+    // .claude holds agent worktrees: whole checkouts, whose files the watcher would index and stall on.
+    watch: { ignored: ['**/backend/**', '**/sdk/src/**', '**/.claude/**'] },
     // Transforms main.tsx's static import graph at startup, so the first page load after `pnpm dev` does not wait on it.
     warmup: { clientFiles: ['./src/main.tsx'] },
     // The folders the app reads from outside this package; a file it imports, such as a repo doc, is served too. Vite's
