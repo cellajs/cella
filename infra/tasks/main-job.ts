@@ -50,9 +50,9 @@ function deployKey(env: NodeJS.ProcessEnv): DeployKey | undefined {
 
 /**
  * One run of the main job, by the engine image the last apply published, to the environment its stamp names. A start by hand sets the
- * target, `TARGET_SHA` under the retry counter `RETRY`. A run the schedule started sets neither: under the lease it finds the target as the
- * environments file at the head of the default branch names it, and deploys it only when no run record has that target and counter
- * (lib/deploy/scheduled-run.ts); otherwise it ends deployed with the line that says why. Where the environment deploys releases only, a release tag must name the
+ * target, `TARGET_SHA` under the retry counter `RETRY`. A run the schedule started sets neither: it finds the target as the
+ * environments file at the head of the default branch names it, and deploys it, under the lease, only when no run record has that target
+ * and counter (lib/deploy/scheduled-run.ts); otherwise it ends deployed with the line that says why. Where the environment deploys releases only, a release tag must name the
  * target before the deploy starts, as no code of the target has run yet; the rule is read from the image, never from a value a start call
  * can set. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed, the target serving already included; blocked, when a
  * required secret the operator owes or an apply stopped it, which its record names; or failed, a scheduled run that could not read its

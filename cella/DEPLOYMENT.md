@@ -137,7 +137,7 @@ An apply writes the schedule, and nothing else needs setting up: it is part of t
 
 Each target deploys once: the records are the schedule's memory. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
 
-One run looks at a time: a scheduled run first takes the lease. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
+A scheduled run looks for a run record of the environment's target and retry counter. With one it ends and writes nothing. Without one it takes the lease and looks again, as one run decides at a time. It then opens the target's record and deploys the target.
 
 ### Run records
 
