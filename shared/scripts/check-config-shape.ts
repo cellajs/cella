@@ -22,6 +22,9 @@ const templatePath = join(configDir, 'config.template.ts');
 
 const run = (command: string, args: string[]) => execFileSync(command, args, { cwd: repoRoot, env: testDatabaseEnv, stdio: 'inherit' });
 
+/** Runs before the config swap, in the caller's env: with `DATABASE_TEST_PORT` set, as `testDatabaseEnv` sets it, `docker:test` starts nothing. */
+const startTestDatabase = () => execFileSync('pnpm', ['docker:test'], { cwd: repoRoot, stdio: 'inherit' });
+
 if (!existsSync(templatePath)) {
   console.info('No shared/config/config.template.ts: this app checks with its own config.');
   process.exit(0);
@@ -66,6 +69,7 @@ const checkTemplateShape = () => {
     });
 
     try {
+      if (process.argv.includes('--tests')) startTestDatabase();
       // The scaffolder's two tokens, with values the config builder accepts.
       const template = readFileSync(templatePath, 'utf8').replaceAll('__project_name__', 'Template Check').replaceAll('__project_slug__', slug);
       writeFileSync(join(configDir, 'config.default.ts'), template);
@@ -74,7 +78,6 @@ const checkTemplateShape = () => {
       run('pnpm', ['--filter', 'sdk', 'generate:sdk']);
       run('pnpm', ['ts']);
       if (process.argv.includes('--tests')) {
-        run('pnpm', ['docker:test']);
         run('pnpm', ['--filter', 'backend', 'exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', ...suites]);
       }
     } catch (error) {
@@ -94,6 +97,7 @@ const checkTemplateShape = () => {
 /** Runs the core suites with both config files edited to an app's shape; a missing leaf throws after the restore. */
 const checkAppShape = () => {
   withRestoredPaths(['shared/config'], () => {
+    startTestDatabase();
     const defaultPath = join(configDir, 'config.default.ts');
     writeFileSync(
       defaultPath,
@@ -106,7 +110,6 @@ const checkAppShape = () => {
       throw new Error(`${appShapePermissionsEdit.file} no longer holds \`${appShapePermissionsEdit.from}\`: adjust write-template-config.ts.`);
     }
     writeFileSync(permissionsPath, permissions.replace(appShapePermissionsEdit.from, appShapePermissionsEdit.to));
-    run('pnpm', ['docker:test']);
     try {
       run('pnpm', ['exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', '--silent=passed-only']);
     } catch {
