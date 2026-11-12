@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { rerunReleaseCheck } from './release-gate';
+import { followsReleases, rerunReleaseCheck } from './release-gate';
 
 // A `gh` on PATH that logs every call and answers the lookups: the run is in progress until its status is read a second time.
 const FAKE_GH = `#!/bin/sh
@@ -46,5 +46,14 @@ describe('the release check after an apply', () => {
     const calls = readFileSync(log, 'utf8').trim().split('\n');
     expect(calls.filter((call) => call.startsWith('run view 1 --json status'))).toHaveLength(2);
     expect(calls.at(-1)).toBe('run rerun --job 7 --repo acme/app');
+  });
+});
+
+// The environments file is app-owned, so an upgrade never brings it.
+describe('which environments follow the releases', () => {
+  it('reads the defaults in an app without an environments file', () => {
+    const root = mkdtempSync(join(tmpdir(), 'release-gate-'));
+    expect(followsReleases('production', root)).toBe(true);
+    expect(followsReleases('staging', root)).toBe(false);
   });
 });
