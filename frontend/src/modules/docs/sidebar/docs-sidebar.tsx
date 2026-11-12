@@ -12,7 +12,7 @@ import { DocsSidebarSection } from '~/modules/docs/sidebar/docs-sidebar-section'
 import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { PagesSidebar } from '~/modules/docs/sidebar/pages-sidebar';
 import { UserTheme } from '~/modules/me/user-theme';
-import { docsConfig } from '~/modules/page/content';
+import { docsConfig, useVisibleDocPages } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
@@ -40,20 +40,26 @@ function PagesSection({ label }: { label: string }) {
   );
 }
 
+const pagesSectionShown = docsConfig.sections.some((section) => section.id === 'pages' && section.visible);
+
 function LinksSection({ label }: { label: string }) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement>(null);
   const hasStatusPage = !!appConfig.statusUrl.trim();
+  // A changelog page an app leaves unhidden is already a row of the pages tree.
+  const changelogInTree = useVisibleDocPages().some((page) => page.id === 'changelog') && pagesSectionShown;
 
   return (
     <DocsSidebarSection label={label}>
-      <Button
-        variant="ghost"
-        className="w-full justify-start"
-        render={<Link to="/docs/page/$" params={{ _splat: 'changelog' }} onClick={closeSidebarSheetAndNavigate} />}
-      >
-        {t('c:changelog')}
-      </Button>
+      {!changelogInTree && (
+        <Button
+          variant="ghost"
+          className="w-full justify-start"
+          render={<Link to="/docs/page/$" params={{ _splat: 'changelog' }} onClick={closeSidebarSheetAndNavigate} />}
+        >
+          {t('c:changelog')}
+        </Button>
+      )}
 
       {hasStatusPage && (
         <Button variant="ghost" className="w-full justify-start" onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
