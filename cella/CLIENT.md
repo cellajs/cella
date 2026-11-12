@@ -72,6 +72,8 @@ A cached row carries no membership or permission. A reader asks the engine throu
 
 A mutation lives in its entity's query module. It patches every cached query that holds the row, then sends the request. It takes the row the server stored, or rolls back on error. Queries and mutations run in `offlineFirst` network mode.
 
+A write with an `stx` retries a network failure until the server answers. The server applies it once by its ids, and an answer lost on the way back must not report an applied write as failed. Other writes retry a network failure three times.
+
 ## Files and blobs
 
 An attachment row is an ordinary product in the query cache. Its bytes live in the per-user database's `blobs` table and never enter the query cache. The [Attachment module](../frontend/src/modules/attachment/README.md) works from that table:

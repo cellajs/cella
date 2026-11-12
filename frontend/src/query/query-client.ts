@@ -33,7 +33,7 @@ function flagReplays(client: QueryClient): void {
   });
 }
 
-/** Gives each mutation on the default retry one that reads its variables, so its replay waits out a gateway's outage. */
+/** Gives each mutation on the default retry one that reads its variables: a sync write outlasts a lost answer, a replay a gateway's outage. */
 function retryReplays(client: QueryClient): void {
   client.getMutationCache().subscribe((event) => {
     if (event.type !== 'added' || event.mutation.options.retry !== mutationRetry) return;
