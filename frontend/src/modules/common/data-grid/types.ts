@@ -23,6 +23,8 @@ export interface ColumnMergeRule {
   readonly order?: Maybe<number>;
   /** Class name(s) for the slot wrapper inside the host cell */
   readonly className?: Maybe<string>;
+  /** Fixed slot width, in pixels or a CSS length: a row without content keeps the space, and the host's header moves past left slots that all set one. */
+  readonly width?: Maybe<number | string>;
 }
 
 /** Per-column overrides applied while the given display mode is active */
@@ -36,6 +38,7 @@ export interface ColumnModeOverrides {
 export interface MergedSlot<TRow, TSummaryRow = unknown> {
   readonly column: CalculatedColumn<TRow, TSummaryRow>;
   readonly className?: Maybe<string>;
+  readonly width?: Maybe<number | string>;
 }
 
 export type MergedSlots<TRow, TSummaryRow = unknown> = Readonly<Record<TileSide, readonly MergedSlot<TRow, TSummaryRow>[]>>;

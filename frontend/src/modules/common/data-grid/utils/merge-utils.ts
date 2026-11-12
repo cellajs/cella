@@ -26,6 +26,17 @@ export function resolveModeOverrides<R, SR>(column: Column<R, SR>, activeModes: 
   return resolved;
 }
 
+/**
+ * A host header's start padding, which puts its name over the cell's main content: the cell's own px-2, then each
+ * fixed-width left slot and the gap-2 after it. Undefined while any left slot sizes to its content.
+ */
+export function getMergedHeaderPadding<R, SR>(column: CalculatedColumn<R, SR>): string | undefined {
+  const left = column.mergedSlots?.left;
+  if (!left?.length || left.some(({ width }) => width == null)) return undefined;
+  const widths = left.map(({ width }) => (typeof width === 'number' ? `${width}px` : width));
+  return `calc(var(--spacing) * 2 * ${left.length + 1} + ${widths.join(' + ')})`;
+}
+
 /** The `merge` of the highest-precedence active mode that defines one. */
 export function resolveMergeRule<R, SR>(column: Column<R, SR>, activeModes: ActiveModes): ColumnMergeRule | undefined {
   for (let i = modePrecedence.length - 1; i >= 0; i--) {

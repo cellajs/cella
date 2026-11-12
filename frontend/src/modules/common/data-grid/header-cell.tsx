@@ -13,6 +13,7 @@ import {
   getCellStyle,
   getHeaderCellRowSpan,
   getHeaderCellStyle,
+  getMergedHeaderPadding,
   headerCellFocusRing,
   isCtrlKeyHeldDown,
   stopPropagation,
@@ -171,7 +172,11 @@ export function HeaderCell<R, SR>({
     }
   }
 
-  const style: React.CSSProperties = { ...getHeaderCellStyle(column, rowIdx, rowSpan), ...getCellStyle(column, colSpan) };
+  const style: React.CSSProperties = {
+    ...getHeaderCellStyle(column, rowIdx, rowSpan),
+    ...getCellStyle(column, colSpan),
+    paddingInlineStart: getMergedHeaderPadding(column),
+  };
 
   const content = column.renderHeaderCell({ column, sortDirection, priority, tabIndex: childTabIndex });
 
