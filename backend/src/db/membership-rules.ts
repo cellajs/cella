@@ -16,10 +16,12 @@ export const membershipRuleTriggers = [
  * Every organization keeps at least one admin: its most privileged role, the only one that hands out every role. One
  * deferred constraint trigger enforces it for every path at once (demoting, removing, leaving, and deleting an account,
  * whose memberships go by cascade), checked at commit so a role swap inside one transaction passes. An organization
- * that is itself being deleted is exempt. The check holds a transaction lock per organization, so two transactions
- * that each remove one of the last two admins check one after the other: the second sees the first's commit, since a
- * PL/pgSQL statement under READ COMMITTED reads a fresh snapshot. Opposite lock orders across two organizations can
- * deadlock, which PostgreSQL ends by aborting one (409).
+ * that is itself being deleted is exempt, and so is one whose tenant is archived: deleting an organization archives its
+ * tenant and leaves the row to the sweep, and its admin must still be able to delete their account in the meantime.
+ * A system admin who restores such a tenant may find it without an admin. The check holds a transaction lock per
+ * organization: two transactions that each remove one of the last two admins check one after the other, and the second
+ * sees the first's commit, since a PL/pgSQL statement under READ COMMITTED reads a fresh snapshot. Opposite lock orders
+ * across two organizations can deadlock, which PostgreSQL ends by aborting one (409).
  * @returns The idempotent SQL, and the admin role it keeps: the organization's most privileged role in the hierarchy.
  * @throws When the organization declares no roles, so generating the migration fails.
  */
@@ -38,8 +40,11 @@ BEGIN
   IF TG_OP = 'UPDATE' AND NEW.role = '${adminRole}' AND NEW.channel_id = OLD.channel_id THEN
     RETURN NULL;
   END IF;
-  -- The organization is gone with its memberships: there is nothing left to manage.
-  IF NOT EXISTS (SELECT 1 FROM organizations WHERE id = OLD.channel_id) THEN
+  -- The organization is gone with its memberships, or archived on its way out: there is nothing left to manage.
+  IF NOT EXISTS (
+    SELECT 1 FROM organizations o JOIN tenants t ON t.id = o.tenant_id
+    WHERE o.id = OLD.channel_id AND t.status <> 'archived'
+  ) THEN
     RETURN NULL;
   END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended('${name}:' || OLD.channel_id::text, 0));

@@ -194,7 +194,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `shared/config/hierarchy-config.ts`.
   - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
-  - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control.
+  - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control. Deleting the organization frees the account; an organization whose other members have no proven address goes with it.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
   - `pending-invitations`: no account oracle on list, resend, invite, check; a member cannot withdraw. `declined-invitations`: a declined invitation cannot be accepted by id, token or inbox proof. `resend-invitation`: no re-mint of rejected, revoked, accepted or used invitations.
   - `tests/invitations/*`: draft invites held, only `prepareRoles` dispatch, a member cannot publish; invite and accept flows.
