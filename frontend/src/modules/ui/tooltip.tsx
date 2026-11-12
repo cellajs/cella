@@ -1,7 +1,6 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import type { PositionedContentProps } from '~/modules/ui/popover';
-import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 export function TooltipProvider({ delay = 200, ...props }: TooltipPrimitive.Provider.Props) {
@@ -40,7 +39,7 @@ export function TooltipContent({
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(
-            popupMotionClass,
+            'popup-motion',
             'bg-muted-foreground text-primary-foreground w-max max-w-xs rounded-md px-3 py-1.5 text-xs text-balance max-sm:hidden',
             className,
           )}

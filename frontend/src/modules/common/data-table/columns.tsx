@@ -108,7 +108,7 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
         draggable={false}
-        className="active:press link-decoration active:link-decoration-strong hover:text-foreground truncate outline-0 transition-colors hover:underline"
+        className="active:press link-reveal hover:text-foreground truncate outline-0 transition-colors"
       >
         <HighlightText text={row.email} />
       </a>

@@ -29,10 +29,7 @@ export function BreadcrumbLink({ render, className, ...props }: useRender.Compon
     render,
     props: {
       'data-slot': 'breadcrumb-link',
-      className: cn(
-        'focus-effect link-decoration active:link-decoration-strong hover:text-foreground rounded-sm ring-offset-0 transition-colors hover:underline',
-        className,
-      ),
+      className: cn('focus-effect link-reveal hover:text-foreground rounded-sm ring-offset-0 transition-colors', className),
       ...props,
     },
   });

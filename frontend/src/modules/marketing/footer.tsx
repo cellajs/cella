@@ -37,7 +37,7 @@ function FooterLink({ title, href }: ShownLink) {
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noreferrer' : undefined}
       draggable={false}
-      className="focus-effect link-decoration active:link-decoration-strong rounded-sm box-decoration-clone p-1 transition hover:underline"
+      className="focus-effect link-reveal rounded-sm box-decoration-clone p-1 transition"
     >
       {t(title)}
     </Link>

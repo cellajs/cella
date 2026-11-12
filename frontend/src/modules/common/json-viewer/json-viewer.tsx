@@ -23,7 +23,7 @@ function RefButton({ value }: DataTypeProps<string>) {
         event.stopPropagation();
         setTargetPath(parseRefPath(value));
       }}
-      className="link-decoration active:link-decoration-strong text-primary cursor-pointer text-left text-sm wrap-anywhere hover:underline"
+      className="link-reveal text-primary cursor-pointer text-left text-sm wrap-anywhere"
     >
       "{value}"
     </button>

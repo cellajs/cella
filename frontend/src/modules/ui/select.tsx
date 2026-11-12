@@ -2,7 +2,6 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
 import { type PositionedContentProps, popupSideOffset } from '~/modules/ui/popover';
-import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 // Hands the value to SelectItem for its check: Base UI's ItemIndicator can show a stale selection.
@@ -78,7 +77,7 @@ export function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            popupMotionClass,
+            'popup-motion',
             'bg-popover text-popover-foreground relative max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md',
             className,
           )}

@@ -72,9 +72,9 @@ A text field, select or field-shaped button keeps its resting edge under the poi
 
 **Icons** come from `lucide-react` and are sized with `size-3` to `size-6` (12 to 24px); an unsized icon is 1rem. A global `svg.lucide` rule overrides the pixel attributes lucide's `size` prop writes, so that prop has no effect. `LucideProvider` in `main.tsx` sets the default stroke width from `appConfig.theme.strokeWidth`, and an icon may override it. Custom SVG icons in `src/modules/common/icons/` carry the `lucide` class to follow the same rules.
 
-**Motion** has one home per kind of change, and timing comes from [motion-presets.ts](src/modules/common/motion-presets.ts) and [popup-motion.ts](src/modules/ui/popup-motion.ts) or a named constant at the top of the file, never a number in JSX:
+**Motion** has one home per kind of change, and timing comes from [motion-presets.ts](src/modules/common/motion-presets.ts), the motion utilities in [tailwind.css](src/styling/tailwind.css) or a named constant at the top of the file, never a number in JSX:
 
-- A state change is a Tailwind transition keyed on the attribute that changes (`data-open`, `aria-expanded`, `hidden`). A Base UI popup enters and exits through `data-starting-style` and `data-ending-style`: a close during the enter reverses from where it is. The popup primitives share `popupMotionClass`.
+- A state change is a Tailwind transition keyed on the attribute that changes (`data-open`, `aria-expanded`, `hidden`). A Base UI popup enters and exits through `data-starting-style` and `data-ending-style`: a close during the enter reverses from where it is. The popup primitives share the `popup-motion` utility.
 - Content that mounts in place of nothing takes `mount-fade`. A reveal of fixed width or height folds `grid-cols-[0fr]` to `1fr`, `inert` while folded. A part that fades out before it goes stays mounted with `hidden` and `transition-discrete`.
 - motion/react does what CSS cannot: the exit of an element React unmounts (`AnimatePresence`), `layout` and `layoutId`, height or width `auto`, a scripted sequence. The root `MotionConfig` alone reads the reduced-motion setting.
 - The Web Animations API moves what has to be measured first, as the tab indicator does.

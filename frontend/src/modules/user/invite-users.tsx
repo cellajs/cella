@@ -79,7 +79,7 @@ function InviteTitle({ mode, onBack }: InviteTitleProps) {
   return (
     <span className="flex items-center gap-2">
       {mode ? (
-        <button type="button" className="hover:underline" onClick={onBack}>
+        <button type="button" className="focus-effect link-reveal rounded-sm" onClick={onBack}>
           {t('c:invite')}
         </button>
       ) : (

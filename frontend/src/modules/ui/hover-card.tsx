@@ -1,7 +1,6 @@
 import { PreviewCard as PreviewCardPrimitive } from '@base-ui/react/preview-card';
 import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import type { PositionedContentProps } from '~/modules/ui/popover';
-import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 /** Previews the content behind a link on hover or keyboard focus of its trigger; Escape closes it from anywhere. */
@@ -33,11 +32,7 @@ export function HoverCardContent({
       <PreviewCardPrimitive.Positioner {...{ side, sideOffset, align, alignOffset }} className={cn('isolate z-200', positionerClassName)}>
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
-          className={cn(
-            popupMotionClass,
-            'bg-popover text-popover-foreground w-64 rounded-md border p-4 text-sm shadow-md outline-hidden',
-            className,
-          )}
+          className={cn('popup-motion', 'bg-popover text-popover-foreground w-64 rounded-md border p-4 text-sm shadow-md outline-hidden', className)}
           {...props}
         />
       </PreviewCardPrimitive.Positioner>

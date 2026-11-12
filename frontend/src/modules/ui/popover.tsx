@@ -1,5 +1,4 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 /** Props the positioned popups add to Base UI's; the select and the tooltip take `container` only. */
@@ -46,7 +45,7 @@ export function PopoverContent({
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={cn(popupMotionClass, 'bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-hidden', className)}
+          className={cn('popup-motion bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-hidden', className)}
           {...props}
         />
       </PopoverPrimitive.Positioner>

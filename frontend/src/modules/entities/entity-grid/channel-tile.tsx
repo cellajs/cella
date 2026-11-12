@@ -237,7 +237,7 @@ export function ChannelTileParentChip({ parent }: { parent: EnrichedChannel | nu
       {...getChannelRoute(parent)}
       {...pageTopHashNav}
       draggable={false}
-      className="focus-effect bg-background/60 absolute top-2 right-2 max-w-40 truncate rounded px-1.5 py-0.5 text-xs backdrop-blur-xs hover:underline"
+      className="focus-effect bg-background/60 absolute top-2 right-2 max-w-40 truncate rounded px-1.5 py-0.5 text-xs backdrop-blur-xs link-reveal"
     >
       {t('c:in_channel', { name: parent.name })}
     </Link>
