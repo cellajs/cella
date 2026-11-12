@@ -3,8 +3,8 @@ import {
   type DragState,
   distributeWidths,
   fitPanels,
+  measureFit,
   type PanelConfig,
-  resolveEndDrag,
   resolveLayout,
 } from '~/modules/common/resizable-panels/panel-layout';
 
@@ -212,47 +212,27 @@ describe('resolveLayout in must-fit', () => {
   });
 });
 
-describe('resolveEndDrag', () => {
-  const endDrag = (widths: Record<string, number>, fit: boolean, room: number, dx: number) => {
-    const ids = Object.keys(widths);
-    return resolveEndDrag(
-      ids.map((id) => panel(id)),
-      { ...dragOf(widths, ids.length - 1), end: { fit, room, reach: 75 } },
-      dx,
-    );
-  };
+describe('measureFit', () => {
+  const three = ['a', 'b', 'c'].map((id) => panel(id));
 
-  it('E3: the last panel pays first, then the one before it, none below min', () => {
-    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -40)).toEqual({ widths: { a: 375, b: 375, c: 335 }, hints: [], snapped: false });
-    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -100).widths).toEqual({ a: 375, b: 350, c: 300 });
+  it('G6: open panels count at their ideal width', () => {
+    expect(measureFit(three, {}, 1125).atIdeal).toBe(true);
+    expect(measureFit(three, {}, 1124).atIdeal).toBe(false);
   });
 
-  it('E3: snaps once the row fits its room', () => {
-    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -124).snapped).toBe(false);
-    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -125).snapped).toBe(true);
+  it('E9: the band is where they fit at minWidth but not at their ideal width', () => {
+    expect(measureFit(three, {}, 1124)).toEqual({ atIdeal: false, atMin: true });
+    expect(measureFit(three, {}, 900)).toEqual({ atIdeal: false, atMin: true });
+    expect(measureFit(three, {}, 899)).toEqual({ atIdeal: false, atMin: false });
   });
 
-  it('E3: snaps once every panel is at min, when the room is too short for that', () => {
-    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 800, -225).snapped).toBe(false);
-    const result = endDrag({ a: 375, b: 375, c: 375 }, false, 800, -400);
-    expect(result).toEqual({ widths: { a: 300, b: 300, c: 300 }, hints: [], snapped: true });
+  it('G6: a closed panel counts its strip', () => {
+    expect(measureFit(three, { b: 50 }, 650)).toEqual({ atIdeal: false, atMin: true });
+    expect(measureFit(three, { b: 50 }, 800)).toEqual({ atIdeal: true, atMin: true });
   });
 
-  it('E3: closes no panel and skips closed ones', () => {
-    expect(endDrag({ a: 400, b: 50, c: 300 }, false, 500, -200).widths).toEqual({ a: 300, b: 50, c: 300 });
-  });
-
-  it('E5: with fit, a drag right pulls through the gate without moving anything', () => {
-    const halfway = endDrag({ a: 400, b: 400 }, true, 800, 20);
-    expect(halfway.widths).toEqual({ a: 400, b: 400 });
-    expect(halfway.hints).toEqual([{ panelId: 'b', side: 'right', mode: 'cover', progress: 0.5, reach: 75 }]);
-    expect(halfway.snapped).toBe(false);
-    expect(endDrag({ a: 400, b: 400 }, true, 800, 40).snapped).toBe(true);
-  });
-
-  it('E7: the other direction does nothing', () => {
-    expect(endDrag({ a: 400, b: 400 }, false, 700, 50)).toEqual({ widths: { a: 400, b: 400 }, hints: [], snapped: false });
-    expect(endDrag({ a: 400, b: 400 }, true, 800, -50)).toEqual({ widths: { a: 400, b: 400 }, hints: [], snapped: false });
+  it('G6: a panel that cannot close counts at its width even when narrow', () => {
+    expect(measureFit([panel('a', { collapsible: false })], { a: 50 }, 374)).toEqual({ atIdeal: false, atMin: true });
   });
 });
 

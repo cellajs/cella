@@ -33,17 +33,6 @@ export interface DragState {
   collapsedAtStart: Set<string>;
   /** The drag may swap a closed panel open (F7), and never ends over budget */
   mustFit?: boolean;
-  /** Set when the end handle is dragged (E rules) */
-  end?: EndDragState;
-}
-
-interface EndDragState {
-  /** Fit at drag start */
-  fit: boolean;
-  /** What the panels may take for the row to fit: the parent's width less the separators */
-  room: number;
-  /** Curtain width at the end of the gate (E5) */
-  reach: number;
 }
 
 interface FitInput {
@@ -226,33 +215,17 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
   return { widths, hints };
 }
 
-// E5: how far a drag right pulls before its release turns fit off
-const endGate = 40;
+/** The ideal width of an expanded panel, as a factor of its `minWidth` (G6). */
+export const idealWidthFactor = 1.25;
 
-/** The end handle's drag: without fit, a drag left narrows the row toward its fit (E3); with fit, a drag right pulls through a gate (E5). `snapped` is whether a release switches fit. */
-export function resolveEndDrag(panels: PanelConfig[], drag: DragState, dx: number): LayoutResult & { snapped: boolean } {
-  const { initialWidths, collapsedAtStart, end } = drag;
-  const widths = { ...initialWidths };
-  const last = panels.at(-1);
-  // E7: the other direction does nothing
-  if (!end || !last || (end.fit ? dx <= 0 : dx >= 0)) return { widths, hints: [], snapped: false };
-
-  if (end.fit) {
-    const progress = Math.min(dx / endGate, 1);
-    return { widths, hints: [{ panelId: last.id, side: 'right', mode: 'cover', progress, reach: end.reach }], snapped: progress === 1 };
-  }
-
-  let remaining = -dx;
-  for (const panel of [...panels].reverse()) {
-    if (remaining <= 0) break;
-    if (collapsedAtStart.has(panel.id)) continue;
-    const initialWidth = initialWidths[panel.id] ?? panel.minWidth;
-    const shrink = Math.min(remaining, Math.max(0, initialWidth - panel.minWidth));
-    widths[panel.id] = initialWidth - shrink;
-    remaining -= shrink;
-  }
-  const total = panels.reduce((sum, panel) => sum + (widths[panel.id] ?? panel.minWidth), 0);
-  return { widths, hints: [], snapped: total <= end.room || remaining > 0 };
+/** Whether the panels fit `room` at their ideal width, and at `minWidth`; a closed panel counts its strip (G6, E9). */
+export function measureFit(panels: PanelConfig[], widths: Record<string, number>, room: number) {
+  const need = (factor: number) =>
+    panels.reduce((sum, panel) => {
+      const closed = panel.collapsible && (widths[panel.id] ?? panel.minWidth) <= panel.collapsedWidth;
+      return sum + (closed ? panel.collapsedWidth : panel.minWidth * factor);
+    }, 0);
+  return { atIdeal: need(idealWidthFactor) <= room, atMin: need(1) <= room };
 }
 
 /** Must-fit layout from what the user chose: closes panels until the row fits, reopens them when room returns, and shares the rest exactly. Valid for any stored value. */

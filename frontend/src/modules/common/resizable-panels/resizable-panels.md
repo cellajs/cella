@@ -84,17 +84,17 @@ No cascade: a key only touches the two panels beside the separator. A collapsed 
 - **Arrow keys** move the separator by 20px. The victim stops at `minWidth`: an arrow never collapses a panel. The grower takes what the victim gave, uncapped.
 - **A collapsed grower** opens to `minWidth` when an arrow or Home/End pulls it open, also when the victim is already at `minWidth`. Then L2's refit rules apply, because the total grew.
 - **Home/End** take the separator to its limit in one press: Home collapses the left panel, End the right one, and the other takes the freed width. If the other was collapsed, that swaps them. A non-collapsible panel stops at `minWidth`.
-- **Enter** toggles collapse on the left panel of the separator. Without an end handle (E1) the last panel has no separator of its own: only its handle reaches it.
+- **Enter** toggles collapse on the left panel of the separator. The last panel has no separator of its own: only its handle reaches it.
 
 ## G6: Mode detection
 
-Ideal sum: collapsed panels contribute `collapsedWidth`, others `minWidth * 1.25`, or `minWidth` with fit (E2). Ideal sum + separator space <= parentWidth -> autoFill, else overflow. So panels that would fit at `minWidth` but not at their ideal width go to overflow, on purpose: it keeps cards at a comfortable width and lets the row scroll. The user can ask for the fit with the end handle.
+Ideal sum: collapsed panels contribute `collapsedWidth`, others `minWidth * 1.25`. Ideal sum + separator space <= parentWidth -> autoFill, else overflow. So panels that would fit at `minWidth` but not at their ideal width go to overflow, on purpose: it keeps cards at a comfortable width and lets the row scroll. That is the fit band (E9), where the user can ask for the fit instead (E2).
 
 Computed at drag start and fixed for the drag; between drags it is computed again on every refit, so a resize can cross it. In overflow mode the container min-width is the larger of the ideal sum and the actual sum, plus separators, so panels grow without collapsing others.
 
 ## G8: Zero-sum resize (no max-width cap)
 
-During a drag every pixel freed by victims goes to the grower, uncapped in both modes, so the total panel sum stays constant: no mid-drag container width adjustment, no scroll compensation. A collapsed grower opening is the one exception: see G10 and O2. The end handle's drag (E3) has no grower: the row narrows, and the container keeps its width until the drop.
+During a drag every pixel freed by victims goes to the grower, uncapped in both modes. The total panel sum stays constant: no mid-drag container width adjustment, no scroll compensation. A collapsed grower opening is the one exception: see G10 and O2.
 
 ## G9: Two-phase cascade
 
@@ -217,7 +217,7 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 - **T3, no room to open:** the row goes to overflow (G6). A panel never closes to make room for another.
 - **T4, all closed:** allowed. The row shows its strips and empty space, with no min-width. Opening one fills the row.
 - **T5, non-collapsible:** toggling does nothing.
-- **T6, glide:** a toggle, `expandPanel`, Home/End (G5) and a fit switch (E4 to E6) move every width in one 200ms eased step. A panel that opens or closes keeps its content at its open width, so the moving edge uncovers or covers it. A closing panel's content fades as a collapse hint fades it (G4), and its collapse is reported when the step ends (P3), so its open content stays mounted until then. A drag never glides: starting one lands a running glide on its target. With reduced motion the widths change at once.
+- **T6, glide:** a toggle, `expandPanel`, Home/End (G5) and a fit switch (E10) move every width in one 200ms eased step. A panel that opens or closes keeps its content at its open width: the moving edge uncovers or covers it. A closing panel's content fades as a collapse hint fades it (G4), and its open content stays mounted until the step ends, when its collapse is reported (P3). A drag never glides: starting one lands a running glide on its target. With reduced motion the widths change at once.
 
 ## Saving
 
@@ -230,28 +230,25 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 - **C1, parent:** the group measures its parent and fills it. Overflow mode only works if the parent can scroll, as `ScrollArea` does. A clipping parent, such as `BoardLayout`'s `autoHeight` wrapper, cuts off what overflows, with no way to reach it. Use that wrapper with a set of panels that fits.
 - **C2, sizes:** `minWidth` and `collapsedWidth` are per panel, and `collapsible` can be off. The API supports mixing them, and they follow the same rules, but every consumer today uses one size and collapsible panels.
 - **C3, direction:** left to right only.
-- **C4, separators:** separator `i` sits between panels `i` and `i + 1`, so `index` has no gaps. An end handle is separator `n - 1`, after the last of `n` panels.
+- **C4, separators:** separator `i` sits between panels `i` and `i + 1`, so `index` has no gaps. The last panel has none after it.
 
-## End handle
+## Fit
 
-A separator after the last panel switches the row between its ideal width and the fit. It is for a parent that scrolls: a row that cannot overflow has no use for it.
+A switch between the row's ideal widths and the fit, for a parent that scrolls. A row that cannot overflow has no use for it. Rule ids E1, E3 and E5 to E7 belonged to the end handle it replaced.
 
-- **E1, the handle:** the consumer renders separator `n - 1` after the last panel (C4). A must-fit group treats it as an ordinary separator, so `BoardLayout` leaves it out there and in its clipping wrapper.
-- **E2, fit:** a flag the consumer stores, passed as `fit` and reported through `onFitChange`. With fit, G6 counts each open panel at `minWidth`, so the row fits whenever every panel fits at its minimum and scrolls at `minWidth` when not even that fits.
-- **E3, drag left without fit:** the row narrows, the last panel first, then the one before it, none below `minWidth` (T3: no panel closes for room). A dashed line marks where the row's end has to land, the parent's width. The line turns solid once the row reaches it, or once every open panel is at its minimum. Released then, fit turns on; released before, the row goes back and nothing switches.
-- **E4, turning fit on:** the panels go back to their widths at drag start and share the room in proportion (R1), each at least `minWidth`. A refit alone would not shrink a row that still overflows at `minWidth`, because overflow keeps the actual sum (G6).
-- **E5, drag right with fit:** a 40px gate, shown as a curtain over the last panel. Released past it, fit turns off and the row refits to the ideal width, usually overflow. Released before, nothing switches.
-- **E6, keys:** Home and ArrowLeft turn fit on, End and ArrowRight turn it off. Enter toggles the last panel (G5).
-- **E7, the other direction:** a drag right without fit, or left with fit, moves nothing.
-- **E8, saving:** `onFitChange` fires on each switch, and the widths save as after any drag or key (P1). A `fit` prop that changes from outside, as when the consumer's store loads after mount, applies as a switch without `onFitChange`.
+- **E2, fit:** a flag the consumer stores, passed as `fit` and reported through `onFitChange`. In the band (E9), with fit, G6 counts each open panel at `minWidth` and the row fits. Outside it fit changes nothing: a row that fits at its ideal width fills its parent anyway, and one that does not fit even at `minWidth` scrolls at its ideal width.
+- **E4, the switch's layout:** turning fit on refits (R1): the open panels share the room in proportion to their widths, each at least `minWidth`. Turning it off refits to the ideal width, which in the band is overflow.
+- **E8, saving:** `onFitChange` fires on each switch, and the widths save (P1). A `fit` prop that changes from outside, as when the consumer's store loads after mount, applies without `onFitChange` and without a glide.
+- **E9, the band:** open panels fit the parent at `minWidth` but not at their ideal width. `onFitBandChange` fires when the row enters or leaves it, measured on every refit. The consumer offers the switch only there. A must-fit row is never in it.
+- **E10, switching:** `PanelGroupApi.setFit` switches in a glide (T6). `BoardLayout` offers it as a tab in the window's bottom-right corner while the row is in the band; with the pointer within 140px, or with keyboard focus, the tab shows its label.
 
 ```
-  Parent 1000, A=B=C=375, end handle: overflow, container min-width 1145.
-  Drag the end handle left 150: C=300, B=300, the row ends at 995, inside the line. Release:
+  Parent 1000, A=B=C=375: the ideal of 1125 plus two separators overflows, at 300 each the row fits, so the row is in the band.
+  Overflow, container min-width 1139. setFit(true):
 
-  +---- A ----++---- B ----++---- C ----+||
-  |   327      ||   327      ||   327      |||  fit, autoFill
-  +------------++------------++------------+||
+  +---- A ----++---- B ----++---- C ----+
+  |   329      ||   329      ||   329      |  fit, autoFill
+  +------------++------------++------------+
 ```
 
 ## Must-fit (`mustFit`)

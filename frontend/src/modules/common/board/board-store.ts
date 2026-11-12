@@ -15,7 +15,7 @@ interface BoardUIState {
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
-  /** boardId => whether the panels fit at their minimum width before the row scrolls (resizable-panels.md, E2). */
+  /** boardId => whether the row fits at the panels' minimum width, in the band where that differs (resizable-panels.md, E2). */
   boardFits: Record<string, boolean>;
   setBoardFit: (boardId: string, fit: boolean) => void;
 
