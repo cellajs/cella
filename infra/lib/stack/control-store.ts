@@ -27,9 +27,21 @@ export interface Rotations {
   secrets?: RotationRecord;
 }
 
+/** One version or delete marker of an object, as `ListObjectVersions` lists it, newest first. */
+interface ObjectVersion {
+  Key?: string;
+  VersionId?: string;
+  IsLatest?: boolean;
+}
+
 /** Minimal S3 client surface used here (the AWS SDK `S3Client` satisfies it). */
 export interface S3Like {
-  send(command: unknown): Promise<{ Body?: { transformToString(): Promise<string> }; ETag?: string }>;
+  send(command: unknown): Promise<{
+    Body?: { transformToString(): Promise<string> };
+    ETag?: string;
+    Versions?: ObjectVersion[];
+    DeleteMarkers?: ObjectVersion[];
+  }>;
 }
 
 /** Lazy SDK loader, keeps `@aws-sdk/client-s3` out of the Pulumi plan path. */
@@ -344,4 +356,30 @@ export async function forceUnlock(s3: S3Like, bucket: string, key: string): Prom
   const { info } = await readLock(s3, bucket, key);
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   return info;
+}
+
+/**
+ * Delete the lock's history: every version and delete marker but the newest, which says whether a lease stands. The bucket keeps each
+ * write of the lock as a version, and Scaleway refuses a write to an object of too many. The deploy key deletes no version, so an
+ * operator action calls this before it takes the lease.
+ * @returns how many versions and delete markers it deleted
+ * @throws when the bucket refuses a list or a delete
+ */
+export async function pruneLockVersions(s3: S3Like, bucket: string, key: string): Promise<number> {
+  const { ListObjectVersionsCommand, DeleteObjectCommand } = await s3sdk();
+  let deleted = 0;
+  // Each pass lists from the top, as a marker may name a version the pass before deleted. 100 passes clear 100,000 entries.
+  for (let pass = 0; pass < 100; pass++) {
+    const page = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket, Prefix: key, MaxKeys: 1000 }));
+    // The newest stays even when it is a delete marker: deleting that one would make the version below it the lease again.
+    const old = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])].filter((entry) => entry.Key === key && entry.VersionId && !entry.IsLatest);
+    if (old.length === 0) break;
+    // One call a version, the call a deploy deletes an env file's version with, 25 at a time.
+    for (let at = 0; at < old.length; at += 25) {
+      const batch = old.slice(at, at + 25);
+      await Promise.all(batch.map((entry) => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key, VersionId: entry.VersionId }))));
+    }
+    deleted += old.length;
+  }
+  return deleted;
 }

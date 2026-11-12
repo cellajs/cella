@@ -7,6 +7,7 @@ import {
   type LockInfo,
   lockKey,
   parseRotations,
+  pruneLockVersions,
   readObjectEtag,
   recordRotation,
   releaseLock,
@@ -159,5 +160,43 @@ describe('readObjectEtag', () => {
     expect(sent).toEqual([{ command: 'HeadObjectCommand', input: { Bucket: 'state', Key: '.pulumi/stacks/infra/production.json' } }]);
     const denied = Object.assign(new Error('access denied'), { name: 'AccessDenied' });
     await expect(readObjectEtag(head(denied), 'state', '.pulumi/stacks/infra/production.json')).rejects.toThrow('access denied');
+  });
+});
+
+describe("the lease's versions", () => {
+  const key = lockKey('production');
+  type Entry = { VersionId: string; marker: boolean };
+  /** A versioned bucket holding one key, newest entry first, that lists two entries a call. */
+  const versioned = (entries: Entry[]) => {
+    let held = [...entries];
+    const s3 = {
+      send: async (command: unknown) => {
+        const sent = command as { constructor: { name: string }; input: { VersionId?: string } };
+        const { input } = sent;
+        if (sent.constructor.name === 'ListObjectVersionsCommand') {
+          const page = held.slice(0, 2).map((entry) => ({ ...entry, Key: key, IsLatest: entry === held[0] }));
+          return { Versions: page.filter((entry) => !entry.marker), DeleteMarkers: page.filter((entry) => entry.marker) };
+        }
+        held = held.filter((entry) => entry.VersionId !== input.VersionId);
+        return {};
+      },
+    };
+    return { s3, held: () => held.map((entry) => entry.VersionId) };
+  };
+
+  // Deleting the newest entry would change who holds the lease: a delete marker gone makes the version below it the lease again.
+  it.each([
+    { case: 'a lease that stands', newest: { VersionId: 'v5', marker: false } },
+    { case: 'a released lease, a delete marker', newest: { VersionId: 'm5', marker: true } },
+  ])('are deleted down to the newest entry: $case', async ({ newest }) => {
+    const bucket = versioned([
+      newest,
+      { VersionId: 'm4', marker: true },
+      { VersionId: 'v3', marker: false },
+      { VersionId: 'm2', marker: true },
+      { VersionId: 'v1', marker: false },
+    ]);
+    expect(await pruneLockVersions(bucket.s3, 'bucket', key)).toBe(4);
+    expect(bucket.held()).toEqual([newest.VersionId]);
   });
 });

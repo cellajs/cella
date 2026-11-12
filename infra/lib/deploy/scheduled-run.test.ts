@@ -55,8 +55,9 @@ describe("a scheduled run's lease and record", () => {
   const started = new Date('2026-11-06T12:00:00Z');
   const looking = 'run:20261106T120000Z';
   const deploying = `run:20261106T120000Z-${sha.slice(0, 10)}`;
-  const fake = (opts: { held?: boolean; records?: RunRecord[]; writeFails?: boolean }) => {
+  const fake = (opts: { held?: boolean; records?: RunRecord[]; openedMeanwhile?: boolean; writeFails?: boolean }) => {
     const calls: string[] = [];
+    let looks = 0;
     const fx: ScheduledEffects = {
       takeLease: async (owner, operation) => {
         calls.push(`take ${owner} ${operation}`);
@@ -74,7 +75,10 @@ describe("a scheduled run's lease and record", () => {
         return '';
       },
       listRemote: async () => [{ sha, ref: 'refs/tags/1.0.0' }],
-      records: async () => opts.records ?? [],
+      records: async () => {
+        looks += 1;
+        return opts.openedMeanwhile && looks > 1 ? [record(sha, 'running', 0)] : (opts.records ?? []);
+      },
       writeRecord: async (record) => {
         calls.push(`write ${record.run} ${record.outcome}`);
         if (opts.writeFails) throw new Error('bucket refused');
@@ -85,16 +89,23 @@ describe("a scheduled run's lease and record", () => {
 
   // The deploy takes over the lease its scheduled run handed it (tasks/deploy-run.ts, adopt), and the status reads a running record by it.
   it.each([
-    { case: 'a held lease ends at once, reads nothing and releases nothing', opts: { held: true }, calls: [`take ${looking} scheduled run`] },
+    // A lease taken by every run of a schedule of one a minute is 2,880 versions a day, and Scaleway refuses a write to an object of too many.
+    { case: 'a run with nothing to deploy takes no lease and writes nothing', opts: { records: [record(sha, 'deployed', 0)] }, calls: ['read'] },
     {
-      case: 'a deploy hands the lease to its run, then opens the record, and keeps the lease',
+      case: 'a held lease ends a run with a target at once and releases nothing',
+      opts: { held: true },
+      calls: ['read', `take ${looking} scheduled run`],
+    },
+    {
+      case: 'a deploy looks again under the lease, hands it to its run, then opens the record, and keeps the lease',
       opts: {},
-      calls: [`take ${looking} scheduled run`, 'read', `hand ${looking} to ${deploying} deploy`, `write ${deploying.slice(4)} running`],
+      calls: ['read', `take ${looking} scheduled run`, 'read', `hand ${looking} to ${deploying} deploy`, `write ${deploying.slice(4)} running`],
     },
     {
       case: 'a record write that fails releases the lease under the deploy owner and deploys nothing',
       opts: { writeFails: true },
       calls: [
+        'read',
         `take ${looking} scheduled run`,
         'read',
         `hand ${looking} to ${deploying} deploy`,
@@ -103,9 +114,9 @@ describe("a scheduled run's lease and record", () => {
       ],
     },
     {
-      case: 'a run that starts nothing releases its looking lease',
-      opts: { records: [record(sha, 'deployed', 0)] },
-      calls: [`take ${looking} scheduled run`, 'read', `release ${looking}`],
+      case: 'a target another run opened before the lease was taken is not deployed twice',
+      opts: { openedMeanwhile: true },
+      calls: ['read', `take ${looking} scheduled run`, 'read', `release ${looking}`],
     },
   ])('$case', async ({ opts, calls: expected }) => {
     const { fx, calls } = fake(opts);

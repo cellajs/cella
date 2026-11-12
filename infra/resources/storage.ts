@@ -6,7 +6,7 @@ import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
 import { resolvePerMode } from '../lib/general-config';
 import { appStorageNeeds, services } from '../lib/services';
-import { CONTROL_PREFIX } from '../lib/stack/control-store';
+import { CONTROL_PREFIX, lockKey } from '../lib/stack/control-store';
 import { deployMode, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
@@ -258,6 +258,8 @@ const bootDiagBucket = new scaleway.object.Bucket(
       { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: RUNS_PREFIX },
       { id: 'expire-releases', enabled: true, expiration: { days: 60 }, prefix: RELEASES_PREFIX },
       { id: 'expire-env', enabled: true, expiration: { days: 1 }, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: ENV_PREFIX },
+      // Every deploy and operator action writes the lease, and Scaleway refuses a write to an object of too many versions.
+      { id: 'expire-lease-versions', enabled: true, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: lockKey(deployMode) },
     ],
   },
   kept,

@@ -4,7 +4,7 @@ import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
 import { allPrincipalNames } from '../lib/scaleway/principals';
-import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
+import { controlActor, lockKey, makeControlClient, pruneLockVersions, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 import type { StackContext } from '../lib/stack/stack-context';
 import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
@@ -206,6 +206,12 @@ export async function acquireStackLockOrExit(opts: {
   const s3 = await makeControlClient(opts.appConfig.s3.region, opts.accessKey, opts.secretKey);
   const bucket = deriveInfra(opts.appConfig).naming.bootDiagBucket;
   const key = lockKey(opts.stack);
+  // Only a person's key deletes versions here, and a lease of too many takes no write from an operator or from a deploy.
+  const pruned = await pruneLockVersions(s3, bucket, key).catch((error: unknown) => {
+    console.warn(`${warningMark} The lease's old versions could not be deleted (${errorMessage(error)}).`);
+    return 0;
+  });
+  if (pruned >= 1000) console.info(pc.dim(`  Deleted ${pruned} old versions of the lease, which Scaleway refuses writes over.`));
   let lastWaitLine = 0;
   const result = await acquireLease({
     s3,

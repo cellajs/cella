@@ -51,21 +51,20 @@ export interface ScheduledDeploy {
 }
 
 /**
- * A scheduled run's verdict, under the environment's lease, which it takes before any read: one run looks at a time, so two never deploy
- * one target. A lease another holds ends it at once, as that holder is a deploy or an operator action. A target to deploy keeps the lease,
- * handed to the deploy's run, and has its record opened, `running`, so a deploy that dies before its own write still leaves the target a
- * record; any other end releases the lease with the one line that says why it starts nothing.
+ * A scheduled run's verdict. It looks first without the environment's lease, and a run with nothing to deploy ends there and writes
+ * nothing: the bucket keeps every version of the lease, and Scaleway refuses a write to an object of too many. A run with a target to
+ * deploy takes the lease and looks again, the look that decides: one run decides at a time, so two never deploy one target. A lease
+ * another holds ends it at once, as that holder is a deploy or an operator action. A target to deploy keeps the lease, handed to the
+ * deploy's run, and has its record opened, `running`: a deploy that dies before its own write still leaves the target a record. Any
+ * other end under the lease releases it with the one line that says why it starts nothing.
  * @param started the run's start, to the second: the record's start and the stamp of its id.
  * @throws when the environments file or the repository cannot be read, or the lease went to another run meanwhile.
  */
 export async function scheduledVerdict(environment: string, fx: ScheduledEffects, started: Date): Promise<ScheduledDeploy | { done: string }> {
-  const looking = leaseOwnerOfRun(runStamp(started));
-  const held = await fx.takeLease(looking, 'scheduled run');
-  if (held) return { done: `${leaseHolder(held)} holds the lease` };
-  let owner = looking;
-  let kept = false;
-  try {
-    const refs: RemoteRef[] = [];
+  const refs: RemoteRef[] = [];
+  /** The target no run record names under its retry counter, or the line that says why this run starts nothing. */
+  const look = async (): Promise<Target | { done: string }> => {
+    refs.length = 0;
     const listRemote = async (patterns: string[]) => {
       const listed = await fx.listRemote(patterns);
       refs.push(...listed);
@@ -79,11 +78,21 @@ export async function scheduledVerdict(environment: string, fx: ScheduledEffects
     if (target === null) return { done: 'no release yet: starts nothing' };
     if (!target) return { done: `no line in ${ENVIRONMENTS_FILE}: starts nothing` };
     const decision = decideScheduledRun(target, await fx.records(target.sha));
-    if (decision.action === 'none') {
-      return {
-        done: `${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}): has run ${decision.record.run}, ${decision.record.outcome}`,
-      };
-    }
+    if (decision.action === 'deploy') return target;
+    return {
+      done: `${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}): has run ${decision.record.run}, ${decision.record.outcome}`,
+    };
+  };
+  const unleased = await look();
+  if ('done' in unleased) return unleased;
+  const looking = leaseOwnerOfRun(runStamp(started));
+  const held = await fx.takeLease(looking, 'scheduled run');
+  if (held) return { done: `${leaseHolder(held)} holds the lease` };
+  let owner = looking;
+  let kept = false;
+  try {
+    const target = await look();
+    if ('done' in target) return target;
     const run = runId(target.sha, started);
     if (!(await fx.handOverLease(looking, leaseOwnerOfRun(run), DEPLOY_OPERATION))) {
       throw new Error('the lease went to another run while this one looked for its target');
