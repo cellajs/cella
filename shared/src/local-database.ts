@@ -12,7 +12,10 @@ export type LocalDatabase = 'dev' | 'test' | 'testbed';
 /** The ports of app number 0; the last digit tells the three apart, and `devAppIndex` adds ten times its number. */
 const basePorts: Record<LocalDatabase, number> = { dev: 5432, test: 5434, testbed: 5470 };
 
-/** The env variable that points a purpose at another server, such as a throwaway test database on a port of its own. */
+/**
+ * The env variable that points a purpose at another server, such as a throwaway test database on a port of its own.
+ * With `DATABASE_TEST_PORT` set, `pnpm docker:test` and the test scripts that call it start no container.
+ */
 const portEnvNames: Record<LocalDatabase, string> = { dev: 'DATABASE_PORT', test: 'DATABASE_TEST_PORT', testbed: 'DATABASE_TESTBED_PORT' };
 
 /** The roles `backend/compose.yaml` and the backend's role setup create, with their passwords. */
