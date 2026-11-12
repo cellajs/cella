@@ -162,6 +162,13 @@ export const parseBlocks = (description: string | null | undefined): Description
   }
 };
 
+/** The block with fresh ids down its children: every document starts from the same `initialBlockId`, and a document holds each id once. */
+export const rekeyBlock = (block: DescriptionBlock): DescriptionBlock & { id: string } => ({
+  ...block,
+  id: crypto.randomUUID(),
+  ...(Array.isArray(block.children) && { children: block.children.map(rekeyBlock) }),
+});
+
 /** Plain text of a stored block document, for captions and excerpts; null when the input is not a block document. */
 export const textFromDocument = (description: string | null | undefined): string | null => {
   const blocks = parseBlocks(description);

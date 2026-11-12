@@ -65,8 +65,9 @@ export async function fanOutNotifications(event: ProductActivityEvent): Promise<
   for (const { row, subjectId, readsMentions } of changes) {
     const subject = subjects.get(subjectId);
     if (!subject) continue;
+    const mentionsAreNew = event.action !== 'create' || source.declaration.readsMentionsOnCreate?.(subject) !== false;
     try {
-      told.push(...(await fanOutRow(ids, row, source, subject, readsMentions)));
+      told.push(...(await fanOutRow(ids, row, source, subject, readsMentions && mentionsAreNew)));
     } catch (error) {
       log.error('Notification fan-out failed for row', { error, activityId: row.activityId, subjectId });
     }

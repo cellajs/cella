@@ -97,6 +97,8 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
   resolveRecipients?(tx: DbOrTx, row: TRow): Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
   resolveContextId?(row: TRow): string | null;
+  /** Whether a created row's mentions are new to their users; false for a row made from rows that told them (a merge). Defaults to true. */
+  readsMentionsOnCreate?(row: TRow): boolean;
   /** Display names for context ids, read inside a tenant transaction. */
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
 }
