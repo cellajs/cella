@@ -60,7 +60,7 @@ export function OrganizationLobby() {
         <AnimatePresence mode="wait" initial={false}>
           {isMenuOpen ? (
             <motion.p key="hint" {...swapMotion} className="text-muted-foreground flex h-10 items-center gap-2 text-sm">
-              <ArrowLeftIcon className="motion-safe:animate-nudge-left size-4" />
+              <ArrowLeftIcon className="size-4" />
               {t('c:continue_in_menu')}
             </motion.p>
           ) : isNavigating ? null : (
