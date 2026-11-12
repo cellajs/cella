@@ -60,14 +60,15 @@ interface CardProps {
   editing?: boolean;
   description?: string | null;
   synced?: boolean;
+  cursorOnMount?: boolean;
 }
 
 const descriptions: Record<string, InPlaceDescription> = {};
 const cardClicks = vi.fn();
 
 /** An app card around the description: it owns `editing` and applies the override to its one static. */
-function Card({ id = 'a', editing = false, description = 'stored', synced = true }: CardProps) {
-  const inPlace = useInPlaceDescription({ editing, canEdit: true, description });
+function Card({ id = 'a', editing = false, description = 'stored', synced = true, cursorOnMount }: CardProps) {
+  const inPlace = useInPlaceDescription({ editing, canEdit: true, description, cursorOnMount });
   descriptions[id] = inPlace;
 
   return (
@@ -228,6 +229,22 @@ describe('the cursor', () => {
     expect(api.focusSummaryEnd).not.toHaveBeenCalled();
     await nextFrame();
     expect(api.focusSummaryEnd).toHaveBeenCalledOnce();
+  });
+
+  it('places none on a mount mid-edit when the host says so, and still does when editing starts', async () => {
+    await render({ editing: true });
+    await nextFrame();
+    expect(api.focusSummaryEnd).toHaveBeenCalledOnce();
+
+    await render({ id: 'b', editing: true, cursorOnMount: false });
+    await nextFrame();
+    expect(isEditing('b')).toBe(true);
+    expect(api.focusSummaryEnd).toHaveBeenCalledOnce();
+
+    await render({ id: 'b', cursorOnMount: false });
+    await render({ id: 'b', editing: true, cursorOnMount: false });
+    await nextFrame();
+    expect(api.focusSummaryEnd).toHaveBeenCalledTimes(2);
   });
 });
 
