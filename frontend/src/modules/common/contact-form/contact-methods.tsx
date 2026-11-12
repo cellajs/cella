@@ -2,8 +2,8 @@ import { CalendarCheckIcon, MailIcon, MapPinIcon, PhoneCallIcon } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import { appConfig, type CompanyAddress } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
+import { ExternalArrow } from '~/modules/common/external-arrow';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { cn } from '~/utils/cn';
 import { regionName } from '~/utils/region-name';
 

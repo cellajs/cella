@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
-import { ExternalArrow } from '~/modules/marketing/external-arrow';
+import { ExternalArrow } from '~/modules/common/external-arrow';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';

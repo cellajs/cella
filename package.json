@@ -25,7 +25,7 @@
     "postinstall": "[ ! -e frontend/node_modules/shared ] || pnpm locales:types",
     "locales:types": "node frontend/vite/write-locale-types.ts",
     "docker": "pnpm --filter backend compose up --detach --wait",
-    "docker:test": "pnpm --filter backend compose --profile test up -d --wait db_test",
+    "docker:test": "[ -n \"$DATABASE_TEST_PORT\" ] || pnpm --filter backend compose --profile test up -d --wait db_test",
     "docker:test:reset": "pnpm --filter backend compose --profile test down -v db_test",
     "stop": "pnpm -r --parallel --stream stop",
     "killports": "node shared/scripts/kill-ports.ts",

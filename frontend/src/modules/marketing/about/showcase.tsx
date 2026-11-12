@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
+import { ExternalArrow } from '~/modules/common/external-arrow';
 import { DeviceMockup } from '~/modules/marketing/device-mockup';
-import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
 
 export interface ShowcaseItem {

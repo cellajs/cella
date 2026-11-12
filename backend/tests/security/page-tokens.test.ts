@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createSystemAdminUser, createTestSession, createTestUser, expectRefusal, rawJsonRequest } from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, createTestUser, expectRefusal, rawJsonRequest } from '../helpers';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
@@ -9,8 +9,8 @@ type Page = { results: { id: string }[]; nextPageToken?: string; totalSize: numb
 
 /**
  * A page token is sealed by the server (AEP-158): a client that reads, alters or forges one, or replays it with other
- * params or on another list, gets a 400 and never a page from a position it chose. Only `maxPageSize` and `skip` may
- * change between pages.
+ * params or on another list, gets a 400 and never a page from a position it chose. Only `maxPageSize`, `skip` and
+ * `include` may change between pages.
  */
 describe('Page tokens', async () => {
   let cookie: string;
@@ -23,6 +23,7 @@ describe('Page tokens', async () => {
     await clearSecurityTestData();
     const admin = await createSystemAdminUser('page-token-admin@example.com');
     for (const name of ['one', 'two', 'three', 'four']) await createTestUser(`page-token-${name}@example.com`);
+    for (let count = 0; count < 2; count++) await createTestOrganization();
     cookie = await createTestSession(admin);
   });
 
@@ -102,5 +103,15 @@ describe('Page tokens', async () => {
     expect(page.status).toBe(200);
     expect(page.body.results).toHaveLength(1);
     expect(first.results.map(({ id }) => id)).not.toContain(page.body.results[0]?.id);
+  });
+
+  // A grid and a table of one list share their pages and ask for different fields.
+  it('opens with another include', async () => {
+    const first = await read('/tenants/-/organizations', { maxPageSize: '1', include: 'counts,members' });
+    expect(first.body.nextPageToken).toEqual(expect.any(String));
+
+    const next = await read('/tenants/-/organizations', { pageToken: first.body.nextPageToken ?? '', maxPageSize: '1', include: 'counts' });
+    expect(next.status).toBe(200);
+    expect(next.body.results[0]?.id).not.toBe(first.body.results[0]?.id);
   });
 });

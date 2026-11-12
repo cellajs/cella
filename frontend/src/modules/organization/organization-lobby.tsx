@@ -4,6 +4,7 @@ import { ArrowLeftIcon, MenuIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { hierarchy } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { swapMotion } from '~/modules/common/motion-presets';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
@@ -30,6 +31,8 @@ export function OrganizationLobby() {
   const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const membership = findMembership(myMemberships?.results ?? [], organization.id);
+  // The organization's roles alone: an app keeps a `you_are_role` key for those and no other
+  const role = hierarchy.getRoles('organization').find((organizationRole) => organizationRole === membership?.role);
 
   // The organization's own menu, as its nav bar button opens it
   const openMenu = () => {
@@ -52,7 +55,7 @@ export function OrganizationLobby() {
           {organization.name}
         </h1>
       </Link>
-      {membership && <p className="text-muted-foreground mt-1 text-sm">{t(`c:you_are_role.${membership.role}`)}</p>}
+      {role && <p className="text-muted-foreground mt-1 text-sm">{t(`c:you_are_role.${role}`)}</p>}
       <div className="mt-6 h-10">
         <AnimatePresence mode="wait" initial={false}>
           {isMenuOpen ? (

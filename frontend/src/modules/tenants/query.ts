@@ -59,7 +59,10 @@ export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number
   });
 };
 
-/** Takes a demo for this browser and opens its organization: the server set a demo session, so the app reloads on the organization's page with it. */
+/**
+ * Takes a demo for this browser and opens its organization. The server sets a demo session, and the app reloads on the organization's page with it.
+ * @public
+ */
 export const useCreateDemoMutation = () =>
   useMutation<Tenant, ApiError>({
     mutationKey: tenantQueryKeys.createDemo,

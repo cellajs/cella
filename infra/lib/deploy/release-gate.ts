@@ -1,5 +1,5 @@
 import { type SpawnSyncReturns, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pc, sleep, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
@@ -23,9 +23,13 @@ export function appliedDescriptionVariable(environment: string): string {
   return `INFRA_APPLIED_DESCRIPTION_${environment.toUpperCase().replaceAll('-', '_')}`;
 }
 
-/** Whether merging the release PR deploys to the environment: its line in the environments file, or its default, follows the releases. */
+/**
+ * Whether merging the release PR deploys to the environment: its line in the environments file, or its default, follows
+ * the releases. An app without the file reads every environment's default, as `readEnvironmentsFile` does.
+ */
 export function followsReleases(environment: string, root = join(infraDir, '..')): boolean {
-  const line = parseEnvironmentsFile(readFileSync(join(root, ENVIRONMENTS_FILE), 'utf8')).get(environment);
+  const file = join(root, ENVIRONMENTS_FILE);
+  const line = parseEnvironmentsFile(existsSync(file) ? readFileSync(file, 'utf8') : '').get(environment);
   return (line?.rule ?? defaultRule(environment))?.kind === 'releases';
 }
 

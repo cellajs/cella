@@ -31,7 +31,7 @@ export function AttachmentsTableBar({
 }: AttachmentsTableBarProps) {
   const { t } = useTranslation();
   // A sub-organization channel homes its uploads on itself; the organization row is the
-  // org. Public read is row-local, so the channel's `public` flag is only the value a new row starts with.
+  // org. A row holds its home channel's `public`, so the optimistic one starts with it.
   const isOrganization = channel.entityType === 'organization';
   const organizationId = channelOrganizationId(channel);
   const isPublic = 'public' in channel && channel.public === true;
