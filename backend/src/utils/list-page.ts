@@ -16,6 +16,8 @@ interface PageQuery {
   pageToken?: string;
   maxPageSize: number;
   skip: number;
+  /** The fields each row carries; a token outlives a change of it, since it leaves the rows and their order alone. */
+  include?: readonly string[];
   afterSeq?: number;
   untilSeq?: number;
 }
@@ -92,7 +94,7 @@ export async function readListPage<T, E extends object = object>(
   query: PageQuery,
   read: (window: PageWindow) => Promise<WindowRows<T> & E>,
 ) {
-  const { pageToken, maxPageSize, skip, ...params } = query;
+  const { pageToken, maxPageSize, skip, include: _include, ...params } = query;
 
   if (seqRangeOf(query)) {
     const { items, total, ...rest } = await read({ offset: 0, limit: maxPageSize });
