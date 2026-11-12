@@ -1,4 +1,5 @@
 import type { YjsDocScope } from 'shared';
+import { yjsCloseCodes } from 'shared/utils/yjs-protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { yjsAwarenessMaxStateBytes } from '../constants';
@@ -214,15 +215,16 @@ describe('handleMessage: sync step 1', () => {
     expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
 
-  it('seeds a description that does not convert as an empty document, and the session opens', async () => {
+  it('must not open a document over a description that does not convert: nothing is seeded and its socket is refused', async () => {
     const { ctx: c, key, ws } = session();
     storage.descriptions.set(key, JSON.stringify([{ type: 'no-such-block' }]));
 
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(blocksOf(storage.bases.get(key)!).map((block) => block.type)).toEqual(['paragraph']);
-    expect(decodeGeneration(ws.sent[0])).toBe(storage.generations.get(key));
-    expect(ws.closed).toBeNull();
+    // An empty document in its place would replace the description at the next write.
+    expect(storage.bases.has(key)).toBe(false);
+    expect(ws.sent).toEqual([]);
+    expect(ws.closed?.code).toBe(yjsCloseCodes.BadRequest);
   });
 
   it('concurrent Step1s from two sockets seed once, through the document lock', async () => {

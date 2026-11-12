@@ -1,7 +1,7 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
-import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
+import { FilePanelExtension } from '@blocknote/core/extensions';
 import * as blocknoteLocales from '@blocknote/core/locales';
 import { withCollaboration } from '@blocknote/core/yjs';
 import { EmojiPickerController, FilePanelController, useCreateBlockNote } from '@blocknote/react';
@@ -17,28 +17,25 @@ import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-ur
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { headingLevelsExtension } from '~/modules/common/blocknote/custom-elements/heading-levels/heading-levels-extension';
+import { flagBlocks } from '~/modules/common/blocknote/custom-elements/media/media-uploads-extension';
 import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
-import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
+import { fileEntryExtension } from '~/modules/common/blocknote/custom-file-panel/file-entry-extension';
+import { isAttachmentMedia } from '~/modules/common/blocknote/custom-file-panel/file-insertion';
 import { FilePanelBridge, useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
-import { InlineUppyFilePanel, uploadEditorFile } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
+import { InlineUppyFilePanel, type UploadingMedia } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
 import { findClickedMediaBlockId, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
+import { pastedTextMaxLines as defaultPastedTextMaxLines } from '~/modules/common/blocknote/helpers/pasted-text';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import { syntaxHighlighter } from '~/modules/common/blocknote/syntax-highlighter';
-import {
-  type BaseUppyFilePanelProps,
-  type CommonBlockNoteProps,
-  type CustomBlockNoteEditor,
-  type CustomBlockTypes,
-  isMediaBlockType,
-} from '~/modules/common/blocknote/types';
+import { type CommonBlockNoteProps, type CustomBlockNoteEditor, type CustomBlockTypes, isMediaBlockType } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { getRouter } from '~/routes/-router-instance';
@@ -64,6 +61,11 @@ export interface BlockNoteContentApi {
   toggleChecklist: (checkboxId: string) => boolean;
   /** Commit the document as blur does: a cache patch while collaborative, a write for a standalone editor once changed. */
   commit: () => void;
+  /**
+   * Opens the upload dialog for new files, for a form's own "Add files" control. They go where the cursor is, or at the
+   * end of a document the person has not been in. Does nothing in an editor without uploads.
+   */
+  addFiles: () => void;
 }
 
 type BlockNoteProps = CommonBlockNoteProps & {
@@ -101,16 +103,14 @@ export function BlockNote({
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
-  emojis = true,
   excludeBlockTypes,
   excludeMediaBlockTypes,
   titlePlaceholder,
-  pinTitleBlock = false,
   ariaLabel,
   extensions,
   members,
-  filePanel,
-  baseFilePanelProps,
+  media,
+  pastedTextMaxLines = defaultPastedTextMaxLines,
   commitOnEveryChange = false,
   collaboration,
   contentApiRef,
@@ -127,16 +127,16 @@ export function BlockNote({
   const collaborative = !!collaboration;
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const uppyPanelProps = appConfig.has.uploads ? baseFilePanelProps : undefined;
-  // Without an upload path the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
-  const canUpload = !!filePanel || !!uppyPanelProps;
+  // Without an upload the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
+  const upload = appConfig.has.uploads ? media?.upload : undefined;
+  const uploadingMedia: UploadingMedia | undefined = media && upload ? { ...media, upload } : undefined;
   const allowedBlockTypes = blockTypes.filter((type) =>
-    isMediaBlockType(type) ? canUpload && !excludeMediaBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
+    isMediaBlockType(type) ? !!upload && !excludeMediaBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
   );
 
-  // A pasted or dropped file becomes an attachment row; a mode without rows leaves files to the panel.
-  const attachmentUploads = uppyPanelProps?.mediaMode === 'public-no-attachment' ? undefined : uppyPanelProps;
-  const uploadFile = useLatestCallback((file: File) => (attachmentUploads ? uploadEditorFile(file, attachmentUploads) : Promise.resolve({})));
+  // A pasted or dropped file, and long pasted text, become attachment rows; a mode without rows leaves files to the dialog.
+  const getAttachmentMedia = useLatestCallback(() => (isAttachmentMedia(uploadingMedia) ? uploadingMedia : undefined));
+  const getPastedTextMaxLines = useLatestCallback(() => pastedTextMaxLines);
 
   // Parse initial content once at creation time so the undo history starts clean
   const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
@@ -154,13 +154,10 @@ export function BlockNote({
       checkedExtension(),
       headingLevelsExtension({ levels: headingLevels }),
       syntaxHighlighter,
-      ...(pinTitleBlock ? [pinnedTitleExtension()] : []),
+      fileEntryExtension({ getMedia: getAttachmentMedia, getMaxLines: getPastedTextMaxLines }),
     ],
-    ...(pinTitleBlock && { dropCursor: { hooks: { computeDropPosition: pinnedTitleDropPosition } } }),
     // The org context is the fallback for a reference whose attachment is not cached.
-    resolveFileUrl: (ref: string) =>
-      resolveBlockNoteFileRef(ref, { tenantId: baseFilePanelProps?.tenantId, organizationId: baseFilePanelProps?.organizationId }),
-    ...(attachmentUploads && { uploadFile }),
+    resolveFileUrl: (ref: string) => resolveBlockNoteFileRef(ref, { tenantId: media?.tenantId, organizationId: media?.organizationId }),
     ...(ariaLabel && { domAttributes: { editor: { 'aria-label': ariaLabel } } }),
   };
 
@@ -168,7 +165,7 @@ export function BlockNote({
 
   useYjsUndoManagerFix(editor, collaborative);
 
-  const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
+  const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: media?.organizationId });
 
   // Escape and blur both commit, so the same document is offered twice; the second call is skipped.
   const lastCommittedRef = useRef<string | null>(null);
@@ -209,6 +206,20 @@ export function BlockNote({
     };
   }, [editable, commitOnEveryChange, commit]);
 
+  // Whether the person has been in the document: its cursor then says where new files go.
+  const hasFocusedRef = useRef(false);
+  const addFiles = useLatestCallback(() => {
+    if (!upload || !editor.isEditable) return;
+    const cursor = hasFocusedRef.current ? editor.getTextCursorPosition().block : editor.document[editor.document.length - 1];
+    const isEmptyParagraph =
+      cursor.type === 'paragraph' && Array.isArray(cursor.content) && cursor.content.length === 0 && cursor.children.length === 0;
+    const [target] = isEmptyParagraph
+      ? editor.replaceBlocks([cursor], [{ type: 'file' }]).insertedBlocks
+      : editor.insertBlocks([{ type: 'file' }], cursor, 'after');
+    flagBlocks(editor, 'added', [target.id], true);
+    editor.getExtension(FilePanelExtension)?.showMenu(target.id);
+  });
+
   useImperativeHandle(
     contentApiRef,
     () => ({
@@ -235,8 +246,9 @@ export function BlockNote({
         return toggled;
       },
       commit,
+      addFiles,
     }),
-    [editor, commit],
+    [editor, commit, addFiles],
   );
 
   // It runs after the change subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
@@ -257,6 +269,11 @@ export function BlockNote({
       if (!commitOnEveryChange) commitDocument();
     },
   });
+
+  const handleFocus = () => {
+    hasFocusedRef.current = true;
+    onFocus?.();
+  };
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview) return;
@@ -288,7 +305,7 @@ export function BlockNote({
       formattingToolbar={false}
       emojiPicker={false}
       filePanel={false}
-      onFocus={onFocus}
+      onFocus={handleFocus}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
@@ -298,33 +315,24 @@ export function BlockNote({
 
       {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
 
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       <MentionMenu members={members} editor={editor} />
 
-      {emojis && <EmojiPickerController triggerCharacter=":" minQueryLength={1} />}
+      <EmojiPickerController triggerCharacter=":" minQueryLength={1} />
 
-      <EditorFilePanel uppyPanelProps={uppyPanelProps} filePanel={filePanel} />
+      <EditorFilePanel media={uploadingMedia} />
     </BlockNoteView>
   );
 }
 
-interface EditorFilePanelProps {
-  /** Set while uploads are on: the panel is the Uppy dialog. */
-  uppyPanelProps?: BaseUppyFilePanelProps;
-  filePanel?: CommonBlockNoteProps['filePanel'];
-}
-
-/** The panel a media block opens: the Uppy dialog, a caller's own panel, or none. */
-function EditorFilePanel({ uppyPanelProps, filePanel }: EditorFilePanelProps) {
+/** The panel a media block opens: the upload dialog while the editor uploads, else none. */
+function EditorFilePanel({ media }: { media?: UploadingMedia }) {
   // Set only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
   const uploadHost = useUploadHost();
 
-  if (uppyPanelProps) {
-    // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
-    if (uploadHost) return <FilePanelBridge host={uploadHost} />;
-    return <FilePanelController filePanel={({ blockId }) => <InlineUppyFilePanel base={uppyPanelProps} blockId={blockId} />} />;
-  }
-  if (filePanel) return <FilePanelController filePanel={filePanel} />;
-  return null;
+  if (!media) return null;
+  // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
+  if (uploadHost) return <FilePanelBridge host={uploadHost} />;
+  return <FilePanelController filePanel={({ blockId }) => <InlineUppyFilePanel media={media} blockId={blockId} />} />;
 }

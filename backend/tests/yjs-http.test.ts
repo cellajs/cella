@@ -283,6 +283,13 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       await expectRefusal(await pull(owner.sessionCookie, attachment.id, new Uint8Array([5, 1])), 400, 'invalid_request');
       expect((await stored(attachment.id)).generation).toBeNull();
     });
+
+    it('must not open a document over a description that does not convert: 400, and nothing is seeded', async () => {
+      // A block type the server's schema lacks, as a newer client could write: an empty seed would replace it at the next write.
+      const attachment = await arrange(JSON.stringify([{ id: 'x', type: 'no-such-block', props: {}, content: [], children: [] }]));
+      await expectRefusal(await pull(owner.sessionCookie, attachment.id), 400, 'invalid_request');
+      expect((await stored(attachment.id)).generation).toBeNull();
+    });
   });
 
   describe('refusals (31)', () => {

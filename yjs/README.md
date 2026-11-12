@@ -72,6 +72,8 @@ Nobody moves or removes someone else's cursors, since a socket announces only it
 
 The first time a description is opened for editing, over the socket or over HTTP, the server seeds its document from the stored description under a new seed generation. Concurrent first connections end up with the same seed. Opening an untouched description never updates the entity, since seeding writes nothing to the log.
 
+A description the server cannot convert, such as one with a block type it does not know, is not opened: an empty document in its place would replace the description at the next save.
+
 ### Edit
 
 On connect, edits made while disconnected upload like any other.

@@ -19,6 +19,7 @@ const api = {
     return true;
   }),
   commit: vi.fn(),
+  addFiles: vi.fn(),
 } satisfies BlockNoteContentApi;
 
 interface EditorProps {

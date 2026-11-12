@@ -1,6 +1,5 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
-import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
@@ -127,8 +126,8 @@ async function resolveMediaBlocks(
 
           if (resolvedUrl) {
             props = { ...props, url: resolvedUrl };
-            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
-          } else if (!getBlockPendingUpload(props)) {
+            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.props.mimeType || block.type });
+          } else if (!getBlockPendingUpload(block.props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
             return children;
           }

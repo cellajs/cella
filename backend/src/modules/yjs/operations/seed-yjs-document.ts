@@ -6,7 +6,7 @@ import { findEntityDescription, findYjsDocument, insertYjsDocument } from '#/mod
 interface SeedYjsDocumentOpts {
   /** The document, with the organization its row carries. */
   doc: YjsDocScope;
-  /** Converts the stored description into the seed: `descriptionToSeedOrEmpty`, with the caller's logging. */
+  /** Converts the stored description into the seed (`descriptionToSeed`). What it throws for one that does not convert reaches the caller, with nothing inserted. */
   toSeed: (description: string | null) => Uint8Array;
 }
 

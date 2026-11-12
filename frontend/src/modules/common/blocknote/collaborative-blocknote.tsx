@@ -12,10 +12,7 @@ import { isYjsEnabled, useStoredYDoc } from '~/modules/common/blocknote/yjs-stor
 import { useCurrentUser } from '~/modules/user/user-store';
 import { getRandomColor } from '~/utils/random-color';
 
-// BlockNote's props are a union (filePanel variants), so Omit must distribute over it
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-
-type PassthroughProps = DistributiveOmit<ComponentProps<typeof BlockNote>, 'collaboration' | 'defaultValue' | 'updateData' | 'onBeforeLoad' | 'id'>;
+type PassthroughProps = Omit<ComponentProps<typeof BlockNote>, 'collaboration' | 'defaultValue' | 'updateData' | 'onBeforeLoad' | 'id'>;
 
 type CollaborativeBlockNoteProps = PassthroughProps &
   YjsDocScope & {
@@ -59,7 +56,7 @@ export function CollaborativeBlockNote({
   waitingFallback,
   ...blockNoteProps
 }: CollaborativeBlockNoteProps) {
-  const { className, dense, clickOpensPreview, baseFilePanelProps } = blockNoteProps;
+  const { className, dense, clickOpensPreview, media } = blockNoteProps;
 
   const descriptionHtml = (
     <Suspense fallback={null}>
@@ -96,7 +93,7 @@ export function CollaborativeBlockNote({
   );
 
   // The upload dialog renders above the editor so it survives an editor remount.
-  return baseFilePanelProps ? <UploadHostProvider baseFilePanelProps={baseFilePanelProps}>{host}</UploadHostProvider> : host;
+  return media?.upload ? <UploadHostProvider media={{ ...media, upload: media.upload }}>{host}</UploadHostProvider> : host;
 }
 
 /** The live editor once the connection is ready, the static with a status until then and once the document cannot be edited. */

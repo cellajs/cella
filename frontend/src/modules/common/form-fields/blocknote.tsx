@@ -1,18 +1,17 @@
-import type { MouseEvent } from 'react';
+import type { MouseEvent, RefObject } from 'react';
 import type { FieldValues } from 'react-hook-form';
-import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
-import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
+import { BlockNote, type BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
+import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
-  /** Omit to disable uploads */
-  baseFilePanelProps?: BaseUppyFilePanelProps;
-};
 export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
-  baseBlockNoteProps: BaseBlockNoteProps;
+  /** `media.upload` turns uploads on. */
+  baseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue'>;
   autoFocus?: boolean;
   containerClassName?: string;
+  /** The editor's handle, for a form's own "Add files" control (`addFiles`). */
+  contentApiRef?: RefObject<BlockNoteContentApi | null>;
 };
 
 // A contenteditable is no `htmlFor` target, so a click on the label focuses the editor itself
@@ -27,35 +26,33 @@ export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   disabled,
   autoFocus,
   containerClassName,
-  baseBlockNoteProps: { baseFilePanelProps, ...restBlockNoteProps },
+  contentApiRef,
+  baseBlockNoteProps,
 }: BlockNoteContentFormFieldProps<TFieldValues>) {
   return (
     <FormField
       control={control}
       name={name}
-      render={({ field: { onChange, value } }) => {
-        const editorProps = {
-          commitOnEveryChange: true,
-          autoFocus,
-          editable: !disabled,
-          defaultValue: value,
-          updateData: onChange,
-          ariaLabel: label,
-          ...restBlockNoteProps,
-        };
-        return (
-          <FormItem name={name} disabled={disabled} className={containerClassName}>
-            {label && (
-              <FormLabel required={required} onClick={focusEditor}>
-                {label}
-              </FormLabel>
-            )}
-            {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
-            {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
-            <FormMessage />
-          </FormItem>
-        );
-      }}
+      render={({ field: { onChange, value } }) => (
+        <FormItem name={name} disabled={disabled} className={containerClassName}>
+          {label && (
+            <FormLabel required={required} onClick={focusEditor}>
+              {label}
+            </FormLabel>
+          )}
+          <BlockNote
+            commitOnEveryChange
+            autoFocus={autoFocus}
+            editable={!disabled}
+            defaultValue={value}
+            updateData={onChange}
+            ariaLabel={label}
+            contentApiRef={contentApiRef}
+            {...baseBlockNoteProps}
+          />
+          <FormMessage />
+        </FormItem>
+      )}
     />
   );
 }

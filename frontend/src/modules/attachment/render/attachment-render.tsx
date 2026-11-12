@@ -3,7 +3,7 @@ import { type MouseEvent, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { useDownloader } from '~/hooks/use-downloader';
-import { getFileIcon } from '~/modules/attachment/file-placeholder';
+import { getFileIcon, isTextFile } from '~/modules/attachment/file-placeholder';
 import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageSpinner, Spinner } from '~/modules/common/spinner';
@@ -14,9 +14,10 @@ import { lazyNamed } from '~/utils/lazy-named';
 const RenderImage = lazyNamed(() => import('~/modules/attachment/render/image'), 'RenderImage');
 const RenderAudio = lazyNamed(() => import('~/modules/attachment/render/audio'), 'RenderAudio');
 const RenderPDF = lazyNamed(() => import('~/modules/attachment/render/pdf'), 'RenderPDF');
+const RenderText = lazyNamed(() => import('~/modules/attachment/render/text'), 'RenderText');
 const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'), 'RenderVideo');
 
-/** The renderers, matched by substring of the content type in this order; any other type gets the download placeholder. */
+/** The renderers, matched by substring of the content type in this order; a text file reads as text, and any other type gets the download placeholder. */
 const renderKinds = ['image', 'audio', 'video', 'pdf'] as const;
 
 export interface MediaPlayerProps {
@@ -101,7 +102,7 @@ export function AttachmentRender({
           {kind === 'audio' && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
           {kind === 'video' && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
           {kind === 'pdf' && <RenderPDF file={url} className="m-auto h-full w-[95vw] max-w-280 overflow-auto" />}
-          {!kind && downloadPlaceholder}
+          {!kind && (isTextFile(type) ? <RenderText src={url} className="m-auto max-h-full w-[95vw] max-w-200" /> : downloadPlaceholder)}
         </Suspense>
       </ErrorBoundary>
     </div>

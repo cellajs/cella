@@ -32,7 +32,7 @@ export const yjsRoutes = createXRoutes(['yjs', 'cella'], {
     xRateLimiter: [yjsHttpLimiter],
     summary: 'Pull Yjs document',
     description:
-      "Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.",
+      "Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it; a description the server cannot convert answers 400 `invalid_request`, and its document stays unopened. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.",
     request: { params: tenantOrgParamSchema, body: jsonBody(yjsPullBodySchema) },
     responses: { 200: json('Document diff', yjsPullResponseSchema) },
   }),
