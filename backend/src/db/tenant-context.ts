@@ -94,6 +94,6 @@ export const tenantReadIncludingDeleted = <T>(ctx: ActorContext, fn: (readCtx: A
 export const tenantContext = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> =>
   requestTransaction(ctx, ctx.var.tenantId, false, false, fn);
 
-/** `tenantContext` that also reads soft-deleted rows (`app.include_deleted`). */
+/** `tenantContext` that also reaches soft-deleted rows (`app.include_deleted`): the select policy filters an UPDATE's WHERE too. */
 export const tenantContextIncludingDeleted = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> =>
   requestTransaction(ctx, ctx.var.tenantId, true, false, fn);

@@ -32,7 +32,7 @@ describe('public read grants: visitor', () => {
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
     // The parent project is public, the task is not: publication never cascades through the
-    // engine. An app that wants it copies the `public` flag to the child row.
+    // engine. The server copies the home channel's `public` flag onto the child row.
     const task = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { public: false } });
     expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
