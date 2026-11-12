@@ -5,9 +5,9 @@ import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/el
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { PanelCollapseContext, PanelDragHandleContext } from '~/modules/common/board/board-drag';
+import { BoardFitToggle } from '~/modules/common/board/board-fit-toggle';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -88,15 +88,15 @@ export function BoardLayout({
   mustFit,
   ref,
 }: BoardLayoutProps) {
-  const { t } = useTranslation();
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
   const fit = useBoardStore((state) => state.boardFits[boardId] ?? false);
   const setBoardFit = useBoardStore((state) => state.setBoardFit);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
-  // The end handle pulls an overflowing row into fit; a clipping parent or a must-fit row never overflows
-  const endHandle = !mustFit && !autoHeight;
+  // A must-fit row never enters the band
+  const [inFitBand, setInFitBand] = useState(false);
 
   const handleFitChange = useCallback((next: boolean) => setBoardFit(boardId, next), [boardId, setBoardFit]);
+  const handleFitToggle = useCallback(() => panelGroupApiRef.current?.setFit(!fit), [fit]);
 
   const handleReady = useCallback((api: PanelGroupApi) => {
     panelGroupApiRef.current = api;
@@ -169,6 +169,7 @@ export function BoardLayout({
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
       onFitChange={handleFitChange}
+      onFitBandChange={setInFitBand}
       className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
       {panels.map(({ panelId, label }, i) => (
@@ -201,10 +202,9 @@ export function BoardLayout({
           </ResizablePanel>
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
 
-          {(i < panels.length - 1 || endHandle) && (
+          {i < panels.length - 1 && (
             <ResizableSeparator
               index={i}
-              aria-label={i === panels.length - 1 ? t('c:fit_panels') : undefined}
               className="border-background hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary mx-[0.02rem] w-1.5 rounded border bg-transparent transition-colors"
             />
           )}
@@ -219,14 +219,17 @@ export function BoardLayout({
 
   // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
-    <ScrollArea
-      className="isolate transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
-      viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto"
-      horizontalScroll
-      autoScrollOnDrag="horizontal"
-    >
-      {panelGroup}
-    </ScrollArea>
+    <>
+      <ScrollArea
+        className="isolate transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
+        viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto"
+        horizontalScroll
+        autoScrollOnDrag="horizontal"
+      >
+        {panelGroup}
+      </ScrollArea>
+      {inFitBand && <BoardFitToggle fit={fit} onToggle={handleFitToggle} />}
+    </>
   );
 }
 

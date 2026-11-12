@@ -35,8 +35,9 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
 
   const hasSubmenu = isSubmenuShown(item);
   const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
-  const mark = getMenuSection(item.entityType)?.rowMark?.(item);
-  const Mark = mark?.icon;
+  const mark = getMenuSection(item.entityType)?.rowMark?.(item, isSubitem);
+  const isMuted = item.membership.muted && canMute(item);
+  const marks = [mark && t(mark.label), isMuted && t('c:muted')].filter(Boolean);
 
   return (
     <Link
@@ -47,7 +48,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
         if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       }}
       data-subitem={isSubitem}
-      aria-label={mark ? `${item.name} (${t(mark.label)})` : item.name}
+      aria-label={marks.length ? `${item.name} (${marks.join(', ')})` : item.name}
       draggable={false}
       // A parent's page holds no place for a hidden or archived sub-row, so it opens its own
       {...getChannelRoute(item, isSubitem && isActive)}
@@ -74,16 +75,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
           name={item.name}
           url={item.thumbnailUrl}
         />
-        {item.membership.muted && canMute(item) && (
-          <span className="bg-card absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg opacity-80">
-            <BellOffIcon className="size-2.5" strokeWidth={2} />
-          </span>
-        )}
-        {Mark && (
-          <span className="bg-card absolute bottom-0 left-0 flex size-3.5 items-center justify-center rounded-tr-lg opacity-80">
-            <Mark className="size-2.5" strokeWidth={2} />
-          </span>
-        )}
+        {mark?.badge}
       </span>
       <span
         className={cn(
@@ -93,6 +85,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       >
         {item.name}
       </span>
+      {isMuted && <BellOffIcon aria-hidden className="text-faint-foreground mr-3.5 size-3.5 shrink-0 opacity-50" />}
       {unseenCount > 0 && <CountBadge count={unseenCount} variant={isActive ? 'primary' : 'muted'} className="mr-3 shrink-0" />}
     </Link>
   );

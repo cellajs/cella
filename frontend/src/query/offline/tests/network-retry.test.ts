@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '~/lib/api';
-import { isNetworkError, mutationRetry } from '~/query/offline/network-retry';
+import { isNetworkError, mutationRetry, replayRetry } from '~/query/offline/network-retry';
 
 describe('isNetworkError', () => {
   it('counts the offline fetch failure of every browser as a network error, and no server response or other error', () => {
@@ -24,5 +24,21 @@ describe('mutationRetry', () => {
     expect([0, 1, 2, 3, 10].map((failureCount) => mutationRetry(failureCount, netErr))).toEqual([true, true, true, false, false]);
     expect(mutationRetry(0, new ApiError({ status: 409 }))).toBe(false);
     expect(mutationRetry(0, new ApiError({ status: 500 }))).toBe(false);
+  });
+});
+
+describe('replayRetry', () => {
+  const netErr = new TypeError('Failed to fetch');
+
+  it('retries a sync write past any count on a network failure, since the server may have applied the try whose answer was lost', () => {
+    const retry = replayRetry(() => ({ id: 'task-1', stx: { mutationId: 'm-1' } }));
+    expect([0, 3, 50].map((failureCount) => retry(failureCount, netErr))).toEqual([true, true, true]);
+    expect(retry(0, new ApiError({ status: 500 }))).toBe(false);
+    expect(retry(0, new ApiError({ status: 409 }))).toBe(false);
+  });
+
+  it('keeps the bounded network retry for a write without an stx', () => {
+    const retry = replayRetry(() => ({ email: 'someone@example.com' }));
+    expect([0, 2, 3].map((failureCount) => retry(failureCount, netErr))).toEqual([true, true, false]);
   });
 });

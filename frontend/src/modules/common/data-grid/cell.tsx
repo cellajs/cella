@@ -134,7 +134,7 @@ function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, 
     const sideSlots = slots[side];
     if (sideSlots.length === 0) return null;
 
-    const children = sideSlots.map(({ column: slotColumn, className }) => {
+    const children = sideSlots.map(({ column: slotColumn, className, width }) => {
       const content = slotColumn.renderCell({
         column: slotColumn,
         row,
@@ -143,9 +143,14 @@ function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, 
         tabIndex,
         onRowChange: (newRow: R) => onRowChange(slotColumn, rowIdx, newRow),
       });
-      if (content == null) return null;
+      // A fixed width holds its place in a row without content, keeping the host's content in line with its header
+      if (content == null && width == null) return null;
       return (
-        <span key={slotColumn.key} className={cn('inline-flex min-w-0 shrink-0 items-center', className)}>
+        <span
+          key={slotColumn.key}
+          style={width != null ? { width } : undefined}
+          className={cn('inline-flex min-w-0 shrink-0 items-center', className)}
+        >
           {content}
         </span>
       );

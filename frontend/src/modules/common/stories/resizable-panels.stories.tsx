@@ -17,8 +17,6 @@ interface BoardState {
   /** `scroll` is a member board's ScrollArea, `clip` the public page's wrapper. */
   parent?: 'scroll' | 'clip';
   mustFit?: boolean;
-  /** Renders the end handle after the last panel (E1) */
-  end?: boolean;
   fit?: boolean;
 }
 
@@ -34,6 +32,7 @@ class Board {
   saves: Layout[] = [];
   collapses: string[] = [];
   fits: boolean[] = [];
+  bands: boolean[] = [];
   api?: PanelGroupApi;
   canvas?: HTMLElement;
   update?: (next: Partial<BoardState>) => void;
@@ -74,11 +73,6 @@ class Board {
 
   minWidth() {
     return this.canvas?.querySelector<HTMLElement>('.group\\/board')?.style.minWidth ?? '';
-  }
-
-  fitLine() {
-    const line = this.canvas?.querySelector<HTMLElement>('[data-fit-line]');
-    return !line || line.hidden ? 'hidden' : line.hasAttribute('data-snapped') ? 'solid' : 'dashed';
   }
 
   async set(next: Partial<BoardState>) {
@@ -124,7 +118,7 @@ function PanelBoard({ board }: { board: Board }) {
     board.update = (next) => setState((previous) => ({ ...previous, ...next }));
   }, [board]);
 
-  const { width, panels, layout, groupId = 'group', parent = 'scroll', mustFit, end, fit } = state;
+  const { width, panels, layout, groupId = 'group', parent = 'scroll', mustFit, fit } = state;
   const group = (
     <ResizablePanelGroup
       id={groupId}
@@ -136,6 +130,7 @@ function PanelBoard({ board }: { board: Board }) {
         board.fits.push(next);
         setState((previous) => ({ ...previous, fit: next }));
       }}
+      onFitBandChange={(inBand) => board.bands.push(inBand)}
       onLayoutChanged={(saved) => board.saves.push(saved)}
       onCollapseChange={(id, collapsed) => board.collapses.push(`${id}:${collapsed ? 'closed' : 'open'}`)}
       onReady={(api) => {
@@ -147,7 +142,7 @@ function PanelBoard({ board }: { board: Board }) {
         return (
           <div key={specId(spec)} className="relative flex shrink-0">
             <ResizablePanel id={specId(spec)} minWidth={minWidth} collapsedWidth={collapsedWidth} collapsible={collapsible} label={specId(spec)} />
-            {(index < panels.length - 1 || end) && <ResizableSeparator index={index} className="bg-border mx-[0.02rem] w-1.5" />}
+            {index < panels.length - 1 && <ResizableSeparator index={index} className="bg-border mx-[0.02rem] w-1.5" />}
           </div>
         );
       })}
@@ -616,74 +611,58 @@ export const FitArrowOpensAStripAndClosesAnother = scenario(
   },
 );
 
-// Three open panels at 375 with the end handle: the ideal of 1125 plus three separators overflows 1000, at 300 each the row fits
+// Three open panels at 375: the ideal of 1125 plus two separators overflows 1000, at 300 each the row fits
 const roomy = { a: 375, b: 375, c: 375 };
 
-export const EndDragToTheLineFits = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
-  await expect(board.minWidth()).toBe('1145px');
-  board.pointerDown(2);
-  board.pointerMove(-60);
-  await expect(board.fitLine()).toBe('dashed');
-  await expect(board.widths()).toEqual({ a: 375, b: 375, c: 315 });
-  board.pointerMove(-150);
-  await expect(board.fitLine()).toBe('solid');
-  await board.pointerUp();
-  await expect(board.fitLine()).toBe('hidden');
+export const FitBandIsReported = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy }, async (board) => {
+  await expect(board.bands).toEqual([true]);
+  await board.set({ width: 1200 });
+  await expect(board.bands).toEqual([true, false]);
+  await board.set({ width: 880 });
+  await expect(board.bands).toEqual([true, false]);
+  await board.set({ width: 1000 });
+  await expect(board.bands).toEqual([true, false, true]);
+});
+
+export const FitBandCountsAClosedPanel = scenario({ width: 700, panels: ['a', 'b', 'c'], layout: { ...roomy, b: 50 } }, async (board) => {
+  await expect(board.bands).toEqual([true]);
+});
+
+export const FitBandNeverInMustFit = scenario({ mustFit: true, width: 1000, panels: ['a', 'b', 'c'] }, async (board) => {
+  await expect(board.bands).toEqual([]);
+});
+
+export const FitSwitchGlidesBothWays = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy }, async (board) => {
+  await expect(board.minWidth()).toBe('1139px');
+  board.api?.setFit(true);
+  await settle();
   await expect(board.fits).toEqual([true]);
   await expect(board.minWidth()).toBe('');
-  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
+  await expect(board.widths()).toEqual({ a: 329, b: 329, c: 329 });
   await expect(board.over()).toBe(0);
-});
-
-export const EndReleasedShortChangesNothing = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
-  await board.drag(-60, 2);
-  await expect(board.fits).toEqual([]);
-  await expect(board.widths()).toEqual(roomy);
-  await expect(board.minWidth()).toBe('1145px');
-});
-
-export const EndFitsAtMinWhenTheRoomIsShort = scenario({ width: 800, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
-  await board.drag(-400, 2);
-  await expect(board.fits).toEqual([true]);
-  await expect(board.widths()).toEqual({ a: 300, b: 300, c: 300 });
-  await expect(board.minWidth()).toBe('920px');
-});
-
-export const EndPullPastTheGateGoesRoomy = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true, fit: true }, async (board) => {
-  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
-  await board.drag(30, 2);
-  await expect(board.fits).toEqual([]);
-  await expect(board.minWidth()).toBe('');
-  await board.drag(60, 2);
-  await expect(board.fits).toEqual([false]);
-  await expect(board.minWidth()).toBe('1145px');
-  await expect(board.widths()).toEqual(roomy);
-});
-
-export const EndKeysSwitchFit = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
-  await board.press('Home', 2);
-  await expect(board.fits).toEqual([true]);
-  await expect(board.minWidth()).toBe('');
-  await board.press('End', 2);
+  board.api?.setFit(false);
+  await settle();
   await expect(board.fits).toEqual([true, false]);
-  await expect(board.minWidth()).toBe('1145px');
+  await expect(board.minWidth()).toBe('1139px');
+  await expect(board.widths()).toEqual(roomy);
+  await expect(board.bands).toEqual([true]);
 });
 
-export const EndFitFromTheConsumerApplies = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+export const FitFromTheConsumerApplies = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy }, async (board) => {
   await board.set({ fit: true });
   await expect(board.fits).toEqual([]);
-  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
+  await expect(board.widths()).toEqual({ a: 329, b: 329, c: 329 });
   await expect(board.minWidth()).toBe('');
 });
 
-export const EndFitKeepsTheRowNarrowOnResize = scenario(
-  { width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true, fit: true },
-  async (board) => {
-    await board.set({ width: 960 });
-    await expect(board.minWidth()).toBe('');
-    await expect(board.widths()).toEqual({ a: 313, b: 313, c: 313 });
-    for (const width of [940, 920, 900]) await board.set({ width });
-    await expect(board.minWidth()).toBe('920px');
-    await expect(board.widths()).toEqual({ a: 300, b: 300, c: 300 });
-  },
-);
+export const FitLetsGoPastTheBand = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, fit: true }, async (board) => {
+  await board.set({ width: 960 });
+  await expect(board.minWidth()).toBe('');
+  await expect(board.widths()).toEqual({ a: 316, b: 316, c: 316 });
+  for (const width of [940, 920, 900]) await board.set({ width });
+  await expect(board.minWidth()).toBe('1139px');
+  await expect(board.widths()).toEqual(roomy);
+  await board.set({ width: 960 });
+  await expect(board.minWidth()).toBe('');
+  await expect(board.widths()).toEqual({ a: 316, b: 316, c: 316 });
+});

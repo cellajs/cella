@@ -195,7 +195,7 @@ export function useCalculatedColumns<R, SR>({
         for (const { column, rule } of hostSlots) {
           // Slot columns share the host's idx so renderCell gets a usable CalculatedColumn and row-change metadata stays in bounds.
           column.idx = host.idx;
-          mergedSlots[rule.side].push({ column: column as CalculatedColumn<R, SR>, className: rule.className });
+          mergedSlots[rule.side].push({ column: column as CalculatedColumn<R, SR>, className: rule.className, width: rule.width });
         }
         host.mergedSlots = mergedSlots;
       }

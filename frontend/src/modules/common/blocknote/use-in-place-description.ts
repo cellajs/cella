@@ -55,6 +55,8 @@ interface UseInPlaceDescriptionOptions {
   holdOnExit?: boolean;
   /** Whether a text click places the cursor at its point: only where the static's layout matches the editor's. */
   cursorAtPoint?: boolean;
+  /** Whether mounting while editing places the cursor, which focuses the editor. Defaults to true. */
+  cursorOnMount?: boolean;
 }
 
 export interface InPlaceDescription {
@@ -95,6 +97,7 @@ export function useInPlaceDescription({
   description,
   holdOnExit = true,
   cursorAtPoint = false,
+  cursorOnMount = true,
 }: UseInPlaceDescriptionOptions): InPlaceDescription {
   // Reads and writes refs during render, so the editor hands over to the static view within one render.
   'use no memo';
@@ -105,7 +108,7 @@ export function useInPlaceDescription({
   const [instanceKey] = useState(() => ({}));
 
   const apiRef = useRef<BlockNoteContentApi | null>(null);
-  const pendingCursorRef = useRef<Cursor | null>(editing ? 'end' : null);
+  const pendingCursorRef = useRef<Cursor | null>(editing && cursorOnMount ? 'end' : null);
   // A text click's point, kept for an editing start in the same task.
   const clickPointRef = useRef<Point | null>(null);
   const pendingTogglesRef = useRef<string[]>([]);
