@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
+import { CellLabel, dateColumn } from '~/modules/common/data-table/columns';
 import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-toggle-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
@@ -13,7 +13,6 @@ import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel } from '~/modules/page/utils/render-mode-label';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */
 const publishStatuses = ['published', 'draft'] as const;
@@ -63,9 +62,9 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
             className="w-auto min-w-0"
             render={<Link to="/docs/page/$" tabIndex={tabIndex} params={{ _splat: row.id }} />}
           >
-            <span className={cn(cellLinkTextClass, 'font-medium')}>
+            <CellLabel className="font-medium">
               <HighlightText text={row.name} />
-            </span>
+            </CellLabel>
           </Button>
           {row.draft && <Badge variant="secondary">{t('c:draft')}</Badge>}
           {row._hasChildren && !row._isExpanded && (

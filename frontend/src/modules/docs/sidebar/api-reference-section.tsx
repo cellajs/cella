@@ -7,7 +7,7 @@ import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~
 import { DocsSidebarSection, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
-import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
@@ -115,7 +115,7 @@ function ApiReferenceGroup({ to, label, count, isActive, isOpen, isRoute, onTogg
         </Link>
         <RowExpandToggle isExpanded={isOpen} onToggle={onToggle} />
       </div>
-      <CollapsibleContent className={collapsiblePanelClass}>
+      <CollapsibleContent>
         <SidebarGroupContent>
           <Suspense fallback={null}>{children}</Suspense>
         </SidebarGroupContent>

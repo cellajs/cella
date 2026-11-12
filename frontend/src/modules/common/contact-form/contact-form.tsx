@@ -128,7 +128,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
       {isLargeScreen && (
         <div className="bg-accent relative overflow-hidden rounded-r-lg">
           {map}
-          <DialogClose render={<Button variant="outline" size="icon" />} className="absolute top-3 right-3 size-8 rounded-full shadow-sm">
+          <DialogClose render={<Button variant="outline" size="icon-xs" />} className="absolute top-3 right-3 rounded-full shadow-sm">
             <XIcon className="size-4" />
             <span className="sr-only">{t('c:close')}</span>
           </DialogClose>

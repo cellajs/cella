@@ -10,7 +10,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { notificationsQueryOptions, useMarkNotificationsReadMutation } from '~/modules/notification/query';
@@ -47,7 +47,7 @@ export function NotificationsSheet() {
             </Button>
           )}
         </div>
-        <div className={menuHairlineClass} />
+        <NavSheetDivider />
       </div>
 
       <div className="flex flex-col gap-2 px-3 py-2">

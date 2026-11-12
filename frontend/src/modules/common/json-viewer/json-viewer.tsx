@@ -23,7 +23,7 @@ function RefButton({ value }: DataTypeProps<string>) {
         event.stopPropagation();
         setTargetPath(parseRefPath(value));
       }}
-      className="link-decoration active:link-decoration-strong text-primary cursor-pointer text-left text-sm wrap-anywhere hover:underline"
+      className="link-reveal text-primary cursor-pointer text-left text-sm wrap-anywhere"
     >
       "{value}"
     </button>
@@ -92,7 +92,10 @@ export function JsonViewer({
   return (
     <JsonViewerContext.Provider value={contextValue}>
       <MatchScope terms={searchText ? [foldText(searchText)] : []}>
-        <div data-openapi-mode={openapiMode} className="group/json-viewer text-foreground font-mono text-sm leading-normal">
+        <div
+          data-openapi-mode={openapiMode}
+          className="group/json-viewer text-foreground font-mono text-sm leading-normal wrap-break-word whitespace-pre-line"
+        >
           <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
         </div>
       </MatchScope>

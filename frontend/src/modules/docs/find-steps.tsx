@@ -1,9 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tw } from '~/utils/tw';
-
-const stepButtonClass = tw('focus-effect hover:bg-hover flex size-7 items-center justify-center rounded-md disabled:opacity-50');
+import { InputGroupButton } from '~/modules/ui/input-group';
 
 /**
  * Next/previous over a view's matching ids in view order, for a find that keeps the content around its matches; the ids
@@ -58,26 +56,24 @@ export function FindSteps({ steps }: { steps: MatchSteps }) {
         {steps.total > 0 && (steps.index >= 0 ? t('c:match_position', { current: steps.index + 1, total: steps.total }) : steps.total)}
       </span>
       {/* Mouse down keeps focus in the field, so typing goes on after a step */}
-      <button
-        type="button"
+      <InputGroupButton
+        size="icon-sm"
         aria-label={t('c:previous')}
-        className={stepButtonClass}
         disabled={!steps.total}
         onMouseDown={(event) => event.preventDefault()}
         onClick={steps.previous}
       >
         <ChevronUpIcon className="size-4" />
-      </button>
-      <button
-        type="button"
+      </InputGroupButton>
+      <InputGroupButton
+        size="icon-sm"
         aria-label={t('c:next')}
-        className={stepButtonClass}
         disabled={!steps.total}
         onMouseDown={(event) => event.preventDefault()}
         onClick={steps.next}
       >
         <ChevronDownIcon className="size-4" />
-      </button>
+      </InputGroupButton>
       <span className="sr-only" aria-live="polite">
         {steps.announcement}
       </span>

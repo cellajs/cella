@@ -1,7 +1,7 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
 import { type ComponentProps, useRef } from 'react';
 import { useStuck } from '~/hooks/use-stuck';
-import { type HeaderBarProps, HeaderClose, stuckEdgeClass } from '~/modules/ui/dialog';
+import { type HeaderBarProps, HeaderClose } from '~/modules/ui/dialog';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -110,7 +110,7 @@ export function SheetHeader({ className, sticky, closeButton = true, children, .
     <div
       ref={ref}
       data-slot="sheet-header"
-      className={cn('relative flex shrink-0 items-center gap-2 p-4', sticky && ['sticky top-0 z-10 bg-(--sheet-bg)', stuckEdgeClass], className)}
+      className={cn('relative flex shrink-0 items-center gap-2 p-4', sticky && 'stuck-edge sticky top-0 z-10 bg-(--sheet-bg)', className)}
       {...props}
     >
       {children}
@@ -128,5 +128,5 @@ export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) 
 }
 
 export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props) {
-  return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
+  return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground px-4 pb-4 text-sm', className)} {...props} />;
 }

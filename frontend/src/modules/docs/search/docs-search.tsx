@@ -182,7 +182,7 @@ export function DocsSearch() {
   );
 }
 
-const treeLineClass = 'absolute left-2 w-px bg-border';
+const treeLineClass = 'absolute left-2 w-px bg-muted-foreground/30';
 
 /** Heading and text rows hang under their page row with a continuous tree line, which parts around a heading's icon. */
 function DocsSearchRow({ item }: { item: DocsSearchResult }) {

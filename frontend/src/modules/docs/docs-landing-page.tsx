@@ -49,7 +49,9 @@ export function DocsLandingPage() {
   );
 }
 
-const cardClass = tw('group/docs-tile border-input hover:bg-hover flex items-start gap-3 rounded-lg border p-4 transition-colors');
+const cardClass = tw(
+  'group/docs-tile focus-effect active:press border-input hover:bg-hover flex items-start gap-3 rounded-lg border p-4 transition-colors',
+);
 
 /** A docs tile: the landing tiles and a page's child pages; internal targets go through the router. */
 export function DocsTileCard({ tile }: { tile: DocsTile }) {

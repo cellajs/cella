@@ -6,8 +6,9 @@ import { appConfig } from 'shared';
 import { LogoMark, LogoText } from '~/modules/common/logo-art';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
-import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { menuColumnsClass } from '~/modules/navigation/menu-sheet/item';
 import { openNavSheet } from '~/modules/navigation/nav-sheet';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
 import { Button } from '~/modules/ui/button';
@@ -67,7 +68,7 @@ export function MenuSheetHeader() {
           </div>
         )}
       </div>
-      <div className={menuHairlineClass} />
+      <NavSheetDivider />
     </div>
   );
 }

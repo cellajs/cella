@@ -1,10 +1,9 @@
-import { XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { type ReactNode, useEffect, useState } from 'react';
 import { computeSpanStats } from 'shared/tracing';
 import { clearSpans, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
+import { CloseButton } from '~/modules/common/close-button';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 function formatDuration(ms: number): string {
   if (ms < 1) return '<1ms';
@@ -36,10 +35,14 @@ function getCategoryColorClass(name: string): string {
   return 'text-muted-foreground';
 }
 
-const tabClass = tw('text-muted-foreground hover:text-foreground cursor-pointer rounded px-2 py-1');
-const statCardClass = tw('bg-card mb-2 rounded-md p-3');
-const statLabelClass = tw('group-label');
-const statValueClass = tw('mt-1 text-xl font-semibold');
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="bg-card mb-2 rounded-md p-3">
+      <div className="group-label">{label}</div>
+      {children}
+    </div>
+  );
+}
 
 function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
   const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
@@ -81,25 +84,21 @@ function StatsView({ spans }: { spans: SpanData[] }) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-2">
-        <div className={statCardClass}>
-          <div className={statLabelClass}>Total spans</div>
-          <div className={statValueClass}>{stats.total}</div>
-        </div>
-        <div className={statCardClass}>
-          <div className={statLabelClass}>Errors</div>
-          <div className={cn(statValueClass, stats.errorCount > 0 ? 'text-destructive' : 'text-success')}>{stats.errorCount}</div>
-        </div>
+        <Stat label="Total spans">
+          <div className="mt-1 text-xl font-semibold">{stats.total}</div>
+        </Stat>
+        <Stat label="Errors">
+          <div className={cn('mt-1 text-xl font-semibold', stats.errorCount > 0 ? 'text-destructive' : 'text-success')}>{stats.errorCount}</div>
+        </Stat>
       </div>
 
-      <div className={statCardClass}>
-        <div className={statLabelClass}>Spans by type</div>
+      <Stat label="Spans by type">
         <PrefixRows values={stats.byPrefix} />
-      </div>
+      </Stat>
 
-      <div className={statCardClass}>
-        <div className={statLabelClass}>Avg duration by type</div>
+      <Stat label="Avg duration by type">
         <PrefixRows values={stats.avgDurationMs} format={formatDuration} />
-      </div>
+      </Stat>
     </div>
   );
 }
@@ -108,7 +107,6 @@ const tabs = ['spans', 'stats'] as const;
 
 /** Dev-only floating panel for the sync flow: recent spans and their stats. */
 export function SyncDevtools({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('spans');
   const [filter, setFilter] = useState('');
   // Seeded from the buffer, so the first render is not empty before the subscription replays it
@@ -123,18 +121,18 @@ export function SyncDevtools({ onClose }: { onClose: () => void }) {
         <div className="text-sm font-semibold">⚡ Sync devtools</div>
         <div className="flex gap-1">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab}
-              type="button"
-              className={cn(tabClass, activeTab === tab && 'bg-muted text-foreground')}
+              variant="ghost"
+              size="micro"
+              aria-pressed={activeTab === tab}
+              className={cn('text-muted-foreground px-2 font-normal', activeTab === tab && 'bg-muted text-foreground')}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
-            </button>
+            </Button>
           ))}
-          <button type="button" className={tabClass} onClick={onClose} aria-label={t('c:close')}>
-            <XIcon className="size-4" />
-          </button>
+          <CloseButton size="sm" onClick={onClose} />
         </div>
       </div>
 

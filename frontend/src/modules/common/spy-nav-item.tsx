@@ -49,13 +49,9 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
     <div className={cn(groupClassName.row, 'relative')} data-spy-link={id} data-active={isActive}>
       {isActive && <IndicatorBar layoutId={layoutId} animate={!staticIndicator} className="top-2 bottom-2" />}
       <Button
-        variant="ghost"
+        variant="nav"
         size="sm"
-        className={cn(
-          'focus-inset text-muted-foreground h-auto min-h-8 w-full justify-start gap-2 py-1.5 text-left font-normal whitespace-normal',
-          groupClassName.active,
-          className,
-        )}
+        className={cn('h-auto min-h-8 w-full gap-2 py-1.5 text-left whitespace-normal', groupClassName.active, className)}
         render={
           <Link
             to="."

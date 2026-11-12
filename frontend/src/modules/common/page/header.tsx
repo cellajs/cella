@@ -118,7 +118,7 @@ function ContextLink({ channel, className }: { channel: EnrichedChannel; classNa
       {...pageTopHashNav}
       draggable={false}
       className={cn(
-        'focus-inset link-decoration active:link-decoration-strong text-muted-foreground hover:text-foreground -m-1 flex min-w-0 rounded-sm p-1 transition-colors hover:underline',
+        'focus-inset link-reveal text-muted-foreground hover:text-foreground -m-1 flex min-w-0 rounded-sm p-1 transition-colors',
         className,
       )}
     >

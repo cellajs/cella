@@ -70,7 +70,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
             {sheet.titleAside}
           </SheetHeader>
         )}
-        {description && <SheetDescription className="px-4 pb-4">{description}</SheetDescription>}
+        {description && <SheetDescription>{description}</SheetDescription>}
         <ContentKeyTransition contentKey={sheet.contentKey}>{sheet.content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>

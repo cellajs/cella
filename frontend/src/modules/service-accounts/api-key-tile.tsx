@@ -175,7 +175,7 @@ function CreatedBy({ actor }: { actor: NonNullable<ApiKey['createdBy']> }) {
   return (
     <button
       type="button"
-      className="focus-effect active:press inline-flex max-w-full items-center gap-1.5 rounded-md text-sm whitespace-nowrap hover:underline"
+      className="focus-effect active:press link-reveal inline-flex max-w-full items-center gap-1.5 rounded-md text-sm whitespace-nowrap"
       onClick={() => openProfile(actor.id)}
     >
       <EntityAvatar type="user" className="size-5 shrink-0" id={actor.id} name={actor.name} url={actor.thumbnailUrl} />

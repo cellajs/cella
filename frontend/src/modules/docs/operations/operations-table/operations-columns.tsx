@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
-import { cellLinkTextClass } from '~/modules/common/data-table/columns';
+import { CellLabel } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
@@ -124,10 +124,10 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
           }
         >
           {/* The underline sits on the path alone: on the button it would reach the badge too */}
-          <span dir="rtl" className={cn(cellLinkTextClass, 'min-w-0 flex-1 text-left')}>
+          <CellLabel dir="rtl" className="min-w-0 flex-1 text-left">
             &lrm;
             <HighlightText text={row.path} />
-          </span>
+          </CellLabel>
           <SwitchedOffBadge enabledBy={row.enabledBy} />
         </Button>
       ),

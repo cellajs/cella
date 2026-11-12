@@ -13,8 +13,8 @@ import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-
 import { DropdownToggleItem } from '~/modules/common/dropdowner/dropdown-toggle-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { StatusDot } from '~/modules/common/status-dot';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { uiStore } from '~/modules/ui/ui-store';
 import type { PageRequest } from '~/query/basic/fetch-all-pages';
@@ -163,7 +163,7 @@ export function ViewMenu<TRow extends object>({ sort, columns, setColumns, expor
   return (
     <TooltipButton className={className} toolTipContent={t('c:view')}>
       <Button ref={triggerRef} variant="outline" className="data-dropdowner-active:bg-accent relative flex" onClick={open}>
-        {hasHidden && <Badge className="absolute -top-1 -right-1 z-10 size-2 p-0" />}
+        {hasHidden && <StatusDot variant="primary" pulse={false} className="absolute -top-1 -right-1 z-10" />}
         <SlidersHorizontalIcon />
         <span className="max-xl:sr-only">{t('c:view')}</span>
         {hasHidden && <span className="sr-only">{t('c:columns_hidden')}</span>}

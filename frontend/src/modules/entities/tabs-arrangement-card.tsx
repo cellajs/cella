@@ -31,9 +31,6 @@ interface TabRow {
   visible: boolean;
 }
 
-const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// 1.5rem is the help toggle's height: the name stays where a centred row has it as the description unfolds
-const helpLabelCellClass = tw('justify-start pt-[calc((var(--rdg-row-height)-1.5rem)/2)] pb-3');
 // Content stays on the row's first line, so nothing shifts while a description unfolds
 const firstLineCellClass = tw('grid grid-rows-(--rdg-row-height) content-start justify-center');
 
@@ -117,7 +114,9 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       minWidth: isMobile ? 132 : 160,
       // Rows take their height from this cell, so a description wraps where a fixed row would truncate it
       wrapText: true,
-      cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
+      // 1.5rem is the help toggle's height: the name stays where a centred row has it as the description unfolds
+      cellClass: (row) =>
+        cn('flex-col items-stretch justify-center py-2', row.description && 'justify-start pt-[calc((var(--rdg-row-height)-1.5rem)/2)] pb-3'),
       renderCell: ({ row, tabIndex }) => {
         const name = <span className="text-sm leading-tight font-medium">{row.name}</span>;
         if (!row.description) return name;

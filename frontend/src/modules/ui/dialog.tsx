@@ -129,11 +129,6 @@ export function DialogContent({
   );
 }
 
-/** The hairline under a sticky header bar, shown while content scrolls beneath it (`useStuck`). */
-export const stuckEdgeClass = tw(
-  'after:bg-border after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:opacity-0 after:transition-opacity data-stuck:after:opacity-100',
-);
-
 export interface HeaderBarProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Only this bar sticks: a description renders after it and scrolls away with the content. */
   sticky?: boolean;
@@ -153,8 +148,7 @@ export function DialogHeader({ className, sticky, closeButton = true, children, 
         'relative flex shrink-0 items-center gap-2 text-left',
         // 1rem shadows cover the scroller's padding and the popup's gap; a description starts after that gap, so they never cover it
         sticky && [
-          'bg-background sticky top-0 z-10 shadow-[0_-1rem_var(--color-background),0_1rem_var(--color-background)]',
-          stuckEdgeClass,
+          'bg-background stuck-edge sticky top-0 z-10 shadow-[0_-1rem_var(--color-background),0_1rem_var(--color-background)]',
           'after:-inset-x-4 after:-bottom-4',
         ],
         className,
@@ -172,7 +166,7 @@ export function HeaderClose() {
   const { t } = useTranslation();
 
   return (
-    <DialogPrimitive.Close data-slot="dialog-close" render={<Button variant="ghost" size="icon" />} className="-my-1 ml-auto size-7 shrink-0">
+    <DialogPrimitive.Close data-slot="dialog-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
       <XIcon className="size-5" />
       <span className="sr-only">{t('c:close')}</span>
     </DialogPrimitive.Close>
@@ -184,7 +178,7 @@ export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
 }
 
 export function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
-  return <DialogPrimitive.Title data-slot="dialog-title" className={cn('leading-none font-semibold', className)} {...props} />;
+  return <DialogPrimitive.Title data-slot="dialog-title" className={cn('text-foreground font-semibold', className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {

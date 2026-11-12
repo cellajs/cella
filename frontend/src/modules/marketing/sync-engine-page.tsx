@@ -1,5 +1,5 @@
 import { CheckIcon } from 'lucide-react';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { AboutSection, AboutStatement } from '~/modules/marketing/about/section';
@@ -8,14 +8,18 @@ import { InfoGrid } from '~/modules/marketing/info-grid';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { syncCategoryIcons, syncPageItems } from '~/modules/marketing/marketing-config';
 import { lazyNamed } from '~/utils/lazy-named';
-import { tw } from '~/utils/tw';
 
 const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/morph-animation'), 'MorphAnimation');
 
-const rowClass = tw('flex gap-5 border-t py-4');
-// The marker box is one text line tall, so "or" and the icon center on the first line of a wrapped row
-const markerClass = tw('text-muted-foreground flex h-6 w-5 shrink-0 items-center font-mono text-sm lowercase sm:h-7');
-const rowTextClass = tw('font-medium sm:text-lg');
+function PointRow({ marker, children }: { marker: ReactNode; children: ReactNode }) {
+  return (
+    <li className="flex gap-5 border-t py-4">
+      {/* "Or" and the icon center on the first line of a wrapped row: the box is one text line tall */}
+      <span className="text-muted-foreground flex h-6 w-5 shrink-0 items-center font-mono text-sm lowercase sm:h-7">{marker}</span>
+      <span className="font-medium sm:text-lg">{children}</span>
+    </li>
+  );
+}
 
 export function SyncEnginePage() {
   const { t } = useTranslation();
@@ -40,12 +44,9 @@ export function SyncEnginePage() {
         {/* Any one point is enough, so the rows after the first start with "or" */}
         <ul className="mx-auto max-w-3xl border-b">
           {([1, 2, 3] as const).map((point) => (
-            <li key={point} className={rowClass}>
-              <span className={markerClass}>{point > 1 && t('c:or')}</span>
-              <span className={rowTextClass}>
-                <Trans t={t} i18nKey={`about:cella_approach_point_${point}`} />
-              </span>
-            </li>
+            <PointRow key={point} marker={point > 1 && t('c:or')}>
+              <Trans t={t} i18nKey={`about:cella_approach_point_${point}`} />
+            </PointRow>
           ))}
         </ul>
       </AboutSection>
@@ -64,12 +65,9 @@ export function SyncEnginePage() {
       <AboutSection title="about:how.title" alternate>
         <ul className="mx-auto mb-10 max-w-3xl border-b">
           {(['about:how.concept_1', 'about:how.concept_2'] as const).map((key) => (
-            <li key={key} className={rowClass}>
-              <span className={markerClass}>
-                <CheckIcon className="size-4" />
-              </span>
-              <span className={rowTextClass}>{t(key)}</span>
-            </li>
+            <PointRow key={key} marker={<CheckIcon className="size-4" />}>
+              {t(key)}
+            </PointRow>
           ))}
         </ul>
         <SyncDiagram />

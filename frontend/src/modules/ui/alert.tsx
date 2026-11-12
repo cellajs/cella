@@ -30,7 +30,7 @@ function AlertClose({ onClose, className }: { onClose: () => void; className?: s
   const { t } = useTranslation();
 
   return (
-    <Button variant="ghost" size="icon" onClick={onClose} className={className}>
+    <Button variant="ghost" size="icon-micro" onClick={onClose} className={className}>
       <XIcon className="size-4" />
       <span className="sr-only">{t('c:close')}</span>
     </Button>
@@ -53,9 +53,7 @@ export function Alert({
         className={cn(alertVariants({ variant }), onClose && 'pr-12 sm:has-[>[data-slot=alert-action]]:pr-4', className)}
         {...props}
       >
-        {onClose && (
-          <AlertClose onClose={onClose} className="absolute top-2.5 right-2.5 size-6 sm:group-has-[>[data-slot=alert-action]]/alert:hidden" />
-        )}
+        {onClose && <AlertClose onClose={onClose} className="absolute top-2.5 right-2.5 sm:group-has-[>[data-slot=alert-action]]/alert:hidden" />}
         {children}
       </div>
     </AlertCloseContext.Provider>

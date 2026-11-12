@@ -22,7 +22,7 @@ export function LegalContact({ className }: { className?: string }) {
     <div className={cn('not-prose flex gap-6', className)}>
       <span className="flex flex-col items-center">
         <BuildingIcon className="mt-1" />
-        <span className="bg-border mt-1 w-px grow" />
+        <span className="bg-muted-foreground/30 mt-1 w-px grow" />
       </span>
       <ul>
         <li className="mb-2">

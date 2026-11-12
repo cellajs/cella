@@ -8,14 +8,13 @@ import type { HealthStatus } from 'shared/health-status';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { askForHelp } from '~/modules/common/error-helpers';
 import { StatusDot, type StatusDotVariant } from '~/modules/common/status-dot';
-import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
 import { healthQueryOptions } from '~/modules/navigation/panels/query';
 import { type GradedStatusEntry, gradeStatusEntries, worstStatus } from '~/modules/navigation/panels/status-entries';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
-import { cn } from '~/utils/cn';
 
 const statusVariant: Record<HealthStatus, StatusDotVariant> = { healthy: 'success', degraded: 'warning', unhealthy: 'destructive' };
 
@@ -70,7 +69,7 @@ export function InfoContent() {
         )}
         <NavSheetRow ref={contactRef} icon={MailIcon} label={t('c:contact_us')} onClick={() => contactFormHandler(contactRef)} />
       </div>
-      <div aria-hidden className={cn(menuHairlineClass, 'mx-0 mb-1')} />
+      <NavSheetDivider className="mx-0 mb-1" />
       <StatusTile />
     </div>
   );
@@ -105,9 +104,9 @@ function StatusTile() {
         {hasStatusPage && (
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             aria-label={t('c:details')}
-            className="text-muted-foreground -my-1 -mr-1.5 size-7"
+            className="text-muted-foreground -my-1.5 -mr-2"
             onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
           >
             <ExternalLinkIcon className="size-4" />

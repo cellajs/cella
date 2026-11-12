@@ -3,7 +3,6 @@ import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { popupSideOffset } from '~/modules/ui/popover';
-import { popupMotionClass } from '~/modules/ui/popup-motion';
 import { cn } from '~/utils/cn';
 
 /** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
@@ -81,7 +80,7 @@ export function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(
-            popupMotionClass,
+            'popup-motion',
             'group/combobox-content bg-popover text-popover-foreground ring-foreground/10 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 relative max-h-(--available-height) w-(--anchor-width) overflow-hidden rounded-md shadow-md ring-1 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8',
             className,
           )}
@@ -168,8 +167,14 @@ export function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.Gr
   );
 }
 
-export function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.Props) {
-  return <ComboboxPrimitive.Separator data-slot="combobox-separator" className={cn('bg-border -mx-1 my-1 h-px', className)} {...props} />;
+export function ComboboxSeparator({ className, dashed, ...props }: ComboboxPrimitive.Separator.Props & { dashed?: boolean }) {
+  return (
+    <ComboboxPrimitive.Separator
+      data-slot="combobox-separator"
+      className={cn('bg-border -mx-1 my-1 h-px', dashed && 'h-0 border-t border-dashed bg-transparent', className)}
+      {...props}
+    />
+  );
 }
 
 export { ComboboxPrimitive };

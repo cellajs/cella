@@ -18,16 +18,14 @@ interface SidebarHashItemProps {
 }
 
 /** Class of a leaf row in the sidebar, under a tag or a parent page: it starts right of the parent's rail, so its fill never covers it. */
-export const sidebarLeafClass = tw(
-  'focus-inset no-focus-ring:h-9 text-muted-foreground data-[active=true]:text-foreground ml-4 flex h-8 w-auto justify-start gap-2 pl-2 font-normal data-[active=true]:font-medium',
-);
+export const sidebarLeafClass = tw('no-focus-ring:h-9 data-[active=true]:text-foreground ml-4 flex w-auto gap-2 pl-2 data-[active=true]:font-medium');
 
 /** Sidebar row for a section of an API reference page: scrolls to it and closes the mobile sidebar sheet. */
 export function SidebarHashItem({ link, isActive, isHidden, children }: SidebarHashItemProps) {
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="nav"
+      size="xs"
       className={sidebarLeafClass}
       render={
         <Link

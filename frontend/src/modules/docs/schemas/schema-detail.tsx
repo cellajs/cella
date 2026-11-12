@@ -98,7 +98,7 @@ export function TagSchemasList({ schemas }: { schemas: GenComponentSchema[] }) {
           key={schema.name}
           schema={schema}
           id={`spy-${schemaAnchor(schema)}`}
-          className="border-input rounded-none border-t border-dashed last:rounded-b-lg"
+          className="rounded-none border-t border-dashed last:rounded-b-lg"
         />
       ))}
     </div>

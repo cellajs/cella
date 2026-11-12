@@ -113,9 +113,9 @@ export function AccountSheet() {
           <TooltipButton toolTipContent={coverLabel} side="left">
             <Button
               variant="outline-ghost"
-              size="icon"
+              size="icon-xs"
               onClick={uploadCover}
-              className={cn('absolute top-4 right-4 size-8 max-sm:size-10', frostedButton, revealOnCoverHover)}
+              className={cn('absolute top-4 right-4 max-sm:size-10', frostedButton, revealOnCoverHover)}
             >
               <ImageUpIcon />
             </Button>

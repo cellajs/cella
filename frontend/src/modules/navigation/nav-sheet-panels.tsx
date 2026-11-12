@@ -9,7 +9,7 @@ import { FocusTrap } from '~/modules/common/focus-trap';
 import { collapseMotion, fadeMotion } from '~/modules/common/motion-presets';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
-import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { InfoContent, InfoIndicator } from '~/modules/navigation/panels/info-content';
 import { PreferencesContent, PreferencesIndicators } from '~/modules/navigation/panels/preferences-content';
@@ -104,7 +104,7 @@ export function NavSheetPanels() {
 
   return (
     <div className="relative mt-auto flex flex-col gap-1 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
-      <div aria-hidden className={cn(menuHairlineClass, 'absolute inset-x-0 top-0')} />
+      <NavSheetDivider className="absolute inset-x-0 top-0" />
       <NavSheetPanelRow id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
         <PreferencesContent />
       </NavSheetPanelRow>
@@ -182,7 +182,7 @@ function NavSheetPanelBar() {
           }}
         >
           {/* An open panel lifts the bar over the sheet, which needs no line then */}
-          {!hasOpenPanel && <div aria-hidden className={cn(menuHairlineClass, 'absolute inset-x-0 top-0')} />}
+          {!hasOpenPanel && <NavSheetDivider className="absolute inset-x-0 top-0" />}
           <NavSheetPanel id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
             <PreferencesContent />
           </NavSheetPanel>

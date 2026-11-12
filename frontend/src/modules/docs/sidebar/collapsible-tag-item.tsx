@@ -5,8 +5,8 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { clearedOperationSearch } from '~/modules/docs/operations/operations-filter';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
-import { sidebarBulletClass } from '~/modules/docs/sidebar/docs-sidebar-section';
-import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { SidebarRail } from '~/modules/docs/sidebar/docs-sidebar-section';
+import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 
@@ -95,10 +95,8 @@ function CollapsibleTagItemBase<T>({
         </Link>
         {isOnRoute && <RowExpandToggle isExpanded={isExpanded} onToggle={toggle} />}
       </div>
-      {/* After the row, so a hover or active fill never covers the rail */}
-      <div className="no-focus-ring:top-5 bg-muted-foreground/30 pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden w-px group-data-[expanded=true]/tag:block" />
-      <div className={sidebarBulletClass} />
-      <CollapsibleContent className={collapsiblePanelClass}>
+      <SidebarRail expanded={isExpanded} lineClassName="bottom-3" />
+      <CollapsibleContent>
         <div className="relative flex flex-col py-1">
           <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
           {items.map((item, index) => (

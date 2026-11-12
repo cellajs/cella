@@ -478,6 +478,23 @@
   text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
 }
 
+/* The three above on a link that reveals its own underline. A link revealed by a named group's hover writes them out with
+   that group's variants, since a utility takes no group name. */
+@utility link-reveal {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration), transparent);
+
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  &:active {
+    text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+  }
+}
+
 /* A link in running text, where only the underline tells it from the copy around it: always underlined, one tier up
    the scale per state. Keyboard focus takes the hover tier, the one focus cue left where the focus ring is off. */
 @utility link-inline {
@@ -568,6 +585,59 @@
 
   @starting-style {
     opacity: 0;
+  }
+}
+
+/* Enter and exit of a popup Base UI positions (popover, menu, tooltip, select, combobox, preview card): a fade with a slight
+   scale from its anchor and an 8px slide from the side it opens on. A transition, so a close during the enter reverses from
+   where the popup is; under reduced motion the fade alone remains. */
+@utility popup-motion {
+  transform-origin: var(--transform-origin);
+  transition-property: opacity, translate, scale;
+  transition-duration: var(--tw-duration, 150ms);
+  transition-timing-function: var(--tw-ease, var(--ease-out));
+
+  &[data-side="top"] {
+    --popup-shift: 0 0.5rem;
+  }
+  &[data-side="bottom"] {
+    --popup-shift: 0 -0.5rem;
+  }
+  &:is([data-side="left"], [data-side="inline-start"]) {
+    --popup-shift: 0.5rem 0;
+  }
+  &:is([data-side="right"], [data-side="inline-end"]) {
+    --popup-shift: -0.5rem 0;
+  }
+
+  &:is([data-starting-style], [data-ending-style]) {
+    opacity: 0;
+
+    @variant motion-safe {
+      translate: var(--popup-shift);
+      scale: 0.95;
+    }
+  }
+}
+
+/* The hairline under a sticky header bar, shown while content scrolls beneath it (`useStuck` sets `data-stuck`). */
+@utility stuck-edge {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: var(--color-border);
+    pointer-events: none;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  }
+
+  &[data-stuck]::after {
+    opacity: 1;
   }
 }
 

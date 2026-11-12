@@ -205,10 +205,10 @@ export function InviteGroups({ check, list, held, role }: InviteGroupsProps) {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="icon-xs"
                         aria-label={t('c:remove_resource', { resource: address })}
                         onClick={() => remove(key, address)}
-                        className="size-8 shrink-0"
+                        className="shrink-0"
                       >
                         <XIcon />
                       </Button>

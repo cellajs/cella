@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
 
@@ -13,7 +13,7 @@ interface PreferencesGroupProps {
 export function PreferencesGroup({ title, children }: PreferencesGroupProps) {
   return (
     <div className="group/preferences flex flex-col gap-4">
-      <div aria-hidden className={cn(menuHairlineClass, 'mx-0 my-2 group-first/preferences:hidden')} />
+      <NavSheetDivider className="mx-0 my-2 group-first/preferences:hidden" />
       <h3 className="sr-only">{title}</h3>
       {children}
     </div>

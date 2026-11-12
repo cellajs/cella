@@ -66,8 +66,6 @@ function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, opena
 
 const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidden">"</span>;
 
-const baseClass = tw('wrap-break-word whitespace-pre-line');
-
 function InlinePrimitiveValue({ value }: { value: unknown }) {
   if (value === null) return <span className={jsonViewerTheme.null}>null</span>;
   if (typeof value === 'boolean' || typeof value === 'number') {
@@ -106,7 +104,7 @@ function PrimitiveValue({ value, type, collapseStringsAfterLength, openapiMode }
 
       // Schema-mode type keywords render unquoted and in the type color.
       if (openapiMode === 'schema' && jsonSchemaTypes.has(str)) {
-        return <span className={cn(baseClass, jsonViewerTheme.schemaType)}>{str}</span>;
+        return <span className={jsonViewerTheme.schemaType}>{str}</span>;
       }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;
@@ -121,13 +119,13 @@ function PrimitiveValue({ value, type, collapseStringsAfterLength, openapiMode }
           {quote}
         </>
       );
-      if (!shouldTruncate) return <span className={baseClass}>{text}</span>;
+      if (!shouldTruncate) return <span>{text}</span>;
 
       const toggle = () => setIsExpanded((prev) => !prev);
       return (
         // biome-ignore lint/a11y/useSemanticElements: text inside a real button cannot be selected to copy, so the string stays a span.
         <span
-          className={cn(baseClass, 'focus-effect cursor-pointer rounded')}
+          className="focus-effect cursor-pointer rounded"
           role="button"
           tabIndex={0}
           aria-expanded={isExpanded}
@@ -146,15 +144,15 @@ function PrimitiveValue({ value, type, collapseStringsAfterLength, openapiMode }
     case 'number':
     case 'boolean':
       return (
-        <span className={cn(baseClass, type === 'number' ? jsonViewerTheme.number : jsonViewerTheme.boolean)}>
+        <span className={type === 'number' ? jsonViewerTheme.number : jsonViewerTheme.boolean}>
           <HighlightText text={String(value)} />
         </span>
       );
     case 'null':
     case 'undefined':
-      return <span className={cn(baseClass, jsonViewerTheme.null)}>{type}</span>;
+      return <span className={jsonViewerTheme.null}>{type}</span>;
     default:
-      return <span className={baseClass}>{String(value)}</span>;
+      return <span>{String(value)}</span>;
   }
 }
 
@@ -294,7 +292,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   if (isArray && isPrimitiveArray) {
     return (
-      <div {...rowProps} className="wrap-break-word">
+      <div {...rowProps}>
         <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>[</span>
         {value.map((item, index) => (

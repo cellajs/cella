@@ -41,7 +41,7 @@ export function TagSectionCard({ scope, name, sectionId, description, isOpen, ch
       </Card>
 
       {shouldMount && (
-        <CollapsibleContent keepMounted>
+        <CollapsibleContent keepMounted animated={false}>
           <div style={style}>
             <Suspense>{details}</Suspense>
           </div>

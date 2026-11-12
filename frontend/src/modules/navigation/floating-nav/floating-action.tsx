@@ -4,9 +4,8 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { FloatingNavButton, floatingHiddenClass } from '~/modules/navigation/floating-nav/button';
+import { FloatingNavButton } from '~/modules/navigation/floating-nav/button';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { cn } from '~/utils/cn';
 
 interface FloatingActionProps {
   icon: IconComponent;
@@ -41,11 +40,9 @@ export function FloatingAction({ icon, label, ariaLabel, onClick }: FloatingActi
       labelVisible={isAtTop}
       variant="default"
       onClick={() => onClick(buttonRef)}
-      className={cn(
-        // Above a bottom nav bar, which the floating menu replaces where it shows
-        appConfig.navigation.navBar && !floatingNavActive && 'bottom-[calc(5rem+var(--bottom-inset,0px))]',
-        !isVisible && floatingHiddenClass,
-      )}
+      concealed={!isVisible}
+      // Above a bottom nav bar, which the floating menu replaces where it shows
+      className={appConfig.navigation.navBar && !floatingNavActive ? 'bottom-[calc(5rem+var(--bottom-inset,0px))]' : undefined}
     />
   );
 }

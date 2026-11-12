@@ -4,7 +4,7 @@ import { type ComponentProps, createContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStuck } from '~/hooks/use-stuck';
 import { Button } from '~/modules/ui/button';
-import { type HeaderBarProps, stuckEdgeClass } from '~/modules/ui/dialog';
+import type { HeaderBarProps } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
 export function Drawer({ ...props }: DrawerPrimitive.Root.Props) {
@@ -123,14 +123,14 @@ export function DrawerHeader({ className, sticky, closeButton, children, ...prop
       className={cn(
         'relative flex shrink-0 items-center gap-2 p-3 group-data-[swipe-direction=down]/drawer-content:justify-center group-data-[swipe-direction=up]/drawer-content:justify-center',
         // top-5 is the handle's height, py-2 around h-1
-        sticky && ['sticky top-0 z-20 bg-(--sheet-bg) group-data-[swipe-direction=down]/drawer-content:top-5', stuckEdgeClass],
+        sticky && 'stuck-edge sticky top-0 z-20 bg-(--sheet-bg) group-data-[swipe-direction=down]/drawer-content:top-5',
         className,
       )}
       {...props}
     >
       {children}
       {closeButton && (
-        <DrawerPrimitive.Close data-slot="drawer-close" render={<Button variant="ghost" size="icon" />} className="-my-1 ml-auto size-7 shrink-0">
+        <DrawerPrimitive.Close data-slot="drawer-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
           <XIcon className="size-5" />
           <span className="sr-only">{t('c:close')}</span>
         </DrawerPrimitive.Close>
@@ -178,7 +178,7 @@ export function DrawerDescription({ className, ...props }: DrawerPrimitive.Descr
     <DrawerPrimitive.Description
       data-slot="drawer-description"
       className={cn(
-        'text-muted-foreground text-sm group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center',
+        'text-muted-foreground px-3 pb-4 text-sm group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center',
         className,
       )}
       {...props}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import { FloatingNavButton, type FloatingNavItem, floatingHiddenClass, labelCollapseDuration } from '~/modules/navigation/floating-nav/button';
+import { FloatingNavButton, type FloatingNavItem, labelCollapseDuration } from '~/modules/navigation/floating-nav/button';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
@@ -55,14 +55,7 @@ export function FloatingNav({ items, resetTrigger }: FloatingNavProps) {
     <nav id="floating-nav" className="print:hidden">
       {items.map((item) => {
         const isItemVisible = (showButtons || (isLabelCollapsing && !!item.label)) && item.visible !== false;
-        return (
-          <FloatingNavButton
-            key={item.id}
-            {...item}
-            className={isItemVisible ? 'opacity-100' : floatingHiddenClass}
-            tabIndex={item.visible === false ? -1 : undefined}
-          />
-        );
+        return <FloatingNavButton key={item.id} {...item} concealed={!isItemVisible} tabIndex={item.visible === false ? -1 : undefined} />;
       })}
     </nav>
   );

@@ -27,7 +27,7 @@ export function MenuSheetChannelTabs({ channel, className }: { channel: UserMenu
               activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ 'data-active': true }}
               className={cn(
-                'focus-effect text-muted-foreground sm:hover:bg-hover sm:hover:text-foreground flex h-10 items-center rounded-sm px-3 text-sm',
+                'focus-effect focus-inset text-muted-foreground sm:hover:bg-hover sm:hover:text-foreground flex h-10 items-center rounded-sm px-3 text-sm',
                 'data-[active=true]:bg-accent data-[active=true]:text-foreground data-[active=true]:font-medium',
               )}
             >

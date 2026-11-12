@@ -143,7 +143,7 @@ export function TagOperationsList({ operations, tagName }: { operations: GenOper
           key={operation.hash}
           operation={operation}
           detail={detailsById.get(operation.id)}
-          className="border-input rounded-none border-t border-dashed last:rounded-b-lg"
+          className="rounded-none border-t border-dashed last:rounded-b-lg"
         />
       ))}
     </div>

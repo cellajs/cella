@@ -9,7 +9,7 @@ import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useDownloader } from '~/hooks/use-downloader';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import { attachmentDialogParam, attachmentDialogStageClassName, clearAttachmentDialogFromUrl } from '~/modules/attachment/dialog/params';
+import { attachmentDialogParam, clearAttachmentDialogFromUrl } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import type { PendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
@@ -49,7 +49,7 @@ export type CarouselItemData = {
 };
 
 /** The viewer header's icon buttons: `-my-1` keeps the header at the stage's 3rem inset, `shrink-0` keeps a long title from squeezing them. */
-export const headerButtonClass = tw('-my-1 size-8 shrink-0');
+export const headerButtonClass = tw('-my-1 shrink-0');
 
 type AttachmentsCarouselProps = {
   items: CarouselItemData[];
@@ -154,7 +154,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             {descriptionText && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-xs"
                 aria-expanded={descriptionOpen}
                 aria-label={t('c:description')}
                 className={cn(headerButtonClass, 'group/description-toggle')}
@@ -171,7 +171,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             {isCDNUrl(currentItem.url) && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-xs"
                 aria-label={t('c:open')}
                 className={headerButtonClass}
                 onClick={() => window.open(currentItem.url, '_blank')}
@@ -184,7 +184,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             {(isCDNUrl(currentItem.url) || currentItem.isLocal) && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-xs"
                 disabled={isInProgress}
                 aria-label={t('c:download')}
                 className={headerButtonClass}
@@ -216,7 +216,8 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             <AttachmentRender
               containerClassName={cn(
                 'relative flex h-full items-center justify-center overflow-hidden',
-                isDialog && attachmentDialogStageClassName,
+                // A fitted image clears the 3rem header and, from sm up, the zoom controls; zoomed content still slides under the chrome, since overflow clips at the padding edge
+                isDialog && 'pt-12 sm:pb-14',
                 containerClassName,
               )}
               itemClassName={isDialog ? 'object-contain' : undefined}

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
+import { CellLabel, dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -64,9 +64,9 @@ export const useColumns = () => {
       modes: { mobile: { minWidth: 120 } },
       renderCell: ({ row, tabIndex }) => (
         <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateTenantSheet(row, { current: event.currentTarget })}>
-          <span className={cn(cellLinkTextClass, 'font-medium')}>
+          <CellLabel className="font-medium">
             <HighlightText text={row.name || '-'} />
-          </span>
+          </CellLabel>
         </Button>
       ),
     },
@@ -101,7 +101,7 @@ export const useColumns = () => {
             }
           >
             <EntityAvatar type="organization" className="size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
-            <span className={cn(cellLinkTextClass, 'max-sm:sr-only')}>{org.name || '-'}</span>
+            <CellLabel className="max-sm:sr-only">{org.name || '-'}</CellLabel>
           </Button>
         );
       },

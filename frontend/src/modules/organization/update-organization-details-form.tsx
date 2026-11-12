@@ -14,7 +14,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
-import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
+import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { Spinner } from '~/modules/common/spinner';
@@ -22,7 +22,6 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Form } from '~/modules/ui/field';
-import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateOrganizationBody;
@@ -104,7 +103,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               excludeBlockTypes: ['checklistItem', 'notify'],
-              className: cn(blockNoteFieldClass, 'bg-background max-h-[50vh] overflow-auto'),
+              className: 'max-h-[50vh] overflow-auto',
               media: {
                 tenantId: organization.tenantId,
                 organizationId: organization.id,

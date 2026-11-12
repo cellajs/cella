@@ -7,6 +7,7 @@ import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
+import { Separator } from '~/modules/ui/separator';
 import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 import { objectEntries } from '~/utils/object-entries';
@@ -87,7 +88,7 @@ export function UserTheme({ buttonClassName, tooltip }: UserThemeProps) {
       <div className="flex flex-col">
         {items.map((item) => (
           <div key={item.key}>
-            {item.separator && <div className="my-1 border-t in-data-[slot=drawer-row-group]:hidden" />}
+            {item.separator && <Separator className="my-1 in-data-[slot=drawer-row-group]:hidden" />}
             <DropdownSelectItem selected={item.selected} onSelect={item.onSelect}>
               <span className="flex items-center gap-2">
                 <span className={item.iconClassName} style={item.iconStyle}>

@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 
 /** A part of an operation's detail, such as its request or responses, open by default. */
 export function OperationSection({ title, children }: { title: string; children: ReactNode }) {
@@ -16,7 +16,7 @@ export function OperationSection({ title, children }: { title: string; children:
           </Button>
         }
       />
-      <CollapsibleContent className={collapsiblePanelClass}>{children}</CollapsibleContent>
+      <CollapsibleContent>{children}</CollapsibleContent>
     </Collapsible>
   );
 }
