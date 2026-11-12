@@ -72,6 +72,16 @@ A text field, select or field-shaped button keeps its resting edge under the poi
 
 **Icons** come from `lucide-react` and are sized with `size-3` to `size-6` (12 to 24px); an unsized icon is 1rem. A global `svg.lucide` rule overrides the pixel attributes lucide's `size` prop writes, so that prop has no effect. `LucideProvider` in `main.tsx` sets the default stroke width from `appConfig.theme.strokeWidth`, and an icon may override it. Custom SVG icons in `src/modules/common/icons/` carry the `lucide` class to follow the same rules.
 
+**Class strings** live where a reader finds them, in this order:
+
+- A literal at each site: layout, three tokens or fewer, or two or three repeats in one file.
+- A local `tw` constant: one file, where the copies must change together or the name says what they cannot.
+- A small component: the same element and behavior in several files.
+- A variant, size or default of the `ui/` primitive that callers override the same way.
+- An `@utility` in [tailwind.css](src/styling/tailwind.css): one style concept across files, when no base or caller class on the element sets the same property.
+
+A custom utility sorts before plain ones and `cn` cannot drop a base class it overrides, which is the reason for that last condition. Only a primitive's own classes that a sibling primitive shares are exported.
+
 **Motion** has one home per kind of change, and timing comes from [motion-presets.ts](src/modules/common/motion-presets.ts), the motion utilities in [tailwind.css](src/styling/tailwind.css) or a named constant at the top of the file, never a number in JSX:
 
 - A state change is a Tailwind transition keyed on the attribute that changes (`data-open`, `aria-expanded`, `hidden`). A Base UI popup enters and exits through `data-starting-style` and `data-ending-style`: a close during the enter reverses from where it is. The popup primitives share the `popup-motion` utility.

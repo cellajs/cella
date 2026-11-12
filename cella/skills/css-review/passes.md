@@ -43,25 +43,28 @@ Never pass `rem` to the canonicalizer: the root font size differs on phones, so 
 
 **Drift** is found by role, not by frequency: project class strings onto families (popup surface, focus ring, link underline, hover reveal) and read the near-copies. Whole-string clustering and raw frequency find only layout. A comment at the site often states why a copy differs.
 
-**A new class** needs all of these, or it stays a literal:
+**A new class** needs all of these, or it stays a literal, a component or a variant:
 
-1. No shorthand or existing class covers it.
-2. At least 5 tokens and 150 characters.
-3. At least 10 sites across 5 modules with the same variant stack. A site that needs another selector or group name does not count, because a class takes no parameter.
-4. Coupled: most tokens are not layout, and removing one causes a visual bug.
-5. At least 3 unrelated components use it, and a near-copy differs for no reason, or a README rule binds every copy.
+1. No shorthand, existing class, component or primitive variant covers it.
+2. Coupled: most tokens are not layout, and removing one causes a visual bug.
+3. More than one file uses it with the same variant stack. A site that needs another selector or group name does not count, because a class takes no parameter.
+4. No base or caller class on the element sets a property it sets. A custom utility with several declarations sorts before every single-property utility and every variant, and tailwind-merge does not know its properties: a primitive's base class it would override wins, where `cn` drops that class for a `tw` constant. `glassClass` stays a constant for this reason.
 
-`focus-effect` passes (6 tokens, 197 characters, 46 sites, 10 modules). A utility doing what plain tokens cannot (a media query inside a state, a pseudo-element) is judged on that capability, with at least 2 sites or a documented app contract. A family member of a passing class passes with it.
+`popup-motion` passes (six popup primitives, a README rule, nothing on the popups sets its properties). A utility doing what plain tokens cannot (a media query inside a state, a pseudo-element) is judged on that capability, with at least 2 sites or a documented app contract. A family member of a passing class passes with it.
 
 | Situation | Use |
 | --- | --- |
 | A shorthand exists | The shorthand |
-| Layout, or 3 tokens or fewer | A literal |
-| One module, or sites that override single tokens through `cn` | A `tw` constant |
+| Layout, 3 tokens or fewer, or two or three repeats in one file | A literal |
+| One file, copies that must change together | A local `tw` constant |
 | Varies by prop on one component | `cva` |
+| Callers override a primitive the same way | A variant, size or default of the primitive |
 | Always the same element and behavior | A small component |
 | The risk is one token missing its partner | A pair rule in `pnpm cella style` |
-| Passes the bar, or needs a capability | A class or `@utility` |
+| Passes the bar, or needs a capability | An `@utility` |
+| A primitive's own classes that a sibling primitive or a consumer contract shares | An exported constant (`buttonVariants`) |
+
+Repeated overrides of one primitive are a lead for this pass: count the classes callers pass to each `ui/` component by variant and size, and read the ones that recur.
 
 ## 3. Performance
 
