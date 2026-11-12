@@ -348,7 +348,16 @@ jobs:
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
   ci-passed:
     if: always()
-    needs: [lint, frontend-build, build-services, test, docker-images, privileged-changes, release-applied, schema-bust-gate]
+    # One job per line: an app's extra job then merges beside an upstream change to the list
+    needs:
+      - lint
+      - frontend-build
+      - build-services
+      - test
+      - docker-images
+      - privileged-changes
+      - release-applied
+      - schema-bust-gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
