@@ -237,7 +237,6 @@ const generateTombstoneSql = (table: string): string => `LOOP
     DELETE FROM ${table} t USING (
       SELECT d.ctid FROM ${table} d
       WHERE d.deleted_at < now() - ${days(retention.deletedItemsDays)}
-        AND d.seq < coalesce((SELECT (c.counts->>'sequence')::bigint FROM channel_counters c WHERE c.channel_key = d.organization_id::text), 0)
       LIMIT ${tombstoneBatchSize}
     ) due WHERE t.ctid = due.ctid;
     GET DIAGNOSTICS removed = ROW_COUNT;
@@ -304,8 +303,7 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  ${unreferencedBlock}-- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time. The row
-  -- holding its organization's newest sequence position stays: a counter rebuild takes MAX(seq) over the rows.
+  ${unreferencedBlock}-- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time.
   ${tombstoneTables.map(generateTombstoneSql).join('\n  ')}
 
   -- Plain tables: retention by DELETE

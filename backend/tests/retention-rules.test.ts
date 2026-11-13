@@ -179,11 +179,9 @@ describe('apply_retention() row rules', () => {
       removed: [invitations.declinedLongAgo, invitations.mailedLongAgo],
     });
 
-    // The counter runs ahead of every row but `newest`, which holds the organization's latest position.
+    // `newest` holds the organization's latest position and goes all the same: a rebuild that regresses the counter moves the generation.
     const plan = await seedAttachmentHome({ id: organization.id, tenantId: organization.tenantId }, user.id);
     cleanups.push(() => cleanupEntityHierarchy(db, plan));
-    await db.execute(sql`INSERT INTO channel_counters (channel_key, counts) VALUES (${organization.id}, '{"sequence": 100}')
-      ON CONFLICT (channel_key) DO UPDATE SET counts = channel_counters.counts || '{"sequence": 100}'`);
     const attachment = async (deletedAt: Date | null, seq: number) => {
       const id = generateId();
       const row = { id, tenantId: organization.tenantId, ...plan.channelIdColumns, keys: {}, createdBy: user.id, updatedBy: null, seq };
@@ -205,8 +203,8 @@ describe('apply_retention() row rules', () => {
             .from(attachmentsTable)
             .where(inArray(attachmentsTable.id, Object.values(tombstones)))
         ).map((row) => row.id),
-      kept: [tombstones.recent, tombstones.newest, tombstones.live],
-      removed: [tombstones.expired],
+      kept: [tombstones.recent, tombstones.live],
+      removed: [tombstones.expired, tombstones.newest],
     });
     cleanups.push(async () => {
       await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, Object.values(tombstones)));
