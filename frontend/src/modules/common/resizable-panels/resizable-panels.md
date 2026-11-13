@@ -227,7 +227,7 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 
 ## Contract with the parent and panels
 
-- **C1, parent:** the group measures its parent and fills it. Overflow mode only works if the parent can scroll, as `ScrollArea` does. A clipping parent, such as `BoardLayout`'s `autoHeight` wrapper, cuts off what overflows, with no way to reach it. Use that wrapper with a set of panels that fits.
+- **C1, parent:** the group measures its parent and fills it. Overflow mode only works if the parent can scroll, as `ScrollArea` does: a clipping parent cuts off what overflows, with no way to reach it.
 - **C2, sizes:** `minWidth` and `collapsedWidth` are per panel, and `collapsible` can be off. The API supports mixing them, and they follow the same rules, but every consumer today uses one size and collapsible panels.
 - **C3, direction:** left to right only.
 - **C4, separators:** separator `i` sits between panels `i` and `i + 1`, so `index` has no gaps. The last panel has none after it.

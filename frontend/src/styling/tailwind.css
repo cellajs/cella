@@ -613,6 +613,11 @@
   }
 }
 
+/* A collapsed board strip's counts and fills: half strength at rest, which keeps a row of strips quiet; full while the strip is hovered or focused. */
+@utility strip-fade {
+  @apply opacity-50 transition-opacity group-hover/strip:opacity-100 group-focus-visible/strip:opacity-100;
+}
+
 /* The hairline under a sticky header bar, shown while content scrolls beneath it (`useStuck` sets `data-stuck`). */
 @utility stuck-edge {
   &::after {

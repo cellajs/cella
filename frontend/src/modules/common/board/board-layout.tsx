@@ -18,13 +18,12 @@ import {
   ResizableSeparator,
 } from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { cn } from '~/utils/cn';
 import { scrollBehavior } from '~/utils/reduced-motion';
 
 /** In px */
 export const panelMinWidth = 300;
 /** In px */
-export const collapsedPanelMinWidth = 50;
+export const collapsedPanelMinWidth = 46;
 
 export interface BoardLayoutPanel {
   panelId: string;
@@ -42,8 +41,6 @@ interface BoardLayoutProps {
   defaultLayout: Record<string, number>;
   onLayoutChanged?: (layout: Record<string, number>) => void;
   children: (panelId: string, index: number) => ReactNode;
-  /** Panels grow with their content, with no fixed viewport height */
-  autoHeight?: boolean;
   reorderable?: boolean;
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   /** `marked` when panel content carries `hintFadeOut`, so frames and avatars stay solid through a collapse hint */
@@ -80,7 +77,6 @@ export function BoardLayout({
   defaultLayout,
   onLayoutChanged,
   children,
-  autoHeight,
   reorderable,
   onPanelReorder,
   panelFade,
@@ -160,7 +156,7 @@ export function BoardLayout({
       onLayoutChanged={handleLayoutChanged}
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
-      className={cn('group/board', !autoHeight && 'h-[inherit]')}
+      className="group/board h-[inherit]"
     >
       {panels.map(({ panelId, label }, i) => (
         <motion.div
@@ -202,10 +198,6 @@ export function BoardLayout({
       ))}
     </ResizablePanelGroup>
   );
-
-  // Clips without a scroll container, so section bars and card headers stay sticky to the window
-  // isolate: the board stacks as one layer, so its sticky headers and rings stay under the page's search field and tabs
-  if (autoHeight) return <div className="isolate overflow-x-clip transition">{panelGroup}</div>;
 
   // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
