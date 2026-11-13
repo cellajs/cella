@@ -9,6 +9,7 @@ export const lazyNamed = <TModule extends Record<TKey, ComponentType<any>>, TKey
 /**
  * `lazyNamed` with a `preload` a route loader awaits. Once loaded it renders the component itself: a lazy component
  * suspends once even then, and React holds back content whose Suspense fallback just showed for 300ms.
+ * @public
  */
 // biome-ignore lint/suspicious/noExplicitAny: the constraint only; each call keeps its component's own props.
 export const preloadableNamed = <TModule extends Record<TKey, ComponentType<any>>, TKey extends keyof TModule>(
