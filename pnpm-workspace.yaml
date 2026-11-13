@@ -17,9 +17,6 @@ ignoredOptionalDependencies:
   - html2canvas
 # A version installs a day after its publish (supply-chain guard), so a release that needs a new create-cella waits for it
 minimumReleaseAge: 1440
-minimumReleaseAgeExclude:
-  # Only the CLI version a release needs before its day is up: the entry is removed, or bumped when a release needs another.
-  - '@cellajs/cli@0.7.2'
 overrides:
   # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
   '@blocknote/shadcn>lucide-react': ^1.59.0
@@ -29,6 +26,8 @@ overrides:
   # Tailwind pins lightningcss exactly, one minor behind Vite: a second set of native bindings until it catches up.
   '@tailwindcss/node>lightningcss': ^1.33.0
   glob@>=9.0.0 <=14.0.1: ^14.0.2
+  js-yaml@>=4.0.0 <4.3.0: ^4.3.2
+  js-yaml@>=4.0.0 <4.3.1: ^4.3.2
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
   minimatch@>=7.0.0 <11.0.1: ^11.0.1
   # Storybook pins an older oxc-resolver exactly; knip's version serves both.
