@@ -7,7 +7,7 @@ import { apiClient } from './a11y.ts';
  * its row out of the match, so the loop asks for the first one each time.
  */
 const foldHidden = async (page: Page) => {
-  const unfolded = page.locator('#nav-sheet [data-hidden-visible="true"][data-has-hidden="true"] > div button');
+  const unfolded = page.locator('#nav-sheet [data-hidden-visible="true"][data-has-hidden="true"] > button');
   while (await unfolded.count()) await unfolded.first().click();
 };
 
