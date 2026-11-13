@@ -43,7 +43,7 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
           {group.label}
         </ComboboxGroupLabel>
       )}
-      <div className={cn('flex flex-wrap gap-1 px-(--search-icon-start)', group.isUnlabeled ? 'py-2' : 'py-1.5')}>
+      <div className="flex flex-wrap gap-1 px-(--search-icon-start) py-1.5 in-data-unlabeled:py-2">
         {options.map((option) => (
           <ComboboxItem
             key={option.value}

@@ -47,8 +47,9 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             className={cn(
               'w-full justify-start',
               // The ghost hover swaps the text color, so a destructive row restates its own
-              destructive && 'text-destructive hover:text-destructive',
-              !destructive && 'text-muted-foreground focus-visible:text-foreground data-spy-active:text-foreground',
+              destructive
+                ? 'text-destructive hover:text-destructive'
+                : 'text-muted-foreground focus-visible:text-foreground data-spy-active:text-foreground',
               'transition-[color,background-color]',
               'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-accent data-spy-active:font-medium',
               tabClassName,

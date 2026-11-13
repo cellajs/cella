@@ -4,7 +4,6 @@ import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
-import { cn } from '~/utils/cn';
 
 interface DropdownToggleItemProps {
   checked: boolean;
@@ -22,7 +21,7 @@ export function DropdownToggleItem({ checked, onCheckedChange, icon: Icon, child
       <Button variant="row" aria-pressed={checked} onClick={() => onCheckedChange(!checked)}>
         {Icon && <Icon />}
         <span className="min-w-0 grow truncate text-left">{children}</span>
-        <CheckIcon className={cn('text-success size-4 shrink-0', !checked && 'invisible')} />
+        <CheckIcon className="text-success size-4 shrink-0 not-in-aria-pressed:invisible" />
       </Button>
     );
   }

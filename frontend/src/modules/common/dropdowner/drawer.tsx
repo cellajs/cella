@@ -27,7 +27,7 @@ export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
     <Drawer key={id} open onOpenChange={closeDropdown}>
       <DrawerVirtualKeyboardProvider>
         {/* While typing, the sheet fills the space above the keyboard: sized by a filtering list, it would shrink and move its search field. */}
-        <DrawerContent id={String(id)} data-overlay="dropdown" className="max-h-[70dvh] group-[.keyboard-open]/body:h-[calc(100%-1.25rem)]">
+        <DrawerContent id={String(id)} data-overlay="dropdown" className="max-h-[70dvh] in-[.keyboard-open]:h-[calc(100%-1.25rem)]">
           {triggerLabel && <DrawerTitle className="sr-only">{triggerLabel}</DrawerTitle>}
           <DropdownerContent dropdown={dropdown} surface="drawer">
             <div ref={containerRef}>

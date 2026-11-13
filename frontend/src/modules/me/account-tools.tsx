@@ -123,7 +123,7 @@ export function AccountAuthenticationCard() {
 
   return (
     <ToolCard label="c:authentication" description={t('c:authentication.text')}>
-      <Accordion className="text-sm [&>:last-child]:mb-0">
+      <Accordion className="text-sm *:last:mb-0">
         {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
           <>
             <HelpText content={t('c:mfa.text')} className="mb-3">

@@ -53,16 +53,12 @@ interface HelpCollapseProps {
 export function HelpCollapse({ open, children }: HelpCollapseProps) {
   return (
     <div
-      className={cn('grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
+      className={cn(
+        'grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none',
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] *:opacity-0',
+      )}
     >
-      <div
-        className={cn(
-          'text-muted-foreground overflow-hidden text-sm transition-opacity duration-200 motion-reduce:transition-none',
-          !open && 'opacity-0',
-        )}
-      >
-        {children}
-      </div>
+      <div className="text-muted-foreground overflow-hidden text-sm transition-opacity duration-200 motion-reduce:transition-none">{children}</div>
     </div>
   );
 }

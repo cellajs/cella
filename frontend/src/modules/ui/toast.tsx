@@ -32,7 +32,7 @@ const toastRootClassName = cn(
   'after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full group-data-[position=top]/toast-viewport:after:top-auto group-data-[position=top]/toast-viewport:after:bottom-full',
   'data-expanded:h-(--toast-height) data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]',
   'data-limited:opacity-0 data-starting-style:[transform:translateY(calc(var(--toast-dir)*150%))]',
-  '[&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(calc(var(--toast-dir)*150%))]',
+  'data-ending-style:not-data-limited:not-data-swipe-direction:[transform:translateY(calc(var(--toast-dir)*150%))]',
   'data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))]',
   'data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))]',
   'data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))]',

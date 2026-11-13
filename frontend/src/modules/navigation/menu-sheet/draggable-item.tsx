@@ -123,9 +123,12 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, i
               animate={{ ...menuListMotion.animate, transition: { ...menuListMotion.transition, delay: hasArrived ? menuRowLandSeconds : 0 } }}
               // The fold is a CSS grid row: a motion height exit measures by collapsing the block for a frame, which makes a
               // sheet scrolled to its end jump up
-              className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isFolding ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}
+              className={cn(
+                'grid transition-[grid-template-rows] duration-200 ease-in-out',
+                isFolding ? 'grid-rows-[0fr] *:overflow-hidden *:opacity-0' : 'grid-rows-[1fr]',
+              )}
             >
-              <div className={cn('min-h-0 min-w-0 transition-opacity duration-200', isFolding && 'overflow-hidden opacity-0')}>
+              <div className="min-h-0 min-w-0 transition-opacity duration-200">
                 <ul>
                   <MenuSheetItemsListEdit items={item.submenu ?? []} group="active" prepareHide={prepareSubitemHide} isSubmenu />
                 </ul>

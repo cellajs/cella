@@ -60,7 +60,7 @@ export function DropdownActionItem({
         aria-busy={loading || undefined}
         disabled={loading}
         onClick={select}
-        className={cn(variant === 'destructive' && 'text-destructive', className)}
+        className={cn('data-[variant=destructive]:text-destructive', className)}
       >
         {icon}
         {children}

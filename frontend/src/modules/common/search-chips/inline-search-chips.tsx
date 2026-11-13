@@ -285,7 +285,7 @@ export function InlineSearchChips({
             {/* Each line as tall as the input, so the icon and the X keep the first line */}
             <div
               ref={rowRef}
-              className={cn('flex min-w-0 grow items-center gap-x-1 *:data-[slot=chip]:my-1.75', isInUse ? 'flex-wrap' : 'overflow-hidden')}
+              className="flex min-w-0 grow items-center gap-x-1 not-in-data-in-use:overflow-hidden in-data-in-use:flex-wrap *:data-[slot=chip]:my-1.75"
             >
               {chips.map((chip, index) => (
                 <FilterChip
@@ -334,7 +334,7 @@ export function InlineSearchChips({
 
               <ComboboxPrimitive.Input
                 ref={inputRef}
-                render={<InputGroupInput className={cn('h-9.5 pl-0!', isInUse ? 'min-w-12' : 'min-w-0')} />}
+                render={<InputGroupInput className="h-9.5 min-w-0 pl-0! in-data-in-use:min-w-12" />}
                 id={id}
                 name={name}
                 placeholder={hasChips ? undefined : label}
