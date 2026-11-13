@@ -188,9 +188,9 @@ export interface RetentionConfig {
   oidcPayloadDaysAfterUse: number;
   /** Requests of every kind: contact messages, waitlist entries and info requests. */
   requestDays: number;
-  /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
+  /** A pending invitation, from its last mail or, with none, its creation; a held one goes with its draft channel. */
   invitationDays: number;
-  /** A declined invitation, from the decline: no invite opens it again or mails its address. At most `invitationDays`. */
+  /** A declined invitation, from the decline: until the sweep removes it, no invite mails its address. */
   declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;

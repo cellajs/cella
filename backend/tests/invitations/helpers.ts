@@ -5,7 +5,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { isoDateIn } from '#/utils/iso-date';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { authCookie, insertTestToken } from '../helpers';
@@ -36,7 +36,7 @@ export async function createInvitation({
   const rawSingleUseToken = nanoid(40);
 
   const [inactiveMembership] = await db
-    .insert(inactiveMembershipsTable)
+    .insert(invitationsTable)
     .values({
       id: inactiveMembershipId,
       email,

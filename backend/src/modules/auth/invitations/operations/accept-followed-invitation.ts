@@ -4,7 +4,7 @@ import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { findLiveBoundToken } from '#/modules/auth/tokens/token-lifecycle';
-import { findInactiveMembershipById } from '#/modules/memberships/inactive-memberships-queries';
+import { findInvitationById } from '#/modules/memberships/invitations-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import type { UserModel } from '#/modules/user/user-db';
 import { log } from '#/utils/logger';
@@ -55,7 +55,7 @@ export const acceptFollowedInvitation = async (
   const { inactiveMembershipId } = followed;
   try {
     // Read before the accept, which deletes the row
-    const invitation = await findInactiveMembershipById({ var: { db: baseDb } }, { id: inactiveMembershipId });
+    const invitation = await findInvitationById({ var: { db: baseDb } }, { id: inactiveMembershipId });
     if (!invitation) return null;
     const { memberships } = await readMemberships(user.id);
     await handleMembershipInvitationOp({ var: { db: baseDb, user, memberships } }, inactiveMembershipId, 'accept');

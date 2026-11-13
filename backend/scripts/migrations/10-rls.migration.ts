@@ -1,7 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { appFullCrudTables, appReadOnlyTables } from '#/db/product-tables';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { entityTables } from '#/tables';
@@ -23,7 +23,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     if (!table) throw new Error(`No table found for channel entity type: ${entityType}`);
     return getTableName(table);
   });
-  const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
+  const membershipTableNames = [getTableName(membershipsTable), getTableName(invitationsTable)];
 
   // Product entity tables + the Yjs session and update-log tables use RLS.
   const additionalRlsTables = [getTableName(yjsDocumentsTable), getTableName(yjsUpdatesTable)];

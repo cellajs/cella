@@ -53,10 +53,12 @@ const sweepRules: { table: string; aged: string }[] = [
   { table: 'passkey_challenges', aged: 'expires_at < now()' },
   { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },
   { table: 'requests', aged: `created_at < now() - ${days(retention.requestDays)}` },
-  // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
+  // A pending invitation ages from its last mail, or from its creation when none went out. A declined one goes when
+  // its hold ends. A held one never ages: it goes with its draft channel.
   {
-    table: 'inactive_memberships',
-    aged: `declined_at < now() - ${days(retention.invitationDays)} OR (declined_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
+    table: 'invitations',
+    aged: `(status = 'pending' AND coalesce(mailed_at, created_at) < now() - ${days(retention.invitationDays)})
+      OR (status = 'declined' AND status_changed_at < now() - ${days(retention.declinedInvitationHoldDays)})`,
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },

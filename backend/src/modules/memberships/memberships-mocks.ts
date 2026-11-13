@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, type ChannelEntityType, type EntityIdColumns, type EntityRole, hierarchy } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
-import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
+import type { InvitationModel } from '#/modules/memberships/invitations-db';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
 import { mockActorRef, mockUserBase } from '#/schemas/entity-base-mocks';
 
@@ -118,7 +118,7 @@ export const mockMembershipResponse = (key = 'membership:default', options: Mock
 };
 
 /** Deterministic stored inactive-membership row. */
-const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>
+const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InvitationModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
@@ -130,25 +130,29 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
       email: faker.internet.email().toLowerCase(),
       userId: base.userId,
       role: base.role,
+      status: 'pending',
+      statusChangedAt: createdAt,
       declinedAt: null,
-      remindedAt: null,
+      mailedAt: createdAt,
       createdAt,
       createdBy: mockUuid(),
+      updatedAt: null,
+      updatedBy: null,
       ...membershipChannelIdColumns(base.channelType, base.channelId, () => mockUuid(), options.channelIds),
       tenantId: base.tenantId,
-    } as InactiveMembershipModel;
+    } as InvitationModel;
   });
 
 /** Inactive membership wire response with its creator hydrated. */
 export const mockInactiveMembershipResponse = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}) => {
   const membership = mockInactiveMembership(key, options);
-  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy) };
+  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy), updatedBy: null };
 };
 
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
 const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
-  const { id, email, role, createdAt, createdBy } = mockInactiveMembershipResponse(key);
-  return { id, email, role, createdAt, remindedAt: createdAt, linkExpiresAt: createdAt, createdBy };
+  const { id, email, role, status, createdAt, mailedAt, createdBy } = mockInactiveMembershipResponse(key);
+  return { id, email, role, status, createdAt, mailedAt, linkExpiresAt: createdAt, createdBy };
 };
 
 export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);

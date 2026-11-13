@@ -158,7 +158,7 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
    */
   const whileRecountsWait = (fn: () => Promise<void>) =>
     cdcDb.transaction(async (tx) => {
-      await tx.execute(sql`LOCK TABLE inactive_memberships IN ACCESS EXCLUSIVE MODE`);
+      await tx.execute(sql`LOCK TABLE invitations IN ACCESS EXCLUSIVE MODE`);
       await fn();
     });
 

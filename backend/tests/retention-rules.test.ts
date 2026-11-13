@@ -9,7 +9,7 @@ import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { requestsTable } from '#/modules/requests/requests-db';
@@ -142,9 +142,9 @@ describe('apply_retention() row rules', () => {
       removed: [requests.oldContact, requests.oldWaitlist, requests.oldInfo],
     });
 
-    const invitation = async ({ declinedAt = null, remindedAt = null }: { declinedAt?: Date | null; remindedAt?: Date | null }) => {
+    const invitation = async (status: 'held' | 'pending' | 'declined', { at, mailedAt }: { at?: Date; mailedAt?: Date } = {}) => {
       const id = generateId();
-      await db.insert(inactiveMembershipsTable).values({
+      await db.insert(invitationsTable).values({
         id,
         email: `${id}@retention.test`,
         channelId: organization.id,
@@ -152,31 +152,32 @@ describe('apply_retention() row rules', () => {
         tenantId: organization.tenantId,
         channelType: 'organization' as const,
         role: memberRole,
+        status,
+        statusChangedAt: (at ?? ago(1000)).toISOString(),
+        declinedAt: status === 'declined' ? (at?.toISOString() ?? null) : null,
         createdBy: user.id,
         createdAt: ago(1000).toISOString(),
-        declinedAt: declinedAt?.toISOString() ?? null,
-        remindedAt: remindedAt?.toISOString() ?? null,
+        mailedAt: mailedAt?.toISOString() ?? null,
       });
       return id;
     };
     const invitations = {
-      declinedLongAgo: await invitation({ declinedAt: outside(retention.invitationDays) }),
-      declinedRecently: await invitation({ declinedAt: inside(retention.invitationDays) }),
-      mailedLongAgo: await invitation({ remindedAt: outside(retention.invitationDays) }),
-      mailedRecently: await invitation({ remindedAt: inside(retention.invitationDays) }),
-      held: await invitation({}),
+      declinedPastHold: await invitation('declined', { at: outside(retention.declinedInvitationHoldDays) }),
+      declinedInHold: await invitation('declined', { at: inside(retention.declinedInvitationHoldDays) }),
+      mailedLongAgo: await invitation('pending', { mailedAt: outside(retention.invitationDays) }),
+      mailedRecently: await invitation('pending', { mailedAt: inside(retention.invitationDays) }),
+      // Its mail was held back by the day limit or failed: it ages from its creation.
+      neverMailed: await invitation('pending'),
+      held: await invitation('held'),
     };
     cases.push({
       rule: 'invitations',
       remaining: async () =>
-        (
-          await db
-            .select({ id: inactiveMembershipsTable.id })
-            .from(inactiveMembershipsTable)
-            .where(eq(inactiveMembershipsTable.organizationId, organization.id))
-        ).map((row) => row.id),
-      kept: [invitations.declinedRecently, invitations.mailedRecently, invitations.held],
-      removed: [invitations.declinedLongAgo, invitations.mailedLongAgo],
+        (await db.select({ id: invitationsTable.id }).from(invitationsTable).where(eq(invitationsTable.organizationId, organization.id))).map(
+          (row) => row.id,
+        ),
+      kept: [invitations.declinedInHold, invitations.mailedRecently, invitations.held],
+      removed: [invitations.declinedPastHold, invitations.mailedLongAgo, invitations.neverMailed],
     });
 
     // `newest` holds the organization's latest position and goes all the same: a rebuild that regresses the counter moves the generation.

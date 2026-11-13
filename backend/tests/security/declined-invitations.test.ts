@@ -1,16 +1,13 @@
 import { and, eq } from 'drizzle-orm';
 import { acceptInvitation, acceptInvitationToken, declineInvitation, deleteInvitation } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';
-import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
-import { TimeSpan } from '#/utils/time-span';
+import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal, mailsTo } from '../helpers';
 import { createInvitation, inviteToOrganization } from '../invitations/helpers';
@@ -42,12 +39,10 @@ describe('Rejected invitations', async () => {
       .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.organizationId, organizationId)));
 
   const declinedAtOf = async (id: string) =>
-    (
-      await db.select({ declinedAt: inactiveMembershipsTable.declinedAt }).from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id))
-    )[0]?.declinedAt;
+    (await db.select({ declinedAt: invitationsTable.declinedAt }).from(invitationsTable).where(eq(invitationsTable.id, id)))[0]?.declinedAt;
 
-  const markDeclined = (id: string, declinedAt = getIsoDate()) =>
-    db.update(inactiveMembershipsTable).set({ declinedAt }).where(eq(inactiveMembershipsTable.id, id));
+  const markDeclined = (id: string) =>
+    db.update(invitationsTable).set({ status: 'declined', declinedAt: getIsoDate() }).where(eq(invitationsTable.id, id));
 
   it('must not accept a declined invitation via acceptInvitation', async () => {
     const organization = await createTestOrganization();
@@ -110,38 +105,13 @@ describe('Rejected invitations', async () => {
     expect(await markEmailVerified({ var: { db } }, { userId: owner.id, email: owner.email, via: 'magic' })).toBe(true);
 
     const boundUserOf = async (id: string) =>
-      (await db.select({ userId: inactiveMembershipsTable.userId }).from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0]
-        ?.userId;
+      (await db.select({ userId: invitationsTable.userId }).from(invitationsTable).where(eq(invitationsTable.id, id)))[0]?.userId;
     expect(await boundUserOf(declined.inactiveMembership.id)).toBeNull();
     // The pending invitation to the same address is claimed (positive control).
     expect(await boundUserOf(pending.inactiveMembership.id)).toBe(owner.id);
   });
 
-  it('opens a declined invitation again once its decline stops holding, with one fresh link in one email', async () => {
-    const organization = await createTestOrganization();
-    const admin = await createOrgUser(call, organization.tenantId, organization.id, 'reinvite-admin', adminRole);
-    const email = 'declined-address@security-test.com';
-    const declined = await createInvitation({ organization, email, createdBy: admin.id });
-    await markDeclined(declined.inactiveMembership.id, isoDateAgo(new TimeSpan(appConfig.retention.declinedInvitationHoldDays + 1, 'd')));
-    const mailsBefore = mailsTo(email).length;
-
-    const invited = await inviteToOrganization(organization, [email], memberRole, admin.sessionCookie);
-    expect(invited.response.status).toBe(200);
-    // The inviter is told the address had declined; the invitee gets one email.
-    expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'remind', declinedAt: expect.any(String) }] });
-    expect(mailsTo(email)).toHaveLength(mailsBefore + 1);
-    expect(await declinedAtOf(declined.inactiveMembership.id)).toBeNull();
-
-    // The link from before the decline stays dead; the fresh one is the invitation's only link.
-    const links = await db
-      .select({ id: tokensTable.id })
-      .from(tokensTable)
-      .where(eq(tokensTable.inactiveMembershipId, declined.inactiveMembership.id));
-    expect(links).toHaveLength(1);
-    expect(links[0].id).not.toBe(declined.token.id);
-  });
-
-  it('must not reopen a declined invitation within the hold', async () => {
+  it('must not reopen a declined invitation before the sweep removes it', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrgUser(call, organization.tenantId, organization.id, 'hold-admin', adminRole);
     const email = 'declined-recently@security-test.com';
@@ -153,7 +123,7 @@ describe('Rejected invitations', async () => {
     // Inviting again tells the inviter of the decline and leaves it standing, mailing nothing.
     const invited = await inviteToOrganization(organization, [email], memberRole, admin.sessionCookie);
     expect(invited.response.status).toBe(200);
-    expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'remind', declinedAt: expect.any(String) }] });
+    expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'declined', declinedAt: expect.any(String) }] });
     expect(mailsTo(email)).toEqual([]);
     expect(await declinedAtOf(declined.inactiveMembership.id)).not.toBeNull();
 

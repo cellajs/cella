@@ -49,13 +49,14 @@ interface PendingTileProps {
 
 function PendingTile({ row, channel, onResent }: PendingTileProps) {
   const { t } = useTranslation();
-  const { id, email, role, createdAt, remindedAt, linkExpiresAt, createdBy } = row;
+  const { id, email, role, status, createdAt, mailedAt, linkExpiresAt, createdBy } = row;
 
   const describe = () => {
-    // No email yet: the invitation waits for its draft channel to be published.
-    if (!remindedAt || !linkExpiresAt) return { tone: 'muted', label: t('c:not_sent_yet'), detail: t('c:invite_state_on_publish') } as const;
+    if (status === 'held') return { tone: 'muted', label: t('c:not_sent_yet'), detail: t('c:invite_state_on_publish') } as const;
+    // Pending with no mail: the tenant mailed the address within the day, or the mail failed.
+    if (!mailedAt || !linkExpiresAt) return { tone: 'warning', label: t('c:not_sent_yet'), detail: t('c:pending_not_mailed') } as const;
     if (Date.parse(linkExpiresAt) < Date.now()) {
-      return { tone: 'warning', label: t('c:pending_expired'), detail: t('c:pending_last_email', { date: dateShort(remindedAt) }) } as const;
+      return { tone: 'warning', label: t('c:pending_expired'), detail: t('c:pending_last_email', { date: dateShort(mailedAt) }) } as const;
     }
     return { tone: 'info', label: t('c:pending_sent'), detail: t('c:pending_link_expires', { time: dateRelative(linkExpiresAt) }) } as const;
   };
@@ -77,13 +78,13 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
       details={
         <>
           <ExpandableTileDetail label={t('c:invited_at')}>{dateShort(createdAt)}</ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:last_email')}>{remindedAt ? dateShort(remindedAt) : t('c:not_sent_yet')}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:last_email')}>{mailedAt ? dateShort(mailedAt) : t('c:not_sent_yet')}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:invited_by')}>{createdBy.name}</ExpandableTileDetail>
         </>
       }
       actions={
         <>
-          {remindedAt && <ResendInvitationButton variant="secondary" size="sm" send={resend} />}
+          {status === 'pending' && <ResendInvitationButton variant="secondary" size="sm" send={resend} />}
           <WithdrawInvitationButton channel={channel} invitationId={id} />
         </>
       }

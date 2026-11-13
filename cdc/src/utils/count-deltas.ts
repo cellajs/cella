@@ -47,7 +47,7 @@ function getTableDeltas(
 
   // Memberships (active + inactive): the counts of their roles.
   if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
-    const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInactiveMembershipDelta(action, newRow, oldRow);
+    const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInvitationDelta(action, newRow, oldRow);
     return delta ? [delta] : [];
   }
 
@@ -122,28 +122,28 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
   return null;
 }
 
-/** Inactive membership m:c:pending delta; only rows with declinedAt null count as pending. */
-function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
+/** Invitation m:c:pending delta; a held or pending row counts, a declined one does not. */
+function getInvitationDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
   if (!channelId) return null;
 
   if (action === 'create') {
-    if (newRow.declinedAt != null) return null;
+    if (newRow.status === 'declined') return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
   }
 
   if (action === 'delete') {
-    if (newRow.declinedAt != null) return null;
+    if (newRow.status === 'declined') return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
-    const wasNull = oldRow.declinedAt == null;
-    const isNull = newRow.declinedAt == null;
-    if (wasNull && !isNull) {
+    const wasOpen = oldRow.status !== 'declined';
+    const isOpen = newRow.status !== 'declined';
+    if (wasOpen && !isOpen) {
       return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
     }
-    if (!wasNull && isNull) {
+    if (!wasOpen && isOpen) {
       return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
     }
   }

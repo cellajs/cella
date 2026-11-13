@@ -4,7 +4,7 @@ import { batchDeleteMembers, createApiKey, createServiceAccount, updateMembershi
 import { type EntityRole, getEntityPolicies, getPolicyPermissions, type OrganizationRole, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -54,7 +54,7 @@ describe('Role grants above the actor', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   const headers = (as: { sessionCookie: string }) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
-  const invitationsTo = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const invitationsTo = (email: string) => db.select().from(invitationsTable).where(eq(invitationsTable.email, email));
   const keysOf = (actorId: string) => db.select().from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId));
   const statusOf = async (id: string) =>
     (await db.select({ status: serviceAccountsTable.status }).from(serviceAccountsTable).where(eq(serviceAccountsTable.id, id)))[0]?.status;

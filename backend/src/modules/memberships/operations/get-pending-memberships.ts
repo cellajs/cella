@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { withCreatorRefs } from '#/modules/actors/actor-refs';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
+import { findInvitationsPaginated } from '#/modules/memberships/invitations-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { PageWindow } from '#/utils/list-page';
@@ -18,7 +18,7 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
   const { entityId, entityType, orderBy } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 
-  const { items: rawItems, total } = await findPendingMembershipsPaginated(ctx, {
+  const { items: rawItems, total } = await findInvitationsPaginated(ctx, {
     organizationId: ctx.var.organization.id,
     entityId: entity.id,
     ...orderBy,
@@ -30,7 +30,7 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
   const linkMs = tokenPolicies.invitation.ttl.milliseconds();
   const withExpiry = rawItems.map((item) => ({
     ...item,
-    linkExpiresAt: item.remindedAt ? new Date(Date.parse(item.remindedAt) + linkMs).toISOString() : null,
+    linkExpiresAt: item.mailedAt ? new Date(Date.parse(item.mailedAt) + linkMs).toISOString() : null,
   }));
 
   return { items: await withCreatorRefs(ctx, withExpiry), total };

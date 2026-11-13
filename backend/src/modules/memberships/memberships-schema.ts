@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { recordFromKeys, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationStatuses, invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { mockInactiveMembershipResponse, mockInviteOutcome, mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import {
@@ -32,7 +32,8 @@ const membershipSchema = z.object({
 
 export const inactiveMembershipSchema = z
   .object({
-    ...createSelectSchema(inactiveMembershipsTable).shape,
+    ...createSelectSchema(invitationsTable).shape,
+    ...auditShape,
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
     createdBy: actorRefSchema,
@@ -71,18 +72,18 @@ export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.ar
 
 export const membershipCheckBodySchema = membershipCreateBodySchema.pick({ emails: true });
 
-const inviteOutcomes = ['invite', 'remind', 'add', 'member'] as const;
+const inviteOutcomes = ['invite', 'remind', 'add', 'member', 'declined'] as const;
 
 export const inviteOutcomeSchema = z
   .object({
     email: validEmailSchema,
     outcome: z.enum(inviteOutcomes).openapi({
       description:
-        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.',
+        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.',
     }),
-    /** remind: when the channel first invited the address. */
+    /** remind, declined: when the channel first invited the address. */
     invitedAt: z.string().optional(),
-    /** remind: when the invitee declined; the invitation opens again once `retention.declinedInvitationHoldDays` have passed. */
+    /** declined: when the invitee declined. */
     declinedAt: z.string().optional(),
     /** member: the role the member holds, which an invite never changes. */
     role: entityRoleSchema.optional(),
@@ -138,9 +139,11 @@ export const pendingMembershipSchema = z.object({
   /** The address the invitation went to. */
   email: validEmailSchema,
   role: entityRoleSchema,
+  /** `held` waits for its draft channel's publish to mail it; a declined invitation is not listed. */
+  status: z.enum(invitationStatuses),
   createdAt: membershipSchema.shape.createdAt,
-  /** The last email; null while it waits for its channel to be published. */
-  remindedAt: z.string().nullable(),
+  /** The last mail; null until the first went out. */
+  mailedAt: z.string().nullable(),
   /** When a link in the last email stops working, derived for every row alike; null while no email went out. */
   linkExpiresAt: z.string().nullable(),
   createdBy: actorRefSchema,

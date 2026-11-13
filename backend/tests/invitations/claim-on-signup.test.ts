@@ -3,7 +3,7 @@ import { inviteMembers } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -38,7 +38,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     return organization;
   };
 
-  const pendingFor = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const pendingFor = (email: string) => db.select().from(invitationsTable).where(eq(invitationsTable.email, email));
   const tokensFor = (email: string) => db.select().from(tokensTable).where(eq(tokensTable.email, email));
   const newcomer = { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', givenName: 'Newcomer' };
 

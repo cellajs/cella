@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -61,7 +61,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(memberships[0].organizationId).toBe(organization.id);
     expect(memberships[0].role).toBe(memberRole);
 
-    expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toHaveLength(0);
+    expect(await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id))).toHaveLength(0);
     expect(await db.select().from(tokensTable).where(eq(tokensTable.id, token.id))).toHaveLength(0);
   });
 
@@ -134,7 +134,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
       organization,
       createdBy: owner.id,
     });
-    await db.update(inactiveMembershipsTable).set({ userId: owner.id }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(invitationsTable).set({ userId: owner.id }).where(eq(invitationsTable.id, inactiveMembership.id));
 
     // Holding the invited address gets the attacker past the address check, to the row's own binding.
     const attacker = await createTestUser(invitedEmail);
@@ -142,7 +142,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     expect(response.status).toBe(404);
     expect(await membershipsOf(attacker.id)).toHaveLength(0);
-    const [still] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [still] = await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
     expect(still.userId).toBe(owner.id);
   });
 
@@ -214,7 +214,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const memberships = await membershipsOf(me.id);
     expect(memberships).toHaveLength(1);
     expect(memberships[0].role).toBe(adminRole);
-    expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toHaveLength(0);
+    expect(await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id))).toHaveLength(0);
   });
 });
 

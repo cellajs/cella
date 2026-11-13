@@ -436,7 +436,7 @@ export const zMembershipBase = z.object({
  */
 export const zInviteOutcome = z.object({
   email: z.email().min(4).max(255),
-  outcome: z.enum(['invite', 'remind', 'add', 'member']),
+  outcome: z.enum(['invite', 'remind', 'add', 'member', 'declined']),
   invitedAt: z.string().optional(),
   declinedAt: z.string().optional(),
   role: z.enum(['admin', 'member']).optional(),
@@ -1665,6 +1665,26 @@ export const zListMyInvitationsResponse = z.object({
       entity: zChannelBase,
       inactiveMembership: z.object({
         createdAt: z.string(),
+        createdBy: zActorRef,
+        updatedAt: z.string().nullable(),
+        updatedBy: z
+          .union([
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              thumbnailUrl: z.string().nullable(),
+              kind: z.enum(['user']),
+              slug: z.string(),
+            }),
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              thumbnailUrl: z.string().nullable(),
+              kind: z.enum(['service']),
+              slug: z.null(),
+            }),
+          ])
+          .nullable(),
         id: z.uuid(),
         tenantId: z.string().max(24),
         channelType: z.enum(['organization']),
@@ -1672,9 +1692,10 @@ export const zListMyInvitationsResponse = z.object({
         email: z.string().max(255),
         userId: z.uuid().nullable(),
         role: z.enum(['admin', 'member']),
+        status: z.enum(['held', 'pending', 'declined']),
+        statusChangedAt: z.string(),
         declinedAt: z.string().nullable(),
-        remindedAt: z.string().nullable(),
-        createdBy: zActorRef,
+        mailedAt: z.string().nullable(),
         organizationId: z.uuid(),
       }),
       organizationName: z.string().nullable(),
@@ -2073,8 +2094,9 @@ export const zListInvitationsResponse = z.object({
       id: z.string(),
       email: z.email().min(4).max(255),
       role: z.enum(['admin', 'member']),
+      status: z.enum(['held', 'pending', 'declined']),
       createdAt: z.string(),
-      remindedAt: z.string().nullable(),
+      mailedAt: z.string().nullable(),
       linkExpiresAt: z.string().nullable(),
       createdBy: zActorRef,
     }),

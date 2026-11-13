@@ -5,7 +5,7 @@ import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/help
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { findSsoConnectionByTenant } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findInactiveMembershipById } from '#/modules/memberships/inactive-memberships-queries';
+import { findInvitationById } from '#/modules/memberships/invitations-queries';
 import { findUserById } from '#/modules/user/user-queries';
 
 type TokenData = z.infer<typeof tokenWithDataSchema>;
@@ -26,7 +26,7 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
 
   if (!tokenRecord.inactiveMembershipId) return tokenData;
 
-  const inactiveMembership = await findInactiveMembershipById(ctx, { id: tokenRecord.inactiveMembershipId });
+  const inactiveMembership = await findInvitationById(ctx, { id: tokenRecord.inactiveMembershipId });
   if (inactiveMembership) {
     const { channelType, channelId, organizationId } = inactiveMembership;
     const [entity, organization, inviter, connection] = await Promise.all([

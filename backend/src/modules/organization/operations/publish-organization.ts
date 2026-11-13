@@ -12,7 +12,7 @@ import { log } from '#/utils/logger';
 
 /**
  * Publishes a draft organization, then sends the invitations it held. Safe to call again: on a published organization
- * it sends the invitations an earlier call left waiting, and nothing when there are none.
+ * it sends the invitations still held, and nothing when there are none.
  */
 export async function publishOrganizationOp(ctx: UserContext, id: string) {
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
@@ -42,10 +42,10 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
     log.info('Organization published', { organizationId: organization.id });
   }
 
-  // A draft another call published meanwhile is that call's to send for.
   const raced = wasDraft && !stamped;
   if (raced) assertNoWriteBetween(ctx, 'organization', organization.id);
-  const { dispatched } = raced ? { dispatched: 0 } : await dispatchDeferredInvites(ctx, { channelIds: [organization.id], organization });
+  // Of two calls, the one whose release claims the held invitations mails them.
+  const { dispatched } = await dispatchDeferredInvites(ctx, { channelIds: [organization.id], organization, by: ctx.var.user.id });
 
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);
   const response = await toOrganizationResponse(ctx, current, membership, { counts: true, membership: true });

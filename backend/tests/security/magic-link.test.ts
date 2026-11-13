@@ -8,7 +8,7 @@ import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
@@ -341,16 +341,16 @@ describe('magic-link sign-up', async () => {
 
     const { users } = await rowsFor(email);
     expect(users).toHaveLength(1);
-    const [claimed] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [claimed] = await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
     expect(claimed.userId).toBe(users[0].id);
   });
 
   it.each([
-    { invitation: 'deleted', end: (id: string) => db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)) },
+    { invitation: 'deleted', end: (id: string) => db.delete(invitationsTable).where(eq(invitationsTable.id, id)) },
     {
       // A decline deletes the invitation's links; one a direct write left behind still permits nothing.
       invitation: 'declined',
-      end: (id: string) => db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id)),
+      end: (id: string) => db.update(invitationsTable).set({ status: 'declined', declinedAt: getIsoDate() }).where(eq(invitationsTable.id, id)),
     },
   ])('must not sign up while registration is closed via the leftover link of a $invitation invitation', async ({ end }) => {
     const organization = await createTestOrganization();

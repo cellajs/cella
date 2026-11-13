@@ -532,9 +532,9 @@ export type MembershipBase = {
 export type InviteOutcome = {
   email: string;
   /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.
    */
-  outcome: 'invite' | 'remind' | 'add' | 'member';
+  outcome: 'invite' | 'remind' | 'add' | 'member' | 'declined';
   invitedAt?: string;
   declinedAt?: string;
   role?: 'admin' | 'member';
@@ -3756,6 +3756,24 @@ export type ListMyInvitationsResponses = {
        */
       inactiveMembership: {
         createdAt: string;
+        createdBy: ActorRef;
+        updatedAt: string | null;
+        updatedBy:
+          | {
+              id: string;
+              name: string;
+              thumbnailUrl: string | null;
+              kind: 'user';
+              slug: string;
+            }
+          | {
+              id: string;
+              name: string;
+              thumbnailUrl: string | null;
+              kind: 'service';
+              slug: null;
+            }
+          | null;
         id: string;
         tenantId: string;
         channelType: 'organization';
@@ -3763,9 +3781,10 @@ export type ListMyInvitationsResponses = {
         email: string;
         userId: string | null;
         role: 'admin' | 'member';
+        status: 'held' | 'pending' | 'declined';
+        statusChangedAt: string;
         declinedAt: string | null;
-        remindedAt: string | null;
-        createdBy: ActorRef;
+        mailedAt: string | null;
         organizationId: string;
       };
       /**
@@ -4755,8 +4774,9 @@ export type ListInvitationsResponses = {
       id: string;
       email: string;
       role: 'admin' | 'member';
+      status: 'held' | 'pending' | 'declined';
       createdAt: string;
-      remindedAt: string | null;
+      mailedAt: string | null;
       linkExpiresAt: string | null;
       createdBy: ActorRef;
     }>;

@@ -47,25 +47,25 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, 's:membership.changed': 1 });
   });
 
-  it('inactive membership create (pending): increments pending count', () => {
+  it('invitation create (pending): increments pending count', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
         tableMeta: inactiveMembershipEntry(),
         action: 'create',
-        rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', declinedAt: null },
+        rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'pending' },
       }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, 's:membership.changed': 1 });
   });
 
-  it('inactive membership update (declined): decrements pending', () => {
+  it('invitation update (declined): decrements pending', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
         tableMeta: inactiveMembershipEntry(),
         action: 'update',
-        rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', declinedAt: '2026-01-01' },
-        oldRowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', declinedAt: null },
+        rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'declined' },
+        oldRowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'pending' },
       }),
     ]);
 

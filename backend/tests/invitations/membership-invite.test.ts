@@ -3,7 +3,7 @@ import { inviteMembers } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
@@ -24,12 +24,12 @@ setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 // Hides a channel's invitations from the invite's plan, as when another request inserts one between the plan and the insert.
 const planSees = vi.hoisted(() => ({ invitations: true }));
-vi.mock('#/modules/memberships/inactive-memberships-queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/memberships/inactive-memberships-queries')>();
+vi.mock('#/modules/memberships/invitations-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/memberships/invitations-queries')>();
   return {
     ...actual,
-    findInactiveMembershipsByEmails: async (...args: Parameters<typeof actual.findInactiveMembershipsByEmails>) =>
-      planSees.invitations ? actual.findInactiveMembershipsByEmails(...args) : [],
+    findInvitationsByEmails: async (...args: Parameters<typeof actual.findInvitationsByEmails>) =>
+      planSees.invitations ? actual.findInvitationsByEmails(...args) : [],
   };
 });
 
@@ -58,7 +58,7 @@ describe('Membership Invitation', async () => {
   const outcomesOf = (data: unknown) => (data as { outcomes: { outcome: string }[] }).outcomes.map(({ outcome }) => outcome);
 
   const getInactiveMemberships = async (organizationId: string) =>
-    await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
+    await db.select().from(invitationsTable).where(eq(invitationsTable.organizationId, organizationId));
 
   it('should invite new users to organization', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();

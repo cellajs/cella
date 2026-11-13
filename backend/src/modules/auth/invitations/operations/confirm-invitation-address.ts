@@ -5,7 +5,7 @@ import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findPendingInactiveMembership } from '#/modules/memberships/inactive-memberships-queries';
+import { findPendingInvitation } from '#/modules/memberships/invitations-queries';
 import { findUserByEmail, isProvenAccount } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { invitationAddressEmail } from '../../../../../emails';
@@ -33,7 +33,7 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
     const txCtx = { var: { db: tx } };
 
     // The locked row is the invitation's anchor: a concurrent answer, rejection or resend waits for this one.
-    const invitation = await findPendingInactiveMembership(txCtx, { id: inactiveMembershipId, forUpdate: true });
+    const invitation = await findPendingInvitation(txCtx, { id: inactiveMembershipId, forUpdate: true });
     if (!invitation) return null;
 
     const entity = await resolveEntity(txCtx, { entityType: invitation.channelType, identifier: invitation.channelId });

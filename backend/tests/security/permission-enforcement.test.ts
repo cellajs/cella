@@ -14,7 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -73,7 +73,7 @@ describe('Member escalation over HTTP', async () => {
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.organizationId, organizationId)));
-  const invitationsTo = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const invitationsTo = (email: string) => db.select().from(invitationsTable).where(eq(invitationsTable.email, email));
 
   /** An organization with an admin, a member, the admin's attachment and a pending invitation. */
   const fixture = async (label: string): Promise<Fixture> => {

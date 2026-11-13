@@ -8,7 +8,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -41,9 +41,9 @@ export const tokensTable = snakeCase.table(
       .$type<UserId>(),
     identityId: uuid().references(() => identitiesTable.id, { onDelete: 'cascade' }),
     /** A membership invitation's link goes with its row, so no answered or deleted invitation keeps a live link. */
-    inactiveMembershipId: uuid().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
+    inactiveMembershipId: uuid().references(() => invitationsTable.id, { onDelete: 'cascade' }),
     /** For a sign-in link: the invitation the asking browser had followed, accepted at the click on any device. */
-    followedInvitationId: uuid().references(() => inactiveMembershipsTable.id, { onDelete: 'set null' }),
+    followedInvitationId: uuid().references(() => invitationsTable.id, { onDelete: 'set null' }),
     redirectPath: varchar({ length: maxLength.field }),
     pendingSignUp: jsonb().$type<PendingSignUp>(),
     /** The session a token is bound to: a step-up link stamps only this session. */

@@ -6,11 +6,7 @@ import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { channelIdColumnsOf, findMenuParent, isHeldInvitation, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
-import {
-  countPendingInactiveMembershipSeats,
-  insertInactiveMemberships,
-  updateInactiveMemberships,
-} from '#/modules/memberships/inactive-memberships-queries';
+import { countInvitationSeats, deleteInvitations, insertInvitations } from '#/modules/memberships/invitations-queries';
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
 import type { membershipCreateBodySchema } from '#/modules/memberships/memberships-schema';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
@@ -29,10 +25,10 @@ type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.inf
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
 /**
- * Invites each address as its plan says: a new invitation, the earlier one sent again (a declined one opens again once
- * its decline stops holding, a higher role replaces a lower one), an organization member added at once, or a member
- * left out. An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done.
- * Returns what happened to each address.
+ * Invites each address as its plan says: a new invitation, the earlier one sent again (a higher role makes it a new
+ * invitation by this inviter), an organization member added at once, or a declined invitation or a member left out.
+ * An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done. Returns
+ * what happened to each address.
  */
 export async function createMembershipsOp(ctx: UserContext, { emails, role, entityId, entityType }: CreateMembershipsInput) {
   const { db, user, organization, tenantId } = ctx.var;
@@ -58,25 +54,29 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const invites = planned('invite');
   const adds = planned('add');
   const reminders = planned('remind');
-  const reopened = reminders.filter(({ invitation }) => invitation.declinedAt);
+  // A higher role replaces the invitation with one by this inviter, never the other way, so the mail and the
+  // membership it becomes credit who granted the role.
+  const raised = reminders.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
+  const raisedIds = new Set(raised.map(({ invitation }) => invitation.id));
+  const unchanged = reminders.filter(({ invitation }) => !raisedIds.has(invitation.id));
 
-  // Seats: new invitations, declined ones that open again and, at the organization, members added at once. A reminder
-  // and a member take none.
-  const seatTakers = [...invites, ...reopened, ...(entityType === 'organization' ? adds : [])];
+  // Seats: new invitations and, at the organization, members added at once. A reminder and a member take none.
+  const seatTakers = [...invites, ...(entityType === 'organization' ? adds : [])];
   const newSeats = seatTakers.length;
   const seatQuota = ctx.var.tenant.restrictions.quotas.user;
   if (seatQuota !== 0 && newSeats > 0) {
     const [members, pending] = await Promise.all([
       countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id }),
       // An address this request charges is left out of the pending count, so a second invitation costs no second seat.
-      countPendingInactiveMembershipSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
+      countInvitationSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
     ]);
     if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
   }
 
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
-  const mailNow = held ? [] : [...invites, ...reminders].map(({ email }) => email);
-  const mailHeldBack = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + reopened.length : 0 });
+  const mailedAgain = unchanged.filter(({ invitation }) => invitation.status === 'pending');
+  const mailNow = held ? [] : [...invites, ...raised, ...mailedAgain].map(({ email }) => email);
+  const mailHeldBack = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + raised.length : 0 });
 
   // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
   const createdMemberships = adds.length
@@ -89,33 +89,33 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
     : [];
   for (const { userId } of adds) invalidateCache.user(userId);
 
-  const insertedInvites = await insertInactiveMemberships(ctx, {
-    memberships: invites.map(({ email, userId }) => ({
-      id: generateId(),
-      email,
-      userId,
-      role,
-      createdBy: user.id,
-      channelType: entityType,
-      tenantId,
-      ...channelIdColumnsOf(entity),
-      channelId: entity.id,
-    })),
+  const newInvitations = [
+    ...invites.map(({ email, userId }) => ({ email, userId })),
+    ...raised.map(({ invitation: { email, userId } }) => ({ email, userId })),
+  ];
+  const inserted = await db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    await deleteInvitations(txCtx, { ids: [...raisedIds] });
+    return insertInvitations(txCtx, {
+      invitations: newInvitations.map(({ email, userId }) => ({
+        id: generateId(),
+        email,
+        userId,
+        role,
+        status: held ? 'held' : 'pending',
+        createdBy: user.id,
+        channelType: entityType,
+        tenantId,
+        ...channelIdColumnsOf(entity),
+        channelId: entity.id,
+      })),
+    });
   });
-
-  // Sent again: a declined invitation opens again, a higher role replaces a lower one, never the other way. A held
-  // invitation goes out at publish, which sends only those without a last email.
-  const raised = reminders.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
-  await updateInactiveMemberships(ctx, {
-    ids: reopened.map(({ invitation }) => invitation.id),
-    values: { declinedAt: null, ...(held && { remindedAt: null }) },
-  });
-  await updateInactiveMemberships(ctx, { ids: raised.map(({ invitation }) => invitation.id), values: { role } });
 
   if (!held) {
     // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
-    const toMail = [...insertedInvites, ...reminders.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
-    const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization })).map(({ email }) => email));
+    const toMail = [...inserted, ...mailedAgain.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
+    const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization, by: user.id })).map(({ email }) => email));
     const unmailed = mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email));
     await refundInvitationMails(ctx, unmailed);
 
@@ -126,7 +126,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   }
 
   log.info('Users invited on entity level', {
-    invited: insertedInvites.length,
+    invited: inserted.length,
     reminded: reminders.length,
     added: adds.length,
     entityType,

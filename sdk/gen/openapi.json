@@ -2467,8 +2467,8 @@
           },
           "outcome": {
             "type": "string",
-            "enum": ["invite", "remind", "add", "member"],
-            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out."
+            "enum": ["invite", "remind", "add", "member", "declined"],
+            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline."
           },
           "invitedAt": {
             "type": "string"
@@ -9101,8 +9101,10 @@
                         "email": "carolyn5@yahoo.com",
                         "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
                         "role": "member",
+                        "status": "pending",
+                        "statusChangedAt": "2024-11-13T15:29:06.546Z",
                         "declinedAt": null,
-                        "remindedAt": null,
+                        "mailedAt": "2024-11-13T15:29:06.546Z",
                         "createdAt": "2024-11-13T15:29:06.546Z",
                         "createdBy": {
                           "id": "915e1951-a439-40dc-9303-6bdbd6aea838",
@@ -9111,6 +9113,8 @@
                           "slug": "sister.monahan13",
                           "thumbnailUrl": null
                         },
+                        "updatedAt": null,
+                        "updatedBy": null,
                         "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                         "tenantId": "i5coyr"
                       },
@@ -9136,8 +9140,10 @@
                         "email": "orion_king81@hotmail.com",
                         "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
                         "role": "admin",
+                        "status": "pending",
+                        "statusChangedAt": "2024-04-11T17:15:50.993Z",
                         "declinedAt": null,
-                        "remindedAt": null,
+                        "mailedAt": "2024-04-11T17:15:50.993Z",
                         "createdAt": "2024-04-11T17:15:50.993Z",
                         "createdBy": {
                           "id": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
@@ -9146,6 +9152,8 @@
                           "slug": "john.morar34",
                           "thumbnailUrl": null
                         },
+                        "updatedAt": null,
+                        "updatedBy": null,
                         "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                         "tenantId": "gwylqy"
                       },
@@ -9170,6 +9178,63 @@
                             "properties": {
                               "createdAt": {
                                 "type": "string"
+                              },
+                              "createdBy": {
+                                "$ref": "#/components/schemas/ActorRef"
+                              },
+                              "updatedAt": {
+                                "type": ["string", "null"]
+                              },
+                              "updatedBy": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "thumbnailUrl": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": ["user"]
+                                      },
+                                      "slug": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "thumbnailUrl": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": ["service"]
+                                      },
+                                      "slug": {
+                                        "type": "null"
+                                      }
+                                    },
+                                    "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               },
                               "id": {
                                 "type": "string",
@@ -9199,14 +9264,18 @@
                                 "type": "string",
                                 "enum": ["admin", "member"]
                               },
+                              "status": {
+                                "type": "string",
+                                "enum": ["held", "pending", "declined"]
+                              },
+                              "statusChangedAt": {
+                                "type": "string"
+                              },
                               "declinedAt": {
                                 "type": ["string", "null"]
                               },
-                              "remindedAt": {
+                              "mailedAt": {
                                 "type": ["string", "null"]
-                              },
-                              "createdBy": {
-                                "$ref": "#/components/schemas/ActorRef"
                               },
                               "organizationId": {
                                 "type": "string",
@@ -9215,6 +9284,9 @@
                             },
                             "required": [
                               "createdAt",
+                              "createdBy",
+                              "updatedAt",
+                              "updatedBy",
                               "id",
                               "tenantId",
                               "channelType",
@@ -9222,9 +9294,10 @@
                               "email",
                               "userId",
                               "role",
+                              "status",
+                              "statusChangedAt",
                               "declinedAt",
-                              "remindedAt",
-                              "createdBy",
+                              "mailedAt",
                               "organizationId"
                             ],
                             "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
@@ -9235,8 +9308,10 @@
                               "email": "dixie.ohara@gmail.com",
                               "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
                               "role": "admin",
+                              "status": "pending",
+                              "statusChangedAt": "2024-02-07T13:46:57.160Z",
                               "declinedAt": null,
-                              "remindedAt": null,
+                              "mailedAt": "2024-02-07T13:46:57.160Z",
                               "createdAt": "2024-02-07T13:46:57.160Z",
                               "createdBy": {
                                 "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
@@ -9245,6 +9320,8 @@
                                 "slug": "lizzie_aufderhar85",
                                 "thumbnailUrl": null
                               },
+                              "updatedAt": null,
+                              "updatedBy": null,
                               "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
                               "tenantId": "2wo2oz"
                             }
@@ -10050,7 +10127,7 @@
         "operationId": "inviteMembers",
         "tags": ["memberships", "cella"],
         "summary": "Invite members",
-        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
+        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (at a higher role it becomes a new invitation by the caller), an organization member added at once, or a declined invitation or a member left out. A declined invitation keeps its address from being invited again until the sweep removes it, `retention.declinedInvitationHoldDays` after the decline. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "parameters": [
@@ -11287,8 +11364,9 @@
                       "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
                       "email": "doug_larkin@hotmail.com",
                       "role": "member",
+                      "status": "pending",
                       "createdAt": "2024-11-21T01:19:53.533Z",
-                      "remindedAt": "2024-11-21T01:19:53.533Z",
+                      "mailedAt": "2024-11-21T01:19:53.533Z",
                       "linkExpiresAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
                         "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
@@ -11302,8 +11380,9 @@
                       "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
                       "email": "santos.jacobi12@gmail.com",
                       "role": "member",
+                      "status": "pending",
                       "createdAt": "2024-10-29T04:35:17.725Z",
-                      "remindedAt": "2024-10-29T04:35:17.725Z",
+                      "mailedAt": "2024-10-29T04:35:17.725Z",
                       "linkExpiresAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
                         "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
@@ -11337,10 +11416,14 @@
                             "type": "string",
                             "enum": ["admin", "member"]
                           },
+                          "status": {
+                            "type": "string",
+                            "enum": ["held", "pending", "declined"]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
-                          "remindedAt": {
+                          "mailedAt": {
                             "type": ["string", "null"]
                           },
                           "linkExpiresAt": {
@@ -11350,7 +11433,7 @@
                             "$ref": "#/components/schemas/ActorRef"
                           }
                         },
-                        "required": ["id", "email", "role", "createdAt", "remindedAt", "linkExpiresAt", "createdBy"]
+                        "required": ["id", "email", "role", "status", "createdAt", "mailedAt", "linkExpiresAt", "createdBy"]
                       }
                     },
                     "nextPageToken": {

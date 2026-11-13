@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { usersTable } from '#/modules/user/user-db';
 import { log } from '#/utils/logger';
@@ -237,9 +237,9 @@ describe('Magic link authentication', async () => {
       const inviter = await createTestUser('inviter@example.com');
       const { inactiveMembership, token } = await createInvitation({ organization, email: 'declined@example.com', createdBy: inviter.id });
       await db
-        .update(inactiveMembershipsTable)
-        .set({ declinedAt: new Date().toISOString() })
-        .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+        .update(invitationsTable)
+        .set({ status: 'declined', declinedAt: new Date().toISOString() })
+        .where(eq(invitationsTable.id, inactiveMembership.id));
       await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
       await requestNoLink('declined@example.com');

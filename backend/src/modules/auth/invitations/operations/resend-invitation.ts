@@ -4,8 +4,7 @@ import { AppError } from '#/core/error';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
-import { findPendingInactiveMembership } from '#/modules/memberships/inactive-memberships-queries';
+import { findPendingInvitation } from '#/modules/memberships/invitations-queries';
 import { resendInvitation } from '#/modules/memberships/operations/resend-pending-invitation';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
@@ -24,16 +23,14 @@ export async function resendInvitationByTokenOp(ctx: DbContext, tokenId: string)
   if (!token) return;
   if (!token.inactiveMembershipId) return resendSystemInvitation(ctx, token);
 
-  const invitation = await findPendingInactiveMembership(ctx, { id: token.inactiveMembershipId });
+  const invitation = await findPendingInvitation(ctx, { id: token.inactiveMembershipId });
   if (!invitation) return;
 
-  const [tenant, organization, channel] = await Promise.all([
+  const [tenant, organization] = await Promise.all([
     loadTenant(invitation.tenantId),
     resolveEntity(ctx, { entityType: 'organization', identifier: invitation.organizationId }),
-    resolveEntity(ctx, { entityType: invitation.channelType, identifier: invitation.channelId }),
   ]);
-  if (tenant?.status !== 'active' || !appConfig.tenantKinds[tenant.kind].invitations || !organization || !channel) return;
-  if (isHeldInvitation(invitation.channelType, channel, invitation.role)) return;
+  if (tenant?.status !== 'active' || !appConfig.tenantKinds[tenant.kind].invitations || !organization) return;
 
   const tenantCtx = { var: { db: ctx.var.db, tenantId: tenant.id, tenant } };
   await resendInvitation(tenantCtx, { invitation, organization }).catch((err) => {

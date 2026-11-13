@@ -1,5 +1,6 @@
 import type { DbContext } from '#/core/context';
-import { findPendingInactiveMembershipsByChannels } from '#/modules/memberships/inactive-memberships-queries';
+import type { UserId } from '#/db/utils/ids';
+import { releaseHeldInvitations } from '#/modules/memberships/invitations-queries';
 import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { log } from '#/utils/logger';
 
@@ -8,20 +9,20 @@ interface DispatchDeferredInvitesOpts {
   channelIds: string[];
   /** The channels' organization: the language a mail to an address without an account takes, and the name a mail gives. */
   organization: { defaultLanguageCode: string; name: string };
+  /** Who published. */
+  by: UserId;
 }
 
 /**
- * Sends the invitations held while their channel was unpublished: the ones whose mail never went out, which carry no
- * `remindedAt`. One mailed when it was made, or dispatched before, is left alone, so a publish flow may hand over a
- * channel again; one whose mail failed is still held for the next call. An invitation no account holds gets its first
- * link here (`mailInvitations`).
+ * Sends the invitations held while their channel was unpublished. Their release to pending and its mail are one
+ * claim: a second publish call finds none held, and one whose mail failed waits as pending for a resend. An invitation
+ * no account holds gets its first link here (`mailInvitations`).
  */
-export async function dispatchDeferredInvites(ctx: DbContext, { channelIds, organization }: DispatchDeferredInvitesOpts) {
-  const pendingRows = await findPendingInactiveMembershipsByChannels(ctx, { channelIds });
-  const heldIds = pendingRows.flatMap(({ id, remindedAt }) => (remindedAt ? [] : [id]));
-  if (!heldIds.length) return { dispatched: 0 };
+export async function dispatchDeferredInvites(ctx: DbContext, { channelIds, organization, by }: DispatchDeferredInvitesOpts) {
+  const released = await releaseHeldInvitations(ctx, { channelIds, by });
+  if (!released.length) return { dispatched: 0 };
 
-  const mailed = await mailInvitations(ctx, { ids: heldIds, organization });
+  const mailed = await mailInvitations(ctx, { ids: released.map(({ id }) => id), organization, by });
 
   log.info('Deferred invites dispatched', { count: mailed.length, channels: channelIds.length });
 

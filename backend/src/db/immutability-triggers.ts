@@ -8,11 +8,11 @@ const membershipChannelIdColumns = appConfig.channelEntityTypes.map((type) => to
 /** Every product table carries `organization_id`, which never changes either. */
 const productImmutableColumns = [...baseEntityColumns, 'organization_id'] as const;
 
-/** Inactive memberships allow mutable user_id for re-assignable invitations. */
-const inactiveMembershipImmutableColumns = ['tenant_id', 'channel_id', 'channel_type', ...membershipChannelIdColumns] as const;
+/** Invitations allow a mutable user_id, for the account that claims one. */
+const invitationImmutableColumns = ['tenant_id', 'channel_id', 'channel_type', ...membershipChannelIdColumns] as const;
 
-/** Active memberships include user_id. */
-export const membershipImmutableColumns = [...inactiveMembershipImmutableColumns, 'user_id'] as const;
+/** Memberships include user_id. */
+export const membershipImmutableColumns = [...invitationImmutableColumns, 'user_id'] as const;
 
 interface TableImmutabilityConfig {
   tableName: string;
@@ -68,7 +68,7 @@ const productConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes.m
 
 const membershipConfigs: TableImmutabilityConfig[] = [
   { tableName: 'memberships', functionName: 'membership_immutable_keys' },
-  { tableName: 'inactive_memberships', functionName: 'inactive_membership_immutable_keys' },
+  { tableName: 'invitations', functionName: 'invitation_immutable_keys' },
 ];
 
 const appendOnlyConfigs: TableImmutabilityConfig[] = [{ tableName: 'activities', functionName: 'append_only_immutable_row' }];
@@ -84,7 +84,7 @@ export const allImmutabilityFunctionsSQL: string[] = [
   buildFunctionSQL('base_entity_immutable_keys', baseEntityColumns),
   buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns),
   buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns),
-  buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns),
+  buildFunctionSQL('invitation_immutable_keys', invitationImmutableColumns),
   appendOnlyImmutabilityFunctionSQL,
   adminOnlyWriteFunctionSQL,
 ];
