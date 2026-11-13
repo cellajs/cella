@@ -6,18 +6,14 @@ import type { ActorContext, DbContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
 import { channelTables } from '#/db/channel-tables';
 import { imageColumns } from '#/db/storage-columns';
-import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
-import { deleteStamps } from '#/db/utils/stamps';
-import { stxWithIds } from '#/db/utils/stx-ids';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
@@ -42,22 +38,6 @@ export const updateAttachment = async (ctx: ActorContext, { id, values }: { id: 
     .returning();
   return updated;
 };
-
-interface DeleteAttachmentsByIdsOpts {
-  ids: string[];
-  /** Who deletes: stamped as the tombstone and as the row's last write. */
-  actorId: ActorId;
-  /** The delete's own mutation and source ids, stored in place of the last edit's. */
-  stx: Pick<StxBase, 'mutationId' | 'sourceId'>;
-}
-
-/** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
-export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, stx }: DeleteAttachmentsByIdsOpts) =>
-  ctx.var.db
-    .update(attachmentsTable)
-    .set({ ...deleteStamps(actorId), stx: stxWithIds(attachmentsTable.stx, stx) })
-    .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
-    .returning();
 
 /** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
 export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: { ids: string[] }) =>
