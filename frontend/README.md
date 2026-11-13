@@ -78,7 +78,7 @@ A text field, select or field-shaped button keeps its resting edge under the poi
 - A local `tw` constant: one file, where the copies must change together or the name says what they cannot.
 - A small component: the same element and behavior in several files.
 - A variant, size or default of the `ui/` primitive that callers override the same way.
-- An `@utility` in [tailwind.css](src/styling/tailwind.css): one style concept across files, when no base or caller class on the element sets the same property.
+- An `@utility` in [tailwind.css](src/styling/tailwind.css), or in [app-utilities.css](src/styling/app-utilities.css) for an app's own: one style concept across files, when no base or caller class on the element sets the same property.
 
 A custom utility sorts before plain ones and `cn` cannot drop a base class it overrides, which is the reason for that last condition. Only a primitive's own classes that a sibling primitive shares are exported.
 
