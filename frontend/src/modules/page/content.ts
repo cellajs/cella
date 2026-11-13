@@ -65,7 +65,7 @@ const defaultDocsConfig: DocsConfig = {
   sections: [
     { id: 'pages', label: 'Documentation', visible: true },
     { id: 'apiReference', label: 'API reference', visible: true },
-    { id: 'links', label: 'Links', visible: true },
+    { id: 'links', label: 'Other', visible: true },
   ],
 };
 

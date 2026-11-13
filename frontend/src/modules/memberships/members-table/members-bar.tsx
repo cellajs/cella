@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { TrashIcon, UserRoundPlusIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -34,6 +34,7 @@ export function MembersTableBar({
   columns,
   setColumns,
   isSheet,
+  inviteOnOpen,
   canUpdate,
   clearSelection,
 }: MembersTableBarProps) {
@@ -80,6 +81,10 @@ export function MembersTableBar({
     const description = <NamedText i18nKey="c:invite_members.text" name={channel.name} />;
     openInviteDialog({ channel, description, triggerRef, containerRef: inviteContainerRef });
   };
+
+  useEffect(() => {
+    if (inviteOnOpen && canUpdate) openInvite({ current: null });
+  }, []);
 
   const fetchExport = (page: PageRequest) => {
     const { id: entityId, entityType, tenantId } = channel;
