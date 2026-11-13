@@ -27,9 +27,8 @@ describe('frontend Caddyfile', () => {
     expect(headerValue('X-Content-Type-Options')).toBe('nosniff');
     expect(headerValue('Cross-Origin-Opener-Policy')).toBe('same-origin');
     expect(headerValue('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
-    for (const feature of ['camera', 'microphone', 'geolocation']) {
-      expect(headerValue('Permissions-Policy')).toContain(`${feature}=()`);
-    }
+    // The uploader's webcam and audio sources record on the app's own page; frames from other origins get neither device.
+    expect(headerValue('Permissions-Policy')).toBe('camera=(self), microphone=(self), geolocation=()');
   });
 
   it('strips the Server header so the upstream is not advertised', () => {
