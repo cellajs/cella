@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ContactForm } from '~/modules/common/contact-form/contact-form';
-import { ContactMethodRows, contactMethods, isWebPage } from '~/modules/common/contact-form/contact-methods';
+import { ContactMethodRows, cancelSelectingClick, contactMethods, isWebPage } from '~/modules/common/contact-form/contact-methods';
 import { ExternalArrow } from '~/modules/common/external-arrow';
 import { MarketingLayout } from '~/modules/marketing/layout';
 
@@ -28,9 +28,11 @@ export function ContactPage() {
                 <p>
                   <a
                     href={method.link}
-                    className="group/external-link focus-effect link-inline rounded-md p-0.5"
+                    className="group/external-link focus-effect link-inline rounded-md p-0.5 select-text"
                     target={webPage ? '_blank' : undefined}
                     rel={webPage ? 'noreferrer' : undefined}
+                    draggable={false}
+                    onClick={cancelSelectingClick}
                   >
                     {method.textKey ? t(method.textKey) : method.text}
                     {webPage && <ExternalArrow />}
