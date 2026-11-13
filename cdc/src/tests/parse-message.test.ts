@@ -54,4 +54,16 @@ describe('parseMessage: updates', () => {
     expect(parseMessage(dmlMessage('update', 'attachments', hidden, shown))?.movedFrom).toMatchObject({ id: 'att-1', public: true });
     expect(parseMessage(dmlMessage('update', 'attachments', shown, hidden))?.movedFrom).toBeNull();
   });
+
+  // One ending, one name: the stream, the activities and the bus all call a soft delete a delete.
+  it('records a soft delete as a delete carrying the tombstone and the row before it, and drops a later update of the tombstone', () => {
+    const live = attachmentRow({ deleted_at: null, stx: { mutationId: 'm1', sourceId: 'tab-1', fieldTimestamps: {} } });
+    const tombstone = { ...live, deleted_at: '2026-07-02T10:00:00.000Z', stx: { mutationId: 'm2', sourceId: 'tab-2', fieldTimestamps: {} } };
+
+    const parsed = parseMessage(dmlMessage('update', 'attachments', tombstone, live));
+    expect(parsed?.activity).toMatchObject({ action: 'delete', type: 'attachment.deleted', changedFields: null, stx: { mutationId: 'm2' } });
+    expect(parsed?.rowData.deletedAt).toBe('2026-07-02T10:00:00.000Z');
+    expect(parsed?.oldRowData?.deletedAt).toBeNull();
+    expect(parseMessage(dmlMessage('update', 'attachments', { ...tombstone, name: 'Renamed' }, tombstone))).toBeNull();
+  });
 });

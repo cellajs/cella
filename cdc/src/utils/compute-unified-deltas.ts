@@ -1,10 +1,11 @@
-import type { ActivityAction, EntityHierarchy } from 'shared';
+import type { EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
 import { isMaxMergeKey, signalVersionPrefix } from '#/modules/entities/counter-keys';
 import { type VersionedSignal, versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
-import type { CdcActivity } from '../pipeline/parse-message';
-import type { CdcRowData, PendingEvent, TableMeta } from '../types';
+import type { CdcActivity, ParseMessageResult } from '../pipeline/parse-message';
+import type { CdcRowData, PendingEvent } from '../types';
 import { getCountDeltas } from './count-deltas';
+import { isTombstone } from './is-tombstone';
 
 /** One sequence group per organization (reserved by RETURNING UPSERT) plus accumulated count deltas. */
 export interface BatchUnifiedDeltaPlan {
@@ -46,9 +47,13 @@ export function mergeDelta(map: Map<string, Record<string, number>>, channelKey:
   }
 }
 
-/** Whether a change gets a sequence value: the create or the update of a product row. */
-export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy = hierarchy): boolean {
-  return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
+/** The parts of a change that decide whether it is stamped. */
+type StampableChange = Pick<ParseMessageResult, 'tableMeta' | 'activity' | 'rowData'>;
+
+/** Whether a change gets a sequence value: one that leaves a product row in its table, a soft delete's tombstone included. */
+export function isStampable({ tableMeta, activity: { action }, rowData }: StampableChange, h: EntityHierarchy = hierarchy): boolean {
+  if (tableMeta.kind !== 'entity' || !h.isProduct(tableMeta.type)) return false;
+  return action === 'create' || action === 'update' || (action === 'delete' && isTombstone(rowData));
 }
 
 /** The organization a stampable change reserves its sequence value from; a change without one violates the hierarchy. */
@@ -79,7 +84,7 @@ export function flushSignals(events: PendingEvent[], h: EntityHierarchy = hierar
  * order, and accumulates count deltas. Frontier (`e:f:`) deltas wait until seq values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
-  const stamped = events.filter(({ result }) => isStampable(result.tableMeta, result.activity.action, h));
+  const stamped = events.filter(({ result }) => isStampable(result, h));
   const orgSequenceGroups = [...Map.groupBy(stamped, organizationOf)].map(([orgKey, group]) => ({ orgKey, events: group }));
 
   const signalsOf = flushSignals(events, h);

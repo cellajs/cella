@@ -64,7 +64,7 @@ A backlog waits in Postgres and not in the worker. A worker that falls behind st
 
 ### Record
 
-A flush is recorded in one transaction. Sequence values are reserved per organization, one contiguous range per flush. They go to product creates and updates in commit order across entity types. A soft-delete counts as a delete and a restore as a create. Removing a tombstone after the deleted-items period records nothing.
+A flush is recorded in one transaction. Sequence values are reserved per organization, one contiguous range per flush. They go to product creates, updates and soft deletes in commit order across entity types. A soft delete is recorded as a `delete` carrying the tombstone, and a restore counts as a create. Removing a tombstone after the deleted-items period records nothing.
 
 Recording happens once per change, however often the change arrives.
 

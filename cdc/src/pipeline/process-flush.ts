@@ -65,7 +65,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<Map<PendingEvent,
     const again = prepared
       .filter((item) => !insertedIds.has(item.activity.id))
       .map((item) => item.event)
-      .filter(({ result: { tableMeta, activity } }) => isStampable(tableMeta, activity.action));
+      .filter(({ result }) => isStampable(result));
     for (const [tableName, events] of Map.groupBy(again, ({ result }) => result.activity.tableName)) {
       const seqById = new Map<string, number>();
       const ids = [...new Set(events.map(({ result }) => result.rowData.id))];
@@ -136,7 +136,7 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
       }));
       sendProductMessagesToApi(productType, rows, traceContext);
       // Written outside the flush's transaction, and a statement that fails rejects the flush.
-      if (action === 'update' || action === 'delete') await stripEmbeddingReferences(productType, action, events);
+      if (action === 'delete') await stripEmbeddingReferences(productType, events);
     });
 
     log.trace('Group processed', { groupSize: group.length, entityType: activity.entityType, action });

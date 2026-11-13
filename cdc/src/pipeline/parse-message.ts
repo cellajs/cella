@@ -7,6 +7,7 @@ import { tableRegistry } from '../table-registry';
 import type { CdcRowData, RowData, TableMeta } from '../types';
 import { compactRowData } from '../utils/compact-row-data';
 import { convertRowKeys } from '../utils/convert-row-keys';
+import { isTombstone } from '../utils/is-tombstone';
 import { parseUpdate } from './parse-update';
 
 /** A change of a row, the one kind of message the parser reads. */
@@ -51,7 +52,7 @@ export function parseMessage(message: DmlMessage): ParseMessageResult | null {
       // The removal of a tombstone (apply_retention()) changes nothing a client holds: the delete reached everyone as
       // the tombstone, and the counters never counted it.
       const removed = parseWholeRow(tableMeta, message.old, 'delete');
-      return removed.rowData.deletedAt == null ? removed : null;
+      return isTombstone(removed.rowData) ? null : removed;
     }
   }
 }

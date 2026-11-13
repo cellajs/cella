@@ -27,7 +27,7 @@ function overflowOf(action: StreamChange['action'], entries: StreamChange['rows'
  * The change frame of rows of a product event, with no entity data, in two tiers by weight: up to
  * `maxStreamChangeRows` each row with its seq, its writer and the stx of its write; past that their ids up to
  * `maxStreamChangeIds` and their range, and past those the range alone.
- * @param rows - The rows to name: those of the event its receivers may read, a create's or update's each with its seq.
+ * @param rows - The rows to name: those of the event its receivers may read, a create's, update's or soft delete's each with its seq.
  * @returns What every receiver of these rows gets.
  */
 export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {
@@ -44,13 +44,9 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
   const embedded = appConfig.productEmbeddings.some(({ embeddedProductType }) => embeddedProductType === entityType);
   if (embedded && !overflowed) {
     // Every row the frame names is in the hint: a host learns of an embedded change by it, or past the cap by its lists'
-    // refetch. A soft delete arrives as an update, and the host drops its copy of that row.
-    const update: string[] = [];
-    const remove: string[] = [];
-    for (const { rowData, entry } of named) {
-      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(entry.subjectId);
-      else update.push(entry.subjectId);
-    }
+    // refetch.
+    const ids = entries.map(({ subjectId }) => subjectId);
+    const [update, remove] = event.action === 'delete' ? [[], ids] : [ids, []];
     propagation = { embeddedProductType: entityType, update, remove };
   }
 

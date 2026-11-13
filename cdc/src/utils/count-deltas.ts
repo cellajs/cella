@@ -85,7 +85,9 @@ function getTableDeltas(
  * = null (invisible to counters and stamps).
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
-  // A create or a delete carries one row image; the parser refuses an update without its old one.
+  // A soft delete carries the row before it; a create or a hard delete one row image.
+  if (action === 'delete' && oldRow) return isCountableRow(oldRow) ? action : null;
+  // The parser refuses an update without its old row.
   if (action !== 'update' || !oldRow) return isCountableRow(newRow) ? action : null;
   const wasCountable = isCountableRow(oldRow);
   const nowCountable = isCountableRow(newRow);

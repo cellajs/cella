@@ -1,13 +1,10 @@
 import { and, arrayOverlaps, asc, eq, getColumns, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from './is-soft-delete-transition';
-
-type EmbeddingStripAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
@@ -69,25 +66,19 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 const embeddingsByProduct = resolveEmbeddings();
 
 /**
- * Removes deleted or unpublished embedded ids from configured host arrays. Runs outside request
- * handlers so the indexed, parent-scoped update does not take row locks on the request path.
+ * Removes the ids of deleted embedded rows (soft-deleted, unpublished or gone) from configured host arrays. Runs
+ * outside request handlers so the indexed, parent-scoped update does not take row locks on the request path.
  */
 export async function stripEmbeddingReferences(
   embeddedProductType: ProductEntityType,
-  action: EmbeddingStripAction,
-  events: { result: { rowData: CdcRowData; oldRowData?: CdcRowData | null } }[],
+  events: { result: { rowData: CdcRowData } }[],
   db: StripExecutor = cdcDb,
 ): Promise<void> {
   const embeddings = embeddingsByProduct.get(embeddedProductType);
-  if (!embeddings) return;
-
-  // Hard delete: every event is a removal. Soft delete: only events that flip deletedAt.
-  const relevantEvents = action === 'delete' ? events : events.filter(({ result }) => isSoftDeleteTransition(result.rowData, result.oldRowData));
-
-  if (relevantEvents.length === 0) return;
+  if (!embeddings || events.length === 0) return;
 
   for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } of embeddings) {
-    const references = relevantEvents.flatMap(({ result: { rowData } }) => {
+    const references = events.flatMap(({ result: { rowData } }) => {
       const parentId = rowData[parentColumnName];
       if (typeof parentId === 'string') return [{ parentId, id: rowData.id }];
       log.warn(`stripEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id: rowData.id });

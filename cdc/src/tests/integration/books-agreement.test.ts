@@ -1,6 +1,6 @@
 import { eq, getTableName, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import type { ActivityAction, ProductEntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { DmlMessage } from '../../pipeline/parse-message';
 import type { PendingEvent } from '../../types';
@@ -219,16 +219,11 @@ function workloadOn(tx: Tx, seed: number) {
 
     await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(survivors), tx);
 
-    const groups = new Map<string, PendingEvent[]>();
-    for (const event of survivors) {
-      const { entityType, action } = event.result.activity;
-      // The synthetic types are no type of the app, so the name is compared as a string.
-      if ((entityType as string | null) !== 'item' || action === 'create') continue;
-      groups.set(action, [...(groups.get(action) ?? []), event]);
-    }
-    for (const [action, events] of groups) {
+    // The synthetic types are no type of the app, so the name is compared as a string.
+    const deletes = survivors.filter(({ result: { activity } }) => (activity.entityType as string | null) === 'item' && activity.action === 'delete');
+    for (const events of deletes.length > 0 ? [deletes] : []) {
       const before = await all('task');
-      await stripEmbeddingReferences('item' as ProductEntityType, action as Exclude<ActivityAction, 'create'>, events, tx as unknown as typeof cdcDb);
+      await stripEmbeddingReferences('item' as ProductEntityType, events, tx as unknown as typeof cdcDb);
       const after = new Map((await all('task')).map((task) => [task.id, task]));
       const stripped: Change[] = [];
       for (const old of before) {

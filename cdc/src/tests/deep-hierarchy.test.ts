@@ -201,7 +201,7 @@ describe('reparent updates re-credit the ancestor diff', () => {
 
 describe('soft-delete / restore transitions on variable-depth rows', () => {
   it('soft-delete of a course-stream item decrements exactly its non-null ancestors', () => {
-    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, courseStreamRow, h);
+    const deltas = getCountDeltas(itemMeta(), itemActivity('delete'), { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, courseStreamRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:c:item': -1 } },

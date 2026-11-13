@@ -39,7 +39,7 @@ const events = [
   {
     lsn: '0/2',
     result: {
-      activity: { action: 'update', entityType: productType, subjectId: 'r2' },
+      activity: { action: 'delete', entityType: productType, subjectId: 'r2' },
       rowData: { id: 'r2', deletedAt: '2026-10-01T10:00:00.000Z' },
       oldRowData: { id: 'r2', deletedAt: null },
     },
@@ -51,8 +51,7 @@ beforeEach(() => {
 });
 
 it('with no embedding declared, the reference strip issues no statement', async () => {
-  await stripEmbeddingReferences(productType, 'delete', events);
-  await stripEmbeddingReferences(productType, 'update', events);
+  await stripEmbeddingReferences(productType, events);
 
   expect(touched).toEqual([]);
 });

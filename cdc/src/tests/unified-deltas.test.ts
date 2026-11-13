@@ -118,17 +118,17 @@ describe('computeBatchUnifiedDeltas', () => {
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -2, 'e:c:h:attachment': -2 });
   });
 
-  it('batch of attachment soft deletes: sequence group and count deltas accumulated', () => {
+  it('batch of attachment soft deletes, each a delete carrying its tombstone: sequence group and count deltas accumulated', () => {
     const events = [
       changeEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'delete',
         rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
         oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
       }),
       changeEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'delete',
         rowData: { id: 'att-2', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
         oldRowData: { id: 'att-2', organizationId: 'org-1', deletedAt: null },
       }),
@@ -239,11 +239,11 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
     expect(stamp).toBeLessThanOrEqual(after);
   });
 
-  it('soft-deletes never stamp (remapped to a delete internally)', () => {
+  it('soft-deletes never stamp', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'delete',
         rowData: { id: 'att-2', organizationId: 'org-1', createdAt, deletedAt: '2026-07-03T10:00:00.000Z' },
         oldRowData: { id: 'att-2', organizationId: 'org-1', createdAt, deletedAt: null },
       }),
@@ -315,11 +315,11 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
     expect(plan.orgSequenceGroups).toHaveLength(1); // still sequence-stamped (tombstone is delta-fetchable)
   });
 
-  it('soft-deleting a PUBLISHED row stays an UPDATE and still decrements (the two dimensions compose)', () => {
+  it('soft-deleting a PUBLISHED row is a delete with its tombstone and decrements (the two dimensions compose)', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'delete',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
         oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
       }),
