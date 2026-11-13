@@ -11,6 +11,7 @@ import {
   endAction,
   type InfraContext,
   pulumiLoginAndSelect,
+  pulumiLoginUrl,
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
@@ -35,7 +36,13 @@ export async function runStatePrune(context: InfraContext): Promise<void> {
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const operator = await acquireOperatorKey(context);
   const stack = stackNameFor(context);
-  const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
+  const env = buildProviderEnv(infraDir, {
+    accessKey: operator.accessKey,
+    secretKey: operator.secretKey,
+    projectId,
+    passphrase,
+    stateBackendUrl: pulumiLoginUrl(appConfig),
+  });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
   const stateKey = stateKeyOf(operator, projectId);
   const lock = await acquireStackLockOrExit({ appConfig, ...stateKey, stack, operation: 'state-prune' });

@@ -28,7 +28,7 @@ import { shutOutOfBuckets } from '../../tasks/admit-operator-buckets';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { writeFinalDump } from '../../tasks/final-dump';
 import { readCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, stackNameFor } from '../shared';
+import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 import { acquireIdentityKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 
@@ -163,7 +163,7 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
   await exitWhenShutOut(context, owner);
   const passphrase = await ownerPassphrase(context, owner);
   const { accessKey, secretKey, organizationId } = owner;
-  const env = buildProviderEnv(infraDir, { accessKey, secretKey, organizationId, projectId, passphrase });
+  const env = buildProviderEnv(infraDir, { accessKey, secretKey, organizationId, projectId, passphrase, stateBackendUrl: pulumiLoginUrl(appConfig) });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
   const lock = await acquireStackLockOrExit({ appConfig, ...stateKeyOf(owner, projectId), stack, operation: 'teardown' });
 

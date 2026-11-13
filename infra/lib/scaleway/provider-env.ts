@@ -12,6 +12,8 @@ export interface ProviderEnvInput {
   projectId: string;
   /** Pulumi state passphrase (`PULUMI_CONFIG_PASSPHRASE`). */
   passphrase: string;
+  /** The app's state bucket URL (`PULUMI_BACKEND_URL`): it outranks the machine-wide `pulumi login`, which another app's run on this machine may have changed. */
+  stateBackendUrl: string;
   /** The key for the S3-protocol Pulumi state backend (`AWS_*`). Defaults to the provider key; set it when the state bucket admits a different one (the admin application key). */
   stateAccessKey?: string;
   stateSecretKey?: string;
@@ -19,9 +21,9 @@ export interface ProviderEnvInput {
   organizationId?: string;
 }
 
-/** Build a child environment with an explicit Scaleway key, state-backend key and Pulumi passphrase, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */
+/** Build a child environment with an explicit Scaleway key, state backend, state-backend key and Pulumi passphrase, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */
 export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): Record<string, string> {
-  const { accessKey, secretKey, projectId, passphrase, organizationId } = input;
+  const { accessKey, secretKey, projectId, passphrase, stateBackendUrl, organizationId } = input;
   // The state side names the project: a key made for another environment's project reaches this one's state bucket that way.
   const stateAccessKey = projectAccessKey(input.stateAccessKey ?? accessKey, projectId);
   const stateSecretKey = input.stateSecretKey ?? secretKey;
@@ -35,6 +37,7 @@ export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): Rec
     AWS_ACCESS_KEY_ID: stateAccessKey,
     AWS_SECRET_ACCESS_KEY: stateSecretKey,
     PULUMI_CONFIG_PASSPHRASE: passphrase,
+    PULUMI_BACKEND_URL: stateBackendUrl,
     SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
     SCW_PROFILE: '',
   });

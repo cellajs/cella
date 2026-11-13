@@ -40,8 +40,6 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     }
   }
 
-  // Taken before the insert, so a stored request and a dropped repeat cost the same statements.
-  const confirms = await mayMail(normalizedEmail);
   // The unique index drops a repeat of a waitlist or info request, concurrent ones included.
   if (!(await insertRequest(ctx, { email: normalizedEmail, kind, message }))) return;
 
@@ -69,7 +67,8 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     )
     .catch((err) => log.error('Failed to notify the team of a request', { err }));
 
-  if (!confirms) return;
+  // Reserved by the call that stored the row: a concurrent repeat that reserved first would leave it unconfirmed.
+  if (!(await mayMail(normalizedEmail))) return;
   mailer
     .sendEmails(requestResponseEmail, { kind }, [{ email: normalizedEmail, lng }])
     .catch((err) => log.error('Failed to send request confirmation', { err }));

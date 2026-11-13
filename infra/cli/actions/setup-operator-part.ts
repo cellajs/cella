@@ -296,6 +296,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     secretKey: operatorKey.secretKey,
     projectId,
     passphrase: pulumiPassphrase,
+    stateBackendUrl: pulumiLoginUrl(appConfig),
     organizationId: operatorKey.organizationId,
   });
 
