@@ -9,6 +9,7 @@ import { maxPendingStreamBytes } from '#/modules/entities/stream/helpers';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
+import { joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 import { cancelOpenStreams, expectClosedWith, expectReleased, insertSession, openStream, openUnreadStream, readStream } from './session-helpers';
@@ -34,7 +35,7 @@ afterEach(async () => {
 });
 
 /** A deleted attachment of the organization, as the CDC worker delivers it: one frame per reader, no notification. */
-const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: string) => {
+const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: string, home: Record<string, string | null>) => {
   const id = generateId();
   // A row names each of its ancestors, null where it is homed above them: the stream reads them to route a frame
   const ancestorColumns = Object.fromEntries(hierarchy.getOrderedAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null]));
@@ -49,7 +50,7 @@ const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: 
     tenantId: org.tenantId,
     organizationId: org.id,
     rowData: null,
-    rows: [{ rowData: { ...ancestorColumns, id, organizationId: org.id, tenantId: org.tenantId, createdBy: authorId } }],
+    rows: [{ rowData: { ...ancestorColumns, id, organizationId: org.id, tenantId: org.tenantId, createdBy: authorId, ...home } }],
     trace: null,
     stx: null,
   } as never);
@@ -67,13 +68,17 @@ describe('The stream lets go of what its client cannot hold', async () => {
   it('must not let a stalled stream hold more than the pending-bytes ceiling', async () => {
     const org = await createTestOrganization();
     const [stalled, reader] = [await createOrgUser(call, org.tenantId, org.id, 'stalled'), await createOrgUser(call, org.tenantId, org.id, 'reader')];
+    // An app may home attachments below the organization: a frame reaches only the readers of that home
+    const plan = await seedAttachmentHome(org, reader.id);
+    await joinAttachmentHome(org, plan, stalled.id);
+    await joinAttachmentHome(org, plan, reader.id);
     const stalledStream = await openUnreadStream(stalled.id, await insertSession(stalled));
     const readerStream = await openStream(reader.id, await insertSession(reader));
 
     // Twice the ceiling in frames of at least 200 bytes, a few to a tick, as CDC messages arrive.
     const changes = Math.ceil((2 * maxPendingStreamBytes) / 200);
     for (let i = 1; i <= changes; i++) {
-      emitAttachmentDeleted(org, reader.id);
+      emitAttachmentDeleted(org, reader.id, plan.channelIdColumns);
       if (i % 10 === 0) await new Promise(setImmediate);
     }
 
@@ -85,6 +90,7 @@ describe('The stream lets go of what its client cannot hold', async () => {
     const org = await createTestOrganization();
     const admin = await createOrgUser(call, org.tenantId, org.id, 'race-admin', adminRole);
     const removed = await createOrgUser(call, org.tenantId, org.id, 'race-removed');
+    const plan = await seedAttachmentHome(org, admin.id);
     const adminStream = await openStream(admin.id, await insertSession(admin));
 
     // The member's connect passes its guard with the membership, then holds before it registers.
@@ -134,7 +140,7 @@ describe('The stream lets go of what its client cannot hold', async () => {
     await expectClosedWith(removedStream, 'access_changed');
 
     // The organization's next change reaches its admin only.
-    emitAttachmentDeleted(org, admin.id);
+    emitAttachmentDeleted(org, admin.id, plan.channelIdColumns);
     await vi.waitFor(() => expect(changesOf(adminStream).length).toBe(1));
     expect(changesOf(removedStream)).toEqual([]);
   });

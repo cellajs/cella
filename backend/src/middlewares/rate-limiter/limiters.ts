@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
@@ -33,6 +34,8 @@ export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
 /** Demos taken per IP a day: each one is a tenant with an account, built on the spot. */
 export const demoLimiter = rateLimiter('limit', 'demo', ['ip'], {
   limits: { points: 5, duration: 24 * 60 * 60 },
+  // Repeated demo starts in development would spend this budget
+  exempt: () => appConfig.mode === 'development',
   name: 'Demos',
   description: 'Demos taken from each IP address a day; a browser that holds a demo gets it back without taking another.',
 });

@@ -13,8 +13,11 @@ const getDelay = (date: string, compact?: boolean) => {
 
 const describe = (date: string, options: DateMiniOptions) => ({ text: dateMini(date, options), kind: dateMiniKind(date, options) });
 
-/** `useRelativeDate` with what the text is ("now", a count or a date), for a sentence that reads each its own way. */
-const useRelativeTime = (date: string, { ago, compact }: DateMiniOptions = {}) => {
+/**
+ * `useRelativeDate` with what the text is ("now", a count or a date), for a sentence that reads each its own way.
+ * @public
+ */
+export const useRelativeTime = (date: string, { ago, compact }: DateMiniOptions = {}) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
   const [time, setTime] = useState(() => describe(date, { ago, compact }));

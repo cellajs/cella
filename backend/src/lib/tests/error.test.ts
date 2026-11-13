@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { toClientError } from '#/lib/error';
 import { i18n } from '#/lib/i18n';
+import enError from '../../../../shared/locales/en/error.json';
 
 /** What a client outside development sees of a thrown value. */
 const seenByClient = (err: unknown) => {
@@ -65,11 +66,9 @@ describe('toClientError', () => {
 
 describe('AppError', () => {
   it("takes the type's general text as its message", () => {
-    expect(new AppError(409, 'last_admin', 'warn').message).toBe(
-      'An organization always keeps at least one admin. Make someone else an admin first.',
-    );
+    expect(new AppError(409, 'last_admin', 'warn').message).toBe(enError['last_admin.text']);
     // A type without a `.text` falls back to its title.
-    expect(new AppError(400, 'passkey_registration_failed', 'warn').message).toBe('Passkey registration failed. Try again later.');
+    expect(new AppError(400, 'passkey_registration_failed', 'warn').message).toBe(enError.passkey_registration_failed);
   });
 
   it('keeps the message written at the throw, which a client outside development never sees for a 5xx', () => {
