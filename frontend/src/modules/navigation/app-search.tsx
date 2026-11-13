@@ -63,13 +63,14 @@ function SearchResultBlock({ results, entityType, label, hideSeparator, collapse
       <ComboboxGroup>
         <button
           type="button"
-          className="group-label bg-popover hover:text-foreground sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center px-4 py-2 text-xs"
+          aria-expanded={!collapsed}
+          className="group/toggle group-label bg-popover hover:text-foreground sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center px-4 py-2 text-xs"
           onClick={onToggleCollapsed}
         >
           {label ?? t(entityType)}
-          {collapsed && <span className="text-faint-foreground ml-3 font-normal">{results.length}</span>}
+          <span className="text-faint-foreground ml-3 font-normal group-aria-expanded/toggle:hidden">{results.length}</span>
           <span className="grow" />
-          <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
+          <ChevronDownIcon className="size-4 transition-transform group-aria-expanded/toggle:rotate-180" />
         </button>
         {results.map((item) => {
           const membership = isChannelType ? findMembership(myMemberships?.results ?? [], item.id) : null;

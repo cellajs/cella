@@ -26,7 +26,10 @@ const isFlexLayout = pricingPlans.length < 3;
 export function Pricing() {
   return (
     <div
-      className={cn('mx-auto mt-8 max-w-7xl gap-8', isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3')}
+      className={cn(
+        'mx-auto mt-8 max-w-7xl gap-8',
+        isFlexLayout ? 'flex flex-col justify-center md:flex-row *:md:w-1/2 *:lg:w-1/3' : 'grid grid-cols-1 md:grid-cols-3',
+      )}
     >
       {pricingPlans.map((plan, planIndex) => (
         <PricingPlanCard key={plan.id} plan={plan} planIndex={planIndex} />
@@ -67,7 +70,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
   };
 
   return (
-    <div className={cn('bg-card relative flex flex-col justify-between rounded-lg border p-6', isFlexLayout && 'md:w-1/2 lg:w-1/3', className)}>
+    <div className={cn('bg-card relative flex flex-col justify-between rounded-lg border p-6', className)}>
       {popular && (
         <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 text-center">
           🚀 {t('about:pricing.popular')}

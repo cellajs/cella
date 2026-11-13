@@ -3,7 +3,6 @@ import { CheckIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { tileTones } from '~/modules/common/expandable-tile';
@@ -40,7 +39,6 @@ interface UserComboboxProps {
 /** Search people by name or email. A press adds or removes and clears the search for the next. */
 export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onToEmail }: UserComboboxProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpointBelow('sm');
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -179,7 +177,8 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
                 <div className="flex min-w-0 items-center gap-2">
                   <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
                   <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
-                    {isMobile ? <MiddleCut text={email} /> : name}
+                    <MiddleCut text={email} className="sm:hidden" />
+                    <span className="max-sm:hidden">{name}</span>
                   </span>
                 </div>
 

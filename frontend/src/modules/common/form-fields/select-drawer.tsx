@@ -32,7 +32,7 @@ export function SelectDrawerRows<TValue extends string>({ options, selected, onS
       return (
         <Button key={option.value} variant="row" aria-pressed={isSelected} className="justify-between" onClick={() => onSelect(option.value)}>
           {option.label}
-          {isSelected && <CheckIcon className="text-success" />}
+          <CheckIcon className="text-success not-in-aria-pressed:hidden" />
         </Button>
       );
     });

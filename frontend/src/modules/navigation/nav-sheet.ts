@@ -11,7 +11,7 @@ import { tw } from '~/utils/tw';
 /** Card-colored; places a nav sheet beside the nav bar on sm+, at the screen edge without one; while keepNavOpen it trades its shadow for a border. */
 const navSheetClassName = cn(
   tw(
-    'xs:max-w-80 [--sheet-bg:var(--card)] max-sm:[--sheet-edge-shadow:0_0_2px_5px_rgba(0,0,0,0.1)] sm:z-90 sm:w-80 sm:group-[.keep-nav-open]/body:border-r sm:group-[.keep-nav-open]/body:shadow-none dark:max-sm:[--sheet-edge-shadow:0_0_2px_5px_rgba(255,255,255,0.05)]',
+    'xs:max-w-80 [--sheet-bg:var(--card)] max-sm:[--sheet-edge-shadow:0_0_2px_5px_rgba(0,0,0,0.1)] sm:z-90 sm:w-80 sm:in-[.keep-nav-open]:border-r sm:in-[.keep-nav-open]:shadow-none dark:max-sm:[--sheet-edge-shadow:0_0_2px_5px_rgba(255,255,255,0.05)]',
   ),
   appConfig.navigation.navBar ? 'sm:left-16' : 'sm:left-0',
 );

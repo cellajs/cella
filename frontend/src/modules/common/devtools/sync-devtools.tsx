@@ -126,7 +126,7 @@ export function SyncDevtools({ onClose }: { onClose: () => void }) {
               variant="ghost"
               size="micro"
               aria-pressed={activeTab === tab}
-              className={cn('text-muted-foreground px-2 font-normal', activeTab === tab && 'bg-muted text-foreground')}
+              className="text-muted-foreground aria-pressed:bg-muted aria-pressed:text-foreground px-2 font-normal"
               onClick={() => setActiveTab(tab)}
             >
               {tab}

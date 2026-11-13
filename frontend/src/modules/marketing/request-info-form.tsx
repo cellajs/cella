@@ -35,7 +35,7 @@ export function RequestInfoForm() {
     <form onSubmit={handleSubmit}>
       {/* The footer band stays dark in both themes: the field reads the dark tokens and native colors. It turns solid once
           focused, filled or autofilled: only an opaque fill can cover a browser's autofill paint. */}
-      <InputGroup className="dark focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-6 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-white/22 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-0 has-[input:autofill]:bg-background has-[input:not(:placeholder-shown)]:bg-background focus-within:bg-background mt-6 h-14 overflow-hidden rounded-2xl border-white/55 bg-white/10 scheme-dark ring-6 ring-white/12 backdrop-blur-md transition focus-within:border-white/85 focus-within:ring-white/22">
+      <InputGroup className="dark focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-6 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-white/22 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-0 has-autofill:bg-background has-[input:not(:placeholder-shown)]:bg-background focus-within:bg-background mt-6 h-14 overflow-hidden rounded-2xl border-white/55 bg-white/10 scheme-dark ring-6 ring-white/12 backdrop-blur-md transition focus-within:border-white/85 focus-within:ring-white/22">
         <InputGroupInput
           type="email"
           name="email"
