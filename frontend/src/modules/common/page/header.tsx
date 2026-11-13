@@ -15,12 +15,14 @@ interface PageHeaderProps extends Omit<PageCoverProps, 'id' | 'url'> {
   entity: ChannelBase | UserBase;
   panel?: ReactNode;
   subline?: ReactNode;
+  /** Replaces the entity type word that opens the context line, e.g. "Public project". */
+  typeLabel?: string;
   avatarBadge?: ReactNode;
   /** Root first. */
   parents?: EnrichedChannel[];
 }
 
-export function PageHeader({ entity, panel, subline, avatarBadge, parents = [], ...coverProps }: PageHeaderProps) {
+export function PageHeader({ entity, panel, subline, typeLabel, avatarBadge, parents = [], ...coverProps }: PageHeaderProps) {
   const isUser = entity.entityType === 'user';
 
   return (
@@ -48,7 +50,7 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents = [], 
           <div className="flex items-center gap-2 text-sm">
             {subline ?? (
               <p className="text-faint-foreground flex min-w-0 items-center gap-1 pr-1">
-                <ContextLine type={entity.entityType} ancestors={parents} />
+                <ContextLine type={entity.entityType} typeLabel={typeLabel} ancestors={parents} />
                 {appConfig.mode === 'development' && <span className="mt-0.5 ml-2 text-xs opacity-50 max-sm:hidden">{entity.id}</span>}
               </p>
             )}
@@ -61,14 +63,22 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents = [], 
 }
 
 /** The entity's type and where it sits: "Project in Course (Class, Group) by Organization"; a phone keeps the top channel only. */
-function ContextLine({ type, ancestors }: { type: (ChannelBase | UserBase)['entityType']; ancestors: EnrichedChannel[] }) {
+function ContextLine({
+  type,
+  typeLabel,
+  ancestors,
+}: {
+  type: (ChannelBase | UserBase)['entityType'];
+  typeLabel?: string;
+  ancestors: EnrichedChannel[];
+}) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
   const organization = ancestors.find((ancestor) => ancestor.entityType === 'organization');
   const [channel, ...subChannels] = ancestors.filter((ancestor) => ancestor.entityType !== 'organization');
 
-  const label = t(`c:${type}`);
+  const label = typeLabel ?? t(`c:${type}`);
   const trail = channel && <ChannelTrail channel={channel} subChannels={isMobile ? [] : subChannels} />;
   const organizationLink = organization && !isMobile && <ContextLink channel={organization} />;
 
