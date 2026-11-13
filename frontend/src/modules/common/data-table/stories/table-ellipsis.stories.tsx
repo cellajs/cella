@@ -28,7 +28,7 @@ const options: EllipsisOption<{ id: string }>[] = [
         <DeleteForm
           resource="c:organization"
           pending={false}
-          allowOfflineDelete
+          allowOffline
           onDelete={() => {
             onDelete();
             dropdowner.getState().remove();

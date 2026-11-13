@@ -20,6 +20,7 @@ export interface ConfirmFormProps {
   /** Defaults to stepping back: to the menu it replaced, or closing its overlay. */
   onCancel?: () => void;
   pending: boolean;
+  /** Lets the press through offline, for a write that queues; by default an offline press is refused with a toast. */
   allowOffline?: boolean;
   /** `destructive` also starts focus on Cancel. */
   variant?: 'default' | 'destructive';
@@ -57,7 +58,7 @@ export function ConfirmForm({
         <SubmitButton
           variant={variant}
           icon={Icon && <Icon />}
-          allowOfflineDelete={allowOffline}
+          allowOffline={allowOffline}
           data-autofocus={!cancelFirst || undefined}
           onClick={onConfirm}
           loading={pending}

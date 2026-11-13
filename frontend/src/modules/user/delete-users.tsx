@@ -8,5 +8,5 @@ interface DeleteUsersProps extends Pick<DeleteItemsProps<BaseUser, BaseUser[]>, 
 
 export function DeleteUsers({ users, ...props }: DeleteUsersProps) {
   const mutation = useUserDeleteMutation();
-  return <DeleteItems items={users} mutation={mutation} toVariables={(items) => items} resource="c:user" onlineOnly callbackFirst {...props} />;
+  return <DeleteItems items={users} mutation={mutation} toVariables={(items) => items} resource="c:user" {...props} />;
 }

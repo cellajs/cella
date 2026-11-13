@@ -7,16 +7,16 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
 interface SubmitButtonProps extends Omit<ButtonProps, 'type'> {
-  allowOfflineDelete?: boolean;
+  allowOffline?: boolean;
   icon?: ReactNode;
 }
 
 /** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({ onClick, children, allowOfflineDelete, loading, disabled, icon, ...props }: SubmitButtonProps) {
+export function SubmitButton({ onClick, children, allowOffline, loading, disabled, icon, ...props }: SubmitButtonProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  const showOfflineWarning = !allowOfflineDelete && !isOnline;
+  const showOfflineWarning = !allowOffline && !isOnline;
 
   const handleClick: MouseEventHandler<HTMLButtonElement> = (event) => {
     if (showOfflineWarning) {

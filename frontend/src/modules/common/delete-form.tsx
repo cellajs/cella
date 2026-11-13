@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { ConfirmForm, type ConfirmFormProps } from '~/modules/common/confirm-form';
 
-interface DeleteFormProps extends Pick<ConfirmFormProps, 'onCancel' | 'pending' | 'icon' | 'cancelLabel'> {
+interface DeleteFormProps extends Pick<ConfirmFormProps, 'onCancel' | 'pending' | 'icon' | 'cancelLabel' | 'allowOffline'> {
   onDelete: () => void;
-  allowOfflineDelete?: boolean;
   /** E.g. `c:organization`: the act reads "Delete organization". */
   resource?: TKey;
   /** For the plural of `resource`. */
@@ -17,7 +16,6 @@ interface DeleteFormProps extends Pick<ConfirmFormProps, 'onCancel' | 'pending' 
 /** A delete confirmation whose act names what goes: "Delete organization". */
 export function DeleteForm({
   onDelete,
-  allowOfflineDelete,
   resource,
   count,
   label = resource ? 'c:delete_resource' : 'c:delete',
@@ -31,7 +29,6 @@ export function DeleteForm({
       variant="destructive"
       label={t(label, { resource: resource && t(resource, { count }) })}
       icon={icon}
-      allowOffline={allowOfflineDelete}
       onConfirm={onDelete}
       {...props}
     />
