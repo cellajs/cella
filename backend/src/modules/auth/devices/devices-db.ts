@@ -20,12 +20,12 @@ export const devicesTable = snakeCase.table(
     /** The first sign-in from this browser. */
     createdAt: timestampColumns.createdAt,
     lastSignInAt: isoTimestamp().notNull(),
-    /** Set when a new sign-in notice went out for this row; the per-user daily budget counts these. */
-    notifiedAt: isoTimestamp(),
+    /** When the last new sign-in mail for this row went out; the per-user daily budget counts these. */
+    mailedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.deviceIdHash] }),
-    index('devices_user_id_notified_at_idx').on(table.userId, table.notifiedAt),
+    index('devices_user_id_mailed_at_idx').on(table.userId, table.mailedAt),
     index('devices_last_sign_in_at_idx').on(table.lastSignInAt),
   ],
 );

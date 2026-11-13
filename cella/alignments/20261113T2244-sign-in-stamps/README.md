@@ -2,14 +2,15 @@
 breaking: true
 clientCacheBump: false
 caughtBy: compiler
-grep: first_seen_at, last_seen_at, last_used_at, deviceDaysUnseen
+grep: first_seen_at, last_seen_at, last_used_at, notified_at, deviceDaysUnseen
 generate: true
 ---
 
 # Devices and identities stamp their sign-ins
 
 `devices.firstSeenAt` is `createdAt`, `devices.lastSeenAt` is `lastSignInAt` (index `devices_last_sign_in_at_idx`), and
-`identities.lastUsedAt` is `lastSignInAt`. The retention key `deviceDaysUnseen` is `deviceDaysSinceSignIn`, and its
+`identities.lastUsedAt` is `lastSignInAt`, and `devices.notifiedAt` (the sign-in mail stamp) is `mailedAt`
+(index `devices_user_id_mailed_at_idx`). The retention key `deviceDaysUnseen` is `deviceDaysSinceSignIn`, and its
 sweep rule reads `last_sign_in_at`. `findNewDevices` takes `createdAfter`, `findUserSessions` takes no `revokedSince`
 and lists revoked sessions until the sweep removes them, and `revokeApiKey` stamps its own `revokedAt`.
 `pnpm generate` with this folder's `hints.json` renames the columns and the index.

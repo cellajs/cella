@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
-import { countNotifiedDevices, updateDeviceNotifiedAt } from '#/modules/auth/devices/devices-queries';
+import { countMailedDevices, stampDeviceMailed } from '#/modules/auth/devices/devices-queries';
 import { sendAccountSecurityEmail, sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
@@ -50,14 +50,14 @@ export const notifyNewSignIn = async ({ user, strategy, newDevice }: Pick<SignIn
   if (!newDevice.previousSignInAt || inboxStrategies.includes(strategy)) return;
 
   try {
-    const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since: isoDateAgo(noticeWindow) });
+    const sent = await countMailedDevices(dbCtx, { userId: user.id, since: isoDateAgo(noticeWindow) });
 
     if (sent >= noticeBudget) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });
       return;
     }
 
-    await updateDeviceNotifiedAt(dbCtx, { userId: user.id, deviceIdHash: newDevice.deviceIdHash });
+    await stampDeviceMailed(dbCtx, { userId: user.id, deviceIdHash: newDevice.deviceIdHash });
 
     // Country, browser and time come with the mail's request details: this runs inside the sign-in's request.
     sendAccountSecurityEmail(user, 'new-sign-in', { strategy: strategyLabels[strategy] });

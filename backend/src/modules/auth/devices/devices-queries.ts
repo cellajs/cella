@@ -46,20 +46,20 @@ export const findNewDevices = async (ctx: DbContext, { userId, createdAfter }: F
     .where(and(eq(devicesTable.userId, userId), gt(devicesTable.createdAt, createdAfter), gt(devicesTable.createdAt, oldestCreatedAt)));
 };
 
-interface CountNotifiedDevicesOpts {
+interface CountMailedDevicesOpts {
   userId: string;
-  /** Count notices sent after this ISO timestamp. */
+  /** Count mails sent after this ISO timestamp. */
   since: string;
 }
 
-/** How many new sign-in notices went out to the user since `since`. */
-export const countNotifiedDevices = async (ctx: DbContext, { userId, since }: CountNotifiedDevicesOpts) =>
-  ctx.var.db.$count(devicesTable, and(eq(devicesTable.userId, userId), gt(devicesTable.notifiedAt, since)));
+/** How many new sign-in mails went out to the user since `since`. */
+export const countMailedDevices = async (ctx: DbContext, { userId, since }: CountMailedDevicesOpts) =>
+  ctx.var.db.$count(devicesTable, and(eq(devicesTable.userId, userId), gt(devicesTable.mailedAt, since)));
 
-/** Marks that a new sign-in notice went out for this device row. */
-export const updateDeviceNotifiedAt = async (ctx: DbContext, { userId, deviceIdHash }: { userId: string; deviceIdHash: string }) => {
+/** Stamps the moment a new sign-in mail went out for this device row. */
+export const stampDeviceMailed = async (ctx: DbContext, { userId, deviceIdHash }: { userId: string; deviceIdHash: string }) => {
   await ctx.var.db
     .update(devicesTable)
-    .set({ notifiedAt: getIsoDate() })
+    .set({ mailedAt: getIsoDate() })
     .where(and(eq(devicesTable.userId, userId), eq(devicesTable.deviceIdHash, deviceIdHash)));
 };

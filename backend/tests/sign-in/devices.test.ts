@@ -106,7 +106,7 @@ describe('new sign-in notice', () => {
     expect(notices()[0].details).toEqual({ strategy: 'Passkey' });
 
     const [row] = await devicesOf(user.id);
-    expect(row.notifiedAt).toBeTruthy();
+    expect(row.mailedAt).toBeTruthy();
   });
 
   it('stays silent for the first sign-in of a new account, and for the same browser afterwards', async () => {
@@ -145,7 +145,7 @@ describe('new sign-in notice', () => {
     expect(notices()).toHaveLength(3);
     const rows = await devicesOf(user.id);
     expect(rows).toHaveLength(4);
-    expect(rows.filter((row) => row.notifiedAt)).toHaveLength(3);
+    expect(rows.filter((row) => row.mailedAt)).toHaveLength(3);
   });
 
   it('does not let a mailer failure surface', async () => {
