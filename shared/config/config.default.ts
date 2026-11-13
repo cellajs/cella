@@ -271,7 +271,7 @@ export const config = {
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
-   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
+   * revoked with the reason `session_cap`. Keep comfortably above a realistic device count. This is
    * bloat/abuse protection (bursts of sign-ins with stolen passwords, unbounded session accumulation), not a UX
    * feature. Regular and `mfa` sessions count together.
    */

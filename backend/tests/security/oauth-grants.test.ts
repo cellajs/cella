@@ -19,7 +19,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
+import type { SessionRevocationReason } from '#/modules/auth/sessions/sessions-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -638,7 +638,7 @@ describe('OAuth grants', async () => {
         });
         return session;
       };
-      const ending = (reason: SessionEndReason, sessionId: string) =>
+      const ending = (reason: SessionRevocationReason, sessionId: string) =>
         revokeSessions({ var: { db } }, { userId: user.id, sessionIds: [sessionId], reason, by: null });
 
       for (const reason of ['sign_out', 'other_session', 'mfa_enabled'] as const) {

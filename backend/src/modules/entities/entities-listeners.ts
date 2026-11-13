@@ -11,7 +11,7 @@ import {
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { authEvents } from '#/modules/auth/auth-events';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeStreamsWhere } from '#/modules/entities/helpers/session-streams';
 import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
@@ -37,12 +37,10 @@ for (const entityType of appConfig.productEntityTypes) {
 
 // Closes the streams bound to ended sessions, each with the code that tells the client whether to reconnect.
 authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
-  const payload = streamErrorForEnding(reason);
-  const ended = streamSubscriberManager
-    .getByTopic(userTopic(userId))
-    .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
-    .map((subscriber) => ({ subscriber, payload }));
-  await closeStreams(ended, 'Failed to close the stream of an ended session');
+  await closeStreamsWhere(
+    (subscriber) => subscriber.userId === userId && (sessionIds === 'all' || sessionIds.includes(subscriber.sessionId)),
+    reason,
+  );
 });
 
 for (const action of ['created', 'updated', 'deleted'] as const) {

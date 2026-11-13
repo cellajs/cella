@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { loadCachedSession } from '#/middlewares/guard/session-cache';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
+import type { SessionFacts, SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/sessions/sessions-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { hashToken } from '#/utils/hash-token';
@@ -22,6 +22,16 @@ export interface ResolvedSession {
   bindingsVersion: string;
 }
 
+/** Why a session row no longer backs a request or a stream; null while it is live. */
+export const sessionRefusal = ({
+  revokedAt,
+  expiresAt,
+}: Pick<SessionModel, 'revokedAt' | 'expiresAt'>): 'session_revoked' | 'session_expired' | null => {
+  if (revokedAt) return 'session_revoked';
+  if (isExpiredDate(expiresAt)) return 'session_expired';
+  return null;
+};
+
 /**
  * The live session a cookie's token names, with its user, whether the user holds the admin system role and the
  * version of the user's bindings: from the session cache (`session-cache.ts`), keyed by the token's hash, or else read
@@ -36,8 +46,8 @@ export const readSession = async (sessionToken: string): Promise<ResolvedSession
     const result = await findSessionBySecret(dbCtx, { secretHash });
 
     if (!result) throw new AppError(401, 'no_session', 'warn');
-    if (result.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
-    if (isExpiredDate(result.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
+    const refusal = sessionRefusal({ revokedAt: result.revokedAt, expiresAt: result.session.expiresAt });
+    if (refusal) throw new AppError(401, refusal, 'warn');
 
     const { session, user, systemRole, bindingsVersion } = result;
     return { session, user, hasSystemRole: systemRole === 'admin', bindingsVersion };

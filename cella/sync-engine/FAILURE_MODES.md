@@ -39,8 +39,8 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A membership changes while the stream is live | The subscriber's memberships update and `membership.changed` tells the user | Missed while away: catchup's signal versions and its read of the memberships, after which it drops the list caches of each organization where a channel membership was lost | |
 | A membership is added in an organization the stream never registered on | The user's `membership.changed` reconnects the stream when the sync store lacks the organization, and the new stream registers there (`streamManager.reconnect`) | | |
 | A session is revoked | `session.revoked` closes its streams | | |
-| A session expires or a system role changes | A sweep each minute closes the stream (`ensureStreamSessionSweep`) | | |
-| The tenant is archived or restored | Its streams close with `access_changed` (`endOrganizationStreams`) | | |
+| A session expires or a system role changes | A recheck each minute closes the stream (`ensureStreamSessionRecheck`) | | |
+| The tenant is archived or restored | Its streams close with `access_changed` (`closeOrganizationStreams`) | | |
 | The stream errors, ends or falls silent | The silence watchdog and a reconnect with backoff, at once when the app is back online or a tab takes over (`handleStreamFailure`) | Repeated failures open the circuit, which a passing health check closes. A session or tenant the server refuses opens it until the next sign-in (`openCircuit`) | |
 | A request gets no response: the link drops packets, or the tab reloads while it waits | The connectivity probe runs. Once it finds the API unreachable, the app goes offline and a waiting write pauses in the queue (`apiFetch`). A sync write is stored while it runs. A reload sends it again as a replay (`shouldDehydrateMutation`) | | |
 | A catchup hangs or fails | Bounded, then the stream's failure path (`handleCatchupFailure`). The writes waiting for it go ahead (`waitForActiveCatchup`) | The same circuit | |

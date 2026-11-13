@@ -22,11 +22,11 @@ import {
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-/** How often the stream sweep re-checks sessions; the tests move a fake clock past it. */
-const SWEEP_INTERVAL_MS = 60_000;
+/** How often the stream recheck reads sessions; the tests move a fake clock past it. */
+const RECHECK_INTERVAL_MS = 60_000;
 
 beforeAll(() => {
-  // Only interval timers are fake: the sweep runs when a test moves the clock, the stream and the database in real time.
+  // Only interval timers are fake: the recheck runs when a test moves the clock, the stream and the database in real time.
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 });
 
@@ -42,10 +42,10 @@ const stamp = (sessionId: string, values: Partial<typeof sessionsTable.$inferIns
 
 /**
  * An ending this process never hears of must still close the stream: another instance revoked the session, it
- * expired, or the user or their system role was deleted outside the API. The sweep re-checks every open stream once
+ * expired, or the user or their system role was deleted outside the API. The recheck reads every open stream's session once
  * a minute; each test keeps a stream on a live session open as the positive control.
  */
-describe('The stream sweep closes streams whose session no longer holds', () => {
+describe('The stream recheck closes streams whose session no longer holds', () => {
   it('must not keep streaming to a session revoked on another instance via its open stream', async () => {
     const user = await createTestUser('elsewhere@security-test.com');
     const [revoked, replaced, live] = [await insertSession(user), await insertSession(user), await insertSession(user)];
@@ -58,7 +58,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     await stamp(revoked.id, { revokedAt, revokedBy: user.id, revocationReason: 'other_session' });
     await stamp(replaced.id, { revokedAt, revocationReason: 'replaced' });
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     await expectClosedWith(revokedStream, 'unauthorized');
     await expectClosedWith(replacedStream, 'session_replaced');
@@ -73,7 +73,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
 
     await stamp(expired.id, { expiresAt: new Date(Date.now() - 1000).toISOString() });
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     await expectClosedWith(expiredStream, 'unauthorized');
     expectStillOpen(user.id, liveStream);
@@ -88,7 +88,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     // The session rows go with the user.
     await getAdminDb('test arrange').delete(usersTable).where(eq(usersTable.id, user.id));
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     await expectClosedWith(removedStream, 'unauthorized');
     expectStillOpen(bystander.id, keptStream);
@@ -103,7 +103,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     // system_roles is written by operators, outside the API.
     await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, demoted.id));
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     // The session still holds, so the client reconnects and the stream is rebuilt without system-admin reads.
     await expectClosedWith(demotedStream, 'access_changed');
@@ -121,7 +121,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
       .insert(systemRolesTable)
       .values({ id: promoted.id, userId: promoted.id, role: 'admin', createdAt: new Date().toISOString() });
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     await expectClosedWith(promotedStream, 'access_changed');
     expectStillOpen(regular.id, regularStream);
@@ -137,17 +137,17 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     const revokedStream = await openStream(admin.id, fromElsewhere(revoked));
 
     await stamp(revoked.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
-    // The sweep ran and found the role; the stream never read as system admin from this address, so nothing changed.
+    // The recheck ran and found the role; the stream never read as system admin from this address, so nothing changed.
     await expectClosedWith(revokedStream, 'unauthorized');
     expectStillOpen(admin.id, adminStream);
   });
 
-  it('must not stall the sweep of every stream via a client that stopped reading', async () => {
+  it('must not stall the recheck of every stream via a client that stopped reading', async () => {
     const [stalled, other] = [await createTestUser('stalled@security-test.com'), await createTestUser('other@security-test.com')];
     const [stalledSession, otherSession] = [await insertSession(stalled), await insertSession(other)];
-    // Opened first, so the sweep meets it first.
+    // Opened first, so the recheck meets it first.
     const stalledStream = await openUnreadStream(stalled.id, stalledSession);
     const otherStream = await openStream(other.id, otherSession);
 
@@ -155,18 +155,18 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     await stamp(stalledSession.id, { revokedAt, revocationReason: 'other_session' });
     await stamp(otherSession.id, { revokedAt, revocationReason: 'other_session' });
 
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
 
     await expectClosedWith(otherStream, 'unauthorized');
 
-    // Later sweeps still run while the stalled client still reads nothing (reading it would release its write): a
-    // session revoked after the stalled close is swept on a later tick.
+    // Later rechecks still run while the stalled client still reads nothing (reading it would release its write): a
+    // session revoked after the stalled close is closed on a later tick.
     const late = await insertSession(other);
     const lateStream = await openStream(other.id, late);
     await stamp(late.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
     await vi.waitFor(
       () => {
-        vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+        vi.advanceTimersByTime(RECHECK_INTERVAL_MS);
         expect(lateStream.ended()).toBe(true);
       },
       { timeout: 5000, interval: 250 },

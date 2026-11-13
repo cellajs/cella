@@ -2,7 +2,7 @@ import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
-import type { SessionEndReason, SessionKind, SessionModel } from '#/modules/auth/sessions/sessions-db';
+import type { SessionKind, SessionModel, SessionRevocationReason } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
 import { deleteOpenedMagicLink } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteProviderSessionsByUser } from '#/modules/oauth-server/oauth-server-queries';
@@ -17,27 +17,34 @@ type SessionSelection = { sessionIds: string[] } | { all: true; kind?: SessionKi
  * user's opened magic link, so the browser that opened it cannot sign in again from its history. Sign-in
  * housekeeping leaves them.
  */
-const leavingReasons = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
+const leavingReasons = new Set<SessionRevocationReason>(['sign_out', 'other_session', 'mfa_enabled']);
 
 type RevokeSessionsOpts = SessionSelection & {
   userId: string;
-  reason: SessionEndReason;
+  reason: SessionRevocationReason;
   /** The actor whose request revokes the sessions; null when the server does it during a sign-in. */
   by: ActorId | null;
 };
 
 /**
+ * After the commit that ended the user's sessions: drops the user's cached sessions in this process and closes the
+ * streams bound to the ended ones (`all`: every one of the user). Other processes stop serving a session within the
+ * session cache's 10 seconds.
+ */
+export const closeSessions = (userId: string, sessionIds: string[] | 'all', reason: SessionRevocationReason | 'user_deleted') => {
+  dropCachedSessions(userId);
+  if (sessionIds === 'all' || sessionIds.length > 0) authEvents.emit('session.revoked', { userId, sessionIds, reason });
+};
+
+/**
  * The one way sessions end before their expiry. Stamps the user's selected live sessions with `revokedAt`,
- * `revokedBy` and `revocationReason`, drops the user's cached sessions in this process and closes the streams bound to
- * them; other processes stop serving the session within the session cache's 10 seconds. A revoked session is never
- * re-stamped, so the first revocation is the one the sessions list shows; the row stays until the nightly sweep.
- * `user_deleted` follows the delete, which took the rows along: nothing is stamped, and every stream of the user
- * closes.
+ * `revokedBy` and `revocationReason`, then closes them ({@link closeSessions}). A revoked session is never re-stamped,
+ * so the first revocation is the one the sessions list shows; the row stays until the nightly sweep.
  *
- * The stamps commit inside the caller's transaction when there is one; the cache drop and the streams happen at the
- * call, so call it last in a transaction.
+ * The stamps commit inside the caller's transaction when there is one; the close happens at the call, so call it last
+ * in a transaction.
  *
- * @returns The stamped sessions, secret stripped; empty for `user_deleted` and for sessions that had already ended.
+ * @returns The stamped sessions, secret stripped; empty for sessions that had already ended.
  */
 export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): Promise<SessionModel[]> => {
   const { userId, reason, by } = opts;
@@ -48,8 +55,7 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
 
   const ended = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const stamped =
-      reason === 'user_deleted' ? [] : await updateSessionsRevoked(txCtx, { match: { userId, ids, kind }, revokedBy: by, revocationReason: reason });
+    const stamped = await updateSessionsRevoked(txCtx, { match: { userId, ids, kind }, revokedBy: by, revocationReason: reason });
 
     if (leavingReasons.has(reason)) {
       await deleteProviderSessionsByUser(txCtx, { userId });
@@ -58,13 +64,8 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
     return stamped;
   });
 
-  dropCachedSessions(userId);
-
   const everySession = 'all' in opts && !opts.kind;
-  if (everySession || ended.length > 0) {
-    const sessionIds = everySession ? 'all' : ended.map((session) => session.id);
-    authEvents.emit('session.revoked', { userId, sessionIds, reason });
-  }
+  closeSessions(userId, everySession ? 'all' : ended.map((session) => session.id), reason);
   log.info('Sessions revoked', { userId, reason, count: ended.length });
 
   return ended;

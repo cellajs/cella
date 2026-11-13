@@ -36,7 +36,7 @@ export const sessionLifetime = new TimeSpan(1, 'w');
  * together, since an mfa session is the full session of a user with MFA on. Concurrent sign-ins may exceed the cap by
  * one.
  */
-export const evictExcessSessions = async (userId: string): Promise<void> => {
+export const revokeExcessSessions = async (userId: string): Promise<void> => {
   const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
   if (excess.length === 0) return;
 
@@ -120,7 +120,7 @@ export const createSession = async (
   // A browser holds at most one live session, so repeated sign-ins do not stack up.
   const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash });
   await revokeSessions(dbCtx, { userId: user.id, sessionIds: replaced.map(({ id }) => id), reason: 'replaced', by: null });
-  await evictExcessSessions(user.id);
+  await revokeExcessSessions(user.id);
 
   await insertSession(dbCtx, { values: session });
 

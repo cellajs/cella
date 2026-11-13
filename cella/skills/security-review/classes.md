@@ -35,7 +35,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/auth/general/helpers/cookie.ts`: the only module importing `hono/cookie` (`setCookie`, `getCookie`, `deleteCookie`).
   - `backend/src/modules/auth/sessions/`: `operations/{create-session,resolve-session,sign-out,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
   - `backend/src/middlewares/guard/session-cache.ts` (TTL 10 s), `backend/src/middlewares/update-last-seen.ts`.
-  - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-sweep.ts`.
+  - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-recheck.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
   - `backend/src/utils/hash-token.ts` (session lookup by SHA-256 of the token) and `shared/src/utils/safe-equal.ts` (hash both sides, then `timingSafeEqual`).
   - `cella/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
@@ -44,7 +44,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `session-model`: a forged secret via a cached session id, the stored hash replayed as a cookie, an expired session via a warm cache, a failed lookup that must not sign out.
   - `session-cache-race`: a revoked session kept by an in-flight lookup.
   - `session-endings`: sign-out, revoke from another device, MFA on, cap eviction, same-browser replace, deleted account; the open stream and cache entry die with the session.
-  - `session-sweep`: a session revoked on another instance, expired, user deleted outside the API.
+  - `session-recheck`: a session revoked on another instance, expired, user deleted outside the API.
   - `tests/sign-in/session-cap` (oldest beyond the cap evicted) and `tests/sign-in/sign-out` (a forged cookie naming the victim's session id revokes nothing).
   - `auth/tokens/token-policies.test.ts`: SameSite per policy.
 - **Asks:** every `setCookie` call's name and attribute values against the five advisories (does any value come from a request?); a new session id at sign-in; what a stolen cookie does after sign-out.
@@ -226,7 +226,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B4 Stream fan-out
 - **Gain:** cross-tenant read by fan-out, denial of service.
-- **Merges:** `accessDecisions` per change and per signal, a change sent too wide, a signal's ids as an existence leak, a membership change mid-stream, a session end closing the stream, the stream sweep, CR or LF in `frame.event` and `id` passed to `writeSSE`, the subscriber cap (`streamConnectLimiter`), catchup frontiers (`opaque`, `forbidden`), propagation hints, the `pg_notify` payload.
+- **Merges:** `accessDecisions` per change and per signal, a change sent too wide, a signal's ids as an existence leak, a membership change mid-stream, a session end closing the stream, the stream session recheck, CR or LF in `frame.event` and `id` passed to `writeSSE`, the subscriber cap (`streamConnectLimiter`), catchup frontiers (`opaque`, `forbidden`), propagation hints, the `pg_notify` payload.
 - **Advisories:** 1 (hono SSE control-field injection through CR or LF).
 - **Files:**
   - `backend/src/modules/entities/stream/`: audiences, build-change, helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
@@ -235,13 +235,13 @@ One class is one review iteration. The scout verifies every path below at the re
   - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
   - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every stream on a new generation).
-  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `endOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
+  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `closeStreamsWhere`, `closeOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-recheck.ts` (60 s recheck).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{stream-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
 - **Holds:**
   - `session-endings`: a signed-out, revoked, evicted, replaced, MFA-superseded or deleted-account session keeps streaming.
-  - `session-sweep`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the sweep.
+  - `session-recheck`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the recheck.
   - `outside-writes`: a removed member keeps reading through a cached session after a CDC membership event; the bindings version moves at every membership write.
   - `entities/stream/dispatch-mirror.test.ts`: a removed member still receives, draft rows reach anyone, a several-row event misses its second-row reader.
   - `entities/stream/send-signal.test.ts`: a signal reaching another user, a stream whose membership is gone, another organization or an undeclared type.

@@ -1,49 +1,45 @@
 import { baseDb } from '#/db/db';
+import { sessionRefusal } from '#/modules/auth/sessions/operations/resolve-session';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeStreams, type EndingReason } from '#/modules/entities/helpers/session-streams';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
-import type { StreamErrorPayload } from '#/schemas';
-import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 
-/** The sweep runs on a timer, without a request, on the base pool. */
+/** The recheck runs on a timer, without a request, on the base pool. */
 const dbCtx = { var: { db: baseDb } };
 
-/** How often the sweep re-checks the session behind every open stream. */
-const sweepIntervalMs = 60_000;
+/** How often the recheck reads the session behind every open stream. */
+const recheckIntervalMs = 60_000;
 
-let sweepTimer: ReturnType<typeof setInterval> | null = null;
-let sweeping = false;
+let recheckTimer: ReturnType<typeof setInterval> | null = null;
+let rechecking = false;
 
 type SessionState = Pick<SessionModel, 'userId' | 'revokedAt' | 'revocationReason' | 'expiresAt'>;
 
 /** Why a stream must close now, or null while its session still holds what the stream was opened with. */
-function staleStreamError(
-  subscriber: StreamSubscriber,
-  sessionsById: Map<string, SessionState>,
-  systemAdmins: Set<string>,
-): StreamErrorPayload | null {
+function staleStreamReason(subscriber: StreamSubscriber, sessionsById: Map<string, SessionState>, systemAdmins: Set<string>): EndingReason | null {
   const session = sessionsById.get(subscriber.sessionId);
-  if (!session) return { code: 'unauthorized', message: 'Session ended' };
-  if (session.revokedAt) return streamErrorForEnding(session.revocationReason ?? 'sign_out');
-  if (isExpiredDate(session.expiresAt)) return { code: 'unauthorized', message: 'Session expired' };
+  if (!session) return 'session_deleted';
+  // A revoked row carries its reason (`sessions_revocation_reason_check`); an expired one carries none.
+  const refusal = sessionRefusal(session);
+  if (refusal) return session.revocationReason ?? refusal;
   // The stream reads as system admin while the user holds the role and it connected from an allowed address.
   if (subscriber.isSystemAdmin !== (subscriber.systemAccessAllowed && systemAdmins.has(subscriber.userId))) {
-    return { code: 'access_changed', message: subscriber.isSystemAdmin ? 'System role removed' : 'System role granted' };
+    return subscriber.isSystemAdmin ? 'system_role_removed' : 'system_role_granted';
   }
   return null;
 }
 
 /**
- * Re-checks the session behind every open stream and closes each stream that must end: its session expired, was
+ * Reads the session behind every open stream again and closes each stream that must end: its session expired, was
  * revoked between its session check and its registration (the revoke closes only the streams registered by then) or
  * went with its user, or the system role was removed or granted since the stream connected (the client reconnects on
  * `access_changed`).
  */
-async function sweepStreamSessions(): Promise<void> {
+async function recheckStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all();
   if (subscribers.length === 0) return;
 
@@ -58,32 +54,32 @@ async function sweepStreamSessions(): Promise<void> {
   const systemAdmins = new Set(admins.map(({ userId }) => userId));
 
   const stale = subscribers.flatMap((subscriber) => {
-    const payload = staleStreamError(subscriber, sessionsById, systemAdmins);
-    return payload ? [{ subscriber, payload }] : [];
+    const reason = staleStreamReason(subscriber, sessionsById, systemAdmins);
+    return reason ? [{ subscriber, reason }] : [];
   });
   if (stale.length === 0) return;
 
-  await closeStreams(stale, 'Failed to close a stale stream');
+  await closeStreams(stale);
   log.info('Closed streams whose session no longer holds', { closed: stale.length });
 }
 
-/** Starts the sweep with the first open stream; it stops once no stream is open. Idempotent. */
-export function ensureStreamSessionSweep(): void {
-  if (sweepTimer) return;
-  sweepTimer = setInterval(() => {
+/** Starts the recheck with the first open stream; it stops once no stream is open. Idempotent. */
+export function ensureStreamSessionRecheck(): void {
+  if (recheckTimer) return;
+  recheckTimer = setInterval(() => {
     if (streamSubscriberManager.size === 0) {
-      if (sweepTimer) clearInterval(sweepTimer);
-      sweepTimer = null;
+      if (recheckTimer) clearInterval(recheckTimer);
+      recheckTimer = null;
       return;
     }
-    if (sweeping) return;
-    sweeping = true;
-    sweepStreamSessions()
-      .catch((error) => log.error('Stream session sweep failed', { error }))
+    if (rechecking) return;
+    rechecking = true;
+    recheckStreamSessions()
+      .catch((error) => log.error('Stream session recheck failed', { error }))
       .finally(() => {
-        sweeping = false;
+        rechecking = false;
       });
-  }, sweepIntervalMs);
-  // A pending sweep never keeps the process alive at shutdown.
-  sweepTimer.unref();
+  }, recheckIntervalMs);
+  // A pending recheck never keeps the process alive at shutdown.
+  recheckTimer.unref();
 }

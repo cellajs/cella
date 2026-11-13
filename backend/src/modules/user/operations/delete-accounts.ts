@@ -3,7 +3,7 @@ import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { clearActorActivity, deleteDanglingActors } from '#/modules/actors/actors-queries';
-import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
+import { closeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { deleteProviderRowsByUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { findOrganizationsHeldOnlyBy } from '#/modules/organization/organization-queries';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
@@ -56,6 +56,6 @@ export async function deleteAccounts(ctx: DbContext, { userIds, by, dropActors =
   }
   if (archived.length > 0) log.info('Organizations archived with their last accounts', { ids: archived.map(({ id }) => id) });
 
-  // After the commit: `user_deleted` stamps nothing, and the cache drop and the stream close must follow the delete.
-  for (const userId of userIds) await revokeSessions(ctx, { userId, all: true, reason: 'user_deleted', by });
+  // The delete took the session rows along: the cache drop and the stream close follow its commit.
+  for (const userId of userIds) closeSessions(userId, 'all', 'user_deleted');
 }

@@ -1,5 +1,5 @@
-import { getColumns } from 'drizzle-orm';
-import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { getColumns, sql } from 'drizzle-orm';
+import { check, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { FederationKey } from 'shared';
 import { oauthProviders } from 'shared/config-builder/types';
 import { generateId } from 'shared/utils/entity-id';
@@ -36,9 +36,6 @@ export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as 
  */
 const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
-
-/** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
-export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
 /**
  * How a session last proved its user's presence again: a second factor (a step-up, the MFA completion that minted the
@@ -97,6 +94,7 @@ export const sessionsTable = snakeCase.table(
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
     index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
+    check('sessions_revocation_reason_check', sql`(${table.revokedAt} IS NULL) = (${table.revocationReason} IS NULL)`),
   ],
 );
 
