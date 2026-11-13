@@ -778,7 +778,7 @@ export type Tenant = {
    * What the tenant is for: `live` serves customers, `test` staff and automated runs, `demo` a visitor.
    */
   kind: 'live' | 'test' | 'demo';
-  status: 'active' | 'suspended' | 'archived';
+  status: 'active' | 'suspended' | 'deleted';
   statusChangedAt: string;
   /**
    * When the tenant goes with everything in it; a demo always carries one.
@@ -6788,7 +6788,7 @@ export type ListTenantsData = {
     /**
      * Filter by status
      */
-    status?: 'active' | 'suspended' | 'archived';
+    status?: 'active' | 'suspended' | 'deleted';
     /**
      * Kinds to list, comma-separated (`live`, `test`, `demo`); absent lists the kinds the app lists by default.
      */
@@ -6887,7 +6887,7 @@ export type UpdateTenantData = {
      * `live` or `test`: a demo is never made or unmade by an update.
      */
     kind?: 'live' | 'test' | 'demo';
-    status?: 'active' | 'suspended' | 'archived';
+    status?: 'active' | 'suspended' | 'deleted';
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.

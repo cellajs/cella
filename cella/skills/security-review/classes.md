@@ -249,7 +249,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/catchup-baseline`: numbers for a foreign org or a mismatched path. `tests/catchup-propagation`: a hint names an unreadable row. `tests/sync-generation`: generation read as the API role.
   - `tests/attachment-notifications`: a mention reaches an account without read access. `tests/integration/cdc-event-bus`: two memberships removed in one transaction arrive as one event.
   - `entities/stream/helpers.test.ts`: the heartbeat is a named event and stops with the stream.
-- **Asks:** the fan-out table (change kind x subscriber relation -> frame or nothing); where event names and ids come from; what an archived tenant's subscribers still receive; the per-user subscriber cap.
+- **Asks:** the fan-out table (change kind x subscriber relation -> frame or nothing); where event names and ids come from; what a deleted tenant's subscribers still receive; the per-user subscriber cap.
 - **Not this class:** object-level reads and range reads belong to B1. The CDC secret and the internal listener belong to the `internal-listener` test and A6. Sign-up pace and account creation belong to the A classes. The `pg_notify` of the Yjs log and the relay belong to B5. Invitation visibility as a property belongs to B3. Frontend handling of frames (`frontend/src/query/realtime/`) is client code.
 
 ### B5 Collaborative documents

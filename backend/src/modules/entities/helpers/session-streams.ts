@@ -80,7 +80,7 @@ export async function closeStreamsWhere(filter: (subscriber: StreamSubscriber) =
 
 /**
  * Closes the streams that hold any of `organizationIds`: their memberships changed without a membership write, as when
- * the tenant is archived or restored. Each client reconnects, and its catchup reads the memberships again.
+ * the tenant is deleted or restored. Each client reconnects, and its catchup reads the memberships again.
  */
 export async function closeOrganizationStreams(organizationIds: string[]): Promise<void> {
   await closeStreamsWhere((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)), 'tenant_status_changed');

@@ -89,7 +89,7 @@ export function TermsText() {
         <p>
           We may suspend or end your access for any reason, including a breach of these Terms. We will try to give notice first so you can retrieve
           important data, unless that is impractical, unlawful or unsafe. When your organization is deleted or stops using the Service, we keep its
-          data {appConfig.retention.archivedTenantDays} more days, so we can restore it or hand it over on request, and then delete it for good.
+          data {appConfig.retention.deletedTenantDays} more days, so we can restore it or hand it over on request, and then delete it for good.
         </p>
         <p>
           Provisions that by their nature should survive termination (payment obligations, liability limitations, intellectual property, dispute

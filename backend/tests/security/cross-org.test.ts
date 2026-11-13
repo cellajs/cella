@@ -144,7 +144,7 @@ describe('Cross-organization API isolation', async () => {
       route: 'batchDeleteOrganizations',
       attempt: (as) => call(batchDeleteOrganizations, { path: { tenantId: tenant.tenantId }, body: { ids: [orgB.id] }, headers: headers(as) }),
       refusal: forbidden,
-      // A delete archives the tenant, so the row stays either way: the tenant must still be active.
+      // A delete marks the tenant deleted, so the row stays either way: the tenant must still be active.
       unchanged: async () => expect(await tenantStatus(orgB.tenantId)).toBe('active'),
     },
     {

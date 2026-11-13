@@ -437,7 +437,7 @@
     },
     {
       "name": "tenants",
-      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds one organization and carries its quotas, rate limits and sign-in policy. Its kind says what it is for: live for customers, test for staff and automated runs, demo for a visitor's throwaway. System admins list and update tenants, a signed-in user creates one of their own, a visitor takes a demo, and a tenant archived past the archived period or past its expiry is removed with everything in it.",
+      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds one organization and carries its quotas, rate limits and sign-in policy. Its kind says what it is for: live for customers, test for staff and automated runs, demo for a visitor's throwaway. System admins list and update tenants, a signed-in user creates one of their own, a visitor takes a demo, and a tenant deleted past the deleted-tenant period or past its expiry is removed with everything in it.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -3398,7 +3398,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "suspended", "archived"]
+            "enum": ["active", "suspended", "deleted"]
           },
           "statusChangedAt": {
             "type": "string"
@@ -13557,7 +13557,7 @@
         "operationId": "batchDeleteOrganizations",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Delete organizations",
-        "description": "Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.",
+        "description": "Deletes organizations by ID within a tenant. Deleting marks the tenant deleted: members lose access at once, and the organization with everything in it is removed after the deleted-tenant period; until then a system admin can restore it.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -15859,7 +15859,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["active", "suspended", "archived"],
+              "enum": ["active", "suspended", "deleted"],
               "description": "Filter by status"
             },
             "required": false,
@@ -16111,7 +16111,7 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "suspended", "archived"]
+                    "enum": ["active", "suspended", "deleted"]
                   },
                   "authStrategies": {
                     "type": "array",
@@ -16192,7 +16192,7 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "suspended", "archived"]
+                    "enum": ["active", "suspended", "deleted"]
                   },
                   "authStrategies": {
                     "type": "array",

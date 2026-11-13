@@ -5,7 +5,7 @@ import { TTLCache } from '#/lib/ttl-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { inUnarchivedTenant } from '#/modules/memberships/memberships-queries';
+import { inUndeletedTenant } from '#/modules/memberships/memberships-queries';
 import { coalesce } from '#/utils/request-coalescing';
 
 /**
@@ -34,7 +34,7 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
 };
 
 /**
- * The user's memberships in unarchived tenants, read past the cache in one statement with the bindings version they
+ * The user's memberships in tenants not deleted, read past the cache in one statement with the bindings version they
  * hold at; the version is undefined when no actor row has the id.
  */
 export async function readMemberships(userId: string): Promise<{ version?: string; memberships: Env['Variables']['memberships'] }> {
@@ -44,7 +44,7 @@ export async function readMemberships(userId: string): Promise<{ version?: strin
       membership: { ...membershipBaseSelect, createdAt: membershipsTable.createdAt, createdBy: membershipsTable.createdBy },
     })
     .from(actorsTable)
-    .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
+    .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUndeletedTenant(membershipsTable.tenantId)))
     .where(eq(actorsTable.id, userId));
 
   return { version: rows[0]?.version, memberships: rows.flatMap(({ membership }) => (membership ? [membership] : [])) };

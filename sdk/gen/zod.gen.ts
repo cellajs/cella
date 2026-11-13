@@ -688,7 +688,7 @@ export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string().max(255),
   kind: z.enum(['live', 'test', 'demo']),
-  status: z.enum(['active', 'suspended', 'archived']),
+  status: z.enum(['active', 'suspended', 'deleted']),
   statusChangedAt: z.string(),
   expiresAt: z.string().nullable(),
   restrictions: z.object({
@@ -2850,7 +2850,7 @@ export const zListTenantsQuery = z.object({
   skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc', 'name', 'name asc', 'name desc']).optional().default('createdAt desc'),
-  status: z.enum(['active', 'suspended', 'archived']).optional(),
+  status: z.enum(['active', 'suspended', 'deleted']).optional(),
   kind: z.string().max(2048).optional(),
 });
 
@@ -2884,7 +2884,7 @@ export const zUpdateTenantBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   kind: z.enum(['live', 'test', 'demo']).optional(),
-  status: z.enum(['active', 'suspended', 'archived']).optional(),
+  status: z.enum(['active', 'suspended', 'deleted']).optional(),
   authStrategies: z
     .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
     .max(9)

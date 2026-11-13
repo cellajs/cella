@@ -9,7 +9,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
 
-export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
+export const tenantStatusValues = ['active', 'suspended', 'deleted'] as const;
 
 /** Top-level isolation boundary for RLS. System resource, not an entity. */
 export const tenantsTable = snakeCase.table(
@@ -20,7 +20,7 @@ export const tenantsTable = snakeCase.table(
     /** What the tenant is for (`appConfig.tenantKinds`): `live` unless a system admin marks it `test`; `demo` only through `createDemo`. */
     kind: varchar({ enum: tenantKindValues }).notNull().default('live'),
     status: varchar({ enum: tenantStatusValues }).notNull().default('active'),
-    /** When `status` last changed, stamped by the server; an archived tenant is removed `archivedTenantDays` after it. */
+    /** When `status` last changed, stamped by `updateTenant`; a deleted tenant is removed `deletedTenantDays` after it. */
     statusChangedAt: isoTimestamp().defaultNow().notNull(),
     /** When the tenant goes with everything in it, whatever its status; a demo carries one, another kind may. */
     expiresAt: isoTimestamp(),

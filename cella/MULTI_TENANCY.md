@@ -87,11 +87,11 @@ A demo invites no one, since that mails third parties. Beyond the tenant its mem
 
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
+A tenant is `active`, `suspended` or `deleted`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
 
-Deleting its organization archives a tenant. A system admin also archives one when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
+Deleting its organization marks a tenant deleted. A system admin also marks one deleted when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
 
-A system admin restores a tenant by setting it active again. Once its archived period or its expiry passes, an hourly sweep removes the tenant with everything in it. The anonymous accounts it leaves with no membership go too.
+A system admin restores a tenant by setting it active again. Once its deleted-tenant period or its expiry passes, an hourly sweep removes the tenant with everything in it. The anonymous accounts it leaves with no membership go too.
 
 ## Verification
 

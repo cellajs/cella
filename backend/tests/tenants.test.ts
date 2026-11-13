@@ -147,11 +147,11 @@ describe('self-service tenants per user', async () => {
 });
 
 /**
- * An organization its admin deleted, or a tenant whose contract ended, is archived and kept for the archived period, so
+ * An organization its admin deleted, or a tenant whose contract ended, is marked deleted and kept for the deleted-tenant period, so
  * it can still be restored or handed over; then it goes with everything in it, and the operator gets the record of it.
  */
-describe('archived-tenant sweep', () => {
-  const archivedDaysAgo = async (days: number, status: 'archived' | 'active' = 'archived') => {
+describe('deleted-tenant sweep', () => {
+  const deletedDaysAgo = async (days: number, status: 'deleted' | 'active' = 'deleted') => {
     const organization = await createTestOrganization();
     const statusChangedAt = new Date(Date.now() - days * 86_400_000).toISOString();
     await db.update(tenantsTable).set({ status, statusChangedAt }).where(eq(tenantsTable.id, organization.tenantId));
@@ -159,11 +159,11 @@ describe('archived-tenant sweep', () => {
   };
   const tenantExists = async (id: string) => (await db.select().from(tenantsTable).where(eq(tenantsTable.id, id))).length === 1;
 
-  it('removes a tenant archived longer than the period with its organization, and keeps the rest', async () => {
-    const period = appConfig.retention.archivedTenantDays;
-    const expired = await archivedDaysAgo(period + 1);
-    const recent = await archivedDaysAgo(period - 1);
-    const active = await archivedDaysAgo(period + 1, 'active');
+  it('removes a tenant deleted longer than the period with its organization, and keeps the rest', async () => {
+    const period = appConfig.retention.deletedTenantDays;
+    const expired = await deletedDaysAgo(period + 1);
+    const recent = await deletedDaysAgo(period - 1);
+    const active = await deletedDaysAgo(period + 1, 'active');
     vi.mocked(mailer.sendEmails).mockClear();
 
     await removeDueTenants();
@@ -178,8 +178,8 @@ describe('archived-tenant sweep', () => {
   });
 
   it('keeps a tenant restored after the sweep listed it', async () => {
-    const period = appConfig.retention.archivedTenantDays;
-    const tenantIds = [(await archivedDaysAgo(period + 1)).tenantId, (await archivedDaysAgo(period + 1)).tenantId];
+    const period = appConfig.retention.deletedTenantDays;
+    const tenantIds = [(await deletedDaysAgo(period + 1)).tenantId, (await deletedDaysAgo(period + 1)).tenantId];
     let restored = '';
     // The first removal's mail goes out before the sweep reaches the other tenant: a system admin restores that one then.
     vi.mocked(mailer.sendEmails)

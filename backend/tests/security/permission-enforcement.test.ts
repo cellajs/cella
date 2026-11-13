@@ -150,7 +150,7 @@ describe('Member escalation over HTTP', async () => {
       act: 'delete the organization',
       attempt: ({ org }, actor) =>
         call(batchDeleteOrganizations, { path: { tenantId: org.tenantId }, body: { ids: [org.id] }, headers: headers(actor) }),
-      // A delete archives the tenant, so the row stays either way: the tenant must still be active.
+      // A delete marks the tenant deleted, so the row stays either way: the tenant must still be active.
       unchanged: async ({ org }) => expect(await tenantStatus(org.tenantId)).toBe('active'),
       okStatus: 200,
     },
@@ -181,10 +181,10 @@ describe('Member escalation over HTTP', async () => {
     expect((data as { rejectedIds: string[] }).rejectedIds).toEqual([]);
     expect((await attachmentRow(mine)).deletedAt).not.toBeNull();
 
-    // The rows end with the organization's deletion, which archives its tenant.
+    // The rows end with the organization's deletion, which marks its tenant deleted.
     for (const { act, attempt, okStatus } of rows) {
       expect((await attempt(own, own.admin)).response.status, act).toBe(okStatus);
     }
-    expect(await tenantStatus(own.org.tenantId)).toBe('archived');
+    expect(await tenantStatus(own.org.tenantId)).toBe('deleted');
   });
 });

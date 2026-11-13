@@ -126,7 +126,7 @@ export const config = {
     activityDays: 90,
     deletedItemsDays: 120,
     unreferencedItemsDays: 30,
-    archivedTenantDays: 120,
+    deletedTenantDays: 120,
     demoTenantDays: 2,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,

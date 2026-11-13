@@ -176,8 +176,8 @@ export interface RetentionConfig {
   deletedItemsDays: number;
   /** A row of an owned embedding that no live host names, from its creation: a file uploaded into a form waits this long for its host, and a removed one counts toward the quota as long. At least 1. */
   unreferencedItemsDays: number;
-  /** An archived tenant (an organization deleted, or a contract ended), from the archiving; a system admin can restore it until then. */
-  archivedTenantDays: number;
+  /** A deleted tenant (an organization deleted, or a contract ended), from the deletion; a system admin can restore it until then. */
+  deletedTenantDays: number;
   /** A demo tenant, from its creation; it goes with everything in it and the account that took it. */
   demoTenantDays: number;
   sessionDaysAfterExpiry: number;

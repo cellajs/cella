@@ -21,7 +21,7 @@ import { cn } from '~/utils/cn';
 
 type BadgeVariant = ComponentProps<typeof Badge>['variant'];
 
-const statusTextClasses: Record<Tenant['status'], string> = { active: 'text-success', suspended: 'text-warning', archived: 'text-muted-foreground' };
+const statusTextClasses: Record<Tenant['status'], string> = { active: 'text-success', suspended: 'text-warning', deleted: 'text-muted-foreground' };
 
 const kindVariants: Record<Tenant['kind'], BadgeVariant> = { live: 'success', test: 'secondary', demo: 'warning' };
 

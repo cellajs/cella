@@ -31,7 +31,7 @@ const toFormValues = (tenant: Tenant): FormValues => ({
   authStrategies: tenant.authStrategies,
 });
 
-export const statusOptions = ['active', 'suspended', 'archived'] as const;
+export const statusOptions = ['active', 'suspended', 'deleted'] as const;
 
 /** The kinds an admin moves a tenant between; a demo is made by its own route and stays one. */
 const kindOptions = ['live', 'test'] as const;

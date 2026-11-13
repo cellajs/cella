@@ -101,8 +101,8 @@ The API and the optional Yjs relay share one permission engine in `shared/`. The
 What a delete or an archive does depends on the entity:
 
 - **Product**: a hidden tombstone until the deleted-items period ends.
-- **Organization**: deleting it archives its tenant and ends access at once.
-- **Archived tenant**: removed with everything in it after the archived period.
+- **Organization**: deleting it marks its tenant deleted and ends access at once.
+- **Deleted tenant**: removed with everything in it after the deleted-tenant period, restorable until then.
 - **Nested channel**: removed at once, with the channels and products in it.
 - **Nested channel, archived**: readable, listed on request and closed to writes until unarchived.
 - **Rows with a period**: sessions, tokens, devices, API keys, passkey challenges, OIDC payloads, requests, invitations, rate limits and push subscriptions are swept nightly after it.

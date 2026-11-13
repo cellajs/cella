@@ -2604,7 +2604,7 @@ export const publishOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Delete organizations
  *
- * Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.
+ * Deletes organizations by ID within a tenant. Deleting marks the tenant deleted: members lose access at once, and the organization with everything in it is removed after the deleted-tenant period; until then a system admin can restore it.
  *
  * **POST /tenants/{tenantId}/organizations:batch-delete** ·· [batchDeleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/tenants/{tenantId}/organizations:batch-delete) ·· _organizations · cella · channel_
  *
