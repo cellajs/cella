@@ -135,7 +135,7 @@ describe('issueToken', () => {
 
 /**
  * Runs `redeem` while another connection holds the token's row locked, and lets go once two updates of the tokens table
- * wait on that lock: both redemptions have read the row unopened by then, so only the update itself decides.
+ * wait on that lock: both redemptions have read the row unredeemed by then, so only the update itself decides.
  */
 const racingOnRow = async <T>(tokenId: string, redeem: () => Promise<T>): Promise<T> => {
   let release = () => {};

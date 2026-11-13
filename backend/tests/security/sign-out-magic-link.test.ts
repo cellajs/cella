@@ -20,7 +20,7 @@ const requestedMagicLink = async (user: { id: string; email: string }) => {
 };
 
 /**
- * A magic link signs in once: the sign-in spends it, so neither the browser that opened it nor the next person at a
+ * A magic link signs in once, and its sign-in spends it. Neither the browser that opened it nor the next person at a
  * shared computer gets in from its history, whether the owner signed out or ended that session from another device.
  */
 describe('Sign-out after a magic-link sign-in', async () => {

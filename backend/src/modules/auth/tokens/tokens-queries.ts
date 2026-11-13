@@ -58,7 +58,7 @@ export const countLiveSystemInvitations = async (ctx: DbContext) => {
   return row.count;
 };
 
-/** The unopened system invitations (no membership row) addressed to any of `emails`, expired ones included. */
+/** The unredeemed system invitations (no membership row) addressed to any of `emails`, expired ones included. */
 export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { emails: string[] }) =>
   ctx.var.db
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
@@ -152,7 +152,7 @@ export const findLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkToke
   return token;
 };
 
-/** Deletes the unredeemed link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
+/** Deletes the unredeemed link a raw value names: neither its URL nor a confirmation page redeems it any more. */
 export const deleteUnredeemedLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts) => {
   await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.redeemedAt)));
 };

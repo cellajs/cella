@@ -25,8 +25,8 @@ async function removedKey(): Promise<SigningKey> {
 }
 
 /**
- * Whoever holds a private signing key mints any token they like, so taking a key out of the keystore is what revokes
- * its tokens: the verifier knows only the `current` and `next` keys.
+ * Whoever holds a private signing key mints any token they like. Taking a key out of the keystore is what revokes its
+ * tokens: the verifier knows only the `current` and `next` keys.
  */
 describe('signing key rotation', async () => {
   const call = await createAppClient();

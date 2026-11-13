@@ -45,7 +45,7 @@ export async function loadSigningJwks(): Promise<{ keys: JWK[] }> {
   return { keys };
 }
 
-// Nothing rotates keys: the provider loads its signing keys at boot, so a rotation also restarts the authorization server.
+// Nothing rotates keys. The provider loads its signing keys at boot: a rotation also restarts the authorization server.
 
 let verifyCache: { at: number; keySet: ReturnType<typeof createLocalJWKSet> } | null = null;
 

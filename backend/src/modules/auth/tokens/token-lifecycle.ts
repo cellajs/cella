@@ -140,7 +140,7 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
 
 /**
  * Settles the account of a link issued without one, in the transaction that redeems it, and returns its user id: the
- * token is bound to that user. A throw rolls the redemption back, so the link stays unopened.
+ * token is bound to that user. A throw rolls the redemption back, and the link stays unredeemed.
  */
 type ClaimTokenHolder = (tx: Tx, token: TokenRecord) => Promise<string>;
 

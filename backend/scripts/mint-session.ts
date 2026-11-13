@@ -1,9 +1,10 @@
-import { and, eq, isNotNull, lte, or } from 'drizzle-orm';
+import { and, eq, not } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { baseDb as db } from '#/db/db';
 import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { liveSession } from '#/modules/auth/sessions/sessions-queries';
 import { emailsTable } from '#/modules/user/emails-db';
 import { newHashedToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
@@ -37,15 +38,7 @@ const deviceName = 'session:mint';
 const now = getIsoDate();
 
 // Ended mints of earlier runs would otherwise fill the user's sessions list for the retention period
-await db
-  .delete(sessionsTable)
-  .where(
-    and(
-      eq(sessionsTable.userId, owner.userId),
-      eq(sessionsTable.deviceName, deviceName),
-      or(isNotNull(sessionsTable.revokedAt), lte(sessionsTable.expiresAt, now)),
-    ),
-  );
+await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, owner.userId), eq(sessionsTable.deviceName, deviceName), not(liveSession(now))));
 
 const hours = Number(hoursArg ?? 24);
 const { raw: sessionToken, hash: secretHash } = newHashedToken();

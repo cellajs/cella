@@ -86,7 +86,7 @@ describe('apply_retention() row rules', () => {
       kept: await device(user.id, inside(retention.deviceDaysSinceSignIn)),
     };
     cases.push({ rule: 'devices since sign-in', remaining: devicesOf(user.id), kept: [signedInLongAgo.kept], removed: [signedInLongAgo.gone] });
-    // Minutes apart and recent, so only the cap decides; the two least recently signed in from go.
+    // Minutes apart and recent: only the cap decides, and the two least recently signed in from go.
     const crowdedDevices: string[] = [];
     for (let i = 0; i < retention.devicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
     cases.push({

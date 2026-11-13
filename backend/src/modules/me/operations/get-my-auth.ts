@@ -19,7 +19,7 @@ const isEnabledProvider = (provider: string): provider is EnabledOAuthProvider =
 /**
  * The user's sessions, newest first and without their secret: live, expired and revoked ones until the sweep removes
  * them, each flagged with `current` and `newDevice`. A device is new when its first sign-in falls within
- * {@link newDeviceWindow} and the user has an older device, so an account's first browser never counts.
+ * {@link newDeviceWindow} and the user has an older device: an account's first browser never counts.
  */
 const readSessions = async (ctx: UserContext) => {
   const userId = ctx.var.user.id;
