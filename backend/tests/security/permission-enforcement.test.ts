@@ -150,7 +150,7 @@ describe('Member escalation over HTTP', async () => {
       act: 'delete the organization',
       attempt: ({ org }, actor) =>
         call(batchDeleteOrganizations, { path: { tenantId: org.tenantId }, body: { ids: [org.id] }, headers: headers(actor) }),
-      // A delete marks the tenant deleted, so the row stays either way: the tenant must still be active.
+      // The row stays either way, since a delete marks the tenant deleted: the tenant must still be active.
       unchanged: async ({ org }) => expect(await tenantStatus(org.tenantId)).toBe('active'),
       okStatus: 200,
     },

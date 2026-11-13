@@ -36,9 +36,9 @@ interface RuleCase {
 }
 
 /**
- * Every row rule of `apply_retention()`: a row just inside its period stays, one just outside goes. The procedure
- * deletes personal data nothing can bring back, so each rule is checked against rows, under the admin role the
- * retention job runs it as.
+ * Every row rule of `apply_retention()`: a row just inside its period stays, one just outside goes. Each rule is checked
+ * against rows, under the admin role the retention job runs it as: the procedure deletes personal data nothing can
+ * bring back.
  */
 describe('apply_retention() row rules', () => {
   const cases: RuleCase[] = [];
@@ -254,7 +254,7 @@ describe('apply_retention() row rules', () => {
       kept: [subscriptions.seen],
       removed: [subscriptions.unseen],
     });
-    // Minutes apart and recent, so only the cap decides; the two least recently seen go.
+    // Minutes apart and recent: only the cap decides, and the two least recently seen go.
     const crowdedSubscriptions: string[] = [];
     for (let i = 0; i < appConfig.maxPushSubscriptionsPerUser + 2; i++) {
       crowdedSubscriptions.push(await subscription(new Date(Date.now() - i * 60_000), ago(1), crowded.id));

@@ -95,12 +95,12 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
  * batches, oldest first, until it is empty or the run's time is spent, each batch tenant by tenant, and deletes the
  * queue rows a tenant cleared; a tenant that fails keeps its rows for the next run.
  * @returns The number of queue rows cleared.
- * @throws After the last batch, when any tenant failed, so the jobs worker records a failed run.
+ * @throws After the last batch, when any tenant failed: the jobs worker records a failed run.
  */
 export async function clearDeletedStorage(): Promise<number> {
   const deadline = Date.now() + runBudgetMs;
   let cleared = 0;
-  // A failed tenant's rows stay, so the next batch starts after the last row this run read.
+  // The next batch starts after the last row this run read: a failed tenant's rows stay in the queue.
   let afterId = 0;
   const failed = new Set<string | null>();
 

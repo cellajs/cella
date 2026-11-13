@@ -20,8 +20,8 @@ export async function runMigrations(db: DB): Promise<void> {
 
 /**
  * Brings the database to this release: the roles the migrations grant to, the schema migrations, then the job store,
- * in that order. The migrate companion, `pnpm migrate` and the API's development boot all run this sequence, so a step
- * added here reaches each of them. Every step is idempotent.
+ * in that order. A step added here reaches the migrate companion, `pnpm migrate` and the API's development boot, which
+ * all run this sequence. Every step is idempotent.
  * @param purpose - Names the admin connection in the error thrown when `DATABASE_ADMIN_URL` is missing.
  * @param announce - Receives a line naming each step before it runs.
  */

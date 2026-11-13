@@ -6,7 +6,7 @@ import { findOrganizationByTenant } from '#/modules/organization/organization-qu
 
 /**
  * What a tenant's status change does beyond its row, after its commit. The tenant's cached rows go. A membership of a
- * deleted tenant counts for no one (`loadMemberships`), and no membership write announces the change, so the members'
+ * deleted tenant counts for no one (`loadMemberships`), and no membership write announces the change. The members'
  * bindings version moves and their open streams close; each client reconnects, and its catchup drops or brings back the
  * organization.
  */

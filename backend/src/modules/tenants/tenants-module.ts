@@ -11,7 +11,7 @@ defineBackendModule({
     customers, test for staff and automated runs, demo for a visitor's throwaway. System admins list and update tenants,
     a signed-in user creates one of their own, a visitor takes a demo, and a tenant deleted past the deleted-tenant
     period or past its expiry is removed with everything in it.`,
-  // Hourly, so a demo goes within the hour after its expiry; the deleted ones go in the same pass.
+  // Hourly: a demo goes within the hour after its expiry, and the deleted tenants in the same pass.
   jobs: [{ name: 'tenants-removal', cron: '30 * * * *', run: () => removeDueTenants() }],
   routes: [
     { path: '/tenants', app: tenantHandlers },
