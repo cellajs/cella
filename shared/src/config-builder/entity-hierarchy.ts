@@ -621,6 +621,10 @@ export class EntityHierarchy<
     return ancestors;
   };
 
+  /** Whether a row of `entityType` is the channel `channelId` or, by its ancestor id columns, a row inside it. */
+  readonly isAtOrInside = (entityType: string, row: Record<string, unknown>, channelId: string): boolean =>
+    row.id === channelId || this.getOrderedAncestors(entityType).some((type) => row[entityIdColumnKey(type)] === channelId);
+
   /** The row's effective home channel id: deepest non-null ancestor. Null when every ancestor id is null. */
   readonly resolveDeepestAncestorId = (entityType: string, row: Record<string, unknown>): string | null =>
     this.resolveNonNullAncestors(entityType, row)[0]?.id ?? null;

@@ -26,7 +26,8 @@ type CdcMessageRow = Omit<ProductMessageInput['rows'][number], RowActivityColumn
 
 /**
  * The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row.
- * `signalVersions` holds per signal type the version this change moved it to; a change delivered again carries none.
+ * `signalVersions` holds per signal type the version this change moved it to, empty when it moved none (a channel
+ * delete its root's covers); a change delivered again carries none.
  */
 type CdcRowMessage = Omit<Exclude<CdcMessageInput, { rows: unknown }>, 'activity'> & { activity: RecordedActivity };
 

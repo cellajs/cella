@@ -50,7 +50,7 @@ interface ActivityEventBase extends Omit<ActivityModel, 'type' | OwnActivityColu
 export interface RowActivityEvent extends ActivityEventBase, Pick<ActivityModel, OwnActivityColumns> {
   rowData: unknown;
   rows: null;
-  /** The versions of the signals this change moved, as the worker counted them; absent when it sent none. */
+  /** The versions of the signals this change moved, as the worker counted them: empty when it moved none, absent when delivered again. */
   signalVersions?: Record<string, number>;
 }
 

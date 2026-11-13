@@ -2,7 +2,7 @@ import { type ActivityAction, type EntityHierarchy, type EntityType, hierarchy, 
 import type { StreamSignalType } from 'shared/stream-signal-types';
 
 /** A signal whose version the changes of a tracked table move. */
-interface VersionedSignal {
+export interface VersionedSignal {
   type: StreamSignalType;
   /** The changes that move it; every change when absent. */
   actions?: ActivityAction[];
@@ -18,8 +18,9 @@ const tableSignals: Partial<Record<EntityType | ResourceType, VersionedSignal[]>
 
 /**
  * The rows below a deleted channel leave by foreign key cascade, and the worker sends no change for them (see
- * `TransactionBuffer`): this signal tells the channel's readers to drop what they hold under it. An organization is no
- * such channel: its delete follows the archive of its tenant, which ends its members' streams.
+ * `TransactionBuffer`): this signal tells the channel's readers to drop what they hold at and under it. A channel deleted
+ * with an ancestor moves none (`flushSignals`): the root's signal covers the subtree. An organization is no such
+ * channel: its delete follows the archive of its tenant, which ends its members' streams.
  */
 const channelDeleted: VersionedSignal = { type: 'channel.deleted', actions: ['delete'], namesRow: true };
 

@@ -1,5 +1,5 @@
 import type { ListMyMembershipsResponse, StreamSignal } from 'sdk';
-import { appConfig, hierarchy, isSeenTracked, type ProductEntityType } from 'shared';
+import { type EntityType, hierarchy, isSeenTracked } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
@@ -13,86 +13,73 @@ import { invalidateUndelivered } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
 import { invalidateEmbeddingHosts } from '~/query/realtime/propagation';
 import { publishChangeEvent } from '~/query/realtime/sync-events';
+import { syncStore } from '~/query/realtime/sync-store';
 
-/** The organization's refetches wait this long for the rest of a cascade: a delete reaches the channels below it, each with a signal of its own. */
-const cascadeSettleMs = 1_000;
+/** The product types a channel below the organization may hold: those with an ancestor under it. */
+const productTypesBelowChannels = () =>
+  getRegisteredProductEntityTypes().filter((type) => hierarchy.getOrderedAncestors(type).some((ancestor) => ancestor !== 'organization'));
 
-/** Per organization, the channels deleted since the last refetch; null for a delete missed while away. */
-const pendingRefetches = new Map<string, Set<string | null>>();
-let refetchTimer: ReturnType<typeof setTimeout> | null = null;
+/** Removes the cached rows of `entityType` at or inside `channelId` from its lists and details, and returns them. */
+function removeAtOrInside(entityType: EntityType, channelId: string): ItemData[] {
+  const keys = getEntityQueryKeys(entityType);
+  const found = new Map<string, ItemData>();
+  const collect = (row: ItemData) => {
+    if (hierarchy.isAtOrInside(entityType, asRecord(row), channelId)) found.set(row.id, row);
+  };
+  forEachListQuery(keys.list.base, (_, data) => {
+    for (const row of getQueryItems(data)) collect(row);
+  });
+  for (const [, detail] of queryClient.getQueriesData<ItemData>({ queryKey: keys.detail.base })) if (detail) collect(detail);
+  if (found.size === 0) return [];
 
-const channelTypesBelowOrganization = () => hierarchy.channelTypes.filter((type) => type !== 'organization');
+  cacheRemove(keys.list.base, [...found.values()]);
+  removeDetailQueriesOnceUnobserved(queryClient, keys.detail.base, found.keys());
+  return [...found.values()];
+}
 
-/** The id columns of the channels below the organization that a product row names in its ancestor chain. */
-const channelColumnsOf = (productType: ProductEntityType) =>
-  hierarchy
-    .getOrderedAncestors(productType)
-    .filter((type) => type !== 'organization')
-    .map((type) => appConfig.entityIdColumnKeys[type]);
-
-/** Drops the cached rows below a deleted channel from lists and details, each announced as a delete, and the channel's own entries. */
-function dropChannel(organizationId: string, channelId: string): void {
-  for (const productType of getRegisteredProductEntityTypes()) {
-    const columns = channelColumnsOf(productType);
-    if (columns.length === 0) continue;
-
-    const keys = getEntityQueryKeys(productType);
-    const below = new Map<string, ItemData>();
-    const collect = (row: ItemData) => {
-      if (columns.some((column) => asRecord(row)[column] === channelId)) below.set(row.id, row);
-    };
-    forEachListQuery(keys.list.base, (_, data) => {
-      for (const row of getQueryItems(data)) collect(row);
-    });
-    for (const [, detail] of queryClient.getQueriesData<ItemData>({ queryKey: keys.detail.base })) if (detail) collect(detail);
-    if (below.size === 0) continue;
-
-    cacheRemove(keys.list.base, [...below.values()]);
-    removeDetailQueriesOnceUnobserved(queryClient, keys.detail.base, below.keys());
-    for (const row of below.values()) {
+/**
+ * Drops the cached channels at or inside a deleted channel and the product rows below them, each product announced as
+ * a delete. A cascade sends one signal, for its root, so the whole subtree goes in this one pass.
+ * @returns The ids of the channels it dropped.
+ */
+function dropChannel(organizationId: string, channelId: string): Set<string> {
+  for (const productType of productTypesBelowChannels()) {
+    for (const row of removeAtOrInside(productType, channelId)) {
       const homeChannelId = resolveHomeChannelId(productType, row);
       publishChangeEvent({ action: 'delete', entityType: productType, organizationId, channelId: homeChannelId, subjectId: row.id });
     }
   }
 
-  // Ids are unique across tables: only the deleted channel's own type holds this one.
-  for (const channelType of channelTypesBelowOrganization()) {
-    if (!hasEntityQueryKeys(channelType)) continue;
-    const keys = getEntityQueryKeys(channelType);
-    cacheRemove(keys.list.base, [{ id: channelId }]);
-    removeDetailQueriesOnceUnobserved(queryClient, keys.detail.base, [channelId]);
+  const droppedIds = new Set([channelId]);
+  for (const channelType of hierarchy.channelTypes) {
+    if (channelType === 'organization' || !hasEntityQueryKeys(channelType)) continue;
+    for (const row of removeAtOrInside(channelType, channelId)) droppedIds.add(row.id);
   }
+  return droppedIds;
 }
 
-/** Marks the lists below every channel of each pending organization, once for the whole cascade. */
-function refetchBelowDeletedChannels(): void {
-  refetchTimer = null;
-  const productTypes = getRegisteredProductEntityTypes().filter((type) => channelColumnsOf(type).length > 0);
-  const deletedIds = new Set<string>();
-
-  for (const [organizationId, channelIds] of pendingRefetches) {
-    for (const productType of productTypes) {
-      invalidateEmbeddingHosts(productType, organizationId);
-      invalidateUndelivered(productType, organizationId, [...channelIds], false);
-    }
-    // The channels' memberships and invitations left by the same cascade.
-    membershipOps.invalidateMemberQueries(organizationId);
-    for (const channelId of channelIds) if (channelId) deletedIds.add(channelId);
-  }
-  pendingRefetches.clear();
-
-  // A delete missed while away leaves the unseen recount and the memberships to the catchup that reported it.
-  if (deletedIds.size > 0 && productTypes.some(isSeenTracked)) queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
-  const memberships = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.results ?? [];
-  if (memberships.some(({ channelId }) => deletedIds.has(channelId))) membershipOps.invalidateMemberships();
-}
-
-/** Drops what is cached below a deleted channel at once, then refetches below every channel of its organization; missed while away, it only refetches. */
+/**
+ * Drops what is cached at and below a deleted channel, then marks the organization's lists of every type a channel
+ * holds, which also count rows never cached. Missed while away, it names no channel: only the marks run, and none
+ * when a start-over refetch is due, which loads every synced list.
+ */
 export function handleChannelDeleted({ organizationId, subjectId }: StreamSignal): void {
   if (!organizationId) return;
-  if (subjectId) dropChannel(organizationId, subjectId);
+  const droppedIds = subjectId ? dropChannel(organizationId, subjectId) : new Set<string>();
 
-  const pending = pendingRefetches.get(organizationId) ?? new Set();
-  pendingRefetches.set(organizationId, pending.add(subjectId));
-  refetchTimer ??= setTimeout(refetchBelowDeletedChannels, cascadeSettleMs);
+  // The channels' memberships and invitations left by the same cascade.
+  membershipOps.invalidateMemberQueries(organizationId);
+  if (!subjectId && syncStore.getState().refetchDueAt !== null) return;
+
+  const productTypes = productTypesBelowChannels();
+  for (const productType of productTypes) {
+    invalidateEmbeddingHosts(productType, organizationId);
+    invalidateUndelivered(productType, organizationId, [subjectId ?? null], false);
+  }
+
+  // A delete missed while away leaves the unseen recount and the memberships to the catchup that reported it.
+  if (droppedIds.size === 0) return;
+  if (productTypes.some(isSeenTracked)) queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+  const memberships = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.results ?? [];
+  if (memberships.some(({ channelId }) => droppedIds.has(channelId))) membershipOps.invalidateMemberships();
 }

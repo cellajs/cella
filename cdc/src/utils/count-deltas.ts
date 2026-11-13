@@ -1,7 +1,7 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { hierarchy } from 'shared';
 import { entityCountHomePrefix, entityCountPrefix, signalVersionPrefix } from '#/modules/entities/counter-keys';
-import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
+import { type VersionedSignal, versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import type { CdcActivity } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
@@ -19,6 +19,7 @@ export interface CountDelta {
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
  * apply only at the home channel. Only live, published rows participate. A change that moves versioned signals
  * moves their versions on its organization's row.
+ * @param signals - The versioned signals the change moves; its table's for its action when absent.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -26,9 +27,9 @@ export function getCountDeltas(
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
   h: EntityHierarchy = hierarchy,
+  signals: VersionedSignal[] = versionedSignalsOf(tableMeta.type, activity.action, h),
 ): CountDelta[] {
   const deltas = getTableDeltas(tableMeta, activity, newRow, oldRow, h);
-  const signals = versionedSignalsOf(tableMeta.type, activity.action, h);
   if (!activity.organizationId || signals.length === 0) return deltas;
   const versions = Object.fromEntries(signals.map(({ type }) => [`${signalVersionPrefix}${type}`, 1]));
   return [...deltas, { channelKey: activity.organizationId, deltas: versions }];
