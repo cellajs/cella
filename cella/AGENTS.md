@@ -133,7 +133,7 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 
 - Use `git` and `gh`. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks, scoped changes.
-- **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section: the table `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew saying what those lines are for (for source, how much is comments; for tests, which of the four reasons in [Testing](#testing) each new test file serves). Lines without a reason are the first to cut.
+- **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section: the table `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew saying what those lines are for (for source, how much is comments; for tests, which of the four reasons in [Testing](#testing) each new test file serves). Lines without a reason are the first to cut. An app's upgrade PR leaves the section out: its lines are upstream's.
 
 ## Worktrees
 
