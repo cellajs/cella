@@ -262,7 +262,6 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
       const incidents = await incidentsSince(since);
       expect(incidents).toHaveLength(1);
       expect(incidents[0]).toMatchObject({ reason: 'wrong_books', corrections: differences, generation: rebuilt });
-      expect(((await syncState()).verifiedAt ?? '') > since).toBe(true);
 
       // Positive control: right books again.
       await fencePassed();
@@ -440,7 +439,7 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
 
       await rebuildBooks('lost_counters');
 
-      // The rebuild stamps no `verified_at`: whoever asked still gets the answer of a verify.
+      // The rebuild answers no verify: whoever asked still gets the answer of a verify.
       expect(await findBooksRequest(cdcDb)).toBe('verify');
       await clearBooksRequest(cdcDb, 'verify');
     }, 60_000);
@@ -674,12 +673,12 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
 
       // No subscription, so no verify: it stays asked for.
       expect(await findBooksRequest(cdcDb)).toBe('verify');
-      expect(((await syncState()).verifiedAt ?? '') > since).toBe(false);
+      expect(((await syncState()).answeredAt ?? '') > since).toBe(false);
 
       await readAgain();
       await answerBooksRequests();
 
-      expect(((await syncState()).verifiedAt ?? '') > since).toBe(true);
+      expect(((await syncState()).answeredAt ?? '') > since).toBe(true);
       expect(await findBooksRequest(cdcDb)).toBeNull();
       // Asked for once that day: the next poll writes no second request.
       await answerBooksRequests();
@@ -702,7 +701,7 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
 
       // Still asked for, and not tried: the next poll is five seconds away, the next verify ten minutes.
       expect(await findBooksRequest(cdcDb)).toBe('verify');
-      expect(((await syncState()).verifiedAt ?? '') > since).toBe(false);
+      expect(((await syncState()).answeredAt ?? '') > since).toBe(false);
 
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(Date.now() + resourceLimits.books.verifyRetryMs + 1000);
@@ -712,7 +711,7 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
         vi.useRealTimers();
       }
 
-      expect(((await syncState()).verifiedAt ?? '') > since).toBe(true);
+      expect(((await syncState()).answeredAt ?? '') > since).toBe(true);
       expect(await findBooksRequest(cdcDb)).toBeNull();
     }, 60_000);
 

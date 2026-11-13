@@ -49,8 +49,7 @@ export const findBooksRequest = async (db: DbOrTx): Promise<BooksRequest | null>
 };
 
 /**
- * Takes a request out of `sync_state` once it is answered or given up. A request of the other kind, written since,
- * stays.
+ * Takes a request out of `sync_state` once it is given up. A request of the other kind, written since, stays.
  * @param db - A connection or transaction that may write `sync_state`.
  */
 export const clearBooksRequest = async (db: DbOrTx, request: BooksRequest): Promise<void> => {
@@ -60,21 +59,28 @@ export const clearBooksRequest = async (db: DbOrTx, request: BooksRequest): Prom
     .where(and(eq(syncStateTable.id, syncStateId), eq(syncStateTable.requested, request)));
 };
 
+/** {@link clearBooksRequest} for a request the worker answered: it stamps `answered_at`, which ends the wait of whoever asked. */
+export const answerBooksRequest = async (db: DbOrTx, request: BooksRequest): Promise<void> => {
+  await db
+    .update(syncStateTable)
+    .set({ requested: null, answeredAt: sql`now()` })
+    .where(and(eq(syncStateTable.id, syncStateId), eq(syncStateTable.requested, request)));
+};
+
 /**
- * Waits until the worker has answered a request: it stamps `verified_at` after a verify and `rebuilt_at` with a
- * rebuild. A verify that finds the books wrong ends in a rebuild, whose incident lists what differed. A request nobody
+ * Waits until the worker has answered a request (`answerBooksRequest`). A verify that finds the books wrong ends in a
+ * rebuild, whose incident lists what differed. A request nobody
  * answered in time is taken back, so it does not run later with nobody waiting for it.
  * @param db - The connection the request was written on.
  * @param since - What `requestBooks` returned.
  */
 export const awaitBooksAnswer = async (db: DbOrTx, request: BooksRequest, since: string, waitSeconds: number): Promise<BooksAnswer> => {
-  const answeredAt = request === 'verify' ? syncStateTable.verifiedAt : syncStateTable.rebuiltAt;
   const deadline = Date.now() + waitSeconds * 1000;
   let generation = 1;
 
   while (true) {
     const [state] = await db
-      .select({ generation: syncStateTable.generation, answered: sql<boolean>`coalesce(${gt(answeredAt, since)}, false)` })
+      .select({ generation: syncStateTable.generation, answered: sql<boolean>`coalesce(${gt(syncStateTable.answeredAt, since)}, false)` })
       .from(syncStateTable)
       .where(eq(syncStateTable.id, syncStateId));
     generation = state?.generation ?? generation;

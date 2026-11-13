@@ -31,8 +31,8 @@ export const syncStateTable = snakeCase.table('sync_state', {
   id: varchar({ length: maxLength.field }).primaryKey().default(syncStateId),
   generation: integer().notNull().default(1),
   requested: varchar({ enum: ['verify', 'rebuild'] }),
-  verifiedAt: isoTimestamp(),
-  rebuiltAt: isoTimestamp(),
+  /** When the worker last answered the request in `requested`, one waiting at a time; a rebuild's own moment is its incident. */
+  answeredAt: isoTimestamp(),
   fence: jsonb().$type<SyncFence>(),
 });
 
