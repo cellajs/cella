@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.46.0](https://github.com/cellajs/cella/compare/0.45.0...0.46.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* a board always scrolls inside its own frame, a close X is size-4, an app can declare a share target, and fresh marketing shots ([#1819](https://github.com/cellajs/cella/issues/1819))
+* menu rows open their own page, a board that fits at minWidth fills its parent, and more ([#1817](https://github.com/cellajs/cella/issues/1817))
+* **frontend:** shared class strings live in utilities, components and primitive variants ([#1816](https://github.com/cellajs/cella/issues/1816))
+* **blocknote:** files enter a document through one upload, as blocks that know their file ([#1815](https://github.com/cellajs/cella/issues/1815))
+* board fit moves to a corner tab, a sync write retries until answered, and more ([#1813](https://github.com/cellajs/cella/issues/1813))
+* eight fixes from the apps' upgrade ledger: page tokens outlive include, ExternalArrow moves to common, and more ([#1812](https://github.com/cellajs/cella/issues/1812))
+* **tenants:** tenants carry no subscription columns ([#1807](https://github.com/cellajs/cella/issues/1807))
+* **infra:** a scheduled run with nothing to deploy writes no lease, and an operator action deletes the lease's old versions ([#1811](https://github.com/cellajs/cella/issues/1811))
+
+### 🎉 New features
+
+* a board always scrolls inside its own frame, a close X is size-4, an app can declare a share target, and fresh marketing shots ([#1819](https://github.com/cellajs/cella/issues/1819)) ([8c2f6ea](https://github.com/cellajs/cella/commit/8c2f6ea85c0db32536ef85b45bddc441734b4abe))
+* **blocknote:** files enter a document through one upload, as blocks that know their file ([#1815](https://github.com/cellajs/cella/issues/1815)) ([4b3c33a](https://github.com/cellajs/cella/commit/4b3c33a16b28e6232707a4f43dc2cfd287a52a61))
+* board fit moves to a corner tab, a sync write retries until answered, and more ([#1813](https://github.com/cellajs/cella/issues/1813)) ([6ad032d](https://github.com/cellajs/cella/commit/6ad032dc05199f43d047e1cede472c923db8c9a1))
+* contact rows copy their value, the members table can open its invite form, and the docs Links section is Other ([#1818](https://github.com/cellajs/cella/issues/1818)) ([1a365a6](https://github.com/cellajs/cella/commit/1a365a6c089996c7b0fbdd6f2c3678541144e3a8))
+* **frontend:** only the open menu row shows its avatar color, and a pointed row group lights up ([#1821](https://github.com/cellajs/cella/issues/1821)) ([e634c1d](https://github.com/cellajs/cella/commit/e634c1d802c4801c9d60f362051f23e1cf9c177e))
+* menu rows open their own page, a board that fits at minWidth fills its parent, and more ([#1817](https://github.com/cellajs/cella/issues/1817)) ([d683091](https://github.com/cellajs/cella/commit/d68309107fba7063b3b72899bff3242638b1e558))
+
+
+### 🐞 Bug fixes
+
+* eight fixes from the apps' upgrade ledger: page tokens outlive include, ExternalArrow moves to common, and more ([#1812](https://github.com/cellajs/cella/issues/1812)) ([8a0e7c7](https://github.com/cellajs/cella/commit/8a0e7c7ca870b9fc49a1630c5447b9bd468c7a07))
+* **infra:** a scheduled run with nothing to deploy writes no lease, and an operator action deletes the lease's old versions ([#1811](https://github.com/cellajs/cella/issues/1811)) ([de2a660](https://github.com/cellajs/cella/commit/de2a660debe9846fa3cb66e869ddef5e16f3d6c5))
+* **navigation:** unseen badges line up in the menu, and a rail press opens a lobby only from an organization page ([#1809](https://github.com/cellajs/cella/issues/1809)) ([abaca0b](https://github.com/cellajs/cella/commit/abaca0b94dedd46236fed770ab1283c3196207d7))
+* **scripts:** the app-shape check starts its test database again ([#1814](https://github.com/cellajs/cella/issues/1814)) ([232704f](https://github.com/cellajs/cella/commit/232704fd09e60d2cc51a7add73b9ce0bc8027734))
+
+
+### 🔧 Small improvements
+
+* **frontend:** shared class strings live in utilities, components and primitive variants ([#1816](https://github.com/cellajs/cella/issues/1816)) ([a670666](https://github.com/cellajs/cella/commit/a6706663304929c323cdb305f7b70ff487c71def))
+* **infra:** the engine image installs production dependencies alone and ships no pnpm store or cache ([#1808](https://github.com/cellajs/cella/issues/1808)) ([f1ba3fc](https://github.com/cellajs/cella/commit/f1ba3fc3d6d8cc5e692c42db90238c55131e244b))
+* **tenants:** tenants carry no subscription columns ([#1807](https://github.com/cellajs/cella/issues/1807)) ([e59ddfb](https://github.com/cellajs/cella/commit/e59ddfb03cf70b099c3e72a34757df6be9ccf8fe))
+
 ## [0.45.0](https://github.com/cellajs/cella/compare/0.44.0...0.45.0) (2026-11-11)
 
 
