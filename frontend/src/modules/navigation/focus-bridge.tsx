@@ -66,7 +66,7 @@ export function BackToStart() {
     <Button
       variant="outline"
       onClick={handleClick}
-      className={cn(layoutStopClass, 'focus:bottom-[calc(1rem+var(--bottom-inset,0px))] focus:left-1/2 focus:-translate-x-1/2')}
+      className={cn(layoutStopClass, 'focus:bottom-[calc(1rem+var(--bottom-inset))] focus:left-1/2 focus:-translate-x-1/2')}
     >
       {t('c:go_to_start')}
     </Button>

@@ -42,7 +42,7 @@ export function FloatingAction({ icon, label, ariaLabel, onClick }: FloatingActi
       onClick={() => onClick(buttonRef)}
       concealed={!isVisible}
       // Above a bottom nav bar, which the floating menu replaces where it shows
-      className={appConfig.navigation.navBar && !floatingNavActive ? 'bottom-[calc(5rem+var(--bottom-inset,0px))]' : undefined}
+      className={appConfig.navigation.navBar && !floatingNavActive ? 'bottom-[calc(5rem+var(--bottom-inset))]' : undefined}
     />
   );
 }
