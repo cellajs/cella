@@ -4505,13 +4505,14 @@ export type UpdateMembershipResponses = {
    * Membership updated
    */
   200: {
-    createdAt: string;
     id: string;
     tenantId: string;
     channelType: 'organization';
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
+    organizationId: string;
+    createdAt: string;
     createdBy:
       | {
           id: string;
@@ -4545,7 +4546,6 @@ export type UpdateMembershipResponses = {
           slug: null;
         }
       | null;
-    organizationId: string;
     hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
@@ -5795,13 +5795,9 @@ export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof Rem
 
 export type RemovePushSubscriptionResponses = {
   /**
-   * Subscriptions removed
-   *
-   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
+   * Subscription removed
    */
-  200: {
-    deleted: number;
-  };
+  204: void;
 };
 
 export type RemovePushSubscriptionResponse = RemovePushSubscriptionResponses[keyof RemovePushSubscriptionResponses];
@@ -6560,10 +6556,6 @@ export type BatchDeleteUsersErrors = {
    * Forbidden
    */
   403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
   /**
    * Conflict
    */

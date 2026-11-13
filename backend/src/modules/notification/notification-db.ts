@@ -2,9 +2,10 @@ import type { z } from '@hono/zod-openapi';
 import { boolean, foreignKey, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
-import { isoTimestamp, isoTimestampWithoutZone, timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import { notificationKinds } from '#/modules/notification/notification-kinds';
 import type { preferencesSchema } from '#/modules/notification/notification-schema';
 import { usersTable } from '#/modules/user/user-db';
@@ -76,7 +77,7 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
   digest: varchar({ enum: digestFrequencies }).notNull().default(defaultPreferences.digest),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: isoTimestamp(),
-  updatedAt: timestampColumns.updatedAt,
+  ...auditColumns(),
 });
 
 export type NotificationModel = typeof notificationsTable.$inferSelect;

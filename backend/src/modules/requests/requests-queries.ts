@@ -54,7 +54,7 @@ export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, li
 
 /** Deletes requests by id. */
 export const deleteRequestsByIds = async (ctx: DbContext, { ids }: { ids: string[] }) =>
-  ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids));
+  ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids)).returning({ id: requestsTable.id });
 
 /** Stamps the address's waitlist request as invited now; a request invited before keeps its first time. */
 export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: { email: string }) =>

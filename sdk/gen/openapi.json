@@ -10622,9 +10622,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "createdAt": {
-                      "type": "string"
-                    },
                     "id": {
                       "type": "string",
                       "format": "uuid"
@@ -10648,6 +10645,13 @@
                     "role": {
                       "type": "string",
                       "enum": ["admin", "member"]
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "createdAt": {
+                      "type": "string"
                     },
                     "createdBy": {
                       "anyOf": [
@@ -10754,10 +10758,6 @@
                         }
                       ]
                     },
-                    "organizationId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
                     "hidden": {
                       "type": "boolean"
                     },
@@ -10771,17 +10771,17 @@
                     }
                   },
                   "required": [
-                    "createdAt",
                     "id",
                     "tenantId",
                     "channelType",
                     "channelId",
                     "userId",
                     "role",
+                    "organizationId",
+                    "createdAt",
                     "createdBy",
                     "updatedAt",
-                    "updatedBy",
-                    "organizationId"
+                    "updatedBy"
                   ]
                 }
               }
@@ -13785,7 +13785,7 @@
         "operationId": "removePushSubscription",
         "tags": ["push", "cella"],
         "summary": "Remove a Web Push subscription",
-        "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
+        "description": "Deletes the given endpoint for the current user; an unknown endpoint, or one owned by someone else, is a no-op.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "requestBody": {
@@ -13807,22 +13807,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Subscriptions removed\n\n`deleted` is the number removed, 0 when the endpoint belongs to another user.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "deleted": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  },
-                  "required": ["deleted"]
-                }
-              }
-            }
+          "204": {
+            "description": "Subscription removed"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -14050,7 +14036,7 @@
         "operationId": "batchDeleteRequests",
         "tags": ["requests", "cella"],
         "summary": "Delete requests",
-        "description": "Deletes one or more requests from the system by their IDs.",
+        "description": "Deletes one or more requests from the system by their IDs. An ID that names no request comes back in `rejectedIds`.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "requestBody": {
@@ -15332,7 +15318,7 @@
         "operationId": "batchDeleteUsers",
         "tags": ["system", "cella"],
         "summary": "Delete users",
-        "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
+        "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable. An ID that names no user comes back in `rejectedIds`.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "requestBody": {
@@ -15401,9 +15387,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"

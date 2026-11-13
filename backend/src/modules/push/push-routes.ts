@@ -6,7 +6,6 @@ import {
   pushSubscriptionResponseSchema,
   pushVapidResponseSchema,
   removePushSubscriptionBodySchema,
-  removePushSubscriptionResponseSchema,
 } from '#/modules/push/push-schema';
 
 export const pushRoutes = createXRoutes(['push', 'cella'], {
@@ -38,13 +37,8 @@ export const pushRoutes = createXRoutes(['push', 'cella'], {
     path: '/subscriptions/~remove',
     xGuard: [userGuard],
     summary: 'Remove a Web Push subscription',
-    description: 'Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.',
+    description: 'Deletes the given endpoint for the current user; an unknown endpoint, or one owned by someone else, is a no-op.',
     request: { body: jsonBody(removePushSubscriptionBodySchema) },
-    responses: {
-      200: json(
-        'Subscriptions removed\n\n`deleted` is the number removed, 0 when the endpoint belongs to another user.',
-        removePushSubscriptionResponseSchema,
-      ),
-    },
+    responses: { 204: { description: 'Subscription removed' } },
   }),
 });

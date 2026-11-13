@@ -1,12 +1,11 @@
 import { boolean, doublePrecision, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { writerColumn } from '#/db/utils/audit-columns';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { membershipChannelColumns, membershipChannelIndexes } from '#/db/utils/channel-relation-columns';
 import { tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -17,7 +16,6 @@ import { usersTable } from '#/modules/user/user-db';
 export const membershipsTable = snakeCase.table(
   'memberships',
   {
-    createdAt: timestampColumns.createdAt,
     id: uuid().primaryKey().$defaultFn(generateId),
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
@@ -29,14 +27,12 @@ export const membershipsTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
-    createdBy: writerColumn(),
-    updatedAt: timestampColumns.updatedAt,
-    updatedBy: writerColumn(),
     hidden: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
     organizationId: uuid().notNull(),
     ...membershipChannelColumns(),
+    ...auditColumns(),
   },
   (table) => [
     index('memberships_user_id_idx').on(table.userId),

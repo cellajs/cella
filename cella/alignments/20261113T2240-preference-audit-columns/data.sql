@@ -1,0 +1,2 @@
+-- No hand-written statements: the generated migration adds the audit columns to notification_preferences (an existing
+-- row takes the migration's moment as created_at and no writer) and drops system_roles.updated_at.

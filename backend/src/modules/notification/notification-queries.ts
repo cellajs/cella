@@ -4,6 +4,7 @@ import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
@@ -110,13 +111,13 @@ interface UpdatePreferencesOpts {
   values: Partial<Pick<NotificationPreferencesModel, 'mentionEmails' | 'commentEmails' | 'digest'>>;
 }
 
-/** Writes the given preferences; a user without a row gets one with the defaults for the rest. */
+/** Writes the given preferences as their user; a user without a row gets one with the defaults for the rest. */
 export async function updatePreferences(ctx: DbContext, { userId, values }: UpdatePreferencesOpts) {
-  const updatedAt = getIsoDate();
+  const stamps = updateStamps(userId);
   const [updated] = await ctx.var.db
     .insert(notificationPreferencesTable)
-    .values({ userId, ...values, updatedAt })
-    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { ...values, updatedAt } })
+    .values({ userId, ...values, createdBy: userId, ...stamps })
+    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { ...values, ...stamps } })
     .returning();
 
   return updated;

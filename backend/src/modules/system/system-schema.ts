@@ -24,4 +24,4 @@ export const sendNewsletterBodySchema = z.object({
   content: z.string().max(maxLength.html),
 });
 
-export const systemRoleBaseSchema = createSelectSchema(systemRolesTable).omit({ createdAt: true, updatedAt: true });
+export const systemRoleBaseSchema = createSelectSchema(systemRolesTable).omit({ createdAt: true });

@@ -39,7 +39,5 @@ export const pushSubscriptionResponseSchema = z.object({ id: z.string(), endpoin
 
 export const removePushSubscriptionBodySchema = z.object({ endpoint: endpointSchema });
 
-export const removePushSubscriptionResponseSchema = z.object({ deleted: z.number().int().min(0) });
-
 /** `publicKey` is null while push sending is off (`has.push` off, or VAPID keys web-push refuses); the client then hides the toggle. */
 export const pushVapidResponseSchema = z.object({ publicKey: z.string().nullable() });

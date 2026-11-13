@@ -1918,13 +1918,14 @@ export const zUpdateMembershipPath = z.object({
  * Membership updated
  */
 export const zUpdateMembershipResponse = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   tenantId: z.string().max(24),
   channelType: z.enum(['organization']),
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
+  organizationId: z.uuid(),
+  createdAt: z.string(),
   createdBy: z
     .union([
       z.object({
@@ -1962,7 +1963,6 @@ export const zUpdateMembershipResponse = z.object({
       }),
     ])
     .nullable(),
-  organizationId: z.uuid(),
   hidden: z.boolean().optional(),
   muted: z.boolean().optional(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
@@ -2493,13 +2493,9 @@ export const zRemovePushSubscriptionBody = z.object({
 });
 
 /**
- * Subscriptions removed
- *
- * `deleted` is the number removed, 0 when the endpoint belongs to another user.
+ * Subscription removed
  */
-export const zRemovePushSubscriptionResponse = z.object({
-  deleted: z.int().gte(0),
-});
+export const zRemovePushSubscriptionResponse = z.void();
 
 export const zListRequestsQuery = z.object({
   pageToken: z.string().max(2048).optional(),

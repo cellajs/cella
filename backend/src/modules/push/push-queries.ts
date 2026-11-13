@@ -34,12 +34,10 @@ export async function upsertPushSubscription(ctx: DbContext, { values }: { value
 }
 
 /** Scoped to the caller: an endpoint another user registered deletes nothing. */
-export async function deletePushSubscription(ctx: DbContext, { userId, endpoint }: { userId: string; endpoint: string }): Promise<number> {
-  const deleted = await ctx.var.db
+export async function deletePushSubscription(ctx: DbContext, { userId, endpoint }: { userId: string; endpoint: string }): Promise<void> {
+  await ctx.var.db
     .delete(pushSubscriptionsTable)
-    .where(and(eq(pushSubscriptionsTable.endpoint, endpoint), eq(pushSubscriptionsTable.userId, userId)))
-    .returning({ id: pushSubscriptionsTable.id });
-  return deleted.length;
+    .where(and(eq(pushSubscriptionsTable.endpoint, endpoint), eq(pushSubscriptionsTable.userId, userId)));
 }
 
 /** Every subscription of these users, one per browser installation. */

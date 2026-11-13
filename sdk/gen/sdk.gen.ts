@@ -2676,13 +2676,13 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Remove a Web Push subscription
  *
- * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
+ * Deletes the given endpoint for the current user; an unknown endpoint, or one owned by someone else, is a no-op.
  *
  * **POST /push/subscriptions:remove** ·· [removePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions:remove) ·· _push · cella_
  *
  * @param {removePushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 413
+ * @returns Possible status codes: 204, 400, 401, 403, 413
  */
 export const removePushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<RemovePushSubscriptionData, ThrowOnError>,
@@ -2753,7 +2753,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
 /**
  * Delete requests
  *
- * Deletes one or more requests from the system by their IDs.
+ * Deletes one or more requests from the system by their IDs. An ID that names no request comes back in `rejectedIds`.
  *
  * **POST /requests:batch-delete** ·· [batchDeleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests:batch-delete) ·· _requests · cella_
  *
@@ -3037,13 +3037,13 @@ export const countSystemInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Delete users
  *
- * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
+ * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable. An ID that names no user comes back in `rejectedIds`.
  *
  * **POST /users:batch-delete** ·· [batchDeleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/users:batch-delete) ·· _system · cella_
  *
  * @param {batchDeleteUsersData} options
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 429
  */
 export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteUsersData, ThrowOnError>,
