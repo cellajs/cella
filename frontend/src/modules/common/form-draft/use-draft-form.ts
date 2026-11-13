@@ -42,7 +42,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
   const resetDraftForm = useDraftStore((state) => state.resetForm);
-  const setFormDirty = useDraftStore((state) => state.setFormDirty);
 
   const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
 
@@ -109,12 +108,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   useEffect(() => {
     toggleUnsavedBadge(isDirty);
-    // Values before the flag, at once, so a draft badge after a reload always has a draft behind it. Only when dirty:
-    // a clean mount must not clear the stored draft before the restore below reads it.
+    // At once, so the first edit survives a reload inside the debounce. Only when dirty: a clean mount must not clear the
+    // stored draft before the restore below reads it.
     if (isDirty) saveDraft();
-    setFormDirty(formId, isDirty);
-    // The flag too: a reader of `dirtyForms` after a reload learns of the draft before its form mounts
-    flushKvWrites();
   }, [isDirty]);
 
   useEffect(() => {
