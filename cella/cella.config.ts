@@ -44,6 +44,7 @@ export default defineConfig({
       'frontend/public/thumbnail.jpg',
       'frontend/src/modules/common/logo-art.tsx',
       'frontend/src/styling/app.css',
+      'frontend/src/styling/app-utilities.css',
       'frontend/src/modules/auth/legal/legal-config.ts',
       'shared/locales/en/app.json',
       'shared/locales/nl/app.json',

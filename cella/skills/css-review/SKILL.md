@@ -60,4 +60,4 @@ What does not carry over from the template:
 
 - **Conclusions about usage.** An app may emit an attribute the template only reads, or call a prop the template never passes. In the template, deleting a hook needs the grep across apps and counts as breaking.
 - **Performance rankings.** Measure the app's own heavy surface; a static read of it is a lead.
-- **New classes.** `app.css` loads inside a layer, where `@utility` and `@custom-variant` fail to compile, and `cn.ts` belongs to the template. A repeated set in an app takes a `tw` constant, a small component or a plain CSS rule, and a plain CSS class takes no variants.
+- **New classes.** `app.css` loads inside a layer, where `@utility` and `@custom-variant` fail to compile: an app writes those in `app-utilities.css`, which `tailwind.css` imports without a layer. `cn.ts` belongs to the template. A repeated set in an app follows the template's order (frontend README, Class strings), and a plain CSS class takes no variants.
