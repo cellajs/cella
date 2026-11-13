@@ -87,7 +87,7 @@ export const handleOAuthCallback = async (
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
 const authCallbackFlow = async ({ providerUser, provider, identity = null }: BaseCallbackProps): Promise<OAuthFlowResult> => {
-  if (identity?.verified) {
+  if (identity && identity.verifiedAt !== null) {
     const user = await findUserById(dbCtx, { id: identity.userId });
     await touchIdentity(identity, providerUser);
     return { type: 'verified', user, identity };
@@ -144,7 +144,7 @@ const connectCallbackFlow = async ({
   if (identity) {
     if (identity.userId !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
 
-    if (identity.verified) {
+    if (identity.verifiedAt !== null) {
       await touchIdentity(identity, providerUser);
       return { type: 'verified', user, identity };
     }
@@ -239,9 +239,9 @@ const verifyCallbackFlow = async ({
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     await spendVerification(ctx, txCtx, verifyToken);
-    if (identity.verified) return;
+    if (identity.verifiedAt !== null) return;
 
-    await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verified: true, verifiedAt: now, lastUsedAt: now } });
+    await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verifiedAt: now, lastUsedAt: now } });
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.

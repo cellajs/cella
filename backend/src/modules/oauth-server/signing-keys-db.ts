@@ -1,16 +1,14 @@
-import { sql } from 'drizzle-orm';
-import { index, jsonb, snakeCase, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { jsonb, snakeCase, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import type { JWK } from 'jose';
 import { maxLength } from '#/db/utils/constraints';
-import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 
-/** `next` is published before it signs anything; `current` signs; `retired` verifies for one access token lifetime after `retiredAt`. */
-const signingKeyStatuses = ['next', 'current', 'retired'] as const;
+/** `next` is published before it signs anything; `current` signs. */
+const signingKeyStatuses = ['next', 'current'] as const;
 
 /**
  * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens). The private JWK is encrypted
  * at rest with `data-encryption.ts`; the public JWK is what the JWKS endpoint and the in-process verifier publish.
- * Rotation moves next → current → retired.
  */
 export const signingKeysTable = snakeCase.table(
   'signing_keys',
@@ -22,13 +20,10 @@ export const signingKeysTable = snakeCase.table(
     privateJwk: text().notNull(),
     publicJwk: jsonb().$type<JWK>().notNull(),
     createdAt: timestampColumns.createdAt,
-    /** When the key stopped signing; a `retired` row without it verifies nothing. */
-    retiredAt: isoTimestamp(),
   },
   (table) => [
-    index('signing_keys_status_idx').on(table.status),
     // One signer and one successor at a time, whatever races at first boot or during a rollout.
-    uniqueIndex('signing_keys_one_per_status_idx').on(table.status).where(sql`${table.status} in ('current', 'next')`),
+    uniqueIndex('signing_keys_one_per_status_idx').on(table.status),
   ],
 );
 

@@ -37,7 +37,7 @@ export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: { 
       lastUsedAt: identitiesTable.lastUsedAt,
     })
     .from(identitiesTable)
-    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)));
+    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), isNotNull(identitiesTable.verifiedAt)));
 
 /** The user's SSO identities that still name the connection they came through. */
 export const findSsoIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
@@ -58,7 +58,7 @@ export const insertIdentity = async (ctx: DbContext, { values, verified = false 
   const now = getIsoDate();
   const [identity] = await ctx.var.db
     .insert(identitiesTable)
-    .values({ ...values, verified, ...(verified && { verifiedAt: now, lastUsedAt: now }) })
+    .values({ ...values, ...(verified && { verifiedAt: now, lastUsedAt: now }) })
     .returning();
   return identity;
 };
@@ -66,7 +66,7 @@ export const insertIdentity = async (ctx: DbContext, { values, verified = false 
 interface UpdateIdentityOpts {
   id: string;
   userId?: string;
-  values: Partial<Pick<InsertIdentityModel, 'email' | 'verified' | 'verifiedAt' | 'lastUsedAt' | 'data' | 'connectionId'>>;
+  values: Partial<Pick<InsertIdentityModel, 'email' | 'verifiedAt' | 'lastUsedAt' | 'data' | 'connectionId'>>;
 }
 
 /** Writes `values` onto the identity; with `userId`, only when the identity belongs to that user. */

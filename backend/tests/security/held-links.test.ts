@@ -53,7 +53,7 @@ describe('invitation and verification links fetched by a scanner', () => {
 
   it('must not let a scanner use up an address verification link', async () => {
     const user = await createTestUser(address('connecting'));
-    const identity = await linkIdentity(user, { verified: false });
+    const identity = await linkIdentity(user, { verifiedAt: null });
     const { raw, row } = await insertTestToken('oauth-verification', user, { identityId: identity.id, expiresInMs: 2 * 60 * 60 * 1000 });
 
     await scan('oauth-verification', raw);

@@ -210,7 +210,7 @@ describe('SSO sign-in through an institution', async () => {
       provider: 'surfconext',
       subject,
       email: studentEmail,
-      verified: true,
+      verifiedAt: expect.any(String),
       connectionId: connection.id,
     });
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['student', 'member'], acr: claimsOf().acr });
@@ -417,7 +417,7 @@ describe('SSO sign-in through an institution', async () => {
       expect(response.status).toBe(302);
       expect(cookieChange(response, 'session')).toBe('set');
       expect(await identitiesOf(user.id)).toMatchObject([
-        { kind: 'sso', provider: 'surfconext', subject: 'lars-subject', verified: true, connectionId: connection.id },
+        { kind: 'sso', provider: 'surfconext', subject: 'lars-subject', verifiedAt: expect.any(String), connectionId: connection.id },
       ]);
       // The institution operates the mailbox it asserts: the address joins the account's ledger.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'lars@student.hu.nl'))).toMatchObject([

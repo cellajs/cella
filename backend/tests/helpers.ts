@@ -424,7 +424,7 @@ export async function linkIdentity(user: { id: string; email: string }, override
       provider: 'github',
       subject: 'github-user-id',
       email: user.email,
-      verified: true,
+      verifiedAt: mockPastIsoDate(),
       createdAt: mockPastIsoDate(),
       ...overrides,
     })
