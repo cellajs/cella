@@ -17,8 +17,7 @@ invitation mail goes through `mailWithinCaps`. Run `pnpm generate` with this fol
 
 Held was a null `remindedAt`, so a pending invitation whose first mail was held back or failed was never swept. The
 status says it now: a publish releases held rows (`mailHeldInvitations`), and the sweep ages a pending row from its last
-mail or its creation. A declined row goes when `retention.declinedInvitationHoldDays` ends, so it is never reopened. A
-role raise is a new invitation by the raising inviter.
+mail or its creation. A declined row goes when `retention.declinedInvitationHoldDays` ends, so it is never reopened.
 
 ## Blast radius
 

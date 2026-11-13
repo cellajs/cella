@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { and, count, countDistinct, eq, getColumns, inArray, isNull, ne, notExists, notInArray, or, sql } from 'drizzle-orm';
-import { appConfig } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import type { DbContext, OrgContext } from '#/core/context';
 import type { UserId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
@@ -258,6 +258,24 @@ export const findInvitationsPaginated = async (ctx: DbContext, opts: FindInvitat
     .offset(offset);
 
   return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(table).where(where)));
+};
+
+interface RaiseInvitationsOpts {
+  ids: string[];
+  role: EntityRole;
+  by: UserId;
+  /** Move a held invitation to pending, for the raising request to mail now. */
+  release: boolean;
+}
+
+/** Raises open invitations to `role` in place: a link already sent keeps working, now for the higher role. */
+export const raiseInvitations = async (ctx: DbContext, { ids, role, by, release }: RaiseInvitationsOpts) => {
+  if (!ids.length) return;
+  const at = getIsoDate();
+  await ctx.var.db
+    .update(invitationsTable)
+    .set({ role, ...(release && statusValues('pending', at)), ...updateStamps(by, at) })
+    .where(and(inArray(invitationsTable.id, ids), ne(invitationsTable.status, 'declined')));
 };
 
 /** Deletes invitations by id; their tokens go with them. */

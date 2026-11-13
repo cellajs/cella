@@ -6,7 +6,7 @@ import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { channelIdColumnsOf, findMenuParent, isHeldInvitation, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
-import { countInvitationSeats, deleteInvitations, insertInvitations } from '#/modules/memberships/invitations-queries';
+import { countInvitationSeats, insertInvitations, raiseInvitations } from '#/modules/memberships/invitations-queries';
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
 import type { membershipCreateBodySchema } from '#/modules/memberships/memberships-schema';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
@@ -25,8 +25,8 @@ type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.inf
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
 /**
- * Invites each address as its plan says: a new invitation, the earlier one sent again (a higher role makes it a new
- * invitation by this inviter), an organization member added at once, or a declined invitation or a member left out.
+ * Invites each address as its plan says: a new invitation, the earlier one sent again (a higher role replaces a lower
+ * one), an organization member added at once, or a declined invitation or a member left out.
  * An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done. Returns
  * what happened to each address.
  */
@@ -54,11 +54,9 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const invites = planned('invite');
   const adds = planned('add');
   const resends = planned('resend');
-  // The mail and the membership credit who granted the role: a higher role replaces the invitation with one by this
-  // inviter, never the other way.
+  // A higher role replaces a lower one, never the other way. Unheld, a raise releases a held invitation to go out now.
   const raised = resends.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
   const raisedIds = new Set(raised.map(({ invitation }) => invitation.id));
-  const unchanged = resends.filter(({ invitation }) => !raisedIds.has(invitation.id));
 
   // Seats: new invitations and, at the organization, members added at once. A resend and a member take none.
   const seatTakers = [...invites, ...(entityType === 'organization' ? adds : [])];
@@ -74,9 +72,9 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   }
 
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
-  const mailedAgain = unchanged.filter(({ invitation }) => invitation.status === 'pending');
-  const mailNow = held ? [] : [...invites, ...raised, ...mailedAgain].map(({ email }) => email);
-  const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + raised.length : 0 });
+  const mailedAgain = resends.filter(({ invitation }) => invitation.status === 'pending' || raisedIds.has(invitation.id));
+  const mailNow = held ? [] : [...invites, ...mailedAgain].map(({ email }) => email);
+  const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length : 0 });
 
   // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
   const createdMemberships = adds.length
@@ -89,28 +87,21 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
     : [];
   for (const { userId } of adds) invalidateCache.user(userId);
 
-  const newInvitations = [
-    ...invites.map(({ email, userId }) => ({ email, userId })),
-    ...raised.map(({ invitation: { email, userId } }) => ({ email, userId })),
-  ];
-  const inserted = await db.transaction(async (tx) => {
-    const txCtx = { var: { db: tx } };
-    await deleteInvitations(txCtx, { ids: [...raisedIds] });
-    return insertInvitations(txCtx, {
-      invitations: newInvitations.map(({ email, userId }) => ({
-        id: generateId(),
-        email,
-        userId,
-        role,
-        status: held ? 'held' : 'pending',
-        createdBy: user.id,
-        channelType: entityType,
-        tenantId,
-        ...channelIdColumnsOf(entity),
-        channelId: entity.id,
-      })),
-    });
+  const inserted = await insertInvitations(ctx, {
+    invitations: invites.map(({ email, userId }) => ({
+      id: generateId(),
+      email,
+      userId,
+      role,
+      status: held ? 'held' : 'pending',
+      createdBy: user.id,
+      channelType: entityType,
+      tenantId,
+      ...channelIdColumnsOf(entity),
+      channelId: entity.id,
+    })),
   });
+  await raiseInvitations(ctx, { ids: [...raisedIds], role, by: user.id, release: !held });
 
   if (!held) {
     // New invitations and resends go out alike: a resend names the role its invitation holds now, and its inviter.

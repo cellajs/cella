@@ -39,7 +39,7 @@ export const invitationsTable = snakeCase.table(
     declinedAt: isoTimestamp(),
     /** When the last mail went out; null until the first. */
     mailedAt: isoTimestamp(),
-    /** The inviter, a user: a service account invites no one. */
+    /** The inviter who made the row, credited in its mails and its membership; `updatedBy` records who raised it. */
     createdBy: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
