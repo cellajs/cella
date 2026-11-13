@@ -5,6 +5,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { collectGarbage } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { docWhere, findYjsDocument, findYjsDocumentGeneration, findYjsLog, logWhere } from '#/modules/yjs/yjs-queries';
@@ -74,12 +75,12 @@ export async function findLog(doc: YjsDocKey, generation: string): Promise<LogRo
 }
 
 /** How a fold ended: written, the document retired or reseeded since the read, or another compaction took its rows. */
-export type FoldResult = 'ok' | 'retired' | 'overlap';
+export type FoldResult = 'ok' | 'retired' | 'reseeded' | 'overlap';
 
 /**
  * Replaces the base state of `generation`, the one the merge was read from, with the merge stripped of deleted content
  * (`collectGarbage`), and deletes exactly the log rows merged into it, in one transaction; rows appended meanwhile
- * stay. `retired`, with nothing changed, when the row of that generation is gone. `overlap`, rolled back, when fewer of
+ * stay. `retired` or `reseeded`, with nothing changed, when the row of that generation is gone or of another one. `overlap`, rolled back, when fewer of
  * the rows are left than were merged: another compaction (a second relay during a rollout) folded them meanwhile, and
  * its base holds rows this merge may lack. The document row is locked first, as a retirement locks it, so two folds of
  * one document wait for each other.
@@ -93,7 +94,7 @@ export async function foldLog(doc: YjsDocKey, merged: Uint8Array, logIds: number
         .set({ state: Buffer.from(state), updatedAt: sql`now()` })
         .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
         .returning({ entityId: yjsDocumentsTable.entityId });
-      if (updated.length === 0) return 'retired';
+      if (updated.length === 0) return (await findYjsDocumentGeneration({ var: { db: tx } }, { doc })) ? 'reseeded' : 'retired';
       if (logIds.length > 0) {
         const deleted = await tx
           .delete(yjsUpdatesTable)
@@ -117,15 +118,9 @@ export async function discardLogRows(doc: YjsDocKey, logIds: number[]): Promise<
   });
 }
 
-/**
- * Removes the document row and any log rows: the entity is gone, so nothing can receive them. The row goes first, so an
- * append that holds it commits before the log delete, which takes its row too.
- */
-export async function deleteDocument(doc: YjsDocKey): Promise<void> {
-  await asSystem(doc.tenantId, async (tx) => {
-    await tx.delete(yjsDocumentsTable).where(docWhere(doc));
-    await tx.delete(yjsUpdatesTable).where(logWhere(doc));
-  });
+/** Retires the document of an entity found gone, as the backend's delete does: base and log go, and every relay hears of it. */
+export async function retireDocument(doc: YjsDocKey): Promise<void> {
+  await asSystem(doc.tenantId, (tx) => retireYjsDocuments({ var: { db: tx } }, { entityType: doc.entityType, entityIds: [doc.entityId] }));
 }
 
 /** What a live stamp learns: whether the document row exists (a retired document has none), and the newest log row id. */
@@ -188,7 +183,7 @@ async function findStaleDocumentsOfTenant(tenantId: string, olderThanMs: number)
 }
 
 /**
- * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
+ * Documents with an uncompacted log that no session stamped for longer than the finish grace (a session stamps its
  * row every yjsLiveStampMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP.
  * An idle document with nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits
  * every tenant through its own tenant-scoped transaction, a bounded number at a time; a contextless query on the

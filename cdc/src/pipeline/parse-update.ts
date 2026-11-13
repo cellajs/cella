@@ -1,6 +1,6 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { hierarchy, isChannel, isProduct } from 'shared';
-import { isReferenceCleanupWrite } from '../embeddings/embedding-cleanup';
+import { isReferenceStripWrite } from '../embeddings/embedding-strip';
 import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
 import { compactRowData } from '../utils/compact-row-data';
@@ -11,7 +11,7 @@ import type { ParseMessageResult } from './parse-message';
 
 /**
  * Columns the diff leaves out: `seq` is the worker's own stamp, `stx` is rewritten by every write and by the worker's reference strip
- * (which `isReferenceCleanupWrite` relies on), and the generated `path` moves with the placement columns. None is a user's edit.
+ * (which `isReferenceStripWrite` relies on), and the generated `path` moves with the placement columns. None is a user's edit.
  */
 const stampedFields = new Set(['stx', 'seq', 'path']);
 
@@ -30,7 +30,7 @@ function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Reco
  * An update as the worker records it: the activity with the fields that differ between the old and the new row, and
  * for a row that left readers behind, by a move or by `public` going false, the permission fields it had.
  * @returns null for an update that changed nothing a client holds: no field, only the stamp, the path or `updatedAt`,
- *   a row that was soft-deleted already, or the worker's own cleanup of an embedding column.
+ *   a row that was soft-deleted already, or the worker's own strip of an embedding column.
  * @throws When the update carries no old row, which a table with REPLICA IDENTITY FULL always sends.
  */
 export function parseUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdate): ParseMessageResult | null {
@@ -45,8 +45,8 @@ export function parseUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdat
 
   if (isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
-  // The worker's own cleanup of an embedding column carries no user mutation.
-  if (isReferenceCleanupWrite(tableMeta.type, changedFields)) return null;
+  // The worker's own strip of an embedding column carries no user mutation.
+  if (isReferenceStripWrite(tableMeta.type, changedFields)) return null;
 
   const activity = createActivity(tableMeta, rowData, 'update', changedFields);
 

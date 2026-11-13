@@ -26,7 +26,7 @@ vi.mock('../lib/db', () => ({
 }));
 
 const { appConfig } = await import('shared');
-const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
+const { stripEmbeddingReferences } = await import('../embeddings/embedding-strip');
 
 const productType: ProductEntityType = appConfig.productEntityTypes[0];
 
@@ -50,9 +50,9 @@ beforeEach(() => {
   touched.length = 0;
 });
 
-it('with no embedding declared, the reference cleanup issues no statement', async () => {
-  await cleanupEmbeddingReferences(productType, 'delete', events);
-  await cleanupEmbeddingReferences(productType, 'update', events);
+it('with no embedding declared, the reference strip issues no statement', async () => {
+  await stripEmbeddingReferences(productType, 'delete', events);
+  await stripEmbeddingReferences(productType, 'update', events);
 
   expect(touched).toEqual([]);
 });

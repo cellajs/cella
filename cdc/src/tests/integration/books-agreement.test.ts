@@ -92,7 +92,7 @@ const tables = (await import('#/tables')) as unknown as {
   resourceTables: Record<string, SyntheticTable>;
 };
 const { cdcDb } = await import('../../lib/db');
-const { cleanupEmbeddingReferences } = await import('../../embeddings/embedding-cleanup');
+const { stripEmbeddingReferences } = await import('../../embeddings/embedding-strip');
 const { parseMessage } = await import('../../pipeline/parse-message');
 const { compareBooks } = await import('../../pipeline/verify');
 const { TransactionBuffer } = await import('../../services/transaction-buffer');
@@ -228,12 +228,7 @@ function workloadOn(tx: Tx, seed: number) {
     }
     for (const [action, events] of groups) {
       const before = await all('task');
-      await cleanupEmbeddingReferences(
-        'item' as ProductEntityType,
-        action as Exclude<ActivityAction, 'create'>,
-        events,
-        tx as unknown as typeof cdcDb,
-      );
+      await stripEmbeddingReferences('item' as ProductEntityType, action as Exclude<ActivityAction, 'create'>, events, tx as unknown as typeof cdcDb);
       const after = new Map((await all('task')).map((task) => [task.id, task]));
       const stripped: Change[] = [];
       for (const old of before) {

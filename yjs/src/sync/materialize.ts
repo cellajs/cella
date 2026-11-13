@@ -9,9 +9,9 @@ import { log } from '../lib/pino';
  * Outcome of one materialize attempt. Only `ok` lets compaction fold the log into the base.
  * - `ok`: durable, safe to compact.
  * - `gone` (410): the entity no longer exists in the document's tenant; nothing can receive the
- *   log, so cleanup and sweep delete the document's rows.
+ *   log, so a finish and the sweep delete the document's rows.
  * - `retry`: the backend is unavailable or refused this write; the log stays, so the next window,
- *   the cleanup or the sweep tries again.
+ *   the finish or the sweep tries again.
  */
 export type MaterializeResult = 'ok' | 'gone' | 'retry';
 

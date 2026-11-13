@@ -128,8 +128,8 @@ Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE
 | A BEGIN carries no commit time | Its activities take the time the worker read them (`onBegin`) | | |
 | A product row names no organization | A delete is counted under its home channel (`resolveChannelKey`) | A create or update fails its flush (`organizationOf`) | |
 | A channel delete cascades to its rows | The cascaded deletes are dropped and counted on the channel's delete (`isCascadedDelete`); clients hear `channel.deleted` | | |
-| The worker's own write comes back through the WAL, or an update changes no field | Changed fields come from the WAL without `stx`, `seq` and `path`, and an update of only `updatedAt` records nothing (`parseUpdate`). The embedding strip is recognized (`isReferenceCleanupWrite`) | | |
-| An embedded row is deleted while hosts reference it | Its id is stripped from the hosts (`cleanupEmbeddingReferences`) | | None for a row deleted by its channel's cascade: it is dropped before the cleanup (`isCascadedDelete`), and a host outside that channel keeps its id |
+| The worker's own write comes back through the WAL, or an update changes no field | Changed fields come from the WAL without `stx`, `seq` and `path`, and an update of only `updatedAt` records nothing (`parseUpdate`). The embedding strip is recognized (`isReferenceStripWrite`) | | |
+| An embedded row is deleted while hosts reference it | Its id is stripped from the hosts (`stripEmbeddingReferences`) | | None for a row deleted by its channel's cascade: it is dropped before the strip (`isCascadedDelete`), and a host outside that channel keeps its id |
 | A column a migration just added reaches a worker of the previous release | Its key is converted without the schema (`convertRowKeys`) | | |
 | The WAL moves on while the worker has nothing to record | The idle worker acknowledges the keepalive position (`acknowledgeIdlePosition`) | | |
 | A flush outlasts the server's `wal_sender_timeout` | The status timer repeats the last acknowledgement (`createReplicationService`) | | |

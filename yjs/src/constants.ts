@@ -1,12 +1,12 @@
 import type { YjsDocKey } from 'shared';
 
-/** Grace period after the last client leaves before the session's log is compacted and the session forgotten. */
-export const yjsCleanupDelayMs = 5 * 60 * 1000;
+/** Grace period after the last client leaves before the session finishes: its log compacted and the session forgotten. */
+export const yjsFinishDelayMs = 5 * 60 * 1000;
 /**
- * How often a session stamps its row live: well inside yjsCleanupDelayMs, the sweep's cutoff, so no relay's sweep takes
+ * How often a session stamps its row live: well inside yjsFinishDelayMs, the sweep's cutoff, so no relay's sweep takes
  * a live session for an orphan.
  */
-export const yjsLiveStampMs = yjsCleanupDelayMs / 5;
+export const yjsLiveStampMs = yjsFinishDelayMs / 5;
 /** Debounces compaction (merge the log into the base state and materialize) after the last received update, up to yjsCompactMaxWaitMs. */
 export const yjsCompactDebounceMs = 3000;
 /**

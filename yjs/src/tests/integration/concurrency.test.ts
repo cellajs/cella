@@ -15,7 +15,7 @@ import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, 
 vi.mock('../../constants', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../constants')>()),
   yjsLiveStampMs: 100,
-  yjsCleanupDelayMs: 500,
+  yjsFinishDelayMs: 500,
 }));
 vi.mock('../../data/permissions', () => ({ authorizeDocument: vi.fn(async (_userId: string, requested: YjsDocScope) => ({ scope: requested })) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
@@ -156,9 +156,9 @@ function firstText(doc: Y.Doc): Y.XmlText {
 /** A relay generation started next to this one, as a start-first rollout does: its own sessions and pool, one database. */
 async function startNextGeneration() {
   vi.resetModules();
-  const { runSweep } = await import('../../sync/sweep');
+  const { materializeOrphanedLogs } = await import('../../sync/sweep');
   const { closeDb } = await import('../../data/db');
-  return { runSweep, closeDb };
+  return { materializeOrphanedLogs, closeDb };
 }
 
 /** A session a crashed relay left behind: its base seeded from the description, one unwritten edit, both a day old. */
@@ -244,7 +244,7 @@ describe('relay end to end', () => {
 
     const next = await startNextGeneration();
     try {
-      await next.runSweep();
+      await next.materializeOrphanedLogs();
     } finally {
       await next.closeDb();
     }

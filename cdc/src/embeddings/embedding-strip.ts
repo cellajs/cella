@@ -7,7 +7,7 @@ import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from './is-soft-delete-transition';
 
-type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
+type EmbeddingStripAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
@@ -20,8 +20,8 @@ interface ResolvedEmbedding {
   hostIdColumn: AnyPgColumn;
 }
 
-/** What the cleanup writes through: the worker's pool, or the transaction a test keeps to itself. */
-type CleanupExecutor = Pick<typeof cdcDb, 'transaction'>;
+/** What the strip writes through: the worker's pool, or the transaction a test keeps to itself. */
+type StripExecutor = Pick<typeof cdcDb, 'transaction'>;
 
 /** Resolves productEmbeddings to Drizzle column references at module init; throws on misconfiguration. */
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
@@ -35,18 +35,17 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 
     const hostColumn = columns[hostColumnName];
     if (!hostColumn) {
-      // Hydrated single-reference embedding: only a `${hostColumnName}Id` column exists, and delete
-      // flows reassign it synchronously, so there is no array to clean.
+      // A single reference (`ProductEmbedding.hostColumn`) holds no array to strip.
       if (columns[`${hostColumnName}Id`]) continue;
       throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProductType}" table`);
     }
 
     // Scope by the deepest strict ancestor, not the parent: a nullable placement column may be null on the deleted row,
-    // which would skip the cleanup with no error, while the strict ancestor (ultimately the organization) is present on
+    // which would skip the strip with no error, while the strict ancestor (ultimately the organization) is present on
     // the row and on every host table.
     const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProductType));
     const parentType = hierarchy.getOrderedAncestors(embeddedProductType).find((ancestor) => !nullableAncestors.has(ancestor));
-    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProductType}" has no parent channel: cleanup requires a scoping column`);
+    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProductType}" has no parent channel: the strip requires a scoping column`);
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
@@ -73,11 +72,11 @@ const embeddingsByProduct = resolveEmbeddings();
  * Removes deleted or unpublished embedded ids from configured host arrays. Runs outside request
  * handlers so the indexed, parent-scoped update does not take row locks on the request path.
  */
-export async function cleanupEmbeddingReferences(
+export async function stripEmbeddingReferences(
   embeddedProductType: ProductEntityType,
-  action: EmbeddingCleanupAction,
+  action: EmbeddingStripAction,
   events: { result: { rowData: CdcRowData; oldRowData?: CdcRowData | null } }[],
-  db: CleanupExecutor = cdcDb,
+  db: StripExecutor = cdcDb,
 ): Promise<void> {
   const embeddings = embeddingsByProduct.get(embeddedProductType);
   if (!embeddings) return;
@@ -91,7 +90,7 @@ export async function cleanupEmbeddingReferences(
     const references = relevantEvents.flatMap(({ result: { rowData } }) => {
       const parentId = rowData[parentColumnName];
       if (typeof parentId === 'string') return [{ parentId, id: rowData.id }];
-      log.warn(`cleanupEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id: rowData.id });
+      log.warn(`stripEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id: rowData.id });
       return [];
     });
     // Grouped by parent scope, e.g. projectId.
@@ -137,10 +136,10 @@ for (const { hostProductType, hostColumn } of appConfig.productEmbeddings) {
 }
 
 /**
- * Whether an update of a `hostProductType` row is the one `cleanupEmbeddingReferences` writes: its embedding columns only,
+ * Whether an update of a `hostProductType` row is the one `stripEmbeddingReferences` writes: its embedding columns only,
  * and no `updatedAt`, which every other write moves. The same column name on another table is no such column.
  */
-export function isReferenceCleanupWrite(hostProductType: string, changedFields: string[]): boolean {
+export function isReferenceStripWrite(hostProductType: string, changedFields: string[]): boolean {
   const columns = embeddingColumnsByHost.get(hostProductType);
   if (!columns || changedFields.length === 0 || changedFields.includes('updatedAt')) return false;
   return changedFields.every((field) => columns.has(field));

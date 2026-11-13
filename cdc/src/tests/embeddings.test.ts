@@ -88,7 +88,7 @@ vi.mock('../lib/db', () => {
 
 // The mock replaces the module, so the one export read here is typed by hand.
 const { getEntityTable } = (await import('#/tables')) as unknown as { getEntityTable: (type: string) => AnyPgTable };
-const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
+const { stripEmbeddingReferences } = await import('../embeddings/embedding-strip');
 const { parseUpdate } = await import('../pipeline/parse-update');
 const { createActivity } = await import('../services/create-activity');
 const { TransactionBuffer } = await import('../services/transaction-buffer');
@@ -151,7 +151,7 @@ beforeEach(() => {
   world.hosts = [{ id: 't1' }];
 });
 
-describe('isReferenceCleanupWrite: in the update handler', () => {
+describe('isReferenceStripWrite: in the update handler', () => {
   const updatedAt = '2026-10-01T10:00:00.000Z';
   const stored = {
     ...taskRow('t1', { items: ['i1', 'i2'] }),
@@ -163,7 +163,7 @@ describe('isReferenceCleanupWrite: in the update handler', () => {
   const update = (row: Row) => ({ tag: 'update', old: stored, new: row }) as unknown as Pgoutput.MessageUpdate;
 
   it('must not turn the cleanup write of a host array into an activity', () => {
-    // As cleanupEmbeddingReferences writes it: the array without the id, nothing else.
+    // As stripEmbeddingReferences writes it: the array without the id, nothing else.
     const cleaned = { ...stored, items: ['i2'] };
 
     expect(parseUpdate(metaOf('task'), update(cleaned))).toBeNull();
@@ -193,9 +193,9 @@ describe('isReferenceCleanupWrite: in the update handler', () => {
   });
 });
 
-describe('cleanupEmbeddingReferences', () => {
+describe('stripEmbeddingReferences', () => {
   it('issues the statement that strips a deleted embedded id from the host arrays of its organization', async () => {
-    await cleanupEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
+    await stripEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
 
     expect(statements).toHaveLength(1);
     const statement = rendered(statements[0]);
@@ -216,7 +216,7 @@ describe('cleanupEmbeddingReferences', () => {
     const live = itemRow('i1');
     const softDeleted = itemRow('i2', { deletedAt: '2026-10-01T10:00:00.000Z' });
 
-    await cleanupEmbeddingReferences(productOf('item'), 'update', [
+    await stripEmbeddingReferences(productOf('item'), 'update', [
       { result: change('item', 'update', live, itemRow('i1')) },
       { result: change('item', 'update', softDeleted, itemRow('i2')) },
     ]);
@@ -225,13 +225,13 @@ describe('cleanupEmbeddingReferences', () => {
     expect(rendered(statements[0]).strippedIds).toEqual(['i2']);
 
     statements.length = 0;
-    await cleanupEmbeddingReferences(productOf('item'), 'update', [{ result: change('item', 'update', live, itemRow('i1')) }]);
+    await stripEmbeddingReferences(productOf('item'), 'update', [{ result: change('item', 'update', live, itemRow('i1')) }]);
 
     expect(statements).toHaveLength(0);
   });
 
   it('issues one statement per organization', async () => {
-    await cleanupEmbeddingReferences(productOf('item'), 'delete', [
+    await stripEmbeddingReferences(productOf('item'), 'delete', [
       { result: change('item', 'delete', itemRow('i1')) },
       { result: change('item', 'delete', itemRow('i2', { organizationId: 'o2' })) },
       { result: change('item', 'delete', itemRow('i3')) },
@@ -244,7 +244,7 @@ describe('cleanupEmbeddingReferences', () => {
   });
 
   it('issues nothing for a product no host embeds', async () => {
-    await cleanupEmbeddingReferences(productOf('task'), 'delete', [{ result: change('task', 'delete', taskRow('t1', { items: ['i1'] })) }]);
+    await stripEmbeddingReferences(productOf('task'), 'delete', [{ result: change('task', 'delete', taskRow('t1', { items: ['i1'] })) }]);
 
     expect(statements).toHaveLength(0);
   });
@@ -252,7 +252,7 @@ describe('cleanupEmbeddingReferences', () => {
   it('writes the hosts it looked up and locked, and no other', async () => {
     world.hosts = [{ id: 't1' }, { id: 't2' }];
 
-    await cleanupEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
+    await stripEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
 
     expect(rendered(statements[0]).writtenIds).toEqual(['t1', 't2']);
   });
@@ -260,7 +260,7 @@ describe('cleanupEmbeddingReferences', () => {
   it('writes nothing when the lookup finds no host, as on a second delivery of the same delete', async () => {
     world.hosts = [];
 
-    await cleanupEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
+    await stripEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
 
     expect(statements).toHaveLength(0);
   });

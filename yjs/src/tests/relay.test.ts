@@ -1015,7 +1015,7 @@ describe('handleLeave: presence', () => {
     const sent = peer.ws.sent.length;
     handleLeave(scope, peer.ws as never);
     expect(peer.ws.sent).toHaveLength(sent);
-    expect(collab.cleanupTimer).toBeDefined();
+    expect(collab.finishTimer).toBeDefined();
   });
 
   it('must not reach a newer session of the document from a socket of one that ended', async () => {
@@ -1305,7 +1305,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(peer.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(getCollab(scope)).toBeUndefined();
-    expect(storage.deleteDocument).not.toHaveBeenCalled();
+    expect(storage.retireDocument).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 

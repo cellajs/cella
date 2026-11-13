@@ -259,6 +259,10 @@ export interface CompanyConfig {
 export interface ProductEmbedding<P extends string = string> {
   readonly embeddedProductType: P;
   readonly hostProductType: P;
+  /**
+   * The host's id array column. A host that holds a single reference has no such array but a `<hostColumn>Id` column,
+   * which the reference strip skips and the retention run reads as one id.
+   */
   readonly hostColumn: string;
   readonly lifecycle?: 'shared' | 'owned';
 }

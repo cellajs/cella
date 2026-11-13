@@ -7,7 +7,7 @@ import { log } from './lib/pino';
 import { otel } from './lib/tracing';
 import { closeWsServer, startWsServer } from './server/ws-server';
 import { onLogNotice, relayUnseenEverywhere } from './sync/relay';
-import { runSweep, startPeriodicSweep } from './sync/sweep';
+import { materializeOrphanedLogs, startPeriodicSweep } from './sync/sweep';
 
 let stopSweep: (() => void) | undefined;
 
@@ -33,7 +33,7 @@ export async function startYjsWorker(options: { inProcess?: boolean } = {}): Pro
   }
 
   // The logs no session holds, which a relay crash left or clients posted over HTTP, are written at boot and every
-  // yjsCleanupDelayMs after; without a database, there are none.
+  // yjsFinishDelayMs after; without a database, there are none.
   stopSweep = env.NODB ? undefined : startPeriodicSweep();
 
   if (!options.inProcess) {
@@ -51,12 +51,12 @@ export async function startYjsWorker(options: { inProcess?: boolean } = {}): Pro
   if (env.NODE_ENV === 'development' && !options.inProcess) {
     // A timeout here must not crash the process: the server already listens and serves once the backend is up.
     waitForBackend()
-      .then(() => runSweep())
+      .then(() => materializeOrphanedLogs())
       .catch((err) => {
-        log.warn('Backend not ready: skipping the boot sweep, the periodic sweep follows', { err });
+        log.warn('Backend not ready: orphaned logs wait for the periodic run', { err });
       });
   } else {
-    runSweep().catch((err) => log.warn('Startup sweep failed', { err }));
+    materializeOrphanedLogs().catch((err) => log.warn('Materializing orphaned logs at startup failed', { err }));
   }
 }
 

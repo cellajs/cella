@@ -6,7 +6,7 @@ vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
 
 const { getCollab, joinCollab, leaveCollab, broadcastToCollab, setUnseenRowHandler, withDocumentLock } = await import('../sync/session-manager');
-const { deleteDocument, stampDocumentLive } = await import('../data/storage');
+const { retireDocument, stampDocumentLive } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
 
 const grace = 5 * 60 * 1000;
@@ -47,9 +47,9 @@ describe('joinCollab / leaveCollab', () => {
     joinCollab(ctx, ws1 as never);
     const collab = joinCollab(ctx, ws2 as never);
     leaveCollab(ctx, ws1 as never);
-    expect(collab.cleanupTimer).toBeUndefined();
+    expect(collab.finishTimer).toBeUndefined();
     leaveCollab(ctx, ws2 as never);
-    expect(collab.cleanupTimer).toBeDefined();
+    expect(collab.finishTimer).toBeDefined();
   });
 
   it('rejoin during the grace period cancels cleanup', async () => {
@@ -58,7 +58,7 @@ describe('joinCollab / leaveCollab', () => {
     const collab = joinCollab(ctx, ws as never);
     leaveCollab(ctx, ws as never);
     joinCollab(ctx, ws as never);
-    expect(collab.cleanupTimer).toBeUndefined();
+    expect(collab.finishTimer).toBeUndefined();
     await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBe(collab);
@@ -75,7 +75,7 @@ describe('joinCollab / leaveCollab', () => {
     await vi.advanceTimersByTimeAsync(grace);
 
     expect(compactDocument).toHaveBeenCalledWith(ctx, null);
-    expect(deleteDocument).not.toHaveBeenCalled();
+    expect(retireDocument).not.toHaveBeenCalled();
     expect(collab.compactTimer).toBeUndefined();
     expect(collab.compactDueAt).toBeUndefined();
     expect(getCollab(ctx)).toBeUndefined();
@@ -88,7 +88,7 @@ describe('joinCollab / leaveCollab', () => {
     vi.mocked(compactDocument).mockResolvedValueOnce('gone');
     leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(grace);
-    expect(deleteDocument).toHaveBeenCalledWith(ctx);
+    expect(retireDocument).toHaveBeenCalledWith(ctx);
     expect(getCollab(ctx)).toBeUndefined();
   });
 
@@ -104,7 +104,7 @@ describe('joinCollab / leaveCollab', () => {
       leaveCollab(ctx, ws as never);
 
       await vi.advanceTimersByTimeAsync(grace);
-      expect(deleteDocument).not.toHaveBeenCalled();
+      expect(retireDocument).not.toHaveBeenCalled();
       expect(getCollab(ctx)).toBeUndefined();
     }
     // No timer is left behind: nothing runs again.
@@ -117,7 +117,7 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     joinCollab(ctx, ws as never);
     vi.mocked(compactDocument).mockResolvedValueOnce('gone');
-    vi.mocked(deleteDocument).mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(retireDocument).mockRejectedValueOnce(new Error('db down'));
     leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(grace);
     expect(getCollab(ctx)).toBeUndefined();
@@ -138,7 +138,7 @@ describe('joinCollab / leaveCollab', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(compactDocument).not.toHaveBeenCalled();
-    expect(deleteDocument).not.toHaveBeenCalled();
+    expect(retireDocument).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBe(collab);
   });
 
@@ -234,11 +234,11 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as never);
     leaveCollab(ctx, ws as never);
-    const armed = collab.cleanupTimer;
+    const armed = collab.finishTimer;
 
     leaveCollab(ctx, ws as never);
     leaveCollab(ctx, mockWebSocket() as never);
-    expect(collab.cleanupTimer).toBe(armed);
+    expect(collab.finishTimer).toBe(armed);
 
     // Positive control: a join cancels the one cleanup, and none runs.
     joinCollab(ctx, mockWebSocket() as never);

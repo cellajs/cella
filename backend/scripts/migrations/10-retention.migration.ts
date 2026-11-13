@@ -100,7 +100,6 @@ function resolveUnreferencedRules(): UnreferencedRule[] {
         const hostTable = productTables[hostProductType]();
         // Widened for the column the config names.
         const columns: Record<string, AnyPgColumn> = getColumns(hostTable);
-        // A hydrated single reference keeps `<hostColumn>Id` and no array.
         const column = columns[hostColumn] ?? columns[`${hostColumn}Id`];
         if (!column) throw new Error(`productEmbeddings: column "${hostColumn}" not found on "${hostProductType}" table`);
         return { table: getTableName(hostTable), column: column.name, isArray: hostColumn in columns };

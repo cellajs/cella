@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { isProduct, type ProductEntityType } from 'shared';
 import { activityAttrs, cdcAttrs, cdcSpanNames } from 'shared/tracing';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { cleanupEmbeddingReferences } from '../embeddings/embedding-cleanup';
+import { stripEmbeddingReferences } from '../embeddings/embedding-strip';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { withSpan } from '../lib/tracing';
@@ -91,7 +91,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<Map<PendingEvent,
  *   2. record it in one transaction, in commit order across entity types and actions: activity rows, sequence values,
  *      counters, row stamps
  *   3. hand the changes to the API: the rows that are no product in commit order, then the product rows per type and
- *      action, each group followed by its embedding cleanup
+ *      action, each group followed by its embedding reference strip
  *
  * Step 2 happens exactly once per change however often the change is delivered; step 3 repeats when it is delivered
  * again, and each part of it is safe to repeat. Whatever fails rejects the flush: the caller then acknowledges nothing
@@ -136,7 +136,7 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
       }));
       sendProductMessagesToApi(productType, rows, traceContext);
       // Written outside the flush's transaction, and a statement that fails rejects the flush.
-      if (action === 'update' || action === 'delete') await cleanupEmbeddingReferences(productType, action, events);
+      if (action === 'update' || action === 'delete') await stripEmbeddingReferences(productType, action, events);
     });
 
     log.trace('Group processed', { groupSize: group.length, entityType: activity.entityType, action });

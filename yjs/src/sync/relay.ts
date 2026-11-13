@@ -347,7 +347,7 @@ async function loadDocumentState(collab: CollabSession, ws?: WebSocket): Promise
   const { scope } = collab;
   let document = await findDocument(scope);
   if (collab.generation !== null && document?.generation !== collab.generation) {
-    endCollab(collab);
+    endCollab(collab, document ? 'reseeded' : 'retired');
     return null;
   }
   // Fresh document: the server seeds it from the stored description, so clients never seed it.
@@ -442,7 +442,7 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
   // The update was classified above, so the append logged it, or found the document retired or reseeded under the
   // session: `no-document` or `stale-generation`.
   if (appended.status !== 'appended') {
-    endCollab(collab);
+    endCollab(collab, appended.status === 'stale-generation' ? 'reseeded' : 'retired');
     return false;
   }
   // The session ended while the append ran: its peers are gone, no timer may run on it, and its generation is void.
@@ -535,7 +535,7 @@ export async function runCompaction(collab: CollabSession): Promise<CompactionRe
           for (const id of ids) collab.seen.delete(id);
         },
       });
-      if (result === 'retired') endCollab(collab);
+      if (result === 'retired' || result === 'reseeded') endCollab(collab, result);
       return result;
     } catch (err) {
       log.error(`Compaction failed for ${docKey(collab.scope)}`, { err });
