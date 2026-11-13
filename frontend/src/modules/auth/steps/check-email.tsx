@@ -50,13 +50,13 @@ export function CheckEmailStep({ invitation }: { invitation?: TokenInvitation })
 
   const { mutate: sendLink, isPending: isSending } = useSendMagicLinkMutation();
 
-  // Only a browser that signed in to the address reaches the sign-in step. Any other gets the same link and the same page, account or not.
+  // Only a browser that signed in to the address hears that it has an account. Any other gets the same link and the same page, account or not.
   const { mutate: submitEmail, isPending: isChecking } = useMutation({
     mutationFn: async (body: CheckEmailData['body']) => !restrictedMode && (await isRecognizedBrowser(body)),
     onSuccess: (recognized, { email }) => {
-      if (recognized) return setStep('signIn', email);
-      if (magicLinkEnabled) return sendLink({ email, mode: 'neutral' });
-      setRestrictedMode(true);
+      if (magicLinkEnabled) return sendLink({ email, mode: recognized ? 'signin' : 'neutral' });
+      // Without magic links the sign-in step offers the passkey.
+      if (!recognized) setRestrictedMode(true);
       setStep('signIn', email);
     },
   });

@@ -3,7 +3,7 @@ import {
   type DragState,
   distributeWidths,
   fitPanels,
-  measureFit,
+  fitsAtMinWidth,
   type PanelConfig,
   resolveLayout,
 } from '~/modules/common/resizable-panels/panel-layout';
@@ -212,27 +212,22 @@ describe('resolveLayout in must-fit', () => {
   });
 });
 
-describe('measureFit', () => {
+describe('fitsAtMinWidth', () => {
   const three = ['a', 'b', 'c'].map((id) => panel(id));
 
-  it('G6: open panels count at their ideal width', () => {
-    expect(measureFit(three, {}, 1125).atIdeal).toBe(true);
-    expect(measureFit(three, {}, 1124).atIdeal).toBe(false);
-  });
-
-  it('E9: the band is where they fit at minWidth but not at their ideal width', () => {
-    expect(measureFit(three, {}, 1124)).toEqual({ atIdeal: false, atMin: true });
-    expect(measureFit(three, {}, 900)).toEqual({ atIdeal: false, atMin: true });
-    expect(measureFit(three, {}, 899)).toEqual({ atIdeal: false, atMin: false });
+  it('G6: open panels count at minWidth', () => {
+    expect(fitsAtMinWidth(three, {}, 900)).toBe(true);
+    expect(fitsAtMinWidth(three, {}, 899)).toBe(false);
   });
 
   it('G6: a closed panel counts its strip', () => {
-    expect(measureFit(three, { b: 50 }, 650)).toEqual({ atIdeal: false, atMin: true });
-    expect(measureFit(three, { b: 50 }, 800)).toEqual({ atIdeal: true, atMin: true });
+    expect(fitsAtMinWidth(three, { b: 50 }, 650)).toBe(true);
+    expect(fitsAtMinWidth(three, { b: 50 }, 649)).toBe(false);
   });
 
-  it('G6: a panel that cannot close counts at its width even when narrow', () => {
-    expect(measureFit([panel('a', { collapsible: false })], { a: 50 }, 374)).toEqual({ atIdeal: false, atMin: true });
+  it('G6: a panel that cannot close counts at minWidth even when narrow', () => {
+    expect(fitsAtMinWidth([panel('a', { collapsible: false })], { a: 50 }, 300)).toBe(true);
+    expect(fitsAtMinWidth([panel('a', { collapsible: false })], { a: 50 }, 299)).toBe(false);
   });
 });
 

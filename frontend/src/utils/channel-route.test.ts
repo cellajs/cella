@@ -1,22 +1,17 @@
 import type { ChannelEntityType } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getProductRoute } from '~/utils/channel-route';
+import { type ChannelRoute, getProductRoute, type ProductLocation } from '~/utils/channel-route';
 
-const { getProductDeepLink, findInCache } = vi.hoisted(() => ({
+const { getProductDeepLink, getChannelProductRoute, findInCache } = vi.hoisted(() => ({
   getProductDeepLink: vi.fn((): { param?: string; hostParam?: string } => ({})),
+  getChannelProductRoute: vi.fn((): ((location: ProductLocation) => ChannelRoute | undefined) | undefined => undefined),
   findInCache: vi.fn((): Record<string, unknown> | undefined => undefined),
 }));
 
-// Two channels below the organization, as an app declares them: the project lists under a workspace in the menu.
 vi.mock('~/routes-config', () => ({
   channelRouteConfig: {
     organization: { path: '/$tenantId/$organizationSlug/organization', paramName: 'organizationSlug' },
-    workspace: { path: '/$tenantId/$organizationSlug/workspace/$slug', paramName: 'slug' },
-    project: {
-      path: '/$tenantId/$organizationSlug/project/$slug',
-      paramName: 'slug',
-      subitemOf: { entityType: 'workspace', searchParam: 'projectSlug' },
-    },
+    project: { path: '/$tenantId/$organizationSlug/project/$slug', paramName: 'slug' },
   },
 }));
 // The hierarchy those routes belong to: the ancestor walk reads the same channels in every app.
@@ -27,8 +22,7 @@ vi.mock('shared', async (importOriginal) => {
     .createEntityHierarchy(roles)
     .user()
     .organization({ roles: roles.all })
-    .channel('workspace', { parent: 'organization', roles: roles.all })
-    .channel('project', { parent: 'workspace', roles: roles.all })
+    .channel('project', { parent: 'organization', roles: roles.all })
     .product('attachment', { parent: 'project' })
     .build();
   return {
@@ -39,7 +33,7 @@ vi.mock('shared', async (importOriginal) => {
     isProduct: hierarchy.isProduct,
   };
 });
-vi.mock('~/lib/entity-modules', () => ({ getProductDeepLink }));
+vi.mock('~/lib/entity-modules', () => ({ getProductDeepLink, getChannelProductRoute }));
 vi.mock('~/query/basic/find-in-list-cache', () => ({ findInCache }));
 
 /** The test's channel types are the app's, not cella's. */
@@ -55,19 +49,20 @@ const location = {
   contextId: 'host-1',
 };
 
-/** A project row as the enrichment leaves it in the list cache, listed under a workspace by the viewer's membership. */
+/** A project row as the enrichment leaves it in the list cache. */
 const cachedProject = {
   id: 'project-1',
   entityType: 'project',
   slug: 'alpha',
   tenantId: 'tenant1',
   organizationId: 'org-1',
-  ancestorSlugs: { organization: 'acme', workspace: 'design' },
+  ancestorSlugs: { organization: 'acme' },
 };
 
 describe('getProductRoute', () => {
   beforeEach(() => {
     getProductDeepLink.mockReturnValue({});
+    getChannelProductRoute.mockReturnValue(undefined);
     findInCache.mockReturnValue(undefined);
   });
 
@@ -77,14 +72,26 @@ describe('getProductRoute', () => {
     expect(getProductRoute(location)?.search).toEqual({ itemId: 'host-1' });
   });
 
-  it("lands a cached subitem on its parent's page by slug, the subject opened there", () => {
+  it("opens a cached channel's own page by slug, the subject opened there", () => {
     findInCache.mockReturnValue(cachedProject);
     getProductDeepLink.mockReturnValue({ param: 'attachmentDialogId' });
     expect(getProductRoute(location)).toEqual({
-      to: '/$tenantId/$organizationSlug/workspace/$slug',
-      params: { tenantId: 'tenant1', organizationSlug: 'acme', slug: 'design' },
-      search: { projectSlug: 'alpha', attachmentDialogId: 'subject-1' },
+      to: '/$tenantId/$organizationSlug/project/$slug',
+      params: { tenantId: 'tenant1', organizationSlug: 'acme', slug: 'alpha' },
+      search: { attachmentDialogId: 'subject-1' },
     });
     expect(findInCache).toHaveBeenCalledWith('project', 'project-1');
+  });
+
+  it("opens the page the channel's module names, its search kept beside the subject's", () => {
+    const pageRoute = {
+      to: '/$tenantId/$organizationSlug/organization',
+      params: { tenantId: 'tenant1', organizationSlug: 'acme' },
+      search: { projectSlug: 'alpha' },
+    } satisfies ChannelRoute;
+    getChannelProductRoute.mockReturnValue(() => pageRoute);
+    getProductDeepLink.mockReturnValue({ param: 'attachmentDialogId' });
+    expect(getProductRoute(location)).toEqual({ ...pageRoute, search: { projectSlug: 'alpha', attachmentDialogId: 'subject-1' } });
+    expect(getChannelProductRoute).toHaveBeenCalledWith('project');
   });
 });

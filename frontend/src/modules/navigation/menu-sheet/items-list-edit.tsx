@@ -25,7 +25,7 @@ export function MenuSheetItemsListEdit({ items, group, options, prepareHide, isS
   return filteredItems.map((item) => (
     <MenuSheetDraggableItem
       key={item.id}
-      {...{ item, options, prepareHide }}
+      {...{ item, prepareHide }}
       siblings={filteredItems}
       listItems={items}
       isSubitem={isSubmenu}

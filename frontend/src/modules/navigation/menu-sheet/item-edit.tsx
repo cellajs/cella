@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isChannelHideable } from 'shared';
 import { env } from '~/env';
+import { getMenuSection } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { IconComponent } from '~/modules/common/icons/types';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { Spinner } from '~/modules/common/spinner';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
-import { canMove, canMute, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
+import { canMove, canMute, isCompactRow, menuGroup } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import type { MenuRowMoves } from '~/modules/navigation/menu-sheet/helpers/use-menu-row-moves';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { Button } from '~/modules/ui/button';
@@ -18,25 +18,27 @@ import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const avatarBoxClass = tw('relative z-2 mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4');
+const avatarBoxClass = tw('relative z-2 mx-3 my-2 flex shrink-0 group-data-[compact=true]/options-item:mx-4');
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
   /** Sorted; the handle's arrow keys step through it. */
   siblings: UserMenuItem[];
   isSubitem: boolean;
-  icon?: IconComponent;
   /** It mounted by moving here from the other list, so it travels above the rows it passes. */
   isArriving?: boolean;
   moves: MenuRowMoves;
 }
 
-export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArriving = false, moves }: MenuSheetItemEditProps) {
+export function MenuSheetItemEdit({ item, siblings, isSubitem, isArriving = false, moves }: MenuSheetItemEditProps) {
   const { t } = useTranslation();
   const [isTravelling, setIsTravelling] = useState(isArriving);
 
   const { hidden, muted } = item.membership;
-  const isActive = menuGroup(item) === 'active';
+  const isInActiveGroup = menuGroup(item) === 'active';
+  const section = getMenuSection(item.entityType);
+  const Icon = section?.icon;
+  const isCompact = isCompactRow(item.entityType, isSubitem);
   const isHideable = isChannelHideable(item.entityType);
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
   const isMovable = canMove(item, siblings);
@@ -45,7 +47,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
     <EntityAvatar
       // An icon avatar's tile would stand out on the row's fill
       className={cn(
-        'size-8 group-data-[inactive=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:size-6',
+        'size-8 group-data-[compact=true]/options-item:size-6 group-data-[inactive=true]/options-item:opacity-70',
         Icon && 'bg-transparent shadow-none',
       )}
       type={item.entityType}
@@ -60,20 +62,20 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
       onLayoutAnimationComplete={() => setIsTravelling(false)}
-      data-subitem={isSubitem}
-      data-inactive={!isActive}
+      data-compact={isCompact}
+      data-inactive={!isInActiveGroup}
       // Opaque, so a travelling row covers the rows it passes; height, gap and avatar box match item.tsx
       className={cn(
-        'group/options-item hover:text-accent-foreground hover:before:bg-muted-hover relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors data-[subitem=true]:h-10',
+        'group/options-item hover:text-accent-foreground hover:before:bg-muted-hover relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors data-[compact=true]:h-10',
         isMovable && 'cursor-grab',
         isTravelling && 'z-3',
       )}
     >
       {/* Drawn per row, so the dots travel with it while a move animates */}
-      {isSubitem && isActive && <SubmenuConnector className="-top-2 h-4" />}
+      {isSubitem && isInActiveGroup && <SubmenuConnector />}
       {moves.isSaving && (
         <div className="absolute z-10">
-          <Spinner className="text-muted-foreground m-1 mr-3 size-10 p-1 group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
+          <Spinner className="text-muted-foreground m-1 mr-3 size-10 p-1 group-data-[compact=true]/options-item:mx-3 group-data-[compact=true]/options-item:my-2 group-data-[compact=true]/options-item:size-7" />
         </div>
       )}
       {isMovable ? (
@@ -112,7 +114,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <span className={avatarBoxClass}>{avatar}</span>
       )}
 
-      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[inactive=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
+      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[compact=true]/options-item:text-sm group-data-[compact=true]/options-item:font-normal group-data-[inactive=true]/options-item:opacity-70">
         {item.name} {env.VITE_DEBUG && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (
@@ -120,7 +122,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
           <Button
             variant={muted ? 'outline' : 'ghost'}
             size="icon-xs"
-            className={cn('relative shrink-0 group-data-[subitem=true]/options-item:size-7', !muted && 'text-faint-foreground')}
+            className={cn('relative shrink-0 group-data-[compact=true]/options-item:size-7', !muted && 'text-faint-foreground')}
             onClick={moves.toggleMuted}
           >
             {muted ? <BellOffIcon className="size-4" /> : <BellIcon className="size-4" />}

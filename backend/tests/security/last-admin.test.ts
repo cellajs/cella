@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db, openDedicatedConnection } from '#/db/db';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
@@ -13,9 +14,9 @@ import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser, orgMembershipOf } from './helpers';
 
 /**
- * An organization always keeps an admin: the only role that can invite, change roles and manage settings. Demoting,
- * removing, leaving and deleting the account of the last admin are refused with 409 `last_admin`, however they are
- * asked for, until someone else is admin. Deleting the organization itself stays possible.
+ * An organization always keeps an admin: demoting, removing, leaving and deleting the account of the last admin are
+ * refused with 409 `last_admin` until someone else is admin. Deleting the organization frees the account, and an
+ * organization whose other members have no proven address goes with it.
  */
 describe('last organization admin', async () => {
   const call = await createAppClient();
@@ -74,6 +75,26 @@ describe('last organization admin', async () => {
 
     await expectLastAdmin(await call(deleteMe, { headers: headers(admin) }));
     expect(await db.select().from(usersTable).where(eq(usersTable.id, admin.id))).toHaveLength(1);
+  });
+
+  it('deletes the account of the only admin once the organization is deleted', async () => {
+    const { org, admin, headers } = await orgWithOneAdmin();
+
+    const deleted = await call(batchDeleteOrganizations, { path: { tenantId: org.tenantId }, body: { ids: [org.id] }, headers: headers(admin) });
+    expect(deleted.response.status).toBe(200);
+
+    expect((await call(deleteMe, { headers: headers(admin) })).response.status).toBe(204);
+    expect(await db.select().from(usersTable).where(eq(usersTable.id, admin.id))).toHaveLength(0);
+  });
+
+  it('deletes an organization with the account of its only admin when no other member has a proven address', async () => {
+    const { org, admin, member, headers } = await orgWithOneAdmin();
+    await db.delete(emailsTable).where(eq(emailsTable.userId, member.id));
+
+    expect((await call(deleteMe, { headers: headers(admin) })).response.status).toBe(204);
+    const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
+    expect(tenant.status).toBe('archived');
+    expect(await db.select().from(usersTable).where(eq(usersTable.id, member.id))).toHaveLength(1);
   });
 
   it('must not leave an organization without an admin via its two admins removed in concurrent transactions', async () => {

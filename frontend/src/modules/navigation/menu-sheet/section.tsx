@@ -18,6 +18,7 @@ import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigati
 import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
+import { RowEndSlot } from '~/modules/navigation/menu-sheet/row-end-slot';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
@@ -31,8 +32,12 @@ export type MenuSectionOptions = {
   /** Opens the create flow; `organizationId` is set when it starts from one organization's menu sheet. */
   createAction?: (ref: RefObject<HTMLButtonElement | null>, organizationId?: string) => void;
   icon?: IconComponent;
-  /** A badge rendered as the sibling of a row's avatar, with the words it adds to the row's accessible name; a sub-row's avatar is smaller. */
-  rowMark?: (item: UserMenuItem, isSubitem: boolean) => { badge: ReactNode; label: TKey } | undefined;
+  /** Rows at sub-row size, for a section that lists rows of a type another section nests: its rows then rank with that section's sub-rows. */
+  compact?: true;
+  /** False keeps the section open with a plain label for its header, even beside other sections. */
+  collapsible?: false;
+  /** A badge rendered as the sibling of a row's avatar, with the words it adds to the row's accessible name; a compact row's avatar is smaller. */
+  rowMark?: (item: UserMenuItem, isCompact: boolean) => { badge: ReactNode; label: TKey } | undefined;
 };
 
 // The icon buttons beside a section toggle: a closed section folds them to nothing, and a toggle widens them to the
@@ -93,11 +98,15 @@ function MenuSheetSectionButton({
               <span className="text-faint-foreground font-normal group-data-[visible=true]/menu-section:hidden">{activeCount}</span>
             )}
           </span>
-          {showsBadge && <CountBadge count={sectionUnseenCount} className="ml-2 shrink-0" />}
+          {showsBadge && (
+            <RowEndSlot className="ml-2">
+              <CountBadge count={sectionUnseenCount} className="shrink-0" />
+            </RowEndSlot>
+          )}
           <FoldingChevron
             icon={ChevronDownIcon}
             folded={showsBadge}
-            className="ml-2 opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180"
+            className="ml-2 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180"
           />
         </Button>
       ) : (
@@ -107,7 +116,7 @@ function MenuSheetSectionButton({
 
       <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:hidden')}>
         <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
-          <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className="focus-inset" onClick={onToggleEditing}>
+          <Button variant={isEditing ? 'secondary' : 'quiet'} size="icon" aria-pressed={isEditing} className="focus-inset" onClick={onToggleEditing}>
             <Settings2Icon className="size-5" />
           </Button>
         </TooltipButton>
@@ -115,7 +124,7 @@ function MenuSheetSectionButton({
       {onCreate && (
         <div inert={!isSectionVisible} className={cn(widenClass, isSectionVisible && widenOpenClass)}>
           <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-            <Button ref={createButtonRef} variant="ghost" size="icon" className="focus-inset" onClick={() => onCreate(createButtonRef)}>
+            <Button ref={createButtonRef} variant="quiet" size="icon" className="focus-inset" onClick={() => onCreate(createButtonRef)}>
               <PlusIcon className="size-5" />
             </Button>
           </TooltipButton>
@@ -148,7 +157,8 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? false);
   // Beside other sections the organization one starts collapsed: users seldom navigate there
   const isOpenByDefault = options.entityType !== 'organization';
-  const isSectionVisible = useNavigationStore((state) => !isCollapsible || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
+  const canCollapse = isCollapsible && options.collapsible !== false;
+  const isSectionVisible = useNavigationStore((state) => !canCollapse || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
   const hiddenItems = items.filter((item) => menuGroup(item) === 'hidden');
   const hiddenCount = hiddenItems.length;
   const archivedItems = items.filter((item) => menuGroup(item) === 'archived');
@@ -176,7 +186,8 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
       <MenuSheetSectionButton
-        {...{ items, options, isEditing, isCollapsible, isSectionVisible }}
+        {...{ items, options, isEditing, isSectionVisible }}
+        isCollapsible={canCollapse}
         channelIds={activeChannelIds}
         onToggleEditing={handleToggleEditing}
         onCreate={handleCreate}
@@ -196,11 +207,12 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
             {isEditing ? (
               <MenuSheetItemsListEdit items={items} group="active" options={options} prepareHide={prepareHide} />
             ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} group="active" options={options} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} group="active" />
             )}
             {hasHiddenGroup && (
               <li>
                 <MenuSheetHiddenGroup
+                  entityType={options.entityType}
                   isOpen={isHiddenVisible}
                   onToggle={handleToggleHidden}
                   count={hiddenCount}
@@ -210,7 +222,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
                   {isEditing ? (
                     <MenuSheetItemsListEdit items={items} group="hidden" options={options} />
                   ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} group="hidden" />
+                    <MenuSheetItemsList entityType={options.entityType} items={items} group="hidden" />
                   )}
                 </MenuSheetHiddenGroup>
               </li>
@@ -218,6 +230,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
             {!!archivedItems.length && (
               <li>
                 <MenuSheetHiddenGroup
+                  entityType={options.entityType}
                   variant="archived"
                   isOpen={isArchivedVisible}
                   onToggle={() => setSectionOpen(archivedSectionKey, !isArchivedVisible)}
@@ -227,7 +240,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
                   {isEditing ? (
                     <MenuSheetItemsListEdit items={items} group="archived" options={options} />
                   ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} group="archived" />
+                    <MenuSheetItemsList entityType={options.entityType} items={items} group="archived" />
                   )}
                 </MenuSheetHiddenGroup>
               </li>

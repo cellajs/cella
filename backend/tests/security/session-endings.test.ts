@@ -8,7 +8,7 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import { usersTable } from '#/modules/user/user-db';
-import { adminRole, overrideConfig } from '../fixtures';
+import { adminRole, memberRole, overrideConfig } from '../fixtures';
 import {
   authCookie,
   createOrganizationAdminUser,
@@ -239,8 +239,9 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
   it('keeps the sessions of an account whose deletion was refused (positive control)', async () => {
     const org = await createTestOrganization();
-    // The only admin of an organization: the database refuses to delete the account.
+    // The only admin of an organization with another member: the database refuses to delete the account.
     const soleAdmin = await createOrganizationAdminUser('sole-admin@security-test.com', org.id, adminRole, org.tenantId);
+    await createOrganizationAdminUser('sole-admin-member@security-test.com', org.id, memberRole, org.tenantId);
     const session = await insertSession(soleAdmin);
     await warmSession(session);
     const stream = await openStream(soleAdmin.id, session);

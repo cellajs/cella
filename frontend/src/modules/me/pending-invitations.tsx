@@ -13,7 +13,7 @@ import { tw } from '~/utils/tw';
 // From this many on, one row counts them and the rows wait behind it
 const summaryFrom = 4;
 
-// The frame of an alert, as the home page's alerts above draw it; on a phone the buttons wrap to a line of their own
+// The frame of the home page's alert rows; on a phone the buttons wrap to a line of their own
 const rowClass = tw('bg-card text-card-foreground flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm');
 
 function InvitationRow({ invitation: { entity, inactiveMembership, organizationName } }: { invitation: Invitation }) {

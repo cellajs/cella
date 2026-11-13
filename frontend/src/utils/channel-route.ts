@@ -1,5 +1,5 @@
 import { appConfig, type ChannelEntityType, hierarchy, type ProductEntityType } from 'shared';
-import { getProductDeepLink } from '~/lib/entity-modules';
+import { getChannelProductRoute, getProductDeepLink } from '~/lib/entity-modules';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
@@ -18,8 +18,6 @@ export type ChannelRouteEntry = {
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
-  /** When shown as a subitem, navigate to a parent entity's route. */
-  subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
 
 /** Nav hint for entity links: scrolls forward navigation to the header (`id="pt"`), or to the top without one; back/forward keeps cached scroll. */
@@ -29,23 +27,20 @@ export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewO
 };
 
 /** A channel's route with its params and search still readable; `EntityRoute` is what a `Link` takes. */
-type ChannelRoute = { to: EntityRoute['to']; params: Record<string, string>; search: Record<string, string> };
+export type ChannelRoute = { to: EntityRoute['to']; params: Record<string, string>; search: Record<string, string> };
 
 /**
  * Resolves an entity to its route via `channelRouteConfig`. A param the enrichment has not filled with a slug takes
  * the id, the entity's own on a cache miss too: the route's `beforeLoad` rewrites it.
  */
-export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): EntityRoute => resolveChannelRoute(item, isSubitem);
+export const getChannelRoute = (item: EnrichedChannel): EntityRoute => resolveChannelRoute(item);
 
 /** The route params of an entity's own page, typed for links to its other routes (its page tabs); `EntityRoute` widens them. */
 export const getChannelRouteParams = (item: EnrichedChannel): Record<string, string> => resolveChannelRoute(item).params;
 
-function resolveChannelRoute(item: EnrichedChannel, isSubitem?: boolean): ChannelRoute {
+function resolveChannelRoute(item: EnrichedChannel): ChannelRoute {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
-
-  // Narrow `config` keeps `path` a literal route type; the widened `entry` exposes the optional `subitemOf`.
   const config = channelRouteConfig[entityType];
-  const entry: ChannelRouteEntry = config;
 
   // `ancestorSlugs` is this entity's exact ancestor set; map each to its route param.
   const params: Record<string, string> = { tenantId };
@@ -56,12 +51,6 @@ function resolveChannelRoute(item: EnrichedChannel, isSubitem?: boolean): Channe
     const { paramName } = channelRouteConfig[ancestor];
     const id = getField(item, appConfig.entityIdColumnKeys[ancestor]);
     if (!params[paramName] && typeof id === 'string') params[paramName] = id;
-  }
-
-  // Subitem: render on the parent's page (param already set above) with this entity as search.
-  const subitemOf = isSubitem ? entry.subitemOf : undefined;
-  if (subitemOf && ancestorSlugs[subitemOf.entityType]) {
-    return { to: channelRouteConfig[subitemOf.entityType].path, params, search: { [subitemOf.searchParam]: slug } };
   }
 
   params[config.paramName] = slug;
@@ -106,7 +95,7 @@ export const getNearestAncestorRoute = (
 };
 
 /** Where a product sits, as a notification or share link carries it: its home channel, and the product to open there. */
-interface ProductLocation {
+export interface ProductLocation {
   tenantId: string;
   organizationId: string;
   channelType: ChannelEntityType;
@@ -129,22 +118,21 @@ function getSubjectSearch({ productType, subjectId, contextId }: ProductLocation
 }
 
 /**
- * Route to a product's channel page with the product opened. A cached channel routes as it does from the menu, a
- * subitem onto its parent's page; one not in cache travels by id in its own param and the organization's, which the
- * routes' `beforeLoad` rewrite to slugs.
+ * Route to the page that opens a product: the page its channel's module names (`productRoute`), else the channel's
+ * own, with the product opened there.
  */
 export function getProductRoute(location: ProductLocation): EntityRoute {
-  const { tenantId, organizationId, channelType, channelId } = location;
-  const config = channelRouteConfig[channelType];
-  const search = getSubjectSearch(location);
+  const route = getChannelProductRoute(location.channelType)?.(location) ?? getChannelPageRoute(location);
+  return { ...route, search: { ...route.search, ...getSubjectSearch(location) } };
+}
 
+/** A cached channel routes by slug; one not in cache travels by id in its own param and the organization's, which the routes' `beforeLoad` rewrite to slugs. */
+function getChannelPageRoute({ tenantId, organizationId, channelType, channelId }: ProductLocation): ChannelRoute {
   const channel = findInCache<EnrichedChannel>(channelType, channelId);
-  if (channel) {
-    const route = resolveChannelRoute(channel, true);
-    return { ...route, search: { ...route.search, ...search } };
-  }
+  if (channel) return resolveChannelRoute(channel);
 
+  const config = channelRouteConfig[channelType];
   const params: Record<string, string> = { tenantId, organizationSlug: organizationId };
   params[config.paramName] = channelId;
-  return { to: config.path, params, search };
+  return { to: config.path, params, search: {} };
 }

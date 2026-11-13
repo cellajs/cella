@@ -218,14 +218,13 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
 /** The ideal width of an expanded panel, as a factor of its `minWidth` (G6). */
 export const idealWidthFactor = 1.25;
 
-/** Whether the panels fit `room` at their ideal width, and at `minWidth`; a closed panel counts its strip (G6, E9). */
-export function measureFit(panels: PanelConfig[], widths: Record<string, number>, room: number) {
-  const need = (factor: number) =>
-    panels.reduce((sum, panel) => {
-      const closed = panel.collapsible && (widths[panel.id] ?? panel.minWidth) <= panel.collapsedWidth;
-      return sum + (closed ? panel.collapsedWidth : panel.minWidth * factor);
-    }, 0);
-  return { atIdeal: need(idealWidthFactor) <= room, atMin: need(1) <= room };
+/** Whether the panels fit `room` with every open one at `minWidth`; a closed panel counts its strip (G6). */
+export function fitsAtMinWidth(panels: PanelConfig[], widths: Record<string, number>, room: number) {
+  const need = panels.reduce((sum, panel) => {
+    const closed = panel.collapsible && (widths[panel.id] ?? panel.minWidth) <= panel.collapsedWidth;
+    return sum + (closed ? panel.collapsedWidth : panel.minWidth);
+  }, 0);
+  return need <= room;
 }
 
 /** Must-fit layout from what the user chose: closes panels until the row fits, reopens them when room returns, and shares the rest exactly. Valid for any stored value. */

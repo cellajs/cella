@@ -1,5 +1,7 @@
 import { eq, getColumns, type SQL, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
+import type { UserId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { userMinimalColumnKeys } from '#/modules/user/helpers/user-minimal';
@@ -19,8 +21,8 @@ export type ServedUser = Omit<UserWithActivity, 'email'> & { email: string | nul
  */
 export const userActorJoin = eq(actorsTable.id, usersTable.id);
 
-/** `EXISTS` on a proven address of the user row: what sets an account with an identity apart from an anonymous one (a demo's, a sample's). */
-export const hasProvenEmail = (userId: typeof usersTable.id): SQL =>
+/** `EXISTS` on a proven address of the user `userId` names: what sets an account with an identity apart from an anonymous one (a demo's, a sample's). */
+export const hasProvenEmail = (userId: AnyPgColumn<{ data: UserId }>): SQL =>
   sql`EXISTS (SELECT 1 FROM ${emailsTable} WHERE ${emailsTable.userId} = ${userId})`;
 
 /** The address as the API serves it: the proven one, else null. An anonymous account's placeholder leaves the server for nothing. */

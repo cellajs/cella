@@ -15,7 +15,8 @@ export const buttonVariants = cva(
       // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega; the neutral hovers take the one
       // hover tint, which an opaque fill takes premixed. Outline keeps the input edge, rests flat and keeps its opaque page
       // fill in dark mode, so an edgeless scope, an open state and media behind it leave it intact; link stays underlined.
-      // The intents, `soft`, outline-ghost and glass (over media), cell, input, row and nav are additions.
+      // The intents, `soft`, quiet (a ghost in the muted color of a group label until hovered or focused), outline-ghost
+      // and glass (over media), cell, input, row and nav are additions.
       variant: {
         default: 'intent-primary',
         brand: 'intent-brand',
@@ -26,6 +27,8 @@ export const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground hover:bg-muted-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         outline: 'border-input bg-background hover:bg-background-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         ghost: 'hover:bg-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
+        quiet:
+          'text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
         glass: [glassClass, 'hover:border-foreground/30 hover:bg-background/60 aria-busy:opacity-100'],

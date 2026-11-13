@@ -6,10 +6,10 @@ import {
   type DragState,
   distributeWidths,
   fitPanels,
+  fitsAtMinWidth,
   type HintData,
   idealWidthFactor,
   type LayoutResult,
-  measureFit,
   type PanelConfig,
   resolveLayout,
 } from '~/modules/common/resizable-panels/panel-layout';
@@ -146,8 +146,6 @@ export interface PanelGroupApi {
   /** No-op when the panel is already expanded */
   expandPanel: (panelId: string) => void;
   togglePanel: (panelId: string) => void;
-  /** Switches fit in a glide, reported through `onFitChange` (E10) */
-  setFit: (fit: boolean) => void;
 }
 
 interface ResizablePanelGroupProps {
@@ -163,11 +161,6 @@ interface ResizablePanelGroupProps {
   onReady?: (api: PanelGroupApi) => void;
   /** The row always fits its parent, closing panels when there are too many, and `onLayoutChanged` reports what the user chose (F rules). Fixed for the group's lifetime. */
   mustFit?: boolean;
-  /** In the fit band, mode detection counts open panels at `minWidth`, not their ideal width (E2) */
-  fit?: boolean;
-  onFitChange?: (fit: boolean) => void;
-  /** Fires when the row enters or leaves the band where fit changes its layout (E9) */
-  onFitBandChange?: (inBand: boolean) => void;
   className?: string;
   children: ReactNode;
 }
@@ -179,9 +172,6 @@ export function ResizablePanelGroup({
   onCollapseChange,
   onReady,
   mustFit = false,
-  fit = false,
-  onFitChange,
-  onFitBandChange,
   className,
   children,
 }: ResizablePanelGroupProps) {
@@ -201,14 +191,9 @@ export function ResizablePanelGroup({
   const resizeSaveRef = useRef(0);
   // T6: panels whose collapse is reported when the glide ends
   const glideRef = useRef<{ closing: Set<string>; timer: number } | null>(null);
-  // Ahead of the prop: a switch applies at once, before the consumer renders it back
-  const fitRef = useRef(fit);
-  const fitBandRef = useRef(false);
   const separatorsRef = useRef<Map<number, HTMLDivElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const onLayoutChangedRef = useLatestRef(onLayoutChanged);
-  const onFitChangeRef = useLatestRef(onFitChange);
-  const onFitBandChangeRef = useLatestRef(onFitBandChange);
   const onCollapseChangeRef = useLatestRef(onCollapseChange);
   const defaultLayoutRef = useLatestRef(defaultLayout);
 
@@ -301,16 +286,6 @@ export function ResizablePanelGroup({
     updateContainerWidth();
     redistributePanels();
     saveLayout();
-  };
-
-  // E4: the refit shares the room, or the ideal width, between the widths the panels have now
-  const setFit = (next: boolean) => {
-    if (next === fitRef.current) return;
-    glide(() => {
-      fitRef.current = next;
-      onFitChangeRef.current?.(next);
-      commitLayout();
-    });
   };
 
   // Every width is in place before anyone hears of a change: a listener can call back into the group
@@ -423,25 +398,16 @@ export function ResizablePanelGroup({
 
   const getWidths = (): Record<string, number> => Object.fromEntries(panelsRef.current.map((panel) => [panel.id, widthOf(panel)]));
 
-  // Measures the parent: updateContainerWidth() can set min-width on the container
-  const measureRow = (container: HTMLElement) => {
+  // Mode detection (G6). Measures the parent: updateContainerWidth() can set min-width on the container.
+  const isAutoFill = (container: HTMLElement) => {
+    if (mustFitRef.current) return true;
     const parentWidth = (container.parentElement ?? container).getBoundingClientRect().width;
-    return measureFit(panelsRef.current, widthsRef.current, parentWidth - getSeparatorSpace());
+    return fitsAtMinWidth(panelsRef.current, widthsRef.current, parentWidth - getSeparatorSpace());
   };
-
-  // Mode detection (G6, E2)
-  const isAutoFill = (row: ReturnType<typeof measureFit>) => mustFitRef.current || row.atIdeal || (fitRef.current && row.atMin);
 
   const computeAutoFill = () => {
     const container = containerRef.current;
-    return !container || isAutoFill(measureRow(container));
-  };
-
-  const reportFitBand = (row: ReturnType<typeof measureFit>) => {
-    const inBand = !mustFitRef.current && row.atMin && !row.atIdeal;
-    if (inBand === fitBandRef.current) return;
-    fitBandRef.current = inBand;
-    onFitBandChangeRef.current?.(inBand);
+    return !container || isAutoFill(container);
   };
 
   // `toLimit` is Home/End: as far as the victim goes, closed if it can, in a glide (T6). An arrow stops at its minWidth.
@@ -665,7 +631,7 @@ export function ResizablePanelGroup({
 
   const getPanelSum = () => panelsRef.current.reduce((sum, panel) => sum + widthOf(panel), 0);
 
-  // Always at the ideal width: overflow only happens without fit or past what fits at minWidth (E2)
+  // A row that has to scroll anyway gives its panels room (G6)
   const getIdealPanelSum = () =>
     panelsRef.current.reduce((sum, panel) => sum + (isCollapsed(panel) ? panel.collapsedWidth : panel.minWidth * idealWidthFactor), 0);
 
@@ -673,9 +639,7 @@ export function ResizablePanelGroup({
     const container = containerRef.current;
     if (!container) return;
 
-    const row = measureRow(container);
-    reportFitBand(row);
-    if (isAutoFill(row)) {
+    if (isAutoFill(container)) {
       container.style.minWidth = '';
       return;
     }
@@ -775,18 +739,10 @@ export function ResizablePanelGroup({
     };
   }, []);
 
-  const notifyReady = useEffectEvent(() => onReady?.({ expandPanel, togglePanel, setFit }));
+  const notifyReady = useEffectEvent(() => onReady?.({ expandPanel, togglePanel }));
   useEffect(() => {
     notifyReady();
   }, []);
-
-  // E8: a store that loads after mount changes the prop
-  const syncFit = useEffectEvent((next: boolean) => {
-    if (next === fitRef.current) return;
-    fitRef.current = next;
-    commitLayout();
-  });
-  useEffect(() => syncFit(fit), [fit]);
 
   // A reorder re-renders the group but registers nothing
   useEffect(() => updateSeparatorAria());

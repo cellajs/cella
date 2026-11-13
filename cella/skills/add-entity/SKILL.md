@@ -221,10 +221,12 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 - `<name>-module.tsx` from `organization-module.tsx`: `channel: { entityType: '<name>', menuSection,
   listQuery: (params) => <name>sListQueryOptions(params) }`. The arrow reads the binding at call time.
   A channel shown under another one in the menu (`menuStructure` `subentityType`) declares no
-  `menuSection`. Augment the slot context with
+  `menuSection`. A product homed in the channel opens on the channel's own page; `productRoute`
+  names another page, for an app that shows the channel inside another channel's page. Augment the
+  slot context with
   `declare module '~/lib/placements' { interface ChannelEntityByType { <name>: Enriched<Name> } }`.
 - `frontend/src/routes-config.tsx`: `<name>: { path: '/$tenantId/$organizationSlug/<name>/$slug',
-  paramName: 'slug' }`, with `subitemOf: { entityType, searchParam }` for a menu subentity.
+  paramName: 'slug' }`.
 - `shared/config/config.default.ts`: an entry in `menuStructure`, and `surfaces['<name>.tabs']` when
   its tabs need an `order` other than their declared one, or a template tab is `hidden`.
 - Routes under `frontend/src/routes/_app/$tenantId.$organizationSlug/<name>.$slug/`, built like the

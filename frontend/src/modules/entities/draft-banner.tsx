@@ -1,4 +1,4 @@
-import { CircleAlertIcon, RocketIcon } from 'lucide-react';
+import { PencilLineIcon, RocketIcon } from 'lucide-react';
 import { type ReactNode, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
@@ -33,20 +33,23 @@ export function DraftBanner({ channel, publishForm }: DraftBannerProps) {
   };
 
   return (
-    <Alert variant="plain" className="rounded-none border-0 border-b px-3 py-2 shadow-[inset_0_0_8px_rgba(0,0,0,0.15)]">
-      <AlertDescription className="flex w-full flex-wrap items-center justify-between gap-2">
+    <Alert
+      variant="plain"
+      className="bg-background border-input rounded-none border-0 border-b border-dashed bg-[repeating-linear-gradient(-45deg,color-mix(in_oklab,var(--foreground)_6%,transparent)_0_2px,transparent_2px_9px)] px-3 py-2"
+    >
+      <AlertDescription className="flex w-full items-center justify-between gap-3">
         <span className="max-w-measure text-muted-foreground flex gap-2">
-          <CircleAlertIcon className="text-warning mt-0.5 size-4 shrink-0" />
+          <PencilLineIcon className="text-foreground-soft mt-0.5 size-4 shrink-0" />
           <span>
             <Trans
               t={t}
               i18nKey="c:draft_banner.text"
               values={{ resource: t(`c:${channel.entityType}`), prepareRoles: prepareRolesText(channel.entityType) }}
-              components={{ strong: <strong className="font-semibold" /> }}
+              components={{ strong: <strong className="text-foreground font-semibold" /> }}
             />
           </span>
         </span>
-        <Button ref={buttonRef} size="sm" className="max-sm:w-full" onClick={openPublishDialog}>
+        <Button ref={buttonRef} size="sm" className="shrink-0" onClick={openPublishDialog}>
           <RocketIcon className="size-3.5" />
           {t('c:publish')}
         </Button>

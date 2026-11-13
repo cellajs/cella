@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
-import type { EntityRole, TenantKind } from 'shared';
+import { and, count, eq, getColumns, inArray, isNull, ne, notExists, notInArray, or, type SQL, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { type EntityRole, hierarchy, type TenantKind } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
@@ -13,6 +14,7 @@ import { type InsertOrganizationModel, organizationsTable } from '#/modules/orga
 import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { tenantOfKind } from '#/modules/tenants/tenants-queries';
+import { hasProvenEmail } from '#/modules/user/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
@@ -27,6 +29,49 @@ export const findOrganizationByTenant = async (ctx: DbContext, { tenantId }: { t
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) => {
   const [result] = await ctx.var.db.select({ count: count() }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
   return result.count;
+};
+
+/**
+ * The organizations, in tenants not archived yet, that deleting the accounts of `userIds` would leave without an admin
+ * and with no one to make one: every admin is among them, and no other member has a proven address. Sample and
+ * anonymous accounts have none.
+ */
+export const findOrganizationsHeldOnlyBy = async (ctx: DbContext, { userIds }: { userIds: string[] }) => {
+  if (userIds.length === 0) return [];
+  const adminRole = hierarchy.getMostPrivilegedRole('organization');
+  const others = alias(membershipsTable, 'others');
+
+  return ctx.var.db
+    .selectDistinct({ id: organizationsTable.id, tenantId: organizationsTable.tenantId })
+    .from(organizationsTable)
+    .innerJoin(tenantsTable, eq(tenantsTable.id, organizationsTable.tenantId))
+    .innerJoin(
+      membershipsTable,
+      and(
+        eq(membershipsTable.channelType, 'organization'),
+        eq(membershipsTable.channelId, organizationsTable.id),
+        eq(membershipsTable.role, adminRole),
+        inArray(membershipsTable.userId, userIds),
+      ),
+    )
+    .where(
+      and(
+        ne(tenantsTable.status, 'archived'),
+        notExists(
+          ctx.var.db
+            .select({ id: others.id })
+            .from(others)
+            .where(
+              and(
+                eq(others.channelType, 'organization'),
+                eq(others.channelId, organizationsTable.id),
+                notInArray(others.userId, userIds),
+                or(eq(others.role, adminRole), hasProvenEmail(others.userId)),
+              ),
+            ),
+        ),
+      ),
+    );
 };
 
 /** Inserts organization rows and returns them as stored. */

@@ -119,7 +119,7 @@
   "invitation_opened": "Invitation link opened before",
   "invitation_opened.text": "It was opened in another browser, or some time ago. Get a new link by email to continue here.",
   "last_admin": "An admin is needed",
-  "last_admin.text": "An organization always keeps at least one admin. Make someone else an admin first.",
+  "last_admin.text": "An organization always keeps at least one admin. Make someone else an admin first, or delete the organization.",
   "link_not_held": "Open the link again",
   "link_not_held.text": "This page waited too long for the link it opened. Open the link from your email again to continue.",
   "load_more_failed": "Could not load more data. Try reloading or come back later.",

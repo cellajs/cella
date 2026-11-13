@@ -155,7 +155,7 @@ export function OrganizationSwitcher({ organization }: { organization: UserMenuI
           />
           <span className="min-w-0 grow truncate text-left">{organization.name}</span>
           {hasUnseenElsewhere && <StatusDot variant="primary" pulse={false} className="-mr-2" />}
-          <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+          <ChevronsUpDownIcon className="text-faint-foreground size-4 shrink-0" />
         </Button>
       </div>
       <NavSheetDivider />

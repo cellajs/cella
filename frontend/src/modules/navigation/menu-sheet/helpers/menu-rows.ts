@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
-import { hierarchy, isChannelHideable } from 'shared';
+import { type ChannelEntityType, hierarchy, isChannelHideable } from 'shared';
+import { getMenuSection } from '~/lib/entity-modules';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { MenuItemDragData } from '~/modules/navigation/types';
@@ -38,6 +39,9 @@ const productHomeChannelTypes = new Set(hierarchy.productTypes.flatMap((type) =>
 
 /** Mute is read on a row's home channel only and reaches no channel below, so a channel that homes no product has nothing to mute. */
 export const canMute = (item: UserMenuItem) => productHomeChannelTypes.has(item.entityType);
+
+/** Whether a row is set compact, as a sub-row or in a `compact` section: read by its name and by the Hidden toggle that folds rows like it. */
+export const isCompactRow = (entityType: ChannelEntityType, isSubitem: boolean) => isSubitem || !!getMenuSection(entityType)?.compact;
 
 export const isMenuItemDragData = (data: Record<string | symbol, unknown>): data is MenuItemDragData =>
   data.dragItem === true && typeof data.displayOrder === 'number' && data.type === 'menuItem';

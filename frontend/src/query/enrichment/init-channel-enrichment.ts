@@ -1,52 +1,25 @@
 import type { Query } from '@tanstack/react-query';
-import type { MembershipBase } from 'sdk';
-import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { getRegisteredEntityTypes } from '~/query/basic/entity-query-registry';
 import { isInfiniteQueryData } from '~/query/basic/mutate-query';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
-import { getCachedMemberships } from '~/query/enrichment/helpers';
 import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
 /** Re-entrancy guard: keeps the subscriber from reacting to its own cache writes. */
 let isEnriching = false;
 
-const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
-
 const getRegisteredChannelTypes = (): ChannelEntityType[] => getRegisteredEntityTypes().filter(isChannel);
 
-/** Channel types hosting this entity as a menu subentity, from menuStructure config, including types that are not hierarchy ancestors. */
-const getMenuParentTypes = (entityType: ChannelEntityType): ChannelEntityType[] =>
-  appConfig.menuStructure.filter((menuItem) => menuItem.subentityType === entityType).map((menuItem) => menuItem.entityType);
-
-/** A menu parent's cache update propagates ancestor-slug re-enrichment to its children. */
-const isMenuParentOf = (parentType: ChannelEntityType, childType: ChannelEntityType): boolean =>
-  appConfig.menuStructure.some((menuItem) => menuItem.entityType === parentType && menuItem.subentityType === childType);
-
-/** Ancestors for URL building: hierarchy ancestors first, then menu parents not already included. */
-function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEntityType[] {
-  let ancestors = extendedAncestorsCache.get(entityType);
-  if (!ancestors) {
-    ancestors = [...new Set([...hierarchy.getOrderedAncestors(entityType), ...getMenuParentTypes(entityType)])];
-    extendedAncestorsCache.set(entityType, ancestors);
-  }
-  return ancestors;
-}
-
-function enrichListData(
-  data: EnrichableListData,
-  memberships: MembershipBase[],
-  entityType: ChannelEntityType,
-  slugIndex: SlugIndex,
-): EnrichableListData {
-  const ancestors = getExtendedAncestors(entityType);
+function enrichListData(data: EnrichableListData, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableListData {
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   let dataChanged = false;
 
   const newPages = data.pages.map((page) => {
     let pageChanged = false;
     const results = page.results.map((item) => {
-      const enriched = enrichWithAncestorSlugs(item, memberships, ancestors, slugIndex);
+      const enriched = enrichWithAncestorSlugs(item, ancestors, slugIndex);
       if (enriched !== item) pageChanged = true;
       return enriched;
     });
@@ -81,51 +54,41 @@ function setCacheData(queryKey: Query['queryKey'], data: unknown) {
   }
 }
 
-function enrichEntityType(entityType: ChannelEntityType, memberships: MembershipBase[], slugIndex: SlugIndex) {
+function enrichEntityType(entityType: ChannelEntityType, slugIndex: SlugIndex) {
   const cache = queryClient.getQueryCache();
 
   for (const query of cache.findAll({ queryKey: [entityType, 'list'] })) {
     const data = query.state.data;
     if (!isInfiniteQueryData<EnrichableChannel>(data)) continue;
-    const enriched = enrichListData(data, memberships, entityType, slugIndex);
+    const enriched = enrichListData(data, entityType, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 
-  const ancestors = getExtendedAncestors(entityType);
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
     const data = query.state.data as EnrichableChannel | undefined;
     if (!data) continue;
-    const enriched = enrichWithAncestorSlugs(data, memberships, ancestors, slugIndex);
+    const enriched = enrichWithAncestorSlugs(data, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 }
 
 /** Indexes every ancestor of this entity type, so enrichWithAncestorSlugs resolves slugs whichever type triggered enrichment. */
 function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex) {
-  for (const ancestor of getExtendedAncestors(entityType)) {
+  for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     if (!slugIndex.has(ancestor)) slugIndex.set(ancestor, buildSlugMap(ancestor));
   }
 }
 
-/** Enriches each type once; one slug index serves them all, since enrichment never changes the ids and slugs it indexes. */
-function enrichTypes(types: readonly ChannelEntityType[]) {
-  // Loaded and empty still enriches: URLs need the slugs.
-  const memberships = getCachedMemberships();
-  if (!memberships) return;
+/** Enrich one entity type, then the child types that read its slugs as ancestors; one slug index serves them all, since enrichment never changes the ids and slugs it indexes. */
+function enrichTypeAndChildren(entityType: ChannelEntityType) {
+  const childTypes = getRegisteredChannelTypes().filter((childType) => childType !== entityType && hierarchy.hasAncestor(childType, entityType));
 
   const slugIndex: SlugIndex = new Map();
-  for (const type of types) {
+  for (const type of [entityType, ...childTypes]) {
     ensureAncestorSlugs(type, slugIndex);
-    enrichEntityType(type, memberships, slugIndex);
+    enrichEntityType(type, slugIndex);
   }
-}
-
-/** Enrich one entity type, then the child types that read its slugs as ancestors. */
-function enrichTypeAndChildren(entityType: ChannelEntityType) {
-  const childTypes = getRegisteredChannelTypes().filter(
-    (childType) => childType !== entityType && (hierarchy.hasAncestor(childType, entityType) || isMenuParentOf(entityType, childType)),
-  );
-  enrichTypes([entityType, ...childTypes]);
 }
 
 export function initChannelEnrichment(): () => void {
@@ -134,14 +97,8 @@ export function initChannelEnrichment(): () => void {
     // Only these two write data: a fetch start, an invalidation or a failure leaves the rows as enriched.
     if (event.action.type !== 'success' && event.action.type !== 'setState') return;
 
-    const { queryKey } = event.query;
-    const entityType = queryKey[0];
-
-    // A membership carries ancestor ids a row may lack (a menu parent), so a change reaches every channel entity.
-    if (entityType === 'me' && queryKey[1] === 'memberships') {
-      enrichTypes(getRegisteredChannelTypes());
-    } else if (typeof entityType === 'string' && isChannel(entityType) && (queryKey[1] === 'list' || queryKey[1] === 'detail')) {
-      enrichTypeAndChildren(entityType);
-    }
+    const entityType = event.query.queryKey[0];
+    const kind = event.query.queryKey[1];
+    if (typeof entityType === 'string' && isChannel(entityType) && (kind === 'list' || kind === 'detail')) enrichTypeAndChildren(entityType);
   });
 }

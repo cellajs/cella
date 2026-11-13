@@ -16,11 +16,12 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from '~/modules/ui/a
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
+import { cn } from '~/utils/cn';
 
 const slot = 'home.sections';
 const organizationAdminRole = hierarchy.getMostPrivilegedRole('organization');
 
-/** The signed-in home: the app's logo linking to its About page, then one stack of alert rows (MFA for an organization admin, a create prompt for a user without an organization, pending invitations), then the `home.sections` slot apps fill. */
+/** The signed-in home in a column as wide as the create dialog: the app's logo linking to its About page, then one stack of alert rows (MFA for an organization admin, pending invitations, a create prompt for a user without an organization), then the `home.sections` slot apps fill. */
 export function HomePage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -34,10 +35,11 @@ export function HomePage() {
     ({ channelType, role }) => channelType === 'organization' && role === organizationAdminRole,
   );
   const hasNoOrganization = orgQuery.isSuccess && flattenInfiniteData<Organization>(orgQuery.data).length === 0;
+  const hasInvitations = !!invitations?.results.length;
   const createOrganization = getMenuSection('organization')?.createAction;
 
   return (
-    <div className="container">
+    <div className="container max-w-2xl">
       <h1 className="sr-only">{t('c:home')}</h1>
       <div className="flex justify-center pt-8 md:pt-12">
         <Link to="/about" className="focus-effect rounded-md transition-opacity hover:opacity-80">
@@ -61,19 +63,21 @@ export function HomePage() {
             {t('c:require_mfa.text')}
           </AlertBanner>
         )}
+        <PendingInvitations />
         {hasNoOrganization && createOrganization && (
-          // The MFA alert's layout without its close button: the way to start stays until an organization exists
-          <Alert>
+          // No close button: the way to start stays until an organization exists. Below an invitation it takes the
+          // invitation row's weight: answering that comes first, and a new organization may duplicate the team's.
+          <Alert className={cn('gap-y-1', !hasInvitations && 'p-4')}>
             <Building2Icon />
-            <AlertTitle>{t('c:no_organization_yet')}</AlertTitle>
-            <AlertDescription>
-              {t(invitations?.results.length ? 'c:no_organization_yet.text_invited' : 'c:no_organization_yet.text')}
+            <AlertTitle className="line-clamp-none text-balance">{t('c:no_organization_yet')}</AlertTitle>
+            <AlertDescription className="text-muted-foreground">
+              {t(hasInvitations ? 'c:no_organization_yet.text_invited' : 'c:no_organization_yet.text')}
             </AlertDescription>
-            <AlertAction>
+            <AlertAction className={cn(!hasInvitations && 'mt-3')}>
               <Button
                 ref={createButtonRef}
-                variant="secondary"
-                size="sm"
+                variant={hasInvitations ? 'secondary' : 'default'}
+                size={hasInvitations ? 'sm' : 'default'}
                 className="max-sm:w-full"
                 onClick={() => createOrganization(createButtonRef)}
               >
@@ -83,7 +87,6 @@ export function HomePage() {
             </AlertAction>
           </Alert>
         )}
-        <PendingInvitations />
       </div>
       {sections.map((tool) => (
         <Suspense key={tool.id} fallback={null}>
