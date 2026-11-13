@@ -263,10 +263,7 @@ export function CarouselDots({ className, size, gap, ...props }: CarouselDotsPro
         >
           <span
             aria-hidden="true"
-            className={cn(
-              'size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-focus-visible/dots:size-[45%] pointer-coarse:size-[45%]',
-              current === index ? 'bg-foreground' : 'bg-muted-foreground/40 group-hover/dot:bg-muted-foreground',
-            )}
+            className="bg-muted-foreground/40 group-hover/dot:bg-muted-foreground group-aria-selected/dot:bg-foreground size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-focus-visible/dots:size-[45%] pointer-coarse:size-[45%]"
           />
         </button>
       ))}

@@ -92,15 +92,12 @@ export function ScrollBar({
         'z-20 flex p-px transition-colors select-none',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
-        disableTrackClick && 'pointer-events-none',
+        disableTrackClick && 'pointer-events-none *:pointer-events-auto',
         className,
       )}
       {...props}
     >
-      <ScrollAreaPrimitive.Thumb
-        data-slot="scroll-area-thumb"
-        className={cn('bg-border relative flex-1 rounded-full', disableTrackClick && 'pointer-events-auto')}
-      />
+      <ScrollAreaPrimitive.Thumb data-slot="scroll-area-thumb" className="bg-border relative flex-1 rounded-full" />
     </ScrollAreaPrimitive.Scrollbar>
   );
 }

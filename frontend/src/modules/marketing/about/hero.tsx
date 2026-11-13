@@ -38,13 +38,15 @@ export function Hero({ title, text, children }: HeroProps) {
       id="spy-welcome"
       className="rich-gradient relative flex min-h-[90vh] items-center justify-center overflow-x-clip px-4 py-24 [--hero-stack-scale:0.8] max-lg:mb-[calc(376px*var(--hero-stack-scale)_-_4.5rem)] min-[1800px]:mb-36 min-[1800px]:[--hero-stack-scale:1.2] md:[--hero-stack-scale:0.95] lg:mb-20 lg:min-h-[80vh] lg:py-32 lg:[--hero-stack-scale:0.82] xl:min-h-[90vh] xl:[--hero-stack-scale:0.92] 2xl:[--hero-stack-scale:1]"
     >
-      <div className="relative z-2 container grid justify-items-center gap-2 min-[1800px]:grid-cols-[minmax(0,1fr)_48rem] sm:gap-10 lg:grid-cols-[minmax(0,1fr)_36rem] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_38rem] 2xl:grid-cols-[minmax(0,1fr)_42rem]">
+      <div
+        className={cn(
+          'relative z-2 container grid justify-items-center gap-2 min-[1800px]:grid-cols-[minmax(0,1fr)_48rem] sm:gap-10 lg:grid-cols-[minmax(0,1fr)_36rem] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_38rem] 2xl:grid-cols-[minmax(0,1fr)_42rem]',
+          !inView && '*:translate-y-4 *:scale-95 *:opacity-0',
+        )}
+      >
         <header
           ref={ref}
-          className={cn(
-            'relative flex max-w-4xl flex-col items-center gap-4 text-center transition-[opacity,translate,scale] duration-500 ease-out lg:col-start-2 lg:row-start-1 lg:items-start lg:text-start',
-            !inView && 'translate-y-4 scale-95 opacity-0',
-          )}
+          className="relative flex max-w-4xl flex-col items-center gap-4 text-center transition-[opacity,translate,scale] duration-500 ease-out lg:col-start-2 lg:row-start-1 lg:items-start lg:text-start"
         >
           <div className="pointer-events-none absolute inset-0 -z-1 opacity-75" aria-hidden="true">
             <div className="rich-veil-gradient" />
@@ -62,12 +64,7 @@ export function Hero({ title, text, children }: HeroProps) {
           )}
           <div>{children}</div>
         </header>
-        <div
-          className={cn(
-            'relative h-[calc(376px*var(--hero-stack-scale))] w-full transition-[opacity,translate,scale] delay-150 duration-500 ease-out lg:col-start-1 lg:row-start-1 lg:h-auto',
-            !inView && 'translate-y-4 scale-95 opacity-0',
-          )}
-        >
+        <div className="relative h-[calc(376px*var(--hero-stack-scale))] w-full transition-[opacity,translate,scale] delay-150 duration-500 ease-out lg:col-start-1 lg:row-start-1 lg:h-auto">
           <HeroStack
             shown={inView}
             className="top-0 left-1/2 origin-top -translate-x-1/2 max-sm:-translate-x-[36%] lg:-top-8 lg:right-0 lg:left-auto lg:origin-top-right lg:translate-x-0 xl:-top-20"

@@ -14,7 +14,6 @@ import { Input, skipPasswordManagers } from '~/modules/ui/input';
 import type { InviteRole } from '~/modules/user/invite-submit';
 import type { InviteCheck, InviteGroupKey } from '~/modules/user/use-invite-check';
 import type { InviteList, InvitePerson } from '~/modules/user/use-invite-list';
-import { cn } from '~/utils/cn';
 
 /** Biggest problem first. New addresses are no problem, so that tile never opens by itself. */
 const inviteTiles: { key: InviteGroupKey; summary: TKey; word: TKey; note: TKey; icon: IconComponent }[] = [
@@ -109,8 +108,8 @@ function InviteChip({ address, person, fact, pinned, onPin, onRemove }: InviteCh
       <span className="flex flex-wrap gap-x-1.5 whitespace-normal">
         {person ? (
           <span className="inline-grid text-start break-all *:[grid-area:1/1]">
-            <span className={cn(showsAddress && 'invisible')}>{person.name}</span>
-            <span className={cn(!showsAddress && 'invisible')}>{address}</span>
+            <span className={showsAddress ? 'invisible' : undefined}>{person.name}</span>
+            <span className={showsAddress ? undefined : 'invisible'}>{address}</span>
           </span>
         ) : (
           <span className="break-all">{address}</span>

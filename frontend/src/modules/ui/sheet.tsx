@@ -1,4 +1,5 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
+import { cva } from 'class-variance-authority';
 import { type ComponentProps, useRef } from 'react';
 import { useStuck } from '~/hooks/use-stuck';
 import { type HeaderBarProps, HeaderClose } from '~/modules/ui/dialog';
@@ -36,6 +37,20 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   );
 }
 
+// Travels in from its edge as a transition; under reduced motion it appears in place
+const sheetSideVariants = cva('fixed z-114 transition-transform transition-discrete duration-300 ease-out', {
+  variants: {
+    side: {
+      right:
+        'inset-y-0 right-0 h-full w-[95vw] motion-safe:data-ending-style:translate-x-full motion-safe:data-starting-style:translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:translate-x-full',
+      left: 'inset-y-0 left-0 h-full w-[95vw] motion-safe:data-ending-style:-translate-x-full motion-safe:data-starting-style:-translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:-translate-x-full',
+      top: 'inset-x-0 top-0 h-auto motion-safe:data-ending-style:-translate-y-full motion-safe:data-starting-style:-translate-y-full motion-safe:starting:-translate-y-full',
+      bottom:
+        'inset-x-0 bottom-0 h-auto motion-safe:data-ending-style:translate-y-full motion-safe:data-starting-style:translate-y-full motion-safe:starting:translate-y-full',
+    },
+  },
+});
+
 export function SheetContent({
   className,
   children,
@@ -60,21 +75,7 @@ export function SheetContent({
       className={cn(
         // The sheet's color sits on the popup, which a bounce of the scroll area reveals. A caller sets `--sheet-bg`, not a fill on its content.
         'flex flex-col bg-(--sheet-bg) shadow-lg [--sheet-bg:var(--background)] focus-visible:outline-hidden',
-        // Travels in from its edge as a transition; under reduced motion it appears in place
-        !container && 'fixed z-114 transition-transform transition-discrete duration-300 ease-out',
-        !container &&
-          side === 'right' &&
-          'inset-y-0 right-0 h-full w-[95vw] motion-safe:data-ending-style:translate-x-full motion-safe:data-starting-style:translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:translate-x-full',
-        !container &&
-          side === 'left' &&
-          'inset-y-0 left-0 h-full w-[95vw] motion-safe:data-ending-style:-translate-x-full motion-safe:data-starting-style:-translate-x-full sm:w-[90vw] lg:max-w-4xl motion-safe:starting:-translate-x-full',
-        !container &&
-          side === 'top' &&
-          'inset-x-0 top-0 h-auto motion-safe:data-ending-style:-translate-y-full motion-safe:data-starting-style:-translate-y-full motion-safe:starting:-translate-y-full',
-        !container &&
-          side === 'bottom' &&
-          'inset-x-0 bottom-0 h-auto motion-safe:data-ending-style:translate-y-full motion-safe:data-starting-style:translate-y-full motion-safe:starting:translate-y-full',
-        container && 'relative size-full',
+        container ? 'relative size-full' : sheetSideVariants({ side }),
         className,
       )}
       {...props}

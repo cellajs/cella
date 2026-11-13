@@ -12,7 +12,7 @@ export function CancelButton({ dirty, className, ...props }: CancelButtonProps) 
   const { t } = useTranslation();
 
   return (
-    <div data-open={dirty || undefined} className={cn('form-actions-reveal', !dirty && 'invisible')}>
+    <div data-open={dirty || undefined} className="form-actions-reveal not-data-open:invisible">
       <div>
         <Button type="reset" variant="secondary" className={cn('shrink-0', !dirty && 'sm:in-data-form-actions:hidden', className)} {...props}>
           {t('c:cancel')}
