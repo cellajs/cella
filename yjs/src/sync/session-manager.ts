@@ -237,8 +237,8 @@ export interface ReleasedClient {
 /**
  * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
  * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
- * A log the backend did not write stays for the next session or the sweep. A socket that joins while the finish runs keeps
- * the session; when it leaves again first, the finish its leave arms takes over, so what it logged is compacted too. A
+ * A log the backend did not write stays for the next session or the sweep. A socket that joins while the finish runs
+ * keeps the session; when it leaves again first, the finish its leave arms takes over and compacts what it logged too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.
  */

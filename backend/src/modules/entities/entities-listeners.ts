@@ -61,9 +61,8 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
 }
 
 // The live half of a versioned signal: its audience hears of it now, a client that misses it gets the version at catchup.
-// A change the worker recorded now names the versions it moved, and one it left out goes with another change of its
-// flush; a change delivered again names none and sends each. Registered after the membership listeners, so a reader's
-// memberships are current when it is decided.
+// A signal a recorded change names no version for went with another change of its flush (`flushSignals`). Registered
+// after the membership listeners, so a reader's memberships are current when it is decided.
 for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
   for (const action of activityActions) {
     const signals = versionedSignalsOf(table, action);

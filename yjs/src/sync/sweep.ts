@@ -9,8 +9,8 @@ let running: Promise<void> | null = null;
 
 /**
  * Writes the logs no session holds: every document with an uncompacted log that no session stamped within the finish
- * grace, and no log row younger than it, goes through the same locked finish as an idle session (the log is durable, so an
- * unmaterialized edit is written now and its rows deleted; the document row stays). Those are the logs a relay crash
+ * grace, and no log row younger than it, goes through the same locked finish as an idle session's. The log is durable:
+ * an unmaterialized edit is written now and its rows deleted, and the document row stays. Those are the logs a relay crash
  * left behind, and the rows clients posted over HTTP while they could not reach a relay. A log the backend did not
  * write waits for a later sweep. A live session stamps its row every yjsLiveStampMs, so a relay generation started
  * next to a running one never lists that one's documents, and a document with a session on this relay is left to it.

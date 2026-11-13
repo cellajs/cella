@@ -72,8 +72,8 @@ type RequestTransactionOptions = {
 };
 
 /**
- * Read-only tenant RLS transaction for a request's product reads. A caller already inside a tenant transaction for the
- * same tenant reads in a savepoint of it, so a write reads the rows it changes (`forUpdate` included).
+ * Read-only tenant RLS transaction for a request's product reads. A write reads the rows it changes (`forUpdate`
+ * included) in a savepoint of its own tenant transaction.
  */
 export const tenantRead = <T>(
   ctx: ActorContext,

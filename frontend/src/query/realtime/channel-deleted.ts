@@ -39,7 +39,7 @@ function removeAtOrInside(entityType: EntityType, channelId: string): ItemData[]
 
 /**
  * Drops the cached channels at or inside a deleted channel and the product rows below them, each product announced as
- * a delete. A cascade sends one signal, for its root, so the whole subtree goes in this one pass.
+ * a delete. The whole subtree goes in this one pass: a cascade sends one signal, for its root.
  * @returns The ids of the channels it dropped.
  */
 function dropChannel(organizationId: string, channelId: string): Set<string> {

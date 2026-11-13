@@ -54,7 +54,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
         offset,
         range,
       }),
-    // A range read reaches tombstones, so a client hears of the rows deleted inside the range.
+    // A client hears of the rows deleted inside a range from their tombstones.
     { includeDeleted: !!range },
   );
 

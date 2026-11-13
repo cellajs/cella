@@ -47,8 +47,8 @@ export interface CompactionObserver {
  *
  * Only a written window, or one with nothing to write, folds: the base is replaced and exactly the rows read are
  * deleted, so an update appended during the POST survives for the next round. Every other outcome leaves base and log
- * untouched, so the base only ever holds written state and the log every edit the entity has not received; a finish and
- * sweep rely on this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists). A fold
+ * untouched: the base only ever holds written state and the log every edit the entity has not received. A finish and
+ * the sweep rely on this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists). A fold
  * another compaction overlapped (a second relay during a rollout) is rolled back as a retry. Unparseable state is
  * never posted and counts as a retry. A row no merge accepts (logged before the relay refused undecodable updates,
  * or one that decodes but will not merge) is discarded first, with its sender logged: it carries no edit anyone can

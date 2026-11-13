@@ -219,7 +219,7 @@ function workloadOn(tx: Tx, seed: number) {
 
     await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(survivors), tx);
 
-    // The synthetic types are no type of the app, so the name is compared as a string.
+    // The name is compared as a string: the synthetic types are no type of the app.
     const deletes = survivors.filter(({ result: { activity } }) => (activity.entityType as string | null) === 'item' && activity.action === 'delete');
     for (const events of deletes.length > 0 ? [deletes] : []) {
       const before = await all('task');

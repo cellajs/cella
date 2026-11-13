@@ -31,7 +31,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   const { organization, membership, updatedRecord } = await tenantContext(
     ctx,
     async (txCtx) => {
-      // Locked: the patches below merge into this row, so no other write may commit between the read and the update.
+      // Locked: no other write may commit between the read and the update, since the patches below merge into this row.
       const { entity: organization, membership } = await getValidChannel(txCtx, id, 'organization', 'update', { forUpdate: true });
 
       const { slug } = input;

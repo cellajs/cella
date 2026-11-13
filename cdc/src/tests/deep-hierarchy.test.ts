@@ -260,7 +260,7 @@ describe('the version of channel.deleted (getCountDeltas)', () => {
 
     expect(computeBatchUnifiedDeltas(events, h).countDeltasByChannelKey.get('o1')?.['s:channel.deleted']).toBe(2);
 
-    // The covered deletes carry an empty record, so the API sends no live signal for them.
+    // The API sends no live signal for a covered delete, which carries an empty record.
     const signalVersions = signalVersionsOf(events, new Map([['o1', { 's:channel.deleted': 9 }]]), h);
     expect(events.map((event) => signalVersions.get(event))).toEqual([{}, {}, { 'channel.deleted': 8 }, { 'channel.deleted': 9 }]);
   });

@@ -21,9 +21,9 @@ interface DeleteProductsInput<T extends TombstoneTable> {
 }
 
 /**
- * Soft-deletes the products the caller may delete, stamping each row with the delete's `stx`, and dispatches
- * `<entityType>.deleted` in the same transaction, so the collaborative documents of the rows go with them. A delete
- * sent again answers as its first attempt did: the rows that attempt removed count as deleted.
+ * Soft-deletes the products the caller may delete, stamping each row with the delete's `stx`. The collaborative
+ * documents of the rows go with them: `<entityType>.deleted` is dispatched in the same transaction. A delete sent again
+ * answers as its first attempt did: the rows that attempt removed count as deleted.
  * @returns The ids the caller may not delete, as `rejectedIds`.
  * @throws AppError 403 when the caller may delete none of them.
  */
