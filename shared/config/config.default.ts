@@ -4,6 +4,7 @@ import type {
   ProductEmbedding,
   RequiredConfig,
   S3ConfigInput,
+  ShareTargetConfig,
   SlotOf,
   SurfaceArrangement,
 } from '../src/config-builder/types.ts';
@@ -229,6 +230,8 @@ export const config = {
     chatSupport: false,
     demos: false,
   },
+
+  shareTarget: undefined as ShareTargetConfig | undefined,
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
   // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
