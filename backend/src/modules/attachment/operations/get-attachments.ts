@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { SQL } from 'drizzle-orm';
 import type { OrgContext } from '#/core/context';
-import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { buildSubtreeCoverWhere } from '#/db/utils/subtree-cover';
 import { withActorRefs } from '#/modules/actors/actor-refs';
@@ -41,18 +41,21 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const subtreeWhere = narrowed ? buildSubtreeCoverWhere(attachmentsTable, 'attachment', channelId) : undefined;
   if (subtreeWhere) filters.push(subtreeWhere);
 
-  const read = range ? tenantReadIncludingDeleted : tenantRead;
-  const { items: rawItems, total } = await read(ctx, (readCtx) =>
-    findAttachmentsPaginated(readCtx, {
-      organizationId,
-      filters,
-      orgWide: scopeWhere.kind === 'all' && !narrowed,
-      q,
-      ...orderBy,
-      limit,
-      offset,
-      range,
-    }),
+  const { items: rawItems, total } = await tenantRead(
+    ctx,
+    (readCtx) =>
+      findAttachmentsPaginated(readCtx, {
+        organizationId,
+        filters,
+        orgWide: scopeWhere.kind === 'all' && !narrowed,
+        q,
+        ...orderBy,
+        limit,
+        offset,
+        range,
+      }),
+    // A range read reaches tombstones, so a client hears of the rows deleted inside the range.
+    { includeDeleted: !!range },
   );
 
   return { items: projectTombstones('attachment', await withActorRefs(ctx, rawItems)), total };

@@ -41,9 +41,9 @@ The helpers in `backend/src/db/tenant-context.ts` open a transaction that names 
 - `tenantRead` for a request's product reads.
 - `tenantContext` for a request's creates and updates.
 - `tenantReadById` for work with no request behind it, such as notification fan-out.
-- `tenantReadAs` for a route without `tenantGuard`, which names the tenant explicitly.
+- `tenantRead` with a `tenantId` for a route without `tenantGuard`, which names the tenant explicitly.
 
-Variants also read tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
+An `includeDeleted` option also reaches tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
 
 ## Write-through policies
 

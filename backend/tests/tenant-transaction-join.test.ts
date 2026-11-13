@@ -3,7 +3,7 @@ import { nanoidTenant } from 'shared/utils/nanoid';
 import { describe, expect, it } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
-import { tenantContext, tenantContextById, tenantRead, tenantReadById, tenantReadIncludingDeleted } from '#/db/tenant-context';
+import { tenantContext, tenantContextById, tenantRead, tenantReadById } from '#/db/tenant-context';
 
 // requestTransaction reads only `var.db` and `var.tenantId`; the rest of a request context is absent (test mock).
 const ctxWith = (db: DbOrTx, tenantId: string) => ({ var: { db, tenantId } }) as unknown as ActorContext;
@@ -59,16 +59,24 @@ describe('joining an open tenant transaction', () => {
       const ctx = ctxWith(outerTx, tenantId);
       expect(await includeDeletedSetting(outerTx)).toBe('false');
 
-      await tenantReadIncludingDeleted(ctx, async (readCtx) => {
-        expect(await includeDeletedSetting(readCtx.var.db)).toBe('true');
-      });
+      await tenantRead(
+        ctx,
+        async (readCtx) => {
+          expect(await includeDeletedSetting(readCtx.var.db)).toBe('true');
+        },
+        { includeDeleted: true },
+      );
       expect(await includeDeletedSetting(outerTx)).toBe('false');
 
       // The savepoint's rollback reverts the setting without the restore statement running.
       await expect(
-        tenantReadIncludingDeleted(ctx, async () => {
-          throw new Error('boom');
-        }),
+        tenantRead(
+          ctx,
+          async () => {
+            throw new Error('boom');
+          },
+          { includeDeleted: true },
+        ),
       ).rejects.toThrow('boom');
       expect(await includeDeletedSetting(outerTx)).toBe('false');
     });

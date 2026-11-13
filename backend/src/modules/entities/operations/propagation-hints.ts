@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
-import { tenantReadAsIncludingDeleted } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -58,14 +58,17 @@ export async function buildPropagationHints(
       const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProductType), access);
       if (readWhere.kind === 'none') continue;
 
-      const { updatedIds, deletedIds, untilSeq } = await tenantReadAsIncludingDeleted(ctx, tenantId, (readCtx) =>
-        findChangedEntityDeltaIds(readCtx, {
-          entityType: embeddedProductType,
-          organizationId,
-          afterSeq: clientCursor,
-          readWhere: readWhere.kind === 'where' ? readWhere.where : undefined,
-          limit: maxHintRows + 1,
-        }),
+      const { updatedIds, deletedIds, untilSeq } = await tenantRead(
+        ctx,
+        (readCtx) =>
+          findChangedEntityDeltaIds(readCtx, {
+            entityType: embeddedProductType,
+            organizationId,
+            afterSeq: clientCursor,
+            readWhere: readWhere.kind === 'where' ? readWhere.where : undefined,
+            limit: maxHintRows + 1,
+          }),
+        { tenantId, includeDeleted: true },
       );
       // No changed row the caller may read.
       if (untilSeq === null) continue;

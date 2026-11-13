@@ -9,7 +9,7 @@ import {
 } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
 import { isArchivedFor } from '#/permissions/archive';
@@ -47,7 +47,7 @@ export const partitionByPermission = async (
   ids: string[],
 ) => {
   // Resolve entities (createdBy included for the owner relation).
-  const resolved = await tenantReadUnlessInTransaction(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }));
+  const resolved = await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }));
   const entities = resolved.filter((entity) => inRequestScope(ctx, entity) && draftShowsTo(ctx, entityType, entity));
 
   // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.

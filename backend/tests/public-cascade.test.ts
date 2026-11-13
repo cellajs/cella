@@ -6,7 +6,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import { baseDb } from '#/db/db';
-import { tenantContextIncludingDeleted } from '#/db/tenant-context';
+import { tenantContext } from '#/db/tenant-context';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler } from '#/lib/mutation-bus';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -59,12 +59,15 @@ describe("Public cascade: a channel's `public` reaches the products homed there"
   };
   /** The home's toggle as its write dispatches it: before and after rows, in a transaction that reads soft-deleted rows. */
   const toggle = (t: TestTenant, p: TestEntityHierarchyPlan, isPublic: boolean, maxRows?: number) =>
-    tenantContextIncludingDeleted(ctxOf(t), (txCtx) =>
-      // The handler reads a channel row's id, tenant, organization and flag; the test row carries no more.
-      handlerWith(maxRows)(txCtx, {
-        before: [homeRow(t, p, !isPublic)],
-        after: [homeRow(t, p, isPublic)],
-      } as unknown as Parameters<MutationHandler>[1]),
+    tenantContext(
+      ctxOf(t),
+      (txCtx) =>
+        // The handler reads a channel row's id, tenant, organization and flag; the test row carries no more.
+        handlerWith(maxRows)(txCtx, {
+          before: [homeRow(t, p, !isPublic)],
+          after: [homeRow(t, p, isPublic)],
+        } as unknown as Parameters<MutationHandler>[1]),
+      { includeDeleted: true },
     );
 
   const rows = (ids: string[]) => adminDb.select().from(attachmentsTable).where(inArray(attachmentsTable.id, ids));

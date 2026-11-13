@@ -159,7 +159,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Files:**
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
   - `backend/src/permissions/`: `get-valid-product.ts`, `get-valid-channel.ts` (re-exported by `index.ts`), `row-predicates.ts` (`buildCollectionReadWhere`), `collection-scope.ts`, `split-by-permission.ts`, `view-read-status.ts` (`resolveViewReadStatus`), `channel-collection-scope.ts`.
-  - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantReadAs`, `tenantReadUnlessInTransaction`).
+  - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantContext`).
   - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`.
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).

@@ -99,7 +99,7 @@ and the renderers.
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
     `readListPage` passes it, which also opens and issues the page tokens.
-    `seqRangeOf(input)` tells a range read, which reads through `tenantReadIncludingDeleted`, AND-s
+    `seqRangeOf(input)` tells a range read, which reads through `tenantRead` with `includeDeleted`, AND-s
     the `where` of `seqRangeRead(<name>sTable, range)` and orders by its `orderBy`; a normal read
     uses `tenantRead` and hides deleted rows. `resolveCollectionReadFilter` and
     `buildCollectionReadWhere(readFilter, <name>sTable, '<name>', actor)` give the read scope, and a

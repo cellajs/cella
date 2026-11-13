@@ -3,7 +3,7 @@ import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { partitionByPermission } from '#/permissions/split-by-permission';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
@@ -41,19 +41,22 @@ export async function splitDeleteByPermission<T extends ProductTable & { deleted
   ids: string[],
   stx: Pick<StxBase, 'mutationId'>,
 ): Promise<{ allowedIds: string[]; rejectedIds: string[] }> {
-  const deletedByAttempt = await tenantReadIncludingDeleted(ctx, (readCtx) =>
-    readCtx.var.db
-      .select({ id: table.id })
-      .from(table)
-      .where(
-        and(
-          inArray(table.id, ids),
-          isNotNull(table.deletedAt),
-          eq(table.deletedBy, ctx.var.actor.id),
-          sql`${table.stx}->>'mutationId' = ${stx.mutationId}`,
-          requestScopeWhere(ctx, table),
+  const deletedByAttempt = await tenantRead(
+    ctx,
+    (readCtx) =>
+      readCtx.var.db
+        .select({ id: table.id })
+        .from(table)
+        .where(
+          and(
+            inArray(table.id, ids),
+            isNotNull(table.deletedAt),
+            eq(table.deletedBy, ctx.var.actor.id),
+            sql`${table.stx}->>'mutationId' = ${stx.mutationId}`,
+            requestScopeWhere(ctx, table),
+          ),
         ),
-      ),
+    { includeDeleted: true },
   );
   const deleted = new Set(deletedByAttempt.map(({ id }) => String(id)));
   const remaining = ids.filter((id) => !deleted.has(id.toLowerCase()));

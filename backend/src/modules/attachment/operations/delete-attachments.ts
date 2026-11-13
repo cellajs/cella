@@ -1,6 +1,6 @@
 import type { ActorContext } from '#/core/context';
 import { createServerStx } from '#/core/stx/create-server-stx';
-import { tenantContextIncludingDeleted } from '#/db/tenant-context';
+import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { deleteAttachmentsByIds } from '#/modules/attachment/attachment-queries';
@@ -23,11 +23,15 @@ export async function deleteAttachmentsOp(
   const { allowedIds, rejectedIds } = await splitDeleteByPermission(ctx, attachmentsTable, 'attachment', ids, stx);
   if (!allowedIds.length) return { results: [], rejectedIds };
 
-  await tenantContextIncludingDeleted(ctx, async (txCtx) => {
-    const deleted = await deleteAttachmentsByIds(txCtx, { ids: allowedIds, actorId: ctx.var.actor.id, stx });
-    // Inside the transaction: the collaborative documents of the rows go with them.
-    await dispatchMutation(txCtx, 'attachment.deleted', { before: deleted });
-  });
+  await tenantContext(
+    ctx,
+    async (txCtx) => {
+      const deleted = await deleteAttachmentsByIds(txCtx, { ids: allowedIds, actorId: ctx.var.actor.id, stx });
+      // Inside the transaction: the collaborative documents of the rows go with them.
+      await dispatchMutation(txCtx, 'attachment.deleted', { before: deleted });
+    },
+    { includeDeleted: true },
+  );
 
   log.info('Attachments deleted', { ids: allowedIds });
 

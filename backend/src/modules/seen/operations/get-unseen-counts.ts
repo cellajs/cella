@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm';
 import { appConfig, type SeenTrackedProductType, seenGroupingChannelTypes } from 'shared';
 import type { UserContext } from '#/core/context';
-import { tenantReadAs } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -49,8 +49,10 @@ export async function getUnseenCountsOp(ctx: UserContext) {
     if (readableTypes.length === 0) continue;
 
     // The route has no tenant guard: each organization's rows are read as its own tenant.
-    const unseenRows = await tenantReadAs(ctx, tenantId, (readCtx) =>
-      findUnseenCountsByUser(readCtx, { userId: user.id, channels, productTypes: readableTypes, scopeWhereByType }),
+    const unseenRows = await tenantRead(
+      ctx,
+      (readCtx) => findUnseenCountsByUser(readCtx, { userId: user.id, channels, productTypes: readableTypes, scopeWhereByType }),
+      { tenantId },
     );
 
     for (const row of unseenRows) {
