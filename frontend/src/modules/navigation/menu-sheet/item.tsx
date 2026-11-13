@@ -24,11 +24,9 @@ interface MenuSheetItemProps {
   item: UserMenuItem;
   /** A submenu row: smaller, joined to its parent by a connector. */
   isSubitem: boolean;
-  /** Its avatar rests grey until hovered or focused. */
-  isResting?: boolean;
 }
 
-export function MenuSheetItem({ item, isSubitem, isResting = false }: MenuSheetItemProps) {
+export function MenuSheetItem({ item, isSubitem }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
@@ -55,7 +53,6 @@ export function MenuSheetItem({ item, isSubitem, isResting = false }: MenuSheetI
         if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       }}
       data-compact={isCompact}
-      data-resting={isResting}
       aria-label={marks.length ? `${item.name} (${marks.join(', ')})` : item.name}
       draggable={false}
       {...getChannelRoute(item)}
@@ -68,10 +65,12 @@ export function MenuSheetItem({ item, isSubitem, isResting = false }: MenuSheetI
       <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
       {isSubitem && isInActiveGroup && <SubmenuConnector />}
-      <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[compact=true]/menu-sheet-item:mx-4 group-data-[compact=true]/menu-sheet-item:size-6">
+      {/* Only the open row shows its color, and a row group under the pointer shows all of its colors while the open row's
+          rests. A JSX attribute keeps the backslash that `.group\/parent` needs, which a JS string drops. */}
+      <span className="pointer-coarse:group-[:not([data-link-active=true],:focus-visible)]/menu-sheet-item:resting-avatar pointer-fine:group-[:not(:hover)]/parent:group-[:not([data-link-active=true],:focus-visible)]/menu-sheet-item:resting-avatar pointer-fine:group-[:not(:hover)]/parent:group-has-[.group\/parent:hover]/menu-sheet:group-[:not(:focus-visible)]/menu-sheet-item:resting-avatar relative mx-3 my-2 size-8 shrink-0 group-data-[compact=true]/menu-sheet-item:mx-4 group-data-[compact=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(
-            'bg-card pointer-fine:group-[[data-resting=true]:not(:hover,:focus-visible)]/menu-sheet-item:resting-avatar pointer-coarse:group-[[data-resting=true]:not(:focus-visible)]/menu-sheet-item:resting-avatar size-8 group-hover/menu-sheet-item:opacity-100 group-data-[compact=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
+            'bg-card size-8 group-hover/menu-sheet-item:opacity-100 group-data-[compact=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
             Icon && 'bg-transparent shadow-none',
           )}
           type={item.entityType}
