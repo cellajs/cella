@@ -79,7 +79,7 @@ const tabSessionId = getTabSessionId();
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 
 /** Tabs of every bundle version lock and query this name, so it never changes. */
-const tabLockPrefix = `${appConfig.slug}-mutation-owner:`;
+const tabLockPrefix = `${appConfig.slug}-tab-open:`;
 
 /** Holds this tab's lock until the tab closes: other tabs' restore reads it as this tab being open. */
 function holdTabLock(): void {

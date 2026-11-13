@@ -11,7 +11,7 @@ import { useCanUploadAttachments } from '~/modules/attachment/helpers/use-can-up
 import { AddFilesButton } from '~/modules/common/blocknote/add-files-button';
 import type { BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';

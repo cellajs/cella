@@ -9,7 +9,7 @@ vi.mock('~/query/idb-kv-storage', () => ({
   idbKvStorage: () => ({ getItem: () => null, setItem: () => {}, removeItem: () => {} }),
 }));
 
-const { useFormWithDraft } = await import('~/modules/common/form-draft/use-draft-form');
+const { useFormWithDraft } = await import('~/modules/common/form-draft/use-form-with-draft');
 const { useDraftStore } = await import('~/modules/common/form-draft/draft-store');
 const { formResolver } = await import('~/utils/form-resolver');
 

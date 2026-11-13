@@ -80,6 +80,7 @@ class FakeBroadcastChannel {
   close(): void {}
 }
 
+const leaderLockName = `${appConfig.slug}-tab-leader`;
 /** What another tab posted, as this tab receives it. */
 const receive = (message: unknown) => FakeBroadcastChannel.opened?.onmessage?.({ data: message } as MessageEvent);
 
@@ -110,7 +111,7 @@ describe('tab coordinator leadership', () => {
     await tick();
 
     expect(isLeader()).toBe(false);
-    expect(fakeLocks.isHeld('tab-leader')).toBe(false);
+    expect(fakeLocks.isHeld(leaderLockName)).toBe(false);
 
     await initTabCoordinator();
     expect(isLeader()).toBe(true);
@@ -122,7 +123,7 @@ describe('tab coordinator leadership', () => {
     const otherHold = new Promise<void>((resolve) => {
       releaseOther = resolve;
     });
-    fakeLocks.request('tab-leader', () => otherHold);
+    fakeLocks.request(leaderLockName, () => otherHold);
 
     await initTabCoordinator();
     expect(isLeader()).toBe(false); // follower: listening to broadcasts only
@@ -133,7 +134,7 @@ describe('tab coordinator leadership', () => {
 
     // The follower must take over so the SSE stream stays alive for every tab.
     expect(isLeader()).toBe(true);
-    expect(fakeLocks.isHeld('tab-leader')).toBe(true);
+    expect(fakeLocks.isHeld(leaderLockName)).toBe(true);
   });
 });
 
@@ -173,7 +174,7 @@ describe('what the leader tells the other tabs', () => {
     // Another tab leads now: this one follows, runs no catchup and has no stream, and hears what was posted.
     releaseTabLeadership();
     await tick();
-    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    fakeLocks.request(leaderLockName, () => new Promise<void>(() => {}));
     await initTabCoordinator();
     expect(isLeader()).toBe(false);
 
@@ -193,7 +194,7 @@ describe('what the leader tells the other tabs', () => {
       handled.push(message);
     });
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    fakeLocks.request(leaderLockName, () => new Promise<void>(() => {}));
     await initTabCoordinator();
 
     receive(signal('bad'));
@@ -228,7 +229,7 @@ describe('what the leader tells the other tabs', () => {
     releaseTabLeadership();
     await tick();
     let releaseOther: () => void = () => {};
-    fakeLocks.request('tab-leader', () => new Promise<void>((resolve) => (releaseOther = resolve)));
+    fakeLocks.request(leaderLockName, () => new Promise<void>((resolve) => (releaseOther = resolve)));
     await initTabCoordinator();
     receive({ type: 'sync-health', health: down });
 

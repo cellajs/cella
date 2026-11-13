@@ -5,8 +5,8 @@ import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
 import { markBundleStale } from '~/query/schema-version-guard';
 
-const channelName = 'tab-sync';
-const leaderLockName = 'tab-leader';
+const channelName = `${appConfig.slug}-tab-sync`;
+const leaderLockName = `${appConfig.slug}-tab-leader`;
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
 

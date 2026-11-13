@@ -7,7 +7,7 @@ import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';

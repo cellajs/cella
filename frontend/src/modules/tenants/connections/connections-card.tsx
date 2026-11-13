@@ -8,7 +8,7 @@ import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { CopiedIcon } from '~/modules/common/copied-icon';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { SelectFormField } from '~/modules/common/form-fields/select';
