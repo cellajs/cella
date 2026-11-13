@@ -61,7 +61,7 @@ describe('enrollDevice', () => {
 
     const first = await enrollDevice(user.id, deviceId);
     const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
-    await db.update(devicesTable).set({ firstSeenAt: lastWeek, lastSeenAt: lastWeek });
+    await db.update(devicesTable).set({ createdAt: lastWeek, lastSignInAt: lastWeek });
     const again = await enrollDevice(user.id, deviceId);
 
     expect(first.isNew).toBe(true);
@@ -69,7 +69,7 @@ describe('enrollDevice', () => {
     expect(first.deviceIdHash).toBe(hashDeviceIdForUser(deviceId, user.id));
 
     const [row] = await devicesOf(user.id);
-    expect(new Date(row.lastSeenAt).getTime()).toBeGreaterThan(new Date(row.firstSeenAt).getTime());
+    expect(new Date(row.lastSignInAt).getTime()).toBeGreaterThan(new Date(row.createdAt).getTime());
   });
 
   it('treats one shared browser as new for each user', async () => {
@@ -217,10 +217,10 @@ describe('sessions list flags sessions from a new browser', async () => {
 
     const eightDaysAgo = new Date(Date.now() - 8 * 86_400_000).toISOString();
     const nineDaysAgo = new Date(Date.now() - 9 * 86_400_000).toISOString();
-    await db.update(devicesTable).set({ firstSeenAt: nineDaysAgo }).where(eq(devicesTable.userId, user.id));
+    await db.update(devicesTable).set({ createdAt: nineDaysAgo }).where(eq(devicesTable.userId, user.id));
     await db
       .update(devicesTable)
-      .set({ firstSeenAt: eightDaysAgo })
+      .set({ createdAt: eightDaysAgo })
       .where(eq(devicesTable.deviceIdHash, aged.newDevice?.deviceIdHash ?? ''));
 
     const sessions = await sessionsOf(user);

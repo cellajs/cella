@@ -32,11 +32,11 @@ export const partitionConfigs: PartitionConfig[] = [
 const sweepRules: { table: string; aged: string }[] = [
   { table: 'sessions', aged: `expires_at < now() - ${days(retention.sessionDaysAfterExpiry)}` },
   { table: 'tokens', aged: `expires_at < now() - ${days(retention.tokenDaysAfterExpiry)}` },
-  { table: 'devices', aged: `last_seen_at < now() - ${days(retention.deviceDaysUnseen)}` },
+  { table: 'devices', aged: `last_sign_in_at < now() - ${days(retention.deviceDaysSinceSignIn)}` },
   {
     table: 'devices',
     aged: `(user_id, device_id_hash) IN (SELECT user_id, device_id_hash FROM (SELECT user_id, device_id_hash,
-      row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC) AS position FROM devices) ranked
+      row_number() OVER (PARTITION BY user_id ORDER BY last_sign_in_at DESC) AS position FROM devices) ranked
       WHERE position > ${retention.devicesPerUser})`,
   },
   { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },

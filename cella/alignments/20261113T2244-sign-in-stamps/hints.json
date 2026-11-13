@@ -1,0 +1,6 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "devices", "first_seen_at"], "to": ["public", "devices", "created_at"] },
+  { "type": "rename", "kind": "column", "from": ["public", "devices", "last_seen_at"], "to": ["public", "devices", "last_sign_in_at"] },
+  { "type": "rename", "kind": "index", "from": ["public", "devices", "devices_last_seen_at_idx"], "to": ["public", "devices", "devices_last_sign_in_at_idx"] },
+  { "type": "rename", "kind": "column", "from": ["public", "identities", "last_used_at"], "to": ["public", "identities", "last_sign_in_at"] }
+]

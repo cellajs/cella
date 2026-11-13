@@ -156,7 +156,7 @@ describe('OAuth Authentication', async () => {
 
       const [used] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
       expect(used.email).toBe('github-user@example.com');
-      expect(used.lastUsedAt).not.toBeNull();
+      expect(used.lastSignInAt).not.toBeNull();
       // The snapshot is display only: no email row appears for it.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'github-user@example.com'))).toHaveLength(0);
     });
@@ -175,7 +175,7 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toContain('/auth/email-verification');
       expect(cookieChange(res, 'session')).toBeUndefined();
       const [untouched] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, ssoIdentity.id));
-      expect(untouched.lastUsedAt).toBeNull();
+      expect(untouched.lastSignInAt).toBeNull();
       expect(untouched.userId).toBe(user.id);
     });
 

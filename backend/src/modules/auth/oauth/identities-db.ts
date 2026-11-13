@@ -35,7 +35,7 @@ export const identitiesTable = snakeCase.table(
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     /** Claims snapshot for sso identities (affiliations, acr); nothing reads it for authorization. */
     data: jsonb().$type<Record<string, unknown>>(),
-    lastUsedAt: isoTimestamp(),
+    lastSignInAt: isoTimestamp(),
   },
   (table) => [
     index('identities_user_id_idx').on(table.userId),

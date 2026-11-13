@@ -2,6 +2,7 @@ import { getColumns } from 'drizzle-orm';
 import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ActorId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
@@ -34,12 +35,8 @@ export const apiKeysTable = snakeCase.table(
     /** Null: never expires. */
     expiresAt: isoTimestamp(),
     revokedAt: isoTimestamp(),
-    revokedBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
-    createdBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
+    revokedBy: writerColumn(),
+    createdBy: writerColumn(),
     createdAt: timestampColumns.createdAt,
   },
   (table) => [

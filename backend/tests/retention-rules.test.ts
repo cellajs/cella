@@ -72,21 +72,21 @@ describe('apply_retention() row rules', () => {
       removed: [tokens.gone.id],
     });
 
-    const device = (userId: string, lastSeen: Date) => {
+    const device = (userId: string, lastSignIn: Date) => {
       const deviceIdHash = hashDeviceIdForUser(nanoid(24), userId);
       return db
         .insert(devicesTable)
-        .values({ userId, deviceIdHash, firstSeenAt: lastSeen.toISOString(), lastSeenAt: lastSeen.toISOString() })
+        .values({ userId, deviceIdHash, createdAt: lastSignIn.toISOString(), lastSignInAt: lastSignIn.toISOString() })
         .then(() => deviceIdHash);
     };
     const devicesOf = (userId: string) => async () =>
       (await db.select({ hash: devicesTable.deviceIdHash }).from(devicesTable).where(eq(devicesTable.userId, userId))).map((row) => row.hash);
-    const unseen = {
-      gone: await device(user.id, outside(retention.deviceDaysUnseen)),
-      kept: await device(user.id, inside(retention.deviceDaysUnseen)),
+    const signedInLongAgo = {
+      gone: await device(user.id, outside(retention.deviceDaysSinceSignIn)),
+      kept: await device(user.id, inside(retention.deviceDaysSinceSignIn)),
     };
-    cases.push({ rule: 'devices unseen', remaining: devicesOf(user.id), kept: [unseen.kept], removed: [unseen.gone] });
-    // Minutes apart and recent, so only the cap decides; the two least recently seen go.
+    cases.push({ rule: 'devices since sign-in', remaining: devicesOf(user.id), kept: [signedInLongAgo.kept], removed: [signedInLongAgo.gone] });
+    // Minutes apart and recent, so only the cap decides; the two least recently signed in from go.
     const crowdedDevices: string[] = [];
     for (let i = 0; i < retention.devicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
     cases.push({

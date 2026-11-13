@@ -1,6 +1,6 @@
 import { index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { UserId } from '#/db/utils/ids';
-import { isoTimestamp } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -17,14 +17,15 @@ export const devicesTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     deviceIdHash: varchar({ length: 64 }).notNull(),
-    firstSeenAt: isoTimestamp().notNull(),
-    lastSeenAt: isoTimestamp().notNull(),
+    /** The first sign-in from this browser. */
+    createdAt: timestampColumns.createdAt,
+    lastSignInAt: isoTimestamp().notNull(),
     /** Set when a new sign-in notice went out for this row; the per-user daily budget counts these. */
     notifiedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.deviceIdHash] }),
     index('devices_user_id_notified_at_idx').on(table.userId, table.notifiedAt),
-    index('devices_last_seen_at_idx').on(table.lastSeenAt),
+    index('devices_last_sign_in_at_idx').on(table.lastSignInAt),
   ],
 );

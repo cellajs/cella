@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -39,19 +39,9 @@ export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, devic
     .orderBy(desc(sessionsTable.createdAt))
     .offset(offset);
 
-interface FindUserSessionsOpts {
-  userId: string;
-  /** Revoked sessions are listed when revoked after this ISO timestamp. */
-  revokedSince: string;
-}
-
-/** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
-export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) =>
-  ctx.var.db
-    .select(sessionSafeColumns)
-    .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
-    .orderBy(desc(sessionsTable.createdAt));
+/** The user's sessions newest first, secret stripped: live, expired and revoked ones, until the sweep removes them. */
+export const findUserSessions = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db.select(sessionSafeColumns).from(sessionsTable).where(eq(sessionsTable.userId, userId)).orderBy(desc(sessionsTable.createdAt));
 
 interface FindSessionBySecretOpts {
   /** The hash of the session token, the only form the database stores. */

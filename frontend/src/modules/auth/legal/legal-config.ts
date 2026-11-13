@@ -163,7 +163,7 @@ export const sharedDataTypes: SharedDataType[] = [
     storageLocation: 'Primary database (EU)',
     retentionPeriod: [
       `Sessions: ${retention.sessionDaysAfterExpiry} days after they end`,
-      `Known devices: ${retention.deviceDaysUnseen} days after you last signed in from one, or until you delete your account`,
+      `Known devices: ${retention.deviceDaysSinceSignIn} days after you last signed in from one, or until you delete your account`,
     ],
   },
   {

@@ -12,8 +12,8 @@ export const upsertDevice = async (ctx: DbContext, { userId, deviceIdHash }: { u
   const now = getIsoDate();
   const [row] = await ctx.var.db
     .insert(devicesTable)
-    .values({ userId, deviceIdHash, firstSeenAt: now, lastSeenAt: now })
-    .onConflictDoUpdate({ target: [devicesTable.userId, devicesTable.deviceIdHash], set: { lastSeenAt: now } })
+    .values({ userId, deviceIdHash, createdAt: now, lastSignInAt: now })
+    .onConflictDoUpdate({ target: [devicesTable.userId, devicesTable.deviceIdHash], set: { lastSignInAt: now } })
     .returning({ isNew: sql<boolean>`(xmax = 0)` });
   return row;
 };
@@ -33,17 +33,17 @@ export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesB
 
 interface FindNewDevicesOpts {
   userId: string;
-  /** Devices first seen after this ISO timestamp. */
-  firstSeenAfter: string;
+  /** Devices first signed in from after this ISO timestamp. */
+  createdAfter: string;
 }
 
-/** The user's devices first seen after `firstSeenAfter`, except their oldest: an account's first browser is never new. */
-export const findNewDevices = async (ctx: DbContext, { userId, firstSeenAfter }: FindNewDevicesOpts) => {
-  const oldestFirstSeen = sql`(select min(${devicesTable.firstSeenAt}) from ${devicesTable} where ${devicesTable.userId} = ${userId})`;
+/** The user's devices first signed in from after `createdAfter`, except their oldest: an account's first browser is never new. */
+export const findNewDevices = async (ctx: DbContext, { userId, createdAfter }: FindNewDevicesOpts) => {
+  const oldestCreatedAt = sql`(select min(${devicesTable.createdAt}) from ${devicesTable} where ${devicesTable.userId} = ${userId})`;
   return ctx.var.db
     .select({ deviceIdHash: devicesTable.deviceIdHash })
     .from(devicesTable)
-    .where(and(eq(devicesTable.userId, userId), gt(devicesTable.firstSeenAt, firstSeenAfter), gt(devicesTable.firstSeenAt, oldestFirstSeen)));
+    .where(and(eq(devicesTable.userId, userId), gt(devicesTable.createdAt, createdAfter), gt(devicesTable.createdAt, oldestCreatedAt)));
 };
 
 interface CountNotifiedDevicesOpts {

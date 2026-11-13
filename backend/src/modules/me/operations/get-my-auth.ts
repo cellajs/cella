@@ -9,31 +9,23 @@ import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/help
 import { findTotp } from '#/modules/auth/totps/totps-queries';
 import { findActiveSsoConnectionsByTenants } from '#/modules/connections/connections-queries';
 import { isoDateAgo } from '#/utils/iso-date';
-import { TimeSpan } from '#/utils/time-span';
 
 /** How long a browser counts as new in the sessions list: one session lifetime. */
 const newDeviceWindow = sessionLifetime;
-
-/** How long a revoked session stays in the list; the sweep drops a row that long after its expiry, so nothing lingers longer. */
-const revokedSessionWindow = new TimeSpan(appConfig.retention.sessionDaysAfterExpiry, 'd');
 
 const isEnabledProvider = (provider: string): provider is EnabledOAuthProvider =>
   appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider);
 
 /**
- * The user's sessions, newest first and without their secret: the live and expired ones and those revoked within
- * {@link revokedSessionWindow}, each flagged with `current` and `newDevice`. A device is new when it was first seen
- * within {@link newDeviceWindow} and the user has an older device, so an account's first browser never counts.
+ * The user's sessions, newest first and without their secret: live, expired and revoked ones until the sweep removes
+ * them, each flagged with `current` and `newDevice`. A device is new when its first sign-in falls within
+ * {@link newDeviceWindow} and the user has an older device, so an account's first browser never counts.
  */
 const readSessions = async (ctx: UserContext) => {
   const userId = ctx.var.user.id;
-  const revokedSince = isoDateAgo(revokedSessionWindow);
-  const firstSeenAfter = isoDateAgo(newDeviceWindow);
+  const createdAfter = isoDateAgo(newDeviceWindow);
 
-  const [sessions, newDevices] = await Promise.all([
-    findUserSessions(ctx, { userId, revokedSince }),
-    findNewDevices(ctx, { userId, firstSeenAfter }),
-  ]);
+  const [sessions, newDevices] = await Promise.all([findUserSessions(ctx, { userId }), findNewDevices(ctx, { userId, createdAfter })]);
   const newDeviceHashes = new Set(newDevices.map(({ deviceIdHash }) => deviceIdHash));
 
   return sessions.map((session) => ({
@@ -73,7 +65,7 @@ export async function getMyAuthOp(ctx: UserContext) {
   const tenantIds = [...new Set(ctx.var.memberships.map(({ tenantId }) => tenantId))];
   const identityAt = (connectionId: string) => {
     const identity = ssoIdentities.find((sso) => sso.connectionId === connectionId);
-    return identity ? { email: identity.email, createdAt: identity.createdAt, lastUsedAt: identity.lastUsedAt } : null;
+    return identity ? { email: identity.email, createdAt: identity.createdAt, lastUsedAt: identity.lastSignInAt } : null;
   };
   const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants(ctx, { tenantIds }) : [];
   const institutions = connections.flatMap(({ id, name, federation }) =>

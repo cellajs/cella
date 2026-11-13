@@ -3,10 +3,10 @@ import { check, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-
 import type { FederationKey } from 'shared';
 import { oauthProviders } from 'shared/config-builder/types';
 import { generateId } from 'shared/utils/entity-id';
+import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
-import type { ActorId, UserId } from '#/db/utils/ids';
+import type { UserId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
-import { actorsTable } from '#/modules/actors/actors-db';
 import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -78,9 +78,7 @@ export const sessionsTable = snakeCase.table(
     expiresAt: timestampColumns.expiresAt,
     revokedAt: isoTimestamp(),
     /** The actor whose request revoked the session; null when the server did it during a sign-in. */
-    revokedBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
+    revokedBy: writerColumn(),
     revocationReason: varchar({ enum: sessionRevocationReasons }),
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
     steppedUpAt: isoTimestamp(),

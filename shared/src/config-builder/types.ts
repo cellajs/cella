@@ -182,8 +182,8 @@ export interface RetentionConfig {
   demoTenantDays: number;
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
-  deviceDaysUnseen: number;
-  /** Known devices kept per user, the most recently seen. */
+  deviceDaysSinceSignIn: number;
+  /** Known devices kept per user, the most recently signed in from. */
   devicesPerUser: number;
   oidcPayloadDaysAfterUse: number;
   /** Requests of every kind: contact messages, waitlist entries and info requests. */

@@ -235,7 +235,7 @@ describe('SSO sign-in through an institution', async () => {
 
     expect(await getUserByEmail(studentEmail)).toHaveLength(1);
     const [identity] = await identitiesOf(user.id);
-    expect(identity.lastUsedAt).not.toBeNull();
+    expect(identity.lastSignInAt).not.toBeNull();
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['employee', 'member'] });
     expect(await membershipsOf(user.id)).toHaveLength(1);
   });

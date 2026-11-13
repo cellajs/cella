@@ -241,7 +241,7 @@ const verifyCallbackFlow = async ({
     await spendVerification(ctx, txCtx, verifyToken);
     if (identity.verifiedAt !== null) return;
 
-    await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verifiedAt: now, lastUsedAt: now } });
+    await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verifiedAt: now, lastSignInAt: now } });
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
@@ -331,7 +331,7 @@ const refreshIdentityEmail = async (identity: IdentityModel, providerUser: Trans
 
 /** A sign-in through the identity: record the use and refresh the address snapshot to what the provider asserts now. */
 const touchIdentity = async (identity: IdentityModel, providerUser: TransformedUser) => {
-  await updateIdentity(dbCtx, { id: identity.id, values: { lastUsedAt: getIsoDate(), email: providerUser.email } });
+  await updateIdentity(dbCtx, { id: identity.id, values: { lastSignInAt: getIsoDate(), email: providerUser.email } });
 };
 
 /**

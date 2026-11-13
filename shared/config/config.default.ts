@@ -130,7 +130,7 @@ export const config = {
     demoTenantDays: 2,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
-    deviceDaysUnseen: 400,
+    deviceDaysSinceSignIn: 400,
     devicesPerUser: 50,
     oidcPayloadDaysAfterUse: 30,
     requestDays: 365,
