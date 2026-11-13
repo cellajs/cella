@@ -26,9 +26,11 @@ interface MenuSheetItemProps {
   isSubitem: boolean;
   /** Its avatar rests grey until hovered or focused. */
   isResting?: boolean;
+  /** Shown in place of what the row counts itself: an organization row on the organizations page shows what its rail button does. */
+  unseenCount?: number;
 }
 
-export function MenuSheetItem({ item, isSubitem, isResting = false }: MenuSheetItemProps) {
+export function MenuSheetItem({ item, isSubitem, isResting = false, unseenCount: givenCount }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
@@ -41,7 +43,8 @@ export function MenuSheetItem({ item, isSubitem, isResting = false }: MenuSheetI
   const isCompact = isCompactRow(item.entityType, isSubitem);
 
   const hasSubmenu = isSubmenuShown(item);
-  const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
+  const ownCount = useMenuItemUnseenCount(item, hasSubmenu);
+  const unseenCount = givenCount ?? ownCount;
   const mark = section?.rowMark?.(item, isCompact);
   const isMuted = item.membership.muted && canMute(item);
   const marks = [mark && t(mark.label), isMuted && t('c:muted')].filter(Boolean);

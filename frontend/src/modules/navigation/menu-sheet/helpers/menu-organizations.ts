@@ -12,10 +12,12 @@ import { channelRouteConfig } from '~/routes-config';
 export const menuOrganizations = (menu: UserMenu): UserMenuItem[] =>
   Object.values(menu).flatMap((items) => items.filter((item) => item.entityType === 'organization'));
 
-/** Opens the lobby of `organization` in place of a page of another organization. The page then names the organization the menu shows. */
+/** Opens the lobby of `organization` in place of a page of another organization, or of the organizations page. The page then names the organization the menu shows. */
 export function openOrganizationLobby(organization: Pick<UserMenuItem, 'id' | 'slug' | 'tenantId'>) {
   const routeOrganizationId = getRouteOrganizationId();
-  if (!routeOrganizationId || routeOrganizationId === organization.id) return;
+  if (routeOrganizationId === organization.id) return;
+  const isOrganizationsPage = getRouter().state.matches.some((match) => match.routeId === '/_app/organizations');
+  if (!routeOrganizationId && !isOrganizationsPage) return;
   getRouter().navigate({ to: '/$tenantId/$organizationSlug', params: { tenantId: organization.tenantId, organizationSlug: organization.slug } });
 }
 

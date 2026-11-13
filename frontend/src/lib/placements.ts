@@ -76,6 +76,10 @@ interface SlotToolFields {
     /** Rendered after the panel toggle's label while the panel is closed, such as a dot when something needs attention. */
     indicator?: () => ReactNode;
   };
+  'home.sections': {
+    /** Loads the section's code and data ahead, in the home route's loader: the page then renders whole, and nothing moves as a late section lands. */
+    preload?: () => Promise<unknown>;
+  };
 }
 
 /** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */

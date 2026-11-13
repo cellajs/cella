@@ -52,6 +52,7 @@ interface MenuSheetSectionButtonProps {
   isEditing: boolean;
   isCollapsible: boolean;
   isSectionVisible: boolean;
+  surface: 'sheet' | 'page';
   items: UserMenuItem[];
   channelIds: string[];
   onToggleEditing: () => void;
@@ -66,6 +67,7 @@ function MenuSheetSectionButton({
   isEditing,
   isCollapsible,
   isSectionVisible,
+  surface,
   onCreate,
   onToggleEditing,
 }: MenuSheetSectionButtonProps) {
@@ -80,9 +82,10 @@ function MenuSheetSectionButton({
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const hasSettings = isSectionVisible && items.length > 0;
+  const Label = surface === 'page' ? 'h1' : 'div';
 
   return (
-    <div className="bg-card sticky top-0 z-10 flex items-center pt-2">
+    <div className="bg-card sticky top-0 z-10 flex items-center pt-2 group-data-[surface=page]/menu-section:static group-data-[surface=page]/menu-section:bg-transparent">
       {isCollapsible ? (
         <Button
           onClick={() => setSectionOpen(options.entityType, !isSectionVisible)}
@@ -110,11 +113,13 @@ function MenuSheetSectionButton({
           />
         </Button>
       ) : (
-        // Matches the toggle's text box, so the label sits where a collapsible section shows it
-        <div className="group-label flex h-10 min-w-0 flex-1 items-center px-3 whitespace-nowrap">{t(options.label)}</div>
+        // The label sits where a collapsible section's toggle shows it; on a page it is the heading
+        <Label className="group-label group-data-[surface=page]/menu-section:text-foreground flex h-10 min-w-0 flex-1 items-center px-3 whitespace-nowrap group-data-[surface=page]/menu-section:text-lg group-data-[surface=page]/menu-section:font-semibold">
+          {t(options.label)}
+        </Label>
       )}
 
-      <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:hidden')}>
+      <div inert={!hasSettings} className={cn(widenClass, hasSettings && widenOpenClass, 'max-sm:group-data-[surface=sheet]/menu-section:hidden')}>
         <TooltipButton toolTipContent={t('c:manage_content')} sideOffset={10}>
           <Button variant={isEditing ? 'secondary' : 'quiet'} size="icon" aria-pressed={isEditing} className="focus-inset" onClick={onToggleEditing}>
             <Settings2Icon className="size-5" />
@@ -141,9 +146,15 @@ interface MenuSheetSectionProps {
   isCollapsible: boolean;
   /** Handed to the create action. */
   organizationId?: string;
+  /** A page of its own, such as the organizations page: its label is the page heading, with no sticky card header over the page. */
+  surface?: 'sheet' | 'page';
+  /** Shown in place of the list while the section has no items, where the menu's placeholder says too little. */
+  emptyState?: ReactNode;
+  /** Unseen counts by row id, for rows that count nothing themselves: organizations on their page show what their rail buttons do. */
+  rowCounts?: Map<string, number>;
 }
 
-export function MenuSheetSection({ items, options, isCollapsible, organizationId }: MenuSheetSectionProps) {
+export function MenuSheetSection({ items, options, isCollapsible, organizationId, surface = 'sheet', emptyState, rowCounts }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
@@ -182,11 +193,12 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   };
 
   const hasHiddenGroup = !!hiddenCount || (!!items.length && isEditing && isChannelHideable(options.entityType));
+  const showsEmptyState = !!emptyState && !items.length;
 
   return (
-    <div className="group/menu-section px-3" data-visible={isSectionVisible}>
+    <div className="group/menu-section px-3" data-visible={isSectionVisible} data-surface={surface}>
       <MenuSheetSectionButton
-        {...{ items, options, isEditing, isSectionVisible }}
+        {...{ items, options, isEditing, isSectionVisible, surface }}
         isCollapsible={canCollapse}
         channelIds={activeChannelIds}
         onToggleEditing={handleToggleEditing}
@@ -202,51 +214,56 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
         )}
       </AnimatePresence>
       <AnimatePresence initial={false}>
-        {isSectionVisible && (
-          <motion.ul key={options.entityType} {...menuListMotion}>
-            {isEditing ? (
-              <MenuSheetItemsListEdit items={items} group="active" options={options} prepareHide={prepareHide} />
-            ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} group="active" />
-            )}
-            {hasHiddenGroup && (
-              <li>
-                <MenuSheetHiddenGroup
-                  entityType={options.entityType}
-                  isOpen={isHiddenVisible}
-                  onToggle={handleToggleHidden}
-                  count={hiddenCount}
-                  channelIds={isEditing ? undefined : hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true))}
-                  dropItems={isEditing ? items : undefined}
-                >
-                  {isEditing ? (
-                    <MenuSheetItemsListEdit items={items} group="hidden" options={options} />
-                  ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} group="hidden" />
-                  )}
-                </MenuSheetHiddenGroup>
-              </li>
-            )}
-            {!!archivedItems.length && (
-              <li>
-                <MenuSheetHiddenGroup
-                  entityType={options.entityType}
-                  variant="archived"
-                  isOpen={isArchivedVisible}
-                  onToggle={() => setSectionOpen(archivedSectionKey, !isArchivedVisible)}
-                  count={archivedItems.length}
-                  channelIds={isEditing ? undefined : archivedItems.flatMap((item) => menuUnseenChannelIds(item, true))}
-                >
-                  {isEditing ? (
-                    <MenuSheetItemsListEdit items={items} group="archived" options={options} />
-                  ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} group="archived" />
-                  )}
-                </MenuSheetHiddenGroup>
-              </li>
-            )}
-          </motion.ul>
-        )}
+        {isSectionVisible &&
+          (showsEmptyState ? (
+            <motion.div key="empty" {...menuListMotion}>
+              {emptyState}
+            </motion.div>
+          ) : (
+            <motion.ul key={options.entityType} {...menuListMotion}>
+              {isEditing ? (
+                <MenuSheetItemsListEdit items={items} group="active" options={options} prepareHide={prepareHide} />
+              ) : (
+                <MenuSheetItemsList entityType={options.entityType} items={items} group="active" rowCounts={rowCounts} />
+              )}
+              {hasHiddenGroup && (
+                <li>
+                  <MenuSheetHiddenGroup
+                    entityType={options.entityType}
+                    isOpen={isHiddenVisible}
+                    onToggle={handleToggleHidden}
+                    count={hiddenCount}
+                    channelIds={isEditing ? undefined : hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true))}
+                    dropItems={isEditing ? items : undefined}
+                  >
+                    {isEditing ? (
+                      <MenuSheetItemsListEdit items={items} group="hidden" options={options} />
+                    ) : (
+                      <MenuSheetItemsList entityType={options.entityType} items={items} group="hidden" rowCounts={rowCounts} />
+                    )}
+                  </MenuSheetHiddenGroup>
+                </li>
+              )}
+              {!!archivedItems.length && (
+                <li>
+                  <MenuSheetHiddenGroup
+                    entityType={options.entityType}
+                    variant="archived"
+                    isOpen={isArchivedVisible}
+                    onToggle={() => setSectionOpen(archivedSectionKey, !isArchivedVisible)}
+                    count={archivedItems.length}
+                    channelIds={isEditing ? undefined : archivedItems.flatMap((item) => menuUnseenChannelIds(item, true))}
+                  >
+                    {isEditing ? (
+                      <MenuSheetItemsListEdit items={items} group="archived" options={options} />
+                    ) : (
+                      <MenuSheetItemsList entityType={options.entityType} items={items} group="archived" rowCounts={rowCounts} />
+                    )}
+                  </MenuSheetHiddenGroup>
+                </li>
+              )}
+            </motion.ul>
+          ))}
       </AnimatePresence>
     </div>
   );

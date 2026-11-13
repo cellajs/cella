@@ -1,4 +1,4 @@
-import { BellIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { BellIcon, EllipsisIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
@@ -13,6 +13,8 @@ import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 export const navItems = [
   // Leads only a nav bar of organization buttons; elsewhere the menu header links home. Whichever leads carries the brand intro and loader.
   { id: 'home', type: 'base', icon: AppIcon, href: '/home', iconOverride: AppNavLoader },
+  // Drawn by the rail at the end of its organization buttons, which no bar lists; a press is handled as any link's
+  { id: 'organizations', type: 'hidden', icon: EllipsisIcon, href: '/organizations' },
   // A menu per organization opens on one of them, so a count across them would not match what it shows
   {
     id: 'menu',

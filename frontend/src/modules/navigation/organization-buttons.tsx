@@ -1,8 +1,8 @@
-import { PlusIcon } from 'lucide-react';
-import { type RefObject, useRef } from 'react';
+import { useMatch } from '@tanstack/react-router';
+import { EllipsisIcon } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { getMenuSection } from '~/lib/entity-modules';
 import { CountBadge } from '~/modules/common/count-badge';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -11,8 +11,9 @@ import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { SidebarNavButton } from '~/modules/navigation/nav-buttons';
+import { closeNavSheet } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import type { TriggerOrganizationFn } from '~/modules/navigation/types';
+import type { TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
@@ -47,7 +48,7 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
         // An outline, not a ring: its offset stays transparent over the button's open fill
         className={cn(
           'size-8 shrink-0 transition-transform group-hover:scale-110',
-          isCurrent && 'outline-primary outline-2 outline-offset-2',
+          isCurrent && 'outline-primary outline-2 outline-offset-2 group-focus-visible:outline-none',
           // Only the organization you are in, or are opening, shows its color
           !isCurrent &&
             !isActive &&
@@ -62,46 +63,63 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
   );
 }
 
-interface SidebarCreateOrganizationButtonProps {
+interface SidebarOrganizationsButtonProps {
   isCollapsed: boolean;
-  onClick: (triggerRef: RefObject<HTMLButtonElement | null>) => void;
+  /** The organizations page is open. */
+  isCurrent: boolean;
+  onClick: TriggerNavItemFn;
 }
 
-/** Ends the rail's organizations: the way into creating one, and the only button there for a user who has none yet. */
-function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreateOrganizationButtonProps) {
+/** Ends the rail's organizations: the page listing them all, where one is created, hidden or reordered, and the only button there for a user who has none yet. */
+function SidebarOrganizationsButton({ isCollapsed, isCurrent, onClick }: SidebarOrganizationsButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <SidebarNavButton
       ref={buttonRef}
-      label={t('c:create_resource', { resource: t('c:organization') })}
-      isCollapsed={isCollapsed}
-      onClick={() => onClick(buttonRef)}
+      label={t('c:organizations')}
+      {...{ isCollapsed, isCurrent }}
+      onClick={() => {
+        // A docked menu sheet closes too: its page stands in for an organization's menu sheet
+        closeNavSheet();
+        onClick('organizations', buttonRef);
+      }}
       itemClassName="pb-0"
     >
-      <span className="border-sidebar-foreground/30 more-contrast:border-sidebar-foreground/40 flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed transition-transform group-hover:scale-110">
+      <span
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center rounded-md transition-transform group-hover:scale-110',
+          isCurrent && 'outline-primary outline-2 outline-offset-2 group-focus-visible:outline-none',
+        )}
+      >
         {/* The nav icons' rendered stroke: theirs is drawn at size-5, this one at size-4 */}
-        <PlusIcon className="size-4" strokeWidth={(appConfig.theme.strokeWidth * 5) / 4} />
+        <EllipsisIcon className="size-4" strokeWidth={(appConfig.theme.strokeWidth * 5) / 4} />
       </span>
     </SidebarNavButton>
   );
 }
 
-/** A rail button per active organization membership in menu order, scrolling on its own once the rail runs out of room. */
-export function SidebarOrganizationButtons({ isCollapsed, onClick }: { isCollapsed: boolean; onClick: TriggerOrganizationFn }) {
+interface SidebarOrganizationButtonsProps {
+  isCollapsed: boolean;
+  onClick: TriggerOrganizationFn;
+  onNavItemClick: TriggerNavItemFn;
+}
+
+/** A rail button per active organization membership in menu order, scrolling on its own once the rail runs out of room, then the organizations page's button. */
+export function SidebarOrganizationButtons({ isCollapsed, onClick, onNavItemClick }: SidebarOrganizationButtonsProps) {
   const user = useUserStore((state) => state.user);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const navSheetOrganizationId = useNavigationStore((state) => state.navSheetOrganizationId);
+  const isOrganizationsPage = useMatch({ from: '/_app/organizations', shouldThrow: false, select: () => true }) ?? false;
 
   const { menu } = useMenu(user?.id);
   const organizations = menuOrganizations(menu);
   const routeOrganizationId = useRouteOrganizationId(organizations);
   const unseenCounts = useOrganizationUnseenCounts(menu);
-  const createOrganization = getMenuSection('organization')?.createAction;
 
-  // An open menu sheet shows these counts itself: the full menu on its rows, an organization's sheet on its header and sections
-  const isFullMenuOpen = navSheetOpen === 'menu' && !navSheetOrganizationId;
+  // An open menu sheet or the organizations page shows these counts itself: the full menu and the page on their rows, an organization's sheet on its header and sections
+  const listsCounts = (navSheetOpen === 'menu' && !navSheetOrganizationId) || isOrganizationsPage;
 
   return (
     <SidebarMenu className="no-scrollbar min-h-0 gap-0 overflow-y-auto">
@@ -111,12 +129,12 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: { isCollaps
           <SidebarOrganizationButton
             key={organization.id}
             {...{ organization, isActive, isCollapsed, onClick }}
-            unseenCount={isFullMenuOpen || isActive ? 0 : (unseenCounts.get(organization.id) ?? 0)}
+            unseenCount={listsCounts || isActive ? 0 : (unseenCounts.get(organization.id) ?? 0)}
             isCurrent={organization.id === routeOrganizationId}
           />
         );
       })}
-      {createOrganization && <SidebarCreateOrganizationButton isCollapsed={isCollapsed} onClick={createOrganization} />}
+      <SidebarOrganizationsButton isCollapsed={isCollapsed} isCurrent={isOrganizationsPage} onClick={onNavItemClick} />
     </SidebarMenu>
   );
 }

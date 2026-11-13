@@ -90,7 +90,7 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
                   </SidebarGroup>
                   <div className="bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40 mx-3 h-px shrink-0" />
                   <SidebarGroup className="min-h-0 p-0">
-                    <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
+                    <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} onNavItemClick={onNavItemClick} />
                   </SidebarGroup>
                   <div className="bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40 mx-3 h-px shrink-0" />
                 </>

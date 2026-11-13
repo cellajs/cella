@@ -68,9 +68,11 @@ interface MenuSheetItemsListProps {
   isSubmenu?: boolean;
   /** The page of another row of the parent's list is open, so its sub-rows rest grey. */
   isResting?: boolean;
+  /** Unseen counts by row id, for rows that count nothing themselves. */
+  rowCounts?: Map<string, number>;
 }
 
-export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false, isResting }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false, isResting, rowCounts }: MenuSheetItemsListProps) {
   const matchRoute = useMatchRoute();
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 
@@ -86,7 +88,7 @@ export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false
     const isSubmenuResting = !!openItem && openItem.id !== item.id;
     return (
       <li key={item.id} className={isSubmenu ? 'group/row' : 'group/parent'} data-icon={!!getMenuSection(item.entityType)?.icon}>
-        <MenuSheetItem item={item} isSubitem={isSubmenu} isResting={isResting} />
+        <MenuSheetItem item={item} isSubitem={isSubmenu} isResting={isResting} unseenCount={rowCounts?.get(item.id)} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (
           <>
