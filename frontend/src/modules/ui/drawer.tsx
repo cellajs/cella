@@ -131,7 +131,7 @@ export function DrawerHeader({ className, sticky, closeButton, children, ...prop
       {children}
       {closeButton && (
         <DrawerPrimitive.Close data-slot="drawer-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
-          <XIcon className="size-5" />
+          <XIcon className="size-4" />
           <span className="sr-only">{t('c:close')}</span>
         </DrawerPrimitive.Close>
       )}
