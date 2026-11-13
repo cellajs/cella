@@ -36,7 +36,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     xAnonymous: true,
     summary: 'Get list of invitations',
-    description: 'Returns a list of pending memberships with entity data.',
+    description: 'Returns the pending invitations of the signed-in user, each with its channel.',
     request: { query: pageQuerySchema },
     responses: { 200: json('Invitations pending', paginationSchema(mePendingInvitationSchema), mockPaginatedInvitationsResponse()) },
   }),
@@ -110,7 +110,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Leave channel',
     description: 'Removes the current user from a channel entity they are a member of.',
     request: { body: jsonBody(entityWithTypeSchema) },
-    responses: { 204: { description: 'Membership removed' }, ...errors(404, 409) },
+    responses: { 204: { description: 'Membership left' }, ...errors(404, 409) },
   }),
   getUploadToken: xRoute({
     method: 'get',

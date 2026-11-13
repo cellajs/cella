@@ -11,10 +11,10 @@ import { MiddleCut } from '~/modules/common/middle-cut';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
+import { channelInvitationsQueryOptions } from '~/modules/memberships/query';
 import { useWithdrawInvitationMutation } from '~/modules/memberships/query-mutations';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
-import type { PendingMembership } from '~/modules/memberships/types';
+import type { ChannelInvitation } from '~/modules/memberships/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
@@ -41,7 +41,7 @@ function WithdrawInvitationButton({ channel, invitationId }: { channel: Enriched
 }
 
 interface PendingTileProps {
-  row: PendingMembership;
+  row: ChannelInvitation;
   channel: EnrichedChannel;
   /** Called after a resend, to refresh the list. */
   onResent: () => Promise<unknown>;
@@ -93,10 +93,10 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
 }
 
 /** A channel's pending invitations as tiles, newest first. */
-export function PendingMembershipsList({ channel }: { channel: EnrichedChannel }) {
+export function ChannelInvitationsList({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
 
-  const queryOptions = pendingMembershipsQueryOptions({
+  const queryOptions = channelInvitationsQueryOptions({
     entityId: channel.id,
     entityType: channel.entityType,
     tenantId: channel.tenantId,

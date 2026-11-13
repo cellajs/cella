@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -35,7 +35,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
     recipientEmails.map((email) => ({ kind: 'invitation' as const, email, createdBy: user.id })),
   );
 
-  await Promise.all(issued.map(({ token }) => stampWaitlistRequestInvited(ctx, { email: token.email })));
+  await Promise.all(issued.map(({ token }) => stampWaitlistRequestMailed(ctx, { email: token.email })));
 
   // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
   // goes out in the app's language.

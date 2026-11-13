@@ -62,7 +62,7 @@ const meta = {
       const url = new URL(request.url);
       const json = (data: unknown) => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 
-      const known: Record<string, 'member' | 'remind'> = parameters.known;
+      const known: Record<string, 'member' | 'resend'> = parameters.known;
       const outcomes = body.emails.map((email: string) => ({ email, outcome: known[email] ?? 'invite' }));
       if (url.pathname.endsWith('/members:check-invite')) return json({ outcomes });
 

@@ -164,6 +164,6 @@ describe('Rejected invitations', async () => {
 
     // A reminder takes no seat: the pending address is invited again with the quota full.
     const reminded = await inviteToOrganization(organization, ['pending-address@security-test.com'], memberRole, admin.sessionCookie);
-    expect(reminded.data).toMatchObject({ outcomes: [{ outcome: 'remind' }] });
+    expect(reminded.data).toMatchObject({ outcomes: [{ outcome: 'resend' }] });
   });
 });

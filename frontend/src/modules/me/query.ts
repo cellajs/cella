@@ -215,15 +215,15 @@ export const myMembershipsQueryOptions = () =>
  * drop the invite from cache, and say so. The answer names the organization, also for an invitation to a channel below
  * it, so the invite is found by its own id; a token answer carries none, and the list reloads.
  */
-const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'decline') => {
+const applySettledInvitation = async (invitationId: string | null, action: 'accept' | 'decline') => {
   // An accept can add an organization, and home's create prompt reads that list
   if (action === 'accept') queryClient.invalidateQueries({ queryKey: getEntityQueryKeys('organization').list.base });
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
-  if (inactiveMembershipId) {
+  if (invitationId) {
     queryClient.setQueryData(meInvitationsQueryOptions().queryKey, (oldData) => {
       if (!oldData) return oldData;
-      const results = oldData.results.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId);
+      const results = oldData.results.filter((invite) => invite.invitation.id !== invitationId);
       return { ...oldData, results, totalSize: oldData.totalSize - (oldData.results.length - results.length) };
     });
   } else {

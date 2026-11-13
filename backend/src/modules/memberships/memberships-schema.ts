@@ -4,7 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { invitationStatuses, invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { mockInactiveMembershipResponse, mockInviteOutcome, mockMembershipBase } from '#/modules/memberships/memberships-mocks';
+import { mockInviteeInvitationResponse, mockInviteOutcome, mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import {
   channelEntityTypeSchema,
   csvQuerySchema,
@@ -30,7 +30,7 @@ const membershipSchema = z.object({
   channelType: channelEntityTypeSchema,
 });
 
-export const inactiveMembershipSchema = z
+export const inviteeInvitationSchema = z
   .object({
     ...createSelectSchema(invitationsTable).shape,
     ...auditShape,
@@ -41,7 +41,7 @@ export const inactiveMembershipSchema = z
   .openapi({
     description:
       "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
-    example: mockInactiveMembershipResponse(),
+    example: mockInviteeInvitationResponse(),
   });
 
 export const membershipBaseSchema = membershipSchema
@@ -72,16 +72,16 @@ export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.ar
 
 export const membershipCheckBodySchema = membershipCreateBodySchema.pick({ emails: true });
 
-const inviteOutcomes = ['invite', 'remind', 'add', 'member', 'declined'] as const;
+const inviteOutcomes = ['invite', 'resend', 'add', 'member', 'declined'] as const;
 
 export const inviteOutcomeSchema = z
   .object({
     email: validEmailSchema,
     outcome: z.enum(inviteOutcomes).openapi({
       description:
-        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.',
+        '`invite`: a new invitation. `resend`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.',
     }),
-    /** remind, declined: when the channel first invited the address. */
+    /** resend, declined: when the channel first invited the address. */
     invitedAt: z.string().optional(),
     /** declined: when the invitee declined. */
     declinedAt: z.string().optional(),
@@ -127,14 +127,14 @@ export const memberListQuerySchema = listQuerySchema.extend({
   userIds: csvQuerySchema(validUuidSchema),
 });
 
-export const pendingMembershipListQuerySchema = pageQuerySchema.extend({
+export const invitationListQuerySchema = pageQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
 });
 
 /** An invitation as the channel sees it: nothing here tells whether an account holds the invited address. */
-export const pendingMembershipSchema = z.object({
+export const invitationSchema = z.object({
   id: z.string(),
   /** The address the invitation went to. */
   email: validEmailSchema,

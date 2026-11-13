@@ -5,11 +5,13 @@ import {
   mockMembershipCheckResponse,
   mockMembershipInviteResponse,
   mockMembershipResponse,
+  mockPaginatedChannelInvitationsResponse,
   mockPaginatedMembersResponse,
-  mockPaginatedPendingMembershipsResponse,
 } from '#/modules/memberships/memberships-mocks';
 import {
+  invitationListQuerySchema,
   invitationParamSchema,
+  invitationSchema,
   memberListQuerySchema,
   membershipCheckBodySchema,
   membershipCheckResponseSchema,
@@ -17,8 +19,6 @@ import {
   membershipInviteResponseSchema,
   membershipParamSchema,
   membershipUpdateBodySchema,
-  pendingMembershipListQuerySchema,
-  pendingMembershipSchema,
   updatedMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
 import { memberSchema } from '#/modules/user/user-schema';
@@ -89,11 +89,11 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     method: 'get',
     path: '/invitations',
     xGuard: [userGuard, tenantGuard, orgGuard],
-    summary: 'Get list of pending memberships',
+    summary: 'Get list of invitations',
     description:
-      'Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
-    request: { params: tenantOrgParamSchema, query: pendingMembershipListQuerySchema },
-    responses: { 200: json('Pending memberships', paginationSchema(pendingMembershipSchema), mockPaginatedPendingMembershipsResponse()) },
+      'Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
+    request: { params: tenantOrgParamSchema, query: invitationListQuerySchema },
+    responses: { 200: json('Invitations', paginationSchema(invitationSchema), mockPaginatedChannelInvitationsResponse()) },
   }),
   resendInvitation: xRoute({
     method: 'post',
@@ -102,7 +102,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, singlePointsLimiter],
     summary: 'Resend pending invitation',
     description:
-      "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+      "Re-sends the invitation email for a pending invitation, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
     request: { params: invitationParamSchema },
     responses: { 204: { description: 'Invitation resent' } },
   }),

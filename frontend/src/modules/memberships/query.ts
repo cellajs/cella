@@ -15,10 +15,10 @@ import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters } from '~/query/types';
 
-type PendingMembershipsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
+type ChannelInvitationsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
 type MemberFilters = ListFilters<ListMembersData['query']>;
 type MembersParams = MemberFilters & ListMembersData['path'];
-type PendingMembershipsListParams = PendingMembershipsParams & { limit?: number };
+type ChannelInvitationsListParams = ChannelInvitationsParams & { limit?: number };
 type MembersListParams = MembersParams & { limit?: number };
 
 const keys = {
@@ -27,8 +27,8 @@ const keys = {
     members: (filters: MembersParams) => [...keys.list.base, filters] as const,
     similarMembers: (filters: Pick<MembersParams, 'tenantId' | 'organizationId' | 'entityId' | 'entityType'>) =>
       [...keys.list.base, filters] as const,
-    pending: (filters: PendingMembershipsParams) => ['invites', ...keys.list.base, filters] as const,
-    similarPending: (filters: Pick<PendingMembershipsParams, 'entityId' | 'entityType'>) => ['invites', ...keys.list.base, filters] as const,
+    pending: (filters: ChannelInvitationsParams) => ['invites', ...keys.list.base, filters] as const,
+    similarPending: (filters: Pick<ChannelInvitationsParams, 'entityId' | 'entityType'>) => ['invites', ...keys.list.base, filters] as const,
   },
   check: (channelId?: string) => ['invites', 'check', channelId] as const,
   update: ['member', 'update'] as const,
@@ -106,7 +106,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   });
 };
 
-export const pendingMembershipsQueryOptions = (params: PendingMembershipsListParams) => {
+export const channelInvitationsQueryOptions = (params: ChannelInvitationsListParams) => {
   const { entityId, tenantId, organizationId, entityType, limit = appConfig.pageSizes.pendingMemberships } = params;
   const query = { entityId, entityType };
 

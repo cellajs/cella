@@ -3,18 +3,18 @@ import type { UserContext } from '#/core/context';
 import { withCreatorRefs } from '#/modules/actors/actor-refs';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { findInvitationsPaginated } from '#/modules/memberships/invitations-queries';
-import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
+import type { invitationListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { PageWindow } from '#/utils/list-page';
 
-type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchema>;
+type ListInvitationsInput = z.infer<typeof invitationListQuerySchema>;
 
 /**
- * Pending invitations of a channel, for anyone who may read it: members already see every member's address. Each row
- * names the address the invitation went to and nothing about an account that may hold it, not even whether a token was
- * minted, since anyone may create an organization and invite any address. A resend names the row by its own id.
+ * A channel's held and pending invitations, for anyone who may read it: members already see every member's address.
+ * Each row names the address the invitation went to and nothing about an account that may hold it, not even whether a
+ * token was minted, since anyone may create an organization and invite any address. A resend names the row by its id.
  */
-export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput, { offset, limit }: PageWindow) {
+export async function listInvitationsOp(ctx: UserContext, input: ListInvitationsInput, { offset, limit }: PageWindow) {
   const { entityId, entityType, orderBy } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 

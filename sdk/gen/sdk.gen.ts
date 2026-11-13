@@ -1824,7 +1824,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
 /**
  * Get list of invitations
  *
- * Returns a list of pending memberships with entity data.
+ * Returns the pending invitations of the signed-in user, each with its channel.
  *
  * **GET /me/invitations** ·· [listMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
  *
@@ -2199,9 +2199,9 @@ export const listMembers = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get list of pending memberships
+ * Get list of invitations
  *
- * Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
+ * Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/invitations** ·· [listInvitations](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/invitations) ·· _memberships · cella_
  *
@@ -2229,7 +2229,7 @@ export const listInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending invitation, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend** ·· [resendInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend) ·· _memberships · cella_
  *

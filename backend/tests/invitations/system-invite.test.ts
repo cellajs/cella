@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { requestsTable } from '#/modules/requests/requests-db';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, createTestUser, mailedLink } from '../helpers';
@@ -83,9 +83,9 @@ describe('System Invitation', async () => {
       ]);
 
       // A later invitation to the address leaves the first time standing.
-      const invitedAtOf = async () => (await db.select().from(requestsTable).where(eq(requestsTable.kind, 'waitlist'))).map((r) => r.invitedAt);
+      const invitedAtOf = async () => (await db.select().from(requestsTable).where(eq(requestsTable.kind, 'waitlist'))).map((r) => r.mailedAt);
       const first = await invitedAtOf();
-      await stampWaitlistRequestInvited({ var: { db } }, { email: 'waiting@example.com' });
+      await stampWaitlistRequestMailed({ var: { db } }, { email: 'waiting@example.com' });
       expect(await invitedAtOf()).toEqual(first);
     });
   });

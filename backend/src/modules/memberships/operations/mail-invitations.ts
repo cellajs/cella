@@ -12,7 +12,7 @@ import {
   type TakenInvitationMails,
   takeInvitationMails,
 } from '#/modules/memberships/operations/take-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
@@ -71,7 +71,7 @@ async function mailInvitations(ctx: DbContext, { ids, organization, by }: MailIn
     if (!sent) continue;
 
     await stampInvitationsMailed(ctx, { ids: group.map(({ id }) => id), by: by ?? createdBy });
-    await Promise.all(group.map(({ email }) => stampWaitlistRequestInvited(ctx, { email })));
+    await Promise.all(group.map(({ email }) => stampWaitlistRequestMailed(ctx, { email })));
     mailed.push(...group);
   }
 

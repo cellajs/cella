@@ -35,8 +35,8 @@ export interface TakenInvitationMails {
 
 /**
  * Takes the invitation mails an inviter's request is about to send from both caps, before any row is written. An
- * address the tenant mailed in the last day is held back and costs the tenant nothing, so a link already sent keeps
- * working; the rest count toward the tenant's day.
+ * address the tenant mailed in the last day is held back and costs the tenant nothing; a link already sent keeps
+ * working. The rest count toward the tenant's day.
  * @throws AppError 429 `invitation_limit_reached` with `meta.retryAfter` in seconds when the tenant's day cannot hold
  *   the mails; nothing is taken then.
  */

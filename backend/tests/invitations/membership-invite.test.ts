@@ -163,7 +163,7 @@ describe('Membership Invitation', async () => {
     const { response: secondRes, data } = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    expect(outcomesOf(data)).toEqual(['remind']);
+    expect(outcomesOf(data)).toEqual(['resend']);
   });
 
   it('mints no link for an invitation another request inserted first', async () => {
@@ -192,7 +192,7 @@ describe('Membership Invitation', async () => {
     await makeInviteRequest(organization.tenantId, organization.id, { emails: ['waiting@example.com'], role: memberRole }, sessionCookie);
 
     const [request] = await db.select().from(requestsTable).where(eq(requestsTable.email, 'waiting@example.com'));
-    expect(request.invitedAt).not.toBeNull();
+    expect(request.mailedAt).not.toBeNull();
   });
 
   it('returns the membership a system admin joins by inviting themself, hide, mute and order included', async () => {

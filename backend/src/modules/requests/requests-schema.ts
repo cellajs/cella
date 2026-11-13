@@ -6,7 +6,7 @@ import { mockRequestResponse } from '#/modules/requests/requests-mocks';
 import { listQuerySchema, orderByQuerySchema, validEmailSchema } from '#/schemas';
 
 export const requestSchema = createSelectSchema(requestsTable)
-  .omit({ invitedAt: true })
+  .omit({ mailedAt: true })
   .extend({ kind: z.enum(requestKinds), invited: z.boolean() })
   .openapi('Request', {
     description:

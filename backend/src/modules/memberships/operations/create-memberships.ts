@@ -53,14 +53,14 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const planned = <O extends PlannedAddress['outcome']>(outcome: O) => plan.filter((item): item is Planned<O> => item.outcome === outcome);
   const invites = planned('invite');
   const adds = planned('add');
-  const reminders = planned('remind');
-  // A higher role replaces the invitation with one by this inviter, never the other way, so the mail and the
-  // membership it becomes credit who granted the role.
-  const raised = reminders.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
+  const resends = planned('resend');
+  // The mail and the membership credit who granted the role: a higher role replaces the invitation with one by this
+  // inviter, never the other way.
+  const raised = resends.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
   const raisedIds = new Set(raised.map(({ invitation }) => invitation.id));
-  const unchanged = reminders.filter(({ invitation }) => !raisedIds.has(invitation.id));
+  const unchanged = resends.filter(({ invitation }) => !raisedIds.has(invitation.id));
 
-  // Seats: new invitations and, at the organization, members added at once. A reminder and a member take none.
+  // Seats: new invitations and, at the organization, members added at once. A resend and a member take none.
   const seatTakers = [...invites, ...(entityType === 'organization' ? adds : [])];
   const newSeats = seatTakers.length;
   const seatQuota = ctx.var.tenant.restrictions.quotas.user;
@@ -113,7 +113,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   });
 
   if (!held) {
-    // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
+    // New invitations and resends go out alike: a resend names the role its invitation holds now, and its inviter.
     const invitations = [...inserted, ...mailedAgain.map(({ invitation }) => invitation)];
     await mailWithinCaps(ctx, { invitations, organization, by: user.id, taken });
 
@@ -125,7 +125,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
 
   log.info('Users invited on entity level', {
     invited: inserted.length,
-    reminded: reminders.length,
+    resent: resends.length,
     added: adds.length,
     entityType,
     entityId,

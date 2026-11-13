@@ -12,9 +12,9 @@ import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
+import { ChannelInvitationsCount } from '~/modules/memberships/channel-invitations-count';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
 import type { MembersTableProps } from '~/modules/memberships/members-table/members-table';
-import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { openInviteDialog } from '~/modules/user/invite-users';
@@ -99,7 +99,7 @@ export function MembersTableBar({
       searchName="memberSearch"
       action={canUpdate ? { icon: UserRoundPlusIcon, label: t('c:invite'), onClick: openInvite } : undefined}
       floatAction={!isSheet}
-      countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
+      countExtra={canUpdate && !barFilters.isFiltered && <ChannelInvitationsCount channel={channel} />}
       searchFilters={searchFilters}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
       export={

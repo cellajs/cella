@@ -117,8 +117,8 @@ export const mockMembershipResponse = (key = 'membership:default', options: Mock
   return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy ?? undefined), updatedBy: null };
 };
 
-/** Deterministic stored inactive-membership row. */
-const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InvitationModel =>
+/** Deterministic stored invitation row. */
+const mockInvitation = (key = 'invitation:default', options: MockMembershipBaseOptions = {}): InvitationModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
@@ -143,19 +143,19 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
     } as InvitationModel;
   });
 
-/** Inactive membership wire response with its creator hydrated. */
-export const mockInactiveMembershipResponse = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}) => {
-  const membership = mockInactiveMembership(key, options);
+/** An invitation as its invitee lists it, with its writers hydrated. */
+export const mockInviteeInvitationResponse = (key = 'invitation:default', options: MockMembershipBaseOptions = {}) => {
+  const membership = mockInvitation(key, options);
   return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy), updatedBy: null };
 };
 
-/** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
-const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
-  const { id, email, role, status, createdAt, mailedAt, createdBy } = mockInactiveMembershipResponse(key);
+/** A channel's invitation list row: the invited address, role and inviter, with no account fields. */
+const mockChannelInvitationResponse = (key = 'channel-invitation:default') => {
+  const { id, email, role, status, createdAt, mailedAt, createdBy } = mockInviteeInvitationResponse(key);
   return { id, email, role, status, createdAt, mailedAt, linkExpiresAt: createdAt, createdBy };
 };
 
-export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);
+export const mockPaginatedChannelInvitationsResponse = (count = 2) => mockPaginated(mockChannelInvitationResponse, count);
 
 const mockMemberResponse = (key = 'member:default') => {
   const user = mockUserBase(`${key}:user`);
@@ -164,8 +164,8 @@ const mockMemberResponse = (key = 'member:default') => {
 
 export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMemberResponse, count);
 
-/** An address the channel invited before, which the invite reminds. */
-export const mockInviteOutcome = () => ({ email: 'p.okafor@example.net', outcome: 'remind' as const, invitedAt: '2026-10-20T09:12:00.000Z' });
+/** An address the channel invited before, which the invite mails again. */
+export const mockInviteOutcome = () => ({ email: 'p.okafor@example.net', outcome: 'resend' as const, invitedAt: '2026-10-20T09:12:00.000Z' });
 
 const mockInviteOutcomes = () => [
   { email: 'sara.devries@example.com', outcome: 'invite' as const },

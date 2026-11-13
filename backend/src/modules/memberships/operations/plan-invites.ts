@@ -15,7 +15,7 @@ type StoredInvitation = Awaited<ReturnType<typeof findInvitationsByEmails>>[numb
 export type PlannedAddress =
   | { email: string; outcome: 'invite'; userId: string | null }
   | { email: string; outcome: 'add'; userId: string }
-  | { email: string; outcome: 'remind'; invitation: StoredInvitation }
+  | { email: string; outcome: 'resend'; invitation: StoredInvitation }
   | { email: string; outcome: 'declined'; invitation: StoredInvitation }
   | { email: string; outcome: 'member'; role: EntityRole };
 
@@ -48,7 +48,7 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
     // An invitation goes out again; a declined one stays declined until the sweep removes it.
     const invitation = invitationByEmail.get(email);
     if (invitation?.status === 'declined') return { email, outcome: 'declined', invitation };
-    if (invitation) return { email, outcome: 'remind', invitation };
+    if (invitation) return { email, outcome: 'resend', invitation };
 
     const account = accountByEmail.get(email);
     if (!account) return { email, outcome: 'invite', userId: null };
@@ -71,14 +71,14 @@ export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
   if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role };
   if (planned.outcome === 'invite' || planned.outcome === 'add') return { email: planned.email, outcome: planned.outcome };
   const { createdAt, declinedAt } = planned.invitation;
-  if (planned.outcome === 'remind') return { email: planned.email, outcome: 'remind', invitedAt: createdAt };
+  if (planned.outcome === 'resend') return { email: planned.email, outcome: 'resend', invitedAt: createdAt };
   return { email: planned.email, outcome: 'declined', invitedAt: createdAt, declinedAt: declinedAt ?? undefined };
 }
 
 /**
  * What an invite would do with each address, for the invite form to show as addresses are added; nothing is written
- * or sent. It needs the same `update` an invite does. Whether an organization member joins a channel at once depends on
- * the role picked later, so here every address that is not a member or invited before reads as a new invitation.
+ * or sent. It needs the same `update` an invite does. Every address that is not a member or invited before reads as a
+ * new invitation: whether an organization member joins a channel at once depends on the role picked later.
  */
 export async function checkInvitesOp(ctx: UserContext, { emails, entityId, entityType }: CheckInvitesInput) {
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');

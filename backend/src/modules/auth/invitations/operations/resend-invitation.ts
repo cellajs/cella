@@ -6,7 +6,7 @@ import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findPendingInvitation } from '#/modules/memberships/invitations-queries';
 import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitations';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
@@ -51,7 +51,7 @@ async function resendSystemInvitation(ctx: DbContext, oldToken: TokenRecord) {
     if (!anchor) return null;
 
     const issued = await issueToken(txCtx, { kind: 'invitation', email, createdBy });
-    await stampWaitlistRequestInvited(txCtx, { email });
+    await stampWaitlistRequestMailed(txCtx, { email });
     return issued;
   });
   if (!reissued) return;

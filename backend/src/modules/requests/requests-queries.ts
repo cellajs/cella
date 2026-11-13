@@ -9,8 +9,8 @@ import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
-/** A request's columns as responses carry them: `invitedAt` travels as `invited`. */
-const { invitedAt, ...requestColumns } = getColumns(requestsTable);
+/** A request's columns as responses carry them: `mailedAt` travels as `invited`. */
+const { mailedAt, ...requestColumns } = getColumns(requestsTable);
 
 const requestOrderColumns = pick(requestsTable, ['id', 'email', 'createdAt', 'kind']);
 
@@ -42,7 +42,7 @@ export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, li
   const orderBy = getOrderColumns({ sort, order, columns: requestOrderColumns, tieBreaker: requestsTable.id });
 
   const itemsQuery = db
-    .select({ ...requestColumns, invited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('invited') })
+    .select({ ...requestColumns, invited: sql<boolean>`${requestsTable.mailedAt} IS NOT NULL`.as('invited') })
     .from(requestsTable)
     .where(filter)
     .orderBy(...orderBy)
@@ -56,9 +56,9 @@ export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, li
 export const deleteRequestsByIds = async (ctx: DbContext, { ids }: { ids: string[] }) =>
   ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids)).returning({ id: requestsTable.id });
 
-/** Stamps the address's waitlist request as invited now; a request invited before keeps its first time. */
-export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: { email: string }) =>
+/** Stamps the address's waitlist request mailed now; one mailed before keeps its first time. */
+export const stampWaitlistRequestMailed = async (ctx: DbContext, { email }: { email: string }) =>
   ctx.var.db
     .update(requestsTable)
-    .set({ invitedAt: getIsoDate() })
-    .where(and(eq(requestsTable.email, email), eq(requestsTable.kind, 'waitlist'), isNull(requestsTable.invitedAt)));
+    .set({ mailedAt: getIsoDate() })
+    .where(and(eq(requestsTable.email, email), eq(requestsTable.kind, 'waitlist'), isNull(requestsTable.mailedAt)));

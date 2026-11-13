@@ -16,7 +16,7 @@ const nullableActorSchema = z.union([
 
 // Route params accept ids in place of slugs (beforeLoad rewrites), so `tenantId`, `organizationId` and `channelId`
 // deep-link without resolving slugs first.
-export const notificationSchema = createSelectSchema(notificationsTable).omit({ userId: true, activityId: true, emailedAt: true }).extend({
+export const notificationSchema = createSelectSchema(notificationsTable).omit({ userId: true, activityId: true, mailedAt: true }).extend({
   /** Who caused it, for the card's avatar and sentence; null when the actor is no user or the user is gone. */
   actor: nullableActorSchema,
   /** Display names for the card's sentence; empty when the subject is gone or the user may not read it. */

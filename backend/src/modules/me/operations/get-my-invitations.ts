@@ -10,13 +10,13 @@ export async function getMyInvitationsOp(ctx: UserContext) {
     (
       await withCreatorRefs(
         ctx,
-        rawItems.map((item) => item.inactiveMembership),
+        rawItems.map((item) => item.invitation),
       )
     ).map((row) => [row.id, row]),
   );
   const items = rawItems.flatMap((item) => {
-    const inactiveMembership = invitations.get(item.inactiveMembership.id);
-    return inactiveMembership ? [{ ...item, inactiveMembership }] : [];
+    const invitation = invitations.get(item.invitation.id);
+    return invitation ? [{ ...item, invitation }] : [];
   });
 
   return items;

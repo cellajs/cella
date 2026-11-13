@@ -184,7 +184,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
   it("dispatch mints a held invitation's first link, stamps mailedAt and the waitlist request, and sends it once", async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     await insertRequest({ var: { db } }, { email: 'deferred@example.com', kind: 'waitlist' });
-    const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].invitedAt;
+    const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].mailedAt;
 
     await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [beforeRow] = await getInactiveRows(organization.id);
@@ -300,7 +300,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
 
     // Re-adding the address is as deliberate as the resend button, so the email goes out again.
     const { data } = await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
-    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
+    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'resend', invitedAt: initial.createdAt }] });
     expect(mailsTo(invitee.email)).toHaveLength(2);
     const [reminded] = await getInactiveRows(organization.id);
     expect(reminded.mailedAt).not.toBe(dayAgo);

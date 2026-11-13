@@ -51,7 +51,7 @@ export const notificationsTable = snakeCase.table(
     activityId: varchar({ length: 64 }).notNull(),
     readAt: isoTimestamp(),
     /** Set once the row's instant mail went out, and on every seeded row; the digest skips it. */
-    emailedAt: isoTimestamp(),
+    mailedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.id, table.createdAt] }),

@@ -436,7 +436,7 @@ export const zMembershipBase = z.object({
  */
 export const zInviteOutcome = z.object({
   email: z.email().min(4).max(255),
-  outcome: z.enum(['invite', 'remind', 'add', 'member', 'declined']),
+  outcome: z.enum(['invite', 'resend', 'add', 'member', 'declined']),
   invitedAt: z.string().optional(),
   declinedAt: z.string().optional(),
   role: z.enum(['admin', 'member']).optional(),
@@ -1663,7 +1663,7 @@ export const zListMyInvitationsResponse = z.object({
   results: z.array(
     z.object({
       entity: zChannelBase,
-      inactiveMembership: z.object({
+      invitation: z.object({
         createdAt: z.string(),
         createdBy: zActorRef,
         updatedAt: z.string().nullable(),
@@ -1765,7 +1765,7 @@ export const zLeaveMembershipBody = z.object({
 });
 
 /**
- * Membership removed
+ * Membership left
  */
 export const zLeaveMembershipResponse = z.void();
 
@@ -2086,7 +2086,7 @@ export const zListInvitationsQuery = z.object({
 });
 
 /**
- * Pending memberships
+ * Invitations
  */
 export const zListInvitationsResponse = z.object({
   results: z.array(

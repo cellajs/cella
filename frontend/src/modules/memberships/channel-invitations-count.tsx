@@ -13,7 +13,7 @@ import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const PendingMembershipsList = lazyNamed(() => import('~/modules/memberships/pending-memberships-list'), 'PendingMembershipsList');
+const ChannelInvitationsList = lazyNamed(() => import('~/modules/memberships/channel-invitations-list'), 'ChannelInvitationsList');
 
 const hasIncluded = (channel: EnrichedChannel): channel is EnrichedChannel & Pick<Organization, 'included'> => 'included' in channel;
 const countsOf = (channel?: EnrichedChannel) => (channel && hasIncluded(channel) ? channel.included.counts : undefined);
@@ -32,11 +32,11 @@ function useCachedDetail({ entityType, id }: EnrichedChannel) {
   );
 }
 
-function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
+function openChannelInvitationsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
   sheeter.getState().create(
     <div className="container">
       <Suspense>
-        <PendingMembershipsList channel={channel} />
+        <ChannelInvitationsList channel={channel} />
       </Suspense>
     </div>,
     {
@@ -49,7 +49,7 @@ function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: Trigg
   );
 }
 
-export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
+export function ChannelInvitationsCount({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   // The prop is the row the bar was opened with, so an open sheet takes its count from the cached detail
@@ -69,7 +69,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
         variant="link"
         size="auto"
         className="shrink-0"
-        onClick={() => (onlineManager.isOnline() ? openPendingMembershipsSheet(channel, buttonRef) : toastOffline())}
+        onClick={() => (onlineManager.isOnline() ? openChannelInvitationsSheet(channel, buttonRef) : toastOffline())}
       >
         {t('c:resource_count', { count: pending, resource: t('c:pending') })}
       </Button>

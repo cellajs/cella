@@ -2,12 +2,12 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { meRoutes } from '#/modules/me/me-routes';
-import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
 import { getMeOp } from '#/modules/me/operations/get-me';
 import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
+import { leaveMembershipOp } from '#/modules/me/operations/leave-membership';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
@@ -60,7 +60,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 
 app.openapi(meRoutes.leaveMembership, async (ctx) => {
   const { entityType, entityId } = ctx.req.valid('json');
-  await deleteMyMembershipOp(ctx, entityType, entityId);
+  await leaveMembershipOp(ctx, entityType, entityId);
   return ctx.body(null, 204);
 });
 

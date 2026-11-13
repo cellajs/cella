@@ -355,7 +355,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
-    /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
+    /** API points per hour per actor; invitation mails per day the tenant sends, new and resent alike. 0 lifts either. */
     rateLimits: { apiPointsPerHour: number; invitationEmailsPerDay: number };
   };
   selfServiceTenantsPerUser: number;

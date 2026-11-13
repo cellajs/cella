@@ -6,10 +6,10 @@ import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**
- * Resends the invitation email for a pending membership, named by the pending row's own id; the caller needs `update`
- * on the invited channel. Every pending invitation answers 204 alike: one no account holds gets a fresh link that
- * retires the older ones, one an account holds gets its invitation email again, and a held one stays held until its
- * channel is published. A missing, foreign or declined row is 404.
+ * Resends the invitation email for an invitation, named by its own id; the caller needs `update` on the invited
+ * channel. Every held or pending invitation answers 204 alike: one no account holds gets a fresh link that retires the
+ * older ones, one an account holds gets its invitation email again, and a held one stays held until its channel is
+ * published. A missing, foreign or declined row is 404.
  * @throws AppError 403 `restrict_by_tenant_kind` in a tenant whose kind invites no one.
  * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from {@link mailWithinCaps}.
  */

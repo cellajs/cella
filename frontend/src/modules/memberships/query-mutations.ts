@@ -202,7 +202,7 @@ export const useMembershipsDeleteMutation = () =>
     },
     onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
       invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
-      toaster.success(t('c:success.delete_members'));
+      toaster.success(t('c:success.remove_members'));
     },
     onError: (_, __, previousLists) => restoreMemberLists(previousLists),
   });

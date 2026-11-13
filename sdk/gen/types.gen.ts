@@ -532,9 +532,9 @@ export type MembershipBase = {
 export type InviteOutcome = {
   email: string;
   /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.
+   * `invite`: a new invitation. `resend`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.
    */
-  outcome: 'invite' | 'remind' | 'add' | 'member' | 'declined';
+  outcome: 'invite' | 'resend' | 'add' | 'member' | 'declined';
   invitedAt?: string;
   declinedAt?: string;
   role?: 'admin' | 'member';
@@ -801,7 +801,7 @@ export type Tenant = {
        */
       apiPointsPerHour: number;
       /**
-       * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+       * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
        */
       invitationEmailsPerDay: number;
     };
@@ -3754,7 +3754,7 @@ export type ListMyInvitationsResponses = {
       /**
        * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
        */
-      inactiveMembership: {
+      invitation: {
         createdAt: string;
         createdBy: ActorRef;
         updatedAt: string | null;
@@ -4020,7 +4020,7 @@ export type LeaveMembershipError = LeaveMembershipErrors[keyof LeaveMembershipEr
 
 export type LeaveMembershipResponses = {
   /**
-   * Membership removed
+   * Membership left
    */
   204: void;
 };
@@ -4767,7 +4767,7 @@ export type ListInvitationsError = ListInvitationsErrors[keyof ListInvitationsEr
 
 export type ListInvitationsResponses = {
   /**
-   * Pending memberships
+   * Invitations
    */
   200: {
     results: Array<{
@@ -6921,7 +6921,7 @@ export type UpdateTenantData = {
          */
         apiPointsPerHour?: number | null;
         /**
-         * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+         * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
          */
         invitationEmailsPerDay?: number | null;
       } | null;

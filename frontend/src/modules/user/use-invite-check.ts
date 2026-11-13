@@ -40,7 +40,7 @@ export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, he
     const note = lowercaseLabel(t('c:invite_state_no_email_until', { date: day(declinedAt && declineHoldEnd(declinedAt)) }));
     return { group: 'out', tone: 'warning', word, note, fact: note };
   }
-  if (outcome?.outcome !== 'remind') {
+  if (outcome?.outcome !== 'resend') {
     const note = lowercaseLabel(t(held ? 'c:invite_state_on_publish' : 'c:invite_state_gets_invitation'));
     return { group: 'new', tone: 'success', word: t('c:invite_state_new'), note };
   }

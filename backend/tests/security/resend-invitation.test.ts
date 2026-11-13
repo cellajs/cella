@@ -232,7 +232,7 @@ describe('Resend an invitation', async () => {
 
     const { response, data } = await reminder;
     expect(response.status).toBe(200);
-    expect(data).toMatchObject({ outcomes: [{ email: invitedEmail, outcome: 'remind' }] });
+    expect(data).toMatchObject({ outcomes: [{ email: invitedEmail, outcome: 'resend' }] });
     expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
   });

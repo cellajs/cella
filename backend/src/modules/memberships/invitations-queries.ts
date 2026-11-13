@@ -7,7 +7,7 @@ import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { type InvitationStatus, invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
+import type { invitationListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
@@ -90,7 +90,7 @@ export const stampInvitationsMailed = async (ctx: DbContext, { ids, by }: { ids:
 
 interface FindPendingInvitationOpts {
   id: string;
-  /** Lock the row for the caller's transaction, so a concurrent answer, decline or resend waits for it. */
+  /** Lock the row for the caller's transaction: a concurrent answer, decline or resend waits for it. */
   forUpdate?: boolean;
 }
 
@@ -187,9 +187,9 @@ export const findPendingInvitationForUser = async (ctx: DbContext, { id, userId 
 };
 
 /**
- * An invitation is claimable by a user while it is not declined and unbound, or bound to that same user. Every write
- * that binds an invitation goes through this condition, so a row bound to someone else is never re-bound
- * (GHSA-fmh4-wcc4-5jm3) and a declined one is never revived.
+ * An invitation is claimable by a user while it is not declined and unbound, or bound to that same user. A row bound to
+ * someone else is never re-bound (GHSA-fmh4-wcc4-5jm3) and a declined one is never revived: every write that binds an
+ * invitation goes through this condition.
  */
 const claimableBy = (userId: string) =>
   and(ne(invitationsTable.status, 'declined'), or(isNull(invitationsTable.userId), eq(invitationsTable.userId, userId)));
@@ -217,8 +217,8 @@ export const bindInvitations = async (ctx: DbContext, { ids, userId }: { ids: st
 
 /**
  * Binds every unbound, {@link claimableBy claimable} invitation addressed to `email` and returns the ids it bound. The
- * caller has proven that inbox. An invitation already bound to the user is left out, so the link flow that bound it
- * keeps its token.
+ * caller has proven that inbox. An invitation already bound to the user is left out: the link flow that bound it keeps
+ * its token.
  */
 export const bindInvitationsByEmail = async (ctx: DbContext, { email, userId }: { email: string; userId: UserId }) => {
   const bound = await ctx.var.db
@@ -229,7 +229,7 @@ export const bindInvitationsByEmail = async (ctx: DbContext, { email, userId }: 
   return bound.map((row) => row.id);
 };
 
-interface FindInvitationsPaginatedOpts extends Pick<z.infer<typeof pendingMembershipListQuerySchema>['orderBy'], 'sort' | 'order'> {
+interface FindInvitationsPaginatedOpts extends Pick<z.infer<typeof invitationListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
   entityId: string;
   offset: number;
@@ -238,7 +238,7 @@ interface FindInvitationsPaginatedOpts extends Pick<z.infer<typeof pendingMember
 
 /**
  * A channel's held and pending invitations as the inviter sees them: the address each went to, never the account
- * that may hold it, so a row looks the same whether the invitee already has an account or not.
+ * that may hold it. A row looks the same whether the invitee already has an account or not.
  */
 export const findInvitationsPaginated = async (ctx: DbContext, opts: FindInvitationsPaginatedOpts) => {
   const { db } = ctx.var;
@@ -287,7 +287,7 @@ export const findPendingInvitationsByUser = async (ctx: DbContext, { userId }: {
       const isOrganization = channelType === 'organization';
 
       const query = ctx.var.db
-        .select({ entity: channelBaseSelect, inactiveMembership: invitationsTable, organizationName: organizationsTable.name })
+        .select({ entity: channelBaseSelect, invitation: invitationsTable, organizationName: organizationsTable.name })
         .from(invitationsTable)
         .innerJoin(channelTable, eq(channelTable.id, invitationsTable.channelId))
         .$dynamic();

@@ -2467,8 +2467,8 @@
           },
           "outcome": {
             "type": "string",
-            "enum": ["invite", "remind", "add", "member", "declined"],
-            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline."
+            "enum": ["invite", "resend", "add", "member", "declined"],
+            "description": "`invite`: a new invitation. `resend`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline."
           },
           "invitedAt": {
             "type": "string"
@@ -2485,7 +2485,7 @@
         "description": "What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.",
         "example": {
           "email": "p.okafor@example.net",
-          "outcome": "remind",
+          "outcome": "resend",
           "invitedAt": "2026-10-20T09:12:00.000Z"
         },
         "x-tags": ["data", "memberships", "cella"]
@@ -3455,7 +3455,7 @@
                   "invitationEmailsPerDay": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
+                    "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
                   }
                 },
                 "required": ["apiPointsPerHour", "invitationEmailsPerDay"]
@@ -9034,7 +9034,7 @@
         "operationId": "listMyInvitations",
         "tags": ["me", "cella"],
         "summary": "Get list of invitations",
-        "description": "Returns a list of pending memberships with entity data.",
+        "description": "Returns the pending invitations of the signed-in user, each with its channel.",
         "x-anonymous": true,
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
@@ -9094,29 +9094,29 @@
                         "bannerUrl": null,
                         "archived": false
                       },
-                      "inactiveMembership": {
-                        "id": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
+                      "invitation": {
+                        "id": "6486636d-7fef-47ab-adbc-02c9c4860869",
                         "channelType": "organization",
-                        "channelId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
-                        "email": "carolyn5@yahoo.com",
-                        "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
+                        "channelId": "8acc4a8f-671c-4c8b-8b18-c7768bbb6ed9",
+                        "email": "steve.damore@hotmail.com",
+                        "userId": "259e4e50-feb7-41f7-a0a7-c5ab2ae5e225",
                         "role": "member",
                         "status": "pending",
-                        "statusChangedAt": "2024-11-13T15:29:06.546Z",
+                        "statusChangedAt": "2024-12-28T23:38:29.815Z",
                         "declinedAt": null,
-                        "mailedAt": "2024-11-13T15:29:06.546Z",
-                        "createdAt": "2024-11-13T15:29:06.546Z",
+                        "mailedAt": "2024-12-28T23:38:29.815Z",
+                        "createdAt": "2024-12-28T23:38:29.815Z",
                         "createdBy": {
-                          "id": "915e1951-a439-40dc-9303-6bdbd6aea838",
+                          "id": "a2b7f811-e985-4793-81c9-a4e4da1ba9e1",
                           "kind": "user",
-                          "name": "Sister Monahan",
-                          "slug": "sister.monahan13",
+                          "name": "Jovani Barton",
+                          "slug": "jovani.barton",
                           "thumbnailUrl": null
                         },
                         "updatedAt": null,
                         "updatedBy": null,
-                        "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
-                        "tenantId": "i5coyr"
+                        "organizationId": "8acc4a8f-671c-4c8b-8b18-c7768bbb6ed9",
+                        "tenantId": "pwrlx5"
                       },
                       "organizationName": null
                     },
@@ -9133,29 +9133,29 @@
                         "bannerUrl": null,
                         "archived": false
                       },
-                      "inactiveMembership": {
-                        "id": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
+                      "invitation": {
+                        "id": "8a1f442e-acd5-477f-aa60-76f6b47c6293",
                         "channelType": "organization",
-                        "channelId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
-                        "email": "orion_king81@hotmail.com",
-                        "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
-                        "role": "admin",
+                        "channelId": "2be879bc-08fe-478b-abb7-562757f48003",
+                        "email": "kian.reichel-grimes@yahoo.com",
+                        "userId": "6d82da47-d875-4349-afb1-7180eb5d32e8",
+                        "role": "member",
                         "status": "pending",
-                        "statusChangedAt": "2024-04-11T17:15:50.993Z",
+                        "statusChangedAt": "2024-11-12T07:37:16.970Z",
                         "declinedAt": null,
-                        "mailedAt": "2024-04-11T17:15:50.993Z",
-                        "createdAt": "2024-04-11T17:15:50.993Z",
+                        "mailedAt": "2024-11-12T07:37:16.970Z",
+                        "createdAt": "2024-11-12T07:37:16.970Z",
                         "createdBy": {
-                          "id": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
+                          "id": "ea83c39c-9b30-4346-97b5-282392a9850e",
                           "kind": "user",
-                          "name": "John Morar",
-                          "slug": "john.morar34",
+                          "name": "Tamia Will",
+                          "slug": "tamia.will",
                           "thumbnailUrl": null
                         },
                         "updatedAt": null,
                         "updatedBy": null,
-                        "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
-                        "tenantId": "gwylqy"
+                        "organizationId": "2be879bc-08fe-478b-abb7-562757f48003",
+                        "tenantId": "bdctpz"
                       },
                       "organizationName": null
                     }
@@ -9173,7 +9173,7 @@
                           "entity": {
                             "$ref": "#/components/schemas/ChannelBase"
                           },
-                          "inactiveMembership": {
+                          "invitation": {
                             "type": "object",
                             "properties": {
                               "createdAt": {
@@ -9302,28 +9302,28 @@
                             ],
                             "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
                             "example": {
-                              "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
+                              "id": "55d945f3-2b21-42cb-a04a-95dce26fdfea",
                               "channelType": "organization",
-                              "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-                              "email": "dixie.ohara@gmail.com",
-                              "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
-                              "role": "admin",
+                              "channelId": "8048c698-a568-41aa-92fe-c6c1f7c814ae",
+                              "email": "johnpaul_adams54@gmail.com",
+                              "userId": "da7ffb66-dc3c-4556-bf53-d27dfde32952",
+                              "role": "member",
                               "status": "pending",
-                              "statusChangedAt": "2024-02-07T13:46:57.160Z",
+                              "statusChangedAt": "2024-02-25T07:27:39.959Z",
                               "declinedAt": null,
-                              "mailedAt": "2024-02-07T13:46:57.160Z",
-                              "createdAt": "2024-02-07T13:46:57.160Z",
+                              "mailedAt": "2024-02-25T07:27:39.959Z",
+                              "createdAt": "2024-02-25T07:27:39.959Z",
                               "createdBy": {
-                                "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
+                                "id": "286daa14-6e23-4676-90b4-1371509433c5",
                                 "kind": "user",
-                                "name": "Lizzie Aufderhar",
-                                "slug": "lizzie_aufderhar85",
+                                "name": "Lottie Mertz",
+                                "slug": "lottie.mertz18",
                                 "thumbnailUrl": null
                               },
                               "updatedAt": null,
                               "updatedBy": null,
-                              "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-                              "tenantId": "2wo2oz"
+                              "organizationId": "8048c698-a568-41aa-92fe-c6c1f7c814ae",
+                              "tenantId": "ccs64g"
                             }
                           },
                           "organizationName": {
@@ -9331,7 +9331,7 @@
                             "description": "The name of the organization the channel is in; null for an invitation to an organization."
                           }
                         },
-                        "required": ["entity", "inactiveMembership", "organizationName"]
+                        "required": ["entity", "invitation", "organizationName"]
                       }
                     },
                     "nextPageToken": {
@@ -9700,7 +9700,7 @@
         },
         "responses": {
           "204": {
-            "description": "Membership removed"
+            "description": "Membership left"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -10210,7 +10210,7 @@
                     },
                     {
                       "email": "p.okafor@example.net",
-                      "outcome": "remind",
+                      "outcome": "resend",
                       "invitedAt": "2026-10-20T09:12:00.000Z"
                     },
                     {
@@ -10399,7 +10399,7 @@
                     },
                     {
                       "email": "p.okafor@example.net",
-                      "outcome": "remind",
+                      "outcome": "resend",
                       "invitedAt": "2026-10-20T09:12:00.000Z"
                     },
                     {
@@ -11264,8 +11264,8 @@
         ],
         "operationId": "listInvitations",
         "tags": ["memberships", "cella"],
-        "summary": "Get list of pending memberships",
-        "description": "Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
+        "summary": "Get list of invitations",
+        "description": "Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
@@ -11355,7 +11355,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Pending memberships",
+            "description": "Invitations",
             "content": {
               "application/json": {
                 "example": {
@@ -11479,7 +11479,7 @@
         "operationId": "resendInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
-        "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+        "description": "Re-sends the invitation email for a pending invitation, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "parameters": [
@@ -16227,7 +16227,7 @@
                           "invitationEmailsPerDay": {
                             "type": ["integer", "null"],
                             "minimum": 0,
-                            "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
+                            "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
                           }
                         }
                       },
@@ -16308,7 +16308,7 @@
                           "invitationEmailsPerDay": {
                             "type": ["integer", "null"],
                             "minimum": 0,
-                            "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
+                            "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
                           }
                         }
                       },
