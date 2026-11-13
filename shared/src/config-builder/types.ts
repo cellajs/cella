@@ -324,6 +324,12 @@ export interface NavigationConfig<C extends string = string> {
   pageTabs: Partial<Record<C, 'menu'>>;
 }
 
+/** The PWA's Web Share Target, posted as multipart form data. */
+export interface ShareTargetConfig {
+  action: string;
+  params: { title?: string; text?: string; url?: string; files?: { name: string; accept: string[] }[] };
+}
+
 /**
  * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
@@ -385,6 +391,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   securityEmail: string;
 
   has: HasFlagsConfig;
+  /** Unset, the app takes no shares. */
+  shareTarget?: ShareTargetConfig;
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];

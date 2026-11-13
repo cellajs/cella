@@ -9,6 +9,7 @@ import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
 import { clearDeletedStorage } from '#/modules/entities/operations/clear-deleted-storage';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { adminDb as db } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant } from './security/helpers';
@@ -34,7 +35,7 @@ describe('Deleted storage', async () => {
     const plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     plans.push(plan);
     const keyOf = (name: string) => `${tenant.organization.id}/${tenant.user.id}/${name}`;
-    const insert = (keys: Record<string, string>, fields: { deletedAt?: string; seq?: number; bucketName?: string } = {}) => {
+    const insert = (keys: Record<string, string>, fields: { createdAt?: string; deletedAt?: string; seq?: number; bucketName?: string } = {}) => {
       const id = generateId();
       return insertAttachmentIn(plan, {
         id,
@@ -67,7 +68,8 @@ describe('Deleted storage', async () => {
     await db.execute(sql`INSERT INTO channel_counters (channel_key, counts) VALUES (${tenant.organization.id}, '{"sequence": 100}')
       ON CONFLICT (channel_key) DO UPDATE SET counts = channel_counters.counts || '{"sequence": 100}'`);
     const expiredAt = new Date(Date.now() - (appConfig.retention.deletedItemsDays + 1) * 86_400_000).toISOString();
-    await insert({ original: keyOf('shared.pdf') });
+    // Fresh: where attachments are an owned embedding, retention collects an old row no host names
+    await insert({ original: keyOf('shared.pdf') }, { createdAt: getIsoDate() });
     await insert({ original: keyOf('gone.pdf'), preview: keyOf('shared.pdf') }, { deletedAt: expiredAt, seq: 5 });
     await insert({ original: 'seed/v1/notes/original.txt' }, { deletedAt: expiredAt, seq: 6 });
     const dropped = await insert({ original: keyOf('dropped.pdf') });

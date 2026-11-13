@@ -27,9 +27,9 @@ function CompanyMarker({ address }: { address: CompanyAddress }) {
   return (
     <div className="relative">
       {cardOpen && (
-        <div className="bg-popover text-popover-foreground absolute bottom-full left-1/2 mb-3 min-w-36 -translate-x-1/2 rounded-md border p-2 text-xs shadow-md">
+        <div className="bg-popover text-popover-foreground absolute bottom-full left-1/2 mb-3 w-max max-w-60 min-w-36 -translate-x-1/2 rounded-md border p-2 text-xs shadow-md">
           <div className="flex items-center justify-between gap-2">
-            <strong className="text-sm">{appConfig.company.name}</strong>
+            <strong className="text-[0.8125rem] leading-tight">{appConfig.company.name}</strong>
             <CloseButton onClick={() => setCardOpen(false)} size="sm" />
           </div>
           <span className="block">{address.streetAddress}</span>

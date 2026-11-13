@@ -20,8 +20,9 @@ type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor &
  * The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and
  * context-role pairs. On an archived channel `update` is no grant: the tools that need it hide, and those that need
  * `archive` or `delete` stay.
+ * @public
  */
-function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
+export function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
   const slot: `${C}.settings` = `${channelType}.settings`;
 

@@ -50,13 +50,13 @@ export function SearchRecentRemoveButton({ onRemove, className }: { onRemove: ()
   );
 }
 
-/** Plain X beside a search field that ends the search; larger than the clear X inside the field and in full text color. */
+/** Plain X beside a search field that ends the search; in full text color, where the clear X inside the field is muted. */
 export function SearchCloseButton({ className, ...props }: ComponentProps<'button'>) {
   const { t } = useTranslation();
 
   return (
     <button type="button" aria-label={t('c:close')} className={cn(searchButtonClass, 'size-9', className)} {...props}>
-      <XIcon className="size-5" />
+      <XIcon className="size-4" />
     </button>
   );
 }

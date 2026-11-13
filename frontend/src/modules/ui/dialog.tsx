@@ -167,7 +167,7 @@ export function HeaderClose() {
 
   return (
     <DialogPrimitive.Close data-slot="dialog-close" render={<Button variant="ghost" size="icon-xs" />} className="-my-1 ml-auto shrink-0">
-      <XIcon className="size-5" />
+      <XIcon className="size-4" />
       <span className="sr-only">{t('c:close')}</span>
     </DialogPrimitive.Close>
   );

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InfoIcon } from 'lucide-react';
-import { expect, userEvent } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 
 /** An interactive component which expands/collapses a panel. */
@@ -40,12 +40,12 @@ export const ShouldOpenClose: Story = {
 
     await step('Open the collapsible', async () => {
       await userEvent.click(trigger, { delay: 100 });
-      expect(await canvas.queryByText(/yes/i, { exact: true })).toBeVisible();
+      await waitFor(() => expect(canvas.queryByText(/yes/i, { exact: true })).toBeVisible());
     });
 
     await step('Close the collapsible', async () => {
       await userEvent.click(trigger, { delay: 100 });
-      expect(await canvas.queryByText(/yes/i, { exact: true })).toBeNull();
+      await waitFor(() => expect(canvas.queryByText(/yes/i, { exact: true })).toBeNull());
     });
   },
 };
