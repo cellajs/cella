@@ -18,7 +18,6 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
       userId: ctx.var.user.id,
       endpoint: body.endpoint,
       ...body.keys,
-      expirationTime: body.expirationTime ? new Date(body.expirationTime).toISOString() : null,
       userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },
   });

@@ -15,7 +15,6 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import type { PasskeyChallengePurpose } from '#/modules/auth/passkeys/passkey-challenges-db';
 import {
   deletePasskeyChallenge,
-  deleteStalePasskeyChallenges,
   findPasskeyByCredentialId,
   findPasskeyCredentialsByUser,
   insertPasskeyChallenge,
@@ -69,13 +68,13 @@ const isPasskeyTransport = (transport: string): transport is PasskeyTransport =>
 
 /**
  * Hands this browser a new challenge for `purpose`: its row stores the hash, the challenge itself travels in a signed
- * cookie and in the response. The challenge the browser held before is dropped, and so are expired ones.
+ * cookie and in the response. The challenge the browser held before is dropped; the nightly retention run drops expired ones.
  * @returns The challenge response: the challenge, 32 random bytes as base64url (the value the WebAuthn options take as
  *   they are), and `userId`'s passkeys with the transports their registration reported, none without one.
  */
 export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId }: IssuePasskeyChallengeOpts) => {
   const previous = getAuthCookie(ctx, 'passkey-challenge');
-  await deleteStalePasskeyChallenges(dbCtx, { previousHash: previous ? hashToken(previous) : undefined });
+  if (previous) await deletePasskeyChallenge(dbCtx, { challengeHash: hashToken(previous) });
 
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
   await insertPasskeyChallenge(dbCtx, {

@@ -2656,7 +2656,6 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  *
  * @param {createPushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
  * @returns Possible status codes: 201, 400, 401, 403, 413, 429
  */

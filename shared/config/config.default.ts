@@ -121,7 +121,7 @@ export const config = {
   /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
   demo: { perDay: 500 },
 
-  /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
+  /** How long data lives, in days: the nightly `retention` job and the tenant sweep apply it, the privacy page states it. */
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
@@ -131,7 +131,7 @@ export const config = {
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
     deviceDaysSinceSignIn: 400,
-    devicesPerUser: 50,
+    apiKeyDaysAfterEnd: 30,
     oidcPayloadDaysAfterUse: 30,
     requestDays: 365,
     invitationDays: 120,
@@ -276,6 +276,10 @@ export const config = {
    * feature. Regular and `mfa` sessions count together.
    */
   maxSessionsPerUser: 10,
+  /** Known devices kept per user; the nightly retention run removes the least recently seen beyond it. */
+  maxDevicesPerUser: 50,
+  /** Push subscriptions kept per user, a notification fan-out loads them all; the nightly retention run removes the least recently seen beyond it. */
+  maxPushSubscriptionsPerUser: 20,
 
   // A code verifies one step either side of now (RFC 6238 §5.2): each step more is one more code a guess can hit.
   // Google Authenticator reads neither the period nor the digits of the key URI, so other values lock its users out.

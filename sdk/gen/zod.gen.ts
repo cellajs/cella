@@ -2474,7 +2474,6 @@ export const zGetPushVapidResponse = z.object({
 
 export const zCreatePushSubscriptionBody = z.object({
   endpoint: z.url().max(2048),
-  expirationTime: z.number().nullish(),
   keys: z.object({
     p256dh: z.string().max(512),
     auth: z.string().max(512),

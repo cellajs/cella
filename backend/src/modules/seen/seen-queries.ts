@@ -8,12 +8,14 @@ import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { getEntityTable } from '#/tables';
+import { isoDateAgo } from '#/utils/iso-date';
+import { TimeSpan } from '#/utils/time-span';
 
 /** The columns the seen queries read off a product table resolved at runtime. */
 export type OrgScopedEntityTable = AnyPgTable & { id: PgColumn; organizationId: PgColumn; createdAt: PgColumn };
 
 /** Where the seen window starts now: a row older than `seenWindowMs`, the client's window too, is never unseen. */
-export const seenWindowStart = () => new Date(Date.now() - seenWindowMs).toISOString();
+export const seenWindowStart = () => isoDateAgo(new TimeSpan(seenWindowMs, 'ms'));
 
 /** A row's recency for the seen window: publish time on draft-lifecycle tables, creation time elsewhere. */
 export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL<string> =>

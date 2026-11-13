@@ -88,12 +88,12 @@ describe('apply_retention() row rules', () => {
     cases.push({ rule: 'devices since sign-in', remaining: devicesOf(user.id), kept: [signedInLongAgo.kept], removed: [signedInLongAgo.gone] });
     // Minutes apart and recent: only the cap decides, and the two least recently signed in from go.
     const crowdedDevices: string[] = [];
-    for (let i = 0; i < retention.devicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
+    for (let i = 0; i < appConfig.maxDevicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
     cases.push({
       rule: 'devices per user',
       remaining: devicesOf(crowded.id),
-      kept: crowdedDevices.slice(0, retention.devicesPerUser),
-      removed: crowdedDevices.slice(retention.devicesPerUser),
+      kept: crowdedDevices.slice(0, appConfig.maxDevicesPerUser),
+      removed: crowdedDevices.slice(appConfig.maxDevicesPerUser),
     });
 
     const payload = (expiresAt: Date | null, consumedAt: Date | null) => {
@@ -227,11 +227,11 @@ describe('apply_retention() row rules', () => {
       removed: [limits.gone],
     });
 
-    const subscription = async (lastSeenAt: Date, createdAt: Date) => {
+    const subscription = async (lastSeenAt: Date, createdAt: Date, userId = user.id) => {
       const id = generateId();
       await db.insert(pushSubscriptionsTable).values({
         id,
-        userId: user.id,
+        userId,
         endpoint: `https://push.retention.test/${id}`,
         p256dh: 'key',
         auth: 'secret',
@@ -253,6 +253,20 @@ describe('apply_retention() row rules', () => {
         ),
       kept: [subscriptions.seen],
       removed: [subscriptions.unseen],
+    });
+    // Minutes apart and recent, so only the cap decides; the two least recently seen go.
+    const crowdedSubscriptions: string[] = [];
+    for (let i = 0; i < appConfig.maxPushSubscriptionsPerUser + 2; i++) {
+      crowdedSubscriptions.push(await subscription(new Date(Date.now() - i * 60_000), ago(1), crowded.id));
+    }
+    cases.push({
+      rule: 'push subscriptions per user',
+      remaining: async () =>
+        (await db.select({ id: pushSubscriptionsTable.id }).from(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, crowded.id))).map(
+          (row) => row.id,
+        ),
+      kept: crowdedSubscriptions.slice(0, appConfig.maxPushSubscriptionsPerUser),
+      removed: crowdedSubscriptions.slice(appConfig.maxPushSubscriptionsPerUser),
     });
 
     await db.execute(sql`CALL apply_retention()`);

@@ -13717,9 +13717,6 @@
                     "maxLength": 2048,
                     "format": "uri"
                   },
-                  "expirationTime": {
-                    "type": ["number", "null"]
-                  },
                   "keys": {
                     "type": "object",
                     "properties": {

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, notInArray, or } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -8,44 +8,29 @@ interface PushSubscriptionInput {
   endpoint: string;
   p256dh: string;
   auth: string;
-  expirationTime: string | null;
   userAgent: string | null;
 }
-
-/** Subscriptions a user keeps, the most recently seen: a notification fan-out loads all of them. */
-const pushSubscriptionsPerUser = 20;
 
 /**
  * Upsert by the unique endpoint. The user's own endpoint takes the posted keys. Another user's endpoint moves to the
  * caller only with its stored auth secret, which the browser holding the subscription hands out and the server never
  * does: a browser profile that changed users stops pushing to its previous user, and an endpoint learned alone takes
- * nothing over. The user's rows beyond `pushSubscriptionsPerUser` go in the same transaction, so a new device is never
- * refused.
+ * nothing over. A new device is never refused: the nightly retention run trims a user's rows to
+ * `maxPushSubscriptionsPerUser`.
  * @returns The stored row, or null when the endpoint stays with another user.
  */
 export async function upsertPushSubscription(ctx: DbContext, { values }: { values: PushSubscriptionInput }) {
   const lastSeenAt = getIsoDate();
-  return ctx.var.db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(pushSubscriptionsTable)
-      .values({ ...values, lastSeenAt })
-      .onConflictDoUpdate({
-        target: pushSubscriptionsTable.endpoint,
-        set: { ...values, lastSeenAt },
-        setWhere: or(eq(pushSubscriptionsTable.userId, values.userId), eq(pushSubscriptionsTable.auth, values.auth)),
-      })
-      .returning({ id: pushSubscriptionsTable.id, endpoint: pushSubscriptionsTable.endpoint });
-    if (!row) return null;
-
-    const kept = tx
-      .select({ id: pushSubscriptionsTable.id })
-      .from(pushSubscriptionsTable)
-      .where(eq(pushSubscriptionsTable.userId, values.userId))
-      .orderBy(desc(pushSubscriptionsTable.lastSeenAt), desc(pushSubscriptionsTable.id))
-      .limit(pushSubscriptionsPerUser);
-    await tx.delete(pushSubscriptionsTable).where(and(eq(pushSubscriptionsTable.userId, values.userId), notInArray(pushSubscriptionsTable.id, kept)));
-    return row;
-  });
+  const [row] = await ctx.var.db
+    .insert(pushSubscriptionsTable)
+    .values({ ...values, lastSeenAt })
+    .onConflictDoUpdate({
+      target: pushSubscriptionsTable.endpoint,
+      set: { ...values, lastSeenAt },
+      setWhere: or(eq(pushSubscriptionsTable.userId, values.userId), eq(pushSubscriptionsTable.auth, values.auth)),
+    })
+    .returning({ id: pushSubscriptionsTable.id, endpoint: pushSubscriptionsTable.endpoint });
+  return row ?? null;
 }
 
 /** Scoped to the caller: an endpoint another user registered deletes nothing. */

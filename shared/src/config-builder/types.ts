@@ -183,8 +183,8 @@ export interface RetentionConfig {
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
   deviceDaysSinceSignIn: number;
-  /** Known devices kept per user, the most recently signed in from. */
-  devicesPerUser: number;
+  /** An API key, from its revocation or else its expiry; a key that never ends stays. */
+  apiKeyDaysAfterEnd: number;
   oidcPayloadDaysAfterUse: number;
   /** Requests of every kind: contact messages, waitlist entries and info requests. */
   requestDays: number;
@@ -399,6 +399,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;
+  maxDevicesPerUser: number;
+  maxPushSubscriptionsPerUser: number;
 
   apiVersion: string;
   cookieVersion: string;

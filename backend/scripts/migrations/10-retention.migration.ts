@@ -1,6 +1,7 @@
 import { getColumns, getTableName } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
+import { channelTables } from '#/db/channel-tables';
 import { appPartitionConfigs, productTables } from '#/db/product-tables';
 import type { PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
@@ -25,20 +26,31 @@ export const partitionConfigs: PartitionConfig[] = [
   ...appPartitionConfigs.map(({ table, ...config }) => ({ name: getTableName(table), ...config })),
 ];
 
+/** The condition under which `column` of the swept table names no row of any of `tables`; true without a table. */
+const namesNoRowOf = (tables: string[], column: string, cast = ''): string =>
+  tables.map((table) => `NOT EXISTS (SELECT 1 FROM ${table} r WHERE r.id${cast} = ${column})`).join(' AND ') || 'true';
+
+const channelTableNames = Object.values(channelTables).map((table) => getTableName(table()));
+
+/** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
+const tombstoneTables = Object.values(productTables).map((table) => getTableName(table()));
+
 /**
  * Plain tables swept row by row by the same procedure: too small to justify partitions, and a plain `id` primary key
  * keeps them referenceable. `aged` is the condition under which a row goes.
  */
 const sweepRules: { table: string; aged: string }[] = [
-  { table: 'sessions', aged: `expires_at < now() - ${days(retention.sessionDaysAfterExpiry)}` },
+  { table: 'sessions', aged: `coalesce(revoked_at, expires_at) < now() - ${days(retention.sessionDaysAfterExpiry)}` },
   { table: 'tokens', aged: `expires_at < now() - ${days(retention.tokenDaysAfterExpiry)}` },
   { table: 'devices', aged: `last_sign_in_at < now() - ${days(retention.deviceDaysSinceSignIn)}` },
   {
     table: 'devices',
     aged: `(user_id, device_id_hash) IN (SELECT user_id, device_id_hash FROM (SELECT user_id, device_id_hash,
       row_number() OVER (PARTITION BY user_id ORDER BY last_sign_in_at DESC) AS position FROM devices) ranked
-      WHERE position > ${retention.devicesPerUser})`,
+      WHERE position > ${appConfig.maxDevicesPerUser})`,
   },
+  { table: 'api_keys', aged: `coalesce(revoked_at, expires_at) < now() - ${days(retention.apiKeyDaysAfterEnd)}` },
+  { table: 'passkey_challenges', aged: 'expires_at < now()' },
   { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },
   { table: 'requests', aged: `created_at < now() - ${days(retention.requestDays)}` },
   // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
@@ -48,10 +60,16 @@ const sweepRules: { table: string; aged: string }[] = [
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
+  {
+    table: 'push_subscriptions',
+    aged: `id IN (SELECT id FROM (SELECT id,
+      row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC, id DESC) AS position FROM push_subscriptions) ranked
+      WHERE position > ${appConfig.maxPushSubscriptionsPerUser})`,
+  },
+  // Counters of a removed channel or product: the CDC worker writes them and nothing else deletes them.
+  { table: 'channel_counters', aged: namesNoRowOf(channelTableNames, 'channel_counters.channel_key', '::text') },
+  { table: 'product_counters', aged: namesNoRowOf(tombstoneTables, 'product_counters.product_id') },
 ];
-
-/** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
-const tombstoneTables = Object.values(productTables).map((table) => getTableName(table()));
 
 /** Tombstones one batch removes; a commit between batches keeps each transaction small for the CDC worker. */
 const tombstoneBatchSize = 1000;
