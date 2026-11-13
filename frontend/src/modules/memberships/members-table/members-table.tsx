@@ -21,9 +21,11 @@ import type { Member, MembersRouteSearchParams } from '~/modules/memberships/typ
 export interface MembersTableProps {
   channel: EnrichedChannel;
   isSheet?: boolean;
+  /** Opens the invite form as the table mounts, for a prompt elsewhere that asked to invite. */
+  inviteOnOpen?: boolean;
 }
 
-export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
+export function MembersTable({ channel, isSheet = false, inviteOnOpen }: MembersTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet, defaults: membersSearchDefaults });
 
@@ -63,7 +65,7 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   return (
     <>
       <MembersTableBar
-        {...{ channel, selected, setSearch, columns, setColumns, clearSelection, isSheet, canUpdate }}
+        {...{ channel, selected, setSearch, columns, setColumns, clearSelection, isSheet, inviteOnOpen, canUpdate }}
         searchVars={{ q, role, sort, order }}
         queryKey={queryOptions.queryKey}
       />
