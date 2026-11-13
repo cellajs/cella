@@ -331,17 +331,18 @@ jobs:
             exit 1
           fi
 
-          # Breaking change present → require a clientCacheVersion bump in the same PR.
-          BASE_BUSTER=$(git show "$BASE:$CFG" | grep -oE "clientCacheVersion: '[^']+'" || true)
-          HEAD_BUSTER=$(grep -oE "clientCacheVersion: '[^']+'" "$CFG" || true)
-          echo "clientCacheVersion base=[$BASE_BUSTER] head=[$HEAD_BUSTER]"
-          if [ -n "$HEAD_BUSTER" ] && [ "$BASE_BUSTER" != "$HEAD_BUSTER" ]; then
+          # Breaking change present → require a higher clientCacheVersion in the same PR. A base without a number
+          # (a string version, before they were numbered) counts as 0.
+          BASE_VERSION=$(git show "$BASE:$CFG" | grep -oE "clientCacheVersion: [0-9]+" | grep -oE "[0-9]+" || true)
+          HEAD_VERSION=$(grep -oE "clientCacheVersion: [0-9]+" "$CFG" | grep -oE "[0-9]+" || true)
+          echo "clientCacheVersion base=[$BASE_VERSION] head=[$HEAD_VERSION]"
+          if [ -n "$HEAD_VERSION" ] && [ "$HEAD_VERSION" -gt "${BASE_VERSION:-0}" ]; then
             echo "✅ Breaking change accompanied by a clientCacheVersion bump."
             exit 0
           fi
 
           echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
-          echo "Bump appConfig.clientCacheVersion (e.g. 'v1' → 'v2') in $CFG and use a 'feat!' PR title so clients wipe stale cache."
+          echo "Raise appConfig.clientCacheVersion by one (e.g. 46 → 47) in $CFG and use a 'feat!' PR title so clients wipe stale cache."
           exit 1
 
   # The `main` ruleset requires this job and `pr-title`, so a job of this workflow joins the merge gate by joining

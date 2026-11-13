@@ -402,7 +402,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   apiVersion: string;
   cookieVersion: string;
-  clientCacheVersion: string;
+  clientCacheVersion: number;
 
   apiDescription: string;
 

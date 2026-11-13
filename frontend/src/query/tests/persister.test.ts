@@ -38,6 +38,7 @@ vi.stubGlobal('sessionStorage', {
 const { persister, persistOptions, shouldPersistQuery } = await import('~/query/persister');
 const { bindLocalUserDb, getLocalUserDb, sweepLocalUserDbs } = await import('~/query/local-user-db');
 const { registerVariablesVersion } = await import('~/query/offline/mutation-variables');
+const { resetBundleStale } = await import('~/query/schema-version-guard');
 const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
 const { totpKeyQueryOptions } = await import('~/modules/me/query');
@@ -90,6 +91,7 @@ const reload = async () => {
 
 beforeEach(async () => {
   bindLocalUserDb('u1');
+  resetBundleStale();
   await persister.removeClient();
 });
 
@@ -160,15 +162,14 @@ describe('the cache as the provider saves and restores it', () => {
     logged.mockRestore();
   });
 
-  it('wipes the cached queries but keeps the queued writes when the client cache version changes', async () => {
+  it('wipes the cached queries but keeps the queued writes when an older bundle wrote the cache', async () => {
     const client = new QueryClient();
     client.setQueryData(productKey('org-1'), [{ id: 'p1' }]);
     client.setQueryData(['me'], { name: 'user' });
     queueWrite(client, [productType, 'create'], { title: 'offline edit' });
     await save(client);
-    // A prior bundle wrote the store under another cache version.
     const db = getLocalUserDb()!;
-    await db.meta.put({ ...(await db.meta.get('rq'))!, clientCacheVersion: 'a-prior-version' });
+    await db.meta.put({ ...(await db.meta.get('rq'))!, clientCacheVersion: appConfig.clientCacheVersion - 1 });
 
     const reloaded = await reload();
     expect(reloaded.getQueryCache().getAll()).toHaveLength(0);
@@ -179,6 +180,21 @@ describe('the cache as the provider saves and restores it', () => {
         .map(({ state }) => state.variables),
     ).toEqual([{ title: 'offline edit' }]);
     expect((await db.meta.get('rq'))?.clientCacheVersion).toBe(appConfig.clientCacheVersion);
+  });
+
+  it('restores nothing and never writes when a newer bundle wrote the cache, as after a rollback deploy', async () => {
+    const client = new QueryClient();
+    client.setQueryData(['me'], { name: 'user' });
+    await save(client);
+    const db = getLocalUserDb()!;
+    await db.meta.put({ ...(await db.meta.get('rq'))!, clientCacheVersion: appConfig.clientCacheVersion + 1 });
+
+    const reloaded = await reload();
+    expect(reloaded.getQueryData(['me'])).toBeUndefined();
+    reloaded.setQueryData(['me'], { name: 'changed' });
+    await save(reloaded);
+
+    expect((await db.meta.get('rq'))?.bundledQueries.map(({ state }) => state.data)).toEqual([{ name: 'user' }]);
   });
 
   it('writes a changed query again after the write that held it failed', async () => {
@@ -294,7 +310,6 @@ describe('the queued writes of every tab', () => {
     await db.meta.put({
       key: 'rq:mut:other-live-tab',
       timestamp: Date.now(),
-      buster: '',
       mutations: [storedWrite([productType, 'update'], { id: 'other' })],
       bundledQueries: [],
     });
@@ -302,7 +317,6 @@ describe('the queued writes of every tab', () => {
     await db.meta.put({
       key: 'rq:mut:dead-tab',
       timestamp: Date.now() - 3 * 60 * 60 * 1000,
-      buster: '',
       mutations: [storedWrite([productType, 'update'], { id: 'crashed' })],
       bundledQueries: [],
     });
@@ -321,11 +335,10 @@ describe('the queued writes of every tab', () => {
   // The restore deleted a dead tab's record and stored its queue only at this tab's first write, up to a second later.
   it("keeps a dead tab's queue when this tab reloads before its first write", async () => {
     const db = getLocalUserDb()!;
-    await db.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', bundledQueries: [] });
+    await db.meta.put({ key: 'rq', timestamp: Date.now(), bundledQueries: [] });
     await db.meta.put({
       key: 'rq:mut:dead-tab',
       timestamp: Date.now() - 3 * 60 * 60 * 1000,
-      buster: '',
       mutations: [storedWrite([productType, 'update'], { id: 'crashed' })],
       bundledQueries: [],
     });

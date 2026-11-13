@@ -38,7 +38,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
   { path: 'securityEmail', value: `'security@${domain}'` },
   { path: 'has.uploads', value: 'false', comment: 'Off until S3 is configured: files stay in the browser (IndexedDB).' },
   { path: 'cookieVersion', value: "'v1'" },
-  { path: 'clientCacheVersion', value: "'v1'" },
+  { path: 'clientCacheVersion', value: '1' },
   {
     path: 'enabledAuthStrategies',
     value: "['passkey', 'oauth', 'totp', 'magic'] as const",

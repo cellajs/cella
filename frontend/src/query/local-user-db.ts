@@ -24,13 +24,12 @@ export interface PersistedQueryRecord {
 }
 
 /** A React Query meta row: the cache's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
-interface PersistedMetaRecord {
+export interface PersistedMetaRecord {
   /** The cache's row: `rq`, with no mutations. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
-  buster: string;
-  /** Persisted client cache version (appConfig.clientCacheVersion). Mismatch wipes cached queries. */
-  clientCacheVersion?: string;
+  /** The `appConfig.clientCacheVersion` of the bundle that wrote the cache; a string predates numbered versions. */
+  clientCacheVersion?: number | string;
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
   mutations?: DehydratedState['mutations'];

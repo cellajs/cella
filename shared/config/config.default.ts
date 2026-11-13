@@ -234,13 +234,13 @@ export const config = {
   shareTarget: undefined as ShareTargetConfig | undefined,
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
-  // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
+  // clientCacheVersion, a number that only rises, clears incompatible cached entities while preserving queued mutations.
   // Bump the relevant token with its change; CI requires cache bumps not covered by an evolution lens.
 
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v46-no-tenant-subscription',
+  clientCacheVersion: 46,
 
   // Authentication
 

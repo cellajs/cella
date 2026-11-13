@@ -5,7 +5,7 @@ vi.mock('shared', () => {
   const productEntityTypes = ['task', 'label', 'attachment'];
   const channelEntityTypes = ['organization', 'workspace', 'project'];
   return {
-    appConfig: { slug: 'test-app', productEntityTypes, channelEntityTypes, clientCacheVersion: 'v1' },
+    appConfig: { slug: 'test-app', productEntityTypes, channelEntityTypes, clientCacheVersion: 1 },
     isProduct: (type: string) => productEntityTypes.includes(type),
     isChannel: (type: string) => channelEntityTypes.includes(type),
   };
@@ -62,13 +62,12 @@ const queuedMutation = (variables: Record<string, unknown>) => ({
 /** Seed an old-shape attachment cache at a given persisted schema ordinal, with the queue a closed tab left. */
 async function seedCache(schemaVersion: number) {
   const db = getLocalUserDb()!;
-  await db.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', clientCacheVersion: 'v1', schemaVersion, bundledQueries: [] });
+  await db.meta.put({ key: 'rq', timestamp: Date.now(), clientCacheVersion: 1, schemaVersion, bundledQueries: [] });
   // Without the locks API, a record this old belongs to a closed tab, whose queue the restore takes over.
   const closedAt = Date.now() - 3 * 60 * 60 * 1000;
   await db.meta.put({
     key: 'rq:mut:closed-tab',
     timestamp: closedAt,
-    buster: '',
     mutations: [queuedMutation({ name: 'offline edit' })],
     bundledQueries: [],
   });

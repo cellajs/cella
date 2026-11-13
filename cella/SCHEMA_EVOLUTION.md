@@ -22,10 +22,11 @@ A breaking schema change, such as renaming `attachment.name` to `attachment.titl
 
 Until the first lens ships, a breaking schema change resets client caches:
 
-1. **Bump `appConfig.clientCacheVersion`** in [config.default.ts](../shared/config/config.default.ts) in the PR that breaks a cached wire shape.
+1. **Raise `appConfig.clientCacheVersion` by one** in [config.default.ts](../shared/config/config.default.ts) in the PR that breaks a cached wire shape.
 2. **Title the PR `feat!`**, as for any breaking change.
-3. **Clients wipe, mutations stay.** After a mismatch at boot, queued mutations replay on the fresh cache.
-4. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a breaking OpenAPI diff without that bump.
+3. **Clients wipe, mutations stay.** A cache an older bundle wrote loses its queries at boot, and queued mutations replay on the fresh cache.
+4. **Newer cache, stale bundle.** A cache a newer bundle wrote is left alone, as a lens pointer ahead of the bundle is.
+5. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
 
 **Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job.
 
