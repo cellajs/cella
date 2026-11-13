@@ -68,7 +68,6 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       SERVICE: migrate
-      PG_CRON_DATABASE: rdb
       APP_ORIGIN: ${APP_ORIGIN}
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}

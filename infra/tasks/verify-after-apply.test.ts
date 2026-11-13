@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EngineConfig } from '../config/engine-config';
-import { CRON_HOME_DATABASE, expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
+import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { FetchLike } from '../lib/utils/fetch-like';
 import { verifyAfterApply } from './verify-after-apply';
 
@@ -24,10 +24,9 @@ const privileges = (rows: Array<[string, string, string]>) =>
   rows.map(([database_name, user_name, permission]) => ({ database_name, user_name, permission }));
 
 describe('expectedDbPrivileges', () => {
-  it('declares both roles on the app database and the admin role on the cron home database', () => {
+  it('declares both roles on the app database', () => {
     expect(expectedDbPrivileges('cella').map((p) => `${p.user}@${p.database}`)).toEqual([
       `${POSTGRES_ROLE_NAMES.admin}@cella`,
-      `${POSTGRES_ROLE_NAMES.admin}@${CRON_HOME_DATABASE}`,
       `${POSTGRES_ROLE_NAMES.runtime}@cella`,
     ]);
   });
@@ -52,33 +51,22 @@ describe('verifyAfterApply', () => {
           total_count: 2,
         },
       },
-      {
-        match: 'privileges?database_name=rdb',
-        body: { privileges: privileges([['rdb', 'admin_role', 'all']]), total_count: 1 },
-      },
     ]);
     const result = await verifyAfterApply({ appConfig, secretKey: 's', fetchImpl, log: () => {} });
     expect(result).toEqual({ ok: true, problems: [], errors: [] });
   });
 
-  it('reports a missing cron privilege', async () => {
+  it('reports a missing privilege', async () => {
     const fetchImpl = makeFetch([
       instance,
       {
         match: 'privileges?database_name=cella',
-        body: {
-          privileges: privileges([
-            ['cella', 'admin_role', 'all'],
-            ['cella', 'runtime_role', 'all'],
-          ]),
-          total_count: 2,
-        },
+        body: { privileges: privileges([['cella', 'admin_role', 'all']]), total_count: 1 },
       },
-      { match: 'privileges?database_name=rdb', body: { privileges: [], total_count: 0 } },
     ]);
     const result = await verifyAfterApply({ appConfig, secretKey: 's', fetchImpl, log: () => {} });
     expect(result.ok).toBe(false);
-    expect(result.problems).toEqual(["database privilege admin_role on rdb: live 'none', expected one of all/custom"]);
+    expect(result.problems).toEqual(["database privilege runtime_role on cella: live 'none', expected one of all/custom"]);
   });
 
   it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {

@@ -90,7 +90,7 @@ describe('ensureDatabase', () => {
       `create ${POSTGRES_ROLE_NAMES.admin} admin=true`,
       `create ${POSTGRES_ROLE_NAMES.runtime} admin=false`,
     ]);
-    expect(calls).toContain(`privilege ${POSTGRES_ROLE_NAMES.admin} rdb all`);
+
     expect(writes['/runtime/database-url-runtime']).toBe(dsn('runtime', 'fresh'));
     expect(writes['/runtime/database-url-cdc']).toBe(dsn('admin', 'fresh'));
   });

@@ -74,6 +74,9 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   const queues = getBackendQueues().map((queue) => `${queue.name}${queue.handler ? '' : ' (worked elsewhere)'}`);
   const scheduled = nextRuns.length ? `${nextRuns.length} periodic jobs, next runs: ${nextRuns.join(', ')}` : 'no periodic jobs';
   baseLog.info(`Jobs worker: ${scheduled}${queues.length ? `; working queues: ${queues.join(', ')}` : ''}`);
+  // `apply_retention()` needs the table owner: without it, no partition is created or dropped and no aged row goes.
+  if (!env.DATABASE_ADMIN_URL)
+    baseLog.warn('jobs: DATABASE_ADMIN_URL is not set, so the nightly retention job fails and apply_retention() never runs');
 
   if (!options.inProcess) {
     const server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => {

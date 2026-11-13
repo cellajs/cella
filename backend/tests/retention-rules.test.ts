@@ -37,8 +37,8 @@ interface RuleCase {
 
 /**
  * Every row rule of `apply_retention()`: a row just inside its period stays, one just outside goes. The procedure
- * deletes personal data nothing can bring back, so each rule is checked against rows, under the admin role pg_cron
- * runs it as.
+ * deletes personal data nothing can bring back, so each rule is checked against rows, under the admin role the
+ * retention job runs it as.
  */
 describe('apply_retention() row rules', () => {
   const cases: RuleCase[] = [];

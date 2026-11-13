@@ -110,7 +110,7 @@ What a delete or an archive does depends on the entity:
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. Where the database provider allows pg_cron, a nightly job in the database removes rows past their period. On Scaleway it stays unscheduled ([Deployment](./DEPLOYMENT.md#overview)). Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. The jobs worker's nightly `retention` job calls `apply_retention()` over the admin connection, which removes rows past their period. Backups and bucket object versions expire on their own schedule.
 
 ## Contracts
 

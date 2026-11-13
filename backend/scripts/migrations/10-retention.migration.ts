@@ -132,7 +132,7 @@ const unreferencedBlock =
 
   `;
 
-/** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-retention.ts). */
+/** The procedure the jobs worker's nightly `retention` job calls (`runRetention`). */
 export const retentionProcedure = 'apply_retention';
 
 /**
@@ -303,9 +303,9 @@ async function run(): Promise<SideEffectBlock> {
 -- Migration: Time-partitioned tables and in-database retention
 -- =============================================================================
 -- Converts the tables below to native range partitions and installs
--- apply_retention(), which pg_cron runs nightly (see
--- scripts/db/schedule-retention.ts) to create partitions ahead, drop those
--- past retention and sweep the plain tables. No extension is needed here.
+-- apply_retention(), which the jobs worker's nightly retention job calls
+-- over the admin connection to create partitions ahead, drop those past
+-- retention and sweep the plain tables. No extension is needed here.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -326,7 +326,7 @@ ${partitionConfigs
 DROP EXTENSION IF EXISTS pg_partman CASCADE;
 DROP SCHEMA IF EXISTS partman CASCADE;
 
--- The procedure's earlier name, and its signature without arguments; the schedule script moves the pg_cron job over.
+-- The procedure's earlier name, and its signature without arguments.
 DROP PROCEDURE IF EXISTS public.maintain_partitions();
 DROP PROCEDURE IF EXISTS public.apply_retention();
 

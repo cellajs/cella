@@ -75,8 +75,7 @@ const envSchema = z
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
-    // The database pg_cron runs in, where migrations schedule the retention job: needed where the admin role is no superuser and so may not read `cron.database_name`.
-    PG_CRON_DATABASE: z.string().optional(),
+
     // The build Node runs: a development or test stack, or a production build; `APP_MODE` names the config.
     NODE_ENV: z.enum(nodeEnvs).default('development'),
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),

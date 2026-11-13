@@ -58,8 +58,7 @@ Resources and traffic flow:
 - **Replication slot:** a stopped CDC worker's slot keeps WAL. The worker warns while that WAL has no bound.
 - **WAL bound:** set `max_slot_wal_keep_size` where the provider offers it.
 - **WAL on Scaleway:** unbounded. It can fill the volume until a slot inactive for 24 hours is removed.
-- **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron.
-- **Retention on Scaleway:** unscheduled while the admin user may not use `cron`. Old rows stay.
+- **Retention job:** the jobs worker calls the retention procedure nightly over the admin connection.
 - **Buckets:** outside the VPC, read directly when public and by presigned URL when private.
 
 ## Deploys

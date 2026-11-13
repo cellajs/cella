@@ -11,8 +11,8 @@ export const appStores = defineStores({
     // The store owns the DSN and CA secret declarations; these map each one to its consuming services, merged ahead of runtime-secrets.config.ts.
     secretConsumers: {
       runtime: ['backend', 'yjs', 'mcp', 'oauth', 'jobs'],
-      // The admin DSN migrates (the backend's release companion); the job store is installed there too, so no worker needs it.
-      admin: ['backend'],
+      // The admin DSN migrates (the backend's release companion, which installs the job store too) and runs the jobs worker's nightly `apply_retention()`, which only the table owner may.
+      admin: ['backend', 'jobs'],
       cdc: ['cdc'],
       ca: ['backend', 'yjs', 'mcp', 'cdc', 'oauth', 'jobs'],
     },
