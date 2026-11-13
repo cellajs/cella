@@ -109,7 +109,7 @@ describe('issueToken', () => {
     const [first, other] = [await invitationTo(), await invitationTo()];
 
     const [rotated, system] = await issueTokens(ctx, [
-      { kind: 'invitation', email, inactiveMembershipId: first.inactiveMembership.id },
+      { kind: 'invitation', email, invitationId: first.inactiveMembership.id },
       { kind: 'invitation', email },
     ]);
 

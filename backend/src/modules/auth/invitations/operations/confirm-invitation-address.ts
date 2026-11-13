@@ -19,8 +19,8 @@ import { invitationAddressEmail } from '../../../../../emails';
  *   when the account holds the address already, 404 `not_found` for an invitation no longer pending.
  */
 export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: TokenRecord) {
-  const { inactiveMembershipId, email, userId, createdBy } = tokenRecord;
-  if (!inactiveMembershipId) throw new AppError(400, 'invalid_request', 'warn');
+  const { invitationId, email, userId, createdBy } = tokenRecord;
+  if (!invitationId) throw new AppError(400, 'invalid_request', 'warn');
 
   const user = ctx.var.user;
   if (userId && userId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
@@ -33,13 +33,13 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
     const txCtx = { var: { db: tx } };
 
     // The locked row is the invitation's anchor: a concurrent answer, rejection or resend waits for this one.
-    const invitation = await findPendingInvitation(txCtx, { id: inactiveMembershipId, forUpdate: true });
+    const invitation = await findPendingInvitation(txCtx, { id: invitationId, forUpdate: true });
     if (!invitation) return null;
 
     const entity = await resolveEntity(txCtx, { entityType: invitation.channelType, identifier: invitation.channelId });
     if (!entity) return null;
 
-    const { token, rawToken } = await issueToken(txCtx, { kind: 'invitation', email, userId: user.id, inactiveMembershipId, createdBy });
+    const { token, rawToken } = await issueToken(txCtx, { kind: 'invitation', email, userId: user.id, invitationId, createdBy });
     return { entityName: entity.name, tokenId: token.id, rawToken };
   });
 
@@ -50,5 +50,5 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
     .sendEmails(invitationAddressEmail, statics, [{ email, lng: user.languageCode }])
     .catch((err) => log.error('Failed to send invitation address confirmation', { err }));
 
-  log.info('Invitation address confirmation sent', { inactiveMembershipId, tokenId: reissued.tokenId });
+  log.info('Invitation address confirmation sent', { invitationId, tokenId: reissued.tokenId });
 }

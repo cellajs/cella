@@ -12,6 +12,8 @@
   { "type": "rename", "kind": "index", "from": ["public", "invitations", "inactive_memberships_email_idx"], "to": ["public", "invitations", "invitations_email_idx"] },
   { "type": "create", "kind": "index", "entity": ["public", "invitations", "invitations_org_status_idx"] },
   { "type": "rename", "kind": "unique", "from": ["public", "invitations", "inactive_memberships_tenant_email_ctx"], "to": ["public", "invitations", "invitations_tenant_email_ctx"] },
+  { "type": "rename", "kind": "column", "from": ["public", "tokens", "inactive_membership_id"], "to": ["public", "tokens", "invitation_id"] },
+  { "type": "rename", "kind": "index", "from": ["public", "tokens", "tokens_inactive_membership_id_idx"], "to": ["public", "tokens", "tokens_invitation_id_idx"] },
   { "type": "rename", "kind": "column", "from": ["public", "requests", "invited_at"], "to": ["public", "requests", "mailed_at"] },
   { "type": "rename", "kind": "column", "from": ["public", "notifications", "emailed_at"], "to": ["public", "notifications", "mailed_at"] }
 ]

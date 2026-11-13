@@ -9,7 +9,7 @@ import { bindInvitationsByEmail } from '#/modules/memberships/invitations-querie
  * unproven claim would let anyone capture another person's invitations.
  */
 export const claimEmailForUser = async (ctx: DbContext, { userId, email }: { userId: string; email: string }) => {
-  const inactiveMembershipIds = await bindInvitationsByEmail(ctx, { email, userId });
-  await deleteInvitationTokens(ctx, { inactiveMembershipIds });
-  return inactiveMembershipIds;
+  const invitationIds = await bindInvitationsByEmail(ctx, { email, userId });
+  await deleteInvitationTokens(ctx, { invitationIds });
+  return invitationIds;
 };

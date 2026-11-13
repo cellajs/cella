@@ -50,10 +50,10 @@ async function mailInvitations(ctx: DbContext, { ids, organization, by }: MailIn
       if (!channel) continue;
 
       const tokenRequests = group.flatMap(({ id, email, userId, createdBy }) =>
-        userId ? [] : [{ kind: 'invitation' as const, email, createdBy, inactiveMembershipId: id }],
+        userId ? [] : [{ kind: 'invitation' as const, email, createdBy, invitationId: id }],
       );
       const links = await issueTokens(txCtx, tokenRequests);
-      const linkById = new Map(links.map(({ token, rawToken }) => [token.inactiveMembershipId, rawToken]));
+      const linkById = new Map(links.map(({ token, rawToken }) => [token.invitationId, rawToken]));
       ready.push({ channel, group: group.map((invitation) => ({ ...invitation, rawToken: linkById.get(invitation.id) })) });
     }
     return ready;

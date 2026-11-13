@@ -30,7 +30,7 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, fol
   const verified = await markEmailVerified(dbCtx, { userId: user.id, email: token.email, via: 'magic' });
   if (!verified) log.error('Magic link address is not on the account', { userId: user.id });
 
-  const asked = token.followedInvitationId ? { inactiveMembershipId: token.followedInvitationId, email: token.email } : null;
+  const asked = token.followedInvitationId ? { invitationId: token.followedInvitationId, email: token.email } : null;
   const joined = await acceptFollowedInvitation(user, { provenEmail: token.email, followed: followed ?? asked });
 
   // A link requested with a path keeps it; a sign-in that joined a channel lands there

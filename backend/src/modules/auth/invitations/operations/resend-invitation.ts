@@ -21,9 +21,9 @@ import { log } from '#/utils/logger';
 export async function resendInvitationByTokenOp(ctx: DbContext, tokenId: string): Promise<void> {
   const token = await findInvitationToken(ctx, { id: tokenId });
   if (!token) return;
-  if (!token.inactiveMembershipId) return resendSystemInvitation(ctx, token);
+  if (!token.invitationId) return resendSystemInvitation(ctx, token);
 
-  const invitation = await findPendingInvitation(ctx, { id: token.inactiveMembershipId });
+  const invitation = await findPendingInvitation(ctx, { id: token.invitationId });
   if (!invitation) return;
 
   const [tenant, organization] = await Promise.all([

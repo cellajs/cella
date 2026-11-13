@@ -72,7 +72,7 @@ vi.mock('#/tables', async () => {
   };
   const resourceTables = {
     membership: pgTable('memberships', membership()),
-    inactive_membership: pgTable('invitations', { ...membership(), status: text('status').notNull().default('pending') }),
+    invitation: pgTable('invitations', { ...membership(), status: text('status').notNull().default('pending') }),
   };
 
   return {
@@ -266,7 +266,7 @@ function workloadOn(tx: Tx, seed: number) {
   const removeChannel = async (name: string, type: 'course' | 'courseSection' | 'project', channel: Row) => {
     const column = { course: 'courseId', courseSection: 'courseSectionId', project: 'projectId' }[type];
     const changes: Change[] = [];
-    for (const childType of ['task', 'item', 'membership', 'inactive_membership', 'project', 'courseSection']) {
+    for (const childType of ['task', 'item', 'membership', 'invitation', 'project', 'courseSection']) {
       for (const child of await all(childType)) if (child[column] === channel.id) changes.push(await remove(childType, child.id));
     }
     const own = await remove(type, channel.id);
@@ -383,11 +383,11 @@ function workloadOn(tx: Tx, seed: number) {
     async (organizationId) => {
       const place = { organizationId, courseId: null, courseSectionId: null, projectId: null };
       const invite = { id: newId(), ...place, channelType: 'organization', channelId: organizationId, role: 'member', status: 'pending' };
-      await run('invite', [await insert('inactive_membership', invite)]);
+      await run('invite', [await insert('invitation', invite)]);
     },
     async () => {
-      const invite = random.pick((await all('inactive_membership')).filter((row) => row.status === 'pending'));
-      if (invite) await run('decline invite', [await update('inactive_membership', invite.id, { status: 'declined' })]);
+      const invite = random.pick((await all('invitation')).filter((row) => row.status === 'pending'));
+      if (invite) await run('decline invite', [await update('invitation', invite.id, { status: 'declined' })]);
     },
   ];
 

@@ -73,7 +73,7 @@ describe('Secret columns in responses', async () => {
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
   let admin: { id: string; sessionCookie: string };
-  let invitee: { sessionCookie: string; otherSessionId: string; inactiveMembershipId: string; tokenId: string; invitationCookie: string };
+  let invitee: { sessionCookie: string; otherSessionId: string; invitationId: string; tokenId: string; invitationCookie: string };
   let serviceAccountId: string;
   let apiKeyId: string;
   let rolledKeyId: string;
@@ -105,7 +105,7 @@ describe('Secret columns in responses', async () => {
       // Stepped up by that TOTP, as ending another of its sessions asks.
       sessionCookie: await createTestSession(inviteeUser, { steppedUpVia: 'totp' }),
       otherSessionId: (await insertTestSession(inviteeUser)).id,
-      inactiveMembershipId: invitation.inactiveMembership.id,
+      invitationId: invitation.inactiveMembership.id,
       tokenId: invitation.token.id,
       invitationCookie: invitation.invitationCookie,
     };
@@ -173,14 +173,14 @@ describe('Secret columns in responses', async () => {
       tables: ['tokens'],
       send: () => rawJsonRequest('/me/invitations', invitee.sessionCookie),
       status: 200,
-      shows: () => [invitee.inactiveMembershipId],
+      shows: () => [invitee.invitationId],
     },
     {
       route: 'GET /auth/token/invitation/{id}',
       tables: ['tokens'],
       send: () => rawJsonRequest(`/auth/token/invitation/${invitee.tokenId}`, invitee.invitationCookie),
       status: 200,
-      shows: () => [invitee.inactiveMembershipId],
+      shows: () => [invitee.invitationId],
     },
     {
       route: 'POST /auth/generate-passkey-challenge',

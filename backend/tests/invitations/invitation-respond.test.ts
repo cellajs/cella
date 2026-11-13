@@ -23,9 +23,9 @@ describe('Invitation response', async () => {
     return await createTestOrganization();
   }
 
-  async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'decline', sessionCookie: string) {
+  async function respondToInvitation(invitationId: string, action: 'accept' | 'decline', sessionCookie: string) {
     return await call(action === 'accept' ? acceptInvitation : declineInvitation, {
-      path: { invitationId: inactiveMembershipId },
+      path: { invitationId: invitationId },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
   }
@@ -154,7 +154,7 @@ describe('Invitation response', async () => {
     const { response: res } = await respondToInvitation(inactiveMembership.id, 'decline', await createTestSession(invitedUser));
     expect(res.status).toBe(200);
 
-    expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id))).toHaveLength(0);
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.invitationId, inactiveMembership.id))).toHaveLength(0);
     const { response, error } = await call(invokeToken, { path: { kind: 'invitation', token: rawToken }, headers: defaultHeaders });
     await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });

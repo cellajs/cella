@@ -11,7 +11,7 @@ import { log } from '#/utils/logger';
 
 /** A membership invitation whose emailed link this browser opened. */
 export interface FollowedInvitation {
-  inactiveMembershipId: string;
+  invitationId: string;
   /** The invited address, as the invitation's link holds it. */
   email: string;
 }
@@ -23,8 +23,8 @@ export interface FollowedInvitation {
  */
 export const findFollowedInvitation = async (ctx: Context<Env>): Promise<FollowedInvitation | null> => {
   const token = await findLiveBoundToken(ctx, 'invitation');
-  if (!token?.inactiveMembershipId) return null;
-  return { inactiveMembershipId: token.inactiveMembershipId, email: token.email };
+  if (!token?.invitationId) return null;
+  return { invitationId: token.invitationId, email: token.email };
 };
 
 /** Where the channel an accepted invitation joined is, as the notification link carries it. */
@@ -52,17 +52,17 @@ export const acceptFollowedInvitation = async (
 ): Promise<JoinedChannel | null> => {
   if (!followed || user.mfaRequired || followed.email.toLowerCase() !== provenEmail.toLowerCase()) return null;
 
-  const { inactiveMembershipId } = followed;
+  const { invitationId } = followed;
   try {
     // Read before the accept, which deletes the row
-    const invitation = await findInvitationById({ var: { db: baseDb } }, { id: inactiveMembershipId });
+    const invitation = await findInvitationById({ var: { db: baseDb } }, { id: invitationId });
     if (!invitation) return null;
     const { memberships } = await readMemberships(user.id);
-    await handleMembershipInvitationOp({ var: { db: baseDb, user, memberships } }, inactiveMembershipId, 'accept');
+    await handleMembershipInvitationOp({ var: { db: baseDb, user, memberships } }, invitationId, 'accept');
     const { tenantId, organizationId, channelId, channelType } = invitation;
     return { tenantId, organizationId, channelId, channelType };
   } catch (err) {
-    log.warn('Followed invitation not accepted at sign-in', { err, userId: user.id, inactiveMembershipId });
+    log.warn('Followed invitation not accepted at sign-in', { err, userId: user.id, invitationId });
     return null;
   }
 };

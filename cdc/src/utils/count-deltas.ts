@@ -45,8 +45,8 @@ function getTableDeltas(
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Memberships (active + inactive): the counts of their roles.
-  if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
+  // Memberships and invitations: the counts of their roles.
+  if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'invitation')) {
     const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInvitationDelta(action, newRow, oldRow);
     return delta ? [delta] : [];
   }

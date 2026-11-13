@@ -1108,7 +1108,7 @@ export const zGetTokenDataPath = z.object({
 export const zGetTokenDataResponse = z.object({
   email: z.email(),
   userId: z.string().optional(),
-  inactiveMembershipId: z.string().optional(),
+  invitationId: z.string().optional(),
   ssoConnectionId: z.string().optional(),
   inviterName: z.string().optional(),
   invitation: z

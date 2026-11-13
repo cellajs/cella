@@ -13,7 +13,7 @@ export interface VersionedSignal {
 const tableSignals: Partial<Record<EntityType | ResourceType, VersionedSignal[]>> = {
   membership: [{ type: 'membership.changed' }],
   // An invitation is a membership not yet accepted: the member lists that show it change with it.
-  inactive_membership: [{ type: 'membership.changed' }],
+  invitation: [{ type: 'membership.changed' }],
 };
 
 /**

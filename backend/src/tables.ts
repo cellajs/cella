@@ -36,7 +36,7 @@ export const entityTables = {
 export const resourceTables = {
   request: requestsTable,
   membership: membershipsTable,
-  inactive_membership: invitationsTable,
+  invitation: invitationsTable,
   tenant: tenantsTable,
   system_role: systemRolesTable,
   service_account: serviceAccountsTable,

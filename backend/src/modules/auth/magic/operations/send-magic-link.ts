@@ -61,7 +61,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirectPath, 
     assertedThrough,
     knowsAccount: !!assertedThrough || (await isRecognizedBrowser(ctx, normalizedEmail)),
     tokenId: generateId(),
-    followedInvitationId: followed?.email.toLowerCase() === normalizedEmail ? followed.inactiveMembershipId : null,
+    followedInvitationId: followed?.email.toLowerCase() === normalizedEmail ? followed.invitationId : null,
   };
 
   // Only a caller that may hear `sso_required` waits for the account's half.

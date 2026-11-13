@@ -1750,7 +1750,7 @@ export type GetTokenDataResponses = {
   200: {
     email: string;
     userId?: string;
-    inactiveMembershipId?: string;
+    invitationId?: string;
     ssoConnectionId?: string;
     /**
      * Name of the user who sent an invitation, for a system invitation too

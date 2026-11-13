@@ -36,8 +36,7 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
  * An unexpired system invitation: one with no membership row. A membership invitation's token counts for nothing here:
  * its row decides, and its tokens go with the row.
  */
-const liveSystemInvitation = () =>
-  and(eq(tokensTable.kind, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
+const liveSystemInvitation = () => and(eq(tokensTable.kind, 'invitation'), isNull(tokensTable.invitationId), gt(tokensTable.expiresAt, getIsoDate()));
 
 /** Whether an unexpired system invitation is addressed to `email`. */
 export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: { email: string }) => {
@@ -67,15 +66,15 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { e
       and(
         inArray(tokensTable.email, emails),
         eq(tokensTable.kind, 'invitation'),
-        isNull(tokensTable.inactiveMembershipId),
+        isNull(tokensTable.invitationId),
         isNull(tokensTable.redeemedAt),
       ),
     );
 
 /** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
-export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: { inactiveMembershipIds: string[] }) => {
-  if (!inactiveMembershipIds.length) return;
-  await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
+export const deleteInvitationTokens = async (ctx: DbContext, { invitationIds }: { invitationIds: string[] }) => {
+  if (!invitationIds.length) return;
+  await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.invitationId, invitationIds));
 };
 
 /** Binds a token issued without an account to the account its sign-up link's redemption created; undefined when the token is bound already. */
@@ -90,7 +89,7 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: { id: stri
 
 /** What decides which earlier tokens a new one replaces. */
 type ReplacingToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'inactiveMembershipId' | 'pendingSignUp' | 'sessionId'>>;
+  Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'invitationId' | 'pendingSignUp' | 'sessionId'>>;
 
 /**
  * Per token kind, the subject whose earlier tokens of that kind a new one deletes, so only the newest one for it works;
@@ -111,9 +110,7 @@ const replacementSubjects = {
   },
   // Its membership invitation, or its address for a system invitation.
   invitation: (token) =>
-    token.inactiveMembershipId
-      ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
-      : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
+    token.invitationId ? eq(tokensTable.invitationId, token.invitationId) : and(eq(tokensTable.email, token.email), isNull(tokensTable.invitationId)),
   // One connect pin per account at a time.
   'oauth-connect': (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
   // One code per session at a time.

@@ -65,7 +65,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
   const getInactiveRows = async (channelId: string) => await db.select().from(invitationsTable).where(eq(invitationsTable.channelId, channelId));
 
   /** The link tokens of an invitation: one while it goes by link, none once an account answers it in-app. */
-  const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitationId));
+  const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.invitationId, invitationId));
 
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();

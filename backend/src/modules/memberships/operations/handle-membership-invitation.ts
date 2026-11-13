@@ -81,7 +81,7 @@ export async function handleMembershipInvitationOp(
 
     if (acceptOrDecline === 'decline') {
       await declineInvitation(txCtx, { id: invitation.id, userId });
-      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [invitation.id] });
+      await deleteInvitationTokens(txCtx, { invitationIds: [invitation.id] });
     }
   });
   if (acceptOrDecline === 'accept') invalidateCache.user(userId);

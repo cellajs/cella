@@ -82,7 +82,7 @@ export async function clearSecurityTestData() {
     'identities',
     'emails',
     'memberships',
-    'inactive_memberships',
+    'invitations',
     'organizations',
     'tenants',
     'users',

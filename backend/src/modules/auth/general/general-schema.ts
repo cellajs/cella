@@ -16,7 +16,7 @@ export const authHealthSchema = z.object({
 export const tokenWithDataSchema = z.object({
   email: z.email(),
   userId: z.string().optional(),
-  inactiveMembershipId: z.string().optional(),
+  invitationId: z.string().optional(),
   /** The invited organization's active SSO connection, so the invitee is offered their institution first. */
   ssoConnectionId: z.string().optional(),
   inviterName: z.string().optional().describe('Name of the user who sent an invitation, for a system invitation too'),

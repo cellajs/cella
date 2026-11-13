@@ -205,8 +205,8 @@ const inviteCallbackFlow = async ({
   });
 
   const user = await findUserById(dbCtx, { id: created.userId });
-  const { inactiveMembershipId } = invitationToken;
-  const followed = inactiveMembershipId ? { inactiveMembershipId, email } : null;
+  const { invitationId } = invitationToken;
+  const followed = invitationId ? { invitationId, email } : null;
   const joined = await acceptFollowedInvitation(user, { provenEmail: providerUser.email, followed });
   return { type: 'verified', user, identity: created.identity, joined };
 };

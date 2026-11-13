@@ -86,7 +86,7 @@ export function InvitationStep({ tokenData, federations }: { tokenData: TokenDat
 
       <AuthAlternatives authStep="invitation" items={[...(institution && emailWay ? [emailWay] : []), ...sso.federations, ...oauth]} />
 
-      {tokenData.inactiveMembershipId && (
+      {tokenData.invitationId && (
         <p className="text-center">
           {t('c:have_account')}{' '}
           <InlineLinkButton

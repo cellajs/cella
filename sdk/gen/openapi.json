@@ -5796,7 +5796,7 @@
                     "userId": {
                       "type": "string"
                     },
-                    "inactiveMembershipId": {
+                    "invitationId": {
                       "type": "string"
                     },
                     "ssoConnectionId": {

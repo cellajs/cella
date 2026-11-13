@@ -107,7 +107,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 };
 
 export const channelInvitationsQueryOptions = (params: ChannelInvitationsListParams) => {
-  const { entityId, tenantId, organizationId, entityType, limit = appConfig.pageSizes.pendingMemberships } = params;
+  const { entityId, tenantId, organizationId, entityType, limit = appConfig.pageSizes.invitations } = params;
   const query = { entityId, entityType };
 
   return infiniteQueryOptions({

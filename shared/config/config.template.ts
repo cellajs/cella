@@ -53,7 +53,7 @@ export const config = {
    * Not entities, but activities are logged for them. Tenant- or system-owned rows only: rows a user owns
    * (sessions, identities, passkeys, emails) are self-audited through the account pages and notifications.
    */
-  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
+  resourceTypes: ['request', 'membership', 'invitation', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
@@ -280,7 +280,7 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pendingMemberships: 20,
+    invitations: 20,
   },
 
   maxBodySize: 1 * 1024 * 1024,

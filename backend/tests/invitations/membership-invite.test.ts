@@ -81,7 +81,7 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships[1].role).toBe(memberRole);
 
     // The last mail carries the link of its own address's token.
-    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMemberships[1].id));
+    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.invitationId, inactiveMemberships[1].id));
     expect(token.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
@@ -123,7 +123,7 @@ describe('Membership Invitation', async () => {
     const [invitation] = await getInactiveMemberships(organization.id);
     expect(invitation.userId).toBe(existingUser.id);
     // Known address, so no token: the invitation is answered in-app.
-    expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitation.id))).toHaveLength(0);
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.invitationId, invitation.id))).toHaveLength(0);
   });
 
   it('should handle mixed existing and new users', async () => {

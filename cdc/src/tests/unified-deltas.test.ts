@@ -6,7 +6,7 @@ import { changeEvent, tableMetaOf } from './factories';
 // entity-count deltas collapse onto a single channelKey.
 const attachmentEntry = () => tableMetaOf('entity', 'attachment');
 const membershipEntry = () => tableMetaOf('resource', 'membership');
-const inactiveMembershipEntry = () => tableMetaOf('resource', 'inactive_membership');
+const invitationEntry = () => tableMetaOf('resource', 'invitation');
 
 describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('membership create: role + total count, plus the version of membership.changed', () => {
@@ -50,7 +50,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('invitation create (pending): increments pending count', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
-        tableMeta: inactiveMembershipEntry(),
+        tableMeta: invitationEntry(),
         action: 'create',
         rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'pending' },
       }),
@@ -62,7 +62,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('invitation update (declined): decrements pending', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
-        tableMeta: inactiveMembershipEntry(),
+        tableMeta: invitationEntry(),
         action: 'update',
         rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'declined' },
         oldRowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', status: 'pending' },

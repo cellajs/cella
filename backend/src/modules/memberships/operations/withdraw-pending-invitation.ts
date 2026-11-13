@@ -18,5 +18,5 @@ export async function withdrawPendingInvitationOp(ctx: UserContext, id: string) 
 
   await deleteInvitations(ctx, { ids: [invitation.id] });
 
-  log.info('Membership invitation withdrawn', { inactiveMembershipId: invitation.id });
+  log.info('Membership invitation withdrawn', { invitationId: invitation.id });
 }

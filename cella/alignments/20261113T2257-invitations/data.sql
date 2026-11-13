@@ -6,12 +6,19 @@ ALTER TABLE "invitations" RENAME CONSTRAINT "inactive_memberships_tenant_id_tena
 ALTER TABLE "invitations" RENAME CONSTRAINT "inactive_memberships_user_id_users_id_fkey" TO "invitations_user_id_users_id_fkey";--> statement-breakpoint
 ALTER TABLE "invitations" RENAME CONSTRAINT "inactive_memberships_created_by_users_id_fkey" TO "invitations_created_by_users_id_fkey";--> statement-breakpoint
 ALTER TABLE "invitations" RENAME CONSTRAINT "inactive_memberships_gmmCA2ACknk4_fkey" TO "invitations_Yt9Bq6Kr3lB9_fkey";--> statement-breakpoint
-ALTER TABLE "tokens" RENAME CONSTRAINT "tokens_inactive_membership_id_inactive_memberships_id_fkey" TO "tokens_inactive_membership_id_invitations_id_fkey";--> statement-breakpoint
+ALTER TABLE "tokens" RENAME CONSTRAINT "tokens_inactive_membership_id_inactive_memberships_id_fkey" TO "tokens_invitation_id_invitations_id_fkey";--> statement-breakpoint
 ALTER TABLE "tokens" RENAME CONSTRAINT "tokens_followed_invitation_id_inactive_memberships_id_fkey" TO "tokens_followed_invitation_id_invitations_id_fkey";--> statement-breakpoint
 
 -- The rename keeps the old immutability trigger; the side-effect migration installs invitations_immutable_keys_trigger.
 DROP TRIGGER IF EXISTS "inactive_memberships_immutable_keys_trigger" ON "invitations";--> statement-breakpoint
 DROP FUNCTION IF EXISTS inactive_membership_immutable_keys();--> statement-breakpoint
+
+-- The resource type `inactive_membership` is `invitation`. Activities are append-only, so the trigger steps aside.
+ALTER TABLE "activities" DISABLE TRIGGER "activities_immutable_keys_trigger";--> statement-breakpoint
+UPDATE "activities"
+SET "resource_type" = 'invitation', "type" = replace("type", 'inactive_membership.', 'invitation.'), "table_name" = 'invitations'
+WHERE "resource_type" = 'inactive_membership';--> statement-breakpoint
+ALTER TABLE "activities" ENABLE TRIGGER "activities_immutable_keys_trigger";--> statement-breakpoint
 
 -- A declined invitation is declined since its decline; any other is pending since its creation.
 UPDATE "invitations"
