@@ -37,7 +37,7 @@ export async function reloadOntoWaitingWorker() {
   return tookOver;
 }
 
-/** Asks the browser for a newer service worker now; one it finds installs and waits, which raises the reload prompt. */
+/** Asks the browser for a newer service worker, at most once per throttle window; one it finds installs and waits, which raises the reload prompt. */
 export async function checkForUpdate() {
   if (Date.now() - lastUpdateCheck < updateCheckThrottle) return;
   lastUpdateCheck = Date.now();

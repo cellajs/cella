@@ -392,9 +392,6 @@ export const persister = {
     }
   },
 
-  /** False from a reset until a restore that started after it completes. */
-  isRestored: () => restoredEpoch === epoch,
-
   /** `persistQueryClientRestore` discards a cache that fails to hydrate through this: the queries go, the queues stay. */
   removeClient: async () => {
     const db = getLocalUserDb();
@@ -408,10 +405,10 @@ export const persister = {
       console.error('[QueryPersister] Failed to remove client:', error);
     }
   },
-} satisfies Persister & { flush: () => Promise<void>; isRestored: () => boolean };
+} satisfies Persister & { flush: () => Promise<void> };
 
 /**
- * What PersistQueryClientProvider restores and saves with. No age limit: the persister guards the cache's lifetime
+ * What the bind restores and the provider saves with. No age limit: the persister guards the cache's lifetime
  * itself (the cache version, the lens pointer), and an expired restore would delete queued writes too.
  */
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {

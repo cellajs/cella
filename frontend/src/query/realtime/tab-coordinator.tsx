@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
+import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
 import { markBundleStale } from '~/query/schema-version-guard';
@@ -22,7 +23,16 @@ export type LeaderMessage =
   | { type: 'catchup'; response: CatchUpMyStreamResponse }
   | { type: 'sync-health'; health: SyncHealth };
 
-type BroadcastMessage = LeaderMessage | { type: 'schema-version'; version: number };
+/** What a tab says as it opens, and again to an older tab that opens after it: the versions its bundle stores the cache under. */
+interface TabAnnouncement {
+  type: 'tab-announcement';
+  schemaVersion: number;
+  cacheVersion: number;
+}
+
+type BroadcastMessage = LeaderMessage | TabAnnouncement;
+
+const announcement: TabAnnouncement = { type: 'tab-announcement', schemaVersion: currentSchemaVersion, cacheVersion: appConfig.clientCacheVersion };
 
 interface TabCoordinatorState {
   isLeader: boolean;
@@ -63,8 +73,8 @@ export async function initTabCoordinator(): Promise<void> {
       broadcastChannel = new BroadcastChannel(channelName);
       broadcastChannel.onmessage = handleBroadcastMessage;
       console.debug('[TabCoordinator] BroadcastChannel initialized');
-      // Announce schema version so tabs running a different bundle detect skew.
-      broadcastChannel.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
+      // Tabs running another bundle learn of the skew, and the leader answers with the health of its stream.
+      broadcastChannel.postMessage(announcement);
     }
 
     if (hasWebLocks) {
@@ -156,15 +166,16 @@ function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
   const store = tabCoordinatorStore.getState();
   const message = event.data;
 
-  if (message.type === 'schema-version') {
-    if (message.version > currentSchemaVersion) {
-      // A newer bundle runs in another tab, stop persisting (schema-version-guard).
+  if (message.type === 'tab-announcement') {
+    const { schemaVersion, cacheVersion } = message;
+    if (schemaVersion > currentSchemaVersion || cacheVersion > appConfig.clientCacheVersion) {
+      // A newer bundle runs in another tab: stop persisting and look for its update (schema-version-guard).
       markBundleStale();
-    } else if (message.version < currentSchemaVersion) {
+    } else if (schemaVersion < currentSchemaVersion || cacheVersion < appConfig.clientCacheVersion) {
       // An older tab announced itself after this one booted: announce again so it learns.
-      broadcastChannel?.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
+      broadcastChannel?.postMessage(announcement);
     }
-    // Every tab announces its version as it opens: the leader answers with the health of its stream, which a new tab has no way to know.
+    // The leader answers every announcement with the health of its stream, which a new tab has no way to know.
     if (store.isLeader && lastSyncHealth) broadcastChannel?.postMessage({ type: 'sync-health', health: lastSyncHealth } satisfies BroadcastMessage);
     return;
   }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { reloadApp } from '~/utils/app-update';
+import { checkForUpdate, reloadApp } from '~/utils/app-update';
 
 const swUpdateInterval = 15 * 60 * 1000;
 const reloadToastId = 'reload-prompt';
@@ -30,15 +30,10 @@ export function ReloadPrompt() {
       if (!registration || cancelled) return;
       console.debug('[ServiceWorker] Registered');
 
-      const interval = setInterval(() => {
-        console.debug('[ServiceWorker] Periodic update check');
-        registration.update();
-      }, swUpdateInterval);
+      const interval = setInterval(() => void checkForUpdate(), swUpdateInterval);
 
       const check = () => {
-        if (document.visibilityState !== 'visible') return;
-        console.debug('[ServiceWorker] Visibility/online update check');
-        registration.update();
+        if (document.visibilityState === 'visible') void checkForUpdate();
       };
       document.addEventListener('visibilitychange', check);
       const unsubscribeOnline = onlineManager.subscribe((online) => {

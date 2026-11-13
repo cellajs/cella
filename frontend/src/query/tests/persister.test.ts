@@ -82,7 +82,7 @@ const save = async (client: QueryClient) => {
   await persister.flush();
 };
 
-/** A tab that opens: a new client, restored as the provider restores it. */
+/** A tab that opens: a new client, restored as the bind of its database restores it. */
 const reload = async () => {
   const client = new QueryClient();
   await persistQueryClientRestore({ ...persistOptions, queryClient: client });
@@ -117,7 +117,7 @@ describe('the queries the provider saves', () => {
   });
 });
 
-describe('the cache as the provider saves and restores it', () => {
+describe('the cache as the provider saves it and the bind restores it', () => {
   it('restores the cache as the last write left it: a changed query updated, a dropped one gone, product and context alike', async () => {
     const client = new QueryClient();
     client.setQueryData(productKey('org-1'), [{ id: 'p1' }], { updatedAt: 1000 });

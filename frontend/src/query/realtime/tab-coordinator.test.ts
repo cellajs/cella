@@ -1,4 +1,5 @@
 import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LeaderMessage } from '~/query/realtime/tab-coordinator';
 
@@ -209,7 +210,7 @@ describe('what the leader tells the other tabs', () => {
     const posted = FakeBroadcastChannel.opened?.posted ?? [];
     const saidBefore = posted.filter((message) => (message as { type: string }).type === 'sync-health').length;
 
-    receive({ type: 'schema-version', version: 1 });
+    receive({ type: 'tab-announcement', schemaVersion: 1, cacheVersion: appConfig.clientCacheVersion });
 
     expect(posted.filter((message) => (message as { type: string }).type === 'sync-health')).toHaveLength(saidBefore + 1);
     expect(posted.at(-1)).toEqual({ type: 'sync-health', health: down });

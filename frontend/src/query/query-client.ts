@@ -99,15 +99,7 @@ if (!import.meta.hot?.data?.listenersAttached) {
   onlineManager.setOnline(navigator.onLine);
 }
 
-let resolveCacheRestored: () => void;
-/** Resolves once PersistQueryClientProvider's restore at boot finished or failed. */
-export const cacheRestored: Promise<void> = import.meta.hot?.data?.cacheRestored ?? new Promise<void>((resolve) => (resolveCacheRestored = resolve));
-export function markCacheRestored() {
-  resolveCacheRestored();
-}
-
 if (import.meta.hot) {
   import.meta.hot.data.queryClient = queryClient;
-  import.meta.hot.data.cacheRestored = cacheRestored;
   import.meta.hot.data.listenersAttached = true;
 }

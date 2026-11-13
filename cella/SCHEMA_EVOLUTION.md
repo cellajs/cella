@@ -101,7 +101,7 @@ The meta record's `schemaVersion` pointer is the global lens ordinal.
 
 - Pointer behind the bundle: one tab at a time migrates the persisted queries and queued mutations.
 - A pass cut short runs again.
-- Pointer ahead of the bundle: the bundle marks itself stale, restores nothing and never writes.
+- Pointer ahead of the bundle: the bundle marks itself stale, restores nothing, never writes and looks for its update, which raises the reload prompt.
 
 ### CI guards
 
