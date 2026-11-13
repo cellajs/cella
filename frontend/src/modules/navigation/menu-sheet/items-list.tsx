@@ -24,12 +24,11 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
 interface SubmenuGroupProps {
   submenu: UserMenuItem[];
   itemId: string;
-  isResting: boolean;
   group: Exclude<MenuGroup, 'active'>;
 }
 
 /** The hidden or the archived sub-rows of a row behind a toggle, for a row that has any. Their unseen count stays on the toggle. */
-function SubmenuGroup({ submenu, itemId, isResting, group }: SubmenuGroupProps) {
+function SubmenuGroup({ submenu, itemId, group }: SubmenuGroupProps) {
   const [isOpen, setIsOpen] = useSubmenuGroupOpen(itemId, group);
   const groupItems = submenu.filter((sub) => menuGroup(sub) === group);
   if (!groupItems.length) return null;
@@ -44,7 +43,7 @@ function SubmenuGroup({ submenu, itemId, isResting, group }: SubmenuGroupProps) 
       count={groupItems.length}
       channelIds={groupItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
     >
-      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} group={group} isSubmenu isResting={isResting} />
+      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} group={group} isSubmenu />
     </MenuSheetHiddenGroup>
   );
 }
@@ -66,43 +65,26 @@ interface MenuSheetItemsListProps {
   group: MenuGroup;
   /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
-  /** The page of another row of the parent's list is open, so its sub-rows rest grey. */
-  isResting?: boolean;
   /** Unseen counts by row id, for rows that count nothing themselves. */
   rowCounts?: Map<string, number>;
 }
 
-export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false, isResting, rowCounts }: MenuSheetItemsListProps) {
-  const matchRoute = useMatchRoute();
+export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false, rowCounts }: MenuSheetItemsListProps) {
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
-
-  const isPageOpen = (item: UserMenuItem) => {
-    const { to, params } = getChannelRoute(item);
-    return !!matchRoute({ to, params, fuzzy: true, includeSearch: false });
-  };
-  // Searched in all rows and their sub-rows, hidden and archived too, as each group's list renders apart
-  const openItem = isSubmenu ? undefined : items.find((item) => isPageOpen(item) || !!item.submenu?.some(isPageOpen));
 
   return sortAndFilterMenu(items, group).map((item) => {
     const hasSubmenu = isSubmenuShown(item);
-    const isSubmenuResting = !!openItem && openItem.id !== item.id;
     return (
       <li key={item.id} className={isSubmenu ? 'group/row' : 'group/parent'} data-icon={!!getMenuSection(item.entityType)?.icon}>
-        <MenuSheetItem item={item} isSubitem={isSubmenu} isResting={isResting} unseenCount={rowCounts?.get(item.id)} />
+        <MenuSheetItem item={item} isSubitem={isSubmenu} unseenCount={rowCounts?.get(item.id)} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (
           <>
             <ul>
-              <MenuSheetItemsList
-                entityType={item.submenu[0].entityType}
-                items={item.submenu}
-                group="active"
-                isSubmenu
-                isResting={isSubmenuResting}
-              />
+              <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} group="active" isSubmenu />
             </ul>
-            <SubmenuGroup submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} group="hidden" />
-            <SubmenuGroup submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} group="archived" />
+            <SubmenuGroup submenu={item.submenu} itemId={item.id} group="hidden" />
+            <SubmenuGroup submenu={item.submenu} itemId={item.id} group="archived" />
           </>
         )}
       </li>
