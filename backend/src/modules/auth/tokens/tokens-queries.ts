@@ -63,12 +63,7 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { e
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
     .from(tokensTable)
     .where(
-      and(
-        inArray(tokensTable.email, emails),
-        eq(tokensTable.kind, 'invitation'),
-        isNull(tokensTable.invitationId),
-        isNull(tokensTable.redeemedAt),
-      ),
+      and(inArray(tokensTable.email, emails), eq(tokensTable.kind, 'invitation'), isNull(tokensTable.invitationId), isNull(tokensTable.redeemedAt)),
     );
 
 /** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
