@@ -10,10 +10,10 @@ import { countInvitationSeats, deleteInvitations, insertInvitations } from '#/mo
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
 import type { membershipCreateBodySchema } from '#/modules/memberships/memberships-schema';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
-import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
+import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitations';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
+import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
@@ -76,7 +76,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
   const mailedAgain = unchanged.filter(({ invitation }) => invitation.status === 'pending');
   const mailNow = held ? [] : [...invites, ...raised, ...mailedAgain].map(({ email }) => email);
-  const mailHeldBack = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + raised.length : 0 });
+  const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + raised.length : 0 });
 
   // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
   const createdMemberships = adds.length
@@ -114,10 +114,8 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
 
   if (!held) {
     // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
-    const toMail = [...inserted, ...mailedAgain.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
-    const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization, by: user.id })).map(({ email }) => email));
-    const unmailed = mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email));
-    await refundInvitationMails(ctx, unmailed);
+    const invitations = [...inserted, ...mailedAgain.map(({ invitation }) => invitation)];
+    await mailWithinCaps(ctx, { invitations, organization, by: user.id, taken });
 
     if (adds.length) {
       const channel = { type: entityType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };

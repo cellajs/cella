@@ -3,7 +3,7 @@ import { assertNoWriteBetween } from '#/core/preconditions';
 import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
+import { mailHeldInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { toOrganizationResponse } from '#/modules/organization/operations/to-organization-response';
 import { publishOrganization } from '#/modules/organization/organization-queries';
@@ -45,10 +45,10 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
   const raced = wasDraft && !stamped;
   if (raced) assertNoWriteBetween(ctx, 'organization', organization.id);
   // Of two calls, the one whose release claims the held invitations mails them.
-  const { dispatched } = await dispatchDeferredInvites(ctx, { channelIds: [organization.id], organization, by: ctx.var.user.id });
+  const mailed = await mailHeldInvitations(ctx, { channelIds: [organization.id], organization, by: ctx.var.user.id });
 
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);
   const response = await toOrganizationResponse(ctx, current, membership, { counts: true, membership: true });
 
-  return { organization: response, invitationCount: dispatched };
+  return { organization: response, invitationCount: mailed.length };
 }

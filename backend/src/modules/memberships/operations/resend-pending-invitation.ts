@@ -1,9 +1,7 @@
-import type { DbContext, UserContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { UserId } from '#/db/utils/ids';
 import { findInvitationInOrg } from '#/modules/memberships/invitations-queries';
-import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
-import { type InvitationMailsContext, refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
+import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitations';
 import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
@@ -13,7 +11,7 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
  * retires the older ones, one an account holds gets its invitation email again, and a held one stays held until its
  * channel is published. A missing, foreign or declined row is 404.
  * @throws AppError 403 `restrict_by_tenant_kind` in a tenant whose kind invites no one.
- * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from {@link resendInvitation}.
+ * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from {@link mailWithinCaps}.
  */
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const invitation = await findInvitationInOrg(ctx, { id });
@@ -25,26 +23,5 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   // The publish of its channel sends a held invitation; a resend before it would let the invitee into the draft.
   if (invitation.status === 'held') return;
 
-  await resendInvitation(ctx, { invitation, organization: ctx.var.organization, by: ctx.var.user.id });
-}
-
-interface ResendInvitationOpts {
-  invitation: { id: string; email: string };
-  /** The invitation's organization, whose default language an address without an account reads and whose name the mail gives. */
-  organization: { defaultLanguageCode: string; name: string };
-  /** Whose request resends it; none for an invitee's own resend. */
-  by?: UserId;
-}
-
-/**
- * Mails a pending, unheld invitation again within its tenant's caps: an address the tenant mailed in the last day gets
- * nothing, and its link keeps working; a mail that did not go out gives the day back.
- * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, sending nothing.
- */
-export async function resendInvitation(ctx: DbContext & InvitationMailsContext, { invitation, organization, by }: ResendInvitationOpts) {
-  const heldBack = await takeInvitationMails(ctx, { mailNow: [invitation.email] });
-  if (heldBack.size) return;
-
-  const mailed = await mailInvitations(ctx, { ids: [invitation.id], organization, by });
-  if (!mailed.length) await refundInvitationMails(ctx, [invitation.email]);
+  await mailWithinCaps(ctx, { invitations: [invitation], organization: ctx.var.organization, by: ctx.var.user.id });
 }

@@ -1,11 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { membershipRoutes } from '#/modules/memberships/memberships-routes';
-import { checkInvitesOp } from '#/modules/memberships/operations/check-invites';
 import { createMembershipsOp } from '#/modules/memberships/operations/create-memberships';
 import { deleteMembershipsOp } from '#/modules/memberships/operations/delete-memberships';
 import { getMembersOp } from '#/modules/memberships/operations/get-members';
 import { getPendingMembershipsOp } from '#/modules/memberships/operations/get-pending-memberships';
+import { checkInvitesOp } from '#/modules/memberships/operations/plan-invites';
 import { resendPendingInvitationOp } from '#/modules/memberships/operations/resend-pending-invitation';
 import { updateMembershipOp } from '#/modules/memberships/operations/update-membership';
 import { withdrawPendingInvitationOp } from '#/modules/memberships/operations/withdraw-pending-invitation';
