@@ -1,0 +1,1260 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d19dc527-59d3-4eef-827b-73efb8ba7797",
+  "prevIds": [
+    "e3ac6024-453e-473c-b37f-18aada4a0234"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "inactive_memberships"
+      ],
+      "writes": [
+        "s|tbl|public.inactive_memberships",
+        "n|tbl|public.inactive_memberships",
+        "n|rel|public.inactive_memberships",
+        "n|type|public.inactive_memberships",
+        "s|tbl|public.invitations",
+        "n|tbl|public.invitations",
+        "n|rel|public.invitations",
+        "n|type|public.invitations"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "first_seen_at"
+      ],
+      "writes": [
+        "s|col|public.devices.first_seen_at",
+        "n|col|public.devices.first_seen_at",
+        "s|col|public.devices.created_at",
+        "n|col|public.devices.created_at"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "last_seen_at"
+      ],
+      "writes": [
+        "s|col|public.devices.last_seen_at",
+        "n|col|public.devices.last_seen_at",
+        "s|col|public.devices.last_sign_in_at",
+        "n|col|public.devices.last_sign_in_at"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "notified_at"
+      ],
+      "writes": [
+        "s|col|public.devices.notified_at",
+        "n|col|public.devices.notified_at",
+        "s|col|public.devices.mailed_at",
+        "n|col|public.devices.mailed_at"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "last_used_at"
+      ],
+      "writes": [
+        "s|col|public.identities.last_used_at",
+        "n|col|public.identities.last_used_at",
+        "s|col|public.identities.last_sign_in_at",
+        "n|col|public.identities.last_sign_in_at"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "inactive_membership_id"
+      ],
+      "writes": [
+        "s|col|public.tokens.inactive_membership_id",
+        "n|col|public.tokens.inactive_membership_id",
+        "s|col|public.tokens.invitation_id",
+        "n|col|public.tokens.invitation_id"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "invoked_at"
+      ],
+      "writes": [
+        "s|col|public.tokens.invoked_at",
+        "n|col|public.tokens.invoked_at",
+        "s|col|public.tokens.redeemed_at",
+        "n|col|public.tokens.redeemed_at"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "invitations",
+        "reminded_at"
+      ],
+      "writes": [
+        "s|col|public.invitations.reminded_at",
+        "n|col|public.invitations.reminded_at",
+        "s|col|public.invitations.mailed_at",
+        "n|col|public.invitations.mailed_at"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "emailed_at"
+      ],
+      "writes": [
+        "s|col|public.notifications.emailed_at",
+        "n|col|public.notifications.emailed_at",
+        "s|col|public.notifications.mailed_at",
+        "n|col|public.notifications.mailed_at"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "requests",
+        "invited_at"
+      ],
+      "writes": [
+        "s|col|public.requests.invited_at",
+        "n|col|public.requests.invited_at",
+        "s|col|public.requests.mailed_at",
+        "n|col|public.requests.mailed_at"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "devices",
+        "devices_user_id_notified_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.devices_user_id_notified_at_idx",
+        "n|idx|public.devices_user_id_notified_at_idx",
+        "n|rel|public.devices_user_id_notified_at_idx",
+        "s|idx|public.devices_user_id_mailed_at_idx",
+        "n|idx|public.devices_user_id_mailed_at_idx",
+        "n|rel|public.devices_user_id_mailed_at_idx"
+      ],
+      "reads": [
+        "e|tbl|public.devices",
+        "n|sch|public",
+        "e|col|public.devices.user_id",
+        "e|col|public.devices.mailed_at"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "devices",
+        "devices_last_seen_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.devices_last_seen_at_idx",
+        "n|idx|public.devices_last_seen_at_idx",
+        "n|rel|public.devices_last_seen_at_idx",
+        "s|idx|public.devices_last_sign_in_at_idx",
+        "n|idx|public.devices_last_sign_in_at_idx",
+        "n|rel|public.devices_last_sign_in_at_idx"
+      ],
+      "reads": [
+        "e|tbl|public.devices",
+        "n|sch|public",
+        "e|col|public.devices.last_sign_in_at"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_inactive_membership_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_inactive_membership_id_idx",
+        "n|idx|public.tokens_inactive_membership_id_idx",
+        "n|rel|public.tokens_inactive_membership_id_idx",
+        "s|idx|public.tokens_invitation_id_idx",
+        "n|idx|public.tokens_invitation_id_idx",
+        "n|rel|public.tokens_invitation_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.tokens",
+        "n|sch|public",
+        "e|col|public.tokens.invitation_id"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "inactive_memberships_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.inactive_memberships_user_id_idx",
+        "n|idx|public.inactive_memberships_user_id_idx",
+        "n|rel|public.inactive_memberships_user_id_idx",
+        "s|idx|public.invitations_user_id_idx",
+        "n|idx|public.invitations_user_id_idx",
+        "n|rel|public.invitations_user_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.user_id"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "inactive_memberships_created_by_idx"
+      ],
+      "writes": [
+        "s|idx|public.inactive_memberships_created_by_idx",
+        "n|idx|public.inactive_memberships_created_by_idx",
+        "n|rel|public.inactive_memberships_created_by_idx",
+        "s|idx|public.invitations_created_by_idx",
+        "n|idx|public.invitations_created_by_idx",
+        "n|rel|public.invitations_created_by_idx"
+      ],
+      "reads": [
+        "e|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.created_by"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "inactive_memberships_tenant_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.inactive_memberships_tenant_id_idx",
+        "n|idx|public.inactive_memberships_tenant_id_idx",
+        "n|rel|public.inactive_memberships_tenant_id_idx",
+        "s|idx|public.invitations_tenant_id_idx",
+        "n|idx|public.invitations_tenant_id_idx",
+        "n|rel|public.invitations_tenant_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.tenant_id"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "inactive_memberships_email_idx"
+      ],
+      "writes": [
+        "s|idx|public.inactive_memberships_email_idx",
+        "n|idx|public.inactive_memberships_email_idx",
+        "n|rel|public.inactive_memberships_email_idx",
+        "s|idx|public.invitations_email_idx",
+        "n|idx|public.invitations_email_idx",
+        "n|rel|public.invitations_email_idx"
+      ],
+      "reads": [
+        "e|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.email"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "inactive_memberships_org_pending_idx"
+      ],
+      "writes": [
+        "s|idx|public.inactive_memberships_org_pending_idx",
+        "n|idx|public.inactive_memberships_org_pending_idx",
+        "e|idx|public.inactive_memberships_org_pending_idx",
+        "n|rel|public.inactive_memberships_org_pending_idx"
+      ],
+      "reads": [
+        "e|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.organization_id",
+        "e|col|public.invitations.declined_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "signing_keys",
+        "signing_keys_status_idx"
+      ],
+      "writes": [
+        "s|idx|public.signing_keys_status_idx",
+        "n|idx|public.signing_keys_status_idx",
+        "e|idx|public.signing_keys_status_idx",
+        "n|rel|public.signing_keys_status_idx"
+      ],
+      "reads": [
+        "e|tbl|public.signing_keys",
+        "n|sch|public",
+        "e|col|public.signing_keys.status"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_state",
+        "answered_at"
+      ],
+      "writes": [
+        "s|col|public.sync_state.answered_at",
+        "n|col|public.sync_state.answered_at",
+        "e|col|public.sync_state.answered_at"
+      ],
+      "reads": [
+        "n|tbl|public.sync_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "invitations",
+        "updated_at"
+      ],
+      "writes": [
+        "s|col|public.invitations.updated_at",
+        "n|col|public.invitations.updated_at",
+        "e|col|public.invitations.updated_at"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "invitations",
+        "updated_by"
+      ],
+      "writes": [
+        "s|col|public.invitations.updated_by",
+        "n|col|public.invitations.updated_by",
+        "e|col|public.invitations.updated_by"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "invitations",
+        "status"
+      ],
+      "writes": [
+        "s|col|public.invitations.status",
+        "n|col|public.invitations.status",
+        "e|col|public.invitations.status"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "invitations",
+        "status_changed_at"
+      ],
+      "writes": [
+        "s|col|public.invitations.status_changed_at",
+        "n|col|public.invitations.status_changed_at",
+        "e|col|public.invitations.status_changed_at"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "created_at"
+      ],
+      "writes": [
+        "s|col|public.notification_preferences.created_at",
+        "n|col|public.notification_preferences.created_at",
+        "e|col|public.notification_preferences.created_at"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "created_by"
+      ],
+      "writes": [
+        "s|col|public.notification_preferences.created_by",
+        "n|col|public.notification_preferences.created_by",
+        "e|col|public.notification_preferences.created_by"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "updated_by"
+      ],
+      "writes": [
+        "s|col|public.notification_preferences.updated_by",
+        "n|col|public.notification_preferences.updated_by",
+        "e|col|public.notification_preferences.updated_by"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "verified"
+      ],
+      "writes": [
+        "s|col|public.identities.verified",
+        "n|col|public.identities.verified",
+        "e|col|public.identities.verified"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_state",
+        "verified_at"
+      ],
+      "writes": [
+        "s|col|public.sync_state.verified_at",
+        "n|col|public.sync_state.verified_at",
+        "e|col|public.sync_state.verified_at"
+      ],
+      "reads": [
+        "n|tbl|public.sync_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_state",
+        "rebuilt_at"
+      ],
+      "writes": [
+        "s|col|public.sync_state.rebuilt_at",
+        "n|col|public.sync_state.rebuilt_at",
+        "e|col|public.sync_state.rebuilt_at"
+      ],
+      "reads": [
+        "n|tbl|public.sync_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "system_roles",
+        "updated_at"
+      ],
+      "writes": [
+        "s|col|public.system_roles.updated_at",
+        "n|col|public.system_roles.updated_at",
+        "e|col|public.system_roles.updated_at"
+      ],
+      "reads": [
+        "n|tbl|public.system_roles",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "push_subscriptions",
+        "expiration_time"
+      ],
+      "writes": [
+        "s|col|public.push_subscriptions.expiration_time",
+        "n|col|public.push_subscriptions.expiration_time",
+        "e|col|public.push_subscriptions.expiration_time"
+      ],
+      "reads": [
+        "n|tbl|public.push_subscriptions",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "signing_keys",
+        "retired_at"
+      ],
+      "writes": [
+        "s|col|public.signing_keys.retired_at",
+        "n|col|public.signing_keys.retired_at",
+        "e|col|public.signing_keys.retired_at"
+      ],
+      "reads": [
+        "n|tbl|public.signing_keys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.devices.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public",
+        "n|col|public.devices.created_at"
+      ],
+      "sqlHash": "e25613da6904e706"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "signing_keys",
+        "signing_keys_one_per_status_idx"
+      ],
+      "writes": [
+        "s|idx|public.signing_keys_one_per_status_idx",
+        "n|idx|public.signing_keys_one_per_status_idx",
+        "e|idx|public.signing_keys_one_per_status_idx",
+        "n|rel|public.signing_keys_one_per_status_idx"
+      ],
+      "reads": [
+        "n|tbl|public.signing_keys",
+        "n|sch|public",
+        "n|col|public.signing_keys.status"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "94b73e11e05c481f"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_invitation_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_invitation_id_idx",
+        "n|idx|public.tokens_invitation_id_idx",
+        "e|idx|public.tokens_invitation_id_idx",
+        "n|rel|public.tokens_invitation_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.invitation_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "0ce6202984a6175f"
+    },
+    {
+      "statementType": "rename_constraint",
+      "statementTarget": [
+        "table",
+        "public",
+        "invitations"
+      ],
+      "writes": [
+        "s|uq|public.invitations.inactive_memberships_tenant_email_ctx",
+        "n|uq|public.invitations.inactive_memberships_tenant_email_ctx",
+        "n|con|public.invitations.inactive_memberships_tenant_email_ctx",
+        "n|rel|public.inactive_memberships_tenant_email_ctx",
+        "s|uq|public.invitations.invitations_tenant_email_ctx",
+        "n|uq|public.invitations.invitations_tenant_email_ctx",
+        "n|con|public.invitations.invitations_tenant_email_ctx",
+        "n|rel|public.invitations_tenant_email_ctx"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public",
+        "e|col|public.invitations.tenant_id",
+        "e|col|public.invitations.email",
+        "e|col|public.invitations.channel_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "invitations",
+        "invitations_org_status_idx"
+      ],
+      "writes": [
+        "s|idx|public.invitations_org_status_idx",
+        "n|idx|public.invitations_org_status_idx",
+        "e|idx|public.invitations_org_status_idx",
+        "n|rel|public.invitations_org_status_idx"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public",
+        "n|col|public.invitations.organization_id",
+        "n|col|public.invitations.status"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "invitations"
+      ],
+      "writes": [
+        "s|fk|public.invitations.invitations_updated_by_actors_id_fkey",
+        "n|fk|public.invitations.invitations_updated_by_actors_id_fkey",
+        "e|fk|public.invitations.invitations_updated_by_actors_id_fkey",
+        "n|con|public.invitations.invitations_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.invitations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.invitations.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preferences"
+      ],
+      "writes": [
+        "s|fk|public.notification_preferences.notification_preferences_created_by_actors_id_fkey",
+        "n|fk|public.notification_preferences.notification_preferences_created_by_actors_id_fkey",
+        "e|fk|public.notification_preferences.notification_preferences_created_by_actors_id_fkey",
+        "n|con|public.notification_preferences.notification_preferences_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.notification_preferences.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preferences"
+      ],
+      "writes": [
+        "s|fk|public.notification_preferences.notification_preferences_updated_by_actors_id_fkey",
+        "n|fk|public.notification_preferences.notification_preferences_updated_by_actors_id_fkey",
+        "e|fk|public.notification_preferences.notification_preferences_updated_by_actors_id_fkey",
+        "n|con|public.notification_preferences.notification_preferences_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.notification_preferences.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "sessions"
+      ],
+      "writes": [
+        "s|ck|public.sessions.sessions_revocation_reason_check",
+        "n|ck|public.sessions.sessions_revocation_reason_check",
+        "e|ck|public.sessions.sessions_revocation_reason_check",
+        "n|con|public.sessions.sessions_revocation_reason_check"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public",
+        "n|col|public.sessions.revoked_at",
+        "n|col|public.sessions.revocation_reason"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "tables\u0000[\"public\",\"inactive_memberships\"]",
+      "set": {
+        "name": "invitations"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"devices\",\"first_seen_at\"]",
+      "set": {
+        "name": "created_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"devices\",\"last_seen_at\"]",
+      "set": {
+        "name": "last_sign_in_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"devices\",\"notified_at\"]",
+      "set": {
+        "name": "mailed_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"identities\",\"last_used_at\"]",
+      "set": {
+        "name": "last_sign_in_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"tokens\",\"inactive_membership_id\"]",
+      "set": {
+        "name": "invitation_id"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"tokens\",\"invoked_at\"]",
+      "set": {
+        "name": "redeemed_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"invitations\",\"reminded_at\"]",
+      "set": {
+        "name": "mailed_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"notifications\",\"emailed_at\"]",
+      "set": {
+        "name": "mailed_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"requests\",\"invited_at\"]",
+      "set": {
+        "name": "mailed_at"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "uniques\u0000[\"public\",\"invitations\",\"inactive_memberships_tenant_email_ctx\"]",
+      "set": {
+        "name": "invitations_tenant_email_ctx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"devices_user_id_notified_at_idx\"]",
+      "set": {
+        "name": "devices_user_id_mailed_at_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"devices_last_seen_at_idx\"]",
+      "set": {
+        "name": "devices_last_sign_in_at_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"tokens_inactive_membership_id_idx\"]",
+      "set": {
+        "name": "tokens_invitation_id_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"inactive_memberships_user_id_idx\"]",
+      "set": {
+        "name": "invitations_user_id_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"inactive_memberships_created_by_idx\"]",
+      "set": {
+        "name": "invitations_created_by_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"inactive_memberships_tenant_id_idx\"]",
+      "set": {
+        "name": "invitations_tenant_id_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"inactive_memberships_email_idx\"]",
+      "set": {
+        "name": "invitations_email_idx"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_state",
+        "name": "answered_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "status",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'pending'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "status_changed_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preferences",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preferences",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preferences",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "invitations_org_status_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "invitations",
+        "name": "invitations_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preferences",
+        "name": "notification_preferences_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preferences",
+        "name": "notification_preferences_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sessions",
+        "name": "sessions_revocation_reason_check",
+        "value": "(\"revoked_at\" IS NULL) = (\"revocation_reason\" IS NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"identities\",\"verified\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"system_roles\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"push_subscriptions\",\"expiration_time\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"signing_keys\",\"retired_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"sync_state\",\"verified_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"sync_state\",\"rebuilt_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"inactive_memberships_org_pending_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"signing_keys_status_idx\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"devices\",\"created_at\"]",
+      "set": {
+        "default": "now()"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"signing_keys_one_per_status_idx\"]",
+      "set": {
+        "where": null
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"tokens_invitation_id_idx\"]",
+      "set": {
+        "where": "\"invitation_id\" is not null"
+      }
+    }
+  ]
+}
