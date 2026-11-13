@@ -1,0 +1,3 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "tokens", "invoked_at"], "to": ["public", "tokens", "redeemed_at"] }
+]

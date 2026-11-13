@@ -27,17 +27,13 @@ const deleteSignedOutCookies = (ctx: Context<Env>) => {
 };
 
 /**
- * Signs this browser out: ends what it holds of a sign-in in progress (an opened magic link, a link held for
- * confirmation, a second-factor challenge), then its session. Every write runs before any cookie goes, so a failure
- * leaves this browser all its cookies and a retry finishes the job: a spend added here defers its cookie delete as
- * well.
+ * Signs this browser out: ends what it holds of a sign-in in progress (a link held for confirmation, a second-factor
+ * challenge), then its session. Every write runs before any cookie goes, so a failure leaves this browser all its
+ * cookies and a retry finishes the job: a spend added here defers its cookie delete as well.
  * @throws AppError 401 when the browser holds no session and no second-factor challenge.
  */
 export const signOutOp = async (ctx: Context<Env>) => {
-  // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
-  // whatever becomes of the session below, so the next person at a shared computer cannot reopen it.
-  await spendCookieToken(ctx, 'magic', { deleteCookie: 'after-commit' });
-  // A link held here for confirmation, never confirmed, goes as well. A provider connect started here dies with the
+  // A magic link held here for confirmation, never confirmed, goes. A provider connect started here dies with the
   // session below: its pin serves only the session that started it.
   await dropHeldMagicLink(ctx);
 

@@ -309,7 +309,7 @@ export async function insertTestToken(
       userId: owner.id ?? null,
       createdBy: owner.id ?? null,
       expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
-      ...(openedWith && { invokedAt: new Date().toISOString(), singleUseToken: hashToken(openedWith) }),
+      ...(openedWith && { redeemedAt: new Date().toISOString(), singleUseToken: hashToken(openedWith) }),
       ...columns,
     })
     .returning();

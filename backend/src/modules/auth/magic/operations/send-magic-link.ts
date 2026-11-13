@@ -8,7 +8,7 @@ import { mailer } from '#/lib/mailer';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
 import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { hasPendingInvitation } from '#/modules/auth/invitations/operations/may-sign-up';
-import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
+import { issueToken, rememberMagicLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAddressGovernance } from '#/modules/connections/connections-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -69,7 +69,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirectPath, 
   else mailMagicLink(request).catch((err) => log.error('Failed to send magic link', { err }));
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
-  rememberLinkRequest(ctx, 'magic', request.tokenId);
+  rememberMagicLinkRequest(ctx, request.tokenId);
 };
 
 /**

@@ -42,7 +42,7 @@ describe('invitation and verification links fetched by a scanner', () => {
     const { rawToken, token } = await createInvitation({ organization, email: address('invitee'), createdBy: inviter.id });
 
     await scan('invitation', rawToken);
-    expect((await tokenRow(token.id)).invokedAt).toBeNull();
+    expect((await tokenRow(token.id)).redeemedAt).toBeNull();
 
     // Positive control: the invitee opens the link and confirms it on the page it leads to.
     const opened = await openHeldLink('invitation', rawToken);
@@ -57,7 +57,7 @@ describe('invitation and verification links fetched by a scanner', () => {
     const { raw, row } = await insertTestToken('oauth-verification', user, { identityId: identity.id, expiresInMs: 2 * 60 * 60 * 1000 });
 
     await scan('oauth-verification', raw);
-    expect((await tokenRow(row.id)).invokedAt).toBeNull();
+    expect((await tokenRow(row.id)).redeemedAt).toBeNull();
 
     // Positive control: the owner's confirmation redeems the link and goes on to the provider.
     const opened = await openHeldLink('oauth-verification', raw);

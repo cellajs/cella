@@ -89,7 +89,7 @@ describe('Resend an invitation', async () => {
     expect(tokens).toHaveLength(1);
     const [fresh] = tokens;
     expect(fresh.id).not.toBe(token.id);
-    expect(fresh).toMatchObject({ inactiveMembershipId: inactiveMembership.id, invokedAt: null, singleUseToken: null });
+    expect(fresh).toMatchObject({ inactiveMembershipId: inactiveMembership.id, redeemedAt: null, singleUseToken: null });
     expect(new Date(fresh.expiresAt).getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
     const rawFresh = mailedRawToken();
     expect(fresh.secretHash).toBe(hashToken(rawFresh));
@@ -138,7 +138,7 @@ describe('Resend an invitation', async () => {
     const tokens = await invitationTokensOf('newcomer@example.com');
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
-    expect(tokens[0]).toMatchObject({ inactiveMembershipId: null, invokedAt: null });
+    expect(tokens[0]).toMatchObject({ inactiveMembershipId: null, redeemedAt: null });
     expect(tokens[0].secretHash).toBe(hashToken(mailedRawToken()));
   });
 

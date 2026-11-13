@@ -12,7 +12,6 @@ import { type CodeTokenKind, type CookieTokenKind, type HeldLinkKind, type LinkT
 import type { InsertTokenModel } from '#/modules/auth/tokens/tokens-db';
 import {
   deleteBoundToken,
-  deleteOpenedLinkTokens,
   deleteReplacedTokens,
   deleteSessionCodeToken,
   findBoundToken,
@@ -21,6 +20,7 @@ import {
   insertTokens,
   type TokenRecord,
   updateTokenRedeemed,
+  updateTokenSpent,
   updateTokenUser,
 } from '#/modules/auth/tokens/tokens-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -42,7 +42,7 @@ const newHashedCode = () => {
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
 export type NewToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secretHash' | 'singleUseToken' | 'expiresAt' | 'invokedAt' | 'createdAt'>>;
+  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secretHash' | 'singleUseToken' | 'expiresAt' | 'redeemedAt' | 'createdAt'>>;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its kind's `ttl`. Each first
@@ -97,15 +97,17 @@ export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { ki
 /** An expired token's refusal names it by id, so an error page can offer a new link; never by its raw value. */
 const expired = (token: TokenRecord) => new AppError(401, `${token.kind}_expired`, 'warn', { meta: { tokenId: token.id } });
 
+/** A link redeemed elsewhere, or spent, is a notice: a second click on a mail that did its job lands here. */
+const opened = (kind: LinkTokenKind, token: TokenRecord) => new AppError(401, `${kind}_opened`, 'info', { meta: { tokenId: token.id } });
+
 /**
- * The refusal of a redeemed link this browser does not hold. An invitation is refused as opened, not expired, while its
- * own lifetime runs: the redemption shortened `expiresAt` to the single-use window, and a fresh link still works.
+ * Refuses a link of `kind` this browser does not hold once no browser may redeem it. A redeemed link answers
+ * `<kind>_opened` while its single-use window (`expiresAt`) runs and `<kind>_expired` after; an unredeemed one answers
+ * `<kind>_expired` past its lifetime.
  */
-const refuseRedeemed = (token: TokenRecord) => {
-  if (token.kind !== 'invitation') return expired(token);
-  const lifetimeEnd = new Date(token.createdAt).getTime() + tokenPolicies.invitation.ttl.milliseconds();
-  if (Date.now() >= lifetimeEnd) return expired(token);
-  return new AppError(401, 'invitation_opened', 'warn', { meta: { tokenId: token.id } });
+export const refuseUnredeemable = (kind: LinkTokenKind, token: TokenRecord) => {
+  if (isExpiredDate(token.expiresAt)) throw expired(token);
+  if (token.redeemedAt) throw opened(kind, token);
 };
 
 /**
@@ -142,7 +144,7 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
  */
 type ClaimTokenHolder = (tx: Tx, token: TokenRecord) => Promise<string>;
 
-interface InvokeTokenOpts {
+interface RedeemTokenOpts {
   kind: LinkTokenKind;
   /** The raw value in the link's URL; the database holds only its hash. */
   rawToken: string;
@@ -160,27 +162,25 @@ const checkLinkToken = async (ctx: Context<Env>, kind: LinkTokenKind, rawToken: 
 
   await refuseOtherAccount(ctx, kind, token);
 
-  if (token.invokedAt) {
+  if (token.redeemedAt) {
     const held = await heldByThisBrowser(ctx, token);
-    if (!held) throw refuseRedeemed(token);
-    return { token: held, redeemed: true };
+    if (held) return { token: held, redeemed: true };
   }
 
-  if (isExpiredDate(token.expiresAt)) throw expired(token);
+  refuseUnredeemable(kind, token);
   return { token, redeemed: false };
 };
 
 /**
  * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
- * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its kind's single-use window and this
+ * redemption wins a compare-and-set on `redeemedAt`: the token's lifetime becomes its kind's single-use window and this
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
- * holding that cookie. A link issued without an account gets its holder from `claimHolder`, committed with the
- * redemption.
- * @throws AppError 401 `<kind>_not_found`, 401 `<kind>_expired` (expired, or redeemed by another browser), 401
- *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
- *   to another account, or what `claimHolder` throws.
+ * holding that cookie, until the link is spent. A link issued without an account gets its holder from `claimHolder`,
+ * committed with the redemption.
+ * @throws AppError 401 `<kind>_not_found`, 401 `<kind>_opened` or `<kind>_expired` ({@link refuseUnredeemable}), 409
+ *   `user_mismatch` while signed in to another account, or what `claimHolder` throws.
  */
-export const invokeToken = async (ctx: Context<Env>, { kind, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
+export const redeemToken = async (ctx: Context<Env>, { kind, rawToken, claimHolder }: RedeemTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[kind];
 
   const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, kind, rawToken);
@@ -208,9 +208,16 @@ export const invokeToken = async (ctx: Context<Env>, { kind, rawToken, claimHold
 
   // Lost the race: the token is usable only in the browser that won it.
   const held = await heldByThisBrowser(ctx, token);
-  if (!held) throw refuseRedeemed(token);
+  if (!held) throw opened(kind, token);
   return held;
 };
+
+/**
+ * Spends a redeemed link once it did its job: no browser holds it any more, the one that redeemed it included, so a
+ * second click answers `<kind>_opened` until the single-use window ends. The browser's single-use cookie binds nothing
+ * from here and lapses with the window.
+ */
+export const spendRedeemedLink = (tokenId: string) => updateTokenSpent(dbCtx, { id: tokenId });
 
 /** How long a link opened in a browser waits there, in its `<kind>-pending` cookie, for its holder to confirm it. */
 export const heldLinkLifetime = new TimeSpan(10, 'm');
@@ -221,7 +228,7 @@ export const heldLinkLifetime = new TimeSpan(10, 'm');
  * redeeming would accept is held in this browser's `<kind>-pending` cookie until the app's page confirms it with a
  * POST (`redeemHeldLink`).
  * @returns The token this browser redeemed before, or null once the link is held.
- * @throws What `invokeToken` throws, before anything is held.
+ * @throws What `redeemToken` throws, before anything is held.
  */
 export const holdLinkToken = async (ctx: Context<Env>, kind: HeldLinkKind, rawToken: string): Promise<TokenRecord | null> => {
   const { token, redeemed } = await checkLinkToken(ctx, kind, rawToken);
@@ -234,33 +241,30 @@ export const holdLinkToken = async (ctx: Context<Env>, kind: HeldLinkKind, rawTo
 /**
  * Redeems the link this browser holds (`holdLinkToken`), on the POST from the app's page, and drops the hold.
  * @throws AppError 401 `link_not_held` when this browser holds none (the hold lapsed while the page stayed open, or a
- *   sign-out cleared it), whatever state the link is in, else what `invokeToken` throws.
+ *   sign-out cleared it), whatever state the link is in, else what `redeemToken` throws.
  */
 export const redeemHeldLink = async (ctx: Context<Env>, kind: HeldLinkKind): Promise<TokenRecord> => {
   const rawToken = getAuthCookie(ctx, `${kind}-pending`);
   if (!rawToken) throw new AppError(401, 'link_not_held', 'info');
 
-  const token = await invokeToken(ctx, { kind, rawToken });
+  const token = await redeemToken(ctx, { kind, rawToken });
   deleteAuthCookie(ctx, `${kind}-pending`);
   return token;
 };
 
-/** The link kinds whose request the asking browser remembers, in a cookie named after the kind. */
-type RequestedLinkKind = 'magic';
-
 /**
- * Remembers, in the browser that asked, which link it asked for, as long as the link lives: opening the link there
- * counts as the asking browser. The cookie is Lax (`cookie.ts`), since the click from the mail is a navigation another
- * site starts.
+ * Remembers, in the browser that asked, which magic link it asked for, as long as the link lives: opening the link
+ * there counts as the asking browser. The cookie is Lax (`cookie.ts`), since the click from the mail is a navigation
+ * another site starts.
  */
-export const rememberLinkRequest = (ctx: Context<Env>, kind: RequestedLinkKind, tokenId: string) =>
-  setAuthCookie(ctx, `${kind}-requested`, tokenId, tokenPolicies[kind].ttl);
+export const rememberMagicLinkRequest = (ctx: Context<Env>, tokenId: string) =>
+  setAuthCookie(ctx, 'magic-requested', tokenId, tokenPolicies.magic.ttl);
 
-/** Whether this browser asked for the link: its marker for the kind names the token. */
-export const isRequestedHere = (ctx: Context<Env>, kind: RequestedLinkKind, tokenId: string) => getAuthCookie(ctx, `${kind}-requested`) === tokenId;
+/** Whether this browser asked for the magic link: its marker names the token. */
+export const isMagicLinkRequestedHere = (ctx: Context<Env>, tokenId: string) => getAuthCookie(ctx, 'magic-requested') === tokenId;
 
-/** Drops the marker once the link is used: it has nothing left to say. */
-export const forgetLinkRequest = (ctx: Context<Env>, kind: RequestedLinkKind) => deleteAuthCookie(ctx, `${kind}-requested`);
+/** Drops the marker once the magic link is used: it has nothing left to say. */
+export const forgetMagicLinkRequest = (ctx: Context<Env>) => deleteAuthCookie(ctx, 'magic-requested');
 
 /** The token this browser's cookie of `kind` binds it to, whatever its state; undefined without one. */
 const findCookieBoundToken = async (ctx: Context<Env>, kind: TokenKind) => {
@@ -351,10 +355,3 @@ export const spendCookieToken = async (
   if (spent.sessionId && !(await findLiveSession(spendCtx, { id: spent.sessionId }))) return null;
   return spent;
 };
-
-/**
- * Deletes the user's opened magic link, so the browser that opened it cannot sign in from it again within its
- * single-use window: for a session end where the person leaves. An account holds one magic link at a time, as a new one
- * replaces the older, so this is the link any session of the user may have come from.
- */
-export const deleteOpenedMagicLink = (ctx: DbContext, userId: string) => deleteOpenedLinkTokens(ctx, { kind: 'magic', userId });

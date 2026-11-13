@@ -769,9 +769,9 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Invoke token session
+ * Redeem a link token
  *
- * Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
+ * Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in once, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
  *
  * **GET /auth/invoke-token/{kind}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{kind}/{token}) ·· _auth · cella_
  *

@@ -1,4 +1,4 @@
-import { and, countDistinct, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, countDistinct, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenKind } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type CodeTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
@@ -68,7 +68,7 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { e
         inArray(tokensTable.email, emails),
         eq(tokensTable.kind, 'invitation'),
         isNull(tokensTable.inactiveMembershipId),
-        isNull(tokensTable.invokedAt),
+        isNull(tokensTable.redeemedAt),
       ),
     );
 
@@ -152,14 +152,9 @@ export const findLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkToke
   return token;
 };
 
-/** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
-export const deleteUnopenedLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts) => {
-  await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.invokedAt)));
-};
-
-/** Deletes the user's opened links of `kind`, so no browser holding a single-use cookie for one opens it again. */
-export const deleteOpenedLinkTokens = async (ctx: DbContext, { kind, userId }: { kind: LinkTokenKind; userId: string }) => {
-  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.kind, kind), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
+/** Deletes the unredeemed link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
+export const deleteUnredeemedLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts) => {
+  await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.redeemedAt)));
 };
 
 interface UpdateTokenRedeemedOpts {
@@ -171,16 +166,21 @@ interface UpdateTokenRedeemedOpts {
 }
 
 /**
- * Redeems an unopened token now: a compare-and-set on `invokedAt IS NULL`, so of two concurrent redemptions exactly
+ * Redeems an unredeemed token now: a compare-and-set on `redeemedAt IS NULL`, so of two concurrent redemptions exactly
  * one gets the row. Undefined for the one that lost.
  */
 export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, expiresAt }: UpdateTokenRedeemedOpts) => {
   const [redeemed] = await ctx.var.db
     .update(tokensTable)
-    .set({ singleUseToken, invokedAt: getIsoDate(), expiresAt })
-    .where(and(eq(tokensTable.id, id), isNull(tokensTable.invokedAt)))
+    .set({ singleUseToken, redeemedAt: getIsoDate(), expiresAt })
+    .where(and(eq(tokensTable.id, id), isNull(tokensTable.redeemedAt)))
     .returning(tokenColumns);
   return redeemed;
+};
+
+/** Unbinds a redeemed token from the browser that redeemed it: no single-use cookie names it any more. */
+export const updateTokenSpent = async (ctx: DbContext, { id }: { id: string }) => {
+  await ctx.var.db.update(tokensTable).set({ singleUseToken: null }).where(eq(tokensTable.id, id));
 };
 
 /**

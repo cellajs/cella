@@ -7,7 +7,7 @@ import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-li
 import { findOpenableMagicLink, readHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
 import { sendMagicLinkOp } from '#/modules/auth/magic/operations/send-magic-link';
-import { invokeToken } from '#/modules/auth/tokens/token-lifecycle';
+import { redeemToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -29,7 +29,7 @@ app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
 
   const followed = await findFollowedInvitation(ctx);
   // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
-  const tokenRecord = await invokeToken(ctx, { kind: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
+  const tokenRecord = await redeemToken(ctx, { kind: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
   deleteAuthCookie(ctx, 'magic-pending');
 
   return handleMagicLink(ctx, tokenRecord, followed);

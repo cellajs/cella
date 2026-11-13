@@ -54,9 +54,9 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
-    summary: 'Invoke token session',
+    summary: 'Redeem a link token',
     description:
-      'Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.',
+      'Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in once, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.',
     request: { params: z.object({ kind: z.enum(linkTokenKinds), token: z.string().max(maxLength.field) }) },
     responses: { 302: { description: 'Redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),

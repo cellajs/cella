@@ -57,7 +57,7 @@ export const tokensTable = snakeCase.table(
       .$type<UserId>(),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
-    invokedAt: isoTimestamp(),
+    redeemedAt: isoTimestamp(),
   },
   (table) => [
     index('tokens_secret_hash_kind_idx').on(table.secretHash, table.kind),

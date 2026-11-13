@@ -4,7 +4,7 @@ import { TimeSpan } from '#/utils/time-span';
 type SameSite = 'lax' | 'strict';
 
 /**
- * The lifecycle rules of one token kind. A `link` token travels in an emailed URL: redeeming it (`invokeToken`) swaps
+ * The lifecycle rules of one token kind. A `link` token travels in an emailed URL: redeeming it (`redeemToken`) swaps
  * its lifetime for the single-use window and binds it to the browser with a single-use cookie. A `cookie` token lives
  * only in a cookie of its own name and is never redeemable as a link. A `code` token is a short number in a mail,
  * entered in the session it was issued for: it is found by that session, never by its value.

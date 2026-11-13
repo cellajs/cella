@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { invokeToken, issueToken, issueTokens, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { issueToken, issueTokens, readBoundToken, redeemToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { isTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
@@ -26,7 +26,7 @@ const app = new Hono<Env>()
   .get('/invoke/:kind/:token', async (ctx) => {
     const kind = ctx.req.param('kind');
     if (!isLinkKind(kind)) return ctx.body(null, 404);
-    return ctx.json(await invokeToken(ctx, { kind, rawToken: ctx.req.param('token') }));
+    return ctx.json(await redeemToken(ctx, { kind, rawToken: ctx.req.param('token') }));
   })
   .get('/read/:kind', async (ctx) => {
     const kind = ctx.req.param('kind');
@@ -165,7 +165,7 @@ const racingOnRow = async <T>(tokenId: string, redeem: () => Promise<T>): Promis
   return redeeming;
 };
 
-describe('invokeToken', () => {
+describe('redeemToken', () => {
   it('binds a link to the one browser that redeems it first', async () => {
     const { token, rawToken } = await issueToken(ctx, { kind: 'invitation', email: address() });
 
@@ -180,7 +180,7 @@ describe('invokeToken', () => {
     expect(cookieChange(loser, 'invitation')).toBeUndefined();
 
     const opened = await rowOf(token.id);
-    expect(opened.invokedAt).not.toBeNull();
+    expect(opened.redeemedAt).not.toBeNull();
     expect(minutesUntil(opened.expiresAt)).toBeGreaterThan(29);
     expect(minutesUntil(opened.expiresAt)).toBeLessThanOrEqual(30);
 
@@ -205,7 +205,7 @@ describe('invokeToken', () => {
     const expired = await request(`/invoke/magic/${rawToken}`);
     expect(expired.status).toBe(401);
     expect(await expired.json()).toEqual({ type: 'magic_expired', tokenId: token.id });
-    expect((await rowOf(token.id)).invokedAt).toBeNull();
+    expect((await rowOf(token.id)).redeemedAt).toBeNull();
   });
 });
 
