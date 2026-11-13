@@ -69,10 +69,14 @@ describe('buildStreamChange: the propagation hint of an embedded product', () =>
     ]);
   });
 
-  it('tells a soft delete from an edit row by row, also when the first row is the edit', () => {
-    const change = buildStreamChange(event('update', [row('a1', 7), row('a2', 8, '2026-10-01T10:00:00.000Z'), row('a3', 9)]));
+  it('removes every row of a soft delete, which arrives as a delete with a seq per row', () => {
+    const change = buildStreamChange(event('delete', [row('a1', 7, '2026-10-01T10:00:00.000Z'), row('a2', 8, '2026-10-01T10:00:00.000Z')]));
 
-    expect(change.propagation).toMatchObject({ update: ['a1', 'a3'], remove: ['a2'] });
+    expect(change.propagation).toMatchObject({ update: [], remove: ['a1', 'a2'] });
+    expect(change.rows.map(({ subjectId, seq }) => [subjectId, seq])).toEqual([
+      ['a1', 7],
+      ['a2', 8],
+    ]);
   });
 
   it('removes every row of a delete', () => {
