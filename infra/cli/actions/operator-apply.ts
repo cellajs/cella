@@ -25,7 +25,15 @@ import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
 import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../tasks/publish-engine';
 import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
-import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import {
+  acquireStackLockOrExit,
+  endAction,
+  type InfraContext,
+  pulumiLoginAndSelect,
+  pulumiLoginUrl,
+  resolveVerifiedPassphrase,
+  stackNameFor,
+} from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
@@ -94,7 +102,13 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   const stack = stackNameFor(context);
 
   await admitOperatorOrExit(context, operator);
-  const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
+  const env = buildProviderEnv(infraDir, {
+    accessKey: operator.accessKey,
+    secretKey: operator.secretKey,
+    projectId,
+    passphrase,
+    stateBackendUrl: pulumiLoginUrl(appConfig),
+  });
   if (opts.engine) env.INFRA_ENGINE_IMAGE = opts.engine.image;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 

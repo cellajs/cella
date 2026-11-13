@@ -10,7 +10,15 @@ import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import {
+  acquireStackLockOrExit,
+  endAction,
+  type InfraContext,
+  pulumiLoginAndSelect,
+  pulumiLoginUrl,
+  resolveVerifiedPassphrase,
+  stackNameFor,
+} from '../shared';
 
 /** The `pulumi preview` arguments of a plan an operator reviews. `--refresh` reads every resource live first, so drift made outside Pulumi (a rule re-scoped in the console) is part of the diff. */
 export function planArgs(stack: string, configFile?: string): string[] {
@@ -69,7 +77,7 @@ export async function reviewPlan(
   }
 
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
-  const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
+  const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, stateBackendUrl: pulumiLoginUrl(appConfig), organizationId });
   // The engine image the apply just pushed, which the plan shows on the main job; without one the program keeps the applied engine's.
   if (opts.engineImage) env.INFRA_ENGINE_IMAGE = opts.engineImage;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);

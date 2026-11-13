@@ -15,6 +15,7 @@ import {
   endsAction,
   type InfraContext,
   pulumiLoginAndSelect,
+  pulumiLoginUrl,
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
@@ -40,7 +41,13 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
   await admitOperatorOrExit(context, operator);
-  const env = buildProviderEnv(infraDir, { ...operator, projectId, passphrase, organizationId: operator.organizationId });
+  const env = buildProviderEnv(infraDir, {
+    ...operator,
+    projectId,
+    passphrase,
+    stateBackendUrl: pulumiLoginUrl(appConfig),
+    organizationId: operator.organizationId,
+  });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   const state = stateKeyOf(operator, projectId);
