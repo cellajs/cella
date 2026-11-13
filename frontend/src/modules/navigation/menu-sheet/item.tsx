@@ -24,9 +24,11 @@ interface MenuSheetItemProps {
   item: UserMenuItem;
   /** A submenu row: smaller, joined to its parent by a connector. */
   isSubitem: boolean;
+  /** Shown in place of what the row counts itself: an organization row on the organizations page shows what its rail button does. */
+  unseenCount?: number;
 }
 
-export function MenuSheetItem({ item, isSubitem }: MenuSheetItemProps) {
+export function MenuSheetItem({ item, isSubitem, unseenCount: givenCount }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
@@ -39,7 +41,8 @@ export function MenuSheetItem({ item, isSubitem }: MenuSheetItemProps) {
   const isCompact = isCompactRow(item.entityType, isSubitem);
 
   const hasSubmenu = isSubmenuShown(item);
-  const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
+  const ownCount = useMenuItemUnseenCount(item, hasSubmenu);
+  const unseenCount = givenCount ?? ownCount;
   const mark = section?.rowMark?.(item, isCompact);
   const isMuted = item.membership.muted && canMute(item);
   const marks = [mark && t(mark.label), isMuted && t('c:muted')].filter(Boolean);

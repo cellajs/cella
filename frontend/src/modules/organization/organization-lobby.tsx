@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { hierarchy } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { swapMotion } from '~/modules/common/motion-presets';
+import { CenteredPage } from '~/modules/common/page/centered-page';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { navItems } from '~/modules/navigation/nav-items';
 import { openNavSheet } from '~/modules/navigation/nav-sheet';
@@ -41,7 +42,7 @@ export function OrganizationLobby() {
   };
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 pb-[10svh] text-center">
+    <CenteredPage className="flex flex-col items-center px-4 text-center">
       {/* One link for avatar and name: hovering either underlines the name and brightens the avatar, as a table cell does */}
       <Link {...getChannelRoute(organization)} className="group/lobby-link focus-effect flex flex-col items-center rounded-lg p-2">
         <EntityAvatar
@@ -73,6 +74,6 @@ export function OrganizationLobby() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </CenteredPage>
   );
 }

@@ -21,11 +21,11 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1165.0",
-    "@aws-sdk/s3-request-presigner": "^3.1165.0",
-    "@inquirer/core": "^12.0.6",
-    "@inquirer/prompts": "^8.7.5",
-    "@pulumi/pulumi": "^3.274.1",
+    "@aws-sdk/client-s3": "^3.1167.0",
+    "@aws-sdk/s3-request-presigner": "^3.1167.0",
+    "@inquirer/core": "^12.1.0",
+    "@inquirer/prompts": "^8.8.0",
+    "@pulumi/pulumi": "^3.275.0",
     "@pulumiverse/scaleway": "^1.62.0",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
@@ -35,7 +35,7 @@
     "@types/node": "^26.6.6",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "ajv": "^8.20.0",
-    "rolldown": "~1.3.1",
+    "rolldown": "~1.3.2",
     "typescript": "6.0.3",
     "vitest": "^5.1.0",
     "yaml": "^2.9.1"

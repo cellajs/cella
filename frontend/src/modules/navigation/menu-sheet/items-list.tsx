@@ -65,16 +65,18 @@ interface MenuSheetItemsListProps {
   group: MenuGroup;
   /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
+  /** Unseen counts by row id, for rows that count nothing themselves. */
+  rowCounts?: Map<string, number>;
 }
 
-export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, group, isSubmenu = false, rowCounts }: MenuSheetItemsListProps) {
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 
   return sortAndFilterMenu(items, group).map((item) => {
     const hasSubmenu = isSubmenuShown(item);
     return (
       <li key={item.id} className={isSubmenu ? 'group/row' : 'group/parent'} data-icon={!!getMenuSection(item.entityType)?.icon}>
-        <MenuSheetItem item={item} isSubitem={isSubmenu} />
+        <MenuSheetItem item={item} isSubitem={isSubmenu} unseenCount={rowCounts?.get(item.id)} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (
           <>

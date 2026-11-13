@@ -155,7 +155,7 @@
   "features.stream_reconnect": "Resilient reconnect",
   "features.stream_reconnect.text": "When the live SSE stream drops, the client reconnects with backoff and jitter, and a circuit breaker backs off a struggling server instead of hammering it.",
   "features.tenant_isolation": "Tenant isolation",
-  "features.tenant_isolation.text": "A hard boundary in the database keeps each tenant's data fully separate. Row-level security makes reads fail closed: without the right tenant context, a query returns nothing.",
+  "features.tenant_isolation.text": "A hard boundary in the database keeps each tenant's product data fully separate. Row-level security makes reads fail closed: without the right tenant context, a query returns nothing.",
   "features.text": "For a complete list of features, <featuresLink>click here</featuresLink>.",
   "features.text_merge": "Character-level text merge",
   "features.text_merge.text": "Long-form descriptions merge character by character through a Yjs CRDT, so two people typing in the same paragraph keep both sets of changes instead of overwriting each other.",

@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './_app/index'
 import { Route as AppAccountRouteImport } from './_app/account'
 import { Route as AppHomeRouteImport } from './_app/home'
 import { Route as AppNRouteImport } from './_app/n'
+import { Route as AppOrganizationsRouteImport } from './_app/organizations'
 import { Route as AppSystemRouteRouteImport } from './_app/system/route'
 import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
@@ -84,6 +85,11 @@ const AppHomeRoute = AppHomeRouteImport.update({
 const AppNRoute = AppNRouteImport.update({
   id: '/n',
   path: '/n',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppOrganizationsRoute = AppOrganizationsRouteImport.update({
+  id: '/organizations',
+  path: '/organizations',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppSystemRouteRoute = AppSystemRouteRouteImport.update({
@@ -319,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
+  '/organizations': typeof AppOrganizationsRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
@@ -365,6 +372,7 @@ export interface FileRoutesByTo {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
+  '/organizations': typeof AppOrganizationsRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
   '/system/$tool': typeof AppSystemToolRoute
@@ -413,6 +421,7 @@ export interface FileRoutesById {
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/n': typeof AppNRoute
+  '/_app/organizations': typeof AppOrganizationsRoute
   '/_public/_marketing': typeof PublicMarketingRouteWithChildren
   '/_public/error': typeof PublicErrorRoute
   '/_public/thumbnail': typeof PublicThumbnailRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/n'
+    | '/organizations'
     | '/error'
     | '/thumbnail'
     | '/$tenantId/$organizationSlug'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/n'
+    | '/organizations'
     | '/error'
     | '/thumbnail'
     | '/system/$tool'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/_app/account'
     | '/_app/home'
     | '/_app/n'
+    | '/_app/organizations'
     | '/_public/_marketing'
     | '/_public/error'
     | '/_public/thumbnail'
@@ -646,6 +658,13 @@ declare module '@tanstack/react-router' {
       path: '/n'
       fullPath: '/n'
       preLoaderRoute: typeof AppNRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/organizations': {
+      id: '/_app/organizations'
+      path: '/organizations'
+      fullPath: '/organizations'
+      preLoaderRoute: typeof AppOrganizationsRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/system': {
@@ -1012,6 +1031,7 @@ interface AppRouteRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppHomeRoute: typeof AppHomeRoute
   AppNRoute: typeof AppNRoute
+  AppOrganizationsRoute: typeof AppOrganizationsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTenantIdOrganizationSlugRouteRoute: typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
 }
@@ -1021,6 +1041,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppHomeRoute: AppHomeRoute,
   AppNRoute: AppNRoute,
+  AppOrganizationsRoute: AppOrganizationsRoute,
   AppIndexRoute: AppIndexRoute,
   AppTenantIdOrganizationSlugRouteRoute:
     AppTenantIdOrganizationSlugRouteRouteWithChildren,

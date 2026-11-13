@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { type KeyboardEvent, useRef } from 'react';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus } from '~/modules/common/overlay-store-helpers';
@@ -9,6 +9,34 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
+
+const tabbableSelector =
+  'a[href], button:not(:disabled), input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), [tabindex], [contenteditable="true"]';
+
+/** Moves Tab past either end of the popup's tabbable elements round to the other end, as a modal popup's focus trap does. */
+function wrapTab(event: KeyboardEvent<HTMLElement>) {
+  const popup = event.currentTarget;
+  // A popover portaled out of the sheet handles its own Tab
+  if (event.key !== 'Tab' || event.defaultPrevented || !(event.target instanceof Node) || !popup.contains(event.target)) return;
+
+  const tabbables = [...popup.querySelectorAll<HTMLElement>(tabbableSelector)].filter(
+    (el) => el.tabIndex >= 0 && !el.closest('[inert]') && el.checkVisibility(),
+  );
+  const first = tabbables[0];
+  const last = tabbables.at(-1);
+  if (!first || !last) return;
+
+  // Focus can sit on an untabbable element too, such as the sheet's focus target ahead of its first stop
+  const isBefore = (el: Node) => !!(first.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING);
+  const isAfter = (el: Node) => !!(last.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const target = event.target;
+  const leavesStart = event.shiftKey && (target === first || isBefore(target));
+  const leavesEnd = !event.shiftKey && (target === last || isAfter(target));
+  if (!leavesStart && !leavesEnd) return;
+
+  event.preventDefault();
+  (leavesStart ? last : first).focus();
+}
 
 export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   const { id, modal, title, titleContent = title, description, closeSheetOnEsc = true } = sheet;
@@ -61,6 +89,8 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         className={cn('items-start', sheet.className)}
         initialFocus={() => touchInitialFocus(popupRef)}
         finalFocus={() => finalFocusFor(sheet.triggerRef, String(id))}
+        // Pinned, it keeps Tab in by hand: Base UI's trap would hide the page beside it. Its focus bridges lead out.
+        onKeyDown={isPinned ? wrapTab : undefined}
         autoScrollOnDrag={sheet.autoScrollOnDrag}
         keepMounted={sheet.keepMounted}
       >
