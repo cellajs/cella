@@ -200,11 +200,6 @@
   }
 }
 
-/* The glow gradient of the install command on /about (glow-button.css) and of glow-underline */
-:root {
-  --glow-stops: rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%;
-}
-
 /* Underlines the strong phrases inside with a 1px glow line, painted in their bottom padding, and a blurred copy cut at
    the line, so the glow only rises into the words. A phrase of several words joins them with a no-break space:
    `white-space: nowrap` would make Chrome drop `text-wrap: balance` for the whole paragraph. */
@@ -643,7 +638,7 @@
     inset-inline: 0;
     bottom: 0;
     height: 1px;
-    background-color: var(--color-border);
+    background-color: var(--border);
     pointer-events: none;
     opacity: 0;
     transition-property: opacity;
@@ -817,6 +812,8 @@
     /* An app's identity color for special buttons, defaulting to each mode's primary; an app may set it apart. */
     --brand: var(--primary);
     --brand-foreground: var(--primary-foreground);
+    /* The glow gradient of the install command on /about (glow-button.css) and of glow-underline */
+    --glow-stops: rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%;
     /* The scrim behind every dialog, sheet and drawer, never blurred, so the page stays readable under it. */
     --overlay: oklch(0 0 0 / 0.5);
     /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */

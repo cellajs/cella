@@ -52,7 +52,7 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
       ? `calc(${sidebarWidth} + ${sheetPanelWidth})`
       : sidebarWidth;
 
-  const cssVars = { '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
+  const cssVars = { '--sidebar-width': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
 
   const renderNavItem = (navItem: NavItem, itemClassName?: string) => (
     <SidebarNavItemButton
@@ -76,11 +76,11 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
       <Sidebar
         id="sidebar-nav"
         data-started={hasStarted}
-        className="focus-view:hidden fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear data-[started=false]:-translate-x-full"
+        className="focus-view:hidden fixed inset-y-0 left-0 z-100 transition-[width] duration-200 ease-linear data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full">
-          <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
+          <div className="flex h-full w-(--sidebar-width) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
             {/* Only the organization buttons scroll, so the buttons under them stay in view */}
             <SidebarContent className="gap-0 overflow-hidden">
               {isMenuPerOrganization && (

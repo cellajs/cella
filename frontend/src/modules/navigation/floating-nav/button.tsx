@@ -89,7 +89,7 @@ export function FloatingNavButton({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 rounded-full transition-[translate,scale,opacity] duration-300 ease-in-out select-none [-webkit-touch-callout:none] active:scale-95 data-[direction=left]:left-4 data-[direction=right]:right-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset))] z-105 rounded-full transition-[translate,scale,opacity] duration-300 ease-in-out select-none [-webkit-touch-callout:none] active:scale-95 data-[direction=left]:left-4 data-[direction=right]:right-4',
         // No border: the base button's transparent one would leave a 1px band between the ring and the fill
         'shadow-floating border-0',
         // pl-4 keeps the icon where the circle centers it
