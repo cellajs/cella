@@ -1,0 +1,3 @@
+/* The app's own `@utility` and `@custom-variant` blocks. tailwind.css imports this file without a layer: Tailwind refuses
+   both in a layered import such as app.css. Plain rules stay in app.css, as here they would outrank every layer. cella
+   ships it empty and never merges it. */

@@ -2,6 +2,7 @@
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 @import "./plus-grain.css" layer(base); /* Dithered + texture echoing the morph animation */
 @import "./app.css" layer(app); /* App-owned styles, ranked last */
+@import "./app-utilities.css"; /* App-owned utilities and variants, which a layered import refuses */
 
 /* Breakpoints, the container cap and typography: the parts that need JS. */
 @plugin "./tailwind-plugin.ts";
