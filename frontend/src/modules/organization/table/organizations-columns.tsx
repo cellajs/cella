@@ -107,9 +107,8 @@ export const useColumns = () => {
           </RenderEditStatus>
         );
       },
-      // Export rows fetched from the API carry the role under `included`.
       exportValue: (row) => {
-        const role = roleOf(row) ?? row.included?.membership?.role;
+        const role = roleOf(row);
         return role && t(role);
       },
       renderEditCell: (props) => (
