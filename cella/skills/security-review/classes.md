@@ -647,7 +647,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vite.config.ts`: `server.host`, `strictPort`, proxy to `localhost` ports, tunnel-only `allowedHosts` and `hmr`, `basicSsl()` when `frontendUrl` is https and not tunneled; no `server.fs`, no `server.cors`.
   - `frontend/.storybook/main.ts` (`viteFinal` adds a proxy `/api/dev/emails` to the API), `frontend/.storybook/start-storybook.ts` (`storybook dev -p <frontend port + 3006> --quiet --no-open`, no `--host`).
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
-  - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
+  - `backend/scripts/drizzle-studio/start.ts` (`pnpm dev` and `pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port). Studio answers every origin with `DATABASE_ADMIN_URL`: an accepted exposure, kept in `pnpm dev` by the developer's choice.
   - `shared/README.md` (dev ports).
   - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
