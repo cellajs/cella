@@ -1,7 +1,7 @@
 ---
 breaking: false
 clientCacheBump: false
-grep: SidebarOrganizationButtons, home.sections, lazyNamed
+grep: SidebarOrganizationButtons, home.sections
 ---
 
 # An organizations page behind the rail's last button; the home page renders whole

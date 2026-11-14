@@ -25,8 +25,9 @@ database, wire-shape or `clientCacheVersion` change.
 
 ## Run
 
-The codemod rewrites a call whose arguments sit on one line; a call spread over several lines is reported for a manual
-rewrite.
+The codemod rewrites each call, on one line or many, and a `const read = range ? tenantReadIncludingDeleted : tenantRead`
+selection, which becomes `{ includeDeleted: !!range }` on each `read` call. Any other use of a removed name, such as a
+mock, is reported for a hand rewrite.
 
 ```sh
 pnpm cella align --run 20261113T2237-tenant-context-options                                       # report only
@@ -35,7 +36,7 @@ pnpm cella align --run 20261113T2237-tenant-context-options -- rewrite backend/s
 
 ## Manual steps
 
-1. Rewrite each multi-line call the codemod reports: the callback moves to the second argument and the tenant id or `includeDeleted: true` into the options object after it.
+1. Rewrite each use the codemod reports: the callback moves to the second argument and the tenant id or `includeDeleted` into the options object after it.
 2. A test that mocks `tenantReadUnlessInTransaction` mocks `tenantRead` in its place.
 
 ## Verify

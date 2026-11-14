@@ -41,7 +41,7 @@ No script: manual.
 7. Read `Invitation.invitation` for `inactiveMembership`, outcome `resend` for `remind` and `declined` for a remind with `declinedAt`; `declineHolds` is `declineHoldEnd`.
 8. Rename i18n overrides `success.delete_members`, `invite_and_remind` and `invite_result_reminded` to `success.remove_members`, `invite_and_resend` and `invite_result_resent`; `remind` is `resend`.
 9. Add a `held` statement to `data.sql` for each app channel table with drafts, as the organizations one does.
-10. Run `pnpm generate` with `hints.json`, append `data.sql` to the generated migration, and rename the snapshot's old `inactive_memberships_*` constraint names to the ones `data.sql` gives.
+10. Run `pnpm generate` with `hints.json` and append `data.sql` to the generated migration. It renames the foreign keys of an app's channel columns too; a key whose name drizzle hashes stops the migration and takes a `RENAME CONSTRAINT` of its own beside the organization key's.
 
 ## Verify
 
