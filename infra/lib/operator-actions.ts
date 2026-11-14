@@ -92,7 +92,7 @@ export const OPERATOR_ACTIONS = {
   'db-reset': {
     label: 'Reset database',
     key: 'operator',
-    description: 'Wipe the database and rebuild it empty. A backup is taken first and kept for 7 days.',
+    description: 'Wipe the database and rebuild it empty, after a backup.',
   },
   unlock: {
     label: 'Unlock',
@@ -112,7 +112,7 @@ export const OPERATOR_ACTIONS = {
   teardown: {
     label: 'Tear down',
     key: 'owner',
-    description: 'Delete everything that runs or costs, after a final dump. The uploads and the dump are kept.',
+    description: 'Delete everything that runs or costs, after a final dump that is kept.',
   },
 } as const satisfies Record<string, OperatorAction>;
 
