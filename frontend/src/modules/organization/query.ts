@@ -162,6 +162,6 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/** A page of organizations for a table export. Bypasses cache; rows carry their counts and the caller's membership. */
+/** A page of organizations for a table export. Bypasses cache; rows carry their counts. */
 export const fetchOrganizationsForExport = ({ q, sort, order }: Pick<OrganizationFilters, 'q' | 'sort' | 'order'>, page: PageRequest) =>
-  fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, page);
+  fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts' }, page);

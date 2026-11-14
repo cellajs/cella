@@ -19,6 +19,9 @@ import { cn } from '~/utils/cn';
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
 const allowedUriRegexp = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
+// DOMPurify also drops `target` by default: links keep the serializer's `_blank` and open in a new tab, as the editor's do.
+const sanitizeConfig = { ALLOWED_URI_REGEXP: allowedUriRegexp, ADD_ATTR: ['target'] };
+
 /**
  * First-pass HTML (media refs unresolved) per organization and document. It lays out like the resolved pass (aspect-ratio
  * media boxes), so a cache hit paints the document at full height in the first commit, as row-measuring lists need.
@@ -241,7 +244,7 @@ export function BlockNoteFullHtml({
         // select-text opts this content back into text selection inside the focusable, click-to-expand Card.
         className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP: allowedUriRegexp }) }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, sanitizeConfig) }}
       />
     </div>
   );
