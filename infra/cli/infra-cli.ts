@@ -8,15 +8,16 @@ import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { crossMark, DIVIDER, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { crossMark, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runAction } from './actions';
 import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
+import { checkoutVersion, formatHeader } from './header';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
-import { BACK, disabledReason, formatStackLine, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
+import { BACK, disabledReason, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import type { InfraContext } from './shared';
@@ -119,10 +120,17 @@ function menuState(context: InfraContext, home?: HomeFacts): MenuState {
   };
 }
 
-/** The environment line with the app's address, then the notices that hold for the whole run: key misconfigurations and deferred compute. */
+/** The header, then the notices that hold for the whole run: key misconfigurations and deferred compute. */
 function printStackNotices(context: InfraContext): void {
-  const url = context.appConfig.frontendUrl ? `  ${pc.underline(context.appConfig.frontendUrl)}` : '';
-  console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}${url}\n`);
+  const host = context.appConfig.frontendUrl ? new URL(context.appConfig.frontendUrl).host : undefined;
+  const [line, divider] = formatHeader({
+    slug: context.appConfig.slug,
+    version: checkoutVersion(),
+    environment: context.environment,
+    state: context.state,
+    host,
+  });
+  console.info(`${line}\n${divider}\n`);
 
   // One line per key misconfiguration (a superseded name in the env file, a key the CLI no longer reads, …) before any action trips over it.
   for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
@@ -278,7 +286,6 @@ while (true) {
   if (READ_ONLY.includes(action)) continue;
 
   // The action may have changed the stack file, the env file or the live stack: read all three again for the next round.
-  console.info(pc.dim(DIVIDER));
   context = await loadContext(environment);
   printStackNotices(context);
   home = await printHome(context);

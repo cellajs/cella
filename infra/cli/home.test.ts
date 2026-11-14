@@ -59,7 +59,7 @@ describe('formatHome', () => {
       '● Database     private',
       '● Security     no findings',
       '',
-      '✔ Nothing needs doing.',
+      '✓ Nothing needs doing.',
     ]);
   });
 
@@ -86,7 +86,7 @@ describe('formatHome', () => {
     };
     expect(plain(formatHome(facts, { now: Date.parse('2026-11-08T10:00:00Z') }))).toEqual([
       '● Serving      0.34.0 since Nov 2 · 1 of 2 services unhealthy',
-      '✖ Last deploy  0.35.0 failed · 2 failed runs today',
+      '✗ Last deploy  0.35.0 failed · 2 failed runs today',
       '● Database     private',
       '! Security     2 findings ("Full status" lists them)',
       '! Lease        held by job:a6696b654e',

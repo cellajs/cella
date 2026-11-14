@@ -30,7 +30,7 @@ export function secretKeyFault(value: string): string | undefined {
 /** What the prompt shows after the value while it is typed: how far a key is, or the check mark once it has the form of one. */
 export function accessKeyProgress(value: string): string {
   if (value.length === 0) return '';
-  return accessKeyFault(value) ? `${value.length} of ${ACCESS_KEY_EXAMPLE.length}` : '✔';
+  return accessKeyFault(value) ? `${value.length} of ${ACCESS_KEY_EXAMPLE.length}` : '✓';
 }
 
 interface AccessKeyConfig {
@@ -70,7 +70,7 @@ const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => 
   if (status === 'done') return `${prefix} ${message} ${theme.style.answer(value.trim())}`;
   const shown = value.length > 0 ? value : pc.dim(ACCESS_KEY_EXAMPLE);
   const progress = accessKeyProgress(value.trim());
-  const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✔' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
+  const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✓' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
   return [line, errorMsg ? theme.style.error(errorMsg) : ''];
 });
 

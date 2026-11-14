@@ -160,10 +160,3 @@ export function pickItems(id: MenuRowId, state: MenuState): Array<MenuChoice<Ope
   });
   return [...choices, { name: '← Back', value: BACK, description: 'Return to the menu.' }];
 }
-
-/** The line that says which environment this run targets. Production is red, so a run against it never looks like a staging run. */
-export function formatStackLine(stack: { slug: string; environment: Environment; state: StackState }): string {
-  const mode = stack.environment === 'production' ? pc.bold(pc.red(stack.environment)) : pc.cyan(stack.environment);
-  const state = stack.state === 'bootstrapped' ? '' : stack.state === 'fresh' ? pc.dim(' · new') : pc.dim(' · setup not finished');
-  return `${pc.cyan('⧈')} ${pc.bold(stack.slug)} · ${mode}${state}`;
-}

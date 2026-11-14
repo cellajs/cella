@@ -47,7 +47,7 @@ describe('endOnPromptAbort', () => {
 
   it('fails the run when a prompt had no terminal to ask on', () => {
     expect(run({ isTerminal: false, leaseHeld: false })).toEqual([
-      'log:✖ A prompt needed an answer and this run has no terminal to ask on.',
+      'log:✗ A prompt needed an answer and this run has no terminal to ask on.',
       'exit:1',
     ]);
     expect(run({ isTerminal: false, leaseHeld: true }).at(-1)).toBe('exit:1');

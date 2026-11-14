@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   BACK,
   disabledReason,
-  formatStackLine,
   type MenuItem,
   type MenuState,
   mainMenuItems,
@@ -194,16 +193,5 @@ describe('rowDisabledReason', () => {
     expect(rowDisabledReason('keys', partial)).toBeUndefined();
     expect(rowDisabledReason('db-open', { ...bootstrapped, environment: 'production' })).toBeUndefined();
     expect(rowDisabledReason('repair', partial)).toBeUndefined();
-  });
-});
-
-describe('formatStackLine', () => {
-  it('names the app and the mode, and says when the setup is unfinished', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'production', state: 'bootstrapped' }))).toBe('⧈ acme · production');
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'partial' }))).toBe('⧈ acme · staging · setup not finished');
-  });
-
-  it('says new on a fresh install', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'fresh' }))).toBe('⧈ acme · staging · new');
   });
 });
