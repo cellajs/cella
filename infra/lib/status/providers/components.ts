@@ -17,11 +17,11 @@ export interface ComponentsFact {
 
 /** One verdict rule with the smoke step: only-degraded warns, anything unhealthy (or a non-ok aggregate with no issue) is an error. */
 function componentsCheck(facts: ComponentsFact, mode: string): Check {
-  const components = check('live.components', 'Primary components');
+  const components = check('live.components', 'Components');
   if (facts.issues === undefined) return components.missing(`unreachable at ${facts.url}`, diagAction(mode));
   if (facts.issues.length === 0) {
     return facts.httpStatus !== undefined && facts.httpStatus < 400
-      ? components.ok(`all healthy (${facts.slug})`)
+      ? { ...components.ok(`all healthy (${facts.slug})`), headline: 'all healthy' }
       : components.error(`HTTP ${facts.httpStatus} with no component issue at ${facts.url}`, diagAction(mode));
   }
   const detail = formatComponentIssues(facts.issues);

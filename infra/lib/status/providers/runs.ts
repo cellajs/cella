@@ -65,19 +65,23 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
   return own;
 }
 
-/** A deploy's end, as its record says it, or a hand start's job run that wrote none: then `record` is undefined. */
+/** A deploy's end, as its record says it, or a hand start's job run that wrote none: then `record` is undefined. `at` is when it started. */
 function deployVerdict(
   runs: CheckBuilder,
   target: string,
   outcome: RunRecord['outcome'] | ReturnType<typeof mainJobOutcome>,
   state: string,
+  at: string | undefined,
   record?: RunRecord,
 ): Check {
   const sha = target.slice(0, 10);
-  if (outcome === 'running') return runs.ok(`${sha} is deploying`, undefined, target);
-  if (outcome === 'deployed' || outcome === 'unchanged') return runs.ok(`deployed ${sha}`, undefined, target);
+  const when = at ? { at: record?.endedAt ?? at } : {};
+  if (outcome === 'running') return { ...runs.ok(`${sha} is deploying`, undefined, target), ...when };
+  if (outcome === 'deployed' || outcome === 'unchanged') {
+    return { ...runs.ok(`deployed ${sha}`, undefined, target), headline: `${sha} deployed`, ...when };
+  }
   if (outcome === 'blocked' || outcome === 'apply needed') {
-    return runs.warn(
+    const verdict = runs.warn(
       `${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`,
       {
         description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
@@ -85,11 +89,12 @@ function deployVerdict(
       },
       target,
     );
+    return { ...verdict, headline: outcome === 'apply needed' ? `${sha} waits for an apply` : `${sha} is blocked`, ...when };
   }
-  const failed = record
-    ? `${sha} failed${record.failedStep ? ` at "${record.failedStep}"` : ''}: ${classifyRun(record).sentence}`
-    : `${sha} failed (${state})`;
-  return runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') }, target);
+  const step = record?.failedStep ? ` at "${record.failedStep}"` : '';
+  const failed = record ? `${sha} failed${step}: ${classifyRun(record).sentence}` : `${sha} failed (${state})`;
+  const verdict = runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') }, target);
+  return { ...verdict, ...(record ? { headline: `${sha} failed${step}` } : {}), ...when };
 }
 
 /**
@@ -143,17 +148,19 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         // A run started by hand after the newest record that wrote none: it runs still, or ended before its record.
         const unrecorded = jobRuns.find((run) => !isScheduledRun(run) && (!newest || (run.created_at ?? '') > newest.startedAt));
         if (unrecorded) {
-          return deployVerdict(runs, label(unrecorded), runEnded(unrecorded) ? mainJobOutcome(unrecorded) : 'running', unrecorded.state);
+          const outcome = runEnded(unrecorded) ? mainJobOutcome(unrecorded) : 'running';
+          return deployVerdict(runs, label(unrecorded), outcome, unrecorded.state, unrecorded.created_at);
         }
         if (!newest) return runs.ok('no deploy yet');
         const sha = newest.target.slice(0, 10);
         if (newest.outcome === 'running' && !leaseHeldByRun(lock, newest.run)) {
-          return runs.error(`${sha} was interrupted: its record says running, and no deploy holds the lease under run ${newest.run}`, {
+          const verdict = runs.error(`${sha} was interrupted: its record says running, and no deploy holds the lease under run ${newest.run}`, {
             description: 'Read how far it came; a scheduled run does not start this target again',
             command: actionCommand('runs'),
           });
+          return { ...verdict, headline: `${sha} was interrupted`, at: newest.startedAt };
         }
-        return deployVerdict(runs, newest.target, newest.outcome, newest.outcome, newest);
+        return deployVerdict(runs, newest.target, newest.outcome, newest.outcome, newest.startedAt, newest);
       }),
     ];
   },

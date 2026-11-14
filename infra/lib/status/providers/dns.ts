@@ -61,6 +61,7 @@ export const dnsProvider: StatusProvider<DnsFacts> = {
     const elsewhere = lbIps?.length ? resolvedIps.filter((ip) => !lbIps.includes(ip)) : [];
     if (elsewhere.length > 0)
       return [dns.error(`${host} resolves to ${elsewhere.join(', ')}, which is not the load balancer (${lbIps?.join(', ')})`)];
-    return [dns.ok(`${host} → ${resolvedIps.join(', ')}${lbIps?.length ? ', the load balancer' : ''}`)];
+    const verdict = dns.ok(`${host} → ${resolvedIps.join(', ')}${lbIps?.length ? ', the load balancer' : ''}`);
+    return [lbIps?.length ? { ...verdict, headline: `${host} → the load balancer` } : verdict];
   },
 };

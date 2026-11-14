@@ -26,6 +26,14 @@ export interface Check {
   nextAction?: NextAction;
   /** The commit the detail is about, in full, so a screen can name it by its release. */
   subject?: string;
+  /** The detail in a few words for a screen row; the row shows the detail when absent. */
+  headline?: string;
+  /** What a finding names, one entry per line under its row, as columns: an application, its policy, its permission count. */
+  items?: string[][];
+  /** What a person does about it where no action of this CLI does it, as a sentence. */
+  fix?: string;
+  /** When what the detail states happened (ISO), so a screen can say how long ago. */
+  at?: string;
 }
 
 /** The full report emitted by `infra status` (the `--json` envelope). */

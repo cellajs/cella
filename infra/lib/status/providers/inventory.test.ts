@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { declaredMainJob } from '../../deploy/main-job';
-import { type InventoryFacts, inventoryFindings, mainJobDifferences } from './inventory';
+import { type Finding, type InventoryFacts, type InventoryFindings, inventoryFindings, mainJobDifferences } from './inventory';
+
+/** Each kind's findings by the sentence the report's detail joins. */
+const details = (found: InventoryFindings) =>
+  Object.fromEntries(Object.entries(found).map(([kind, findings]: [string, Finding[]]) => [kind, findings.map((finding) => finding.detail)]));
 
 const expect_ = {
   projectId: 'p-staging',
@@ -65,7 +69,7 @@ describe('the inventory', () => {
       mainJob: { env: {} },
       organizationId: 'o',
     };
-    expect(inventoryFindings(facts, expect_, Date.parse('2026-10-14T12:00:00Z'))).toEqual({
+    expect(details(inventoryFindings(facts, expect_, Date.parse('2026-10-14T12:00:00Z')))).toEqual({
       applications: ['other-production-ci-deploy: can act in this environment through other-production-ci-deploy-policy: IAMApplicationManager'],
       keys: ['app-staging-boot holds 2 keys: SCWBOOT (no description), SCWPLANTED (planted)'],
       operatorKeys: ['app-operator holds a key that outlives a day: SCWOPDURABLE (forever)'],
@@ -81,8 +85,8 @@ describe('the inventory', () => {
     // The age is the Instance API's: a lease in the bucket, which the deploy key writes, excuses nothing.
     const young = facts.machines?.map((machine) => ({ ...machine, createdAt: '2026-10-14T11:20:00Z' }));
     const deploying = inventoryFindings({ ...facts, machines: young }, expect_, Date.parse('2026-10-14T12:00:00Z'));
-    expect(deploying.machines).toEqual(['mallory: not made by the engine', 'app-backend-1f2e3d4c: not made by the engine']);
-    expect(deploying.passing).toEqual([
+    expect(details(deploying).machines).toEqual(['mallory: not made by the engine', 'app-backend-1f2e3d4c: not made by the engine']);
+    expect(details(deploying).passing).toEqual([
       'app-backend-b: a machine the live record does not name, a machine a deploy may be making',
       'app-builder-abc: a builder, a machine a deploy may be making',
     ]);
