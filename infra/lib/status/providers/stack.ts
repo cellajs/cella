@@ -46,7 +46,7 @@ export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
 }
 
 /** The keys as a count and the oldest one's age: `24 API keys, oldest 19 d`. */
-export function keyAgesHeadline(ages: readonly KeyAge[], now = Date.now()): string {
+function keyAgesHeadline(ages: readonly KeyAge[], now = Date.now()): string {
   const oldest = Math.max(...ages.map((age) => ageInDays(age.createdAt, now)));
   return `${ages.length} API key${ages.length === 1 ? '' : 's'}, oldest ${oldest} d`;
 }

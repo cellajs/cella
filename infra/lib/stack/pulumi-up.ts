@@ -7,7 +7,7 @@ import { infraDir } from '../utils/paths';
 
 /**
  * Set one stack config key. `secret` encrypts the value; `configFile` targets an alternate stack config file.
- * @throws when pulumi exits non-zero, so a caller under a lease releases it on the way out
+ * @throws when pulumi exits non-zero: a caller under a lease releases it on the way out
  */
 export function pulumiConfigSet(
   env: NodeJS.ProcessEnv,

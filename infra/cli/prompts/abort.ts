@@ -15,7 +15,7 @@ export function isPromptAbort(error: unknown): boolean {
 }
 
 /**
- * Run work that waits without a prompt, such as a poll, so a Ctrl-C rejects it with {@link Interrupted} at once. The work reads `signal`
+ * Run work that waits without a prompt, such as a poll, where a Ctrl-C rejects it with {@link Interrupted} at once. The work reads `signal`
  * between its steps and stops printing once it is aborted.
  */
 export async function untilInterrupt<T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> {
@@ -35,8 +35,8 @@ export async function untilInterrupt<T>(work: (signal: AbortSignal) => Promise<T
 }
 
 /**
- * Run a child process to its end while a Ctrl-C reaches the child alone, so this process lives on and its `finally` runs. The signal a
- * blocking spawn received is handled on the next tick, so the listener stays until then.
+ * Run a child process to its end while a Ctrl-C reaches the child alone: this process lives on and its `finally` runs. The signal a
+ * blocking spawn received is handled on the next tick, and the listener stays until then.
  */
 export async function shieldInterrupt<T>(run: () => T): Promise<T> {
   const ignore = () => {};

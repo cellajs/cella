@@ -239,7 +239,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
         endAction(0);
       }
     },
-    // Asked here, so Esc at the key goes back to the question above it; the apply below runs on the key the session keeps.
+    // The key is a step of its own: Esc at it goes back to the question above. The apply below runs on the key the session keeps.
     async () => {
       await acquireOperatorKey(context);
     },

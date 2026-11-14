@@ -125,8 +125,8 @@ const SETTLE_WAIT_MS = 30_000;
 type KeyWayOut = 'wait' | 'another' | 'retry' | typeof LEAVE;
 
 /**
- * Ask what to do with a key Scaleway did not take. A refused key is dropped, and a 403 may be a policy that has not held yet, so waiting
- * comes first; a key Scaleway never answered on is read again.
+ * Ask what to do with a key Scaleway did not take. A refused key is dropped. A 403 may be a policy that has not held yet: waiting comes
+ * first. A key Scaleway never answered on is read again.
  */
 function keyWaysOut(judged: { refused: boolean; status?: number }): Promise<KeyWayOut> {
   const rows: Array<WayOut<KeyWayOut>> = judged.refused

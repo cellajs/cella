@@ -9,7 +9,7 @@ const session: {
   operatorKey?: KeyPair;
   /** The operator key was minted by this run's setup, so IAM may refuse it until its policy holds. */
   operatorKeyMinted?: boolean;
-  /** The run shows the menu, so an action that fails or is stopped returns to it. */
+  /** The run shows the menu: an action that fails or is stopped returns to it. */
   menu?: boolean;
   /** The answers the running action gave, by prompt id: a step back or a retry offers each as its default. */
   answers: Map<string, string | boolean>;
@@ -72,7 +72,7 @@ export function recalledAnswer(id: string): string | boolean | undefined {
   return session.answers.get(id);
 }
 
-/** Drop the running action's answers once it ends, so the next action asks with the prompts' own defaults. */
+/** Drop the running action's answers once it ends: the next action asks with the prompts' own defaults. */
 export function forgetAnswers(): void {
   session.answers.clear();
 }

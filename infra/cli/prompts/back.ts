@@ -26,7 +26,7 @@ export interface PromptContext {
 }
 
 /**
- * Run one prompt so Esc rejects it with {@link PromptBack} and erases it. Inquirer's prompts have no Esc of their own, so a keypress
+ * Run one prompt so Esc rejects it with {@link PromptBack} and erases it. Inquirer's prompts have no Esc of their own: a keypress
  * listener aborts the prompt through its signal, as menuSelect does; Inquirer reads the erase flag only once the prompt ends. Node 26
  * reports a lone Esc with `meta` set, which the name alone matches.
  */

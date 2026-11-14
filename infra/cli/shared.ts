@@ -34,12 +34,12 @@ export interface EndOptions {
   fix?: OperatorActionId | readonly OperatorActionId[];
   /** The retry row's words, for a retry that does more than run the action again. */
   retry?: string;
-  /** The operator already chose to leave from ways out the action offered, so nothing more is offered. */
+  /** The operator already chose to leave from the ways out the action offered: nothing more is offered. */
   left?: boolean;
 }
 
 /**
- * Ends the running action after it printed its failure. It is thrown, so every `finally` on the way out runs: the menu then offers a retry
+ * Ends the running action after it printed its failure. It is thrown, and every `finally` on the way out runs: the menu then offers a retry
  * and the fixes, and a single-action run exits with `exitCode`.
  */
 export class ActionEnded extends Error {

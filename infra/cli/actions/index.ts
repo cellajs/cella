@@ -161,5 +161,4 @@ export async function runAction(id: OperatorActionId, context: InfraContext, opt
 }
 
 /** The line under a first setup's failure: the operator key its Owner moment made is in memory only. */
-const SETUP_KEY_NOTE =
-  'The operator key this setup made lives only in this run: quitting drops it, and the next run asks for one made in the console.';
+const SETUP_KEY_NOTE = 'The operator key this setup made ends with this run: after quitting, make one in the console.';

@@ -29,7 +29,7 @@ export async function menuSelect<T extends string>(options: MenuSelectOptions<T>
   let chosen: T | undefined;
   const onKeypress = (_chunk: unknown, key?: { name?: string; ctrl?: boolean; meta?: boolean }) => {
     if (!key?.name || key.ctrl) return;
-    // Node 26 reports a lone Esc with `meta` set, so Esc is matched before the modifier check.
+    // Node 26 reports a lone Esc with `meta` set: Esc is matched before the modifier check.
     if (key.name === 'escape' || (!key.meta && quits && key.name === 'q')) return controller.abort();
     if (key.meta) return;
     const hot = options.hotkeys?.[key.name];
