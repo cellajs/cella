@@ -118,11 +118,13 @@ A run ends in one of five outcomes:
 - **Apply needed:** the target describes the app otherwise, or the run ran outside the engine image ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)).
 - **Failed:** roles it did not switch keep their machines, and the target waits for a change in git or a start by hand.
 
-**Releases only.** In production, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
+**Releases only.** In production, the engine refuses a target that no release tag names, and a release that the default branch does not contain. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
 
 The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Deploy logs flags such a run.
 
-The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
+A tag alone deploys nothing. A `99.0.0` pushed on a commit outside the default branch is refused, and its run ends failed with that reason. Delete the tag, or merge the commit and raise the retry counter.
+
+The rule is as strong as the two rulesets together. Whoever may push a tag chooses among the commits the default branch holds, an old release included. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
 The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The apply keeps the description beside its hash in `control/<mode>/applied.json`. From that copy the CLI names the fields an earlier or waiting release would change. A run installs nothing. The image starts its deploy from the target, the retry counter, the deploy key, the project and the organization. A deploy reads no Pulumi state.
 

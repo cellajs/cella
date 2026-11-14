@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EngineStamp } from '../lib/deploy/applied-engine';
+import type { RunRecord } from '../lib/deploy/run-record';
 import type { RemoteRef } from '../lib/deploy/target';
 import { type MainJobEffects, mainJob } from './main-job';
 
@@ -15,9 +16,14 @@ const REFS: RemoteRef[] = [
   { sha: '4'.repeat(40), ref: 'refs/tags/nightly' },
 ];
 
-function effects(opts: { stamp?: EngineStamp; codes?: Record<string, number>; refs?: RemoteRef[] | Error } = {}) {
+/** `offBranch`: the commits the default branch does not contain. `scheduled`: the run reads its target as a scheduled run does. */
+function effects(
+  opts: { stamp?: EngineStamp; codes?: Record<string, number>; refs?: RemoteRef[] | Error; offBranch?: string[]; scheduled?: boolean } = {},
+) {
   const calls: Array<{ line: string; env: NodeJS.ProcessEnv }> = [];
   const listed: string[] = [];
+  const records: RunRecord[] = [];
+  const released: string[] = [];
   const fx: MainJobEffects = {
     stamp: () => opts.stamp,
     releaseRefs: async ({ mode }) => {
@@ -25,15 +31,25 @@ function effects(opts: { stamp?: EngineStamp; codes?: Record<string, number>; re
       if (opts.refs instanceof Error) throw opts.refs;
       return opts.refs ?? REFS;
     },
+    onDefaultBranch: async ({ sha }) => !opts.offBranch?.includes(sha),
     scheduledEffects: async () => {
-      throw new Error('a run started by hand reads no schedule');
+      if (!opts.scheduled) throw new Error('a run started by hand reads no schedule');
+      return {
+        takeLease: async () => undefined,
+        handOverLease: async () => true,
+        releaseLease: async (owner) => void released.push(owner),
+        environmentsFile: async () => '',
+        listRemote: async () => REFS,
+        records: async () => [],
+        writeRecord: async (record) => void records.push(record),
+      };
     },
     run: (script, args, runEnv) => {
       calls.push({ line: `${script} ${args.join(' ')}`, env: runEnv });
       return opts.codes?.[script] ?? 0;
     },
   };
-  return { fx, calls, listed };
+  return { fx, calls, listed, records, released };
 }
 
 beforeEach(() => {
@@ -82,6 +98,23 @@ describe('a main job run', () => {
       expect(await mainJob({ ...own, TARGET_SHA: sha }, fx)).toBe(0);
       expect(calls.map((call) => call.line)).toEqual([`deploy --mode production --sha ${sha} --retry 1`]);
     }
+  });
+
+  it('must not deploy a release the default branch does not contain: a tag alone, on any commit, names no release of the app', async () => {
+    const { fx, calls } = effects({ stamp: stamp('production'), offBranch: ['1'.repeat(40)] });
+    expect(await mainJob({ ...env, TARGET_SHA: '1'.repeat(40) }, fx)).toBe(1);
+    expect(calls).toEqual([]);
+  });
+
+  it('must not deploy such a release on the schedule either, and ends the record it opened with the reason: no later run starts it', async () => {
+    // The newest release, 0.26.0, points outside the default branch.
+    const { fx, calls, records, released } = effects({ stamp: stamp('production'), offBranch: ['3'.repeat(40)], scheduled: true });
+    expect(await mainJob({ DEPLOY_KEY_JSON: KEY, SCW_DEFAULT_PROJECT_ID: 'p' }, fx)).toBe(1);
+    expect(calls).toEqual([]);
+    expect(records.map((record) => record.outcome)).toEqual(['running', 'failed']);
+    expect(records[1]).toMatchObject({ run: records[0]?.run, target: '3'.repeat(40), startedAt: records[0]?.startedAt });
+    expect(records[1]?.error).toMatch(/default branch only, which does not contain 0\.26\.0/);
+    expect(released).toHaveLength(1);
   });
 
   it('fails a release check that cannot list the tags, as a private repository without its read key answers', async () => {
