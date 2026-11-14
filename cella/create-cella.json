@@ -1,0 +1,14 @@
+{
+  "remove": ["infra/Pulumi.production.yaml"],
+  "empty": ["backend/drizzle"],
+  "copy": {
+    "frontend/.env.example": "frontend/.env"
+  },
+  "edit": {
+    "quickstart": "cella/QUICKSTART.md",
+    "configTemplate": "shared/config/config.template.ts",
+    "cliConfig": "cella/cella.config.ts",
+    "envExample": ".env.example",
+    "releaseConfig": ".github/release-please-config.json"
+  }
+}

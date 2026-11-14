@@ -14,3 +14,20 @@ describe.skipIf(!existsSync(templateUrl))('config template', () => {
     expect(readFileSync(templateUrl, 'utf8')).toBe(renderTemplateConfig(readFileSync(defaultUrl, 'utf8')));
   });
 });
+
+/**
+ * `cella/create-cella.json` names every template path create-cella removes, empties, copies or edits in a new app.
+ * A rename that leaves a path behind fails here, in the pull request that makes it.
+ */
+const repoRoot = new URL('../../../../', import.meta.url);
+const manifestUrl = new URL('cella/create-cella.json', repoRoot);
+
+describe.skipIf(!existsSync(templateUrl))('create-cella manifest', () => {
+  it('names paths the template has', () => {
+    const manifest: { remove: string[]; empty: string[]; copy: Record<string, string>; edit: Record<string, string> } = JSON.parse(
+      readFileSync(manifestUrl, 'utf8'),
+    );
+    const paths = [...manifest.remove, ...manifest.empty, ...Object.keys(manifest.copy), ...Object.values(manifest.edit)];
+    expect(paths.filter((path) => !existsSync(new URL(path, repoRoot)))).toEqual([]);
+  });
+});
