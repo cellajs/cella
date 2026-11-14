@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.47.0](https://github.com/cellajs/cella/compare/0.46.0...0.47.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* retention runs in the jobs worker, invitations carry a status, one product delete, one signal per cascade, and every lifecycle act named once ([#1829](https://github.com/cellajs/cella/issues/1829))
+
+### 🎉 New features
+
+* an app gets app-utilities.css, the app's page may use the camera and microphone, resting text steps back, and deps ([#1828](https://github.com/cellajs/cella/issues/1828)) ([f2ce332](https://github.com/cellajs/cella/commit/f2ce332ab156d9aef886198af6943c84fdc9bdde))
+* an app's own utilities file, camera and microphone on the app's page, softer resting text, and deps ([#1827](https://github.com/cellajs/cella/issues/1827)) ([6e5cf95](https://github.com/cellajs/cella/commit/6e5cf956f0a56f4d43653a24b9e09b1e29de095d))
+* an organizations page behind the rail's last button, the home page renders whole, and deps with Node 26.13.1 ([#1820](https://github.com/cellajs/cella/issues/1820)) ([6b9f59a](https://github.com/cellajs/cella/commit/6b9f59a7469e7744e138ce7613860a55dbb97a90))
+* retention runs in the jobs worker, invitations carry a status, one product delete, one signal per cascade, and every lifecycle act named once ([#1829](https://github.com/cellajs/cella/issues/1829)) ([eede5b9](https://github.com/cellajs/cella/commit/eede5b93762499b15d10f6b9d880fe04c26b623a))
+* system messages go to a Matrix room, with mail as the fallback ([#1830](https://github.com/cellajs/cella/issues/1830)) ([587ddca](https://github.com/cellajs/cella/commit/587ddcaf4b67b125f69aac9dd330d1dd87c45239))
+* the skip link shows only past a sidebar, pnpm dev starts Drizzle Studio again, and fresh raak shots ([#1831](https://github.com/cellajs/cella/issues/1831)) ([d5ce329](https://github.com/cellajs/cella/commit/d5ce329e7b934d524dc041bf6f9da6137f54bd76))
+
+
+### 🐞 Bug fixes
+
+* infra actions pin the app's state bucket, and the stored request reserves its confirmation mail ([#1822](https://github.com/cellajs/cella/issues/1822)) ([80bbad0](https://github.com/cellajs/cella/commit/80bbad09a0c6bdeee70f606f7e11a561e5ae250d))
+
+
+### 🔧 Small improvements
+
+* **frontend:** a state is styled through one mechanism ([#1826](https://github.com/cellajs/cella/issues/1826)) ([567afde](https://github.com/cellajs/cella/commit/567afde71bb2feb0d2b1db9fe57406e0309a13b8))
+* **frontend:** tokens are read by name and declared in a layer ([#1825](https://github.com/cellajs/cella/issues/1825)) ([0346c41](https://github.com/cellajs/cella/commit/0346c415abb815a0d86a0dc886286f19feaf175a))
+
+
+### 📖 Documentation
+
+* an app's upgrade PR leaves the Size section out ([#1824](https://github.com/cellajs/cella/issues/1824)) ([1c03437](https://github.com/cellajs/cella/commit/1c0343793be8d24a6edc89c35015ec60aed8cebf))
+
 ## [0.46.0](https://github.com/cellajs/cella/compare/0.45.0...0.46.0) (2026-11-13)
 
 
