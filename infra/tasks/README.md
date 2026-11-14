@@ -10,8 +10,6 @@ The deploy's steps and the operator tasks. The sequencers keep their live effect
 - **Pull request checks**: `privileged-check` renders the base and the head with `privileged-footprint`; `release-applied-check`, on the release PR, holds the head's `description-hash` against the one the last apply published.
 - **Status**: `status`, the report behind `pnpm infra status`.
 
-`args.ts` holds the flag helpers the tasks share.
-
 ## Failing a task
 
 A task that [deploy-run.ts](./deploy-run.ts) runs in-process reports failure by throwing, never through `process.exit` or `process.exitCode`: the deploy stops only on a throw. A task whose exit code means something to a standalone caller (exit 2, blocked: the env composition for a missing required secret) throws `ExitCodeError` ([lib/utils/errors.ts](../lib/utils/errors.ts)), and `runIfMain` exits with its code.

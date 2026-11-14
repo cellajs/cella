@@ -1,5 +1,6 @@
 import type { RdbBackup, RdbDatabase, RdbInstance, RdbPermission } from '../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../lib/utils/cli-output';
+import { errorMessage } from '../lib/utils/errors';
 
 /** The live API target shown to the operator for confirmation. */
 export interface ResetTarget {
@@ -106,7 +107,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
     plan.log(`${checkMark} Deleted database ${plan.databaseName}`);
   } catch (error) {
     // Nothing was destroyed if the delete itself failed, so this stays a normal error.
-    throw new Error(`Failed to delete '${plan.databaseName}': ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Failed to delete '${plan.databaseName}': ${errorMessage(error)}`);
   }
 
   try {
@@ -125,7 +126,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
     return { instanceId: instance.id, backupId: backup.id, granted };
   } catch (error) {
     throw new ResetIrrecoverableError(
-      `${plan.databaseName} was deleted but could not be rebuilt: ${error instanceof Error ? error.message : String(error)}`,
+      `${plan.databaseName} was deleted but could not be rebuilt: ${errorMessage(error)}`,
       backup.id,
       instance.id,
       plan.databaseName,

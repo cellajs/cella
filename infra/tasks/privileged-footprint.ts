@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import type { PrivilegedFootprint } from '../lib/stack/privileged-footprint';
+import { getFlag } from '../lib/utils/args';
 import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 
 /** The project and organization a keyless render names: fixed words, so a base and a head render compare on what the code declares. */
 const PROJECT = 'project';

@@ -1,4 +1,5 @@
 import { OBSERVER_KEY_NAMES } from '../utils/env-files';
+import { errorMessage } from '../utils/errors';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
@@ -36,7 +37,7 @@ function optionalKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar: s
   try {
     return envKeyPair(env, accessVar, secretVar);
   } catch (error) {
-    warnings.push(`${error instanceof Error ? error.message : String(error)}: ignoring the half-set pair.`);
+    warnings.push(`${errorMessage(error)}: ignoring the half-set pair.`);
     return undefined;
   }
 }
@@ -180,7 +181,7 @@ export async function assertIamManager(opts: {
     desc = await describeKey(opts.pair, { fetchImpl: opts.fetchImpl });
   } catch (error) {
     throw new Error(
-      `The supplied key cannot describe itself in IAM (${error instanceof Error ? error.message : String(error)}). An Owner API key is ${OWNER_KEY_HOWTO}, or the key of an application holding ProjectManager + IAMManager.`,
+      `The supplied key cannot describe itself in IAM (${errorMessage(error)}). An Owner API key is ${OWNER_KEY_HOWTO}, or the key of an application holding ProjectManager + IAMManager.`,
     );
   }
   const role = classifyPrincipal(desc, opts.names);

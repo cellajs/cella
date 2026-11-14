@@ -4,8 +4,9 @@ import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '..
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
 import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
-import { crossMark, pc, sleep, warningMark, withSpinner } from '../../lib/utils/cli-output';
+import { crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { sleep } from '../../lib/utils/sleep';
 import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';

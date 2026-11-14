@@ -2,12 +2,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { healthContract } from '../config/health.config';
 import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
-import { sleep as defaultSleep } from '../lib/utils/cli-output';
+import { getFlag } from '../lib/utils/args';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { pollUntil } from '../lib/utils/retry';
 import { parseServiceRows } from '../lib/utils/service-rows';
-import { getFlag } from './args';
+import { sleep as defaultSleep } from '../lib/utils/sleep';
 import { isHealthy } from './wait-for-version';
 
 /** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */

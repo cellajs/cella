@@ -1,4 +1,5 @@
 import { resolveFetch } from '../utils/fetch-like';
+import { sleep } from '../utils/sleep';
 import { type ScwAuth, scwErrorStatus, scwFetch, scwSend } from './scw-fetch';
 
 /** A machine as the Instance API returns it. */
@@ -11,7 +12,6 @@ export interface ScwServer {
 }
 
 const instanceApi = (zone: string) => `https://api.scaleway.com/instance/v1/zones/${zone}`;
-const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
 
 /** What a deploy makes a machine of. */
 export interface MachineSpec {

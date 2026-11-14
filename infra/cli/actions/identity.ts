@@ -8,6 +8,7 @@ import { ensureApplication } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwSend } from '../../lib/scaleway/scw-fetch';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { planDeclaredPolicies, writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { type IdentityChanges, identityChangeLines, planIdentityChanges } from '../../tasks/identity-plan';
 import { declaredObserverPolicy } from '../../tasks/setup-observer-app';
@@ -71,7 +72,7 @@ export async function exitOnIdentityChanges(
   release?: () => Promise<void>,
 ): Promise<void> {
   const plan = await planChanges(context, key.secretKey, key.organizationId).catch((error) => {
-    console.warn(`${warningMark} Could not read the identities (${error instanceof Error ? error.message : String(error)}).`);
+    console.warn(`${warningMark} Could not read the identities (${errorMessage(error)}).`);
     return undefined;
   });
   const changes = plan ? identityChangeLines(plan) : [];

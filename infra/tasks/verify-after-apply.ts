@@ -2,6 +2,7 @@ import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { expectedDbPrivileges } from '../lib/scaleway/db-privileges';
 import { createRdbClient } from '../lib/scaleway/scaleway-rdb';
+import { errorMessage } from '../lib/utils/errors';
 import type { FetchLike } from '../lib/utils/fetch-like';
 
 export interface VerifyAfterApplyOptions {
@@ -52,7 +53,7 @@ export async function verifyAfterApply(opts: VerifyAfterApplyOptions): Promise<V
       }
     }
   } catch (error) {
-    errors.push(`database privileges: ${error instanceof Error ? error.message : String(error)}`);
+    errors.push(`database privileges: ${errorMessage(error)}`);
   }
 
   return { ok: problems.length === 0 && errors.length === 0, problems, errors };

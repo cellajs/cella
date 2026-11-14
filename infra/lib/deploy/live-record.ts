@@ -10,6 +10,7 @@ import {
 } from '../stack/control-store';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
+import { sleep as defaultSleep } from '../utils/sleep';
 
 /**
  * What one role serves: the slot whose machine takes its traffic, that machine, the commit it runs, and the retry counter and rotation it
@@ -95,7 +96,7 @@ export async function recordRole(
   opts: { by: string; attempts?: number; now?: () => Date; sleep?: (ms: number) => Promise<void> } = { by: 'unknown' },
 ): Promise<void> {
   const attempts = opts.attempts ?? 8;
-  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  const sleep = opts.sleep ?? defaultSleep;
   for (let attempt = 1; ; attempt++) {
     const { record, etag } = await readLiveRecord(s3, bucket, stack);
     const roles = { ...record.roles };
