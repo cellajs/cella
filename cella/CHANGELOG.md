@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.47.1](https://github.com/cellajs/cella/compare/0.47.0...0.47.1) (2026-11-14)
+
+
+### 🐞 Bug fixes
+
+* alignment gaps raak hit upgrading to d5ce329e7 ([#1832](https://github.com/cellajs/cella/issues/1832)) ([bc960c0](https://github.com/cellajs/cella/commit/bc960c01298fb2838046599cbe31b7b4ecea42c1))
+* **frontend:** attachments hide views when untracked, and the lobby's menu button reads as a way back ([#1837](https://github.com/cellajs/cella/issues/1837)) ([da30aed](https://github.com/cellajs/cella/commit/da30aed02b809deec2275552dfdd2fab9e5405dc))
+* **frontend:** description links open in a new tab, the organizations export reads roles from the cache, and fresh raak shots ([#1835](https://github.com/cellajs/cella/issues/1835)) ([4b222a1](https://github.com/cellajs/cella/commit/4b222a10b10fa8631ccae58060ddc413e30f8050))
+* the images copy patches/ for an app whose pnpm patches a dependency, and the organizations export tests follow [#1835](https://github.com/cellajs/cella/issues/1835) ([#1836](https://github.com/cellajs/cella/issues/1836)) ([d100adc](https://github.com/cellajs/cella/commit/d100adce310d2ae702438f003f6b904cc5368daa))
+
+
+### 📖 Documentation
+
+* docs and marketing copy match the code after a claim-by-claim check ([#1834](https://github.com/cellajs/cella/issues/1834)) ([6b15f76](https://github.com/cellajs/cella/commit/6b15f7670aef189bfd86abd45e12c8ebdb708d29))
+
 ## [0.47.0](https://github.com/cellajs/cella/compare/0.46.0...0.47.0) (2026-11-14)
 
 
