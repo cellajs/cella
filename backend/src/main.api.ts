@@ -10,6 +10,7 @@ import { env } from '#/env';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
+import { connectSystemRoom } from '#/lib/system-room';
 import { otel } from '#/lib/tracing';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
@@ -49,6 +50,8 @@ const main = async () => {
   }
 
   stops.push(startGeoipRefresh());
+  // Detached: the log says whether the system room takes messages, and a slow homeserver never holds the boot.
+  void connectSystemRoom();
 
   // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
   internalListener = serveInternal({ port: internalPort });

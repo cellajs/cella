@@ -250,6 +250,16 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend'],
   },
+  matrixAccessToken: {
+    secretName: 'matrix-access-token',
+    description: 'Matrix bot access token for the system room',
+    envVar: 'MATRIX_ACCESS_TOKEN',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    // The tenant removal job posts from the jobs worker.
+    services: ['backend', 'jobs'],
+  },
   transloaditKey: {
     secretName: 'transloadit-key',
     description: 'Transloadit auth key that signed upload assemblies carry',

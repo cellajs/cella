@@ -6,7 +6,8 @@ This document collects the procedures for a running deployment, from a failed de
 
 Every procedure runs through the Infra CLI or the Scaleway console, since machines take no logins. Resetting the database
 is a hard outage, for pre-production or a planned stop. A teardown deletes everything that runs or costs and keeps what
-cannot be made again for the next setup. A clean slate deletes that too.
+cannot be made again for the next setup. A clean slate deletes that too. The system room is optional, and every
+system message it cannot take goes out by mail.
 
 ## Debug a failed deploy
 
@@ -83,6 +84,36 @@ The apex answers the worker script itself: that script replaces the kept worker 
 Sign-ins resolve the client IP to a country and network with DB-IP Lite data, under CC BY 4.0. The sessions list and the new sign-in notice show them. The image ships no data, and a refresh needs no release. Each API process downloads the data from the `geoip/` prefix of the public bucket at boot and checks for newer data.
 
 Every deploy refreshes stale data, and `pnpm infra start-deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
+
+## The system room
+
+The system room is an optional Matrix room without encryption, in which a bot posts system messages for the operator: a new request from the public form, or the record of a removed tenant. Mail to `company.email` carries every message the room does not take.
+
+1. Create an account for the bot on a homeserver and get an access token for it. On a homeserver you run, issue one as its admin. On a public homeserver that offers password sign-in, as matrix.org does, sign in once through the login API and keep the `access_token` of the answer:
+
+   ```bash
+   curl -X POST https://matrix-client.matrix.org/_matrix/client/v3/login -d '{"type":"m.login.password","identifier":{"type":"m.id.user","user":"<bot>"},"password":"<password>","initial_device_display_name":"system room"}'
+   ```
+
+   A token copied from Element's settings can expire within minutes on such a server. This one lasts until the bot signs out.
+
+2. Create a room with encryption off and invite the bot. Element Web and Desktop show the switch when you create a room. Encryption cannot be switched off later.
+3. Set `matrix: { homeserverUrl, systemRoomId }` in the config of the mode, with the room id from the room's settings under **Advanced**. Store the token as `MATRIX_ACCESS_TOKEN`: in `.env` locally, and in a deployment as the runtime secret `matrix-access-token` in **Env vars & secrets** (`pnpm infra secrets`).
+4. Start the app, or deploy a release with that config. The API joins the room and logs `System room connected as @bot:server`, or `System room not connected` with a reason from the table below. A token stored later reaches only the machines of the next deploy.
+
+A message the room does not take goes out by mail, which ends with "Sent by mail: the system room could not be reached (`<reason>`)." The log holds `System room send failed` with the same reason.
+
+| Reason | Means | What to do |
+| --- | --- | --- |
+| `timeout` | The homeserver did not answer in time, several tries in a row. | Nothing: the next message tries the room again. |
+| `unreachable` | No connection to the homeserver. | Check `homeserverUrl` and the homeserver's status. |
+| `M_UNKNOWN_TOKEN` | The homeserver refuses the token. | Store a new token as in step 3 and start again as in step 4. |
+| `M_FORBIDDEN` | The bot is not in the room and has no invite. | Invite the bot again. The next message joins. |
+| `encrypted` | Encryption is on in the room. | Create a room without encryption and set its id. Encryption cannot be switched off. |
+| `M_LIMIT_EXCEEDED` | The homeserver asked the bot to wait longer than a message may. | Nothing for a single one. When it recurs, raise the bot's rate limit or run your own homeserver. |
+| Anything else, such as `http_502`, `bad_response` or `error` | The answer was no Matrix answer, or the message could not be built. | Read the log line beside it. |
+
+Nothing needs to be sent again: every message the room did not take arrived by mail.
 
 ## Open the database
 

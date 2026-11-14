@@ -1,3 +1,5 @@
+import type { RequestDetails } from '#/lib/request-details';
+import type { ChatText } from './chat-text';
 import type { SafeHtmlPolicy } from './components/safe-html';
 import type { EmailFrame } from './frame';
 
@@ -54,6 +56,12 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
  */
 export type RequestDetailsDeclaration<TStatic> = true | ((statics: TStatic) => boolean);
 
+/**
+ * The same message as a chat text, for a template a room can take (`sendToSystemRoom`).
+ * @param details - The request the send runs in; null outside one.
+ */
+export type ChatRendering<TStatic> = (lng: string, statics: TStatic, details: RequestDetails | null) => ChatText;
+
 /** Props every component receives from the mailer besides `translate`'s output: the frame it forwards to the layout. */
 export type FrameProps = { frame: EmailFrame };
 
@@ -69,6 +77,7 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
   translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): { subject: string } & Record<string, unknown>;
   /** React shell receiving translate() output and per-recipient display props. No i18n calls. */
   component(props: Record<string, unknown> & FrameProps): React.ReactElement;
+  chat?: ChatRendering<TStatic>;
   /** Sample data to render this template in previews and tests. */
   preview: EmailPreviewData<TStatic, TRecipient>;
   /** More sample data by variant name, for each case in which the mail reads differently, such as a sign-up or a waitlist. */
@@ -90,6 +99,7 @@ export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient =
     translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): TTranslated;
     /** The mailer sends `subject` as the mail header and keeps it from the component. */
     component(props: Omit<TTranslated, 'subject'> & RecipientProps<TRecipient> & FrameProps): React.ReactElement;
+    chat?: ChatRendering<TStatic>;
     preview: EmailPreviewData<TStatic, TRecipient>;
     previewVariants?: Record<string, EmailPreviewData<TStatic, TRecipient>>;
     htmlParams?: HtmlParams<TRecipient>;

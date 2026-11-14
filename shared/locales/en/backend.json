@@ -1,4 +1,10 @@
 {
+  "chat.request.contact": "<strong>Contact request</strong> from <a href=\"mailto:{{email}}\">{{email}}</a>",
+  "chat.request.info": "<strong>Info request</strong> from <a href=\"mailto:{{email}}\">{{email}}</a>",
+  "chat.request.open": "Open requests",
+  "chat.request.reply": "Reply by mail",
+  "chat.request.waitlist": "<strong>Waitlist request</strong> from <a href=\"mailto:{{email}}\">{{email}}</a>",
+  "chat.tenant_removed": "<strong>Tenant removed</strong>: {{name}}",
   "email.account_exists.preview": "This address already signs in to {{appName}}",
   "email.account_exists.subject": "You already have a {{appName}} account",
   "email.account_exists.text": "Someone asked to join the {{appName}} waitlist with this address. It already has an account, so there is nothing to wait for.",
@@ -38,6 +44,7 @@
   "email.author_email": "Message the author",
   "email.contact_request.text": "Thanks for reaching out to {{appName}}. Our team will get back to you as soon as possible.",
   "email.contact_request.title": "Our team has your request",
+  "email.delivery_note": "Sent by mail: the system room could not be reached ({{reason}}).",
   "email.ending.ignore": "Not you? Ignore this email: nothing happens without this link.",
   "email.ending.invitation": "Not expecting this? Ignore this email: nothing happens unless you accept.",
   "email.ending.no_change": "Not you? Ignore this email: nothing on your account changed.",

@@ -95,6 +95,7 @@ describe('runtime secret registry', () => {
       'DATA_ENCRYPTION_KEY',
       'BREVO_API_KEY',
       'MAPLE_SECRET_INGEST_KEY',
+      'MATRIX_ACCESS_TOKEN',
     ]);
   });
 

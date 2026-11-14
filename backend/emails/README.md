@@ -34,11 +34,24 @@ Brevo reads the subject and body as templates. The mailer's `neutralizeBrevoTags
 - a table's rows sit in a `<tbody>`;
 - `Conditional` and `Raw` write Outlook's conditional comments and verbatim HTML where they stand.
 
+## Chat text
+
+A system message, such as a new request or the record of a removed tenant, goes to the operator's [system room](../../cella/deployment/RUNBOOKS.md#the-system-room) in Matrix, and to mail where the room does not take it. Its template opts in with `chat(lng, statics, details)` beside `translate` and `component`. It returns a `ChatText` from [chat-text.ts](chat-text.ts):
+
+- `headlineHtml`: translated inline HTML from a key under `chat.*` in the `backend` namespace. The first line, which a phone shows.
+- `quote`: plain text a person typed, or a record's lines.
+- `links`: a label and an href each.
+- `note`: plain text after the links, such as the country and browser the request `details` hold.
+
+The i18n instance escapes the headline's values, as it does in a mail body. The renderer in chat-text.ts escapes the quote, the link labels and the note, and keeps only emphasis and links in the headline. It marks the message as mentioning no one: a typed `@room` pings nobody.
+
+The mail that replaces a room message says why. A template the room can take accepts the optional `deliveryNote` static (`DeliveryNoteStatic`) and passes it to the layout as `endingHtml`.
+
 ## Previewing
 
 `preview-fixtures.ts` maps each preview slug (used in URLs and Storybook story names) to its template; the sample props live on the template's `preview` field and are shared by previews and tests.
 
 - **Storybook**: the _Emails / Email templates_ stories fetch rendered HTML from the backend into an iframe, with language and placeholder controls.
-- **Dev route**: with the backend running (`pnpm dev`), `http://localhost:4000/dev/emails` lists templates and their variants, and `/dev/emails/:name?lng=&variant=&placeholders=1` renders one. Mounted only outside production.
+- **Dev route**: with the backend running (`pnpm dev`), `http://localhost:4000/dev/emails` lists templates and their variants, and `/dev/emails/:name?lng=&variant=&placeholders=1` renders one. Mounted only outside production. For each template with a chat text, the list links `/dev/emails/:name/chat?lng=`, which shows the formatted message and its plain text.
 
 `tests/emails/email-templates.test.ts` renders every fixture and variant in every language.
