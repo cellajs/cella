@@ -1,4 +1,3 @@
-import { select } from '@inquirer/prompts';
 import {
   accountExcerpt,
   accountFailed,
@@ -32,6 +31,7 @@ import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 
 const LIST_LENGTH = 10;
@@ -163,26 +163,38 @@ export async function showRuns(
         !records.some((record) => wroteRecord(run, run.environment_variables?.TARGET_SHA, record))) ||
       ownValues(run, opts.definition) !== '',
   );
-  const rows = [
-    ...readings.map(({ newest: record, rewrite }) => {
+  const rows: Array<{ at: string; line: string; reading?: Growth<RunRecord> }> = [
+    ...readings.map((reading) => {
+      const { newest: record, rewrite } = reading;
       const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
-      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}` };
+      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}`, reading };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
       line: `${runWithoutRecordLine(run, opts.environment ?? '')}${ownValues(run, opts.definition)}`,
     })),
-  ].sort((a, b) => b.at.localeCompare(a.at));
+  ]
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, LIST_LENGTH);
   if (rows.length === 0) return print('No run has left a record yet.');
-  for (const row of rows.slice(0, LIST_LENGTH)) print(`  ${row.line}`);
   const [newest] = readings;
+  // The picker is the list: a run without a record stays in it, not selectable, its line saying why.
+  const pick = opts.pick && rows.some((row) => row.reading);
+  if (!pick) for (const row of rows) print(`  ${row.line}`);
   if (!newest) return;
-  const chosen = opts.pick
-    ? await select({
-        message: 'Show which run?',
-        choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest, opts.refs), value: reading })),
-      })
-    : newest;
+  let chosen = newest;
+  if (pick) {
+    const picked = await menuSelect({
+      message: 'Show which run?',
+      items: rows.map((row, index) =>
+        row.reading ? { name: row.line, value: row.reading.newest.run } : { name: row.line, value: `unrecorded-${index}`, disabled: ' ' },
+      ),
+      default: newest.newest.run,
+      escape: 'back',
+    });
+    if (picked === ESCAPED) return;
+    chosen = readings.find((reading) => reading.newest.run === picked) ?? newest;
+  }
   print('');
   for (const line of await runDetailLines(chosen, store, opts.refs)) print(line);
 }

@@ -37,6 +37,11 @@ export function nameSubject(check: Pick<Check, 'detail' | 'subject'>, refs: read
   return check.detail.replace(new RegExp(`\\b${check.subject.slice(0, 7)}[0-9a-f]*\\b`, 'g'), name);
 }
 
+/** What a screen row shows of a check: its headline, else its detail, with the subject named by its release. */
+export function rowText(check: Pick<Check, 'detail' | 'headline' | 'subject'>, refs: readonly RemoteRef[] | undefined): string {
+  return nameSubject({ detail: check.headline ?? check.detail, subject: check.subject }, refs);
+}
+
 export type Verdict = (detail: string, nextAction?: NextAction, subject?: string) => Check;
 export interface CheckBuilder {
   ok: Verdict;

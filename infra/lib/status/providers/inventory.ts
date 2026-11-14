@@ -10,7 +10,7 @@ import { durableKeyLife, organizationIdOfKey } from '../../scaleway/operator-ide
 import { appPrincipalNames } from '../../scaleway/principals';
 import { scwFetch } from '../../scaleway/scw-fetch';
 import { type CheckBuilder, check, probed } from '../check';
-import type { Check, NextAction, StatusProvider } from '../types';
+import type { Check, StatusProvider } from '../types';
 
 /** A policy as the inventory reads it: its principal, and where each of its rules reaches. */
 interface InventoryPolicy {
@@ -63,17 +63,23 @@ export interface InventoryExpectation {
   operator: string;
 }
 
+/** One thing the inventory found: the sentence the report's detail joins, and the columns a screen lists it by. */
+export interface Finding {
+  detail: string;
+  item: string[];
+}
+
 export interface InventoryFindings {
-  applications: string[];
+  applications: Finding[];
   /** An extra key that Rotate keys removes, or a person's key without an end date. */
-  keys: string[];
+  keys: Finding[];
   /** A key of the operator that outlives a day, which the console deletes: the CLI takes none such. */
-  operatorKeys: string[];
-  policies: string[];
+  operatorKeys: Finding[];
+  policies: Finding[];
   /** A machine the engine did not make. */
-  machines: string[];
+  machines: Finding[];
   /** A machine the engine made that is not live while a deploy runs: one of a switch not finished, or a builder. */
-  passing: string[];
+  passing: Finding[];
 }
 
 /**
@@ -88,7 +94,10 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   const own = new Set(facts.applications.filter((application) => application.name in expect.declared).map((application) => application.id));
   for (const application of facts.applications) {
     if (!own.has(application.id) && application.name.startsWith(expect.environmentPrefix)) {
-      found.applications.push(`${application.name}: named for this environment, and not declared`);
+      found.applications.push({
+        detail: `${application.name}: named for this environment, and not declared`,
+        item: [application.name, 'named for this environment, not declared'],
+      });
     }
   }
   // A rule on the project acts in it; a rule on the organization does too unless it only reads, as a write set there (IAMApplicationManager
@@ -103,34 +112,54 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   for (const policy of facts.policies) {
     const bound = policy.application_id;
     const declared = bound && own.has(bound) ? expect.declared[nameOf.get(bound) ?? ''] : undefined;
-    if (declared && policy.name !== declared) found.policies.push(`${policy.name} on ${nameOf.get(bound ?? '')}, beside the declared ${declared}`);
+    if (declared && policy.name !== declared) {
+      const on = nameOf.get(bound ?? '');
+      found.policies.push({
+        detail: `${policy.name} on ${on}, beside the declared ${declared}`,
+        item: [policy.name, `on ${on}, beside ${declared}`],
+      });
+    }
     const rules = reaching(policy);
     if (rules.length === 0) continue;
     const group = policy.group_id ? facts.groups.find((candidate) => candidate.id === policy.group_id) : undefined;
     for (const id of bound ? [bound] : (group?.application_ids ?? [])) {
       if (own.has(id) || reported.has(id)) continue;
       reported.add(id);
-      const sets = [...new Set(rules.flatMap((rule) => rule.permission_set_names ?? []))].join(', ');
-      found.applications.push(
-        `${nameOf.get(id) ?? id}: can act in this environment through ${policy.name}${group ? ` (group ${group.name})` : ''}: ${sets}`,
-      );
+      const sets = [...new Set(rules.flatMap((rule) => rule.permission_set_names ?? []))];
+      const through = `${policy.name}${group ? ` (group ${group.name})` : ''}`;
+      found.applications.push({
+        detail: `${nameOf.get(id) ?? id}: can act in this environment through ${through}: ${sets.join(', ')}`,
+        item: [nameOf.get(id) ?? id, through, `${sets.length} permission${sets.length === 1 ? '' : 's'}`],
+      });
     }
   }
   const keysOf = new Map<string, typeof facts.apiKeys>();
   const describe = (key: InventoryFacts['apiKeys'][number]) => `${key.access_key} (${key.description || 'no description'})`;
   for (const key of facts.apiKeys) {
-    if (key.user_id && !key.expires_at) found.keys.push(`a person's key without an end date: ${describe(key)}`);
+    if (key.user_id && !key.expires_at) {
+      found.keys.push({
+        detail: `a person's key without an end date: ${describe(key)}`,
+        item: [key.access_key, `a person's, without an end date (${key.description || 'no description'})`],
+      });
+    }
     if (key.application_id && own.has(key.application_id)) keysOf.set(key.application_id, [...(keysOf.get(key.application_id) ?? []), key]);
   }
   for (const [id, keys] of keysOf) {
     const name = nameOf.get(id) ?? id;
     if (name === expect.operator) {
       for (const key of keys) {
-        if (durableKeyLife({ expiresAt: key.expires_at ?? undefined }, now))
-          found.operatorKeys.push(`${name} holds a key that outlives a day: ${describe(key)}`);
+        if (durableKeyLife({ expiresAt: key.expires_at ?? undefined }, now)) {
+          found.operatorKeys.push({
+            detail: `${name} holds a key that outlives a day: ${describe(key)}`,
+            item: [key.access_key, key.description || 'no description'],
+          });
+        }
       }
     } else if (expect.oneKey.includes(name) && keys.length > 1) {
-      found.keys.push(`${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`);
+      found.keys.push({
+        detail: `${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`,
+        item: [name, `holds ${keys.length} keys: ${keys.map((key) => key.access_key).join(', ')}`],
+      });
     }
   }
   const live = new Set(Object.values(facts.liveMachines));
@@ -146,9 +175,12 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
         ? 'a machine the live record does not name'
         : undefined;
     const ageMs = createdAt ? now - Date.parse(createdAt) : Number.POSITIVE_INFINITY;
-    if (!kind) found.machines.push(`${name}: not made by the engine`);
-    else if (ageMs < limitMs) found.passing.push(`${name}: ${kind}, a machine a deploy may be making`);
-    else found.machines.push(`${name}: ${kind}, older than a deploy runs (a failed run left it, or someone named it so)`);
+    if (!kind) found.machines.push({ detail: `${name}: not made by the engine`, item: [name, 'not made by the engine'] });
+    else if (ageMs < limitMs) found.passing.push({ detail: `${name}: ${kind}, a machine a deploy may be making`, item: [name, kind] });
+    else {
+      const older = `${kind}, older than a deploy runs`;
+      found.machines.push({ detail: `${name}: ${older} (a failed run left it, or someone named it so)`, item: [name, older] });
+    }
   }
   return found;
 }
@@ -205,20 +237,22 @@ function mainJobVerdict(
   if (!mainJob.command || !mainJob.imageUri) return builder.warn('its command or image could not be read');
   if (applied === undefined) return builder.warn('the applied engine (applied.json) could not be read');
   if (applied === null) {
-    return builder.error(`runs ${mainJob.imageUri}, which no apply recorded publishing`, {
+    const verdict = builder.error(`runs ${mainJob.imageUri}, which no apply recorded publishing`, {
       description: 'Review & apply changes publishes the engine image and points the main job at it',
       command: actionCommand('apply'),
     });
+    return { ...verdict, headline: 'runs an image no apply published' };
   }
   const differs = mainJobDifferences(mainJob, declared(applied));
   if (differs.length > 0) {
-    return builder.error(`${differs.join('; ')}: an apply is owed, or someone edited the definition`, {
+    const verdict = builder.error(`${differs.join('; ')}: an apply is owed, or someone edited the definition`, {
       description: 'An apply writes the declared definition again',
       command: actionCommand('apply'),
     });
+    return { ...verdict, headline: 'differs from the declared one: an apply is owed, or someone edited it', items: differs.map((line) => [line]) };
   }
   if (!mainJob.secretReferences) return builder.warn('runs the declared script, image and env; its secret references could not be read');
-  return builder.ok('runs the declared script, image, env and secret references');
+  return { ...builder.ok('runs the declared script, image, env and secret references'), headline: 'deploy job as declared' };
 }
 
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
@@ -341,30 +375,77 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const builder = check(id, title, 'scaleway');
       return probed(builder, session.scalewayKeyAvailable, read, 'could not read IAM or the main job', (value) => verdict(builder, value));
     };
-    const listed = (builder: CheckBuilder, lines: string[], fine: string, nextAction?: NextAction) =>
-      lines.length === 0 ? builder.ok(fine) : builder.error(lines.join('; '), nextAction);
+    const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+    // Nothing found reads ok in the fine words; a finding is an error whose detail joins the findings and whose items list them.
+    const listed = (
+      builder: CheckBuilder,
+      findings: Finding[],
+      fine: [detail: string, headline: string],
+      found: Pick<Check, 'headline' | 'fix' | 'nextAction'>,
+    ): Check =>
+      findings.length === 0
+        ? { ...builder.ok(fine[0]), headline: fine[1] }
+        : { ...builder.error(findings.map((finding) => finding.detail).join('; ')), ...found, items: findings.map((finding) => finding.item) };
     const rotate = { description: 'Rotate keys deletes every key beside the declared ones', command: actionCommand('rotate-keys') };
+    const unknownMaker = 'remove each in the Scaleway console once you know who made it';
     return [
-      item('inventory.applications', 'Applications', (b, { found }) => listed(b, found.applications, 'only the declared ones can act here')),
-      item('inventory.keys', 'API keys', (b, { found }) =>
-        listed(
-          b,
-          [...found.keys, ...found.operatorKeys.map((line) => `${line}: delete it in the console`)],
-          'one key per identity, as declared, and every operator key ends within a day',
-          found.keys.length > 0 ? rotate : undefined,
-        ),
+      item('inventory.applications', 'Applications', (b, { found }) =>
+        listed(b, found.applications, ['only the declared ones can act here', 'declared applications only'], {
+          headline: `${count(found.applications.length, 'outside application', 'outside applications')} can act on ${session.mode}`,
+          fix: 'delete the ones you do not use in the Scaleway console',
+        }),
       ),
-      item('inventory.policies', 'Policies', (b, { found }) => listed(b, found.policies, 'one per identity, as declared')),
+      item('inventory.keys', 'API keys', (b, { found }) => {
+        const operator = found.operatorKeys.length;
+        return listed(
+          b,
+          [...found.keys, ...found.operatorKeys.map((finding) => ({ ...finding, detail: `${finding.detail}: delete it in the console` }))],
+          ['one key per identity, as declared, and every operator key ends within a day', 'keys as declared'],
+          {
+            headline: [
+              operator > 0 ? `${count(operator, 'operator key outlives', 'operator keys outlive')} a day` : '',
+              found.keys.length > 0 ? `${count(found.keys.length, 'key', 'keys')} beside the declared ones` : '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            ...(operator > 0
+              ? { fix: `delete ${found.keys.length > 0 ? 'the operator keys' : operator === 1 ? 'it' : 'them'} in the Scaleway console` }
+              : {}),
+            ...(found.keys.length > 0 ? { nextAction: rotate } : {}),
+          },
+        );
+      }),
+      item('inventory.policies', 'Policies', (b, { found }) =>
+        listed(b, found.policies, ['one per identity, as declared', 'policies as declared'], {
+          headline: `${count(found.policies.length, 'policy', 'policies')} beside the declared ones`,
+          fix: unknownMaker,
+        }),
+      ),
       item('inventory.machines', 'Machines', (b, { facts, found }) =>
         !facts.machines
-          ? b.unknown('not read: machines are listed with the operator key, once a session holds it')
+          ? {
+              ...b.unknown('not read: machines are listed with the operator key, once a session holds it'),
+              headline: 'needs the operator key: read once a run holds it',
+            }
           : found.machines.length > 0
-            ? b.error(found.machines.join('; '))
+            ? {
+                ...b.error(found.machines.map((finding) => finding.detail).join('; ')),
+                headline: `${count(found.machines.length, 'machine', 'machines')} no deploy accounts for`,
+                items: found.machines.map((finding) => finding.item),
+                fix: unknownMaker,
+              }
             : found.passing.length > 0
-              ? b.warn(found.passing.join('; '))
-              : b.ok(`${facts.machines.length} machine(s), each one the live record names`),
+              ? {
+                  ...b.warn(found.passing.map((finding) => finding.detail).join('; ')),
+                  headline: `${count(found.passing.length, 'machine', 'machines')} a deploy may be making`,
+                  items: found.passing.map((finding) => finding.item),
+                }
+              : {
+                  ...b.ok(`${facts.machines.length} machine(s), each one the live record names`),
+                  headline: `${count(facts.machines.length, 'machine', 'machines')}, all live`,
+                },
       ),
-      item('inventory.mainJob', 'Main job', (b, { facts }) =>
+      item('inventory.mainJob', 'Deploy job', (b, { facts }) =>
         mainJobVerdict(b, facts.mainJob, facts.applied, (applied) => {
           const { naming, region } = deriveInfra(session.appConfig);
           return declaredMainJob({
