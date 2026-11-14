@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { formatPostgresUrl, passwordOfPostgresUrl } from '../lib/postgres-url';
+import { formatPostgresUrl } from '../lib/postgres-url';
 import { databaseRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import { createRdbClient, type RdbUser } from '../lib/scaleway/scaleway-rdb';
@@ -62,13 +62,12 @@ export function rolePasswordSecretName(role: DatabaseRole): string {
 }
 
 /** Where a role's password came from in this run. */
-export type PasswordSource = 'stored' | 'recovered' | 'generated';
+export type PasswordSource = 'stored' | 'generated';
 
 /**
  * Make the database roles, their passwords and privileges, and the connection strings, through the database API and Secret Manager, so no
  * password passes through the Pulumi state.
- * - A role's password is the one kept in the engine folder; failing that, the one an existing connection string of that role carries (a stack
- *   whose roles the program made keeps its passwords); failing that, a fresh one. A recovered or fresh one is kept in the engine folder.
+ * - A role's password is the one kept in the engine folder; failing that, a fresh one, which is kept there.
  * - A missing role is created with its password and its privileges. A role that exists gets a fresh password only when none could be found.
  * - A connection string is written when it is missing or names another endpoint or password.
  */
@@ -98,14 +97,8 @@ export async function ensureDatabase(opts: {
       sources[role] = 'stored';
       continue;
     }
-    let recovered: string | undefined;
-    for (const definition of opts.rotate ? [] : definitions.filter((candidate) => candidate.database?.role === role)) {
-      const container = await opts.secrets.getSecretByName(definition.secretName, RUNTIME_FOLDER);
-      if (recovered || !container || (container.version_count ?? 0) === 0) continue;
-      recovered = passwordOfPostgresUrl(await opts.secrets.accessLatestValue(container.id));
-    }
-    passwords[role] = recovered ?? generate();
-    sources[role] = recovered ? 'recovered' : 'generated';
+    passwords[role] = generate();
+    sources[role] = 'generated';
   }
 
   const live = new Set((await opts.rdb.listUsers(instanceId)).map((user) => user.name));

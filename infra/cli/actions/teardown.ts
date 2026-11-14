@@ -8,6 +8,7 @@ import { deleteLiveRecord } from '../../lib/deploy/live-record';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { shutOutOfBuckets } from '../../lib/scaleway/bucket-admission';
 import { removeMachines } from '../../lib/scaleway/machines';
 import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -24,7 +25,6 @@ import { checkMark, crossMark, pc, tildeMark, warningMark } from '../../lib/util
 import { writeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { shutOutOfBuckets } from '../../tasks/admit-operator-buckets';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { writeFinalDump } from '../../tasks/final-dump';
 import { readCustodiedPassphrase } from '../../tasks/passphrase-custody';
@@ -215,7 +215,7 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
 
   try {
     const secrets = createSecretManagerClient({ secretKey: owner.secretKey, region, projectId });
-    const swept = sweptSecrets(await secrets.listSecrets(), kept, engineFolders(appConfig));
+    const swept = sweptSecrets(await secrets.listSecrets(), kept, engineFolders);
     for (const secret of swept) await secrets.deleteSecret(secret.id);
     console.info(`${checkMark} Deleted ${swept.length} secret container(s).`);
   } catch (error) {

@@ -14,7 +14,6 @@ import { controlActor, makeControlClient, recordRotation } from '../../lib/stack
 import { importPlan, keptResources } from '../../lib/stack/kept-resources';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
-import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -22,7 +21,6 @@ import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { type PublishedEngine, pruneEngines, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
-import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
@@ -38,7 +36,7 @@ import {
   resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
-import { admitOperatorOrExit } from './operator-apply';
+import { exitWhenShutOutOfBuckets } from './operator-apply';
 import type { OperatorKey } from './operator-unlock';
 import { printLaunchChecklist } from './setup-checklist';
 import { connectRepository, offerFirstDeploy } from './setup-connect';
@@ -176,21 +174,6 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     });
   }
 
-  // A resume of a provisioned stack runs an `up` like an apply: the machines the program made keep their place in the pools and leave the
-  // state live, as every retired resource does.
-  if (!firstProvision) {
-    await moveMachinesOutOfProgram({
-      appConfig: ctx.appConfig,
-      stack: ctx.stackName,
-      secretKey: ctx.secretKey,
-      projectId: ctx.projectId,
-      s3: await makeControlClient(ctx.appConfig.s3.region, ctx.stateKey.accessKey, ctx.stateKey.secretKey),
-      env: ctx.childEnv,
-      log: (message) => console.info(pc.dim(message)),
-    });
-    forgetRetiredResources(ctx.stackName, ctx.childEnv);
-  }
-
   // The engine the main job runs: built and pushed before the `up` once the registry exists, as on a resume, and after the first one else.
   let engine = await publishEngineOrWarn(ctx);
   if (engine) ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
@@ -289,7 +272,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
   // operator application lets it in first.
-  if (!firstSetup) await admitOperatorOrExit(context, operatorKey);
+  if (!firstSetup) await exitWhenShutOutOfBuckets(context, operatorKey);
   const stateKey: KeyPair = stateKeyOf(operatorKey, projectId);
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: operatorKey.accessKey,

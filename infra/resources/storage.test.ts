@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { EngineConfig } from '../config/engine-config';
-import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
+import { appPrincipalNames } from '../lib/scaleway/principals';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
@@ -81,12 +81,6 @@ describe('storage module', () => {
           /^s3:(ListBucket|ListBucketMultipartUploads|ListMultipartUploadParts|GetObject|PutObject|DeleteObject|AbortMultipartUpload)$/,
         );
       }
-    }
-  });
-
-  it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
-    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
-      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(appConfig.slug, 'production').admin);
     }
   });
 

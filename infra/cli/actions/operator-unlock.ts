@@ -3,11 +3,9 @@ import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
-import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, sleep, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { moveSecretsOutOfPrefix } from '../../tasks/move-secret-paths';
 import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
@@ -136,34 +134,7 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
     return endAction(1);
   }
   rememberOperatorKey(pair);
-  await unprefixSecrets(stack, pair.secretKey);
   return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: verdict.organizationId };
-}
-
-/** The projects whose secrets this run has moved out of their environment's prefix. */
-const unprefixedProjects = new Set<string>();
-
-/**
- * Move a stack's secrets out of its `/<slug>-<mode>/` prefix once per run, before anything of the session reads a folder: the passphrase
- * and the database passwords are read at their paths from the project's root. A move that fails ends the action, as what follows would
- * find those folders empty and make their secrets anew.
- */
-async function unprefixSecrets(stack: StackRef, secretKey: string): Promise<void> {
-  if (!stack.projectId || unprefixedProjects.has(stack.projectId)) return;
-  const { slug } = stack.appConfig;
-  const client = createSecretManagerClient({ secretKey, region: stack.appConfig.s3.region, projectId: stack.projectId });
-  const left = await moveSecretsOutOfPrefix({ client, slug, mode: stack.environment, log: (message) => console.info(pc.dim(message)) }).catch(
-    (error) => {
-      console.error(`${crossMark} Could not move the secrets of ${stack.environment} out of /${slug}-${stack.environment}/: ${errorMessage(error)}`);
-      return endAction(1);
-    },
-  );
-  if (left.length > 0) {
-    console.warn(
-      `${warningMark} ${left.length} secret(s) stay under /${slug}-${stack.environment}/ beside a newer one of the same name: delete the stale ones.`,
-    );
-  }
-  unprefixedProjects.add(stack.projectId);
 }
 
 /** The operator key a run holds: it ends within the day, writes no IAM, and is kept in memory for the session. */

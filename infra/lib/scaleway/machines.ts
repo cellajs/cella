@@ -124,7 +124,7 @@ export async function deleteMachine(auth: ScwAuth, zone: string, serverId: strin
   }
   await scwSend(auth, 'DELETE', `${instanceApi(zone)}/servers/${server.id}`);
   for (const volume of Object.values(server.volumes ?? {})) {
-    // A local volume, which a machine the Pulumi program made may hold, is the Instance API's; every other one Block Storage's.
+    // A local volume is the Instance API's; every other one Block Storage's.
     const url =
       volume.volume_type === 'l_ssd'
         ? `${instanceApi(zone)}/volumes/${volume.id}`

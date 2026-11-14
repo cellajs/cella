@@ -115,24 +115,20 @@ export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opt
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
-export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'observer' | 'vm-service' | 'owner' | 'member' | 'application';
+export type PrincipalRole = 'ci-deploy' | 'operator' | 'observer' | 'owner' | 'member' | 'application';
 
 export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames & AppPrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
-  if (desc.name === names.admin) return 'admin';
   if (desc.name === names.operator) return 'operator';
   if (desc.name === names.observer) return 'observer';
-  if (desc.name.startsWith(`${names.group}-vm-`)) return 'vm-service';
   return 'application';
 }
 
 const ROLE_LABELS: Record<PrincipalRole, string> = {
   'ci-deploy': 'CI deploy application',
-  admin: 'admin application',
   operator: 'operator application',
   observer: 'observer application',
-  'vm-service': 'retired machine application',
   owner: 'organization Owner',
   member: 'member user',
   application: 'application',
@@ -188,7 +184,7 @@ export async function assertIamManager(opts: {
     );
   }
   const role = classifyPrincipal(desc, opts.names);
-  if (role === 'ci-deploy' || role === 'admin' || role === 'observer' || role === 'vm-service') {
+  if (role === 'ci-deploy' || role === 'observer') {
     throw new Error(
       `${formatKeyLine(desc, role)} is an application the engine created, not an Owner API key: it cannot write IAM policies or database privileges. Use ${OWNER_KEY_HOWTO}.`,
     );

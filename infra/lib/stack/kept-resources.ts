@@ -4,8 +4,8 @@ import { deriveInfra } from '../naming';
 import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import type { SecretManagerSecret } from '../scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../scaleway/secret-paths';
-import { appStorageNeeds, serviceNames, services } from '../services';
-import { urnsOf, withoutUrns, withResources } from './retired-state';
+import { appStorageNeeds, services } from '../services';
+import { urnsOf, withoutUrns, withResources } from './stack-export';
 
 const BUCKET = 'scaleway:object/bucket:Bucket';
 const BUCKET_POLICY = 'scaleway:object/bucketPolicy:BucketPolicy';
@@ -77,14 +77,8 @@ export function destroyableState(exported: unknown, kept: readonly KeptResource[
   return { document, kept: urns.map((urn) => urnKey(urn).split('::')[1] ?? urn), emptied };
 }
 
-/**
- * The folders a teardown empties: the runtime and engine folders, and the ones the engine wrote secrets into before them (each consumer's,
- * the shared ones, the deploy folder, the handoff bundles, the environment's prefix). A container outside them is none of the engine's.
- */
-export function engineFolders(appConfig: Pick<EngineConfig, 'slug' | 'mode'>): string[] {
-  const retired = ['/deploy/', '/handoff/', '/shared/', ...serviceNames.map((name) => `/${name}/`), `/${appConfig.slug}-${appConfig.mode}/`];
-  return [RUNTIME_FOLDER, ENGINE_FOLDER, ...retired];
-}
+/** The folders a teardown empties. A container outside them is none of the engine's. */
+export const engineFolders: readonly string[] = [RUNTIME_FOLDER, ENGINE_FOLDER];
 
 /** The secret containers a teardown deletes: every one in the engine's folders, or below them, but the kept values' containers. */
 export function sweptSecrets<Secret extends ListedSecret>(

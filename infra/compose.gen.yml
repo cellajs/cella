@@ -39,7 +39,6 @@ services:
     x-service:
       slug: backend
       healthPort: 4000
-      healthExpectStatus: 204
       runRelease: true
       replacementStrategy: start-first
       drainSeconds: 10
@@ -96,7 +95,6 @@ services:
     x-service:
       slug: cdc
       healthPort: 4001
-      healthExpectStatus: 204
       runRelease: false
       replacementStrategy: stop-first
       drainSeconds: 0
@@ -133,7 +131,6 @@ services:
     x-service:
       slug: yjs
       healthPort: 4002
-      healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
       drainSeconds: 5
@@ -174,7 +171,6 @@ services:
     x-service:
       slug: mcp
       healthPort: 4003
-      healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
       drainSeconds: 10
@@ -211,7 +207,6 @@ services:
     x-service:
       slug: oauth
       healthPort: 4004
-      healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
       drainSeconds: 10
@@ -248,7 +243,6 @@ services:
     x-service:
       slug: jobs
       healthPort: 4006
-      healthExpectStatus: 204
       runRelease: false
       replacementStrategy: stop-first
       drainSeconds: 0
@@ -275,7 +269,6 @@ services:
     x-service:
       slug: frontend
       healthPort: 80
-      healthExpectStatus: 200
       runRelease: false
       replacementStrategy: start-first
       drainSeconds: 0

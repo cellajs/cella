@@ -1,4 +1,4 @@
-import * as pulumi from '@pulumi/pulumi';
+import type * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineConfig as appConfig } from '../config/engine-config';
 import { isRouted, type MachineRole, machineRoles, SLOTS, slotName } from '../lib/machine-roles';
@@ -34,13 +34,6 @@ function roleAddresses(role: string): pulumi.Output<string>[] {
   return ips.map((ip) => ip.address.apply((address) => address.split('/')[0] ?? address));
 }
 
-/**
- * The addresses of the machines a migration found serving, by pool key, which the pools keep beside the reserved ones until the first
- * deploy of machines on them served (`bootstrap:legacyServers`, written by the alignment that moved machines out of the program).
- */
-export const legacyServers: Readonly<Record<string, string[]>> =
-  new pulumi.Config('bootstrap').getObject<Record<string, string[]>>('legacyServers') ?? {};
-
 /** The role whose addresses a pool lists. */
 function poolRole(poolKey: string): MachineRole {
   const role = roles.find((candidate) => candidate.pools.some((pool) => pool.key === poolKey));
@@ -48,7 +41,7 @@ function poolRole(poolKey: string): MachineRole {
   return role;
 }
 
-/** A pool's servers: its role's two addresses, and the legacy addresses a migration keeps there. */
-export function poolServers(poolKey: string): pulumi.Input<string>[] {
-  return [...roleAddresses(poolRole(poolKey).role), ...(legacyServers[poolKey] ?? [])];
+/** A pool's servers: its role's two addresses. */
+export function poolServers(poolKey: string): pulumi.Output<string>[] {
+  return roleAddresses(poolRole(poolKey).role);
 }

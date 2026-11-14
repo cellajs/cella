@@ -19,7 +19,7 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
-import { admitOperatorOrExit } from './operator-apply';
+import { exitWhenShutOutOfBuckets } from './operator-apply';
 import { acquireOperatorKey } from './operator-unlock';
 import { redeployAfterRotation } from './start-deploy';
 
@@ -40,7 +40,7 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const operator = await acquireOperatorKey(context);
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
-  await admitOperatorOrExit(context, operator);
+  await exitWhenShutOutOfBuckets(context, operator);
   const env = buildProviderEnv(infraDir, {
     ...operator,
     projectId,

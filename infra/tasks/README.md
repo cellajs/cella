@@ -9,7 +9,6 @@ The deploy's steps and the operator tasks. The sequencers keep their live effect
 - **Identity tasks**, written at an Owner moment: `declared-policies`, `uploads-key`, `setup-ci-key`, `setup-operators`, `setup-observer-app`, `provision-managed-key`; `identity-plan` reads where the identities differ from the declared ones.
 - **Pull request checks**: `privileged-check` renders the base and the head with `privileged-footprint`; `release-applied-check`, on the release PR, holds the head's `description-hash` against the one the last apply published.
 - **Status**: `status`, the report behind `pnpm infra status`.
-- **Retired-model migrations**: `admit-operator-buckets`, `move-secret-paths` (each secret's copies into one container of the runtime folder), `retire-program-machines` (the apply's move off the machines the Pulumi program made).
 
 `args.ts` holds the flag helpers the tasks share.
 

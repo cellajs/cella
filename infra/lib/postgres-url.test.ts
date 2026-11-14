@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPostgresUrl, passwordOfPostgresUrl } from './postgres-url';
+import { formatPostgresUrl } from './postgres-url';
 
 describe('formatPostgresUrl', () => {
   it('assembles a DSN with host, port and database in place', () => {
@@ -30,16 +30,5 @@ describe('formatPostgresUrl', () => {
     const [userinfo, hostport] = authority.split('@');
     expect(hostport).toBe('real-host:5432');
     expect(userinfo).toBe('u:p%40ss%3Abad%40host');
-  });
-});
-describe('passwordOfPostgresUrl', () => {
-  it('reads back the password a connection string was built with, metacharacters included', () => {
-    expect(passwordOfPostgresUrl(formatPostgresUrl('u', 'p@ss:w/rd?#&', 'h', 5432, 'd'))).toBe('p@ss:w/rd?#&');
-  });
-
-  it('reads nothing from what is no PostgreSQL URL with a password', () => {
-    expect(passwordOfPostgresUrl('https://u:p@h/')).toBeUndefined();
-    expect(passwordOfPostgresUrl('postgresql://u@h:5432/d')).toBeUndefined();
-    expect(passwordOfPostgresUrl('not a url')).toBeUndefined();
   });
 });

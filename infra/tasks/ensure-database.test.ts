@@ -69,19 +69,6 @@ const run = (rdb: EnsureDatabaseRdb, secrets: EnsureDatabaseSecrets, ip = endpoi
   });
 
 describe('ensureDatabase', () => {
-  it('keeps the passwords of a stack whose roles the program made: recovered from its connection strings, and nothing changes', async () => {
-    const { secrets, writes } = fakeSecrets({
-      '/runtime/database-url-runtime': dsn('runtime', 'run-pw'),
-      '/runtime/database-url-admin': dsn('admin', 'adm-pw'),
-      '/runtime/database-url-cdc': dsn('admin', 'adm-pw'),
-    });
-    const { rdb, calls } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
-    const result = await run(rdb, secrets);
-    expect(result.passwords).toEqual({ admin: 'recovered', runtime: 'recovered' });
-    expect(calls).toEqual([]);
-    expect(writes).toEqual({ [adminKept]: 'adm-pw', [runtimeKept]: 'run-pw' });
-  });
-
   it('makes the roles of a fresh database, and only the migration role is a Scaleway admin', async () => {
     const { secrets, writes } = fakeSecrets({ '/runtime/database-url-runtime': undefined, '/runtime/database-url-cdc': undefined });
     const { rdb, calls } = fakeRdb([]);
@@ -105,7 +92,7 @@ describe('ensureDatabase', () => {
     expect(writes).toEqual({ '/runtime/database-url-runtime': dsn('runtime', 'run-pw') });
   });
 
-  it('gives a role that exists a fresh password only when none could be found anywhere', async () => {
+  it('gives a role that exists a fresh password only when the engine folder keeps none', async () => {
     const { secrets } = fakeSecrets({ [adminKept]: 'adm-pw' });
     const { rdb, calls } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
     await run(rdb, secrets);

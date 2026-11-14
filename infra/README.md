@@ -74,7 +74,7 @@ They find only what an intruder did not disguise: they read the live machines fr
 To clear what they flag:
 
 - **Rotate keys** replaces the environment's keys and deletes the others.
-- **Update identities** deletes a policy or key beside the declared one, and the retired machine identities.
+- **Update identities** deletes a policy or key beside the declared one.
 - **In the console,** delete a key of the operator application that outlives a day.
 - **Anything else** goes in the console once you know who made it.
 

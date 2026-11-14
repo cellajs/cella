@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { policyAdmits } from './admit-operator-buckets';
+import { policyAdmits } from './bucket-admission';
 
 const policy = (principals: string[]) =>
   JSON.stringify({ Version: '2023-04-17', Statement: principals.map((id) => ({ Effect: 'Allow', Principal: { SCW: `application_id:${id}` } })) });

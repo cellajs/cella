@@ -16,7 +16,7 @@ import type { OwnerKey } from './owner-key';
 export type ObserverStep = 'create' | 'key' | 'none';
 
 /** The observer key this machine holds: the environment's own file first, else any other environment's, as the one key serves them all. */
-export function observerKeyHere(mode: string): KeyPair | undefined {
+function observerKeyHere(mode: string): KeyPair | undefined {
   return observerKeyInModeFile(mode) ?? environments.map(observerKeyInModeFile).find(Boolean);
 }
 
