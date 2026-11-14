@@ -4,11 +4,16 @@
   "copy": {
     "frontend/.env.example": "frontend/.env"
   },
+  "link": {
+    "cella/skills": ".claude/skills"
+  },
   "edit": {
     "quickstart": "cella/QUICKSTART.md",
     "configTemplate": "shared/config/config.template.ts",
+    "config": "shared/config/config.default.ts",
     "cliConfig": "cella/cella.config.ts",
     "envExample": ".env.example",
-    "releaseConfig": ".github/release-please-config.json"
+    "releaseConfig": ".github/release-please-config.json",
+    "releaseManifest": ".github/release-please-manifest.json"
   }
 }
