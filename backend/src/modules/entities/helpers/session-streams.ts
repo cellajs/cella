@@ -69,7 +69,7 @@ export async function closeStreams(closings: { subscriber: StreamSubscriber; rea
  * Closes the open streams `filter` picks, all for one reason.
  * @returns How many streams it closed.
  */
-export async function closeStreamsWhere(filter: (subscriber: StreamSubscriber) => boolean, reason: EndingReason): Promise<number> {
+async function closeStreamsWhere(filter: (subscriber: StreamSubscriber) => boolean, reason: EndingReason): Promise<number> {
   const closings = streamSubscriberManager
     .all()
     .filter(filter)

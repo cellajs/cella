@@ -68,7 +68,7 @@ function organizationOf({ result: { tableMeta, activity, rowData } }: PendingEve
  * The versioned signals each change of a flush moves. A channel deleted under another channel the same flush deletes
  * moves none that names its row: the signal of the deleted root tells its readers to drop the whole subtree.
  */
-export function flushSignals(events: PendingEvent[], h: EntityHierarchy = hierarchy): (event: PendingEvent) => VersionedSignal[] {
+function flushSignals(events: PendingEvent[], h: EntityHierarchy = hierarchy): (event: PendingEvent) => VersionedSignal[] {
   const isChannelDelete = ({ result: { tableMeta, activity } }: PendingEvent) => activity.action === 'delete' && h.isChannel(tableMeta.type);
   const deletedChannelIds = new Set(events.filter(isChannelDelete).map(({ result }) => result.rowData.id));
   return (event) => {
