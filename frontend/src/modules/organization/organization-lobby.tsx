@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { hierarchy } from 'shared';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { swapMotion } from '~/modules/common/motion-presets';
 import { CenteredPage } from '~/modules/common/page/centered-page';
@@ -23,6 +24,7 @@ const lobbyRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/');
 export function OrganizationLobby() {
   const { t } = useTranslation();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useBreakpointBelow('sm');
   const isMenuOpen = useNavigationStore((state) => state.navSheetOpen === 'menu');
   // A menu row closes the menu in the click that starts its navigation: the button stays away while the next page loads
   const isNavigating = useRouterState({ select: (state) => state.status === 'pending' });
@@ -66,8 +68,9 @@ export function OrganizationLobby() {
             </motion.p>
           ) : isNavigating ? null : (
             <motion.div key="button" {...swapMotion}>
-              <Button ref={menuButtonRef} onClick={openMenu}>
-                <MenuIcon />
+              <Button ref={menuButtonRef} variant="ghost" onClick={openMenu}>
+                {/* A phone's floating menu button is a hamburger; a wider screen's nav bar can show organization buttons in its place */}
+                {isMobile ? <MenuIcon /> : <ArrowLeftIcon />}
                 {t('c:open_menu')}
               </Button>
             </motion.div>
