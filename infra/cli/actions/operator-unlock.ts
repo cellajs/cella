@@ -4,12 +4,11 @@ import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '..
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
 import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
-import { crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
+import { crossMark, pc, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { sleep } from '../../lib/utils/sleep';
-import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { keyPairPrompt } from '../prompts/key-pair';
-import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
+import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
@@ -108,20 +107,12 @@ interface Unlocked {
 
 /**
  * Unlock the session: the operator key, both halves, typed once per run. It is proven by asking IAM who bears it, with the key itself: that
- * names the application or the user and its organization, and needs no right beyond the IAM read the operators hold. With `optional`, an
- * empty access key returns undefined: the caller then asks for what it needs in another way.
+ * names the application or the user and its organization, and needs no right beyond the IAM read the operators hold.
  */
-async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
+async function unlock(stack: StackRef): Promise<Unlocked> {
   const names = appPrincipalNames(stack.appConfig.appSlug);
-  let pair = rememberedOperatorKey();
-  if (!pair) {
-    pair = await keyPairPrompt({
-      label: 'Operator key',
-      howto: `Paste a key of '${names.operator}' that expires today.`,
-      optional: opts.optional,
-    });
-    if (!pair) return undefined;
-  }
+  const pair =
+    rememberedOperatorKey() ?? (await keyPairPrompt({ label: 'Operator key', howto: `Paste a key of '${names.operator}' that expires today.` }));
   let desc: KeyDescription;
   try {
     desc = operatorKeyMintedThisRun() ? await describeMintedKey(pair) : await describeKey(pair);
@@ -151,7 +142,6 @@ export interface OperatorKey extends KeyPair {
  */
 export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
   const unlocked = await unlock(stack);
-  if (!unlocked) return endAction(1);
   return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
 }
 
@@ -172,38 +162,4 @@ export async function acquireIdentityKey(stack: StackRef, why: string): Promise<
   const names = allPrincipalNames(stack.appConfig, stack.environment);
   console.info(pc.dim(`${why} It takes your Owner key.`));
   return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
-}
-
-/**
- * Let the passphrase come from Secret Manager for this run. Reading it unlocks the session, so nobody types the passphrase; a person without
- * a key at hand leaves the prompt empty and types the passphrase as before. A passphrase typed while the session is unlocked is stored, which
- * is how an existing stack gets its copy.
- */
-export function installPassphraseCustody(stack: StackRef): void {
-  const custody = {
-    secretKey: '',
-    region: stack.appConfig.s3.region,
-    projectId: stack.projectId,
-  };
-  setPassphraseCustody({
-    async read() {
-      const unlocked = await unlock(stack, { optional: 'Enter to type the recovery passphrase' });
-      if (!unlocked) return undefined;
-      return readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
-        console.warn(`${warningMark} Could not read the passphrase from Secret Manager (${errorMessage(error)}); type it once.`);
-        return undefined;
-      });
-    },
-    async store(passphrase) {
-      const key = rememberedOperatorKey();
-      if (!key) return false;
-      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase }).then(
-        () => true,
-        (error) => {
-          console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked again next time.`);
-          return false;
-        },
-      );
-    },
-  });
 }

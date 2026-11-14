@@ -17,7 +17,6 @@ vi.mock('../shared', () => ({
   endAction: (code: number) => {
     throw Object.assign(new Error('ended'), { name: 'ActionEnded', exitCode: code });
   },
-  resolveVerifiedPassphrase: async () => 'correct horse',
   stackNameFor: () => 'cella/production',
 }));
 vi.mock('./plan', () => ({ reviewPlan: (...args: unknown[]) => reviewPlan(...args), askToApply: (...args: unknown[]) => askToApply(...args) }));
@@ -26,6 +25,7 @@ vi.mock('./operator-apply', () => ({
   runOperatorApply: (...args: unknown[]) => runOperatorApply(...args),
 }));
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
+vi.mock('./drop-passphrase', () => ({ dropKeptPassphrase: async () => {} }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 vi.mock('./releases', () => ({ checkWaitingRelease: async () => {} }));
@@ -38,7 +38,7 @@ const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
 const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
-const reviewed = { passphrase: 'correct horse', checkpoint: '"aaa"' };
+const reviewed = { checkpoint: '"aaa"' };
 const engine = { image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`, imageDigest: `sha256:${'1'.repeat(64)}` };
 
 beforeEach(() => {

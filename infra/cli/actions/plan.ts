@@ -9,7 +9,7 @@ import { checkpointKey } from '../../lib/stack/pending-operations';
 import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 
 /** The `pulumi preview` arguments of a plan an operator reviews. `--refresh` reads every resource live first, so drift made outside Pulumi (a rule re-scoped in the console) is part of the diff. */
 export function planArgs(stack: string, configFile?: string): string[] {
@@ -30,8 +30,6 @@ export function askToApply(environment: string): Promise<boolean> {
 
 /** A plan shown before the stack is locked. */
 export interface ReviewedPlan {
-  /** The passphrase verified for the plan, so the apply does not ask for it again. */
-  passphrase: string;
   /**
    * The etag of the stack's checkpoint the plan was computed from, null when there was none: every `up` changes it, and a preview writes
    * none. Undefined when the state bucket could not be read: the apply then plans again under the lock.
@@ -49,7 +47,6 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { en
     endAction(1);
   }
   const { projectId, appConfig } = context;
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
 
   // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_DEFAULT_ORGANIZATION_ID from the env, else what IAM says about the key.
@@ -64,7 +61,7 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { en
   }
 
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
-  const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, stateBackendUrl: pulumiLoginUrl(appConfig), organizationId });
+  const env = buildProviderEnv(infraDir, { ...key, projectId, stateBackendUrl: pulumiLoginUrl(appConfig), organizationId });
   // The engine image the apply just pushed, which the plan shows on the main job; without one the program keeps the applied engine's.
   if (opts.engineImage) env.INFRA_ENGINE_IMAGE = opts.engineImage;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
@@ -76,8 +73,8 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { en
 
   const status = showPlan(env, stack);
   if (status !== 0) {
-    console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env) and the passphrase.`);
+    console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env).`);
     endAction(status);
   }
-  return { passphrase, checkpoint };
+  return { checkpoint };
 }

@@ -26,7 +26,6 @@ import {
   type InfraContext,
   pulumiLoginAndSelect,
   pulumiLoginUrl,
-  resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
 import { operatorKeys } from './operator-unlock';
@@ -50,8 +49,6 @@ export function lockVerdict(held: Pick<LockInfo, 'expiresAt'> | undefined, now: 
 export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
   const targetStack = stackNameFor(context);
-
-  await resolveVerifiedPassphrase(context.stackYaml);
 
   // The operator key, as Apply locks with: the boot-diag bucket's policy on the lease admits the operator, the observer (read) and the deploy key.
   const { state: key } = await operatorKeys(context);
@@ -122,7 +119,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
     console.info(
       '\n  An interrupted update or delete is resolved by a refresh: it reads each resource from Scaleway into the state and clears these records.\n' +
         `  Run "${menuPath('preview')}" first to see the drift a refresh records, then: ${pc.cyan(`pulumi refresh --stack ${opts.stack}`)}\n` +
-        `  ${pc.dim(`(logged in to the state backend with the key of '${appPrincipalNames(context.appConfig.appSlug).operator}', PULUMI_CONFIG_PASSPHRASE set to the passphrase in the engine folder, and no run in progress)`)}\n` +
+        `  ${pc.dim(`(logged in to the state backend with the key of '${appPrincipalNames(context.appConfig.appSlug).operator}', PULUMI_CONFIG_PASSPHRASE set and empty, and no run in progress)`)}\n` +
         `  ${pc.dim('Nothing is cleared here: dropping the records through an import would drop the interrupted updates and deletes unread.')}`,
     );
     return;
@@ -139,12 +136,10 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
     return;
   }
 
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   // The operator key serves the state backend; nothing here calls a Scaleway API beyond the state bucket.
   const env = buildProviderEnv(infraDir, {
     ...opts.key,
     projectId: context.projectId,
-    passphrase,
     stateBackendUrl: pulumiLoginUrl(context.appConfig),
   });
   pulumiLoginAndSelect(infraDir, env, context.appConfig, opts.stack);

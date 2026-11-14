@@ -10,17 +10,18 @@ export interface ProviderEnvInput {
   accessKey: string;
   secretKey: string;
   projectId: string;
-  /** Pulumi state passphrase (`PULUMI_CONFIG_PASSPHRASE`). */
-  passphrase: string;
   /** The app's state bucket URL (`PULUMI_BACKEND_URL`): it outranks the machine-wide `pulumi login`, which another app's run on this machine may have changed. */
   stateBackendUrl: string;
   /** Optional Scaleway organization id (`SCW_DEFAULT_ORGANIZATION_ID`). */
   organizationId?: string;
 }
 
-/** Build a child environment with an explicit Scaleway key, state backend and Pulumi passphrase, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. The key also opens the S3-protocol state backend (`AWS_*`). */
+/**
+ * Build a child environment with an explicit Scaleway key and state backend, with local Scaleway profiles disabled so operator configuration
+ * cannot shadow the supplied identity. The key also opens the S3-protocol state backend (`AWS_*`).
+ */
 export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): Record<string, string> {
-  const { accessKey, secretKey, projectId, passphrase, stateBackendUrl, organizationId } = input;
+  const { accessKey, secretKey, projectId, stateBackendUrl, organizationId } = input;
   const env: Record<string, string> = {};
   for (const [name, value] of Object.entries(process.env)) if (value !== undefined) env[name] = value;
   Object.assign(env, {
@@ -30,7 +31,8 @@ export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): Rec
     // The state side names the project: a key made for another environment's project reaches this one's state bucket that way.
     AWS_ACCESS_KEY_ID: projectAccessKey(accessKey, projectId),
     AWS_SECRET_ACCESS_KEY: secretKey,
-    PULUMI_CONFIG_PASSPHRASE: passphrase,
+    // Every stack takes the empty passphrase: its state holds no secret value, and the state bucket's policy says who reads it.
+    PULUMI_CONFIG_PASSPHRASE: '',
     PULUMI_BACKEND_URL: stateBackendUrl,
     SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
     SCW_PROFILE: '',

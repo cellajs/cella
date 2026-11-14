@@ -99,7 +99,7 @@ export const keylessFetch: typeof fetch = async (input) => {
   if (url.pathname.startsWith('/ipam/v1/')) return Response.json({ ips: [{ address: '10.0.0.200/24' }] });
   if (url.pathname.startsWith('/secret-manager/') && url.pathname.endsWith('/secrets')) {
     const path = url.searchParams.get('path') ?? '/';
-    const names = ['deploy-key', 'pulumi-passphrase'];
+    const names = ['deploy-key'];
     return Response.json({ secrets: names.map((name) => ({ id: `keyless-${name}`, name, path, version_count: 1 })), total_count: names.length });
   }
   throw new Error(`a keyless render reaches no network, and the program called ${url.href}`);

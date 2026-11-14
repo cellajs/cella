@@ -19,7 +19,6 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { type PublishedEngine, pruneEngines, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
@@ -33,7 +32,6 @@ import {
   endActionWithHint,
   endsAction,
   pulumiLoginUrl,
-  resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
 import { exitWhenShutOutOfBuckets } from './operator-apply';
@@ -64,7 +62,7 @@ interface SetupContext {
   /** The key for the state side (backend login, lease): the operator key, naming this project. */
   stateKey: KeyPair;
   stackName: string;
-  /** Child-process env carrying the provider key + passphrase. */
+  /** Child-process env carrying the provider key. */
   childEnv: Record<string, string>;
   must: ReturnType<typeof createStepRunner>['must'];
 }
@@ -250,7 +248,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 }
 
 /**
- * The operator part of a setup, on the operator key: the passphrase and its custody, the state bucket and the stack, the first `pulumi up`
+ * The operator part of a setup, on the operator key: the state bucket and the stack, the first `pulumi up`
  * and the operator's secret values. It writes no IAM. It ends by connecting the repository while the stack file is not pushed, and at the
  * first deploy while the environment never deployed.
  */
@@ -261,8 +259,6 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   const stackName = stackNameFor(context);
   const firstSetup = context.state === 'fresh';
 
-  // After the key: an unlocked session fetches the passphrase, so nobody types it.
-  const { passphrase: pulumiPassphrase } = await resolveOrCreatePassphrase(context.stackYaml);
   const operatorSecrets: OperatorSecretValues = { adminEmail: '', brevoApiKey: '' };
   if (firstSetup) {
     operatorSecrets.adminEmail = await askAdminEmail();
@@ -278,7 +274,6 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     accessKey: operatorKey.accessKey,
     secretKey: operatorKey.secretKey,
     projectId,
-    passphrase: pulumiPassphrase,
     stateBackendUrl: pulumiLoginUrl(appConfig),
     organizationId: operatorKey.organizationId,
   });
@@ -302,16 +297,6 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' });
   if (selected.status !== 0) await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
   writeStackFileProjectId(environment, projectId);
-
-  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
-  await storeCustodiedPassphrase({
-    secretKey: operatorKey.secretKey,
-    region: appConfig.s3.region,
-    projectId,
-    passphrase: pulumiPassphrase,
-  }).catch((error) =>
-    console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
-  );
 
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const ciKey = moment?.ciKey;

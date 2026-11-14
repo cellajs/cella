@@ -4,6 +4,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { discardEngine, type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
 import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
+import { dropKeptPassphrase } from './drop-passphrase';
 import { exitOnIdentityChanges } from './identity';
 import { exitWhenShutOutOfBuckets, runOperatorApply } from './operator-apply';
 import { acquireOperatorKey } from './operator-unlock';
@@ -23,6 +24,9 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
   const operator = await acquireOperatorKey(context);
+  await exitWhenShutOutOfBuckets(context, operator);
+  // Before anything runs Pulumi, the close of an open endpoint included.
+  await dropKeptPassphrase(context, operator);
   // The committed stack config never records an open endpoint, so its plan keeps the endpoint and deletes the ACL.
   const open = await openDbEndpoints(context, operator.secretKey);
   if (open.length > 0) {
@@ -31,7 +35,6 @@ export async function runApply(context: InfraContext): Promise<void> {
     );
     endAction(1);
   }
-  await exitWhenShutOutOfBuckets(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);
   // A release waiting on an apply deploys only on the description of its own checkout: another one ends the action before the build.

@@ -21,15 +21,7 @@ import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../tasks/publish-engine';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
-import {
-  acquireStackLockOrExit,
-  endAction,
-  type InfraContext,
-  pulumiLoginAndSelect,
-  pulumiLoginUrl,
-  resolveVerifiedPassphrase,
-  stackNameFor,
-} from '../shared';
+import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
@@ -79,7 +71,7 @@ async function infraTask(env: NodeJS.ProcessEnv, args: string[]): Promise<{ stat
 }
 
 /**
- * The operator apply shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
+ * The operator apply shared by "Review & apply changes", the DB access actions, and seeding, in order: take the
  * operator key and the lease, apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with
  * an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
@@ -90,7 +82,6 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     endAction(1);
   }
 
-  const passphrase = opts.reviewed?.passphrase ?? (await resolveVerifiedPassphrase(context.stackYaml));
   const { projectId, appConfig } = context;
 
   const operator = await acquireOperatorKey(context);
@@ -102,7 +93,6 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     accessKey: operator.accessKey,
     secretKey: operator.secretKey,
     projectId,
-    passphrase,
     stateBackendUrl: pulumiLoginUrl(appConfig),
   });
   if (opts.engine) env.INFRA_ENGINE_IMAGE = opts.engine.image;
