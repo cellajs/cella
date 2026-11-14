@@ -50,7 +50,7 @@ The socket speaks the sync and awareness framing of y-protocols plus two message
 
 ## Who may edit
 
-Editing needs a token. The backend issues one per entity, for five minutes, to a user who may update it. A valid token opens the socket. The relay then asks the permission engine itself whether this user may update this row. A socket lives no longer than its token, so the client refreshes and reconnects.
+A socket needs a token. The backend issues one per entity, for five minutes, to a user who may update it. A valid token opens the socket. The relay then asks the permission engine itself whether this user may update this row. A socket lives no longer than its token, so the client refreshes and reconnects.
 
 - **No minting on the relay.** It holds only the public half of the signing key.
 - **One origin.** A page on another origin than the app's cannot open a socket.

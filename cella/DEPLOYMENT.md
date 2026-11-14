@@ -4,7 +4,7 @@ This document explains how a cella app deploys to [Scaleway](https://www.scalewa
 
 ### TL;DR
 
-Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. GitHub holds no key: a schedule inside the Scaleway organization starts each deploy. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), and no machine holds one.
+Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. GitHub holds no key: a schedule inside the Scaleway organization starts each deploy. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), which no machine holds.
 
 ## Overview
 
@@ -84,7 +84,7 @@ A target is one of:
 
 Merging a line is not publishing a release. The file's rules:
 
-- **Releases only:** production and any other environment that follows the releases take only `releases` or a tag.
+- **Releases only:** production takes only `releases` or a release tag.
 - **Pinned:** a line holds its environment until it is removed, also past a newer release.
 - **Retry:** raising the retry counter asks for the same target once more.
 - **Default branch:** a change counts from its merge, since a scheduled run reads the file there.
@@ -118,13 +118,13 @@ A run ends in one of five outcomes:
 - **Apply needed:** the target describes the app otherwise, or the run ran outside the engine image ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)).
 - **Failed:** roles it did not switch keep their machines, and the target waits for a change in git or a start by hand.
 
-**Releases only.** In an environment that follows the releases, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
+**Releases only.** In production, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
 
 The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Deploy logs flags such a run.
 
 The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
-The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The apply keeps the description beside its hash in `control/<mode>/applied.json`. From that copy the CLI names the fields an earlier or waiting release would change. A run installs nothing. The image starts its deploy from four values alone: the target, the retry counter, the deploy key and the project. A deploy reads no Pulumi state and no passphrase.
+The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The apply keeps the description beside its hash in `control/<mode>/applied.json`. From that copy the CLI names the fields an earlier or waiting release would change. A run installs nothing. The image starts its deploy from the target, the retry counter, the deploy key, the project and the organization. A deploy reads no Pulumi state and no passphrase.
 
 The target's code never runs beside the deploy key. The builder evaluates the target's own description in a container that holds no key. It reports the description with its hash beside the archives' digests. Before the deploy reads a runtime value, it compares that hash with the image's. A release that describes the app otherwise ends **apply needed** and names the fields that differ.
 
@@ -163,7 +163,7 @@ Deploy logs shows a rewritten run as it stood before the rewrite, and `status` r
 
 When the boot-diag bucket lacks a release's manifest or one of its archives, the deploy makes a builder machine. The builder fetches the commit, builds every image and the frontend, and is deleted when the build ends.
 
-- **No key:** the builder writes its archives and their manifest through links the deploy signed.
+- **No Scaleway key:** the builder writes its archives and their manifest through links the deploy signed.
 - **Checked archives:** the deploy checks every archive against the manifest.
 - **Plain files:** the deploy uploads the frontend and refuses any entry but a plain file in the output.
 - **Contained code:** the app's code runs only in containers that reach no machine metadata.
@@ -211,7 +211,7 @@ A **switch** moves one role to its new machine:
 5. The load balancer stops routing to it. Its agent stops the containers after the drain time.
 6. The deploy deletes the old machine.
 
-A new machine that does not serve within the wait is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
+A start-first machine that never serves is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
 
 The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC worker](../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
 
@@ -223,11 +223,11 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new machine boots on the idle slot beside the old one. Once the pools see it healthy, the old one drains and goes. A new machine that never serves is deleted, and the old one keeps the traffic. | None: the pools hold both until the old one's check turns red. |
 | **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The old machine drains and goes first, then the new one boots. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
-| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. The new process's cdc waits until the old machine drained: one session holds the replication slot. Both processes run a jobs worker until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from the switch until the slot moves, up to a minute past the drain. Activities are still written. |
+| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. The new process's cdc waits until the old machine drained: one session holds the replication slot. Both processes run a jobs worker until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from the switch until the slot moves, up to a minute past the drain. No activity is lost. |
 
 ## Runtime secret delivery
 
-Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume. It writes the file to the boot-diag bucket, which no other key reads.
+Each value has one container in the runtime folder, which the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume. It writes the file to the boot-diag bucket.
 
 The new machine fetches the file once through a link in its user data and keeps it at `0600`. The deploy deletes the bucket's copy once the machine's boot account arrived, or at the end of the run.
 
@@ -240,7 +240,7 @@ The new machine fetches the file once through a link in its user data and keeps 
 
 ## Load balancer and DNS
 
-The setup's first apply makes the load balancer, before any machine. Its pools, their reserved addresses, its DNS records and its certificates come with it. They change only in an apply. The deploy key may read them and write none. Every apply also replaces a certificate that failed for good.
+The setup's first apply makes the load balancer, before any machine. Its pools, their reserved addresses, its DNS records and its certificates come with it. They change only in an apply. The deploy key only reads the load balancer. Every apply also replaces a certificate that failed for good.
 
 ## Configuration
 

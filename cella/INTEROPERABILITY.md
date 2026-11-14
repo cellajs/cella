@@ -12,11 +12,11 @@ Every actor is a row in `actors`, a user or a service account. A person without 
 
 A service account is tenant-scoped and holds role bindings like a member does. "Create API key" in organization settings makes one, named after the key, as a member of the organization. Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
 
-A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column. A sync or import that a connection runs acts as a service account of its own. The rows it wrote name that account.
+A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column.
 
 ## Proving who you are
 
-Every caller gets the same OpenAPI contract and SDK. Only the proof of who it is differs: an API key, or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
+Every caller gets the same OpenAPI contract and SDK. Routes open to machines take an API key or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
 
 ### API keys
 
@@ -49,11 +49,11 @@ Every entity type with a policy has `<type>:read` and `<type>:write`, and `write
 
 ### Quotas and limits
 
-Tenant restrictions cap the active service accounts and live API keys a tenant holds. Machine calls pass a per-second burst limit. Routes that carry it also spend an hourly points budget the tenant sets. An app acting on a person's consent spends that person's budget, since both count per actor.
+Tenant restrictions cap the active service accounts and live API keys a tenant holds. Machine calls pass a per-second burst limit. Routes that carry it also spend the tenant's hourly points budget. An app acting on a person's consent spends that person's budget, since both count per actor.
 
 ## The REST API
 
-The REST API is the API the app's own frontend uses, described in one OpenAPI document that also generates the SDK. Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev) as far as an offline-first app allows, and the API docs show every route's shape, status codes and limits. A machine caller gets the same contract as a browser session, narrowed by its scopes.
+The REST API is the API the app's own frontend uses, described in one OpenAPI document that also generates the SDK. Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev) as far as an offline-first app allows, and the API docs show every route's shape, status codes and limits. A machine caller reaches the routes open to machines, narrowed by its scopes.
 
 Four behaviors hold across the API, and a client codes against them:
 

@@ -4,7 +4,7 @@ This document describes the Infra CLI, built on [Pulumi](https://www.pulumi.com/
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting. Then it opens on a home screen that says whether the app serves and what to do next, above a menu by task. A schedule in the same Scaleway account deploys every release onto fresh machines. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting. Then it opens on a home screen that says whether the app serves and what to do next, above a menu by task. A schedule in the same Scaleway account deploys every release onto fresh machines. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds the deploy key.
 
 ## What it does
 

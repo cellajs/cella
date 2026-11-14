@@ -20,7 +20,7 @@ system message it cannot take goes out by mail.
 
 A switch that times out waiting for the new machine means its agent never answered 200. That is almost always a crash at boot, not the load balancer.
 
-The deploy deleted the new machine, and the old one kept serving. A role that switched before the failure serves the target. The next run of the same target switches only the rest.
+The deploy deleted the new machine where the old one kept serving; a stop-first role keeps its failed machine. A role that switched before the failure serves the target. The next run of the same target switches only the rest.
 
 1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report, a crashed container's output included. "No account" means the agent never finished its boot. The machine's serial console then shows how far it got: Scaleway console → Instances → the machine → Console. A deleted machine's console is gone with it. For a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
 2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` in the boot-diag bucket. `docker run` it with a minimal valid environment. A failing import such as `ERR_MODULE_NOT_FOUND` shows in seconds.
@@ -105,7 +105,7 @@ A message the room does not take goes out by mail, which ends with "Sent by mail
 
 | Reason | Means | What to do |
 | --- | --- | --- |
-| `timeout` | The homeserver did not answer in time, several tries in a row. | Nothing: the next message tries the room again. |
+| `timeout` | The homeserver did not answer in time. | Nothing: the next message tries the room again. |
 | `unreachable` | No connection to the homeserver. | Check `homeserverUrl` and the homeserver's status. |
 | `M_UNKNOWN_TOKEN` | The homeserver refuses the token. | Store a new token as in step 3 and start again as in step 4. |
 | `M_FORBIDDEN` | The bot is not in the room and has no invite. | Invite the bot again. The next message joins. |
@@ -113,7 +113,7 @@ A message the room does not take goes out by mail, which ends with "Sent by mail
 | `M_LIMIT_EXCEEDED` | The homeserver asked the bot to wait longer than a message may. | Nothing for a single one. When it recurs, raise the bot's rate limit or run your own homeserver. |
 | Anything else, such as `http_502`, `bad_response` or `error` | The answer was no Matrix answer, or the message could not be built. | Read the log line beside it. |
 
-Nothing needs to be sent again: every message the room did not take arrived by mail.
+Nothing needs to be sent again, unless the mail failed too.
 
 ## Open the database
 
@@ -161,7 +161,7 @@ ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SER
 
 `pnpm infra` → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
 
-Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker rebuilds its sync books, since a recreated or restored database has no replication slot ([Verify and rebuild](../../cdc/README.md#verify-and-rebuild)).
+Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../cdc/README.md#verify-and-rebuild)).
 
 - **Nothing but you stops this.** Scaleway deletes a database in use, replication slot included.
 - **The typed name is the only guard.** You confirm by typing `<database>@<instance>`.
@@ -170,7 +170,7 @@ Verify that `curl https://<your-app>/api/health?depth=full` reports every compon
 
 ## Restore a backup
 
-A backup holds the accounts deleted after it was taken. A deletion someone asked for must hold on the restored database too. The live database lists every deleted account, since its `actors` row stays behind. Before restoring, save that list:
+A backup holds the accounts deleted after it was taken. A deletion someone asked for must hold on the restored database too. The live database lists each account a person deleted: its `actors` row stays. Before restoring, save that list:
 
 ```sql
 SELECT a.id FROM actors a LEFT JOIN users u ON u.id = a.id WHERE a.kind = 'user' AND u.id IS NULL;
@@ -200,7 +200,7 @@ Before it touches anything, it refuses a key the bucket policies do not name. Yo
 
 Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there.
 
-When the dump fails, the teardown destroys nothing of the stack and says what it did before. Stop traffic first: a write the app takes after the dump is lost.
+When the dump fails, the machines are gone already and the teardown destroys nothing else. Stop traffic first: a write the app takes after the dump is lost.
 
 The teardown deletes:
 

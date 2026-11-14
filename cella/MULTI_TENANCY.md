@@ -32,7 +32,7 @@ RLS is enabled on product tables and on resources that hold tenant data. The own
 | Memberships | No RLS | Membership operations and permissions |
 | Resources | RLS only when they hold tenant data and the migration lists them | Owning module and guards |
 
-The RLS migration protects every registered product table without per-table opt-in. Every product entity has a tenant and a home channel: the hierarchy rejects a product without a channel parent. Channel-entity and membership queries use `baseDb`. Product reads must enter a tenant helper.
+The RLS migration enables RLS on every registered product table. Every product entity has a tenant and a home channel: the hierarchy rejects a product without a channel parent. Channel-entity and membership queries use `baseDb`. Product reads must enter a tenant helper.
 
 ## Product reads
 
@@ -47,16 +47,16 @@ An `includeDeleted` option also reaches tombstones. Database work stays inside t
 
 ## Write-through policies
 
-The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions are `true`. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
+Each RLS table carries INSERT, UPDATE and DELETE policies whose expressions are `true`. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
 
 | Concern | Mechanism | Limit |
 | --- | --- | --- |
 | Actor may perform the action | Guards and the permission engine | Every mutation path must call them |
 | Initial tenant and organization | The server derives them from the guarded context | A contextless SQL insert is outside this protection |
 | Update or delete targets | The operation's query uses guarded ids and channel scope | RLS write policies add no predicates |
-| Tenant and organization agree | A composite `(tenant_id, organization_id)` foreign key on every organization-bound table. Tenant and organization are 1:1. | Does not authorize the actor |
+| Tenant and organization agree | A composite `(tenant_id, organization_id)` foreign key on product and membership tables. Tenant and organization are 1:1. | Does not authorize the actor |
 | Product identity cannot move | A trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor ids are not covered. |
-| Membership identity, activities | Immutability triggers on membership identity columns. Activity rows are append-only for the runtime role. | Same limits. `admin_role` can delete activities. |
+| Membership identity, activities | Immutability triggers on membership identity columns. Activity rows are read-only for the runtime role. | Same limits. `admin_role` can delete activities. |
 
 ## Database roles
 
@@ -69,7 +69,7 @@ The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions 
 
 Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
 
-The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it. Its request handlers then cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
+The admin credential serves migrations, seeds and retention. An API that runs none of them serves without it. Its request handlers then cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
 ## Tenant kinds
 

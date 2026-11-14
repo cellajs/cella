@@ -6,7 +6,7 @@ This document covers the CDC worker, which reads committed Postgres changes thro
 
 A **Change Data Capture** worker turns committed database changes into audit history, counts
 and the changes the live stream announces. It keeps changes in commit order and groups nearby changes
-when the same clients should receive them. Each change gets an order number and all counts are updated.
+when the same clients should receive them. Product changes get an order number and counts are updated.
 
 ## Vocabulary
 
@@ -19,7 +19,7 @@ when the same clients should receive them. Each change gets an order number and 
 | **Record** | Write what a change leaves in the database: its activity as the audit row, its sequence value, the counters and the stamp on its row. |
 | **Acknowledge** | Tell the slot that everything up to a position is recorded. |
 | **Read again** | Stop reading without acknowledging and start anew. What is recorded already is not recorded twice. |
-| **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience. |
+| **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience and action. |
 | **Books** | The numbers the worker keeps in `channel_counters`: the counts, the sequence counter and the frontiers. |
 | **Lost case** | A state the WAL cannot repair: no slot, empty counters, a rebuild that was interrupted. It ends in a rebuild. |
 | **Sync generation** | A number that moves on whenever the books were rebuilt. A client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
@@ -125,8 +125,7 @@ Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE
 | The worker stops inside a rebuild | | | The fence it stored makes the next start rebuild (`rebuildWasInterrupted`) |
 | Clients hold cursors from before a rebuild | | | A new generation: the API ends every stream and clients refetch once (`noteGeneration`) |
 | A stream state protocol 1 never sends: a change outside a transaction, a BEGIN or COMMIT without its position, an update without its old row | | Refused (`TransactionBuffer`, `parseUpdate`), then read again | |
-| A BEGIN carries no commit time | Its activities take the time the worker read them (`onBegin`) | | |
-| A product row names no organization | A delete is counted under its home channel (`resolveChannelKey`) | A create or update fails its flush (`organizationOf`) | |
+| A product row names no organization | | Its flush fails (`organizationOf`, `buildProductMessage`) | |
 | A channel delete cascades to its rows | The cascaded deletes are dropped and counted on the channel's delete (`isCascadedDelete`); clients hear `channel.deleted` | | |
 | The worker's own write comes back through the WAL, or an update changes no field | Changed fields come from the WAL without `stx`, `seq` and `path`, and an update of only `updatedAt` records nothing (`parseUpdate`). The embedding strip is recognized (`isReferenceStripWrite`) | | |
 | An embedded row is deleted while hosts reference it | Its id is stripped from the hosts (`stripEmbeddingReferences`) | | None for a row deleted by its channel's cascade: it is dropped before the strip (`isCascadedDelete`), and a host outside that channel keeps its id |

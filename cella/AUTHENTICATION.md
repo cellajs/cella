@@ -10,7 +10,7 @@ Changing how an account is protected first asks the session to prove its user ag
 
 ## Sign-in methods
 
-The sign-in page first asks for the address. A browser that signed in to that account before goes on to sign in. Every other browser is mailed a link that signs in or signs up, and sees the same page, account or not.
+The sign-in page first asks for the address. A browser that signed in to that account before goes on to sign in. Every other browser sees the same page, account or not: the link, if any, arrives by mail.
 
 | Method | What proves the person |
 | --- | --- |
@@ -66,7 +66,7 @@ The `auth/tokens/` module issues, opens and spends every token, with one policy 
 
 Opening a link only holds it in the browser. A mail scanner or a link preview does not use it up: a click on the app's page then redeems it with a POST.
 
-The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. A magic link signs in once, and its sign-in spends it: a second click, or a second factor that failed, needs a new link. A token or code issued for a session serves that session alone and dies with it.
+The first redemption wins. The token then works for a short while in that browser alone. A magic link signs in once, and its sign-in spends it: a second click, or a second factor that failed, needs a new link. A token or code issued for a session serves that session alone and dies with it.
 
 A magic link is the one link that redeems on opening, and only in the browser that asked for it. A crawler or a prefetch changes nothing: a cookie set at the request proves that browser.
 
@@ -103,7 +103,7 @@ An account-security action needs a session that proved its user present within t
 - **SSO factor**: an SSO sign-in counts when the institution asserted MFA within the window.
 - **Set up a factor**: the dialog adds a passkey or authenticator app, then runs the action.
 - **Emailed code**: mailed for this session and typed into the same dialog. Any device can read the mail.
-- **Not a factor**: an emailed code is only as strong as the mailbox. Its misses are capped per day only.
+- **Not a factor**: an emailed code is only as strong as the mailbox. Its misses are capped per hour and per day.
 - **A lost factor**: an emailed code may set up a new one, since with MFA off the mailbox signs in anyway.
 - **With MFA on**: the other factor replaces the lost one.
 
@@ -126,5 +126,5 @@ Mail and failed proofs carry limits of their own:
 - **Typed addresses.** A mail to an address someone else typed is also capped per address.
 - **Failed proofs.** They count per client address even for a signed-in user. Failed second factors also count per account.
 - **Daily tier.** Every failure budget also has one, which slows a patient guesser.
-- **Weeks for second factors.** Their failures also count over weeks. A correct code never resets that count.
+- **Weeks for TOTP.** Its failures also count over weeks. A correct code never resets that count.
 - **Self-lifting block.** It lifts once the weeks pass, where NIST SP 800-63B disables the authenticator.

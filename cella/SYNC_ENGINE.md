@@ -68,7 +68,7 @@ Only product rows sync. Channels are containers, and products are the synced con
 | **Sequence** | One monotonic counter per organization, shared by all product entity types |
 | **Path** | Root-first channel ID path of a row. A **subtree**, a channel and everything below it, is a path prefix. |
 | **Home** | Deepest non-null channel ancestor of a product row, with organization as fallback |
-| **Summary** | Counts and timestamps on a channel row, so one read answers for a subtree. The organization's row also holds the frontiers. |
+| **Summary** | Counts and timestamps per channel, so one read answers for a subtree. The organization's row also holds the frontiers. |
 | **Frontier** | Newest sequence position of a product type in an organization. It only moves forward. |
 | **View** | An organization and a product type a client tracks. Catchup authorizes and answers per view. |
 | **Cursor** | Latest sequence position a view has ingested |
@@ -109,7 +109,7 @@ When an update moves rows where a subscriber can no longer read them, that subsc
 A change frame names each changed row with its sequence position and the write that changed it. The client answers by the row's action:
 
 - **Create or update:** fetch the row and patch it into the caches.
-- **Delete:** mark the row's lists for a refetch, since no row is left to fetch.
+- **Delete:** fetch its tombstone, or mark its lists when no row is left.
 - **Move-out:** drop the row at once.
 - **Own echo:** fetch nothing, since the write's answer brought the stored row.
 
@@ -127,7 +127,7 @@ A view behind its frontier hands the gap to the fetch prioritizer. A view withou
 
 ### SSE wire
 
-Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
+The stream also sends an `offset` once, a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
 
 The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame.
 
@@ -153,7 +153,7 @@ A list the engine cannot patch whole, such as an overflowed or a filtered list, 
 
 ### Unseen tracking
 
-Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. The client counts only types every channel member may read. Their endpoint counts the others.
+Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. The client counts only types every channel member may read. The config refuses to track the others.
 
 ## Embeddings
 
@@ -215,7 +215,7 @@ Losing the stream costs live updates and nothing else. Lists refetch when opened
 
 ### What happens when
 
-The client's own catchup repairs missed frames. Clients refetch everything only when the books themselves were wrong.
+The client's own catchup repairs missed frames. Every client refetches everything only after a rebuild of the books.
 
 | What happened | What a user sees | What repairs it | What is lost |
 | --- | --- | --- | --- |

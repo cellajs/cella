@@ -114,7 +114,7 @@ A row's home is the product's declared parent, or a channel above it when the hi
 
 A role's product grants reach only rows homed at its own channel. A role the hierarchy declares `elevated` there reaches the channel's whole subtree. No grant reaches rows homed above its channel. A grant above a channel counts in full for it, since channel subjects are never home-scoped.
 
-A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync.
+A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add or a sign-in through a connection.
 
 The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
 
@@ -191,7 +191,7 @@ A route gate, `requireEntityAction`, asks the same question before the page load
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | [Guards](#guards) | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 401 or 403 before the handler ([Refusals](#refusals)) |
+| Guard chain | [Guards](#guards) | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 4xx before the handler ([Refusals](#refusals)) |
 | Single row | `getValidProduct`, `getValidChannel` | Loads the row, checks it is in the request's tenant and organization, runs the engine | 404 for a row the caller may not read, 403 for a denied action on one it reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed. 403 only when nothing is allowed |
@@ -230,7 +230,7 @@ A guard declares what it reads of an earlier one. A route that lists them out of
 
 No route, app or test meets two shapes for one cause: each situation has one answer.
 
-A refusal the caller's request or state brings about carries severity `warn`: a warning toast and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone.
+A refusal the caller's request or state brings about carries severity `warn` or `info` and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone.
 
 The members an answer names beside its type, such as `resource`, are top-level members of the error body.
 
@@ -238,18 +238,18 @@ The members an answer names beside its type, such as `resource`, are top-level m
 | --- | --- | --- |
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
-| An action denied on a row the caller reads, a create the placement denies, or a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `action` | The caller already knows the row |
+| An action denied on a row the caller reads, a create the placement denies, or a bulk call where nothing is allowed | 403 `forbidden`, `entityType` | The caller already knows the row |
 | A write in an archived channel, or into one | 403 `channel_archived` with `entityType` | The caller reads the channel, so the answer names the state that refuses, not the id |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `reason: 'role_exceeds_actor'`, `role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
-| An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename. The slug check answers 409 taken, 204 free | A slug is the organization's public URL path, unique across tenants. Every route gives the same answer, so availability is the policy and no leak |
+| An organization slug another organization holds, in any tenant | `slug_exists` from create and rename. The slug check answers 409 taken, 204 free | A slug is the organization's public URL path, unique across tenants. Every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<kind>_not_found` or `<kind>_expired` | The token was the proof, so without it the request is not authenticated |
 | A passkey the server does not hold for the account | 404 `passkey_not_found` | The credential id comes from the caller's own authenticator, so the answer reveals no account |
 | A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
 | An address the provider verified, or a provider account, that another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app. An unverified address answers as a free one, so the answer tells nobody whether an account holds it |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend sends a person to sign-in on these four alone |
-| A tenant quota that is full | 403 `restrict_by_app` with `resource` and `quota`, or `restrict_by_org` for member seats | The tenant's policy, not a rate. Waiting does not lift it, so never a 429 |
+| A tenant quota that is full | 403 `restrict_by_app`, or `restrict_by_org` for member seats | The tenant's policy, not a rate. Waiting does not lift it, so never a 429 |
 | A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationEmailsPerDay` |
 | An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | `withStepUp` opens the proof dialog on it and runs the action again |
 | A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | The tenant decides how the people it knows through a connection sign in |
@@ -266,7 +266,7 @@ A change here must also change the privacy statement, which tells users the same
 
 ## System admins
 
-A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership.
+A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. The guards let them through without a membership, on a session only.
 
 A system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities.
 

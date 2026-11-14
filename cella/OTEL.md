@@ -4,8 +4,8 @@ This document explains how [OpenTelemetry](https://opentelemetry.io/docs/) trace
 
 ### TL;DR
 
-Every service uses the same setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
-and logs. They go to [Maple.dev](https://maple.dev) by default, or to any OTLP endpoint. One trace
+Every Node service uses one setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
+and logs. They go to [Maple.dev](https://maple.dev) or to any OTLP endpoint. One trace
 follows a request from a browser click through the backend. A second follows a database change from
 the database-change worker into the backend.
 
@@ -56,7 +56,7 @@ Every worker needs the parts below. CDC is the reference:
 
 - [tracing.ts](../cdc/src/lib/tracing.ts) starts the shared setup under the worker's service name.
 - [pino.ts](../cdc/src/lib/pino.ts) ships logs to the same destination and prints readable lines in development.
-- [index.ts](../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal or a crash.
+- [index.ts](../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal.
 - A worker that serves HTTP mounts the shared health app ([health-app.ts](../shared/src/health-app.ts)).
 
 ### Metrics
