@@ -47,7 +47,7 @@ export const formatMailTime = (iso: string, lng: string) => {
   return Number.isNaN(date.getTime()) ? iso : mailTimeFormat(lng).format(date);
 };
 
-/** The request details as rows in `lng`. A row whose value is unknown is left out; the time is always known. */
+/** The request details as rows in `lng`. A row whose value is unknown is left out; the time is always known and comes last. */
 const requestDetailRows = (lng: string, { at, regionCode, browser, os }: RequestDetails): RequestDetailRow[] => {
   const t = (key: 'browser' | 'browser_value' | 'country' | 'country_value' | 'time', values: Record<string, string> = {}) =>
     i18n.t(`backend:email.request_details.${key}`, { lng, ...values, ...plainText });
@@ -58,6 +58,16 @@ const requestDetailRows = (lng: string, { at, regionCode, browser, os }: Request
   if (device) rows.push({ label: t('browser'), value: device });
   rows.push({ label: t('time'), value: formatMailTime(at, lng) });
   return rows;
+};
+
+/**
+ * Where a request came from on one line, for a chat text: "Netherlands (approximate), Firefox on macOS". The time is
+ * left out: a room stamps every message. Undefined outside a request, or when neither value is known.
+ */
+export const requestOrigin = (lng: string, details: RequestDetails | null) => {
+  if (!details) return undefined;
+  const origin = requestDetailRows(lng, details).slice(0, -1);
+  return origin.map((row) => row.value).join(', ') || undefined;
 };
 
 /**

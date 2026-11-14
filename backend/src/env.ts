@@ -86,6 +86,9 @@ const envSchema = z
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().optional(),
 
+    // The bot's access token for `appConfig.matrix`; unset, system messages go out by mail.
+    MATRIX_ACCESS_TOKEN: z.string().optional(),
+
     // One secret or a comma-separated list (the first signs, any verifies). Every entry counts on its own, so a stray
     // comma or a short entry stops the boot and never becomes a signing key.
     COOKIE_SECRET: z.string().refine((value) => value.split(',').every((entry) => entry.trim().length >= minSecretLength), {

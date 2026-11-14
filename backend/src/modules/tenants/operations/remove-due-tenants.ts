@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { productTables } from '#/db/product-tables';
 import { tenantReadById } from '#/db/tenant-context';
-import { mailer } from '#/lib/mailer';
+import { sendToSystemRoom } from '#/lib/system-room';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMemberUserIdsByTenant } from '#/modules/memberships/memberships-queries';
 import { deleteDueTenant, findDueTenants } from '#/modules/tenants/tenants-queries';
@@ -38,7 +38,7 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
  * accounts it orphaned: a member with no proven address and no membership left, such as a demo's account, which goes
  * with its actor row. An app's fixture account without an email row follows the same rule and goes with the last tenant
  * that held it; a fixture that must outlive its tenants needs a proven address or a membership elsewhere. For a kind
- * with operator notices the operator gets a mail per tenant with what was removed: the
+ * with operator notices the operator gets a message per tenant with what was removed, in the system room or by mail: the
  * written confirmation a processing agreement asks for. A tenant that fails is logged and tried again at the next run.
  * @returns The number of tenants removed.
  * @throws After every tenant ran, when any of them failed, so the jobs worker records a failed run.
@@ -64,9 +64,9 @@ export async function removeDueTenants(): Promise<number> {
       if (!operatorNotices) continue;
       const deletedAt = tenant.status === 'deleted' ? tenant.statusChangedAt : (tenant.expiresAt ?? due.now);
       const statics = { tenantId: tenant.id, tenantName: tenant.name, deletedAt, removedAt: getIsoDate(), counts };
-      await mailer
-        .sendEmails(tenantRemovedEmail, statics, [{ email: appConfig.company.email, lng: appConfig.defaultLanguageCode }])
-        .catch((err) => log.error('Failed to mail the removal of a tenant', { tenantId: tenant.id, err }));
+      await sendToSystemRoom(tenantRemovedEmail, statics).catch((err) =>
+        log.error('Failed to report the removal of a tenant', { tenantId: tenant.id, err }),
+      );
     } catch (error) {
       failed.push(tenant.id);
       log.error('Removing a due tenant failed', { tenantId: tenant.id, err: error });

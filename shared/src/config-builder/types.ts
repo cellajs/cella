@@ -334,6 +334,14 @@ export interface ShareTargetConfig {
   params: { title?: string; text?: string; url?: string; files?: { name: string; accept: string[] }[] };
 }
 
+/** The deployment's Matrix bot and the room it posts system messages into. */
+export interface MatrixConfig {
+  /** The homeserver's client-server base URL, such as `https://matrix-client.matrix.org`. */
+  homeserverUrl: string;
+  /** The room id (`!…:server`) of an unencrypted room the bot is invited to. */
+  systemRoomId: string;
+}
+
 /**
  * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
@@ -397,6 +405,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   has: HasFlagsConfig;
   /** Unset, the app takes no shares. */
   shareTarget?: ShareTargetConfig;
+  /** Unset, system messages go out by mail. */
+  matrix?: MatrixConfig;
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];

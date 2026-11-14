@@ -1,9 +1,10 @@
+import type { DeliveryNoteStatic } from '../chat-text';
 import { EmailLayout, EmailText } from '../components';
 import { formatMailTime } from '../frame';
 import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
-interface TenantRemovedStatic {
+interface TenantRemovedStatic extends DeliveryNoteStatic {
   tenantId: string;
   tenantName: string;
   /** ISO moments of the deletion (a demo's expiry) and of the removal. */
@@ -12,6 +13,14 @@ interface TenantRemovedStatic {
   /** What the removal deleted, one line per kind, e.g. `attachment: 12`. */
   counts: string[];
 }
+
+/** The record of a removal, one line each: the mail lists them and the chat text quotes them. */
+const recordLines = (lng: string, { tenantId, deletedAt, removedAt, counts }: TenantRemovedStatic) => [
+  `Tenant: ${tenantId}`,
+  `Deleted: ${formatMailTime(deletedAt, lng)}`,
+  `Removed: ${formatMailTime(removedAt, lng)}, with its organization and the stored files it held. Backups expire on their own schedule.`,
+  ...counts,
+];
 
 /** Tells the operator a tenant was removed after its deleted-tenant period: the written record of a destruction. */
 export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
@@ -22,22 +31,24 @@ export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
       previewText: subject,
       headerHtml: i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
-      ...statics,
-      deletedAt: formatMailTime(statics.deletedAt, lng),
-      removedAt: formatMailTime(statics.removedAt, lng),
+      lines: recordLines(lng, statics),
+      endingHtml: statics.deliveryNote,
     };
   },
-  component({ previewText, headerHtml, supportText, tenantId, deletedAt, removedAt, counts, frame }) {
+  component({ previewText, headerHtml, supportText, lines, endingHtml, frame }) {
     return (
-      <EmailLayout frame={frame} previewText={previewText} headerHtml={headerHtml} supportText={supportText}>
-        <EmailText>Tenant: {tenantId}</EmailText>
-        <EmailText>Deleted: {deletedAt}</EmailText>
-        <EmailText>Removed: {removedAt}, with its organization and the stored files it held. Backups expire on their own schedule.</EmailText>
-        {counts.map((line) => (
+      <EmailLayout frame={frame} previewText={previewText} headerHtml={headerHtml} supportText={supportText} endingHtml={endingHtml}>
+        {lines.map((line) => (
           <EmailText key={line}>{line}</EmailText>
         ))}
       </EmailLayout>
     );
+  },
+  chat(lng, statics) {
+    return {
+      headlineHtml: i18n.t('backend:chat.tenant_removed', { name: statics.tenantName, lng }),
+      quote: recordLines(lng, statics).join('\n'),
+    };
   },
   preview: {
     statics: {

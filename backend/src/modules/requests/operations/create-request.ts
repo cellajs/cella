@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
+import { sendToSystemRoom } from '#/lib/system-room';
 import { getRateLimiterInstance, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import type { requestCreateBodySchema } from '#/modules/requests/requests-schema';
@@ -58,14 +59,9 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   }
 
   // Replies go to the requester, who typed this address: answering means writing back.
-  mailer
-    .sendEmails(
-      requestReceivedEmail,
-      { kind, message, email: normalizedEmail, subject: title },
-      [{ email: appConfig.company.email, lng }],
-      normalizedEmail,
-    )
-    .catch((err) => log.error('Failed to notify the team of a request', { err }));
+  sendToSystemRoom(requestReceivedEmail, { kind, message, email: normalizedEmail, subject: title }, normalizedEmail).catch((err) =>
+    log.error('Failed to notify the team of a request', { err }),
+  );
 
   // Reserved by the call that stored the row: a concurrent repeat that reserved first would leave it unconfirmed.
   if (!(await mayMail(normalizedEmail))) return;

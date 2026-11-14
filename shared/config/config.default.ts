@@ -1,5 +1,6 @@
 import type {
   FederationConfig,
+  MatrixConfig,
   NavigationConfig,
   ProductEmbedding,
   RequiredConfig,
@@ -232,6 +233,7 @@ export const config = {
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
+  matrix: undefined as MatrixConfig | undefined,
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
   // clientCacheVersion, a number that only rises, clears incompatible cached entities while preserving queued mutations.
