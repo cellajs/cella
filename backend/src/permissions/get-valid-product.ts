@@ -3,7 +3,7 @@ import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checkPreconditions } from '#/core/preconditions';
 import { baseDb } from '#/db/db';
-import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { requestScope } from '#/db/utils/request-scope';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
@@ -39,7 +39,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // A lock lasts as long as its transaction, and the read below opens a read-only one of its own.
   if (forUpdate && ctx.var.db === baseDb) throw new Error('getValidProduct: forUpdate needs the transaction of the write it guards');
 
-  const entity = await tenantReadUnlessInTransaction(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id, forUpdate }));
+  const entity = await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id, forUpdate }));
 
   // Missing, soft-deleted, foreign-tenant, foreign-organization and invisible-draft rows all read
   // as the same 404, so a row's existence is never revealed outside its scope.

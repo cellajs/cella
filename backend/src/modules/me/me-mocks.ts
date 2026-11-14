@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { mockNanoid, mockPaginated, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
-import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
+import { mockInviteeInvitationResponse } from '#/modules/memberships/memberships-mocks';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
@@ -73,7 +73,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default') =>
 
 const mockPendingInvitationResponse = (key = 'pending-invitation:default') => ({
   entity: mockChannelBase(`${key}:entity`),
-  inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
+  invitation: mockInviteeInvitationResponse(`${key}:invitation`),
   organizationName: null,
 });
 

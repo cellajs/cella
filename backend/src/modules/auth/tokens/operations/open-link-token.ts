@@ -5,11 +5,11 @@ import { AppError } from '#/core/error';
 import { assertSwitchOn } from '#/middlewares/config-switch';
 import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-link';
-import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
+import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
 import { oauthVerificationUrl } from '#/modules/auth/oauth/operations/handle-oauth-verification';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
-import { forgetLinkRequest, holdLinkToken, invokeToken, redeemHeldLink } from '#/modules/auth/tokens/token-lifecycle';
+import { forgetMagicLinkRequest, holdLinkToken, redeemHeldLink, redeemToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { HeldLinkKind, LinkTokenKind } from '#/modules/auth/tokens/token-policies';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { log } from '#/utils/logger';
@@ -24,7 +24,7 @@ type LinkHandler = (ctx: Context<Env>, rawToken: string) => Promise<Response>;
 const redeemedLinkTargets = {
   'oauth-verification': oauthVerificationUrl,
   invitation: async (token) => {
-    log.info('Token invoked, redirecting with single use token in cookie', { tokenId: token.id, userId: token.userId });
+    log.info('Token redeemed, redirecting with single use token in cookie', { tokenId: token.id, userId: token.userId });
     return `${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`;
   },
 } satisfies Record<HeldLinkKind, (token: TokenRecord) => Promise<string>>;
@@ -58,10 +58,8 @@ const linkHandlers = {
 
     const followed = await findFollowedInvitation(ctx);
     // A sign-up link creates its account at this click, which proves the inbox.
-    const token = await invokeToken(ctx, { kind: 'magic', rawToken, claimHolder: claimMagicLinkHolder }).catch((err) =>
-      explainOpenedMagicLink(err, rawToken),
-    );
-    forgetLinkRequest(ctx, 'magic');
+    const token = await redeemToken(ctx, { kind: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
+    forgetMagicLinkRequest(ctx);
     return handleMagicLink(ctx, token, followed);
   },
   'oauth-verification': (ctx, rawToken) => holdLink(ctx, 'oauth-verification', rawToken),

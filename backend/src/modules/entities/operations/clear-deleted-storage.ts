@@ -1,4 +1,4 @@
-import { asc, inArray } from 'drizzle-orm';
+import { asc, gt, inArray } from 'drizzle-orm';
 import { appConfig, isProduct, type ProductEntityType } from 'shared';
 import { isOrganizationKey } from 'shared/utils/media-ref';
 import { isLocalStorageKey } from 'shared/utils/storage-key';
@@ -13,8 +13,11 @@ import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-document
 import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
 import { log } from '#/utils/logger';
 
-/** Queue rows one run takes; the next run takes the rest. */
+/** Queue rows one batch takes. */
 const batchSize = 500;
+
+/** Time after which a run takes no further batch and leaves the rest to the next: the job expires at 15 minutes. */
+const runBudgetMs = 8 * 60 * 1000;
 
 interface StoredObject {
   bucketName: string;
@@ -51,13 +54,14 @@ function ownedObjectsOf({ entityType, entityId, organizationId, storage }: Delet
 async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[]): Promise<void> {
   const objects = rows.flatMap(ownedObjectsOf);
   let released = objects;
+  const documents = new Map<ProductEntityType, string[]>();
+  for (const row of rows) {
+    if (isProduct(row.entityType) && getYjsMaterializer(row.entityType))
+      documents.set(row.entityType, [...(documents.get(row.entityType) ?? []), row.entityId]);
+  }
 
-  if (tenantId) {
-    const documents = new Map<ProductEntityType, string[]>();
-    for (const row of rows) {
-      if (isProduct(row.entityType) && getYjsMaterializer(row.entityType))
-        documents.set(row.entityType, [...(documents.get(row.entityType) ?? []), row.entityId]);
-    }
+  // Rows that stored nothing and held no document leave the tenant nothing to read.
+  if (tenantId && (objects.length > 0 || documents.size > 0)) {
     released = await tenantContextById(tenantId, async (db) => {
       for (const [entityType, entityIds] of documents) await retireYjsDocuments({ var: { db } }, { entityType, entityIds });
       const named = await findLiveAttachmentKeys({ var: { db } }, { tenantId, keys: objects.map(({ key }) => key) });
@@ -87,30 +91,44 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
 
 /**
  * Clears what deleted entity rows left outside their tables, from the queue their delete triggers fill: whatever
- * deleted them, a request, an FK cascade from a channel or organization, or `apply_retention()`. Works the oldest batch
- * tenant by tenant and deletes the queue rows a tenant cleared; a tenant that fails keeps its rows for the next run.
+ * deleted them, a request, an FK cascade from a channel or organization, or `apply_retention()`. Works the queue in
+ * batches, oldest first, until it is empty or the run's time is spent, each batch tenant by tenant, and deletes the
+ * queue rows a tenant cleared; a tenant that fails keeps its rows for the next run.
  * @returns The number of queue rows cleared.
- * @throws After every tenant ran, when any of them failed, so the jobs worker records a failed run.
+ * @throws After the last batch, when any tenant failed: the jobs worker records a failed run.
  */
 export async function clearDeletedStorage(): Promise<number> {
-  const rows = await baseDb.select().from(deletedStorageTable).orderBy(asc(deletedStorageTable.id)).limit(batchSize);
-  const byTenant = Map.groupBy(rows, (row) => row.tenantId);
-
+  const deadline = Date.now() + runBudgetMs;
   let cleared = 0;
-  const failed: (string | null)[] = [];
-  for (const [tenantId, tenantRows] of byTenant) {
-    try {
-      await clearTenant(tenantId, tenantRows);
-      const ids = tenantRows.map(({ id }) => id);
-      await baseDb.delete(deletedStorageTable).where(inArray(deletedStorageTable.id, ids));
-      cleared += tenantRows.length;
-    } catch (error) {
-      failed.push(tenantId);
-      log.error('Clearing deleted storage failed for a tenant', { tenantId, error });
+  // The next batch starts after the last row this run read: a failed tenant's rows stay in the queue.
+  let afterId = 0;
+  const failed = new Set<string | null>();
+
+  while (Date.now() < deadline) {
+    const rows = await baseDb
+      .select()
+      .from(deletedStorageTable)
+      .where(gt(deletedStorageTable.id, afterId))
+      .orderBy(asc(deletedStorageTable.id))
+      .limit(batchSize);
+    if (rows.length === 0) break;
+    afterId = rows[rows.length - 1].id;
+
+    for (const [tenantId, tenantRows] of Map.groupBy(rows, (row) => row.tenantId)) {
+      try {
+        await clearTenant(tenantId, tenantRows);
+        const ids = tenantRows.map(({ id }) => id);
+        await baseDb.delete(deletedStorageTable).where(inArray(deletedStorageTable.id, ids));
+        cleared += tenantRows.length;
+      } catch (error) {
+        failed.add(tenantId);
+        log.error('Clearing deleted storage failed for a tenant', { tenantId, error });
+      }
     }
+    if (rows.length < batchSize) break;
   }
 
   if (cleared > 0) log.info('Deleted storage cleared', { rows: cleared });
-  if (failed.length > 0) throw new Error(`Clearing deleted storage failed for ${failed.length} tenant(s)`);
+  if (failed.size > 0) throw new Error(`Clearing deleted storage failed for ${failed.size} tenant(s)`);
   return cleared;
 }

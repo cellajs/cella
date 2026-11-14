@@ -20,23 +20,23 @@ const namedLeftOut = 3;
 /** What a send did, as a title and the sentences under it. An address the list showed as left out at the send (`shownOut`) is not named again. */
 export const describeInviteResult = ({ outcomes, rejected, held }: InviteResultData, shownOut: string[], t: TFunction, channelName?: string) => {
   let invited = 0;
-  let reminded = 0;
+  let resent = 0;
   let added = 0;
   const leftOut = [...rejected];
 
   for (const outcome of outcomes) {
     if (outcome.outcome === 'invite') invited++;
     else if (outcome.outcome === 'add') added++;
-    else if (outcomeView(outcome, t, held).group === 'again') reminded++;
+    else if (outcomeView(outcome, t, held).group === 'again') resent++;
     else if (!shownOut.includes(outcome.email.toLowerCase())) leftOut.push(outcome.email);
   }
 
   const parts = [
     invited && t('c:invite_result_invited', { count: invited }),
-    reminded && t('c:invite_result_reminded', { count: reminded }),
+    resent && t('c:invite_result_resent', { count: resent }),
     added && t('c:invite_result_added', { count: added }),
   ].filter(Boolean);
-  const saved = invited + reminded;
+  const saved = invited + resent;
   const title = held && saved ? t('c:invite_result_saved', { count: saved }) : parts.join(', ') || t('c:invite_result_none');
 
   const notes: string[] = [];
@@ -44,5 +44,5 @@ export const describeInviteResult = ({ outcomes, rejected, held }: InviteResultD
   else if (leftOut.length) notes.push(t('c:invite_result_left_out_named', { addresses: formatList(leftOut) }));
   if (held && channelName) notes.push(t('c:invite_result_held', { name: channelName }));
 
-  return { title, notes, anySent: invited + reminded + added > 0 };
+  return { title, notes, anySent: invited + resent + added > 0 };
 };

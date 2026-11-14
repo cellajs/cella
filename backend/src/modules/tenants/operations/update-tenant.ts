@@ -2,7 +2,6 @@ import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
@@ -10,7 +9,6 @@ import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { applyMergePatch } from '#/utils/merge-patch';
 
@@ -42,10 +40,8 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
       ...otherUpdates,
       // `existing` holds every field, so the stored shape is whole but for the keys a `null` removed.
       ...(restrictionsUpdate ? { restrictions: applyMergePatch(existing.restrictions, restrictionsUpdate) } : {}),
-      ...(statusChanged ? { statusChangedAt: getIsoDate() } : {}),
-      ...updateStamps(ctx.var.actor.id),
     };
-    return { existing, updated: await updateTenant(txCtx, { id: tenantId, values }), statusChanged };
+    return { existing, updated: await updateTenant(txCtx, { id: tenantId, values, by: ctx.var.actor.id }), statusChanged };
   });
 
   invalidateCache.tenant(tenantId);

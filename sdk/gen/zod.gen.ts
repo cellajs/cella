@@ -436,7 +436,7 @@ export const zMembershipBase = z.object({
  */
 export const zInviteOutcome = z.object({
   email: z.email().min(4).max(255),
-  outcome: z.enum(['invite', 'remind', 'add', 'member']),
+  outcome: z.enum(['invite', 'resend', 'add', 'member', 'declined']),
   invitedAt: z.string().optional(),
   declinedAt: z.string().optional(),
   role: z.enum(['admin', 'member']).optional(),
@@ -688,7 +688,7 @@ export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string().max(255),
   kind: z.enum(['live', 'test', 'demo']),
-  status: z.enum(['active', 'suspended', 'archived']),
+  status: z.enum(['active', 'suspended', 'deleted']),
   statusChangedAt: z.string(),
   expiresAt: z.string().nullable(),
   restrictions: z.object({
@@ -1108,7 +1108,7 @@ export const zGetTokenDataPath = z.object({
 export const zGetTokenDataResponse = z.object({
   email: z.email(),
   userId: z.string().optional(),
-  inactiveMembershipId: z.string().optional(),
+  invitationId: z.string().optional(),
   ssoConnectionId: z.string().optional(),
   inviterName: z.string().optional(),
   invitation: z
@@ -1663,8 +1663,28 @@ export const zListMyInvitationsResponse = z.object({
   results: z.array(
     z.object({
       entity: zChannelBase,
-      inactiveMembership: z.object({
+      invitation: z.object({
         createdAt: z.string(),
+        createdBy: zActorRef,
+        updatedAt: z.string().nullable(),
+        updatedBy: z
+          .union([
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              thumbnailUrl: z.string().nullable(),
+              kind: z.enum(['user']),
+              slug: z.string(),
+            }),
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              thumbnailUrl: z.string().nullable(),
+              kind: z.enum(['service']),
+              slug: z.null(),
+            }),
+          ])
+          .nullable(),
         id: z.uuid(),
         tenantId: z.string().max(24),
         channelType: z.enum(['organization']),
@@ -1672,9 +1692,10 @@ export const zListMyInvitationsResponse = z.object({
         email: z.string().max(255),
         userId: z.uuid().nullable(),
         role: z.enum(['admin', 'member']),
+        status: z.enum(['held', 'pending', 'declined']),
+        statusChangedAt: z.string(),
         declinedAt: z.string().nullable(),
-        remindedAt: z.string().nullable(),
-        createdBy: zActorRef,
+        mailedAt: z.string().nullable(),
         organizationId: z.uuid(),
       }),
       organizationName: z.string().nullable(),
@@ -1744,7 +1765,7 @@ export const zLeaveMembershipBody = z.object({
 });
 
 /**
- * Membership removed
+ * Membership left
  */
 export const zLeaveMembershipResponse = z.void();
 
@@ -1918,13 +1939,14 @@ export const zUpdateMembershipPath = z.object({
  * Membership updated
  */
 export const zUpdateMembershipResponse = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   tenantId: z.string().max(24),
   channelType: z.enum(['organization']),
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
+  organizationId: z.uuid(),
+  createdAt: z.string(),
   createdBy: z
     .union([
       z.object({
@@ -1962,7 +1984,6 @@ export const zUpdateMembershipResponse = z.object({
       }),
     ])
     .nullable(),
-  organizationId: z.uuid(),
   hidden: z.boolean().optional(),
   muted: z.boolean().optional(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
@@ -2065,7 +2086,7 @@ export const zListInvitationsQuery = z.object({
 });
 
 /**
- * Pending memberships
+ * Invitations
  */
 export const zListInvitationsResponse = z.object({
   results: z.array(
@@ -2073,8 +2094,9 @@ export const zListInvitationsResponse = z.object({
       id: z.string(),
       email: z.email().min(4).max(255),
       role: z.enum(['admin', 'member']),
+      status: z.enum(['held', 'pending', 'declined']),
       createdAt: z.string(),
-      remindedAt: z.string().nullable(),
+      mailedAt: z.string().nullable(),
       linkExpiresAt: z.string().nullable(),
       createdBy: zActorRef,
     }),
@@ -2474,7 +2496,6 @@ export const zGetPushVapidResponse = z.object({
 
 export const zCreatePushSubscriptionBody = z.object({
   endpoint: z.url().max(2048),
-  expirationTime: z.number().nullish(),
   keys: z.object({
     p256dh: z.string().max(512),
     auth: z.string().max(512),
@@ -2494,13 +2515,9 @@ export const zRemovePushSubscriptionBody = z.object({
 });
 
 /**
- * Subscriptions removed
- *
- * `deleted` is the number removed, 0 when the endpoint belongs to another user.
+ * Subscription removed
  */
-export const zRemovePushSubscriptionResponse = z.object({
-  deleted: z.int().gte(0),
-});
+export const zRemovePushSubscriptionResponse = z.void();
 
 export const zListRequestsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
@@ -2851,7 +2868,7 @@ export const zListTenantsQuery = z.object({
   skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc', 'name', 'name asc', 'name desc']).optional().default('createdAt desc'),
-  status: z.enum(['active', 'suspended', 'archived']).optional(),
+  status: z.enum(['active', 'suspended', 'deleted']).optional(),
   kind: z.string().max(2048).optional(),
 });
 
@@ -2885,7 +2902,7 @@ export const zUpdateTenantBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   kind: z.enum(['live', 'test', 'demo']).optional(),
-  status: z.enum(['active', 'suspended', 'archived']).optional(),
+  status: z.enum(['active', 'suspended', 'deleted']).optional(),
   authStrategies: z
     .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
     .max(9)

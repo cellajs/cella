@@ -29,7 +29,7 @@ export const touchSsoIdentity = async (
 ) => {
   await updateIdentity(dbCtx, {
     id: identity.id,
-    values: { lastUsedAt: getIsoDate(), email: profile.email ?? identity.email, data: snapshot, connectionId: connection.id },
+    values: { lastSignInAt: getIsoDate(), email: profile.email ?? identity.email, data: snapshot, connectionId: connection.id },
   });
 };
 

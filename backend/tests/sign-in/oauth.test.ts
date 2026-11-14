@@ -10,7 +10,7 @@ import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -156,7 +156,7 @@ describe('OAuth Authentication', async () => {
 
       const [used] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
       expect(used.email).toBe('github-user@example.com');
-      expect(used.lastUsedAt).not.toBeNull();
+      expect(used.lastSignInAt).not.toBeNull();
       // The snapshot is display only: no email row appears for it.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'github-user@example.com'))).toHaveLength(0);
     });
@@ -175,7 +175,7 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toContain('/auth/email-verification');
       expect(cookieChange(res, 'session')).toBeUndefined();
       const [untouched] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, ssoIdentity.id));
-      expect(untouched.lastUsedAt).toBeNull();
+      expect(untouched.lastSignInAt).toBeNull();
       expect(untouched.userId).toBe(user.id);
     });
 
@@ -184,7 +184,7 @@ describe('OAuth Authentication', async () => {
     // later be pointed at the holder's inbox and verified into the account of whoever proved that address meanwhile.
     it("must not move an unverified identity's verification to another address via a signed-out sign-in", async () => {
       const user = await createTestUser('local-account@example.com');
-      const identity = await linkIdentity(user, { verified: false, email: user.email });
+      const identity = await linkIdentity(user, { verifiedAt: null, email: user.email });
 
       const state = 'mock-state-test';
       mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', codeVerifier: 'verifier' }));
@@ -195,12 +195,12 @@ describe('OAuth Authentication', async () => {
       expect(cookieChange(res, 'session')).toBeUndefined();
       expect(await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id))).toHaveLength(0);
       const [unchanged] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
-      expect(unchanged).toMatchObject({ email: 'local-account@example.com', verified: false });
+      expect(unchanged).toMatchObject({ email: 'local-account@example.com', verifiedAt: null });
     });
 
     it("mails the verification to the account's own address, refreshing a stale snapshot (positive control)", async () => {
       const user = await createTestUser('github-user@example.com');
-      const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
+      const identity = await linkIdentity(user, { verifiedAt: null, email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
       mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', codeVerifier: 'verifier' }));
@@ -224,7 +224,7 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createTestUser(userEmail);
 
-      await linkIdentity(user, { verified: false });
+      await linkIdentity(user, { verifiedAt: null });
 
       const state = 'mock-state-test';
       mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', codeVerifier: 'verifier' }));
@@ -345,7 +345,7 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toContain('/auth/email-verification/connect');
 
       const [oauthAccount] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, user.id));
-      expect(oauthAccount).toMatchObject({ kind: 'oauth', provider: 'github', email: providerEmail, verified: false });
+      expect(oauthAccount).toMatchObject({ kind: 'oauth', provider: 'github', email: providerEmail, verifiedAt: null });
 
       // Identity is the provider subject: the provider address stays on the OAuth account.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
@@ -417,7 +417,10 @@ describe('OAuth Authentication', async () => {
       const sessionId = await pinConnect(user);
 
       // Signed out, or revoked from another device, while the provider's page stayed open in this browser.
-      await db.update(sessionsTable).set({ revokedAt: new Date().toISOString() }).where(eq(sessionsTable.id, sessionId));
+      await db
+        .update(sessionsTable)
+        .set({ revokedAt: new Date().toISOString(), revocationReason: 'other_session' })
+        .where(eq(sessionsTable.id, sessionId));
       const ended = await connectCallback();
       await expectRefusal(ended, 401, 'oauth-connect_not_found');
       expect(await identitiesOf(user.id)).toHaveLength(0);
@@ -480,7 +483,7 @@ describe('OAuth Authentication', async () => {
     /** A connected-but-unverified GitHub account on another address, with the mailed single-use token in hand. */
     const connectedUnverified = async () => {
       const user = await createTestUser('local-account@example.com');
-      const oauthAccount = await linkIdentity(user, { verified: false, email: providerEmail });
+      const oauthAccount = await linkIdentity(user, { verifiedAt: null, email: providerEmail });
 
       const rawSingleUse = nanoid(40);
       const { row: token } = await insertTestToken(
@@ -501,7 +504,7 @@ describe('OAuth Authentication', async () => {
 
       expect(res.status).toBe(302);
       const [verifiedAccount] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, oauthAccount.id));
-      expect(verifiedAccount.verified).toBe(true);
+      expect(verifiedAccount.verifiedAt).not.toBeNull();
 
       const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(row).toMatchObject({ userId: user.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
@@ -756,10 +759,10 @@ describe('OAuth Authentication', async () => {
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'google' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
-      expect(identity).toMatchObject({ provider: 'google', subject: 'google-user-id', verified: true });
+      expect(identity).toMatchObject({ provider: 'google', subject: 'google-user-id', verifiedAt: expect.any(String) });
 
       // The invitation of the opened link is accepted with the sign-up, as at a magic-link sign-in.
-      expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toEqual([]);
+      expect(await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id))).toEqual([]);
       const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, account.id));
       expect(memberships.map(({ organizationId }) => organizationId)).toEqual([organization.id]);
     });
@@ -914,7 +917,7 @@ describe('OAuth Authentication', async () => {
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
-      expect(identity).toMatchObject({ provider: 'github', subject: 'github-user-id', verified: true });
+      expect(identity).toMatchObject({ provider: 'github', subject: 'github-user-id', verifiedAt: expect.any(String) });
       // The verification is spent with the sign-up, and this browser's cookie for it goes once that has committed.
       expect(await verificationTokens()).toHaveLength(0);
       expect(mockCookieStore.has('oauth-verification')).toBe(false);

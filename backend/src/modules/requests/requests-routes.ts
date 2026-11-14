@@ -34,7 +34,7 @@ export const requestRoutes = createXRoutes(['requests', 'cella'], {
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete requests',
-    description: 'Deletes one or more requests from the system by their IDs.',
+    description: 'Deletes one or more requests from the system by their IDs. An ID that names no request comes back in `rejectedIds`.',
     request: { body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),

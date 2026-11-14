@@ -189,7 +189,7 @@ export const storageMock = () => ({
   findLog: vi.fn().mockResolvedValue([]),
   foldLog: vi.fn().mockResolvedValue('ok'),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
-  deleteDocument: vi.fn().mockResolvedValue(undefined),
+  retireDocument: vi.fn().mockResolvedValue(undefined),
   stampDocumentLive: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
   findStaleDocuments: vi.fn().mockResolvedValue([]),
 });
@@ -274,7 +274,8 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     foldLog: vi.fn(async (doc: YjsDocKey, merged: Uint8Array, ids: number[], generation?: string) => {
       await wait('foldLog');
       const current = row(key(doc));
-      if (!current || (generation !== undefined && current.generation !== generation)) return 'retired' as const;
+      if (!current) return 'retired' as const;
+      if (generation !== undefined && current.generation !== generation) return 'reseeded' as const;
       const log = logs.get(key(doc)) ?? [];
       if (ids.some((id) => !log.some((logged) => logged.id === id))) return 'overlap' as const;
       bases.set(key(doc), merged);
@@ -291,8 +292,8 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
         (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
     }),
-    deleteDocument: vi.fn(async (doc: YjsDocKey) => {
-      await wait('deleteDocument');
+    retireDocument: vi.fn(async (doc: YjsDocKey) => {
+      await wait('retireDocument');
       bases.delete(key(doc));
       generations.delete(key(doc));
       logs.delete(key(doc));
@@ -363,7 +364,7 @@ export async function startRelayServer() {
       await nextTurn();
       for (const collab of docs.map((doc) => sessions.getCollab(doc))) {
         clearTimeout(collab?.compactTimer);
-        clearTimeout(collab?.cleanupTimer);
+        clearTimeout(collab?.finishTimer);
         clearInterval(collab?.liveTimer);
       }
       wss.close();

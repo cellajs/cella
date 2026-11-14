@@ -18,7 +18,7 @@ const gatewayError = () => new ApiError({ status: 503, type: 'service_unavailabl
 const { userStore, userStorageKey } = await import('~/modules/user/user-store');
 const { getLocalUserDb } = await import('~/query/local-user-db');
 const { onError } = await import('~/query/on-error');
-const { markCacheRestored, queryClient } = await import('~/query/query-client');
+const { queryClient } = await import('~/query/query-client');
 const { persister, persistOptions } = await import('~/query/persister');
 const { forgetStoredUser, localUserStorageReady } = await import('~/query/local-user-storage');
 const { teardownUserState } = await import('~/utils/teardown-user-state');
@@ -118,7 +118,6 @@ describe('the per-user database follows who is signed in', () => {
     userStore.setState({ user: target as never });
     const opening = getLocalUserDb()?.kv.put({ key: 'board', value: '{}' });
     forgetStoredUser();
-    markCacheRestored();
     await opening?.catch(() => {});
 
     expect(userStore.getState()).toMatchObject({ user: null, lastUser: null });
@@ -127,9 +126,8 @@ describe('the per-user database follows who is signed in', () => {
   });
 
   it('must not lose the writes a lost session left queued when the same user signs in again on the page: they return to memory and stay stored', async () => {
-    // The page's first restore is done; signing in restores the user's empty database, then an edit made offline pauses and is stored.
+    // Signing in restores the user's empty database, then an edit made offline pauses and is stored.
     userStore.setState({ user: target as never });
-    markCacheRestored();
     await localUserStorageReady();
     queueOfflineEdit({ name: 'offline edit' });
     await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
@@ -154,7 +152,6 @@ describe('the per-user database follows who is signed in', () => {
   it('must not lose an edit whose replay meets the lost session: it stays stored while its request runs and returns at the next sign-in', async () => {
     vi.stubGlobal('location', new URL('https://app.example/organization/attachments'));
     userStore.setState({ user: target as never });
-    markCacheRestored();
     await localUserStorageReady();
     const request = queueOfflineEdit({ name: 'offline edit', stx: { mutationId: 'm-1' } });
     await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
@@ -184,7 +181,6 @@ describe('the per-user database follows who is signed in', () => {
     const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => gateway());
     onTestFinished(() => probe.mockRestore());
     userStore.setState({ user: target as never });
-    markCacheRestored();
     await localUserStorageReady();
     onlineManager.setOnline(false);
     new MutationObserver<unknown, Error, { name: string; stx: { mutationId: string } }>(queryClient, {
@@ -215,7 +211,6 @@ describe('the per-user database follows who is signed in', () => {
     const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(null, { status: 204 }));
     onTestFinished(() => probe.mockRestore());
     userStore.setState({ user: target as never });
-    markCacheRestored();
     await localUserStorageReady();
     onlineManager.setOnline(false);
     const deploy = { sends: 0, over: false };

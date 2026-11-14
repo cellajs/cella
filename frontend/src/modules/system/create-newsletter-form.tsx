@@ -12,7 +12,7 @@ import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocknoteHasContent } from '~/modules/common/blocknote/helpers/blocknote-has-content';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';

@@ -36,7 +36,7 @@ describe('mutation pausing on connectivity failure', () => {
     expect(mutation.state.status).toBe('pending');
     expect(mutation.state.failureCount).toBeGreaterThanOrEqual(1);
 
-    // Reconnect and resume to mirror the PersistQueryClientProvider onSuccess flow.
+    // Reconnect and resume, as the restore at a database's bind does.
     onlineManager.setOnline(true);
     await queryClient.resumePausedMutations();
 

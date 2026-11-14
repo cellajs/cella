@@ -18,7 +18,6 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
       userId: ctx.var.user.id,
       endpoint: body.endpoint,
       ...body.keys,
-      expirationTime: body.expirationTime ? new Date(body.expirationTime).toISOString() : null,
       userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },
   });
@@ -28,8 +27,8 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
 
 app.openapi(pushRoutes.removePushSubscription, async (ctx) => {
   const { endpoint } = ctx.req.valid('json');
-  const deleted = await deletePushSubscription(ctx, { userId: ctx.var.user.id, endpoint });
-  return ctx.json({ deleted }, 200);
+  await deletePushSubscription(ctx, { userId: ctx.var.user.id, endpoint });
+  return ctx.body(null, 204);
 });
 
 export const pushHandlers = app;

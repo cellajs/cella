@@ -93,6 +93,24 @@ describe('a hard delete of several rows', () => {
   });
 });
 
+describe('a soft delete: a delete carrying its tombstone', () => {
+  it('fetches the tombstone as an update is fetched, and the tab’s own soft delete is an echo that fetches nothing', () => {
+    handleStreamChange(change({ action: 'delete', rows: [row(8, { actorId: 'user-b' })] }));
+    expect(enqueueRange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ afterSeq: 7, untilSeq: 8 }));
+    expect(invalidateEntityDetail).not.toHaveBeenCalled();
+
+    handleStreamChange(change({ action: 'delete', rows: [row(9)] }));
+    expect(enqueueRange).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes a hard-deleted row of the same frame by id, and fetches only the tombstone', () => {
+    handleStreamChange(change({ action: 'delete', rows: [row(8, { actorId: 'user-b' }), row(0, { subjectId: 'att-gone', seq: null })] }));
+
+    expect(enqueueRange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ afterSeq: 7, untilSeq: 8 }));
+    expect(invalidateEntityDetail.mock.calls.map(([subjectId]) => subjectId)).toEqual(['att-gone']);
+  });
+});
+
 describe('a frame past the row cap', () => {
   const ids = (count: number) => Array.from({ length: count }, (_, index) => `att-${index}`);
 

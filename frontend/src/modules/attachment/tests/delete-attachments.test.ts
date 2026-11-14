@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { Attachment } from 'sdk';
 import { describe, expect, it, vi } from 'vitest';
 
-type DeleteFormProps = { onDelete: () => void; allowOfflineDelete?: boolean; pending: boolean };
+type DeleteFormProps = { onDelete: () => void; allowOffline?: boolean; pending: boolean };
 const { shown, mutation } = vi.hoisted(() => ({
   shown: {} as { form?: DeleteFormProps },
   // A delete queued offline: its promise settles only once the network is back.
@@ -32,7 +32,7 @@ describe('DeleteAttachments', () => {
       createElement(OverlayCloseContext.Provider, { value: { close, back: vi.fn() } }, createElement(DeleteAttachments, { attachments, callback })),
     );
 
-    expect(shown.form?.allowOfflineDelete).toBe(true);
+    expect(shown.form?.allowOffline).toBe(true);
     shown.form?.onDelete();
     await Promise.resolve();
 

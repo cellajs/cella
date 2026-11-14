@@ -12,7 +12,7 @@ import { closeStreams } from '#/modules/entities/helpers/session-streams';
 import { archiveChannelOp } from '#/modules/entities/operations/archive-channel';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { streamCatchupOp } from '#/modules/entities/operations/stream-catchup';
-import { ensureStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
+import { ensureStreamSessionRecheck } from '#/modules/entities/operations/stream-session-recheck';
 import { keepAlive, writeOffset } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -126,7 +126,7 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
     // The user topic carries self-membership events whatever organizations it registered on, so a membership in a new
     // organization reaches the user here and the client reconnects to register on it.
     streamSubscriberManager.register(subscriber, [...organizationIds].map(organizationTopic));
-    ensureStreamSessionSweep();
+    ensureStreamSessionRecheck();
     log.debug('Stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
     stream.onAbort(() => {
@@ -135,10 +135,7 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
       log.debug('Stream subscriber disconnected', { subscriberId: subscriber.id });
     });
 
-    if (await membershipsChangedSince(user.id, memberships)) {
-      const payload = { code: 'access_changed', message: 'Memberships changed while the stream connected' } as const;
-      return closeStreams([{ subscriber, payload }], 'Failed to close a stream that connected across a membership change');
-    }
+    if (await membershipsChangedSince(user.id, memberships)) return closeStreams([{ subscriber, reason: 'memberships_changed' }]);
 
     // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
     await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? workerAwayPing : ''));

@@ -22,13 +22,13 @@ const isP256PublicKey = (value: string) => {
 const isAuthSecret = (value: string) => Buffer.from(value, 'base64url').length === 16;
 
 /**
- * Body of `PushManager.subscribe()`'s `toJSON()`, verbatim, so the client needs no mapping. The server POSTs each push
- * to `endpoint`, so it must be a known push service: any other URL would let a user pick the host of that request.
- * The keys are refused unless they are the shape a browser makes, so no stored row fails every send.
+ * Body of `PushManager.subscribe()`'s `toJSON()`, verbatim, so the client needs no mapping. Its `expirationTime` is
+ * dropped unread. The endpoint must be a known push service: the server POSTs each push to it, and any other URL would
+ * let a user pick the host of that request. The keys are refused unless they are the shape a browser makes: no stored
+ * row then fails every send.
  */
 export const pushSubscriptionBodySchema = z.object({
   endpoint: endpointSchema.superRefine(refineWithType(isPushServiceEndpoint, 'invalid_push_endpoint')),
-  expirationTime: z.number().nullable().optional(),
   keys: z.object({
     p256dh: z.string().max(512).superRefine(refineWithType(isP256PublicKey, 'invalid_push_keys')),
     auth: z.string().max(512).superRefine(refineWithType(isAuthSecret, 'invalid_push_keys')),
@@ -38,8 +38,6 @@ export const pushSubscriptionBodySchema = z.object({
 export const pushSubscriptionResponseSchema = z.object({ id: z.string(), endpoint: z.string() });
 
 export const removePushSubscriptionBodySchema = z.object({ endpoint: endpointSchema });
-
-export const removePushSubscriptionResponseSchema = z.object({ deleted: z.number().int().min(0) });
 
 /** `publicKey` is null while push sending is off (`has.push` off, or VAPID keys web-push refuses); the client then hides the toggle. */
 export const pushVapidResponseSchema = z.object({ publicKey: z.string().nullable() });

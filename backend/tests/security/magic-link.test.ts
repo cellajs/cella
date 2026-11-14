@@ -8,7 +8,7 @@ import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
@@ -137,7 +137,7 @@ describe('magic link replay', async () => {
     expect(response.status).toBe(302);
     expect(cookieChange(response, 'session')).toBe('set');
     expect(response.headers.get('location')?.startsWith(appConfig.frontendUrl)).toBe(true);
-    expect((await tokenRow(row.id)).invokedAt).not.toBeNull();
+    expect((await tokenRow(row.id)).redeemedAt).not.toBeNull();
   });
 });
 
@@ -152,7 +152,7 @@ describe('magic link opened in another browser', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   const newUser = () => createTestUser(`magic-${nanoid(6)}@security-test.com`.toLowerCase());
-  const openedAt = async (id: string) => (await tokenRow(id))?.invokedAt ?? null;
+  const openedAt = async (id: string) => (await tokenRow(id))?.redeemedAt ?? null;
   const confirmPage = new URL('/auth/confirm-sign-in', appConfig.frontendUrl).toString();
 
   it('must not sign in via a magic link opened in a browser that did not ask for it', async () => {
@@ -308,7 +308,7 @@ describe('magic-link sign-up', async () => {
 
     expect(await rowsFor(email)).toEqual({ users: [], emails: [] });
     expect(await actorCount()).toBe(actorsBefore);
-    expect(await tokensFor(email)).toEqual([expect.objectContaining({ kind: 'magic', userId: null, createdBy: null, invokedAt: null })]);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ kind: 'magic', userId: null, createdBy: null, redeemedAt: null })]);
   });
 
   it('creates the account with its address verified when the link is clicked, and signs in (positive control)', async () => {
@@ -341,16 +341,16 @@ describe('magic-link sign-up', async () => {
 
     const { users } = await rowsFor(email);
     expect(users).toHaveLength(1);
-    const [claimed] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [claimed] = await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
     expect(claimed.userId).toBe(users[0].id);
   });
 
   it.each([
-    { invitation: 'deleted', end: (id: string) => db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)) },
+    { invitation: 'deleted', end: (id: string) => db.delete(invitationsTable).where(eq(invitationsTable.id, id)) },
     {
       // A decline deletes the invitation's links; one a direct write left behind still permits nothing.
       invitation: 'declined',
-      end: (id: string) => db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id)),
+      end: (id: string) => db.update(invitationsTable).set({ status: 'declined', declinedAt: getIsoDate() }).where(eq(invitationsTable.id, id)),
     },
   ])('must not sign up while registration is closed via the leftover link of a $invitation invitation', async ({ end }) => {
     const organization = await createTestOrganization();
@@ -391,7 +391,7 @@ describe('magic-link sign-up', async () => {
     await expectRefusal({ response, error }, 403, 'sign_up_restricted');
     expect(cookieChange(response, 'session')).toBeUndefined();
     expect((await rowsFor(email)).users).toHaveLength(0);
-    expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ redeemedAt: null, userId: null })]);
   });
 
   it('must not confirm a planted sign-up link into a new account while signed in', async () => {
@@ -403,7 +403,7 @@ describe('magic-link sign-up', async () => {
     const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
     await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect((await rowsFor(email)).users).toHaveLength(0);
-    expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ redeemedAt: null, userId: null })]);
   });
 
   it('shows the address of a sign-up link opened elsewhere, and creates the account on confirmation', async () => {
@@ -490,6 +490,6 @@ describe('magic link in a browser with a stale session cookie', async () => {
     const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
     expect(response.status).toBe(503);
     expect(cookieChange(response, 'session')).toBeUndefined();
-    expect((await tokenRow(row.id)).invokedAt).toBeNull();
+    expect((await tokenRow(row.id)).redeemedAt).toBeNull();
   });
 });

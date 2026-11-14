@@ -42,7 +42,7 @@ export function openConfirm(trigger: HTMLElement, options: ConfirmOptions) {
         label={options.label}
         cancelLabel={options.cancelLabel}
         icon={options.icon}
-        allowOfflineDelete={options.allowOffline}
+        allowOffline={options.allowOffline}
         pending={false}
         onDelete={() => {
           remove();

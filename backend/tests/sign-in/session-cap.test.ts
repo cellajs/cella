@@ -2,7 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { evictExcessSessions } from '#/modules/auth/sessions/operations/create-session';
+import { revokeExcessSessions } from '#/modules/auth/sessions/operations/create-session';
 import { type SessionKind, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { overrideConfig } from '../fixtures';
 import { createTestUser, insertTestSession, sessionRow } from '../helpers';
@@ -26,12 +26,12 @@ const liveIds = (userId: string, kind?: SessionKind) =>
     .then((rows) => new Set(rows.map((r) => r.id)));
 
 describe('per-user session cap (A1)', () => {
-  it('evicts the oldest regular sessions beyond the cap, leaving room for the pending new one', async () => {
+  it('revokes the oldest regular sessions beyond the cap, leaving room for the pending new one', async () => {
     const user = await createTestUser('cap@example.com');
     const ids: string[] = [];
     for (let i = 0; i < 5; i++) ids.push(await insertSession(user, 'regular', 100_000 - i * 1000)); // oldest → newest
 
-    await evictExcessSessions(user.id);
+    await revokeExcessSessions(user.id);
 
     const remaining = await liveIds(user.id, 'regular');
     // Called just before an insert, it leaves cap-1 so the new row brings the total to exactly the cap.
@@ -42,10 +42,10 @@ describe('per-user session cap (A1)', () => {
     expect(remaining.has(ids[0])).toBe(false);
     expect(remaining.has(ids[1])).toBe(false);
 
-    // The evicted rows stay, stamped as the server's own housekeeping.
-    const evicted = await sessionRow(ids[0]);
-    expect(evicted).toMatchObject({ revocationReason: 'session_cap', revokedBy: null });
-    expect(evicted.revokedAt).not.toBeNull();
+    // The revoked rows stay, stamped as the server's own housekeeping.
+    const revoked = await sessionRow(ids[0]);
+    expect(revoked).toMatchObject({ revocationReason: 'session_cap', revokedBy: null });
+    expect(revoked.revokedAt).not.toBeNull();
   });
 
   it('counts mfa sessions toward the cap', async () => {
@@ -54,7 +54,7 @@ describe('per-user session cap (A1)', () => {
     const mfaIds: string[] = [];
     for (let i = 0; i < 5; i++) mfaIds.push(await insertSession(user, 'mfa', 100_000 - i * 1000)); // oldest → newest
 
-    await evictExcessSessions(user.id);
+    await revokeExcessSessions(user.id);
 
     const ids = await liveIds(user.id);
     expect(mfaIds.filter((id) => ids.has(id))).toEqual(mfaIds.slice(-(TEST_CAP - 1)));
@@ -64,7 +64,7 @@ describe('per-user session cap (A1)', () => {
     const user = await createTestUser('cap3@example.com');
     for (let i = 0; i < TEST_CAP - 1; i++) await insertSession(user, 'regular', 100_000 - i * 1000);
 
-    await evictExcessSessions(user.id);
+    await revokeExcessSessions(user.id);
 
     expect((await liveIds(user.id, 'regular')).size).toBe(TEST_CAP - 1);
   });

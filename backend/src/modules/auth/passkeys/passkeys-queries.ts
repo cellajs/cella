@@ -1,8 +1,7 @@
-import { and, eq, getColumns, lt, or } from 'drizzle-orm';
+import { and, eq, getColumns, lt } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
 import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
 
 /** Every column but the credential id, public key, signature counter and transports: what a response carries of a passkey. */
@@ -80,17 +79,6 @@ export const deletePasskey = async (ctx: DbContext, { userId, id }: { userId: st
 /** Stores a challenge handed out to a browser. */
 export const insertPasskeyChallenge = async (ctx: DbContext, { values }: { values: typeof passkeyChallengesTable.$inferInsert }) => {
   await ctx.var.db.insert(passkeyChallengesTable).values(values);
-};
-
-interface DeleteStalePasskeyChallengesOpts {
-  /** The challenge this browser held before, if any. */
-  previousHash?: string;
-}
-
-/** Drops every expired challenge, and the one this browser held before. */
-export const deleteStalePasskeyChallenges = async (ctx: DbContext, { previousHash }: DeleteStalePasskeyChallengesOpts) => {
-  const expired = lt(passkeyChallengesTable.expiresAt, getIsoDate());
-  await ctx.var.db.delete(passkeyChallengesTable).where(previousHash ? or(eq(passkeyChallengesTable.challengeHash, previousHash), expired) : expired);
 };
 
 /** Takes a challenge out of play; returns what it was issued for, or undefined when it does not exist. */

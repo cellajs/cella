@@ -69,7 +69,7 @@ export function OrganizationDeleteCard({ organization }: OrganizationCardProps) 
       dialogId="delete-organization"
       channel={organization}
       notice="c:delete_organization_notice.text"
-      values={{ days: appConfig.retention.archivedTenantDays }}
+      values={{ days: appConfig.retention.deletedTenantDays }}
       renderDialog={() => (
         <DeleteOrganizations
           tenantId={organization.tenantId}

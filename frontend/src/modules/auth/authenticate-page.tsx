@@ -79,7 +79,7 @@ export function AuthenticatePage() {
   }, [tokenData, lastUser, step, inviteOtherAccount]);
 
   // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
-  const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.inactiveMembershipId;
+  const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.invitationId;
   useEffect(() => {
     if (!nothingToConfirm) return;
     if (tokenError?.status === 401) toaster.info(t('c:invite_link_spent'));
@@ -102,7 +102,7 @@ export function AuthenticatePage() {
   }
 
   // Signed in and holding a membership invitation: the confirm step accepts it as this account.
-  if (signedInUser && tokenData?.inactiveMembershipId) return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
+  if (signedInUser && tokenData?.invitationId) return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
 
   // The steps that sign in or up; the invitation step lays out its own ways in.
   const isSigningIn = ['checkEmail', 'signIn'].includes(step);

@@ -31,7 +31,7 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
   withFakerSeed(key, () => ({
     email: faker.internet.email({ provider: 'demo.local' }).toLowerCase(),
     userId: mockUuid(),
-    inactiveMembershipId: undefined,
+    invitationId: undefined,
     inviterName: faker.person.fullName(),
   }));
 

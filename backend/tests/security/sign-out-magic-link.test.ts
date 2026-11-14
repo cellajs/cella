@@ -1,5 +1,4 @@
 import { confirmMagicLink, getPendingMagicLink, getTokenData, invokeToken, revokeMySessions, signOut } from 'sdk';
-import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -21,9 +20,8 @@ const requestedMagicLink = async (user: { id: string; email: string }) => {
 };
 
 /**
- * An opened magic link lets the browser that holds its single-use cookie back in for the rest of its window, without
- * any other proof. On a shared computer that browser serves the next person too, so signing out spends the link, and
- * so does ending that session from another device.
+ * A magic link signs in once, and its sign-in spends it. Neither the browser that opened it nor the next person at a
+ * shared computer gets in from its history, whether the owner signed out or ended that session from another device.
  */
 describe('Sign-out after a magic-link sign-in', async () => {
   const call = await createAppClient();
@@ -33,23 +31,21 @@ describe('Sign-out after a magic-link sign-in', async () => {
 
   it("must not sign the next person in as the owner via the owner's opened magic link after sign-out", async () => {
     const owner = await createTestUser(`shared-computer-${nanoid(6)}@security-test.com`.toLowerCase());
-    const { raw, row, requestedHere } = await requestedMagicLink(owner);
+    const { raw, requestedHere } = await requestedMagicLink(owner);
 
     const opened = await openLink(raw, requestedHere);
     expect(opened.response.status).toBe(302);
     expect(cookieChange(opened.response, 'session')).toBe('set');
-    let ownerBrowser = cookiesAfter(requestedHere, opened.response);
+    const ownerBrowser = cookiesAfter(requestedHere, opened.response);
 
-    // Positive control: until the owner signs out, the browser holding the link's cookie gets back in with it.
+    // The sign-in spent the link: the browser that opened it, with every cookie it got, does not get back in.
     const reopenedBefore = await openLink(raw, ownerBrowser);
-    expect(reopenedBefore.response.status).toBe(302);
-    expect(cookieChange(reopenedBefore.response, 'session')).toBe('set');
-    ownerBrowser = cookiesAfter(ownerBrowser, reopenedBefore.response);
+    await expectRefusal(reopenedBefore, 401, 'magic_opened');
+    expect(cookieChange(reopenedBefore.response, 'session')).not.toBe('set');
 
     const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } });
     expect(signedOut.response.status).toBe(204);
     expect(cookieChange(signedOut.response, 'magic')).toBe('cleared');
-    expect(await tokenRow(row.id)).toBeUndefined();
 
     // The next person reopens the link from the history, even with the single-use cookie as it was before sign-out.
     const withoutSession = ownerBrowser
@@ -57,13 +53,13 @@ describe('Sign-out after a magic-link sign-in', async () => {
       .filter((pair) => !pair.startsWith(`${authCookieName('session')}=`))
       .join('; ');
     const reopened = await openLink(raw, withoutSession);
-    await expectRefusal(reopened, 401, 'magic_not_found');
+    await expectRefusal(reopened, 401, 'magic_opened');
     expect(cookieChange(reopened.response, 'session')).not.toBe('set');
   });
 
   it('must not leave the opened magic link usable via a sign-out whose session already ended', async () => {
     const owner = await createTestUser(`ended-session-${nanoid(6)}@security-test.com`.toLowerCase());
-    const { raw, row, requestedHere } = await requestedMagicLink(owner);
+    const { raw, requestedHere } = await requestedMagicLink(owner);
 
     const opened = await openLink(raw, requestedHere);
     const ownerBrowser = cookiesAfter(requestedHere, opened.response);
@@ -75,7 +71,6 @@ describe('Sign-out after a magic-link sign-in', async () => {
     const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } });
     expect(signedOut.response.status).toBe(401);
     expect(cookieChange(signedOut.response, 'magic')).toBe('cleared');
-    expect(await tokenRow(row.id)).toBeUndefined();
 
     const reopened = await openLink(raw, ownerBrowser);
     expect(reopened.response.status).toBe(401);
@@ -84,7 +79,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
 
   it('must not sign a browser in again from a magic link whose session was revoked', async () => {
     const owner = await createTestUser(`revoked-elsewhere-${nanoid(6)}@security-test.com`.toLowerCase());
-    const { raw, row, requestedHere } = await requestedMagicLink(owner);
+    const { raw, requestedHere } = await requestedMagicLink(owner);
 
     // A shared computer opens the link; within its window the owner ends that session from the phone.
     const opened = await openLink(raw, requestedHere);
@@ -95,11 +90,10 @@ describe('Sign-out after a magic-link sign-in', async () => {
     const revoked = await call(revokeMySessions, { body: { ids: [sharedSession.id] }, headers: phone.headers });
     expect(revoked.response.status).toBe(200);
     expect(await sessionRow(sharedSession.id)).toMatchObject({ revocationReason: 'other_session' });
-    expect(await tokenRow(row.id)).toBeUndefined();
 
     // The next person reopens the link from the history, with the single-use cookie and the ended session cookie.
     const reopened = await openLink(raw, sharedBrowser);
-    await expectRefusal(reopened, 401, 'magic_not_found');
+    await expectRefusal(reopened, 401, 'magic_opened');
     expect(cookieChange(reopened.response, 'session')).not.toBe('set');
   });
 
@@ -129,25 +123,6 @@ describe('Sign-out after a magic-link sign-in', async () => {
     expect(cookieChange(confirmed.response, 'session')).not.toBe('set');
     const reopened = await openLink(raw, '');
     await expectRefusal(reopened, 401, 'magic_not_found');
-  });
-
-  it("spends only this browser's link: another browser's opened link keeps working (positive control)", async () => {
-    const [owner, other] = [
-      await createTestUser(`owner-${nanoid(6)}@security-test.com`.toLowerCase()),
-      await createTestUser(`other-${nanoid(6)}@security-test.com`.toLowerCase()),
-    ];
-    const ownerLink = await requestedMagicLink(owner);
-    const otherLink = await requestedMagicLink(other);
-
-    const ownerBrowser = cookiesAfter(ownerLink.requestedHere, (await openLink(ownerLink.raw, ownerLink.requestedHere)).response);
-    const otherBrowser = cookiesAfter(otherLink.requestedHere, (await openLink(otherLink.raw, otherLink.requestedHere)).response);
-
-    expect((await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } })).response.status).toBe(204);
-
-    expect(await tokenRow(otherLink.row.id)).toBeDefined();
-    const reopened = await openLink(otherLink.raw, otherBrowser);
-    expect(reopened.response.status).toBe(302);
-    expect(reopened.response.headers.get('location')?.startsWith(appConfig.frontendUrl)).toBe(true);
   });
 });
 

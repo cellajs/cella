@@ -53,7 +53,7 @@ export const config = {
    * Not entities, but activities are logged for them. Tenant- or system-owned rows only: rows a user owns
    * (sessions, identities, passkeys, emails) are self-audited through the account pages and notifications.
    */
-  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
+  resourceTypes: ['request', 'membership', 'invitation', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
@@ -121,17 +121,17 @@ export const config = {
   /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
   demo: { perDay: 500 },
 
-  /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
+  /** How long data lives, in days: the nightly `retention` job and the tenant sweep apply it, the privacy page states it. */
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
     unreferencedItemsDays: 30,
-    archivedTenantDays: 120,
+    deletedTenantDays: 120,
     demoTenantDays: 2,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
-    deviceDaysUnseen: 400,
-    devicesPerUser: 50,
+    deviceDaysSinceSignIn: 400,
+    apiKeyDaysAfterEnd: 30,
     oidcPayloadDaysAfterUse: 30,
     requestDays: 365,
     invitationDays: 120,
@@ -228,13 +228,13 @@ export const config = {
   shareTarget: undefined as ShareTargetConfig | undefined,
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
-  // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
+  // clientCacheVersion, a number that only rises, clears incompatible cached entities while preserving queued mutations.
   // Bump the relevant token with its change; CI requires cache bumps not covered by an evolution lens.
 
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v1',
-  clientCacheVersion: 'v1',
+  clientCacheVersion: 1,
 
   // Authentication
 
@@ -253,11 +253,15 @@ export const config = {
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
-   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
+   * revoked with the reason `session_cap`. Keep comfortably above a realistic device count. This is
    * bloat/abuse protection (bursts of sign-ins with stolen passwords, unbounded session accumulation), not a UX
    * feature. Regular and `mfa` sessions count together.
    */
   maxSessionsPerUser: 10,
+  /** Known devices kept per user; the nightly retention run removes the least recently seen beyond it. */
+  maxDevicesPerUser: 50,
+  /** Push subscriptions kept per user, a notification fan-out loads them all; the nightly retention run removes the least recently seen beyond it. */
+  maxPushSubscriptionsPerUser: 20,
 
   // A code verifies one step either side of now (RFC 6238 §5.2): each step more is one more code a guess can hit.
   // Google Authenticator reads neither the period nor the digits of the key URI, so other values lock its users out.
@@ -276,7 +280,7 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pendingMemberships: 20,
+    invitations: 20,
   },
 
   maxBodySize: 1 * 1024 * 1024,

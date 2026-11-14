@@ -8,16 +8,9 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { storedUserIds, userStorageKey, userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import {
-  bindLocalUserDb,
-  closeLocalUserDb,
-  deletedElsewhereListeners,
-  getLocalUserDb,
-  type LocalUserDatabase,
-  notifyLocalUserChange,
-} from '~/query/local-user-db';
-import { persister, persistOptions, resetPersister } from '~/query/persister';
-import { cacheRestored, queryClient } from '~/query/query-client';
+import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, getLocalUserDb, notifyLocalUserChange } from '~/query/local-user-db';
+import { persistOptions, resetPersister } from '~/query/persister';
+import { queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
@@ -37,13 +30,26 @@ let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
 /**
- * The provider restores the query cache once per page. A database bound after it read, as when the same user signs in
- * again after a lost session, restores here, the writes that session left queued included.
+ * Warns about restored mutations that hold no `mutationFn`: their module set its defaults after the restore, so their
+ * replay fails. Runs after the restore, before resuming.
  */
-async function restoreQueryCache(db: LocalUserDatabase): Promise<void> {
-  await cacheRestored;
-  if (getLocalUserDb() !== db || persister.isRestored()) return;
+function warnMutationsWithoutDefaults(): void {
+  const keys = queryClient
+    .getMutationCache()
+    .getAll()
+    .filter((mutation) => mutation.state.isPaused && !mutation.options.mutationFn)
+    .map((mutation) => mutation.options.mutationKey);
+  if (keys.length === 0) return;
+  console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
+}
+
+/**
+ * Restores the query cache from the database just bound, at boot or when the same user signs in again after a lost
+ * session, and resumes the writes queued in it after catchup. A failed restore resumes what it hydrated before failing.
+ */
+async function restoreQueryCache(): Promise<void> {
   await persistQueryClientRestore({ ...persistOptions, queryClient }).catch((error) => console.error('[QueryPersister] Restore failed:', error));
+  warnMutationsWithoutDefaults();
   resumeRestoredMutations();
 }
 
@@ -55,7 +61,7 @@ function bindLocalUser(userId: string): void {
   if (db === previous) return;
   resetPersister();
   const rehydrations = localUserStores.map((store) => store.persist.rehydrate());
-  readyPromise = settleOrReport('local_user_db.bind', longWaitMs, Promise.all([...rehydrations, restoreQueryCache(db)])).then((answered) => {
+  readyPromise = settleOrReport('local_user_db.bind', longWaitMs, Promise.all([...rehydrations, restoreQueryCache()])).then((answered) => {
     if (answered || getLocalUserDb() !== db) return;
     // The tab goes on without a database, as while signed out, until its next load. Closed and reset, a read that
     // answers late fills nothing: it would put stored state over what the page loaded meanwhile.

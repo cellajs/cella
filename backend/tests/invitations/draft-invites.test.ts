@@ -5,12 +5,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
+import { mailHeldInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
+import { loadTenant } from '#/modules/tenants/load-tenant';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -33,12 +34,18 @@ setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
-// Unpublished contexts hold invites until publishing calls `dispatchDeferredInvites`; the hierarchy's `drafts.prepareRoles`
+// Unpublished contexts hold invites until publishing calls `mailHeldInvitations`; the hierarchy's `drafts.prepareRoles`
 // (admin, for an organization) are invited at once.
 describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
-  const dbContext = { var: { db } };
+  /** What a publish by `by` mails: the organization's held invitations, in its tenant's context. Returns how many went out. */
+  const mailHeld = async (organization: Parameters<typeof mailHeldInvitations>[1]['organization'] & { id: string; tenantId: string }, by: string) => {
+    const tenant = await loadTenant(organization.tenantId);
+    if (!tenant) throw new Error(`no tenant ${organization.tenantId}`);
+    const ctx = { var: { db, tenantId: tenant.id, tenant } };
+    return (await mailHeldInvitations(ctx, { channelIds: [organization.id], organization, by })).length;
+  };
   /** A language other than the app's default, where the app has one. */
   const otherLanguage = appConfig.languageCodes.find((language) => language !== appConfig.defaultLanguageCode);
 
@@ -55,11 +62,10 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
 
-  const getInactiveRows = async (channelId: string) =>
-    await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.channelId, channelId));
+  const getInactiveRows = async (channelId: string) => await db.select().from(invitationsTable).where(eq(invitationsTable.channelId, channelId));
 
   /** The link tokens of an invitation: one while it goes by link, none once an account answers it in-app. */
-  const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitationId));
+  const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.invitationId, invitationId));
 
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
@@ -71,7 +77,8 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     expect(row).toBeDefined();
     expect(row.role).toBe(memberRole);
     expect(await linksOf(row.id)).toHaveLength(0); // the publish mints the link it mails
-    expect(row.remindedAt).toBeNull(); // and email dispatch was held
+    expect(row.status).toBe('held'); // and email dispatch was held
+    expect(row.mailedAt).toBeNull();
     expect(mailer.sendEmails).not.toHaveBeenCalled();
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, organization.id));
@@ -87,7 +94,8 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     const [row] = await getInactiveRows(organization.id);
     expect(row).toBeDefined();
     expect(row.role).toBe('admin');
-    expect(row.remindedAt).not.toBeNull(); // the mail went out, so the invitation is not held
+    expect(row.status).toBe('pending'); // a prepare role is never held
+    expect(row.mailedAt).not.toBeNull();
     expect(mailer.sendEmails).toHaveBeenCalledOnce();
   });
 
@@ -173,51 +181,57 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     expect(mailsTo('held@example.com').map(({ recipient }) => recipient.lng)).toEqual([otherLanguage]);
   });
 
-  it("dispatch mints a held invitation's first link, stamps remindedAt and the waitlist request, and sends it once", async () => {
-    const { organization, sessionCookie } = await createDraftOrgWorld();
+  it("dispatch mints a held invitation's first link, stamps mailedAt and the waitlist request, and sends it once", async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     await insertRequest({ var: { db } }, { email: 'deferred@example.com', kind: 'waitlist' });
-    const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].invitedAt;
+    const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].mailedAt;
 
     await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [beforeRow] = await getInactiveRows(organization.id);
-    expect(beforeRow.remindedAt).toBeNull();
+    expect(beforeRow.mailedAt).toBeNull();
     expect(await waitlistInvitedAt()).toBeNull();
 
-    const first = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
-    expect(first.dispatched).toBe(1);
+    const first = await mailHeld(organization, admin.id);
+    expect(first).toBe(1);
 
     const [afterRow] = await getInactiveRows(organization.id);
-    expect(afterRow.remindedAt).not.toBeNull();
+    expect(afterRow).toMatchObject({ status: 'pending', mailedAt: expect.any(String) });
     expect(await waitlistInvitedAt()).not.toBeNull();
     const [link, ...more] = await linksOf(afterRow.id);
     expect(more).toEqual([]);
     expect(link.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
 
-    // Second dispatch: the invitation is no longer held, so no re-send and no token churn
-    const second = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
-    expect(second.dispatched).toBe(0);
+    // Second dispatch: the release moved the invitation to pending, so no re-send and no token churn
+    const second = await mailHeld(organization, admin.id);
+    expect(second).toBe(0);
     const [afterSecond] = await getInactiveRows(organization.id);
-    expect(afterSecond.remindedAt).toBe(afterRow.remindedAt);
+    expect(afterSecond.mailedAt).toBe(afterRow.mailedAt);
     expect((await linksOf(afterSecond.id)).map(({ id }) => id)).toEqual([link.id]);
   });
 
-  it('keeps a held invitation held when its dispatch mail fails, so the next dispatch sends it', async () => {
-    const { organization, sessionCookie } = await createDraftOrgWorld();
+  it('leaves a held invitation pending and unmailed when its dispatch mail fails, for a resend to send', async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
 
     failNextMailSend();
-    expect(await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization })).toEqual({ dispatched: 0 });
+    expect(await mailHeld(organization, admin.id)).toBe(0);
     const [failed] = await getInactiveRows(organization.id);
-    expect(failed.remindedAt).toBeNull();
+    expect(failed).toMatchObject({ status: 'pending', mailedAt: null });
 
-    expect(await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization })).toEqual({ dispatched: 1 });
+    // The release is the claim: a second dispatch finds nothing held, and the resend button sends it.
+    expect(await mailHeld(organization, admin.id)).toBe(0);
+    await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
+    await call(resendInvitation, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id, invitationId: failed.id },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
     const [link, ...more] = await linksOf(failed.id);
     expect(more).toEqual([]);
     expect(link.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('dispatches the held invitations alone: one mailed when it was made keeps its link', async () => {
-    const { organization, sessionCookie } = await createDraftOrgWorld();
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
 
     // The most privileged role is mailed on a draft; the member invitation is held.
     await inviteToOrganization(organization, ['co-admin@example.com'], adminRole, sessionCookie);
@@ -225,7 +239,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     const mailed = (await getInactiveRows(organization.id)).find((row) => row.email === 'co-admin@example.com')!;
     const [mailedLink] = await linksOf(mailed.id);
 
-    const { dispatched } = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
+    const dispatched = await mailHeld(organization, admin.id);
     expect(dispatched).toBe(1);
     expect(mailsTo('co-admin@example.com')).toHaveLength(1);
     expect(mailsTo('held@example.com')).toHaveLength(1);
@@ -240,19 +254,19 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     const [mailedLink] = await linksOf(mailed.id);
 
     // A publish flow that runs again hands over a context it published before.
-    const { dispatched } = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
+    const dispatched = await mailHeld(organization, admin.id);
     expect(dispatched).toBe(0);
     expect(mailsTo('mailed@example.com')).toHaveLength(1);
     expect((await linksOf(mailed.id)).map((link) => link.id)).toEqual([mailedLink.id]);
   });
 
   it('lists a dispatched invite once: resending its link retires the old one', async () => {
-    const { organization, sessionCookie } = await createDraftOrgWorld();
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
 
     await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
+    await mailHeld(organization, admin.id);
     const [dispatchedLink] = await linksOf(held.id);
 
     await call(resendInvitation, {
@@ -281,15 +295,15 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [initial] = await getInactiveRows(organization.id);
-    await db.update(inactiveMembershipsTable).set({ remindedAt: dayAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
+    await db.update(invitationsTable).set({ mailedAt: dayAgo }).where(eq(invitationsTable.id, initial.id));
     await endRateLimitWindows('invitationMailAddress');
 
     // Re-adding the address is as deliberate as the resend button, so the email goes out again.
     const { data } = await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
-    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
+    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'resend', invitedAt: initial.createdAt }] });
     expect(mailsTo(invitee.email)).toHaveLength(2);
     const [reminded] = await getInactiveRows(organization.id);
-    expect(reminded.remindedAt).not.toBe(dayAgo);
+    expect(reminded.mailedAt).not.toBe(dayAgo);
   });
 
   it('reminds a pending invitation to a new address with a fresh link that retires the one mailed before', async () => {
@@ -311,7 +325,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
   });
 
   it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {
-    const { organization, sessionCookie } = await createDraftOrgWorld();
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     const newcomer = 'newcomer@example.com';
     await inviteToOrganization(organization, [newcomer], memberRole, sessionCookie);
 
@@ -325,7 +339,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
     expect(await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer))).toHaveLength(0);
 
     await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
-    const { dispatched } = await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
+    const dispatched = await mailHeld(organization, admin.id);
     expect(dispatched).toBe(1);
 
     // An account answers in-app: the mail links the channel's page, and no token is minted for it.

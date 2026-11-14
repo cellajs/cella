@@ -3,7 +3,7 @@ import { deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -40,9 +40,7 @@ describe('Invitation mail caps', async () => {
     });
 
   const invitationOf = async (organization: Organization, email: string) =>
-    (await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organization.id))).find(
-      (row) => row.email === email,
-    );
+    (await db.select().from(invitationsTable).where(eq(invitationsTable.organizationId, organization.id))).find((row) => row.email === email);
 
   const linksTo = (email: string) => db.select({ id: tokensTable.id }).from(tokensTable).where(eq(tokensTable.email, email));
 

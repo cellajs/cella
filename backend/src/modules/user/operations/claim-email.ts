@@ -1,6 +1,6 @@
 import type { DbContext } from '#/core/context';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
-import { bindInactiveMembershipsByEmail } from '#/modules/memberships/inactive-memberships-queries';
+import { bindInvitationsByEmail } from '#/modules/memberships/invitations-queries';
 
 /**
  * Binds every pending, unbound invitation addressed to `email` to the user, then deletes their invitation tokens: a
@@ -9,7 +9,7 @@ import { bindInactiveMembershipsByEmail } from '#/modules/memberships/inactive-m
  * unproven claim would let anyone capture another person's invitations.
  */
 export const claimEmailForUser = async (ctx: DbContext, { userId, email }: { userId: string; email: string }) => {
-  const inactiveMembershipIds = await bindInactiveMembershipsByEmail(ctx, { email, userId });
-  await deleteInvitationTokens(ctx, { inactiveMembershipIds });
-  return inactiveMembershipIds;
+  const invitationIds = await bindInvitationsByEmail(ctx, { email, userId });
+  await deleteInvitationTokens(ctx, { invitationIds });
+  return invitationIds;
 };

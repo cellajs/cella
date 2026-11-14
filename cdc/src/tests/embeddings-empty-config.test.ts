@@ -26,7 +26,7 @@ vi.mock('../lib/db', () => ({
 }));
 
 const { appConfig } = await import('shared');
-const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
+const { stripEmbeddingReferences } = await import('../embeddings/embedding-strip');
 
 const productType: ProductEntityType = appConfig.productEntityTypes[0];
 
@@ -39,7 +39,7 @@ const events = [
   {
     lsn: '0/2',
     result: {
-      activity: { action: 'update', entityType: productType, subjectId: 'r2' },
+      activity: { action: 'delete', entityType: productType, subjectId: 'r2' },
       rowData: { id: 'r2', deletedAt: '2026-10-01T10:00:00.000Z' },
       oldRowData: { id: 'r2', deletedAt: null },
     },
@@ -50,9 +50,8 @@ beforeEach(() => {
   touched.length = 0;
 });
 
-it('with no embedding declared, the reference cleanup issues no statement', async () => {
-  await cleanupEmbeddingReferences(productType, 'delete', events);
-  await cleanupEmbeddingReferences(productType, 'update', events);
+it('with no embedding declared, the reference strip issues no statement', async () => {
+  await stripEmbeddingReferences(productType, events);
 
   expect(touched).toEqual([]);
 });

@@ -1,0 +1,2 @@
+-- No hand-written statements: the generated migration drops push_subscriptions.expiration_time and installs the new
+-- apply_retention(), whose sweep rules need no data move.

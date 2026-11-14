@@ -25,11 +25,7 @@ const membershipPairs = (alias: string, idColumn: string, channelType: string, c
     countPair(`m:c:${role}`, 'memberships cm', `cm.${idColumn} = ${alias}.id AND cm.channel_type = '${channelType}' AND cm.role = '${role}'`),
   ),
   countPair('m:c:total', 'memberships cm', `cm.${idColumn} = ${alias}.id AND cm.channel_type = '${channelType}'`),
-  countPair(
-    'm:c:pending',
-    'inactive_memberships im',
-    `im.${idColumn} = ${alias}.id AND im.channel_type = '${channelType}' AND im.declined_at IS NULL`,
-  ),
+  countPair('m:c:pending', 'invitations im', `im.${idColumn} = ${alias}.id AND im.channel_type = '${channelType}' AND im.status <> 'declined'`),
 ];
 
 /**

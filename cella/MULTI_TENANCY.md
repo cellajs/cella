@@ -41,9 +41,9 @@ The helpers in `backend/src/db/tenant-context.ts` open a transaction that names 
 - `tenantRead` for a request's product reads.
 - `tenantContext` for a request's creates and updates.
 - `tenantReadById` for work with no request behind it, such as notification fan-out.
-- `tenantReadAs` for a route without `tenantGuard`, which names the tenant explicitly.
+- `tenantRead` with a `tenantId` for a route without `tenantGuard`, which names the tenant explicitly.
 
-Variants also read tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
+An `includeDeleted` option also reaches tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
 
 ## Write-through policies
 
@@ -63,7 +63,7 @@ The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions 
 | Role | RLS | Purpose |
 | --- | --- | --- |
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
-| `admin_role` | Bypassed as table owner | Migrations, seeds, the pg_cron partition job, and CDC replication or stamping |
+| `admin_role` | Bypassed as table owner | Migrations, seeds, the nightly retention job, and CDC replication or stamping |
 
 `admin_role` also owns the activities. Its bypass never depends on the `BYPASSRLS` attribute, which managed providers such as Scaleway cannot grant. The dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs. They refuse to run when either role is missing.
 
@@ -87,11 +87,11 @@ A demo invites no one, since that mails third parties. Beyond the tenant its mem
 
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
+A tenant is `active`, `suspended` or `deleted`. `tenantGuard` refuses every request to a tenant that is not active or is past its `expiresAt`. The refusal counts at once in the process that changed the status, and within seconds in any other.
 
-Deleting its organization archives a tenant. A system admin also archives one when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
+Deleting its organization marks a tenant deleted. A system admin also marks one deleted when a contract ends. The organization then leaves every member's memberships and lists. Their open streams end, so their apps drop it.
 
-A system admin restores a tenant by setting it active again. Once its archived period or its expiry passes, an hourly sweep removes the tenant with everything in it. The anonymous accounts it leaves with no membership go too.
+A system admin restores a tenant by setting it active again. Once its deleted-tenant period or its expiry passes, an hourly sweep removes the tenant with everything in it. The anonymous accounts it leaves with no membership go too.
 
 ## Verification
 

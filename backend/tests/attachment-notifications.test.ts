@@ -109,7 +109,7 @@ describe('Attachment mentions (template notification source)', async () => {
 
   const notificationsFor = (userId: string) =>
     db
-      .select({ kind: notificationsTable.kind, emailedAt: notificationsTable.emailedAt })
+      .select({ kind: notificationsTable.kind, mailedAt: notificationsTable.mailedAt })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, attachmentId)));
 
@@ -253,7 +253,7 @@ describe('Attachment mentions (template notification source)', async () => {
     // Mention email is on by default and the member's address is verified, so the fan-out mails the row it wrote.
     const [told] = await notificationsFor(member.id);
     expect(told?.kind).toBe('mention');
-    expect(told?.emailedAt).not.toBeNull();
+    expect(told?.mailedAt).not.toBeNull();
     // Titled with the name the inbox shows, quoting the body the fan-out read.
     const [{ name }] = await db.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     const mails = mailsTo(member.email);
@@ -289,10 +289,10 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(mailsTo(member.email)).toHaveLength(1);
 
     const [row] = await db
-      .select({ emailedAt: notificationsTable.emailedAt })
+      .select({ mailedAt: notificationsTable.mailedAt })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, subjectId)));
-    expect(row?.emailedAt).toBeNull();
+    expect(row?.mailedAt).toBeNull();
     const minute = 60 * 1000;
     const window = { since: new Date(Date.now() - minute).toISOString(), before: new Date(Date.now() + minute).toISOString() };
     const sections = await buildDigestForUser({ var: { db: baseDb } }, { userId: member.id, ...window, lng: 'en' });
@@ -369,7 +369,7 @@ describe('Attachment mentions (template notification source)', async () => {
     const stamped = await db
       .select({ id: notificationsTable.id })
       .from(notificationsTable)
-      .where(and(inArray(notificationsTable.id, backlogIds), isNotNull(notificationsTable.emailedAt)));
+      .where(and(inArray(notificationsTable.id, backlogIds), isNotNull(notificationsTable.mailedAt)));
     expect(stamped).toEqual([]);
   });
 
@@ -448,7 +448,7 @@ describe('Attachment mentions (template notification source)', async () => {
           await db
             .select({ id: notificationsTable.id })
             .from(notificationsTable)
-            .where(and(eq(notificationsTable.subjectId, subjectId), isNotNull(notificationsTable.emailedAt)))
+            .where(and(eq(notificationsTable.subjectId, subjectId), isNotNull(notificationsTable.mailedAt)))
         ).length;
 
       // The second send reads what the first one left, as a process that stopped there would leave it.
@@ -542,10 +542,10 @@ describe('Attachment mentions (template notification source)', async () => {
     const rowsOf = async (subjectId: string) =>
       (
         await db
-          .select({ kind: notificationsTable.kind, emailedAt: notificationsTable.emailedAt })
+          .select({ kind: notificationsTable.kind, mailedAt: notificationsTable.mailedAt })
           .from(notificationsTable)
           .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, subjectId)))
-      ).map(({ kind, emailedAt }) => ({ kind, emailed: emailedAt !== null }));
+      ).map(({ kind, mailedAt }) => ({ kind, emailed: mailedAt !== null }));
 
     const setCommentEmail = (commentEmails: boolean) =>
       db

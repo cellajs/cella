@@ -3,7 +3,7 @@ import { type AnyColumn, and, count, eq, inArray, isNull, type SQL, sql } from '
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
-import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
+import { tenantRead } from '#/db/tenant-context';
 import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
@@ -105,7 +105,7 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
       const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
       return row.count;
     };
-    return tenantReadUnlessInTransaction(ctx, countRows);
+    return tenantRead(ctx, countRows);
   }
 
   const [row] = await ctx.var.db
@@ -130,7 +130,7 @@ export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: {
       .where(and(eq(table.tenantId, ctx.var.tenantId), live));
     return row.total;
   };
-  return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
+  return isProduct(entityType) ? tenantRead(ctx, countRows) : countRows(ctx);
 };
 
 /**

@@ -78,7 +78,7 @@ export const organizationRoutes = createXRoutes(['organizations', 'cella', 'chan
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete organizations',
     description:
-      'Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.',
+      'Deletes organizations by ID within a tenant. Deleting marks the tenant deleted: members lose access at once, and the organization with everything in it is removed after the deleted-tenant period; until then a system admin can restore it.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),

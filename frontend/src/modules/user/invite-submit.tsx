@@ -5,7 +5,7 @@ import { inviteUsers as baseSystemInvite } from 'sdk';
 import { zInviteMembersBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy } from 'shared';
 import { z } from 'zod';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';

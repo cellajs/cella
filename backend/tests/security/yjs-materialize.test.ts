@@ -149,13 +149,13 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     expect(await stored()).toEqual({ description: original, updatedBy: null });
   });
 
-  it('must not write while its tenant is suspended or archived, as tenantGuard refuses every request there', async () => {
-    const setStatus = async (status: 'active' | 'suspended' | 'archived') => {
+  it('must not write while its tenant is suspended or deleted, as tenantGuard refuses every request there', async () => {
+    const setStatus = async (status: 'active' | 'suspended' | 'deleted') => {
       await adminDb.update(tenantsTable).set({ status }).where(eq(tenantsTable.id, owner.tenantId));
       invalidateCache.tenant(owner.tenantId);
     };
     try {
-      for (const status of ['suspended', 'archived'] as const) {
+      for (const status of ['suspended', 'deleted'] as const) {
         await setStatus(status);
         // 403 keeps the relay's log for a retry once the tenant is active again.
         await expectRefusal(await materialize(bodyFor(ownScope(), `written while ${status}`)), 403, 'forbidden', status);

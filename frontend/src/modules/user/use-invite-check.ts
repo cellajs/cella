@@ -2,15 +2,14 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import i18n, { type TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { InviteOutcome } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { declineHolds } from 'shared/decline-hold';
+import { hierarchy } from 'shared';
+import { declineHoldEnd } from 'shared/decline-hold';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
 import { useDebounce } from '~/hooks/use-debounce';
 import type { TileTone } from '~/modules/common/expandable-tile';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import type { InvitePerson } from '~/modules/user/use-invite-list';
-import { dayMs } from '~/utils/date-mini';
 
 /** What an invite does with an address: asks to be fixed, goes unchecked, sends a first invitation, sends the email again, or leaves it out. */
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
@@ -35,23 +34,18 @@ export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, he
     const word = outcome.role ? t('c:invite_state_already_role', { role: t(`c:${outcome.role}`), context: outcome.role }) : t('c:already_member');
     return { group: 'out', tone: 'muted', word, note: lowercaseLabel(t('c:invite_group_out')), fact: lowercaseLabel(word) };
   }
-  if (outcome?.outcome !== 'remind') {
+  if (outcome?.outcome === 'declined') {
+    const { declinedAt } = outcome;
+    const word = t('c:invite_state_declined', { date: day(declinedAt) });
+    const note = lowercaseLabel(t('c:invite_state_no_email_until', { date: day(declinedAt && declineHoldEnd(declinedAt)) }));
+    return { group: 'out', tone: 'warning', word, note, fact: note };
+  }
+  if (outcome?.outcome !== 'resend') {
     const note = lowercaseLabel(t(held ? 'c:invite_state_on_publish' : 'c:invite_state_gets_invitation'));
     return { group: 'new', tone: 'success', word: t('c:invite_state_new'), note };
   }
 
-  const { declinedAt, invitedAt } = outcome;
-  if (declinedAt) {
-    const word = t('c:invite_state_declined', { date: day(declinedAt) });
-    if (declineHolds(declinedAt)) {
-      const until = Date.parse(declinedAt) + appConfig.retention.declinedInvitationHoldDays * dayMs;
-      const note = lowercaseLabel(t('c:invite_state_no_email_until', { date: day(until) }));
-      return { group: 'out', tone: 'warning', word, note, fact: note };
-    }
-    return { group: 'again', tone: 'warning', word, note: lowercaseLabel(t('c:invite_state_invited_again')), fact: lowercaseLabel(word) };
-  }
-
-  const word = t('c:invite_state_invited', { date: day(invitedAt) }).trim();
+  const word = t('c:invite_state_invited', { date: day(outcome.invitedAt) }).trim();
   const note = lowercaseLabel(t(held ? 'c:invite_state_no_email_before_publish' : 'c:invite_state_gets_email_again'));
   return { group: held ? 'out' : 'again', tone: 'info', word, note, fact: held ? note : lowercaseLabel(word) };
 };

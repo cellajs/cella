@@ -24,7 +24,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -144,7 +144,7 @@ describe('Cross-organization API isolation', async () => {
       route: 'batchDeleteOrganizations',
       attempt: (as) => call(batchDeleteOrganizations, { path: { tenantId: tenant.tenantId }, body: { ids: [orgB.id] }, headers: headers(as) }),
       refusal: forbidden,
-      // A delete archives the tenant, so the row stays either way: the tenant must still be active.
+      // The row stays either way, since a delete marks the tenant deleted: the tenant must still be active.
       unchanged: async () => expect(await tenantStatus(orgB.tenantId)).toBe('active'),
     },
     {
@@ -224,8 +224,7 @@ describe('Cross-organization API isolation', async () => {
           body: { emails: [invitedByAttacker], role: memberRole },
           headers: headers(as),
         }),
-      unchanged: async () =>
-        expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, invitedByAttacker))).toHaveLength(0),
+      unchanged: async () => expect(await db.select().from(invitationsTable).where(eq(invitationsTable.email, invitedByAttacker))).toHaveLength(0),
     },
     {
       route: 'resendInvitation',

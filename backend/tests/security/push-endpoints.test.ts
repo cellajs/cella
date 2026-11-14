@@ -86,23 +86,6 @@ describe('Push subscription endpoints', async () => {
     }
   });
 
-  it('must not keep more than 20 push subscriptions for one user via repeated registrations', async () => {
-    const { user, headers } = await userWithSession();
-    const other = await userWithSession();
-    const otherEndpoint = `${realEndpoints[0]}-other`;
-    expect((await call(createPushSubscription, { body: { endpoint: otherEndpoint, keys }, headers: other.headers })).response.status).toBe(201);
-    const endpoints = Array.from({ length: 25 }, (_, n) => `https://fcm.googleapis.com/fcm/send/flood-${n}`);
-
-    for (const endpoint of endpoints) {
-      const { response } = await call(createPushSubscription, { body: { endpoint, keys }, headers });
-      expect(response.status, endpoint).toBe(201);
-    }
-
-    // The newest registrations stay, a new device among them; another user's subscription is untouched.
-    expect((await endpointsOf(user.id)).sort()).toEqual(endpoints.slice(-20).sort());
-    expect(await endpointsOf(other.user.id)).toEqual([otherEndpoint]);
-  });
-
   it('must not register push subscriptions past 30 an hour for one user', async () => {
     const { headers } = await userWithSession();
     const register = (n: number) =>

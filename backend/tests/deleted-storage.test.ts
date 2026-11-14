@@ -64,9 +64,6 @@ describe('Deleted storage', async () => {
 
   it("deletes a purged or dropped row's files and documents, never a key a live row or a seed names", async () => {
     const { tenant, keyOf, insert } = await seed('deleted-storage');
-    // apply_retention() keeps the row holding the organization's newest position, so the counter runs ahead of the rows.
-    await db.execute(sql`INSERT INTO channel_counters (channel_key, counts) VALUES (${tenant.organization.id}, '{"sequence": 100}')
-      ON CONFLICT (channel_key) DO UPDATE SET counts = channel_counters.counts || '{"sequence": 100}'`);
     const expiredAt = new Date(Date.now() - (appConfig.retention.deletedItemsDays + 1) * 86_400_000).toISOString();
     // Fresh: where attachments are an owned embedding, retention collects an old row no host names
     await insert({ original: keyOf('shared.pdf') }, { createdAt: getIsoDate() });

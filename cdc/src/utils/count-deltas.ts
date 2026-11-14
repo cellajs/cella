@@ -1,7 +1,7 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { hierarchy } from 'shared';
 import { entityCountHomePrefix, entityCountPrefix, signalVersionPrefix } from '#/modules/entities/counter-keys';
-import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
+import { type VersionedSignal, versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import type { CdcActivity } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
@@ -19,6 +19,7 @@ export interface CountDelta {
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
  * apply only at the home channel. Only live, published rows participate. A change that moves versioned signals
  * moves their versions on its organization's row.
+ * @param signals - The versioned signals the change moves; its table's for its action when absent.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -26,9 +27,9 @@ export function getCountDeltas(
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
   h: EntityHierarchy = hierarchy,
+  signals: VersionedSignal[] = versionedSignalsOf(tableMeta.type, activity.action, h),
 ): CountDelta[] {
   const deltas = getTableDeltas(tableMeta, activity, newRow, oldRow, h);
-  const signals = versionedSignalsOf(tableMeta.type, activity.action, h);
   if (!activity.organizationId || signals.length === 0) return deltas;
   const versions = Object.fromEntries(signals.map(({ type }) => [`${signalVersionPrefix}${type}`, 1]));
   return [...deltas, { channelKey: activity.organizationId, deltas: versions }];
@@ -44,9 +45,9 @@ function getTableDeltas(
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Memberships (active + inactive): the counts of their roles.
-  if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
-    const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInactiveMembershipDelta(action, newRow, oldRow);
+  // Memberships and invitations: the counts of their roles.
+  if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'invitation')) {
+    const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInvitationDelta(action, newRow, oldRow);
     return delta ? [delta] : [];
   }
 
@@ -84,7 +85,9 @@ function getTableDeltas(
  * = null (invisible to counters and stamps).
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
-  // A create or a delete carries one row image; the parser refuses an update without its old one.
+  // A soft delete carries the row before it; a create or a hard delete one row image.
+  if (action === 'delete' && oldRow) return isCountableRow(oldRow) ? action : null;
+  // The parser refuses an update without its old row.
   if (action !== 'update' || !oldRow) return isCountableRow(newRow) ? action : null;
   const wasCountable = isCountableRow(oldRow);
   const nowCountable = isCountableRow(newRow);
@@ -119,28 +122,28 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
   return null;
 }
 
-/** Inactive membership m:c:pending delta; only rows with declinedAt null count as pending. */
-function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
+/** Invitation m:c:pending delta; a held or pending row counts, a declined one does not. */
+function getInvitationDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
   if (!channelId) return null;
 
   if (action === 'create') {
-    if (newRow.declinedAt != null) return null;
+    if (newRow.status === 'declined') return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
   }
 
   if (action === 'delete') {
-    if (newRow.declinedAt != null) return null;
+    if (newRow.status === 'declined') return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
-    const wasNull = oldRow.declinedAt == null;
-    const isNull = newRow.declinedAt == null;
-    if (wasNull && !isNull) {
+    const wasOpen = oldRow.status !== 'declined';
+    const isOpen = newRow.status !== 'declined';
+    if (wasOpen && !isOpen) {
       return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
     }
-    if (!wasNull && isNull) {
+    if (!wasOpen && isOpen) {
       return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
     }
   }

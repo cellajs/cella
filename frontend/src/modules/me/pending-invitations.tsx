@@ -16,7 +16,7 @@ const summaryFrom = 4;
 // The frame of the home page's alert rows; on a phone the buttons wrap to a line of their own
 const rowClass = tw('bg-card text-card-foreground flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm');
 
-function InvitationRow({ invitation: { entity, inactiveMembership, organizationName } }: { invitation: Invitation }) {
+function InvitationRow({ item: { entity, invitation, organizationName } }: { item: Invitation }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mutate, isPending, variables } = useHandleInvitationMutation();
@@ -25,13 +25,13 @@ function InvitationRow({ invitation: { entity, inactiveMembership, organizationN
   const open = () =>
     navigate({
       to: '/n',
-      search: { tenantId: entity.tenantId, organizationId: inactiveMembership.organizationId, channelId: entity.id, channelType: entity.entityType },
+      search: { tenantId: entity.tenantId, organizationId: invitation.organizationId, channelId: entity.id, channelType: entity.entityType },
     });
   const values = {
-    inviterName: inactiveMembership.createdBy.name,
+    inviterName: invitation.createdBy.name,
     entityName: entity.name,
     organizationName,
-    role: t(`c:${inactiveMembership.role}`),
+    role: t(`c:${invitation.role}`),
   };
 
   return (
@@ -40,7 +40,7 @@ function InvitationRow({ invitation: { entity, inactiveMembership, organizationN
       <div className="min-w-0 flex-1">
         <p>{t(organizationName ? 'c:invite_accept_as_account_in_organization.text' : 'c:invite_accept_as_account.text', values)}</p>
         <p className="text-muted-foreground">
-          {t(`c:${entity.entityType}`)} · {dateShort(inactiveMembership.createdAt, 'day')}
+          {t(`c:${entity.entityType}`)} · {dateShort(invitation.createdAt, 'day')}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2 max-sm:w-full">
@@ -51,7 +51,7 @@ function InvitationRow({ invitation: { entity, inactiveMembership, organizationN
             variant={action === 'accept' ? 'success' : 'secondary'}
             disabled={isPending}
             loading={isPending && variables?.action === action}
-            onClick={() => mutate({ invitationId: inactiveMembership.id, action }, action === 'accept' ? { onSuccess: open } : undefined)}
+            onClick={() => mutate({ invitationId: invitation.id, action }, action === 'accept' ? { onSuccess: open } : undefined)}
           >
             {t(`c:${action}`)}
           </Button>
@@ -87,8 +87,8 @@ export function PendingInvitations() {
       )}
       {(!isSummarized || isOpen) && (
         <ul className="flex flex-col gap-3 not-first:mt-3">
-          {invitations.map((invitation) => (
-            <InvitationRow key={invitation.inactiveMembership.id} invitation={invitation} />
+          {invitations.map((item) => (
+            <InvitationRow key={item.invitation.id} item={item} />
           ))}
         </ul>
       )}

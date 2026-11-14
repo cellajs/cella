@@ -15,8 +15,8 @@ import { findUserByEmail } from '#/modules/user/user-queries';
  *   `anonymous_account` from the accept for an account without a proven address.
  */
 export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: TokenRecord) {
-  const { inactiveMembershipId, email, userId } = tokenRecord;
-  if (!inactiveMembershipId) throw new AppError(400, 'invalid_request', 'warn');
+  const { invitationId, email, userId } = tokenRecord;
+  if (!invitationId) throw new AppError(400, 'invalid_request', 'warn');
 
   const user = ctx.var.user;
 
@@ -29,5 +29,5 @@ export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: Tok
   // Linked to this account when issued, the link reached it through the invited inbox.
   if (!holder && userId !== user.id) throw new AppError(403, 'invitation_address_unproven', 'info', { meta: { email } });
 
-  return handleMembershipInvitationOp(ctx, inactiveMembershipId, 'accept', { viaToken: true });
+  return handleMembershipInvitationOp(ctx, invitationId, 'accept', { viaToken: true });
 }

@@ -22,7 +22,7 @@ Each row names its answers per level ([Sync engine](../../../../cella/sync-engin
 | One change carries rows of several writers or subjects | Each row is told under its own activity and writer (`fanOutNotifications`) | | |
 | A mentioned or resolved user names no user, may not read the row, or is outside the organization of a public row | Left out before the insert (`filterByReadAccess`) | | |
 | The recipient leaves the organization afterwards | Every inbox, count and digest read requires the membership or a system admin role (`recipientStillBelongs`) | | |
-| The recipient's organization is in an archived tenant | The digest leaves its rows out (`findReadableSubjectIds`) | | None for the inbox: the membership rows stay, so its rows stay listed and counted unread, with empty names (`recipientStillBelongs`) |
+| The recipient's organization is in a deleted tenant | The digest leaves its rows out (`findReadableSubjectIds`) | | None for the inbox: its rows stay listed and counted unread, with empty names, while the membership rows stay (`recipientStillBelongs`) |
 | The subject is deleted or unpublished, or the recipient may no longer read it | The inbox blanks its names and the digest leaves it out (`findReadableSubjectIds`) | | |
 | One row's fan-out throws | Logged and skipped, per row and per change (`fanOutNotifications`) | | |
 | The API stops after the worker's message reached it and before the fan-out wrote | | | None: no inbox row, mail or digest line (`fanOutNotifications`) |

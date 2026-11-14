@@ -88,6 +88,7 @@ describe('runtime secret registry', () => {
     ]);
     expect(runtimeSecretsForConsumer('jobs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
+      'DATABASE_ADMIN_URL',
       'DATABASE_SSL_CA',
       'COOKIE_SECRET',
       'UNSUBSCRIBE_SECRET',

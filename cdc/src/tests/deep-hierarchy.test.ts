@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
 import { createActivity } from '../services/create-activity';
-import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, resolveChannelKey, signalVersionsOf } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
 import { changeEvent, mockCdcActivity, tableMetaOf } from './factories';
 
@@ -201,7 +201,7 @@ describe('reparent updates re-credit the ancestor diff', () => {
 
 describe('soft-delete / restore transitions on variable-depth rows', () => {
   it('soft-delete of a course-stream item decrements exactly its non-null ancestors', () => {
-    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, courseStreamRow, h);
+    const deltas = getCountDeltas(itemMeta(), itemActivity('delete'), { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, courseStreamRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:c:item': -1 } },
@@ -247,6 +247,22 @@ describe('the version of channel.deleted (getCountDeltas)', () => {
     }
     // An organization's activity names no organization: its delete follows the archive of its tenant.
     expect(versions(channelChange('organization', 'delete', null))).toEqual([]);
+  });
+
+  it('moves once for a cascade, at its root: a channel deleted with an ancestor in the same flush is covered by it', () => {
+    const channelDelete = (type: string, rowData: Record<string, unknown> & { id: string }) =>
+      changeEvent({ tableMeta: tableMetaOf('entity', type), action: 'delete', rowData: { organizationId: 'o1', ...rowData } });
+    const course = channelDelete('course', { id: 'c1' });
+    const section = channelDelete('courseSection', { id: 's1', courseId: 'c1' });
+    const project = channelDelete('project', { id: 'p1', courseId: 'c1', courseSectionId: 's1' });
+    const elsewhere = channelDelete('project', { id: 'p9', courseId: 'c2', courseSectionId: null });
+    const events = [section, project, course, elsewhere];
+
+    expect(computeBatchUnifiedDeltas(events, h).countDeltasByChannelKey.get('o1')?.['s:channel.deleted']).toBe(2);
+
+    // The API sends no live signal for a covered delete, which carries an empty record.
+    const signalVersions = signalVersionsOf(events, new Map([['o1', { 's:channel.deleted': 9 }]]), h);
+    expect(events.map((event) => signalVersions.get(event))).toEqual([{}, {}, { 'channel.deleted': 8 }, { 'channel.deleted': 9 }]);
   });
 });
 

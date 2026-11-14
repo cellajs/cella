@@ -5,7 +5,7 @@ import { currentSchemaVersion } from 'shared/schema-evolution';
 import { isRecord } from 'shared/utils/as-record';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
-import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
+import { getLocalUserDb, type LocalUserDatabase, type PersistedMetaRecord, type PersistedQueryRecord } from '~/query/local-user-db';
 import { isPending } from '~/query/offline/mutation-queue';
 import { hasStx, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
@@ -79,7 +79,7 @@ const tabSessionId = getTabSessionId();
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 
 /** Tabs of every bundle version lock and query this name, so it never changes. */
-const tabLockPrefix = `${appConfig.slug}-mutation-owner:`;
+const tabLockPrefix = `${appConfig.slug}-tab-open:`;
 
 /** Holds this tab's lock until the tab closes: other tabs' restore reads it as this tab being open. */
 function holdTabLock(): void {
@@ -134,6 +134,16 @@ function resetTracker() {
   lastBundledSnapshot = '';
   lastMutationsSnapshot = '';
 }
+
+/** The stored cache version: a missing one is this bundle's, and a string, from before the versions were numbered, is older than any. */
+function storedCacheVersion({ clientCacheVersion }: PersistedMetaRecord): number {
+  if (clientCacheVersion === undefined) return appConfig.clientCacheVersion;
+  return typeof clientCacheVersion === 'number' ? clientCacheVersion : 0;
+}
+
+/** Whether a newer bundle wrote the stored cache: its cache version or its lens pointer is ahead of this bundle's. */
+const isStoreAhead = (meta: PersistedMetaRecord): boolean =>
+  storedCacheVersion(meta) > appConfig.clientCacheVersion || (meta.schemaVersion ?? currentSchemaVersion) > currentSchemaVersion;
 
 /**
  * Deletes the cached queries and advances the cache version. The meta record keeps its lens pointer and every tab's
@@ -204,16 +214,16 @@ async function flush() {
   if (restoredEpoch !== epoch) return;
 
   try {
-    // Another tab may have migrated the store forward since this bundle booted; the broadcast can lose the race to the first write.
+    // A newer bundle may have written the store since this one booted; the broadcast can lose the race to the first write.
     const existing = await db.meta.get(cacheKey);
-    if ((existing?.schemaVersion ?? 0) > currentSchemaVersion) {
+    if (existing && isStoreAhead(existing)) {
       markBundleStale();
-      console.debug('[QueryPersister] Store is at a newer schema version, persisting disabled');
+      console.debug('[QueryPersister] A newer bundle wrote the store, persisting disabled');
       return;
     }
 
     const { queries } = client.clientState;
-    const { timestamp, buster } = client;
+    const { timestamp } = client;
     // Each queued mutation is stored with the version of its variables, which the restore reads.
     const mutations = client.clientState.mutations.map((mutation) =>
       withVariablesVersion({ ...mutation, meta: storedMeta(mutation.meta), state: storedMutationState(mutation.state) }),
@@ -253,12 +263,11 @@ async function flush() {
         if (removals.length > 0) await db.queries.bulkDelete(removals);
         if (mutationsChanged) {
           if (mutations.length === 0) await db.meta.delete(tabMutationKey);
-          else await db.meta.put({ key: tabMutationKey, timestamp, buster, mutations, bundledQueries: [] });
+          else await db.meta.put({ key: tabMutationKey, timestamp, mutations, bundledQueries: [] });
         }
         await db.meta.put({
           key: cacheKey,
           timestamp,
-          buster,
           clientCacheVersion: appConfig.clientCacheVersion,
           schemaVersion: currentSchemaVersion,
           bundledQueries,
@@ -318,22 +327,20 @@ export const persister = {
       let meta = await db.meta.get(cacheKey);
       if (!meta) return restored();
 
-      // A clientCacheVersion mismatch wipes cached query data but keeps queued mutations; a missing version seeds without wiping.
-      const versionChanged = (meta.clientCacheVersion ?? appConfig.clientCacheVersion) !== appConfig.clientCacheVersion;
-      // Upgrade rows and queued mutations when their lens ordinal trails the bundle; a missing ordinal seeds current.
-      const pointer = meta.schemaVersion ?? currentSchemaVersion;
+      // A newer tab or a rollback deploy wrote the store: this bundle stops persisting and reads none of it.
+      if (isStoreAhead(meta)) {
+        markBundleStale();
+        return undefined;
+      }
 
-      if (versionChanged) {
+      // An older cache version wipes the cached queries and keeps the queued mutations.
+      if (storedCacheVersion(meta) < appConfig.clientCacheVersion) {
         await bustQueriesKeepMutations(db);
         meta = (await db.meta.get(cacheKey)) ?? meta;
       }
 
-      if (pointer !== currentSchemaVersion) {
-        if (pointer > currentSchemaVersion) {
-          // Disk is ahead after another tab migrated forward or a rollback deploy: stop persisting and let the PWA update flow replace this bundle.
-          markBundleStale();
-          return undefined;
-        }
+      // A lens pointer behind the bundle upgrades the rows and queued mutations; a missing one seeds current.
+      if ((meta.schemaVersion ?? currentSchemaVersion) < currentSchemaVersion) {
         await withMigrationLock(async () => {
           // Re-read after acquiring the lock; another tab may have migrated.
           const fresh = await db.meta.get(cacheKey);
@@ -356,7 +363,6 @@ export const persister = {
       ];
 
       // Restores shared data, this tab's record, and orphaned tab records; live tabs keep theirs, and age substitutes when lock liveness is undetectable.
-      const { buster } = meta;
       const live = await liveTabSessionIds();
       // An orphaned queue moves under this tab's key in the transaction that deletes it, so a tab closed before its first write loses none.
       const tabMutations = await db.transaction('rw', db.meta, async () => {
@@ -369,13 +375,14 @@ export const persister = {
         if (orphaned.length === 0) return own;
         const absorbed = [...own, ...orphaned.flatMap((record) => record.mutations ?? [])];
         await db.meta.bulkDelete(orphaned.map((record) => record.key));
-        await db.meta.put({ key: tabMutationKey, timestamp: Date.now(), buster, mutations: absorbed, bundledQueries: [] });
+        await db.meta.put({ key: tabMutationKey, timestamp: Date.now(), mutations: absorbed, bundledQueries: [] });
         return absorbed;
       });
 
       return restored({
         timestamp: meta.timestamp,
-        buster: meta.buster,
+        // TanStack drops a restore whose buster differs from the provider's, which sets none: the cache version replaces it.
+        buster: '',
         clientState: { queries: allQueries, mutations: inCurrentShape(tabMutations) },
       });
     } catch (error) {
@@ -384,9 +391,6 @@ export const persister = {
       return undefined;
     }
   },
-
-  /** False from a reset until a restore that started after it completes. */
-  isRestored: () => restoredEpoch === epoch,
 
   /** `persistQueryClientRestore` discards a cache that fails to hydrate through this: the queries go, the queues stay. */
   removeClient: async () => {
@@ -401,10 +405,10 @@ export const persister = {
       console.error('[QueryPersister] Failed to remove client:', error);
     }
   },
-} satisfies Persister & { flush: () => Promise<void>; isRestored: () => boolean };
+} satisfies Persister & { flush: () => Promise<void> };
 
 /**
- * What PersistQueryClientProvider restores and saves with. No age limit: the persister guards the cache's lifetime
+ * What the bind restores and the provider saves with. No age limit: the persister guards the cache's lifetime
  * itself (the cache version, the lens pointer), and an expired restore would delete queued writes too.
  */
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {

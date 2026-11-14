@@ -5,7 +5,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { isoDateIn } from '#/utils/iso-date';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { authCookie, insertTestToken } from '../helpers';
@@ -31,14 +31,14 @@ export async function createInvitation({
   boundTo = null,
   token: tokenState = 'fresh',
 }: CreateInvitationOpts) {
-  const inactiveMembershipId = generateId();
+  const invitationId = generateId();
   const tokenId = generateId();
   const rawSingleUseToken = nanoid(40);
 
   const [inactiveMembership] = await db
-    .insert(inactiveMembershipsTable)
+    .insert(invitationsTable)
     .values({
-      id: inactiveMembershipId,
+      id: invitationId,
       email,
       userId: boundTo,
       channelId: organization.id,
@@ -57,7 +57,7 @@ export async function createInvitation({
     {
       id: tokenId,
       createdBy,
-      inactiveMembershipId,
+      invitationId,
       createdAt: mockPastIsoDate(),
       // Opening the link swaps the week-long lifetime for the single-use window.
       ...(tokenState === 'invoked'

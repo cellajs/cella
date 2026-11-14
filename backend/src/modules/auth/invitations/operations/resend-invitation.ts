@@ -1,42 +1,39 @@
-import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
-import { findPendingInactiveMembership } from '#/modules/memberships/inactive-memberships-queries';
-import { resendInvitation } from '#/modules/memberships/operations/resend-pending-invitation';
+import { findPendingInvitation } from '#/modules/memberships/invitations-queries';
+import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitations';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 /**
  * Re-sends the invitation one of its token ids names, for an invitee whose link expired; the id comes from that link,
- * so nothing else is asked. A membership invitation goes out as its inviter's resend does: within its tenant's caps, in
- * its organization's language, and never while it is held. A system invitation whose address no account holds gets
- * one fresh link. Anything else sends nothing, and so does a tenant past its day, so every id gets the same answer.
+ * so nothing else is asked. A pending membership invitation goes out as its inviter's resend does, within its tenant's
+ * caps and in its organization's language; a held one has no link to name it. A system invitation whose address no
+ * account holds gets one fresh link. Anything else sends nothing, and so does a tenant past its day or one the tenant
+ * guard would refuse, so every id gets the same answer.
  */
 export async function resendInvitationByTokenOp(ctx: DbContext, tokenId: string): Promise<void> {
   const token = await findInvitationToken(ctx, { id: tokenId });
   if (!token) return;
-  if (!token.inactiveMembershipId) return resendSystemInvitation(ctx, token);
+  if (!token.invitationId) return resendSystemInvitation(ctx, token);
 
-  const invitation = await findPendingInactiveMembership(ctx, { id: token.inactiveMembershipId });
+  const invitation = await findPendingInvitation(ctx, { id: token.invitationId });
   if (!invitation) return;
 
-  const [tenant, organization, channel] = await Promise.all([
+  const [tenant, organization] = await Promise.all([
     loadTenant(invitation.tenantId),
     resolveEntity(ctx, { entityType: 'organization', identifier: invitation.organizationId }),
-    resolveEntity(ctx, { entityType: invitation.channelType, identifier: invitation.channelId }),
   ]);
-  if (tenant?.status !== 'active' || !appConfig.tenantKinds[tenant.kind].invitations || !organization || !channel) return;
-  if (isHeldInvitation(invitation.channelType, channel, invitation.role)) return;
+  if (tenant?.status !== 'active' || !organization) return;
 
   const tenantCtx = { var: { db: ctx.var.db, tenantId: tenant.id, tenant } };
-  await resendInvitation(tenantCtx, { invitation, organization }).catch((err) => {
+  await mailWithinCaps(tenantCtx, { invitations: [invitation], organization }).catch((err) => {
     if (!(err instanceof AppError) || err.type !== 'invitation_limit_reached') throw err;
   });
 }
@@ -54,7 +51,7 @@ async function resendSystemInvitation(ctx: DbContext, oldToken: TokenRecord) {
     if (!anchor) return null;
 
     const issued = await issueToken(txCtx, { kind: 'invitation', email, createdBy });
-    await stampWaitlistRequestInvited(txCtx, { email });
+    await stampWaitlistRequestMailed(txCtx, { email });
     return issued;
   });
   if (!reissued) return;

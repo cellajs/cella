@@ -9,7 +9,7 @@ import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { requestsTable } from '#/modules/requests/requests-db';
@@ -36,9 +36,9 @@ interface RuleCase {
 }
 
 /**
- * Every row rule of `apply_retention()`: a row just inside its period stays, one just outside goes. The procedure
- * deletes personal data nothing can bring back, so each rule is checked against rows, under the admin role pg_cron
- * runs it as.
+ * Every row rule of `apply_retention()`: a row just inside its period stays, one just outside goes. Each rule is checked
+ * against rows, under the admin role the retention job runs it as: the procedure deletes personal data nothing can
+ * bring back.
  */
 describe('apply_retention() row rules', () => {
   const cases: RuleCase[] = [];
@@ -72,28 +72,28 @@ describe('apply_retention() row rules', () => {
       removed: [tokens.gone.id],
     });
 
-    const device = (userId: string, lastSeen: Date) => {
+    const device = (userId: string, lastSignIn: Date) => {
       const deviceIdHash = hashDeviceIdForUser(nanoid(24), userId);
       return db
         .insert(devicesTable)
-        .values({ userId, deviceIdHash, firstSeenAt: lastSeen.toISOString(), lastSeenAt: lastSeen.toISOString() })
+        .values({ userId, deviceIdHash, createdAt: lastSignIn.toISOString(), lastSignInAt: lastSignIn.toISOString() })
         .then(() => deviceIdHash);
     };
     const devicesOf = (userId: string) => async () =>
       (await db.select({ hash: devicesTable.deviceIdHash }).from(devicesTable).where(eq(devicesTable.userId, userId))).map((row) => row.hash);
-    const unseen = {
-      gone: await device(user.id, outside(retention.deviceDaysUnseen)),
-      kept: await device(user.id, inside(retention.deviceDaysUnseen)),
+    const signedInLongAgo = {
+      gone: await device(user.id, outside(retention.deviceDaysSinceSignIn)),
+      kept: await device(user.id, inside(retention.deviceDaysSinceSignIn)),
     };
-    cases.push({ rule: 'devices unseen', remaining: devicesOf(user.id), kept: [unseen.kept], removed: [unseen.gone] });
-    // Minutes apart and recent, so only the cap decides; the two least recently seen go.
+    cases.push({ rule: 'devices since sign-in', remaining: devicesOf(user.id), kept: [signedInLongAgo.kept], removed: [signedInLongAgo.gone] });
+    // Minutes apart and recent: only the cap decides, and the two least recently signed in from go.
     const crowdedDevices: string[] = [];
-    for (let i = 0; i < retention.devicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
+    for (let i = 0; i < appConfig.maxDevicesPerUser + 2; i++) crowdedDevices.push(await device(crowded.id, new Date(Date.now() - i * 60_000)));
     cases.push({
       rule: 'devices per user',
       remaining: devicesOf(crowded.id),
-      kept: crowdedDevices.slice(0, retention.devicesPerUser),
-      removed: crowdedDevices.slice(retention.devicesPerUser),
+      kept: crowdedDevices.slice(0, appConfig.maxDevicesPerUser),
+      removed: crowdedDevices.slice(appConfig.maxDevicesPerUser),
     });
 
     const payload = (expiresAt: Date | null, consumedAt: Date | null) => {
@@ -142,9 +142,9 @@ describe('apply_retention() row rules', () => {
       removed: [requests.oldContact, requests.oldWaitlist, requests.oldInfo],
     });
 
-    const invitation = async ({ declinedAt = null, remindedAt = null }: { declinedAt?: Date | null; remindedAt?: Date | null }) => {
+    const invitation = async (status: 'held' | 'pending' | 'declined', { at, mailedAt }: { at?: Date; mailedAt?: Date } = {}) => {
       const id = generateId();
-      await db.insert(inactiveMembershipsTable).values({
+      await db.insert(invitationsTable).values({
         id,
         email: `${id}@retention.test`,
         channelId: organization.id,
@@ -152,38 +152,37 @@ describe('apply_retention() row rules', () => {
         tenantId: organization.tenantId,
         channelType: 'organization' as const,
         role: memberRole,
+        status,
+        statusChangedAt: (at ?? ago(1000)).toISOString(),
+        declinedAt: status === 'declined' ? (at?.toISOString() ?? null) : null,
         createdBy: user.id,
         createdAt: ago(1000).toISOString(),
-        declinedAt: declinedAt?.toISOString() ?? null,
-        remindedAt: remindedAt?.toISOString() ?? null,
+        mailedAt: mailedAt?.toISOString() ?? null,
       });
       return id;
     };
     const invitations = {
-      declinedLongAgo: await invitation({ declinedAt: outside(retention.invitationDays) }),
-      declinedRecently: await invitation({ declinedAt: inside(retention.invitationDays) }),
-      mailedLongAgo: await invitation({ remindedAt: outside(retention.invitationDays) }),
-      mailedRecently: await invitation({ remindedAt: inside(retention.invitationDays) }),
-      held: await invitation({}),
+      declinedPastHold: await invitation('declined', { at: outside(retention.declinedInvitationHoldDays) }),
+      declinedInHold: await invitation('declined', { at: inside(retention.declinedInvitationHoldDays) }),
+      mailedLongAgo: await invitation('pending', { mailedAt: outside(retention.invitationDays) }),
+      mailedRecently: await invitation('pending', { mailedAt: inside(retention.invitationDays) }),
+      // Its mail was held back by the day limit or failed: it ages from its creation.
+      neverMailed: await invitation('pending'),
+      held: await invitation('held'),
     };
     cases.push({
       rule: 'invitations',
       remaining: async () =>
-        (
-          await db
-            .select({ id: inactiveMembershipsTable.id })
-            .from(inactiveMembershipsTable)
-            .where(eq(inactiveMembershipsTable.organizationId, organization.id))
-        ).map((row) => row.id),
-      kept: [invitations.declinedRecently, invitations.mailedRecently, invitations.held],
-      removed: [invitations.declinedLongAgo, invitations.mailedLongAgo],
+        (await db.select({ id: invitationsTable.id }).from(invitationsTable).where(eq(invitationsTable.organizationId, organization.id))).map(
+          (row) => row.id,
+        ),
+      kept: [invitations.declinedInHold, invitations.mailedRecently, invitations.held],
+      removed: [invitations.declinedPastHold, invitations.mailedLongAgo, invitations.neverMailed],
     });
 
-    // The counter runs ahead of every row but `newest`, which holds the organization's latest position.
+    // `newest` holds the organization's latest position and goes all the same: a rebuild that regresses the counter moves the generation.
     const plan = await seedAttachmentHome({ id: organization.id, tenantId: organization.tenantId }, user.id);
     cleanups.push(() => cleanupEntityHierarchy(db, plan));
-    await db.execute(sql`INSERT INTO channel_counters (channel_key, counts) VALUES (${organization.id}, '{"sequence": 100}')
-      ON CONFLICT (channel_key) DO UPDATE SET counts = channel_counters.counts || '{"sequence": 100}'`);
     const attachment = async (deletedAt: Date | null, seq: number) => {
       const id = generateId();
       const row = { id, tenantId: organization.tenantId, ...plan.channelIdColumns, keys: {}, createdBy: user.id, updatedBy: null, seq };
@@ -205,8 +204,8 @@ describe('apply_retention() row rules', () => {
             .from(attachmentsTable)
             .where(inArray(attachmentsTable.id, Object.values(tombstones)))
         ).map((row) => row.id),
-      kept: [tombstones.recent, tombstones.newest, tombstones.live],
-      removed: [tombstones.expired],
+      kept: [tombstones.recent, tombstones.live],
+      removed: [tombstones.expired, tombstones.newest],
     });
     cleanups.push(async () => {
       await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, Object.values(tombstones)));
@@ -227,11 +226,11 @@ describe('apply_retention() row rules', () => {
       removed: [limits.gone],
     });
 
-    const subscription = async (lastSeenAt: Date, createdAt: Date) => {
+    const subscription = async (lastSeenAt: Date, createdAt: Date, userId = user.id) => {
       const id = generateId();
       await db.insert(pushSubscriptionsTable).values({
         id,
-        userId: user.id,
+        userId,
         endpoint: `https://push.retention.test/${id}`,
         p256dh: 'key',
         auth: 'secret',
@@ -253,6 +252,20 @@ describe('apply_retention() row rules', () => {
         ),
       kept: [subscriptions.seen],
       removed: [subscriptions.unseen],
+    });
+    // Minutes apart and recent: only the cap decides, and the two least recently seen go.
+    const crowdedSubscriptions: string[] = [];
+    for (let i = 0; i < appConfig.maxPushSubscriptionsPerUser + 2; i++) {
+      crowdedSubscriptions.push(await subscription(new Date(Date.now() - i * 60_000), ago(1), crowded.id));
+    }
+    cases.push({
+      rule: 'push subscriptions per user',
+      remaining: async () =>
+        (await db.select({ id: pushSubscriptionsTable.id }).from(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, crowded.id))).map(
+          (row) => row.id,
+        ),
+      kept: crowdedSubscriptions.slice(0, appConfig.maxPushSubscriptionsPerUser),
+      removed: crowdedSubscriptions.slice(appConfig.maxPushSubscriptionsPerUser),
     });
 
     await db.execute(sql`CALL apply_retention()`);

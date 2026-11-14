@@ -99,16 +99,16 @@ function InviteTitle({ mode, onBack }: InviteTitleProps) {
 
 interface SubmitLabelOptions {
   invite: number;
-  remind: number;
+  resend: number;
   isEmpty: boolean;
   held: boolean;
 }
 
-const submitLabel = ({ invite, remind, isEmpty, held }: SubmitLabelOptions): TKey => {
-  if (!invite && !remind) return isEmpty ? 'c:invite' : 'c:nothing_to_send';
+const submitLabel = ({ invite, resend, isEmpty, held }: SubmitLabelOptions): TKey => {
+  if (!invite && !resend) return isEmpty ? 'c:invite' : 'c:nothing_to_send';
   if (held) return 'c:save';
-  if (invite && remind) return 'c:invite_and_remind';
-  return remind ? 'c:remind' : 'c:invite';
+  if (invite && resend) return 'c:invite_and_resend';
+  return resend ? 'c:resend' : 'c:invite';
 };
 
 /** What every role of the channel may do, as the role field's help. */
@@ -231,7 +231,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersP
 
   // An address the check could not answer for still goes: the send decides, and its result says what happened.
   const invite = check.groups.new.length + check.groups.unchecked.length + (list.typedAddress ? 1 : 0);
-  const remind = check.groups.again.length;
+  const resend = check.groups.again.length;
   const isEmpty = !list.hasList && !list.typed.trim();
   // A report holds while the list is what its send left there
   const shownReport = report && report.unsent.join() === list.emails.join() ? report : null;
@@ -258,9 +258,9 @@ export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersP
                 {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
                 {list.hasList && <InviteGroups check={check} list={list} held={held} role={channel ? role : undefined} />}
                 <FormActions>
-                  <SubmitButton disabled={!invite && !remind} loading={isPending}>
+                  <SubmitButton disabled={!invite && !resend} loading={isPending}>
                     <SendIcon />
-                    {t(submitLabel({ invite, remind, isEmpty, held }))}
+                    {t(submitLabel({ invite, resend, isEmpty, held }))}
                   </SubmitButton>
                   <CancelButton dirty={form.isDirty} onClick={cancel} />
                 </FormActions>

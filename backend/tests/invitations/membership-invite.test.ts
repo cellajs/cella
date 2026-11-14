@@ -3,7 +3,7 @@ import { inviteMembers } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
@@ -24,12 +24,12 @@ setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 // Hides a channel's invitations from the invite's plan, as when another request inserts one between the plan and the insert.
 const planSees = vi.hoisted(() => ({ invitations: true }));
-vi.mock('#/modules/memberships/inactive-memberships-queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/memberships/inactive-memberships-queries')>();
+vi.mock('#/modules/memberships/invitations-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/memberships/invitations-queries')>();
   return {
     ...actual,
-    findInactiveMembershipsByEmails: async (...args: Parameters<typeof actual.findInactiveMembershipsByEmails>) =>
-      planSees.invitations ? actual.findInactiveMembershipsByEmails(...args) : [],
+    findInvitationsByEmails: async (...args: Parameters<typeof actual.findInvitationsByEmails>) =>
+      planSees.invitations ? actual.findInvitationsByEmails(...args) : [],
   };
 });
 
@@ -58,7 +58,7 @@ describe('Membership Invitation', async () => {
   const outcomesOf = (data: unknown) => (data as { outcomes: { outcome: string }[] }).outcomes.map(({ outcome }) => outcome);
 
   const getInactiveMemberships = async (organizationId: string) =>
-    await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
+    await db.select().from(invitationsTable).where(eq(invitationsTable.organizationId, organizationId));
 
   it('should invite new users to organization', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
@@ -81,7 +81,7 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships[1].role).toBe(memberRole);
 
     // The last mail carries the link of its own address's token.
-    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMemberships[1].id));
+    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.invitationId, inactiveMemberships[1].id));
     expect(token.secretHash).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
@@ -123,7 +123,7 @@ describe('Membership Invitation', async () => {
     const [invitation] = await getInactiveMemberships(organization.id);
     expect(invitation.userId).toBe(existingUser.id);
     // Known address, so no token: the invitation is answered in-app.
-    expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitation.id))).toHaveLength(0);
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.invitationId, invitation.id))).toHaveLength(0);
   });
 
   it('should handle mixed existing and new users', async () => {
@@ -163,7 +163,7 @@ describe('Membership Invitation', async () => {
     const { response: secondRes, data } = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    expect(outcomesOf(data)).toEqual(['remind']);
+    expect(outcomesOf(data)).toEqual(['resend']);
   });
 
   it('mints no link for an invitation another request inserted first', async () => {
@@ -192,7 +192,7 @@ describe('Membership Invitation', async () => {
     await makeInviteRequest(organization.tenantId, organization.id, { emails: ['waiting@example.com'], role: memberRole }, sessionCookie);
 
     const [request] = await db.select().from(requestsTable).where(eq(requestsTable.email, 'waiting@example.com'));
-    expect(request.invitedAt).not.toBeNull();
+    expect(request.mailedAt).not.toBeNull();
   });
 
   it('returns the membership a system admin joins by inviting themself, hide, mute and order included', async () => {

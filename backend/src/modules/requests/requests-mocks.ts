@@ -9,11 +9,11 @@ const mockRequest = (key = 'request:default'): RequestModel =>
     kind: 'contact' as const,
     message: faker.lorem.sentence(),
     createdAt: mockPastIsoDate(),
-    invitedAt: null,
+    mailedAt: null,
   }));
 
 export const mockRequestResponse = (key = 'request:default') => {
-  const { invitedAt: _, ...request } = mockRequest(key);
+  const { mailedAt: _, ...request } = mockRequest(key);
   return { ...request, invited: false };
 };
 

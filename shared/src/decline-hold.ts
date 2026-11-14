@@ -3,8 +3,8 @@ import { appConfig } from './config-builder/app-config.ts';
 const holdMs = appConfig.retention.declinedInvitationHoldDays * 24 * 60 * 60 * 1000;
 
 /**
- * Whether a decline still holds: until it stops, no invite opens the invitation again or mails its address. One source
- * for the server's invite plan and the invite form's result, so the form never says an invitation went out that did not.
- * @param declinedAt - The invitation's `declinedAt`; none for an invitation nobody declined.
+ * When a decline stops holding: the nightly sweep removes the declined invitation after it, so the address can be
+ * invited again up to a day later.
+ * @returns Epoch milliseconds.
  */
-export const declineHolds = (declinedAt?: string | null) => !!declinedAt && Date.parse(declinedAt) + holdMs > Date.now();
+export const declineHoldEnd = (declinedAt: string) => Date.parse(declinedAt) + holdMs;

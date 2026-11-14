@@ -4,7 +4,7 @@ import type { ChannelEntityType, ProductEntityType } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
-// An app's shape: tasks below a project, notes at the organization.
+// An app's shape: tasks below a project, steps below a section inside it, notes at the organization.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const roles = actual.createRoleRegistry(['member'] as const);
@@ -13,7 +13,9 @@ vi.mock('shared', async (importOriginal) => {
     .user()
     .organization({ roles: roles.all })
     .channel('project', { parent: 'organization', roles: roles.all })
+    .channel('section', { parent: 'project', roles: roles.all })
     .product('task', { parent: 'project' })
+    .product('step', { parent: 'section' })
     .product('note', { parent: 'organization' })
     .build();
   return {
@@ -40,11 +42,6 @@ vi.mock('~/query/realtime/membership-ops', () => ({
 }));
 // The deleted project is not on screen: the marks wait for the lists to be opened.
 vi.mock('~/query/realtime/sync-priority', () => ({ isViewingChannel: () => false }));
-// The catchup that reports a missed delete answered the task view opaque in one case below.
-const opaque = new Set<string>();
-vi.mock('~/query/realtime/catchup-processor', () => ({
-  isOpaqueScope: (organizationId: string, type: string) => opaque.has(`${organizationId}:${type}`),
-}));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-source' }));
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: vi.fn(), state: { matches: [] } }) }));
 
@@ -62,21 +59,31 @@ const { syncStore } = await import('~/query/realtime/sync-store');
 // The synthetic types exist only in this file's shared mock, hence the casts.
 const taskType = 'task' as ProductEntityType;
 const noteType = 'note' as ProductEntityType;
+const stepType = 'step' as ProductEntityType;
 const projectType = 'project' as ChannelEntityType;
+const sectionType = 'section' as ChannelEntityType;
 const taskKeys = createEntityKeys<Record<string, never>>(taskType);
 const noteKeys = createEntityKeys<Record<string, never>>(noteType);
+const stepKeys = createEntityKeys<Record<string, never>>(stepType);
 const projectKeys = createEntityKeys<Record<string, never>>(projectType);
+const sectionKeys = createEntityKeys<Record<string, never>>(sectionType);
 registerEntityQueryKeys(taskType, taskKeys);
 registerEntityQueryKeys(noteType, noteKeys);
+registerEntityQueryKeys(stepType, stepKeys);
 registerEntityQueryKeys(projectType, projectKeys);
+registerEntityQueryKeys(sectionType, sectionKeys);
 
 const task = (id: string, projectId: string) => ({ id, organizationId: 'org-1', projectId });
+const section = (id: string, projectId: string) => ({ id, organizationId: 'org-1', projectId });
+const step = (id: string, sectionId: string, projectId: string) => ({ id, organizationId: 'org-1', projectId, sectionId });
 const list = <T>(items: T[]) => ({ results: items, totalSize: items.length });
 
 const homeOfP1: QueryKey = taskKeys.list.home('org-1', 'p1');
 const homeOfP2: QueryKey = taskKeys.list.home('org-1', 'p2');
 const acrossProjects: QueryKey = [...taskKeys.list.org('org-1'), { q: '' }];
 const notes: QueryKey = noteKeys.list.home('org-1');
+const sections: QueryKey = sectionKeys.list.org('org-1');
+const steps: QueryKey = stepKeys.list.org('org-1');
 
 /** What an org admin outside project p1 holds: p1's tasks in its home list, an org-wide list and a detail, and p2 beside it. */
 function seedCache() {
@@ -87,6 +94,9 @@ function seedCache() {
   queryClient.setQueryData(notes, list([{ id: 'n1', organizationId: 'org-1' }]));
   queryClient.setQueryData(projectKeys.list.org('org-1'), list([{ id: 'p1' }, { id: 'p2' }]));
   queryClient.setQueryData(projectKeys.detail.byId('p1'), { id: 'p1' });
+  queryClient.setQueryData(sections, list([section('s1', 'p1'), section('s2', 'p2')]));
+  queryClient.setQueryData(sectionKeys.detail.byId('s1'), section('s1', 'p1'));
+  queryClient.setQueryData(steps, list([step('st1', 's1', 'p1'), step('st2', 's2', 'p2')]));
   queryClient.setQueryData(meKeys.memberships, { results: [{ organizationId: 'org-1', channelId: 'p1' }] });
   queryClient.setQueryData(seenKeys.unseenCounts, {});
 }
@@ -97,9 +107,6 @@ const signal = (overrides: Partial<StreamSignal> = {}): StreamSignal => ({
   subjectId: 'p1',
   ...overrides,
 });
-
-// Past the handler's window for the rest of a cascade, short of the cache's garbage collection.
-const cascadeSettles = () => vi.advanceTimersByTime(1_000);
 
 const idsOf = (key: QueryKey) => queryClient.getQueryData<{ results: { id: string }[] }>(key)?.results.map(({ id }) => id);
 const isMarked = (key: QueryKey) => queryClient.getQueryState(key)?.isInvalidated;
@@ -113,7 +120,6 @@ afterEach(() => {
   vi.useRealTimers();
   queryClient.clear();
   vi.clearAllMocks();
-  opaque.clear();
   syncStore.getState().reset();
 });
 
@@ -125,7 +131,6 @@ describe('channel.deleted', () => {
 
     handleChannelDeleted(signal());
     stop();
-    cascadeSettles();
 
     // The cascade sent no change for these rows: without the signal they stay in every list and detail.
     expect(idsOf(homeOfP1)).toEqual([]);
@@ -133,7 +138,7 @@ describe('channel.deleted', () => {
     expect(queryClient.getQueryData<{ totalSize: number }>(acrossProjects)?.totalSize).toBe(1);
     expect(queryClient.getQueryData(taskKeys.detail.byId('t1'))).toBeUndefined();
     expect(idsOf(homeOfP2)).toEqual(['t3']);
-    expect(announced.toSorted()).toEqual(['delete:t1', 'delete:t2']);
+    expect(announced.toSorted()).toEqual(['delete:st1', 'delete:t1', 'delete:t2']);
 
     // Rows below it that were never cached still count in the server's lists: each one refetches when opened.
     for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(true);
@@ -145,49 +150,35 @@ describe('channel.deleted', () => {
     expect(invalidateMemberships).toHaveBeenCalled();
   });
 
-  it('refetches once for a whole cascade: each channel it reached sends a signal of its own', () => {
+  it('drops the channels inside the deleted one and their rows in one pass: a cascade sends one signal, for its root', () => {
     seedCache();
 
     handleChannelDeleted(signal());
-    handleChannelDeleted(signal({ subjectId: 'p2' }));
-    cascadeSettles();
 
-    expect(idsOf(homeOfP2)).toEqual([]);
+    expect(idsOf(sections)).toEqual(['s2']);
+    expect(queryClient.getQueryData(sectionKeys.detail.byId('s1'))).toBeUndefined();
+    expect(idsOf(steps)).toEqual(['st2']);
     expect(invalidateMemberQueries.mock.calls).toEqual([['org-1']]);
-    expect(invalidateMemberships).toHaveBeenCalledTimes(1);
   });
 
   it('missed while away, it names no channel: the lists of every type below a channel take the mark, and no row is dropped', () => {
     seedCache();
 
     handleChannelDeleted(signal({ subjectId: null }));
-    cascadeSettles();
 
     expect(idsOf(homeOfP1)).toEqual(['t1', 't2']);
     for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(true);
     expect(isMarked(notes)).toBe(false);
+    expect(invalidateMemberships).not.toHaveBeenCalled();
   });
 
-  it('missed while away, must not refetch a list when a start-over refetch is due, also one that ran before the cascade settled', () => {
+  it('missed while away, must not refetch a list when a start-over refetch is due', () => {
     seedCache();
     // A new generation: every client runs its versioned signals once, and refetches its synced cache at its share of the spread.
     syncStore.getState().adoptGeneration(1, 0);
     syncStore.getState().adoptGeneration(2, 10_000);
 
     handleChannelDeleted(signal({ subjectId: null }));
-    syncStore.getState().markRefetched();
-    cascadeSettles();
-
-    for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(false);
-    expect(invalidateMemberQueries).toHaveBeenCalledWith('org-1');
-  });
-
-  it('missed while away, must not refetch the lists of a scope the same catchup answered opaque a second time', () => {
-    seedCache();
-    opaque.add('org-1:task');
-
-    handleChannelDeleted(signal({ subjectId: null }));
-    cascadeSettles();
 
     for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(false);
     expect(invalidateMemberQueries).toHaveBeenCalledWith('org-1');

@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { updateStamps } from '#/db/utils/stamps';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { createTenant } from '#/modules/tenants/operations/create-tenant';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -31,7 +30,7 @@ export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTena
     // renamed): the reused tenant takes it.
     const orphanTenant = await findOrphanTenant(txCtx, { createdBy });
     if (orphanTenant?.name === input.name) return orphanTenant.id;
-    if (orphanTenant) return (await updateTenant(txCtx, { id: orphanTenant.id, values: { name: input.name, ...updateStamps(createdBy) } })).id;
+    if (orphanTenant) return (await updateTenant(txCtx, { id: orphanTenant.id, values: { name: input.name }, by: createdBy })).id;
 
     const quota = appConfig.selfServiceTenantsPerUser;
     if (!isSystemAdmin && (await countTenantsCreatedBy(txCtx, { createdBy })) >= quota) {

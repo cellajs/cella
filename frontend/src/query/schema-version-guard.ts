@@ -1,11 +1,15 @@
+import { checkForUpdate } from '~/utils/app-update';
+
 let staleBundle = false;
 
-/** Marks this bundle as stale after a newer schema version appears in another tab or on disk. */
+/** Marks this bundle as stale after a newer bundle announces itself in another tab or wrote the store, and looks for the update: a worker it finds raises the reload prompt. */
 export function markBundleStale(): void {
+  if (staleBundle) return;
   staleBundle = true;
+  void checkForUpdate();
 }
 
-/** Whether this bundle is behind another tab and must stop persisting. */
+/** Whether a newer bundle runs beside this one, which must stop persisting. */
 export const isBundleStale = (): boolean => staleBundle;
 
 /** Test-only: clears the sticky stale flag between tests. */

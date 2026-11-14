@@ -1,4 +1,3 @@
-import { useIsRestoring } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
@@ -34,14 +33,13 @@ function buildItemData(item: ResolvableItem, url: string, isLocal: boolean): Car
   };
 }
 
-/** Resolves carousel item URLs offline-first, waiting for cache restoration before reporting not found. */
+/** Resolves carousel item URLs offline-first. */
 export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachmentsResult {
   const [resolvedItems, setResolvedItems] = useState<CarouselItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorIds, setErrorIds] = useState<string[]>([]);
   // The items key the results belong to: a render with new items reads as loading, not as the old items' errors.
   const [resolvedKey, setResolvedKey] = useState<string | null>(null);
-  const isRestoring = useIsRestoring();
   const blobUrlsRef = useRef<Map<string, string>>(new Map());
 
   // Bumped to re-run resolution after a transient failure; reset when the item set changes.
@@ -55,11 +53,6 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   }, [itemsKey]);
 
   useEffect(() => {
-    if (isRestoring) {
-      setIsLoading(true);
-      return;
-    }
-
     if (!items.length) {
       setResolvedItems([]);
       setIsLoading(false);
@@ -141,7 +134,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
       cancelled = true;
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [itemsKey, isRestoring, retrySignal]);
+  }, [itemsKey, retrySignal]);
 
   useEffect(() => {
     return () => {

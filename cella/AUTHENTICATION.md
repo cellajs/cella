@@ -66,7 +66,7 @@ The `auth/tokens/` module issues, opens and spends every token, with one policy 
 
 Opening a link only holds it in the browser. A mail scanner or a link preview does not use it up: a click on the app's page then redeems it with a POST.
 
-The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
+The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. A magic link signs in once, and its sign-in spends it: a second click, or a second factor that failed, needs a new link. A token or code issued for a session serves that session alone and dies with it.
 
 A magic link is the one link that redeems on opening, and only in the browser that asked for it. A crawler or a prefetch changes nothing: a cookie set at the request proves that browser.
 

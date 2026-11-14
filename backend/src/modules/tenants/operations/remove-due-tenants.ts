@@ -32,7 +32,7 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
 }
 
 /**
- * Removes the tenants whose time is over: archived longer than `appConfig.retention.archivedTenantDays` (an
+ * Removes the tenants whose time is over: deleted longer than `appConfig.retention.deletedTenantDays` (an
  * organization its admin deleted, or a contract ended) or past their `expiresAt` (a demo after its days). Each goes
  * with its organization and everything in it, the stored files through the deletion queue, then the anonymous
  * accounts it orphaned: a member with no proven address and no membership left, such as a demo's account, which goes
@@ -44,7 +44,7 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
  * @throws After every tenant ran, when any of them failed, so the jobs worker records a failed run.
  */
 export async function removeDueTenants(): Promise<number> {
-  const due = { archivedBefore: isoDateAgo(new TimeSpan(appConfig.retention.archivedTenantDays, 'd')), now: getIsoDate() };
+  const due = { deletedBefore: isoDateAgo(new TimeSpan(appConfig.retention.deletedTenantDays, 'd')), now: getIsoDate() };
   const tenants = await findDueTenants(dbCtx, due);
 
   let removed = 0;
@@ -55,15 +55,15 @@ export async function removeDueTenants(): Promise<number> {
       const counts = operatorNotices ? await countTenantRows(tenant.id) : [];
       const memberIds = await findMemberUserIdsByTenant(dbCtx, { tenantId: tenant.id });
       const deleted = await deleteDueTenant(dbCtx, { tenantId: tenant.id, ...due });
-      // Restored, archived again or given more time since the listing: kept, and no mail.
+      // Restored, deleted again or given more time since the listing: kept, and no mail.
       if (!deleted) continue;
       removed += 1;
       const orphaned = await findOrphanedAnonymousUserIds(dbCtx, { ids: memberIds });
       if (orphaned.length > 0) await deleteAccounts(dbCtx, { userIds: orphaned, by: null, dropActors: true });
       log.info('Tenant removed', { tenantId: tenant.id, kind: tenant.kind, counts, orphanedAccounts: orphaned.length });
       if (!operatorNotices) continue;
-      const archivedAt = tenant.status === 'archived' ? tenant.statusChangedAt : (tenant.expiresAt ?? due.now);
-      const statics = { tenantId: tenant.id, tenantName: tenant.name, archivedAt, removedAt: getIsoDate(), counts };
+      const deletedAt = tenant.status === 'deleted' ? tenant.statusChangedAt : (tenant.expiresAt ?? due.now);
+      const statics = { tenantId: tenant.id, tenantName: tenant.name, deletedAt, removedAt: getIsoDate(), counts };
       await mailer
         .sendEmails(tenantRemovedEmail, statics, [{ email: appConfig.company.email, lng: appConfig.defaultLanguageCode }])
         .catch((err) => log.error('Failed to mail the removal of a tenant', { tenantId: tenant.id, err }));

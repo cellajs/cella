@@ -20,10 +20,10 @@ function editorsNewestFirst(rows: readonly LogRow[]): string[] {
 }
 
 /**
- * `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone,
- * or of another generation than the session's. The other values are the materialize outcome.
+ * `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone.
+ * `reseeded`: the row is of another generation than the session's. The other values are the materialize outcome.
  */
-export type CompactionResult = 'empty' | 'ok' | 'gone' | 'retry' | 'retired';
+export type CompactionResult = 'empty' | 'ok' | 'gone' | 'retry' | 'retired' | 'reseeded';
 
 /** What a live session learns from its compaction: the window read, before any of it folds, and the rows that left the log. */
 export interface CompactionObserver {
@@ -47,8 +47,8 @@ export interface CompactionObserver {
  *
  * Only a written window, or one with nothing to write, folds: the base is replaced and exactly the rows read are
  * deleted, so an update appended during the POST survives for the next round. Every other outcome leaves base and log
- * untouched, so the base only ever holds written state and the log every edit the entity has not received; cleanup and
- * sweep rely on this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists). A fold
+ * untouched: the base only ever holds written state and the log every edit the entity has not received. A finish and
+ * the sweep rely on this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists). A fold
  * another compaction overlapped (a second relay during a rollout) is rolled back as a retry. Unparseable state is
  * never posted and counts as a retry. A row no merge accepts (logged before the relay refused undecodable updates,
  * or one that decodes but will not merge) is discarded first, with its sender logged: it carries no edit anyone can
@@ -58,7 +58,7 @@ export interface CompactionObserver {
 export async function compactDocument(scope: YjsDocScope, generation: string | null, observer?: CompactionObserver): Promise<CompactionResult> {
   const document = await findDocument(scope);
   if (document === null) return generation === null ? 'empty' : 'retired';
-  if (generation !== null && document.generation !== generation) return 'retired';
+  if (generation !== null && document.generation !== generation) return 'reseeded';
   if (document.rows.length === 0) return 'empty';
 
   const { state, accepted: rows, rejected } = mergeLog(document.base, document.rows);
@@ -90,7 +90,7 @@ export async function compactDocument(scope: YjsDocScope, generation: string | n
       );
       const batchIds = batch.map((row) => row.id);
       const folded = merged ? await foldLog(scope, merged, batchIds, document.generation) : 'ok';
-      if (folded !== 'ok') return folded === 'overlap' ? 'retry' : 'retired';
+      if (folded !== 'ok') return folded === 'overlap' ? 'retry' : folded;
       observer?.removed(batchIds);
       return compactDocument(scope, document.generation, observer);
     }
@@ -107,7 +107,7 @@ export async function compactDocument(scope: YjsDocScope, generation: string | n
     log.warn(`Compaction: another compaction folded rows of ${docKey(scope)}, retrying`);
     return 'retry';
   }
-  if (folded === 'retired') return 'retired';
+  if (folded === 'retired' || folded === 'reseeded') return folded;
   observer?.removed(ids);
   return 'ok';
 }

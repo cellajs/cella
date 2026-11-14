@@ -5,7 +5,7 @@ import { buildNotificationPath } from 'shared/utils/notification-link';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
@@ -47,7 +47,7 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
   };
 
   const membershipsOf = (userId: string) => db.select().from(membershipsTable).where(eq(membershipsTable.userId, userId));
-  const invitationRow = async (id: string) => (await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0];
+  const invitationRow = async (id: string) => (await db.select().from(invitationsTable).where(eq(invitationsTable.id, id)))[0];
 
   it.each([{ account: 'new' }, { account: 'existing' }])(
     'accepts the invitation this browser opened, signing in to a $account account',

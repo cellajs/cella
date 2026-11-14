@@ -13,7 +13,7 @@ import {
   findChannelLabels,
   findUsersMinimal,
   findVerifiedRecipients,
-  stampEmailed,
+  stampNotificationsMailed,
   type WrittenNotification,
 } from '#/modules/notification/notification-queries';
 import { findContextNames } from '#/modules/notification/notification-sources';
@@ -30,7 +30,7 @@ const dbCtx = { var: { db: baseDb } };
  * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmails`
  * (`instantEmailKinds`), each to a recipient with a verified address who keeps that category on (comment email is
  * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row is stamped
- * `emailedAt` right after its mail went out, so the digest skips it; any other row, a failed send included, stays for
+ * `mailedAt` right after its mail went out, and the digest skips it; any other row, a failed send included, stays for
  * the digest.
  * @param subjects - The subject rows the fan-out read, with their body, keyed by id.
  */
@@ -84,7 +84,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
         ]);
       }
       // Per send: a process that stops in the loop leaves only the row in flight for the digest to mail again.
-      await stampEmailed(dbCtx, { ids: [notification.id] });
+      await stampNotificationsMailed(dbCtx, { ids: [notification.id] });
       mailed++;
     } catch (err) {
       log.error('Instant notification email or its stamp failed', { err, notificationId: notification.id });

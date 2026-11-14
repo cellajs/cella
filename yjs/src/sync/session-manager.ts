@@ -1,14 +1,14 @@
 import type { YjsDocKey, YjsDocScope } from 'shared';
 import { yjsMessageTypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket } from 'ws';
-import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsLiveStampMs, yjsMaxBufferedBytes } from '../constants';
-import { deleteDocument, stampDocumentLive } from '../data/storage';
+import { docKey, yjsAwarenessMaxClients, yjsFinishDelayMs, yjsLiveStampMs, yjsMaxBufferedBytes } from '../constants';
+import { retireDocument, stampDocumentLive } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 
-/** A document's collab session: what this relay keeps in memory for it while editors are connected and until its cleanup. */
+/** A document's collab session: what this relay keeps in memory for it while editors are connected and until its finish. */
 export interface CollabSession {
-  /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
+  /** The document as its entity row places it; compaction, materialize and finish act in it as the system, never as a joiner. */
   scope: YjsDocScope;
   clients: Set<WebSocket>;
   /**
@@ -23,7 +23,7 @@ export interface CollabSession {
    */
   awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
   /**
-   * Document lock: every load (a handshake's, an update's first, a catch-up's), compaction and finishing (cleanup or the
+   * Document lock: every load (a handshake's, an update's first, a catch-up's), compaction and finishing (an idle session's or the
    * sweep) run one at a time through this chain.
    */
   chain: Promise<unknown>;
@@ -39,7 +39,7 @@ export interface CollabSession {
   seen: Set<number>;
   /** A catch-up queued on the document lock that has not started yet: a later call joins it, since its read comes after. */
   queuedCatchUp?: Promise<void>;
-  cleanupTimer?: ReturnType<typeof setTimeout>;
+  finishTimer?: ReturnType<typeof setTimeout>;
   compactTimer?: ReturnType<typeof setTimeout>;
   /** When the armed compaction runs at the latest: yjsCompactMaxWaitMs after the first update since the last run started. */
   compactDueAt?: number;
@@ -129,7 +129,7 @@ function openCollab(scope: YjsDocScope, clients: WebSocket[]): CollabSession {
 }
 
 /**
- * Registers an authorized client for a document and cancels pending cleanup when reconnecting. `scope` is the one
+ * Registers an authorized client for a document and cancels a pending finish when reconnecting. `scope` is the one
  * authorization read from the entity row, so every joiner of a document brings the same one and the first opens the
  * session in it.
  */
@@ -137,9 +137,9 @@ export function joinCollab(scope: YjsDocScope, ws: WebSocket): CollabSession {
   const collab = collabSessions.get(docKey(scope));
   if (!collab) return openCollab(scope, [ws]);
 
-  if (collab.cleanupTimer) {
-    clearTimeout(collab.cleanupTimer);
-    collab.cleanupTimer = undefined;
+  if (collab.finishTimer) {
+    clearTimeout(collab.finishTimer);
+    collab.finishTimer = undefined;
   }
   collab.clients.add(ws);
   return collab;
@@ -148,35 +148,37 @@ export function joinCollab(scope: YjsDocScope, ws: WebSocket): CollabSession {
 /** Takes a session out of the map, when it is still the one there, and clears its timers: none may later run on it. */
 function dropCollab(collab: CollabSession): void {
   const key = docKey(collab.scope);
-  clearTimeout(collab.cleanupTimer);
+  clearTimeout(collab.finishTimer);
   clearTimeout(collab.compactTimer);
   clearInterval(collab.liveTimer);
-  collab.cleanupTimer = undefined;
+  collab.finishTimer = undefined;
   collab.compactTimer = undefined;
   collab.compactDueAt = undefined;
   if (collabSessions.get(key) === collab) collabSessions.delete(key);
 }
 
+/** Why a session ended under its sockets: its document was retired (its entity deleted) or reseeded under another generation. */
+export type EndReason = 'retired' | 'reseeded';
+
 /**
- * Ends a session whose document was retired (its entity deleted) or reseeded under another generation: every socket
- * closes with 1013 and reconnects. A deleted entity's reconnect is closed with 4410; any other reconnect opens a fresh
+ * Ends a session whose document was retired or reseeded: every socket closes with 1013 and reconnects. A deleted entity's reconnect is closed with 4410; any other reconnect opens a fresh
  * session, which tells each client the generation it finds. The session leaves the map at once, so no later task of it
  * reaches a newer one.
  */
-export function endCollab(collab: CollabSession): void {
+export function endCollab(collab: CollabSession, reason: EndReason = 'retired'): void {
   const key = docKey(collab.scope);
   if (collabSessions.get(key) !== collab) return;
   dropCollab(collab);
-  log.info(`Document ${key} was retired: ending its session`);
-  for (const ws of collab.clients) ws.close(1013, 'Document retired');
+  log.info(`Document ${key} was ${reason}: ending its session`);
+  for (const ws of collab.clients) ws.close(1013, `Document ${reason}`);
 }
 
 /** How finishing a session ended: a socket joined it, its log is not written, or its log is written or gone. */
 type FinishOutcome = 'joined' | 'retry' | 'done';
 
-/** A socket joined since the finish started: it is still in the session, or its leave armed a newer cleanup. */
+/** A socket joined since the finish started: it is still in the session, or its leave armed a newer finish. */
 function joinedSince(collab: CollabSession): boolean {
-  return collab.clients.size > 0 || collab.cleanupTimer !== undefined;
+  return collab.clients.size > 0 || collab.finishTimer !== undefined;
 }
 
 /**
@@ -202,7 +204,7 @@ async function finishCollab(collab: CollabSession): Promise<FinishOutcome> {
     if (result === 'retry') return 'retry';
     if (result === 'gone') {
       try {
-        await deleteDocument(collab.scope);
+        await retireDocument(collab.scope);
       } catch (err) {
         log.error(`Failed to delete the rows of ${key}`, { err });
       }
@@ -213,7 +215,7 @@ async function finishCollab(collab: CollabSession): Promise<FinishOutcome> {
 }
 
 /**
- * Finishes the log of a document the sweep found unwritten, as a cleanup does. The session it opens for it has
+ * Finishes the log of a document the sweep found unwritten, as an idle session's finish does. The session it opens for it has
  * no socket but sits in the map, so a socket that joins meanwhile joins it: its handshake waits for the document lock,
  * and it keeps the session. The session is forgotten unless a socket joined; a document that already has a session
  * here is left to it.
@@ -235,8 +237,8 @@ export interface ReleasedClient {
 /**
  * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
  * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
- * A log the backend did not write stays for the next session or the sweep. A socket that joins while cleanup runs keeps
- * the session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
+ * A log the backend did not write stays for the next session or the sweep. A socket that joins while the finish runs
+ * keeps the session; when it leaves again first, the finish its leave arms takes over and compacts what it logged too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.
  */
@@ -253,8 +255,8 @@ export function leaveCollab(doc: YjsDocKey, ws: WebSocket): ReleasedClient[] {
   }
   if (collab.clients.size > 0) return released;
 
-  const cleanup = async () => {
-    collab.cleanupTimer = undefined;
+  const finishIdle = async () => {
+    collab.finishTimer = undefined;
     if (collabSessions.get(key) !== collab || collab.clients.size > 0) return;
     if (collab.compactTimer) {
       clearTimeout(collab.compactTimer);
@@ -264,11 +266,11 @@ export function leaveCollab(doc: YjsDocKey, ws: WebSocket): ReleasedClient[] {
 
     const outcome = await finishCollab(collab);
     if (outcome === 'joined') return;
-    if (outcome === 'retry') log.warn(`Log of ${key} not written at cleanup: keeping it for the next session or the sweep`);
+    if (outcome === 'retry') log.warn(`Log of ${key} not written at finish: keeping it for the next session or the sweep`);
     dropCollab(collab);
   };
 
-  collab.cleanupTimer = setTimeout(cleanup, yjsCleanupDelayMs);
+  collab.finishTimer = setTimeout(finishIdle, yjsFinishDelayMs);
   return released;
 }
 

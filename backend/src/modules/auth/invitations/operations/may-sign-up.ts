@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { hasLiveSystemInvitationToken } from '#/modules/auth/tokens/tokens-queries';
-import { findPendingInactiveMembershipByEmail } from '#/modules/memberships/inactive-memberships-queries';
+import { findOpenInvitationByEmail } from '#/modules/memberships/invitations-queries';
 
 interface SignUpEmailOpts {
   email: string;
@@ -12,7 +12,7 @@ interface SignUpEmailOpts {
  * its emailed token), or a live system invitation token (a system invite has no membership row).
  */
 export const hasPendingInvitation = async (ctx: DbContext, { email }: SignUpEmailOpts) => {
-  if (await findPendingInactiveMembershipByEmail(ctx, { email })) return true;
+  if (await findOpenInvitationByEmail(ctx, { email })) return true;
 
   return hasLiveSystemInvitationToken(ctx, { email });
 };

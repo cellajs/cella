@@ -1,23 +1,22 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, EntityRole } from 'shared';
-import { declineHolds } from 'shared/decline-hold';
 import type { UserContext } from '#/core/context';
-import { findInactiveMembershipsByEmails } from '#/modules/memberships/inactive-memberships-queries';
+import { findInvitationsByEmails } from '#/modules/memberships/invitations-queries';
 import { findInviteeAccounts } from '#/modules/memberships/memberships-queries';
-import type { inviteOutcomeSchema } from '#/modules/memberships/memberships-schema';
+import type { inviteOutcomeSchema, membershipCheckBodySchema } from '#/modules/memberships/memberships-schema';
+import { getValidChannel } from '#/permissions/get-valid-channel';
+import type { entityWithTypeSchema } from '#/schemas';
 
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;
-type InactiveMembership = Awaited<ReturnType<typeof findInactiveMembershipsByEmails>>[number];
+type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof entityWithTypeSchema>;
+type StoredInvitation = Awaited<ReturnType<typeof findInvitationsByEmails>>[number];
 
-/**
- * One address with what an invite does with it, and the rows the invite acts on. Only `outcome` goes on the wire, where
- * a `declined` one, left alone while its decline holds, reads as the `remind` it was.
- */
+/** One address with what an invite does with it, and the row the invite acts on; only the outcome goes on the wire. */
 export type PlannedAddress =
   | { email: string; outcome: 'invite'; userId: string | null }
   | { email: string; outcome: 'add'; userId: string }
-  | { email: string; outcome: 'remind'; invitation: InactiveMembership }
-  | { email: string; outcome: 'declined'; invitation: InactiveMembership }
+  | { email: string; outcome: 'resend'; invitation: StoredInvitation }
+  | { email: string; outcome: 'declined'; invitation: StoredInvitation }
   | { email: string; outcome: 'member'; role: EntityRole };
 
 interface PlanInvitesInput {
@@ -40,16 +39,16 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
 
   const [accounts, invitations] = await Promise.all([
     findInviteeAccounts(ctx, { emails: uniqueEmails, entityType, entityId: entity.id }),
-    findInactiveMembershipsByEmails(ctx, { emails: uniqueEmails, channelId: entity.id }),
+    findInvitationsByEmails(ctx, { emails: uniqueEmails, channelId: entity.id }),
   ]);
   const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
   const invitationByEmail = new Map(invitations.map((invitation) => [invitation.email, invitation]));
 
   return uniqueEmails.map((email): PlannedAddress => {
-    // A pending invitation goes out again, and a declined one opens again once its decline stops holding.
+    // An invitation goes out again; a declined one stays declined until the sweep removes it.
     const invitation = invitationByEmail.get(email);
-    if (invitation && declineHolds(invitation.declinedAt)) return { email, outcome: 'declined', invitation };
-    if (invitation) return { email, outcome: 'remind', invitation };
+    if (invitation?.status === 'declined') return { email, outcome: 'declined', invitation };
+    if (invitation) return { email, outcome: 'resend', invitation };
 
     const account = accountByEmail.get(email);
     if (!account) return { email, outcome: 'invite', userId: null };
@@ -72,5 +71,18 @@ export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
   if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role };
   if (planned.outcome === 'invite' || planned.outcome === 'add') return { email: planned.email, outcome: planned.outcome };
   const { createdAt, declinedAt } = planned.invitation;
-  return { email: planned.email, outcome: 'remind', invitedAt: createdAt, ...(declinedAt && { declinedAt }) };
+  if (planned.outcome === 'resend') return { email: planned.email, outcome: 'resend', invitedAt: createdAt };
+  return { email: planned.email, outcome: 'declined', invitedAt: createdAt, declinedAt: declinedAt ?? undefined };
+}
+
+/**
+ * What an invite would do with each address, for the invite form to show as addresses are added; nothing is written
+ * or sent. It needs the same `update` an invite does. Every address that is not a member or invited before reads as a
+ * new invitation: whether an organization member joins a channel at once depends on the role picked later.
+ */
+export async function checkInvitesOp(ctx: UserContext, { emails, entityId, entityType }: CheckInvitesInput) {
+  const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
+
+  const plan = await planInvites(ctx, { emails, entity, entityType, held: true });
+  return { outcomes: plan.map((item) => toInviteOutcome(item.outcome === 'add' ? { ...item, outcome: 'invite' } : item)) };
 }

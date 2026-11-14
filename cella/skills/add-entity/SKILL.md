@@ -99,7 +99,7 @@ and the renderers.
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
     `readListPage` passes it, which also opens and issues the page tokens.
-    `seqRangeOf(input)` tells a range read, which reads through `tenantReadIncludingDeleted`, AND-s
+    `seqRangeOf(input)` tells a range read, which reads through `tenantRead` with `includeDeleted`, AND-s
     the `where` of `seqRangeRead(<name>sTable, range)` and orders by its `orderBy`; a normal read
     uses `tenantRead` and hides deleted rows. `resolveCollectionReadFilter` and
     `buildCollectionReadWhere(readFilter, <name>sTable, '<name>', actor)` give the read scope, and a
@@ -107,8 +107,8 @@ and the renderers.
     a range read: a row that leaves the filter would never reach the caches. The rows go out through
     `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and
     the route declares the page with `productListResponseSchema('<name>', <name>Schema)`.
-  - **Delete** (`delete-attachments.ts`): the soft delete stores the body's `stx` ids, or a
-    `createServerStx()` without one, through `stxWithIds(<name>sTable.stx, stx)`.
+  - **Delete** (`delete-attachments.ts`): one call of `deleteProductsOp` with the product's table
+    and the body's `stx`; an `onDelete` callback holds the product's own logic in the transaction.
   - **Single read** (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.

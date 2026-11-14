@@ -5,7 +5,7 @@ import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { isForwardOnlyCounterKey, isPlainCountKey } from '#/modules/entities/counter-keys';
 import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
-import { clearBooksRequest, findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
+import { answerBooksRequest, findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
 import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateId, syncStateTable } from '#/modules/entities/sync-state-db';
 import { resourceLimits } from '../constants';
 import { cdcDb, type Executor } from '../lib/db';
@@ -87,7 +87,7 @@ async function writeIncident(tx: Tx, reason: IncidentReason, details: IncidentDe
   await tx.insert(syncStateTable).values({ id: syncStateId }).onConflictDoNothing();
   const [state] = await tx
     .update(syncStateTable)
-    .set({ generation: nextGeneration, rebuiltAt: sql`now()` })
+    .set({ generation: nextGeneration })
     .where(eq(syncStateTable.id, syncStateId))
     .returning({ generation: syncStateTable.generation });
   await tx.insert(syncIncidentsTable).values({ reason, ...details, generation: state.generation });
@@ -172,7 +172,7 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
           await tx.update(syncStateTable).set({ fence: kept }).where(eq(syncStateTable.id, syncStateId));
           // A rebuild answers a request for one, whatever started it. A verify asked for during another rebuild still gets its
           // own answer; one waiting when a lost slot writes its rebuild request is replaced by that rebuild.
-          await clearBooksRequest(tx, 'rebuild');
+          await answerBooksRequest(tx, 'rebuild');
           return next;
         },
         { isolationLevel: 'repeatable read' },
@@ -197,8 +197,8 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
 /**
  * Checks the books against the tables while the worker reads on. The snapshot is taken exactly between two flushes;
  * the recount runs beside the stream, and the comparison waits until the stream has passed the snapshot. A verify only
- * detects: when the books are right nothing but `verified_at` is written, and when they differ the books are rebuilt,
- * with the differences in the incident.
+ * detects: when the books are right it writes nothing but the answer to a verify request, and when they differ the books
+ * are rebuilt, with the differences in the incident.
  * @returns The differences found (empty when the books were right), or null when it could not run or finish.
  */
 export async function verifyBooks(): Promise<SyncCorrection[] | null> {
@@ -243,10 +243,7 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
 
     const differences = compareBooks(stored, counted, fence.close());
     if (differences.length > 0) await rebuildBooks('wrong_books', { corrections: differences });
-    await cdcDb
-      .insert(syncStateTable)
-      .values({ id: syncStateId, verifiedAt: sql`now()` })
-      .onConflictDoUpdate({ target: syncStateTable.id, set: { verifiedAt: sql`now()` } });
+    await answerBooksRequest(cdcDb, 'verify');
     log.info('Sync books verified', { channels: counted.size, differences: differences.length });
     return differences;
   } catch (error) {
@@ -327,7 +324,7 @@ export async function answerBooksRequests(): Promise<void> {
   // A verify that started and gave no answer stays asked for, and waits: a recount that cannot finish must not run
   // back to back.
   if (Date.now() - verifyGaveUpAt < verifyRetryMs) return;
-  if ((await verifyBooks()) !== null) await clearBooksRequest(cdcDb, 'verify');
+  await verifyBooks();
 }
 
 /** Starts the poll for what the worker is asked for: by `pnpm sync:verify`, `pnpm sync:rebuild` or a seed, and by itself once a day. */

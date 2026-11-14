@@ -35,7 +35,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/auth/general/helpers/cookie.ts`: the only module importing `hono/cookie` (`setCookie`, `getCookie`, `deleteCookie`).
   - `backend/src/modules/auth/sessions/`: `operations/{create-session,resolve-session,sign-out,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
   - `backend/src/middlewares/guard/session-cache.ts` (TTL 10 s), `backend/src/middlewares/update-last-seen.ts`.
-  - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-sweep.ts`.
+  - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-recheck.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
   - `backend/src/utils/hash-token.ts` (session lookup by SHA-256 of the token) and `shared/src/utils/safe-equal.ts` (hash both sides, then `timingSafeEqual`).
   - `cella/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
@@ -44,7 +44,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `session-model`: a forged secret via a cached session id, the stored hash replayed as a cookie, an expired session via a warm cache, a failed lookup that must not sign out.
   - `session-cache-race`: a revoked session kept by an in-flight lookup.
   - `session-endings`: sign-out, revoke from another device, MFA on, cap eviction, same-browser replace, deleted account; the open stream and cache entry die with the session.
-  - `session-sweep`: a session revoked on another instance, expired, user deleted outside the API.
+  - `session-recheck`: a session revoked on another instance, expired, user deleted outside the API.
   - `tests/sign-in/session-cap` (oldest beyond the cap evicted) and `tests/sign-in/sign-out` (a forged cookie naming the victim's session id revokes nothing).
   - `auth/tokens/token-policies.test.ts`: SameSite per policy.
 - **Asks:** every `setCookie` call's name and attribute values against the five advisories (does any value come from a request?); a new session id at sign-in; what a stolen cookie does after sign-out.
@@ -159,13 +159,13 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Files:**
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
   - `backend/src/permissions/`: `get-valid-product.ts`, `get-valid-channel.ts` (re-exported by `index.ts`), `row-predicates.ts` (`buildCollectionReadWhere`), `collection-scope.ts`, `split-by-permission.ts`, `view-read-status.ts` (`resolveViewReadStatus`), `channel-collection-scope.ts`.
-  - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantReadAs`, `tenantReadUnlessInTransaction`).
+  - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantContext`).
   - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`.
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).
   - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/middlewares/guard/relatable-guard.ts`.
   - Activities: no read route, and no API code reads the table.
-  - Callers: `getValidProduct` in `modules/attachment/operations/{get-attachment,update-attachment,link-attachment-keys}.ts` and `authorize-yjs-editor.ts`; `getValidChannel` in organization, memberships (`get-members`, `get-pending-memberships`, `check-invites`, `create-memberships`, `delete-memberships`, `update-membership`, `resend-pending-invitation`, `withdraw-pending-invitation`) and service-accounts operations; `resolveCollectionReadFilter` in the attachments list, `get-unseen-counts.ts`, `mark-seen.ts`, `propagation-hints.ts`, `view-read-status.ts`; `splitByPermission` in `delete-attachments.ts`, `delete-organizations.ts`; `filterExistingProductIds` in `entities/embedding-queries.ts`; `checkAccessFanout` in `notification/operations/fan-out.ts`.
+  - Callers: `getValidProduct` in `modules/attachment/operations/{get-attachment,update-attachment,link-attachment-keys}.ts` and `authorize-yjs-editor.ts`; `getValidChannel` in organization, memberships (`get-members`, `list-invitations`, `plan-invites`, `create-memberships`, `delete-memberships`, `update-membership`, `resend-pending-invitation`, `withdraw-pending-invitation`) and service-accounts operations; `resolveCollectionReadFilter` in the attachments list, `get-unseen-counts.ts`, `mark-seen.ts`, `propagation-hints.ts`, `view-read-status.ts`; `splitByPermission` in `delete-attachments.ts`, `delete-organizations.ts`; `filterExistingProductIds` in `entities/embedding-queries.ts`; `checkAccessFanout` in `notification/operations/fan-out.ts`.
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
 - **Holds:**
   - `cross-tenant`: a user of tenant A listing or reading tenant B attachments and organization, or signing tenant A's attachment from B's session.
@@ -192,7 +192,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
   - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
-  - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
+  - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/leave-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
   - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control. Deleting the organization frees the account; an organization whose other members have no proven address goes with it.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
@@ -226,7 +226,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B4 Stream fan-out
 - **Gain:** cross-tenant read by fan-out, denial of service.
-- **Merges:** `accessDecisions` per change and per signal, a change sent too wide, a signal's ids as an existence leak, a membership change mid-stream, a session end closing the stream, the stream sweep, CR or LF in `frame.event` and `id` passed to `writeSSE`, the subscriber cap (`streamConnectLimiter`), catchup frontiers (`opaque`, `forbidden`), propagation hints, the `pg_notify` payload.
+- **Merges:** `accessDecisions` per change and per signal, a change sent too wide, a signal's ids as an existence leak, a membership change mid-stream, a session end closing the stream, the stream session recheck, CR or LF in `frame.event` and `id` passed to `writeSSE`, the subscriber cap (`streamConnectLimiter`), catchup frontiers (`opaque`, `forbidden`), propagation hints, the `pg_notify` payload.
 - **Advisories:** 1 (hono SSE control-field injection through CR or LF).
 - **Files:**
   - `backend/src/modules/entities/stream/`: audiences, build-change, helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
@@ -235,13 +235,13 @@ One class is one review iteration. The scout verifies every path below at the re
   - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
   - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every stream on a new generation).
-  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `endOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
+  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `closeStreamsWhere`, `closeOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-recheck.ts` (60 s recheck).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{stream-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
 - **Holds:**
   - `session-endings`: a signed-out, revoked, evicted, replaced, MFA-superseded or deleted-account session keeps streaming.
-  - `session-sweep`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the sweep.
+  - `session-recheck`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the recheck.
   - `outside-writes`: a removed member keeps reading through a cached session after a CDC membership event; the bindings version moves at every membership write.
   - `entities/stream/dispatch-mirror.test.ts`: a removed member still receives, draft rows reach anyone, a several-row event misses its second-row reader.
   - `entities/stream/send-signal.test.ts`: a signal reaching another user, a stream whose membership is gone, another organization or an undeclared type.
@@ -249,7 +249,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/catchup-baseline`: numbers for a foreign org or a mismatched path. `tests/catchup-propagation`: a hint names an unreadable row. `tests/sync-generation`: generation read as the API role.
   - `tests/attachment-notifications`: a mention reaches an account without read access. `tests/integration/cdc-event-bus`: two memberships removed in one transaction arrive as one event.
   - `entities/stream/helpers.test.ts`: the heartbeat is a named event and stops with the stream.
-- **Asks:** the fan-out table (change kind x subscriber relation -> frame or nothing); where event names and ids come from; what an archived tenant's subscribers still receive; the per-user subscriber cap.
+- **Asks:** the fan-out table (change kind x subscriber relation -> frame or nothing); where event names and ids come from; what a deleted tenant's subscribers still receive; the per-user subscriber cap.
 - **Not this class:** object-level reads and range reads belong to B1. The CDC secret and the internal listener belong to the `internal-listener` test and A6. Sign-up pace and account creation belong to the A classes. The `pg_notify` of the Yjs log and the relay belong to B5. Invitation visibility as a property belongs to B3. Frontend handling of frames (`frontend/src/query/realtime/`) is client code.
 
 ### B5 Collaborative documents

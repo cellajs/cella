@@ -143,7 +143,7 @@ describe('Notification access', async () => {
   // Each test starts from unread, unmailed rows and users who never had a digest.
   beforeEach(async () => {
     const users = [leaver.id, stayer.id];
-    await db.update(notificationsTable).set({ emailedAt: null, readAt: null }).where(inArray(notificationsTable.userId, users));
+    await db.update(notificationsTable).set({ mailedAt: null, readAt: null }).where(inArray(notificationsTable.userId, users));
     await db.update(notificationPreferencesTable).set({ lastDigestAt: null }).where(inArray(notificationPreferencesTable.userId, users));
   });
 

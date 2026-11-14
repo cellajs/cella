@@ -532,9 +532,9 @@ export type MembershipBase = {
 export type InviteOutcome = {
   email: string;
   /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   * `invite`: a new invitation. `resend`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out. `declined`: the invitee declined, and the address cannot be invited again before the sweep removes the invitation, `retention.declinedInvitationHoldDays` after the decline.
    */
-  outcome: 'invite' | 'remind' | 'add' | 'member';
+  outcome: 'invite' | 'resend' | 'add' | 'member' | 'declined';
   invitedAt?: string;
   declinedAt?: string;
   role?: 'admin' | 'member';
@@ -778,7 +778,7 @@ export type Tenant = {
    * What the tenant is for: `live` serves customers, `test` staff and automated runs, `demo` a visitor.
    */
   kind: 'live' | 'test' | 'demo';
-  status: 'active' | 'suspended' | 'archived';
+  status: 'active' | 'suspended' | 'deleted';
   statusChangedAt: string;
   /**
    * When the tenant goes with everything in it; a demo always carries one.
@@ -801,7 +801,7 @@ export type Tenant = {
        */
       apiPointsPerHour: number;
       /**
-       * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+       * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
        */
       invitationEmailsPerDay: number;
     };
@@ -1750,7 +1750,7 @@ export type GetTokenDataResponses = {
   200: {
     email: string;
     userId?: string;
-    inactiveMembershipId?: string;
+    invitationId?: string;
     ssoConnectionId?: string;
     /**
      * Name of the user who sent an invitation, for a system invitation too
@@ -3754,8 +3754,26 @@ export type ListMyInvitationsResponses = {
       /**
        * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
        */
-      inactiveMembership: {
+      invitation: {
         createdAt: string;
+        createdBy: ActorRef;
+        updatedAt: string | null;
+        updatedBy:
+          | {
+              id: string;
+              name: string;
+              thumbnailUrl: string | null;
+              kind: 'user';
+              slug: string;
+            }
+          | {
+              id: string;
+              name: string;
+              thumbnailUrl: string | null;
+              kind: 'service';
+              slug: null;
+            }
+          | null;
         id: string;
         tenantId: string;
         channelType: 'organization';
@@ -3763,9 +3781,10 @@ export type ListMyInvitationsResponses = {
         email: string;
         userId: string | null;
         role: 'admin' | 'member';
+        status: 'held' | 'pending' | 'declined';
+        statusChangedAt: string;
         declinedAt: string | null;
-        remindedAt: string | null;
-        createdBy: ActorRef;
+        mailedAt: string | null;
         organizationId: string;
       };
       /**
@@ -4001,7 +4020,7 @@ export type LeaveMembershipError = LeaveMembershipErrors[keyof LeaveMembershipEr
 
 export type LeaveMembershipResponses = {
   /**
-   * Membership removed
+   * Membership left
    */
   204: void;
 };
@@ -4505,13 +4524,14 @@ export type UpdateMembershipResponses = {
    * Membership updated
    */
   200: {
-    createdAt: string;
     id: string;
     tenantId: string;
     channelType: 'organization';
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
+    organizationId: string;
+    createdAt: string;
     createdBy:
       | {
           id: string;
@@ -4545,7 +4565,6 @@ export type UpdateMembershipResponses = {
           slug: null;
         }
       | null;
-    organizationId: string;
     hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
@@ -4748,15 +4767,16 @@ export type ListInvitationsError = ListInvitationsErrors[keyof ListInvitationsEr
 
 export type ListInvitationsResponses = {
   /**
-   * Pending memberships
+   * Invitations
    */
   200: {
     results: Array<{
       id: string;
       email: string;
       role: 'admin' | 'member';
+      status: 'held' | 'pending' | 'declined';
       createdAt: string;
-      remindedAt: string | null;
+      mailedAt: string | null;
       linkExpiresAt: string | null;
       createdBy: ActorRef;
     }>;
@@ -5716,7 +5736,6 @@ export type GetPushVapidResponse = GetPushVapidResponses[keyof GetPushVapidRespo
 export type CreatePushSubscriptionData = {
   body: {
     endpoint: string;
-    expirationTime?: number | null;
     keys: {
       p256dh: string;
       auth: string;
@@ -5796,13 +5815,9 @@ export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof Rem
 
 export type RemovePushSubscriptionResponses = {
   /**
-   * Subscriptions removed
-   *
-   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
+   * Subscription removed
    */
-  200: {
-    deleted: number;
-  };
+  204: void;
 };
 
 export type RemovePushSubscriptionResponse = RemovePushSubscriptionResponses[keyof RemovePushSubscriptionResponses];
@@ -6562,10 +6577,6 @@ export type BatchDeleteUsersErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
    * Conflict
    */
   409: ConflictError;
@@ -6789,7 +6800,7 @@ export type ListTenantsData = {
     /**
      * Filter by status
      */
-    status?: 'active' | 'suspended' | 'archived';
+    status?: 'active' | 'suspended' | 'deleted';
     /**
      * Kinds to list, comma-separated (`live`, `test`, `demo`); absent lists the kinds the app lists by default.
      */
@@ -6888,7 +6899,7 @@ export type UpdateTenantData = {
      * `live` or `test`: a demo is never made or unmade by an update.
      */
     kind?: 'live' | 'test' | 'demo';
-    status?: 'active' | 'suspended' | 'archived';
+    status?: 'active' | 'suspended' | 'deleted';
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
@@ -6910,7 +6921,7 @@ export type UpdateTenantData = {
          */
         apiPointsPerHour?: number | null;
         /**
-         * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+         * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
          */
         invitationEmailsPerDay?: number | null;
       } | null;

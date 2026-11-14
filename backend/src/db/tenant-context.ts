@@ -63,37 +63,27 @@ export const tenantReadById = <T>(tenantId: string, fn: (tx: DbOrTx) => Promise<
 export const tenantContextById = <T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> =>
   tenantTransaction({ tenantId, includeDeleted: false }, false, fn);
 
-/**
- * `tenantRead` with an explicit tenant id, for cross-tenant routes (bare `baseDb`, no
- * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
- * list whose per-row subqueries read RLS-guarded product tables.
- */
-export const tenantReadAs = <T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, tenantId, false, true, fn);
-
-/** `tenantReadAs` that also reads soft-deleted rows (`app.include_deleted`), for a delta read on a route without `tenantGuard`. */
-export const tenantReadAsIncludingDeleted = <T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, tenantId, true, true, fn);
-
-/** Read-only tenant RLS transaction for normal product queries. */
-export const tenantRead = <T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, ctx.var.tenantId, false, true, fn);
+/** Which tenant a request transaction runs as, and whether it reaches soft-deleted rows. */
+type RequestTransactionOptions = {
+  /** The tenant a route without `tenantGuard` resolved itself, such as an org-scoped list on bare `baseDb`. Default: `ctx.var.tenantId`. */
+  tenantId?: string;
+  /** Sets `app.include_deleted`: reads see tombstones, and an UPDATE's WHERE reaches them, since the select policy filters it too. */
+  includeDeleted?: boolean;
+};
 
 /**
- * `tenantRead` for a caller on the bare pool, which carries no RLS session context. A caller that already holds a
- * tenant transaction (a write that reads the rows it changes, with `forUpdate`) reads in it.
+ * Read-only tenant RLS transaction for a request's product reads. A write reads the rows it changes (`forUpdate`
+ * included) in a savepoint of its own tenant transaction.
  */
-export const tenantReadUnlessInTransaction = <T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> =>
-  ctx.var.db === baseDb ? tenantRead(ctx, fn) : fn(ctx);
+export const tenantRead = <T>(
+  ctx: ActorContext,
+  fn: (readCtx: ActorContext) => Promise<T>,
+  { tenantId = ctx.var.tenantId, includeDeleted = false }: RequestTransactionOptions = {},
+): Promise<T> => requestTransaction(ctx, tenantId, includeDeleted, true, fn);
 
-/** `tenantRead` that also reads soft-deleted rows (`app.include_deleted`). */
-export const tenantReadIncludingDeleted = <T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, ctx.var.tenantId, true, true, fn);
-
-/** Read-write RLS transaction for mutation handlers; session vars let RLS SELECT policies pass on RETURNING. */
-export const tenantContext = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, ctx.var.tenantId, false, false, fn);
-
-/** `tenantContext` that also reaches soft-deleted rows (`app.include_deleted`): the select policy filters an UPDATE's WHERE too. */
-export const tenantContextIncludingDeleted = <T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> =>
-  requestTransaction(ctx, ctx.var.tenantId, true, false, fn);
+/** Read-write tenant RLS transaction for a request's writes; the session variables let RLS select policies pass on RETURNING. */
+export const tenantContext = <T>(
+  ctx: ActorContext,
+  fn: (txCtx: ActorContext) => Promise<T>,
+  { tenantId = ctx.var.tenantId, includeDeleted = false }: RequestTransactionOptions = {},
+): Promise<T> => requestTransaction(ctx, tenantId, includeDeleted, false, fn);

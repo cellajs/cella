@@ -221,7 +221,7 @@ describe('compactDocument', () => {
   it("must not touch a document reseeded under another generation than the session's: its log is the new session's", async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('new session', 1));
 
-    expect(await compactDocument(scope, 'gen-retired')).toBe('retired');
+    expect(await compactDocument(scope, 'gen-retired')).toBe('reseeded');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
     expect(storage.logs.get(key)).toHaveLength(1);
@@ -232,13 +232,13 @@ describe('compactDocument', () => {
     const reseed = mapUpdate('reseeded', true);
     vi.mocked(postMaterialize).mockImplementationOnce(async () => {
       // The document is retired and reseeded, under a new generation, before this window's base is written.
-      await storage.deleteDocument(scope);
+      await storage.retireDocument(scope);
       storage.bases.set(key, reseed);
       storage.generations.set(key, 'gen-reseeded');
       return 'ok';
     });
 
-    expect(await compactDocument(scope, 'gen-0')).toBe('retired');
+    expect(await compactDocument(scope, 'gen-0')).toBe('reseeded');
     expect(readMap(storage.bases.get(key)!)).toEqual({ reseeded: true });
   });
 });

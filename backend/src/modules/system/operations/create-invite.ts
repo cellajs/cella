@@ -2,8 +2,9 @@ import type { UserContext } from '#/core/context';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 
 /**
@@ -14,7 +15,6 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
   // The body schema trims and lowercases each address; the set drops repeats.
   const uniqueEmails = [...new Set(emails)];
-  const now = new Date();
 
   const verifiedEmails = await findVerifiedEmails(ctx, { emails: uniqueEmails });
   const pendingTokens = await findSystemInvitationTokens(ctx, { emails: uniqueEmails });
@@ -22,7 +22,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   // An expired invitation's address is invited again.
   const taken = new Set([
     ...verifiedEmails.map((row) => row.email),
-    ...pendingTokens.filter((token) => new Date(token.expiresAt) > now).map((token) => token.email),
+    ...pendingTokens.filter((token) => !isExpiredDate(token.expiresAt)).map((token) => token.email),
   ]);
   const recipientEmails = uniqueEmails.filter((email) => !taken.has(email));
   const rejectedIds = uniqueEmails.filter((email) => taken.has(email));
@@ -35,7 +35,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
     recipientEmails.map((email) => ({ kind: 'invitation' as const, email, createdBy: user.id })),
   );
 
-  await Promise.all(issued.map(({ token }) => stampWaitlistRequestInvited(ctx, { email: token.email })));
+  await Promise.all(issued.map(({ token }) => stampWaitlistRequestMailed(ctx, { email: token.email })));
 
   // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
   // goes out in the app's language.

@@ -11,7 +11,7 @@ import { exchangeFederationCode } from '#/modules/auth/sso/helpers/federation-cl
 import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -210,7 +210,7 @@ describe('SSO sign-in through an institution', async () => {
       provider: 'surfconext',
       subject,
       email: studentEmail,
-      verified: true,
+      verifiedAt: expect.any(String),
       connectionId: connection.id,
     });
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['student', 'member'], acr: claimsOf().acr });
@@ -235,7 +235,7 @@ describe('SSO sign-in through an institution', async () => {
 
     expect(await getUserByEmail(studentEmail)).toHaveLength(1);
     const [identity] = await identitiesOf(user.id);
-    expect(identity.lastUsedAt).not.toBeNull();
+    expect(identity.lastSignInAt).not.toBeNull();
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['employee', 'member'] });
     expect(await membershipsOf(user.id)).toHaveLength(1);
   });
@@ -300,7 +300,7 @@ describe('SSO sign-in through an institution', async () => {
     const inviter = await createTestUser('admin@victim.example');
     const foreign = 'ceo@victim.example';
     const { inactiveMembership } = await createInvitation({ organization: victim, email: foreign, createdBy: inviter.id });
-    const invitee = async (id: string) => (await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0].userId;
+    const invitee = async (id: string) => (await db.select().from(invitationsTable).where(eq(invitationsTable.id, id)))[0].userId;
     const ledgerOf = (email: string) => db.select().from(emailsTable).where(eq(emailsTable.email, email));
 
     // A first sign-in is refused before any account holds the address, with the offer to prove the inbox by mail.
@@ -375,7 +375,7 @@ describe('SSO sign-in through an institution', async () => {
     const [user] = await getUserByEmail(studentEmail);
 
     // The invitation into the organization is bound to the new account and names the role; the sign-in grants no membership of its own.
-    const [bound] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [bound] = await db.select().from(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
     expect(bound.userId).toBe(user.id);
     expect(await membershipsOf(user.id)).toHaveLength(0);
   });
@@ -417,7 +417,7 @@ describe('SSO sign-in through an institution', async () => {
       expect(response.status).toBe(302);
       expect(cookieChange(response, 'session')).toBe('set');
       expect(await identitiesOf(user.id)).toMatchObject([
-        { kind: 'sso', provider: 'surfconext', subject: 'lars-subject', verified: true, connectionId: connection.id },
+        { kind: 'sso', provider: 'surfconext', subject: 'lars-subject', verifiedAt: expect.any(String), connectionId: connection.id },
       ]);
       // The institution operates the mailbox it asserts: the address joins the account's ledger.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'lars@student.hu.nl'))).toMatchObject([

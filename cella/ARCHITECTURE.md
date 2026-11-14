@@ -101,16 +101,17 @@ The API and the optional Yjs relay share one permission engine in `shared/`. The
 What a delete or an archive does depends on the entity:
 
 - **Product**: a hidden tombstone until the deleted-items period ends.
-- **Organization**: deleting it archives its tenant and ends access at once.
-- **Archived tenant**: removed with everything in it after the archived period.
+- **Organization**: deleting it marks its tenant deleted and ends access at once.
+- **Deleted tenant**: removed with everything in it after the deleted-tenant period, restorable until then.
 - **Nested channel**: removed at once, with the channels and products in it.
 - **Nested channel, archived**: readable, listed on request and closed to writes until unarchived.
-- **Rows with a period**: sessions, tokens, devices and invitations are swept nightly after it.
+- **Rows with a period**: sessions, tokens, devices, API keys, passkey challenges, OIDC payloads, requests, invitations, rate limits and push subscriptions are swept nightly after it.
+- **Counters**: those of a removed channel or product are swept nightly.
 - **Row of an owned embedding**: deleted as a product once no host references it and its period has passed.
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. Where the database provider allows pg_cron, a nightly job in the database removes rows past their period. On Scaleway it stays unscheduled ([Deployment](./DEPLOYMENT.md#overview)). Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. The jobs worker's nightly `retention` job calls `apply_retention()` over the admin connection, which removes rows past their period. Backups and bucket object versions expire on their own schedule.
 
 ## Contracts
 

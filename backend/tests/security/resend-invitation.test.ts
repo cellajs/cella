@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
@@ -89,7 +89,7 @@ describe('Resend an invitation', async () => {
     expect(tokens).toHaveLength(1);
     const [fresh] = tokens;
     expect(fresh.id).not.toBe(token.id);
-    expect(fresh).toMatchObject({ inactiveMembershipId: inactiveMembership.id, invokedAt: null, singleUseToken: null });
+    expect(fresh).toMatchObject({ invitationId: inactiveMembership.id, redeemedAt: null, singleUseToken: null });
     expect(new Date(fresh.expiresAt).getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
     const rawFresh = mailedRawToken();
     expect(fresh.secretHash).toBe(hashToken(rawFresh));
@@ -138,13 +138,13 @@ describe('Resend an invitation', async () => {
     const tokens = await invitationTokensOf('newcomer@example.com');
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
-    expect(tokens[0]).toMatchObject({ inactiveMembershipId: null, invokedAt: null });
+    expect(tokens[0]).toMatchObject({ invitationId: null, redeemedAt: null });
     expect(tokens[0].secretHash).toBe(hashToken(mailedRawToken()));
   });
 
   it('must not re-mint a declined invitation via resend-invitation', async () => {
     const { token, inactiveMembership } = await expiredInvitation();
-    await db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(invitationsTable).set({ status: 'declined', declinedAt: getIsoDate() }).where(eq(invitationsTable.id, inactiveMembership.id));
 
     const { response } = await resend({ tokenId: token.id });
 
@@ -156,7 +156,7 @@ describe('Resend an invitation', async () => {
   it('must not re-mint an accepted or revoked invitation via resend-invitation', async () => {
     const { token, inactiveMembership } = await expiredInvitation();
     // Accepting deletes the invitation row, and so does deleting its channel; its links go with the row.
-    await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.delete(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
     expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
 
     const { response } = await resend({ tokenId: token.id });
@@ -203,7 +203,7 @@ describe('Resend an invitation', async () => {
       rowDeleted = resolve;
     });
     const answer = db.transaction(async (tx) => {
-      await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+      await tx.delete(invitationsTable).where(eq(invitationsTable.id, inactiveMembership.id));
       rowDeleted();
       await released;
     });
@@ -223,7 +223,7 @@ describe('Resend an invitation', async () => {
     });
     await vi.waitFor(async () => {
       const { rows } = await db.execute<{ waiting: number }>(
-        sql`select count(*)::int as waiting from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and query ilike '%from "inactive_memberships"%for update%'`,
+        sql`select count(*)::int as waiting from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and query ilike '%from "invitations"%for update%'`,
       );
       expect(rows[0].waiting).toBe(1);
     });
@@ -232,7 +232,7 @@ describe('Resend an invitation', async () => {
 
     const { response, data } = await reminder;
     expect(response.status).toBe(200);
-    expect(data).toMatchObject({ outcomes: [{ email: invitedEmail, outcome: 'remind' }] });
+    expect(data).toMatchObject({ outcomes: [{ email: invitedEmail, outcome: 'resend' }] });
     expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
   });
@@ -294,33 +294,27 @@ describe('Resend a pending invitation from the pending list', async () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
     expect(tokens[0].secretHash).toBe(hashToken(mailedRawToken()));
-    // The resend is the invitation's last mail: a dispatch of held invitations leaves it alone.
-    const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.invitationId));
-    expect(resent.remindedAt).not.toBeNull();
+    const [resent] = await db.select().from(invitationsTable).where(eq(invitationsTable.id, path.invitationId));
+    expect(resent.mailedAt).not.toBeNull();
   });
 
   it('gives the address its day back when the resend mail fails, so the next resend goes out', async () => {
     const { headers, path } = await setup();
-    const remindedAt = async () =>
-      (
-        await db
-          .select({ remindedAt: inactiveMembershipsTable.remindedAt })
-          .from(inactiveMembershipsTable)
-          .where(eq(inactiveMembershipsTable.id, path.invitationId))
-      )[0].remindedAt;
+    const mailedAt = async () =>
+      (await db.select({ mailedAt: invitationsTable.mailedAt }).from(invitationsTable).where(eq(invitationsTable.id, path.invitationId)))[0].mailedAt;
 
     failNextMailSend();
     expect((await call(resendInvitation, { path, headers })).response.status).toBe(204);
-    expect(await remindedAt()).toBeNull();
+    expect(await mailedAt()).toBeNull();
 
     expect((await call(resendInvitation, { path, headers })).response.status).toBe(204);
     expect(mailer.sendEmails).toHaveBeenCalledTimes(2);
-    expect(await remindedAt()).not.toBeNull();
+    expect(await mailedAt()).not.toBeNull();
   });
 
   it('must not re-mint a declined invitation via the pending list', async () => {
     const { headers, path, token, inactiveMembership } = await setup();
-    await db.update(inactiveMembershipsTable).set({ declinedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(invitationsTable).set({ status: 'declined', declinedAt: getIsoDate() }).where(eq(invitationsTable.id, inactiveMembership.id));
 
     const { response, error } = await call(resendInvitation, { path, headers });
 

@@ -33,9 +33,9 @@ export const systemRoutes = createXRoutes(['system', 'cella'], {
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete users',
     description:
-      "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
+      "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable. An ID that names no user comes back in `rejectedIds`.",
     request: { body: jsonBody(idsBodySchema()) },
-    responses: { 200: json('Success', batchResponseSchema()), ...errors(404, 409) },
+    responses: { 200: json('Success', batchResponseSchema()), ...errors(409) },
   }),
   updateUser: xRoute({
     method: 'patch',

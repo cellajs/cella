@@ -2,7 +2,7 @@ import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ResourceType } from 'shared';
 import { channelTables } from '#/db/channel-tables';
 import { productTables } from '#/db/product-tables';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { requestsTable } from '#/modules/requests/requests-db';
@@ -36,7 +36,7 @@ export const entityTables = {
 export const resourceTables = {
   request: requestsTable,
   membership: membershipsTable,
-  inactive_membership: inactiveMembershipsTable,
+  invitation: invitationsTable,
   tenant: tenantsTable,
   system_role: systemRolesTable,
   service_account: serviceAccountsTable,

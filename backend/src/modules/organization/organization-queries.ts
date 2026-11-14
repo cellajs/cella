@@ -32,7 +32,7 @@ export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: {
 };
 
 /**
- * The organizations, in tenants not archived yet, that deleting the accounts of `userIds` would leave without an admin
+ * The organizations, in tenants not deleted yet, that deleting the accounts of `userIds` would leave without an admin
  * and with no one to make one: every admin is among them, and no other member has a proven address. Sample and
  * anonymous accounts have none.
  */
@@ -56,7 +56,7 @@ export const findOrganizationsHeldOnlyBy = async (ctx: DbContext, { userIds }: {
     )
     .where(
       and(
-        ne(tenantsTable.status, 'archived'),
+        ne(tenantsTable.status, 'deleted'),
         notExists(
           ctx.var.db
             .select({ id: others.id })
@@ -130,8 +130,8 @@ interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizatio
 }
 
 /**
- * A page of organizations with its total: with `isSystemAdmin` every organization, archived tenants included; otherwise
- * the ones `targetUserId` is a member of, without archived tenants.
+ * A page of organizations with its total: with `isSystemAdmin` every organization, deleted tenants included; otherwise
+ * the ones `targetUserId` is a member of, without deleted tenants.
  */
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
@@ -151,12 +151,12 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 
   const search = searchFilter([organizationsTable.name], q);
-  // Org-only filters belong in WHERE (safe for both admin + non-admin); an archived tenant's organization lists for system admins only.
+  // Org-only filters belong in WHERE (safe for both admin + non-admin); a deleted tenant's organization lists for system admins only.
   const orgWhere: SQL[] = [
     ...(isSystemAdmin
       ? []
       : [
-          sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${organizationsTable.tenantId} AND ${tenantsTable.status} = 'archived')`,
+          sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${organizationsTable.tenantId} AND ${tenantsTable.status} = 'deleted')`,
         ]),
     ...(search ? [search] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),

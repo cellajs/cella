@@ -7,7 +7,7 @@ import { zUpdateTenantBody } from 'sdk/zod.gen';
 import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
@@ -31,7 +31,7 @@ const toFormValues = (tenant: Tenant): FormValues => ({
   authStrategies: tenant.authStrategies,
 });
 
-export const statusOptions = ['active', 'suspended', 'archived'] as const;
+export const statusOptions = ['active', 'suspended', 'deleted'] as const;
 
 /** The kinds an admin moves a tenant between; a demo is made by its own route and stays one. */
 const kindOptions = ['live', 'test'] as const;

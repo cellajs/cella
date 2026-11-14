@@ -1,4 +1,4 @@
-import { and, countDistinct, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, countDistinct, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenKind } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type CodeTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
@@ -36,8 +36,7 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
  * An unexpired system invitation: one with no membership row. A membership invitation's token counts for nothing here:
  * its row decides, and its tokens go with the row.
  */
-const liveSystemInvitation = () =>
-  and(eq(tokensTable.kind, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
+const liveSystemInvitation = () => and(eq(tokensTable.kind, 'invitation'), isNull(tokensTable.invitationId), gt(tokensTable.expiresAt, getIsoDate()));
 
 /** Whether an unexpired system invitation is addressed to `email`. */
 export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: { email: string }) => {
@@ -58,24 +57,19 @@ export const countLiveSystemInvitations = async (ctx: DbContext) => {
   return row.count;
 };
 
-/** The unopened system invitations (no membership row) addressed to any of `emails`, expired ones included. */
+/** The unredeemed system invitations (no membership row) addressed to any of `emails`, expired ones included. */
 export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { emails: string[] }) =>
   ctx.var.db
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
     .from(tokensTable)
     .where(
-      and(
-        inArray(tokensTable.email, emails),
-        eq(tokensTable.kind, 'invitation'),
-        isNull(tokensTable.inactiveMembershipId),
-        isNull(tokensTable.invokedAt),
-      ),
+      and(inArray(tokensTable.email, emails), eq(tokensTable.kind, 'invitation'), isNull(tokensTable.invitationId), isNull(tokensTable.redeemedAt)),
     );
 
 /** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
-export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: { inactiveMembershipIds: string[] }) => {
-  if (!inactiveMembershipIds.length) return;
-  await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
+export const deleteInvitationTokens = async (ctx: DbContext, { invitationIds }: { invitationIds: string[] }) => {
+  if (!invitationIds.length) return;
+  await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.invitationId, invitationIds));
 };
 
 /** Binds a token issued without an account to the account its sign-up link's redemption created; undefined when the token is bound already. */
@@ -90,7 +84,7 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: { id: stri
 
 /** What decides which earlier tokens a new one replaces. */
 type ReplacingToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'inactiveMembershipId' | 'pendingSignUp' | 'sessionId'>>;
+  Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'invitationId' | 'pendingSignUp' | 'sessionId'>>;
 
 /**
  * Per token kind, the subject whose earlier tokens of that kind a new one deletes, so only the newest one for it works;
@@ -111,9 +105,7 @@ const replacementSubjects = {
   },
   // Its membership invitation, or its address for a system invitation.
   invitation: (token) =>
-    token.inactiveMembershipId
-      ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
-      : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
+    token.invitationId ? eq(tokensTable.invitationId, token.invitationId) : and(eq(tokensTable.email, token.email), isNull(tokensTable.invitationId)),
   // One connect pin per account at a time.
   'oauth-connect': (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
   // One code per session at a time.
@@ -152,14 +144,9 @@ export const findLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkToke
   return token;
 };
 
-/** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
-export const deleteUnopenedLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts) => {
-  await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.invokedAt)));
-};
-
-/** Deletes the user's opened links of `kind`, so no browser holding a single-use cookie for one opens it again. */
-export const deleteOpenedLinkTokens = async (ctx: DbContext, { kind, userId }: { kind: LinkTokenKind; userId: string }) => {
-  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.kind, kind), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
+/** Deletes the unredeemed link a raw value names: neither its URL nor a confirmation page redeems it any more. */
+export const deleteUnredeemedLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts) => {
+  await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.redeemedAt)));
 };
 
 interface UpdateTokenRedeemedOpts {
@@ -171,16 +158,21 @@ interface UpdateTokenRedeemedOpts {
 }
 
 /**
- * Redeems an unopened token now: a compare-and-set on `invokedAt IS NULL`, so of two concurrent redemptions exactly
+ * Redeems an unredeemed token now: a compare-and-set on `redeemedAt IS NULL`, so of two concurrent redemptions exactly
  * one gets the row. Undefined for the one that lost.
  */
 export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, expiresAt }: UpdateTokenRedeemedOpts) => {
   const [redeemed] = await ctx.var.db
     .update(tokensTable)
-    .set({ singleUseToken, invokedAt: getIsoDate(), expiresAt })
-    .where(and(eq(tokensTable.id, id), isNull(tokensTable.invokedAt)))
+    .set({ singleUseToken, redeemedAt: getIsoDate(), expiresAt })
+    .where(and(eq(tokensTable.id, id), isNull(tokensTable.redeemedAt)))
     .returning(tokenColumns);
   return redeemed;
+};
+
+/** Unbinds a redeemed token from the browser that redeemed it: no single-use cookie names it any more. */
+export const updateTokenSpent = async (ctx: DbContext, { id }: { id: string }) => {
+  await ctx.var.db.update(tokensTable).set({ singleUseToken: null }).where(eq(tokensTable.id, id));
 };
 
 /**

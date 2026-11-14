@@ -6,7 +6,7 @@ import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { federationRefSchema } from '#/modules/auth/sso/sso-schema';
 import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from '#/modules/me/me-mocks';
-import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
+import { inviteeInvitationSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersSchema, userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import { validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
@@ -94,7 +94,7 @@ export const myInvitationParamSchema = z.object({ invitationId: validIdSchema })
 
 export const mePendingInvitationSchema = z.object({
   entity: channelBaseSchema,
-  inactiveMembership: inactiveMembershipSchema,
+  invitation: inviteeInvitationSchema,
   organizationName: z
     .string()
     .nullable()

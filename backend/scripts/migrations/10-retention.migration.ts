@@ -1,6 +1,7 @@
 import { getColumns, getTableName } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
+import { channelTables } from '#/db/channel-tables';
 import { appPartitionConfigs, productTables } from '#/db/product-tables';
 import type { PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
@@ -25,33 +26,52 @@ export const partitionConfigs: PartitionConfig[] = [
   ...appPartitionConfigs.map(({ table, ...config }) => ({ name: getTableName(table), ...config })),
 ];
 
+/** The condition under which `column` of the swept table names no row of any of `tables`; true without a table. */
+const namesNoRowOf = (tables: string[], column: string, cast = ''): string =>
+  tables.map((table) => `NOT EXISTS (SELECT 1 FROM ${table} r WHERE r.id${cast} = ${column})`).join(' AND ') || 'true';
+
+const channelTableNames = Object.values(channelTables).map((table) => getTableName(table()));
+
+/** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
+const tombstoneTables = Object.values(productTables).map((table) => getTableName(table()));
+
 /**
  * Plain tables swept row by row by the same procedure: too small to justify partitions, and a plain `id` primary key
  * keeps them referenceable. `aged` is the condition under which a row goes.
  */
 const sweepRules: { table: string; aged: string }[] = [
-  { table: 'sessions', aged: `expires_at < now() - ${days(retention.sessionDaysAfterExpiry)}` },
+  { table: 'sessions', aged: `coalesce(revoked_at, expires_at) < now() - ${days(retention.sessionDaysAfterExpiry)}` },
   { table: 'tokens', aged: `expires_at < now() - ${days(retention.tokenDaysAfterExpiry)}` },
-  { table: 'devices', aged: `last_seen_at < now() - ${days(retention.deviceDaysUnseen)}` },
+  { table: 'devices', aged: `last_sign_in_at < now() - ${days(retention.deviceDaysSinceSignIn)}` },
   {
     table: 'devices',
     aged: `(user_id, device_id_hash) IN (SELECT user_id, device_id_hash FROM (SELECT user_id, device_id_hash,
-      row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC) AS position FROM devices) ranked
-      WHERE position > ${retention.devicesPerUser})`,
+      row_number() OVER (PARTITION BY user_id ORDER BY last_sign_in_at DESC) AS position FROM devices) ranked
+      WHERE position > ${appConfig.maxDevicesPerUser})`,
   },
+  { table: 'api_keys', aged: `coalesce(revoked_at, expires_at) < now() - ${days(retention.apiKeyDaysAfterEnd)}` },
+  { table: 'passkey_challenges', aged: 'expires_at < now()' },
   { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },
   { table: 'requests', aged: `created_at < now() - ${days(retention.requestDays)}` },
-  // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
+  // A pending invitation ages from its last mail, or from its creation when none went out. A declined one goes when
+  // its hold ends. A held one never ages: it goes with its draft channel.
   {
-    table: 'inactive_memberships',
-    aged: `declined_at < now() - ${days(retention.invitationDays)} OR (declined_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
+    table: 'invitations',
+    aged: `(status = 'pending' AND coalesce(mailed_at, created_at) < now() - ${days(retention.invitationDays)})
+      OR (status = 'declined' AND status_changed_at < now() - ${days(retention.declinedInvitationHoldDays)})`,
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
+  {
+    table: 'push_subscriptions',
+    aged: `id IN (SELECT id FROM (SELECT id,
+      row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC, id DESC) AS position FROM push_subscriptions) ranked
+      WHERE position > ${appConfig.maxPushSubscriptionsPerUser})`,
+  },
+  // Counters of a removed channel or product: the CDC worker writes them and nothing else deletes them.
+  { table: 'channel_counters', aged: namesNoRowOf(channelTableNames, 'channel_counters.channel_key', '::text') },
+  { table: 'product_counters', aged: namesNoRowOf(tombstoneTables, 'product_counters.product_id') },
 ];
-
-/** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
-const tombstoneTables = Object.values(productTables).map((table) => getTableName(table()));
 
 /** Tombstones one batch removes; a commit between batches keeps each transaction small for the CDC worker. */
 const tombstoneBatchSize = 1000;
@@ -82,7 +102,6 @@ function resolveUnreferencedRules(): UnreferencedRule[] {
         const hostTable = productTables[hostProductType]();
         // Widened for the column the config names.
         const columns: Record<string, AnyPgColumn> = getColumns(hostTable);
-        // A hydrated single reference keeps `<hostColumn>Id` and no array.
         const column = columns[hostColumn] ?? columns[`${hostColumn}Id`];
         if (!column) throw new Error(`productEmbeddings: column "${hostColumn}" not found on "${hostProductType}" table`);
         return { table: getTableName(hostTable), column: column.name, isArray: hostColumn in columns };
@@ -132,7 +151,7 @@ const unreferencedBlock =
 
   `;
 
-/** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-retention.ts). */
+/** The procedure the jobs worker's nightly `retention` job calls (`runRetention`). */
 export const retentionProcedure = 'apply_retention';
 
 /**
@@ -220,7 +239,6 @@ const generateTombstoneSql = (table: string): string => `LOOP
     DELETE FROM ${table} t USING (
       SELECT d.ctid FROM ${table} d
       WHERE d.deleted_at < now() - ${days(retention.deletedItemsDays)}
-        AND d.seq < coalesce((SELECT (c.counts->>'sequence')::bigint FROM channel_counters c WHERE c.channel_key = d.organization_id::text), 0)
       LIMIT ${tombstoneBatchSize}
     ) due WHERE t.ctid = due.ctid;
     GET DIAGNOSTICS removed = ROW_COUNT;
@@ -287,8 +305,7 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  ${unreferencedBlock}-- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time. The row
-  -- holding its organization's newest sequence position stays: a counter rebuild takes MAX(seq) over the rows.
+  ${unreferencedBlock}-- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time.
   ${tombstoneTables.map(generateTombstoneSql).join('\n  ')}
 
   -- Plain tables: retention by DELETE
@@ -303,9 +320,9 @@ async function run(): Promise<SideEffectBlock> {
 -- Migration: Time-partitioned tables and in-database retention
 -- =============================================================================
 -- Converts the tables below to native range partitions and installs
--- apply_retention(), which pg_cron runs nightly (see
--- scripts/db/schedule-retention.ts) to create partitions ahead, drop those
--- past retention and sweep the plain tables. No extension is needed here.
+-- apply_retention(), which the jobs worker's nightly retention job calls
+-- over the admin connection to create partitions ahead, drop those past
+-- retention and sweep the plain tables. No extension is needed here.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -326,7 +343,7 @@ ${partitionConfigs
 DROP EXTENSION IF EXISTS pg_partman CASCADE;
 DROP SCHEMA IF EXISTS partman CASCADE;
 
--- The procedure's earlier name, and its signature without arguments; the schedule script moves the pg_cron job over.
+-- The procedure's earlier name, and its signature without arguments.
 DROP PROCEDURE IF EXISTS public.maintain_partitions();
 DROP PROCEDURE IF EXISTS public.apply_retention();
 

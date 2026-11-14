@@ -769,9 +769,9 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Invoke token session
+ * Redeem a link token
  *
- * Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
+ * Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in once, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
  *
  * **GET /auth/invoke-token/{kind}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{kind}/{token}) ·· _auth · cella_
  *
@@ -1824,7 +1824,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
 /**
  * Get list of invitations
  *
- * Returns a list of pending memberships with entity data.
+ * Returns the pending invitations of the signed-in user, each with its channel.
  *
  * **GET /me/invitations** ·· [listMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
  *
@@ -2050,7 +2050,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * Invite members
  *
- * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a declined invitation or a member left out. A declined invitation keeps its address from being invited again until the sweep removes it, `retention.declinedInvitationHoldDays` after the decline. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/members:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/members:invite) ·· _memberships · cella_
  *
@@ -2199,9 +2199,9 @@ export const listMembers = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get list of pending memberships
+ * Get list of invitations
  *
- * Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
+ * Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/invitations** ·· [listInvitations](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/invitations) ·· _memberships · cella_
  *
@@ -2229,7 +2229,7 @@ export const listInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending invitation, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend** ·· [resendInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend) ·· _memberships · cella_
  *
@@ -2604,7 +2604,7 @@ export const publishOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Delete organizations
  *
- * Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.
+ * Deletes organizations by ID within a tenant. Deleting marks the tenant deleted: members lose access at once, and the organization with everything in it is removed after the deleted-tenant period; until then a system admin can restore it.
  *
  * **POST /tenants/{tenantId}/organizations:batch-delete** ·· [batchDeleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/tenants/{tenantId}/organizations:batch-delete) ·· _organizations · cella · channel_
  *
@@ -2656,7 +2656,6 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  *
  * @param {createPushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
  * @returns Possible status codes: 201, 400, 401, 403, 413, 429
  */
@@ -2677,13 +2676,13 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Remove a Web Push subscription
  *
- * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
+ * Deletes the given endpoint for the current user; an unknown endpoint, or one owned by someone else, is a no-op.
  *
  * **POST /push/subscriptions:remove** ·· [removePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions:remove) ·· _push · cella_
  *
  * @param {removePushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 413
+ * @returns Possible status codes: 204, 400, 401, 403, 413
  */
 export const removePushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<RemovePushSubscriptionData, ThrowOnError>,
@@ -2754,7 +2753,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
 /**
  * Delete requests
  *
- * Deletes one or more requests from the system by their IDs.
+ * Deletes one or more requests from the system by their IDs. An ID that names no request comes back in `rejectedIds`.
  *
  * **POST /requests:batch-delete** ·· [batchDeleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests:batch-delete) ·· _requests · cella_
  *
@@ -3038,13 +3037,13 @@ export const countSystemInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Delete users
  *
- * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
+ * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable. An ID that names no user comes back in `rejectedIds`.
  *
  * **POST /users:batch-delete** ·· [batchDeleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/users:batch-delete) ·· _system · cella_
  *
  * @param {batchDeleteUsersData} options
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 429
  */
 export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteUsersData, ThrowOnError>,

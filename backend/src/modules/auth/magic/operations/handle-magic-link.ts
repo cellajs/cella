@@ -5,6 +5,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import { acceptFollowedInvitation, type FollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
+import { spendRedeemedLink } from '#/modules/auth/tokens/token-lifecycle';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserById } from '#/modules/user/user-queries';
@@ -16,7 +17,8 @@ const dbCtx = { var: { db: baseDb } };
 /**
  * Signs in the user a redeemed magic link names, records that the click proved their inbox, and accepts the invitation
  * whose link this browser opened (`findFollowedInvitation`, read before the magic link was redeemed), else the one the
- * browser that asked for the link had opened.
+ * browser that asked for the link had opened. The finished sign-in spends the link, so no browser signs in from it
+ * again, a second factor's challenge included: a failed challenge needs a new link.
  */
 export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, followed: FollowedInvitation | null) => {
   if (!token.userId) throw new AppError(500, 'server_error', 'error');
@@ -28,9 +30,11 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, fol
   const verified = await markEmailVerified(dbCtx, { userId: user.id, email: token.email, via: 'magic' });
   if (!verified) log.error('Magic link address is not on the account', { userId: user.id });
 
-  const asked = token.followedInvitationId ? { inactiveMembershipId: token.followedInvitationId, email: token.email } : null;
+  const asked = token.followedInvitationId ? { invitationId: token.followedInvitationId, email: token.email } : null;
   const joined = await acceptFollowedInvitation(user, { provenEmail: token.email, followed: followed ?? asked });
 
   // A link requested with a path keeps it; a sign-in that joined a channel lands there
-  return finishSignIn(ctx, user, 'magic', token.redirectPath ?? (joined && buildNotificationPath(joined)));
+  const response = await finishSignIn(ctx, user, 'magic', token.redirectPath ?? (joined && buildNotificationPath(joined)));
+  await spendRedeemedLink(token.id);
+  return response;
 };

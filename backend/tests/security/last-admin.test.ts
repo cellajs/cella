@@ -93,7 +93,7 @@ describe('last organization admin', async () => {
 
     expect((await call(deleteMe, { headers: headers(admin) })).response.status).toBe(204);
     const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
-    expect(tenant.status).toBe('archived');
+    expect(tenant.status).toBe('deleted');
     expect(await db.select().from(usersTable).where(eq(usersTable.id, member.id))).toHaveLength(1);
   });
 
@@ -154,8 +154,8 @@ describe('last organization admin', async () => {
       headers: headers(member),
     });
     expect(deleted.response.status).toBe(200);
-    // Deleting archives the tenant; the archived-tenant sweep removes the organization later.
+    // Deleting marks the tenant deleted; the deleted-tenant sweep removes the organization later.
     const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
-    expect(tenant.status).toBe('archived');
+    expect(tenant.status).toBe('deleted');
   });
 });

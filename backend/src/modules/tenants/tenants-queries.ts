@@ -3,7 +3,9 @@ import { and, count, eq, gt, gte, inArray, lt, notInArray, or, type SQL, sql } f
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions, publicSharingTenantKinds } from '#/modules/tenants/tenant-restrictions';
@@ -116,7 +118,7 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: TenantCrea
  */
 export const findDemoTenant = async (ctx: DbContext, { userId }: { userId: string }) => {
   const memberOf = ctx.var.db.select({ tenantId: membershipsTable.tenantId }).from(membershipsTable).where(eq(membershipsTable.userId, userId));
-  // A demo past its end or archived is over before the sweep removes it
+  // A demo past its end or deleted is over before the sweep removes it
   const running = and(eq(tenantsTable.kind, 'demo'), eq(tenantsTable.status, 'active'), gt(tenantsTable.expiresAt, getIsoDate()));
   return findTenant(ctx, { where: and(inArray(tenantsTable.id, memberOf), running) });
 };
@@ -142,7 +144,7 @@ export const lockTenantCreation = async (ctx: DbContext, { createdBy }: TenantCr
   await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`tenant_creation:${createdBy}`}, 0))`);
 };
 
-/** How many tenants the user created, archived ones included. */
+/** How many tenants the user created, deleted ones included. */
 export const countTenantsCreatedBy = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) => {
   const [{ total }] = await ctx.var.db.select({ total: count() }).from(tenantsTable).where(eq(tenantsTable.createdBy, createdBy));
   return total;
@@ -169,24 +171,45 @@ export const insertTenant = async (ctx: DbContext, { values }: { values: InsertT
   return tenant;
 };
 
-/** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
-export const updateTenant = async (ctx: DbContext, { id, values }: { id: string; values: Partial<InsertTenantModel> }) => {
-  const [updated] = await ctx.var.db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
+interface UpdateTenantOpts {
+  id: string;
+  values: Omit<Partial<InsertTenantModel>, 'statusChangedAt' | 'updatedAt' | 'updatedBy'>;
+  by: ActorId;
+}
+
+/**
+ * Writes `values` to a tenant with its stamps; a `status` that differs from the stored one also moves `statusChangedAt`
+ * to the same moment.
+ * @returns Its response columns, or undefined for an unknown id.
+ */
+export const updateTenant = async (ctx: DbContext, { id, values, by }: UpdateTenantOpts) => {
+  const at = getIsoDate();
+  const statusChangedAt =
+    values.status === undefined
+      ? {}
+      : {
+          statusChangedAt: sql<string>`CASE WHEN ${tenantsTable.status} IS DISTINCT FROM ${values.status} THEN ${at} ELSE ${tenantsTable.statusChangedAt} END`,
+        };
+  const [updated] = await ctx.var.db
+    .update(tenantsTable)
+    .set({ ...values, ...statusChangedAt, ...updateStamps(by, at) })
+    .where(eq(tenantsTable.id, id))
+    .returning(tenantColumns);
   return updated;
 };
 
 interface DueTenantsOpts {
-  /** Tenants archived before this ISO moment are due. */
-  archivedBefore: string;
+  /** Tenants deleted before this ISO moment are due. */
+  deletedBefore: string;
   /** Tenants whose `expiresAt` lies before this ISO moment are due. */
   now: string;
 }
 
 /** The sweep's condition: read when it lists the tenants, and again under the row lock before each delete. */
-const dueForRemoval = ({ archivedBefore, now }: DueTenantsOpts) =>
-  or(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)), lt(tenantsTable.expiresAt, now));
+const dueForRemoval = ({ deletedBefore, now }: DueTenantsOpts) =>
+  or(and(eq(tenantsTable.status, 'deleted'), lt(tenantsTable.statusChangedAt, deletedBefore)), lt(tenantsTable.expiresAt, now));
 
-/** Tenants archived before `archivedBefore` or expired before `now`, the ones the removal sweep removes. */
+/** Tenants deleted before `deletedBefore` or expired before `now`, the ones the removal sweep removes. */
 export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) =>
   ctx.var.db
     .select(pick(tenantsTable, ['id', 'name', 'kind', 'status', 'statusChangedAt', 'expiresAt']))
@@ -199,7 +222,7 @@ interface DeleteDueTenantOpts extends DueTenantsOpts {
 
 /**
  * Deletes a tenant still due under `opts` and its organization in one transaction. It first locks the tenant row and
- * reads it again: a tenant restored, archived again or given more time since the sweep listed it stays, and a restore
+ * reads it again: a tenant restored, deleted again or given more time since the sweep listed it stays, and a restore
  * that comes later waits for the delete and then finds no row. The organization goes first: its cascade takes the
  * channels, products, memberships and collaborative documents, and their delete triggers queue the stored files. The
  * tenant row then takes its service accounts, API keys and connections.

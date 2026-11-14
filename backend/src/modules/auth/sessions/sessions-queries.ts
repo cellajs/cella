@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -19,6 +19,9 @@ import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
 
+/** A session neither revoked nor expired at `now`, an ISO timestamp. */
+export const liveSession = (now: string) => and(isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now));
+
 interface FindLiveSessionsHeldByUserOpts {
   userId: string;
   /** Only the sessions of this browser. */
@@ -32,30 +35,13 @@ export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, devic
   ctx.var.db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(
-      and(
-        eq(sessionsTable.userId, userId),
-        gt(sessionsTable.expiresAt, getIsoDate()),
-        isNull(sessionsTable.revokedAt),
-        deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined,
-      ),
-    )
+    .where(and(eq(sessionsTable.userId, userId), liveSession(getIsoDate()), deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined))
     .orderBy(desc(sessionsTable.createdAt))
     .offset(offset);
 
-interface FindUserSessionsOpts {
-  userId: string;
-  /** Revoked sessions are listed when revoked after this ISO timestamp. */
-  revokedSince: string;
-}
-
-/** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
-export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) =>
-  ctx.var.db
-    .select(sessionSafeColumns)
-    .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
-    .orderBy(desc(sessionsTable.createdAt));
+/** The user's sessions newest first, secret stripped: live, expired and revoked ones, until the sweep removes them. */
+export const findUserSessions = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db.select(sessionSafeColumns).from(sessionsTable).where(eq(sessionsTable.userId, userId)).orderBy(desc(sessionsTable.createdAt));
 
 interface FindSessionBySecretOpts {
   /** The hash of the session token, the only form the database stores. */
@@ -96,7 +82,7 @@ export const findLiveSession = async (ctx: DbContext, { id }: { id: string }) =>
   const [live] = await ctx.var.db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.id, id), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())))
+    .where(and(eq(sessionsTable.id, id), liveSession(getIsoDate())))
     .limit(1);
   return live;
 };
@@ -128,7 +114,7 @@ export const updateSessionsRevoked = async (ctx: DbContext, { match, revokedBy, 
   return ctx.var.db
     .update(sessionsTable)
     .set({ revokedAt: now, revokedBy, revocationReason })
-    .where(and(isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now), matched))
+    .where(and(liveSession(now), matched))
     .returning(sessionSafeColumns);
 };
 
@@ -183,7 +169,7 @@ export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via, 
   const [stamped] = await ctx.var.db
     .update(sessionsTable)
     .set({ steppedUpAt: now, steppedUpVia: via, steppedUpSecretHash: secretHash })
-    .where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now)))
+    .where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId), liveSession(now)))
     .returning({ id: sessionsTable.id });
   return stamped;
 };

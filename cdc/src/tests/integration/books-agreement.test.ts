@@ -1,6 +1,6 @@
 import { eq, getTableName, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import type { ActivityAction, ProductEntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { DmlMessage } from '../../pipeline/parse-message';
 import type { PendingEvent } from '../../types';
@@ -72,7 +72,7 @@ vi.mock('#/tables', async () => {
   };
   const resourceTables = {
     membership: pgTable('memberships', membership()),
-    inactive_membership: pgTable('inactive_memberships', { ...membership(), declinedAt: timestamp('declined_at', { mode: 'string' }) }),
+    invitation: pgTable('invitations', { ...membership(), status: text('status').notNull().default('pending') }),
   };
 
   return {
@@ -92,7 +92,7 @@ const tables = (await import('#/tables')) as unknown as {
   resourceTables: Record<string, SyntheticTable>;
 };
 const { cdcDb } = await import('../../lib/db');
-const { cleanupEmbeddingReferences } = await import('../../embeddings/embedding-cleanup');
+const { stripEmbeddingReferences } = await import('../../embeddings/embedding-strip');
 const { parseMessage } = await import('../../pipeline/parse-message');
 const { compareBooks } = await import('../../pipeline/verify');
 const { TransactionBuffer } = await import('../../services/transaction-buffer');
@@ -117,7 +117,7 @@ const ddl = [
   `CREATE TABLE items (${productColumns})`,
   `CREATE TABLE tasks (${productColumns}, items uuid[] NOT NULL DEFAULT '{}')`,
   `CREATE TABLE memberships (${membershipColumns})`,
-  `CREATE TABLE inactive_memberships (${membershipColumns}, declined_at timestamp)`,
+  `CREATE TABLE invitations (${membershipColumns}, status text NOT NULL DEFAULT 'pending')`,
   'CREATE TABLE channel_counters (LIKE public.channel_counters INCLUDING ALL)',
 ];
 
@@ -219,21 +219,11 @@ function workloadOn(tx: Tx, seed: number) {
 
     await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(survivors), tx);
 
-    const groups = new Map<string, PendingEvent[]>();
-    for (const event of survivors) {
-      const { entityType, action } = event.result.activity;
-      // The synthetic types are no type of the app, so the name is compared as a string.
-      if ((entityType as string | null) !== 'item' || action === 'create') continue;
-      groups.set(action, [...(groups.get(action) ?? []), event]);
-    }
-    for (const [action, events] of groups) {
+    // The name is compared as a string: the synthetic types are no type of the app.
+    const deletes = survivors.filter(({ result: { activity } }) => (activity.entityType as string | null) === 'item' && activity.action === 'delete');
+    for (const events of deletes.length > 0 ? [deletes] : []) {
       const before = await all('task');
-      await cleanupEmbeddingReferences(
-        'item' as ProductEntityType,
-        action as Exclude<ActivityAction, 'create'>,
-        events,
-        tx as unknown as typeof cdcDb,
-      );
+      await stripEmbeddingReferences('item' as ProductEntityType, events, tx as unknown as typeof cdcDb);
       const after = new Map((await all('task')).map((task) => [task.id, task]));
       const stripped: Change[] = [];
       for (const old of before) {
@@ -276,7 +266,7 @@ function workloadOn(tx: Tx, seed: number) {
   const removeChannel = async (name: string, type: 'course' | 'courseSection' | 'project', channel: Row) => {
     const column = { course: 'courseId', courseSection: 'courseSectionId', project: 'projectId' }[type];
     const changes: Change[] = [];
-    for (const childType of ['task', 'item', 'membership', 'inactive_membership', 'project', 'courseSection']) {
+    for (const childType of ['task', 'item', 'membership', 'invitation', 'project', 'courseSection']) {
       for (const child of await all(childType)) if (child[column] === channel.id) changes.push(await remove(childType, child.id));
     }
     const own = await remove(type, channel.id);
@@ -392,12 +382,12 @@ function workloadOn(tx: Tx, seed: number) {
     },
     async (organizationId) => {
       const place = { organizationId, courseId: null, courseSectionId: null, projectId: null };
-      const invite = { id: newId(), ...place, channelType: 'organization', channelId: organizationId, role: 'member', declinedAt: null };
-      await run('invite', [await insert('inactive_membership', invite)]);
+      const invite = { id: newId(), ...place, channelType: 'organization', channelId: organizationId, role: 'member', status: 'pending' };
+      await run('invite', [await insert('invitation', invite)]);
     },
     async () => {
-      const invite = random.pick((await all('inactive_membership')).filter((row) => row.declinedAt == null));
-      if (invite) await run('decline invite', [await update('inactive_membership', invite.id, { declinedAt: now() })]);
+      const invite = random.pick((await all('invitation')).filter((row) => row.status === 'pending'));
+      if (invite) await run('decline invite', [await update('invitation', invite.id, { status: 'declined' })]);
     },
   ];
 

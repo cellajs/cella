@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, inArray, lte, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext } from '#/core/context';
@@ -96,10 +96,15 @@ export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userI
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
 
-/** Deletes memberships by id, only those of the request's organization. */
+/** Deletes memberships by id, only those of the request's organization; an organization membership takes its user's memberships below it along. */
 export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: { ids: string[] }) => {
   const { db, organizationId } = ctx.var;
-  return db.delete(membershipsTable).where(and(inArray(membershipsTable.id, ids), eq(membershipsTable.organizationId, organizationId)));
+  const ofOrganization = eq(membershipsTable.organizationId, organizationId);
+  const leaving = db
+    .select({ userId: membershipsTable.userId })
+    .from(membershipsTable)
+    .where(and(inArray(membershipsTable.id, ids), ofOrganization, eq(membershipsTable.channelType, 'organization')));
+  return db.delete(membershipsTable).where(and(ofOrganization, or(inArray(membershipsTable.id, ids), inArray(membershipsTable.userId, leaving))));
 };
 
 /** Updates a membership of the request's organization and returns the row; null when none has the id. */
@@ -262,16 +267,16 @@ export const insertMissingMembershipRows = async (ctx: DbContext, { values }: In
   await ctx.var.db.insert(membershipsTable).values(values).onConflictDoNothing();
 };
 
-/** A membership counts while its tenant is not archived: an organization deleted by its admin leaves every member's list at once. */
-export const inUnarchivedTenant = (tenantId: typeof membershipsTable.tenantId) =>
-  sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
+/** A membership counts while its tenant is not deleted: an organization deleted by its admin leaves every member's list at once. */
+export const inUndeletedTenant = (tenantId: typeof membershipsTable.tenantId) =>
+  sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'deleted')`;
 
 /** Every membership of these users that counts, in any organization, as a session reads its own (`loadMemberships`). */
 export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: { userIds: string[] }) =>
   ctx.var.db
     .select()
     .from(membershipsTable)
-    .where(and(inArray(membershipsTable.userId, userIds), inUnarchivedTenant(membershipsTable.tenantId)));
+    .where(and(inArray(membershipsTable.userId, userIds), inUndeletedTenant(membershipsTable.tenantId)));
 
 interface TenantMembersOpts {
   tenantId: string;

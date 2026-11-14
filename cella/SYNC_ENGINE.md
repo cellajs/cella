@@ -57,7 +57,7 @@ The stream carries two kinds of frame. Both are announcements. The client reads 
 
 A signal is versioned when a client that was away must still hear it. A committed row then makes it. A module declares the signals it sends and the handlers that answer them.
 
-The rows below a deleted channel leave by cascade and get no change of their own. The channel's delete sends one `channel.deleted` to its readers in their place.
+The rows below a deleted channel leave by cascade and get no change of their own. The delete sends one `channel.deleted` to the readers of the deleted channel in their place, which covers the channels inside it too.
 
 ## Selective sync
 

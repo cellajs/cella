@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -29,13 +29,13 @@ export const identitiesTable = snakeCase.table(
     provider: varchar({ length: maxLength.field }).notNull(),
     subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),
-    verified: boolean().notNull().default(false),
+    /** Null until a proof stands for the identity: an inbox click, or the provider's assertion where that is the proof. */
     verifiedAt: isoTimestamp(),
     /** The connection (an institution's trust) an sso identity came through; null for social identities. */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     /** Claims snapshot for sso identities (affiliations, acr); nothing reads it for authorization. */
     data: jsonb().$type<Record<string, unknown>>(),
-    lastUsedAt: isoTimestamp(),
+    lastSignInAt: isoTimestamp(),
   },
   (table) => [
     index('identities_user_id_idx').on(table.userId),

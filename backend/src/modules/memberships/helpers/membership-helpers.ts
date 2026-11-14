@@ -108,8 +108,8 @@ export const channelIdColumnsOf = (entity: MembershipEntity): { organizationId: 
 };
 
 /**
- * Whether an invitation to the channel waits for its publish: one to a draft channel is held, its mail unsent and its
- * invitee kept out, unless its role is one of the channel's prepare roles (`drafts.prepareRoles`), which go out at once.
+ * Whether a new invitation to the channel starts `held`, waiting for its publish: one to a draft channel, its mail
+ * unsent and its invitee kept out, unless its role is one of the channel's prepare roles (`drafts.prepareRoles`).
  */
 export const isHeldInvitation = (channelType: ChannelEntityType, channel: { publishedAt: string | null }, role: EntityRole) =>
   channel.publishedAt === null && !appHierarchy.getPrepareRoles(channelType).includes(role);

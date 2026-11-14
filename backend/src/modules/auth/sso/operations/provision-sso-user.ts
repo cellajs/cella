@@ -9,7 +9,7 @@ import { newUserFromProfile } from '#/modules/auth/sso/helpers/transform-sso-cla
 import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
 import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
 import { rememberSsoCollision } from '#/modules/auth/sso/operations/sso-recovery';
-import { findPendingOrganizationInactiveMembership } from '#/modules/memberships/inactive-memberships-queries';
+import { findOpenOrganizationInvitation } from '#/modules/memberships/invitations-queries';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { createAccount } from '#/modules/user/operations/create-account';
@@ -64,11 +64,7 @@ export const provisionSsoUser = async (
       verified: true,
     });
 
-    if (
-      connection.jitProvisioning &&
-      organization &&
-      !(await findPendingOrganizationInactiveMembership(txCtx, { email, organizationId: organization.id }))
-    ) {
+    if (connection.jitProvisioning && organization && !(await findOpenOrganizationInvitation(txCtx, { email, organizationId: organization.id }))) {
       await insertSsoMembership(txCtx, { userId: user.id, organization, federation, connection, claims });
     }
 

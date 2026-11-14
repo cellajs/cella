@@ -16,7 +16,6 @@ export const systemRolesTable = snakeCase.table('system_roles', {
     .$type<UserId>(),
   role: varchar({ enum: roleEnum }).notNull(),
   createdAt: timestampColumns.createdAt,
-  updatedAt: timestampColumns.updatedAt,
 });
 
 export type SystemRoleModel = typeof systemRolesTable.$inferSelect;

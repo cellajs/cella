@@ -7,7 +7,7 @@ import { splitByPermission } from '#/permissions/split-by-permission';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
 vi.mock('#/db/tenant-context', () => ({
-  tenantReadUnlessInTransaction: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
+  tenantRead: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
 }));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntities: vi.fn() }));
 vi.mock('shared', async (importOriginal) => ({

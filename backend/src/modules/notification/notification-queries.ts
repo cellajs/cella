@@ -4,6 +4,7 @@ import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
@@ -110,13 +111,13 @@ interface UpdatePreferencesOpts {
   values: Partial<Pick<NotificationPreferencesModel, 'mentionEmails' | 'commentEmails' | 'digest'>>;
 }
 
-/** Writes the given preferences; a user without a row gets one with the defaults for the rest. */
+/** Writes the given preferences as their user; a user without a row gets one with the defaults for the rest. */
 export async function updatePreferences(ctx: DbContext, { userId, values }: UpdatePreferencesOpts) {
-  const updatedAt = getIsoDate();
+  const stamps = updateStamps(userId);
   const [updated] = await ctx.var.db
     .insert(notificationPreferencesTable)
-    .values({ userId, ...values, updatedAt })
-    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { ...values, updatedAt } })
+    .values({ userId, ...values, createdBy: userId, ...stamps })
+    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { ...values, ...stamps } })
     .returning();
 
   return updated;
@@ -304,9 +305,9 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
 }
 
 /** Stamps the rows whose instant mail went out, so the digest does not repeat them. */
-export async function stampEmailed(ctx: DbContext, { ids }: { ids: string[] }): Promise<void> {
+export async function stampNotificationsMailed(ctx: DbContext, { ids }: { ids: string[] }): Promise<void> {
   if (ids.length === 0) return;
-  await ctx.var.db.update(notificationsTable).set({ emailedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
+  await ctx.var.db.update(notificationsTable).set({ mailedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
 }
 
 /**
@@ -316,7 +317,7 @@ export async function stampEmailed(ctx: DbContext, { ids }: { ids: string[] }): 
  * this read falls in neither.
  */
 const undigestedRows = (since: SQL | string, before: string) => sql`${notificationsTable.readAt} is null
-  and ${notificationsTable.emailedAt} is null
+  and ${notificationsTable.mailedAt} is null
   and ${notificationsTable.createdAt} >= ${since}
   and ${notificationsTable.createdAt} < ${before}
   and ${recipientStillBelongs}`;

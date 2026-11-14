@@ -27,18 +27,23 @@ interface TakeInvitationMailsInput {
   mailAtPublish?: number;
 }
 
+/** What a take reserved: the addresses it was asked for, and those held back, which get no mail and no new link. */
+export interface TakenInvitationMails {
+  emails: string[];
+  heldBack: Set<string>;
+}
+
 /**
  * Takes the invitation mails an inviter's request is about to send from both caps, before any row is written. An
- * address the tenant mailed in the last day is held back and costs the tenant nothing; the rest count toward the
- * tenant's day.
- * @returns The addresses held back: they get no mail and no new link, so a link already sent keeps working.
+ * address the tenant mailed in the last day is held back and costs the tenant nothing; a link already sent keeps
+ * working. The rest count toward the tenant's day.
  * @throws AppError 429 `invitation_limit_reached` with `meta.retryAfter` in seconds when the tenant's day cannot hold
  *   the mails; nothing is taken then.
  */
 export async function takeInvitationMails(
   ctx: InvitationMailsContext,
   { mailNow, mailAtPublish = 0 }: TakeInvitationMailsInput,
-): Promise<Set<string>> {
+): Promise<TakenInvitationMails> {
   const { tenantId, tenant } = ctx.var;
 
   const reservations = await Promise.all(
@@ -48,10 +53,10 @@ export async function takeInvitationMails(
 
   const count = mailNow.length - heldBack.size + mailAtPublish;
   const budget = tenant.restrictions.rateLimits.invitationEmailsPerDay;
-  if (!count || budget === 0) return heldBack;
+  if (!count || budget === 0) return { emails: mailNow, heldBack };
 
   const total = await reserveAttempt(tenantMails, tenantId, { points: budget, duration: day }, count);
-  if (total.granted) return heldBack;
+  if (total.granted) return { emails: mailNow, heldBack };
 
   for (const { email, reservation } of reservations) {
     if (reservation.granted) await refundAttempt(reservation.store, addressKey(tenantId, email));

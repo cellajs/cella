@@ -6,6 +6,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { searchFilter } from '#/utils/sql';
 
 interface InTenantOpts {
@@ -94,7 +95,7 @@ export async function countActiveServiceAccounts(ctx: DbContext, { tenantId }: I
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */
 export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  const unexpired = or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, sql`now()`));
+  const unexpired = or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, getIsoDate()));
   return ctx.var.db.$count(apiKeysTable, and(eq(apiKeysTable.tenantId, tenantId), isNull(apiKeysTable.revokedAt), unexpired));
 }
 
@@ -160,15 +161,14 @@ export async function scheduleApiKeyExpiry(ctx: DbContext, { actorId, id, expire
 interface RevokeApiKeyOpts {
   actorId: string;
   id: string;
-  revokedAt: string;
   revokedBy: string;
 }
 
-/** Revokes a live key; a second call finds nothing, so the first `revokedAt` stays as the audit timestamp. */
-export async function revokeApiKey(ctx: DbContext, { actorId, id, revokedAt, revokedBy }: RevokeApiKeyOpts) {
+/** Revokes a live key now; a second call finds nothing, so the first `revokedAt` stays as the audit timestamp. */
+export async function revokeApiKey(ctx: DbContext, { actorId, id, revokedBy }: RevokeApiKeyOpts) {
   const [row] = await ctx.var.db
     .update(apiKeysTable)
-    .set({ revokedAt, revokedBy })
+    .set({ revokedAt: getIsoDate(), revokedBy })
     .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
     .returning(apiKeySafeColumns);
   return row ?? null;

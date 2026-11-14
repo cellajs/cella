@@ -86,7 +86,7 @@ An attachment row is an ordinary product in the query cache. Its bytes live in t
 
 Every user works offline. All tabs share one cache that survives tab and browser restarts. Two version stamps guard every restore. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
 
-The persister snapshots the cache into the per-user database and restores it on boot. A refetch that gets no response or a server error keeps the last data on disk, restored marked.
+The persister snapshots the cache into the per-user database and restores it when the database binds. A refetch that gets no response or a server error keeps the last data on disk, restored marked.
 
 Paused mutations are persisted too. A running write is persisted only when it carries an `stx`. One cut off by a closed tab or a reload is then sent again as a replay.
 
@@ -121,11 +121,10 @@ Signing out in one tab signs out every tab of that user. A tab whose signed-in u
 Boot order, cached data first:
 
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
-2. The app route waits until the per-user database is bound and its stores hydrated. A database that does not answer in time is closed: the tab runs online without it until its next load.
-3. The persister restores the cache scope.
-4. The app reads the memberships, so the first catchup declares every organization.
-5. One tab is elected leader. It performs catchup and owns the live connection.
-6. Paused mutations resume after catchup and whenever the app comes back online or regains focus.
-7. Route loaders fill the current view.
-8. A background fill loads every uncached list and every marked synced list, current organization first.
+2. The app route waits until the per-user database is bound, its stores hydrated and the cache restored from it. A database that does not answer in time is closed: the tab runs online without it until its next load.
+3. The app reads the memberships, so the first catchup declares every organization.
+4. One tab is elected leader. It performs catchup and owns the live connection.
+5. Paused mutations resume after catchup and whenever the app comes back online or regains focus.
+6. Route loaders fill the current view.
+7. A background fill loads every uncached list and every marked synced list, current organization first.
 9. From then on catchup keeps the synced lists fresh.

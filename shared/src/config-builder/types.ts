@@ -176,21 +176,21 @@ export interface RetentionConfig {
   deletedItemsDays: number;
   /** A row of an owned embedding that no live host names, from its creation: a file uploaded into a form waits this long for its host, and a removed one counts toward the quota as long. At least 1. */
   unreferencedItemsDays: number;
-  /** An archived tenant (an organization deleted, or a contract ended), from the archiving; a system admin can restore it until then. */
-  archivedTenantDays: number;
+  /** A deleted tenant (an organization deleted, or a contract ended), from the deletion; a system admin can restore it until then. */
+  deletedTenantDays: number;
   /** A demo tenant, from its creation; it goes with everything in it and the account that took it. */
   demoTenantDays: number;
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
-  deviceDaysUnseen: number;
-  /** Known devices kept per user, the most recently seen. */
-  devicesPerUser: number;
+  deviceDaysSinceSignIn: number;
+  /** An API key, from its revocation or else its expiry; a key that never ends stays. */
+  apiKeyDaysAfterEnd: number;
   oidcPayloadDaysAfterUse: number;
   /** Requests of every kind: contact messages, waitlist entries and info requests. */
   requestDays: number;
-  /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
+  /** A pending invitation, from its last mail or, with none, its creation; a held one goes with its draft channel. */
   invitationDays: number;
-  /** A declined invitation, from the decline: no invite opens it again or mails its address. At most `invitationDays`. */
+  /** A declined invitation, from the decline: until the sweep removes it, no invite mails its address. */
   declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;
@@ -259,6 +259,10 @@ export interface CompanyConfig {
 export interface ProductEmbedding<P extends string = string> {
   readonly embeddedProductType: P;
   readonly hostProductType: P;
+  /**
+   * The host's id array column. A host that holds a single reference has no such array but a `<hostColumn>Id` column,
+   * which the reference strip skips and the retention run reads as one id.
+   */
   readonly hostColumn: string;
   readonly lifecycle?: 'shared' | 'owned';
 }
@@ -351,7 +355,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
-    /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
+    /** API points per hour per actor; invitation mails per day the tenant sends, new and resent alike. 0 lifts either. */
     rateLimits: { apiPointsPerHour: number; invitationEmailsPerDay: number };
   };
   selfServiceTenantsPerUser: number;
@@ -399,10 +403,12 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;
+  maxDevicesPerUser: number;
+  maxPushSubscriptionsPerUser: number;
 
   apiVersion: string;
   cookieVersion: string;
-  clientCacheVersion: string;
+  clientCacheVersion: number;
 
   apiDescription: string;
 

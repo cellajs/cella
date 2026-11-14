@@ -11,7 +11,7 @@ import {
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { authEvents } from '#/modules/auth/auth-events';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeStreams } from '#/modules/entities/helpers/session-streams';
 import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
@@ -37,12 +37,10 @@ for (const entityType of appConfig.productEntityTypes) {
 
 // Closes the streams bound to ended sessions, each with the code that tells the client whether to reconnect.
 authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
-  const payload = streamErrorForEnding(reason);
   const ended = streamSubscriberManager
     .getByTopic(userTopic(userId))
-    .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
-    .map((subscriber) => ({ subscriber, payload }));
-  await closeStreams(ended, 'Failed to close the stream of an ended session');
+    .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId));
+  await closeStreams(ended.map((subscriber) => ({ subscriber, reason })));
 });
 
 for (const action of ['created', 'updated', 'deleted'] as const) {
@@ -63,7 +61,8 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
 }
 
 // The live half of a versioned signal: its audience hears of it now, a client that misses it gets the version at catchup.
-// Registered after the membership listeners, so a reader's memberships are current when it is decided.
+// A signal a recorded change names no version for went with another change of its flush (`flushSignals`). Registered
+// after the membership listeners, so a reader's memberships are current when it is decided.
 for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
   for (const action of activityActions) {
     const signals = versionedSignalsOf(table, action);
@@ -76,6 +75,7 @@ for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
       const versions = event.rows === null ? event.signalVersions : undefined;
       for (const { type, namesRow } of signals) {
         const version = versions?.[type];
+        if (versions && version === undefined) continue;
         if (!namesRow) await sendSignal(type, toReaders(organization), { organizationId, version });
         else if (channel) await sendSignal(type, channel.readers, { organizationId, subjectId: channel.id, version });
       }

@@ -309,7 +309,7 @@ export async function insertTestToken(
       userId: owner.id ?? null,
       createdBy: owner.id ?? null,
       expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
-      ...(openedWith && { invokedAt: new Date().toISOString(), singleUseToken: hashToken(openedWith) }),
+      ...(openedWith && { redeemedAt: new Date().toISOString(), singleUseToken: hashToken(openedWith) }),
       ...columns,
     })
     .returning();
@@ -424,7 +424,7 @@ export async function linkIdentity(user: { id: string; email: string }, override
       provider: 'github',
       subject: 'github-user-id',
       email: user.email,
-      verified: true,
+      verifiedAt: mockPastIsoDate(),
       createdAt: mockPastIsoDate(),
       ...overrides,
     })

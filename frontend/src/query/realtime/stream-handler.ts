@@ -73,12 +73,16 @@ function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
   });
 }
 
+/** A soft delete's tombstone: a delete whose row stays in its table, with the seq it was stamped at. */
+const isTombstone = (action: StreamChange['action'], { seq }: StreamChange['rows'][number]) => action === 'delete' && seq !== null;
+
 /**
- * The tab's own create or update of a row: its source id and its signed-in user, since every row the tab wrote shows
- * the source id to its readers. Deletes are never echoes, because row STX names the last writer and not necessarily the deleter.
+ * The tab's own create, update or soft delete of a row: its source id and its signed-in user, since every row the tab
+ * wrote shows the source id to its readers. A hard delete is never an echo: its row names the last writer, not the deleter.
  */
-function isOwnEcho(action: StreamChange['action'], { stx, actorId }: StreamChange['rows'][number]): boolean {
-  if (action === 'delete' || stx?.sourceId !== sourceId) return false;
+function isOwnEcho(action: StreamChange['action'], row: StreamChange['rows'][number]): boolean {
+  const { stx, actorId } = row;
+  if ((action === 'delete' && !isTombstone(action, row)) || stx?.sourceId !== sourceId) return false;
   const userId = userStore.getState().user?.id;
   return userId !== undefined && actorId === userId;
 }
@@ -94,24 +98,20 @@ function handleProductChange(change: StreamChange): void {
   });
   if (rows.length === 0) return;
 
-  switch (action) {
-    case 'create':
-    case 'update': {
-      // The range of the rows goes to the lazy path; the watermark advances once its flush settles, since advancing earlier would skip the range forever.
-      const seqs = rows.flatMap(({ seq }) => (seq === null ? [] : [seq]));
-      if (seqs.length > 0) enqueueAnnouncedRange(change, { afterSeq: Math.min(...seqs) - 1, untilSeq: Math.max(...seqs) });
-      // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
-      break;
-    }
+  // A row in its table goes to the lazy path as the range of its seq, a soft delete's tombstone too: the watermark
+  // advances once its flush settles, and unseen-sync counts the fetched rows. A hard delete, an unpublish or a move-out
+  // leaves no row to fetch.
+  const fetched = action === 'create' || action === 'update' ? rows : rows.filter((row) => isTombstone(action, row));
+  const seqs = fetched.flatMap(({ seq }) => (seq === null ? [] : [seq]));
+  if (seqs.length > 0) enqueueAnnouncedRange(change, { afterSeq: Math.min(...seqs) - 1, untilSeq: Math.max(...seqs) });
 
-    // Physical deletes, unpublishes and move-outs; a soft delete stays an update reconciled through sequence ranges.
-    case 'delete':
-    case 'moveOut': {
-      const subjectIds = rows.map(({ subjectId }) => subjectId);
-      removeRows(change, subjectIds);
-      if (propagation) propagateEmbeddings(propagation);
-      break;
-    }
+  const gone = rows.filter((row) => !fetched.includes(row));
+  if (gone.length > 0) {
+    removeRows(
+      change,
+      gone.map(({ subjectId }) => subjectId),
+    );
+    if (propagation) propagateEmbeddings(propagation);
   }
 
   console.debug(`[handleProductChange] ${entityType}:${action} rows=${rows.length}`);

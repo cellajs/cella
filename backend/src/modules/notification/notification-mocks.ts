@@ -22,7 +22,7 @@ function seedNotificationDate(subjectAt: string): string {
 
 /**
  * An inbox row for a seeded subject, shaped as the fan-out would write it: home channel is the
- * deepest non-null ancestor, `seed:<subjectId>` is the activity id the seed finds its rows by, and `emailedAt` is
+ * deepest non-null ancestor, `seed:<subjectId>` is the activity id the seed finds its rows by, and `mailedAt` is
  * stamped on every row, whatever its kind, so no digest mails seeded activity. Seed scripts skip the actor themselves;
  * this only shapes the row.
  */
@@ -49,6 +49,6 @@ export function mockSeedNotification(
     activityId: `seed:${subject.id}`,
     createdAt,
     readAt: faker.datatype.boolean({ probability: readProbability }) ? createdAt : null,
-    emailedAt: createdAt,
+    mailedAt: createdAt,
   };
 }

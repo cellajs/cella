@@ -61,7 +61,7 @@ describe('getChangedFields', () => {
     expect(getChangedFields(row, row)).toEqual([]);
   });
 
-  it("lists updatedAt: the parser tells an edit from the worker's own cleanup of an embedding column by it", () => {
+  it("lists updatedAt: the parser tells an edit from the worker's own strip of an embedding column by it", () => {
     const oldRow = { id: '1', name: 'old', updatedAt: '2024-01-01' };
     const newRow = { id: '1', name: 'old', updatedAt: '2024-01-02' };
     expect(getChangedFields(oldRow, newRow)).toEqual(['updatedAt']);

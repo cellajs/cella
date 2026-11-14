@@ -25,8 +25,7 @@ export const pushSubscriptionsTable = snakeCase.table(
     p256dh: text().notNull(),
     /** Auth secret (`getKey('auth')`), base64url. */
     auth: text().notNull(),
-    /** Browser-reported expiry; null means no fixed expiry (the common case). */
-    expirationTime: isoTimestamp(),
+
     /** Coarse device hint for the user's own subscription list; never parsed. */
     userAgent: varchar({ length: maxLength.field }),
     createdAt: timestampColumns.createdAt,
