@@ -2,21 +2,21 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: 0.0.0.0, DB_PORT, DB_TEST_PORT, DB_A11Y_PORT, docker run, fs.allow, drizzle-studio
+grep: 0.0.0.0, DB_PORT, DB_TEST_PORT, DB_A11Y_PORT, docker run, fs.allow
 ---
 
 # Dev servers and database ports bind loopback
 
 An app-owned listener that binds `'0.0.0.0'` takes `listenHost()` from `shared/utils/listen-host`, and an app's own
 compose file or `docker run -p` publishes `127.0.0.1:<host port>:<container port>`. A developer who opens the app on
-another device starts it with `DEV_HOST=0.0.0.0`, and Drizzle Studio starts with `pnpm studio`, never with `pnpm dev`.
+another device starts it with `DEV_HOST=0.0.0.0`.
 
 ## What & why
 
 Outside production and staging, the dev databases, Vite and the seven service listeners bound every interface: a peer on
 the same network signed in to Postgres as the superuser with the published password, replaced the CDC worker with the
-example secret, and read repo files through Vite. They now bind `127.0.0.1`, Vite serves only the folders in
-`server.fs.allow`, and Drizzle Studio, which runs any website's SQL as `DATABASE_ADMIN_URL`, leaves `pnpm dev`.
+example secret, and read repo files through Vite. They now bind `127.0.0.1`, and Vite serves only the folders in
+`server.fs.allow`.
 
 ## Blast radius
 

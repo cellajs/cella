@@ -60,7 +60,8 @@ function AppContent() {
 export function AppLayout() {
   return (
     <div className="max-sm:not-in-[.floating-nav]:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
-      <SkipLink />
+      {/* Without a nav bar the menu sheet is the navigation, and its own bridges lead to the content */}
+      {appConfig.navigation.navBar && <SkipLink />}
       <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <SidebarWrapper>
           <AppNav />
@@ -83,7 +84,7 @@ export function AppLayout() {
         <DownAlert />
         <Dropdowner />
       </ErrorBoundary>
-      <BackToStart />
+      {appConfig.navigation.navBar && <BackToStart />}
     </div>
   );
 }

@@ -21,6 +21,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "generate": "tsx scripts/generate.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "dev:studio": "tsx scripts/drizzle-studio/start.ts",
     "studio": "tsx scripts/drizzle-studio/start.ts",
     "test": "cross-env TEST_MODE=core vitest run",
     "s3:cors": "tsx scripts/set-bucket-cors.ts",

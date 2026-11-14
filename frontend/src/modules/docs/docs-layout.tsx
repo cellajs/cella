@@ -9,6 +9,7 @@ import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
 import { useFloatingNavItems } from '~/modules/navigation/floating-nav/use-floating-nav-items';
+import { BackToStart, SkipLink } from '~/modules/navigation/focus-bridge';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
@@ -122,6 +123,7 @@ export function DocsLayout() {
   // One root at every width, so `main` and the page in it stay mounted when the window crosses `md`
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
+      {isDesktop && <SkipLink />}
       {isDesktop ? (
         <aside ref={sidebarRef} className="bg-card focus-view:hidden fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width)">
           <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
@@ -146,6 +148,7 @@ export function DocsLayout() {
       <main className={cn('focus-view-scope pb-[70vh] focus:outline-hidden', isDesktop ? 'focus-view:ml-0 ml-(--docs-sidebar-width)' : 'pt-4')}>
         <Outlet />
       </main>
+      {isDesktop && <BackToStart />}
     </div>
   );
 }

@@ -16,4 +16,4 @@ Development and build scripts for the backend.
 - **migrations/** - Migration generator scripts (CDC setup, activity triggers)
 - **seeds/** - Seed data by entity: user, organizations, `data` for product entities. `agent` seeds `agent-test@cellajs.com`, the user agents sign in as, with the admin's memberships; `pnpm seed agent` adds it to a database seeded before it
 - **seeds/assets/** - Source files of the seeded attachments, one folder per file with `original` plus optional `thumbnail`, `preview` and `converted` variants; a changed set gets a new version prefix in `seeds/seed-assets.ts`
-- **drizzle-studio/** (`pnpm studio`) - Start Drizzle Studio on this checkout's port; `pnpm stop` ends it. `pnpm dev` does not start it: it runs SQL as `DATABASE_ADMIN_URL` for any website that calls its port
+- **drizzle-studio/** (`pnpm studio`) - Start Drizzle Studio on this checkout's port; `pnpm dev` starts it too, and `pnpm stop` ends it. It runs SQL as `DATABASE_ADMIN_URL` for any website that calls its port
