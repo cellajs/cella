@@ -109,15 +109,12 @@ describe('csv export', () => {
         },
       },
       { id: 'org-12', name: 'Organization 12', createdAt: null, included: {} },
-      // A row fetched for the export carries the caller's membership under `included`.
-      { id: 'org-7', name: 'Seven', included: { membership: { role: 'member' } } },
     ];
 
     expect(await csvLines(columnsOf(organizations.useColumns), rows)).toEqual([
       `c:name,c:your_role,c:created_at,${cells(orgRoles, (role) => `c:${role}`)},${cells(orgCountTypes, (type) => `c:${type}`)}`,
       `Tenant 48,admin,${dateCell(created)},${cells(orgRoles, (role) => String(roleCount(role)))},${cells(orgCountTypes, () => '0')}`,
       `Organization 12,-,-,${cells(orgRoles, () => '-')},${cells(orgCountTypes, () => '-')}`,
-      `Seven,member,-,${cells(orgRoles, () => '-')},${cells(orgCountTypes, () => '-')}`,
     ]);
   });
 

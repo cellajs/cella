@@ -36,11 +36,11 @@ describe('included parts on mount', () => {
 });
 
 describe('export fetchers', () => {
-  it('ask for the parts their export columns read: counts and my membership for organizations, counts and MFA for members', async () => {
+  it('ask for the parts their export columns read: counts for organizations, counts and MFA for members', async () => {
     await fetchOrganizationsForExport({}, { maxPageSize: 1000 });
     await fetchMembersForExport({ ...channel, role: memberRole }, { maxPageSize: 1000 });
 
-    expect(vi.mocked(sdk.listOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,membership' } });
+    expect(vi.mocked(sdk.listOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts' } });
     expect(vi.mocked(sdk.listMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
   });
 });

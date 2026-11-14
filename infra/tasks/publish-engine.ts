@@ -25,7 +25,7 @@ import { errorMessage } from '../lib/utils/errors';
 import { infraDir } from '../lib/utils/paths';
 
 /** What the image copies of the checkout (infra/Dockerfile), relative to its root. */
-const CONTEXT_PATHS = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'shared', 'infra'];
+const CONTEXT_PATHS = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'patches', 'shared', 'infra'];
 
 /** An engine image an apply built and pushed, with what `applied.json` records of it once the apply's `up` completed. */
 export interface PublishedEngine {
