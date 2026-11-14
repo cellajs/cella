@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: popupMotionClass, stuckEdgeClass, collapsiblePanelClass, cellLinkTextClass, blockNoteFieldClass, menuHairlineClass, menuColumnsClass, floatingHiddenClass, sidebarBulletClass, authFieldClass, attachmentDialogStageClassName, SheetDescription, DrawerDescription, SelectTrigger, size="icon"
+grep: popupMotionClass, stuckEdgeClass, collapsiblePanelClass, cellLinkTextClass, blockNoteFieldClass, menuHairlineClass, menuColumnsClass, floatingHiddenClass, sidebarBulletClass, authFieldClass, attachmentDialogStageClassName, SheetDescription, DrawerDescription, SelectTrigger
 ---
 
 # Shared class constants become utilities, components and variants

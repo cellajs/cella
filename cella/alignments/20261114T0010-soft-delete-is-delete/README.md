@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: true
 caughtBy: nothing
-grep: isSoftDeleteTransition, isAlreadySoftDeleted, action === 'update', deletedAt != null, .updated
+grep: isSoftDeleteTransition, isAlreadySoftDeleted, buildStreamChange, stripEmbeddingReferences, action === 'update', deletedAt != null
 ---
 
 # A soft delete is a delete on the stream and in the activities
@@ -21,8 +21,8 @@ the update, and the tab that deleted it skips its own echo.
 ## Blast radius
 
 Every app: `clientCacheVersion` is bumped. Code of an app's own that listens to `<type>.updated` for a soft delete,
-reads activities with `action = 'update'` and `deleted_at` in `changed_fields`, or calls `stripEmbeddingReferences`
-with an action. No database change.
+reads activities with `action = 'update'` and `deleted_at` in `changed_fields`, calls `stripEmbeddingReferences`
+with an action, or tests a soft delete's stream change. No database change.
 
 ## Run
 
@@ -32,7 +32,8 @@ No script: manual.
 
 1. Move app logic that reacts to a soft delete from an `activityBus` `<type>.updated` listener that checks `deletedAt` to a `<type>.deleted` listener; a delete whose `rowData.deletedAt` is set is a soft delete, one without it a hard delete or an unpublish.
 2. An app query or report over `activities` that finds soft deletes by `changed_fields` containing `deletedAt` reads `action = 'delete'` from now on; older rows keep the update form.
-3. Bump the app's own `clientCacheVersion` when it sets one.
+3. An app test that passes a soft delete to `buildStreamChange` sends it as a `delete`: the change removes a row on a delete alone, and an update with `deletedAt` now names the row for a refetch.
+4. Bump the app's own `clientCacheVersion` when it sets one.
 
 ## Verify
 
