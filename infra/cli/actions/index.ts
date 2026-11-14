@@ -81,8 +81,8 @@ function fixKey(label: string, taken: Set<string>): string {
 /** The ways out of a failed action: retry it, each action that fixes it by its menu name (in a menu session), then leave. */
 function waysOut(id: OperatorActionId, ended: ActionEnded, firstSetup: boolean): Array<WayOut<string>> {
   const retry: WayOut<string> = firstSetup
-    ? { key: 'r', value: RETRY, label: 'Retry this step', description: 'Runs the step again with your answers and keys. What is made stays.' }
-    : { key: 'r', value: RETRY, label: ended.retry ?? `Retry ${actionLabel(id)}`, description: 'Runs it again with your answers and keys.' };
+    ? { key: 'r', value: RETRY, label: 'Retry this step', description: 'Runs the step again. What is made stays, and only the rest is created.' }
+    : { key: 'r', value: RETRY, label: ended.retry ?? `Retry ${actionLabel(id)}`, description: 'Runs the action again, from its first question.' };
   const taken = new Set(['r', 'm', 'q']);
   const fixes = inMenuSession()
     ? ended.fix.map((fix) => ({
