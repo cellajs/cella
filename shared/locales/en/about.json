@@ -15,7 +15,7 @@
   "cards.transloadit.purpose": "File handling",
   "cards.transloadit.text": "Transloadit is a file handling service that helps you with uploading, transforming and storing files.",
   "cella_approach_fit": "Cella has its own sync engine. It's a better fit if:",
-  "cella_approach_intro": "Existing sync frameworks and sync databases require you to hand over control of schemas, queries, and storage. They do work that you likely have to do again by yourself: counting items effectively, generating an audit trail.",
+  "cella_approach_intro": "Existing sync frameworks and sync databases require you to hand over control of schemas, queries, and storage. They do work that you eventually will repeat anyways: counting items effectively, event-driven logic, maintaining an audit trail.",
   "cella_approach_point_1": "Only selected data models need sync",
   "cella_approach_point_2": "Every write should go through your own REST API",
   "cella_approach_point_3": "Lock-in or framework constraints should be avoided",
