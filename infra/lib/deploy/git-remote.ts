@@ -39,6 +39,34 @@ export function listRemoteRefs(repository: string, key: string | undefined, opts
   return async (patterns: string[]): Promise<RemoteRef[]> => parseLsRemote(await git(key, ['ls-remote', repository, ...patterns], opts));
 }
 
+/**
+ * Fetch the head of the repository's default branch into `dir`, an empty folder, as a partial clone under `fetchArgs`; a private
+ * repository's read key goes as a header with every fetch.
+ * @returns the head's commit id
+ * @throws when the repository names no default branch or a git command fails.
+ */
+export async function fetchDefaultHead(opts: { repository: string; key: string | undefined; dir: string }, fetchArgs: string[]): Promise<string> {
+  const head = (await listRemoteRefs(opts.repository, opts.key)(['HEAD'])).find((ref) => ref.ref === 'HEAD')?.sha;
+  if (!head) throw new Error(`${opts.repository} names no default branch`);
+  await git(opts.key, ['init', '-q', '--bare', opts.dir]);
+  await git(opts.key, ['-C', opts.dir, 'remote', 'add', 'origin', opts.repository]);
+  await git(opts.key, ['-C', opts.dir, 'config', 'extensions.partialClone', 'origin']);
+  await git(opts.key, ['-C', opts.dir, 'config', 'remote.origin.promisor', 'true']);
+  await git(opts.key, ['-C', opts.dir, 'fetch', '-q', ...fetchArgs, 'origin', head]);
+  return head;
+}
+
+/**
+ * Whether the repository's default branch contains a commit. The branch's commits are fetched into `dir`, an empty folder, without trees
+ * or file contents. The commit asked about is never fetched: a tag may point at a history of any length.
+ * @throws when the repository names no default branch or a git command fails.
+ */
+export async function defaultBranchContains(opts: { repository: string; key: string | undefined; dir: string; sha: string }): Promise<boolean> {
+  const head = await fetchDefaultHead(opts, ['--filter=tree:0']);
+  // Read whole: the 16 MB `git` keeps of an answer hold about 400,000 commit ids.
+  return (await git(opts.key, ['-C', opts.dir, 'rev-list', head])).split('\n').includes(opts.sha);
+}
+
 /** How long a read that only names commits waits for the repository, and how long one answer serves the screens of a run. */
 const COMMIT_REFS_TIMEOUT_MS = 4_000;
 const COMMIT_REFS_FRESH_MS = 30_000;

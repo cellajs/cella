@@ -4,8 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { type EngineStamp, readEngineStamp } from '../lib/deploy/applied-engine';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
+import { RunRecorder } from '../lib/deploy/run-record';
 import { type ScheduledEffects, scheduledVerdict } from '../lib/deploy/scheduled-run';
-import { COMMIT, defaultRule, isReleaseCommit, type RemoteRef } from '../lib/deploy/target';
+import { COMMIT, commitName, defaultRule, isReleaseCommit, type RemoteRef } from '../lib/deploy/target';
 import { leaseOwnerOfRun } from '../lib/stack/control-store';
 import { errorMessage } from '../lib/utils/errors';
 import { isRecord } from '../lib/utils/guards';
@@ -21,6 +22,8 @@ export interface MainJobEffects {
   stamp(): EngineStamp | undefined;
   /** The repository's release tags as `git ls-remote` lists them, with the repository read key a private repository needs. */
   releaseRefs(opts: { mode: string; key: DeployKey; projectId: string }): Promise<RemoteRef[]>;
+  /** Whether the repository's default branch contains the commit, read with the same read key. */
+  onDefaultBranch(opts: { mode: string; key: DeployKey; projectId: string; sha: string }): Promise<boolean>;
   /** The lease, the reads and the record write of a scheduled run. */
   scheduledEffects(opts: { mode: string; key: DeployKey; projectId: string }): Promise<ScheduledEffects>;
   run: RunTask;
@@ -53,8 +56,8 @@ function deployKey(env: NodeJS.ProcessEnv): DeployKey | undefined {
  * target, `TARGET_SHA` under the retry counter `RETRY`. A run the schedule started sets neither: it finds the target as the
  * environments file at the head of the default branch names it, and deploys it, under the lease, only when no run record has that target
  * and counter (lib/deploy/scheduled-run.ts); otherwise it ends deployed with the line that says why. Where the environment deploys releases only, a release tag must name the
- * target before the deploy starts, as no code of the target has run yet; the rule is read from the image, never from a value a start call
- * can set. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed, the target serving already included; blocked, when a
+ * target and the default branch must contain it before the deploy starts, as no code of the target has run yet; the rule is read from the
+ * image, never from a value a start call can set. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed, the target serving already included; blocked, when a
  * required secret the operator owes or an apply stopped it, which its record names; or failed, a scheduled run that could not read its
  * target included. A run outside an engine image (a definition from before it) takes `MODE` from its env, and the deploy ends it `apply needed`.
  */
@@ -91,7 +94,14 @@ export async function mainJob(env: NodeJS.ProcessEnv, fx: MainJobEffects): Promi
     ({ run } = verdict);
     console.info(`[main-job] ${mode}: ${verdict.deploy.source} has no run under retry ${verdict.deploy.retry}: run ${run} deploys it`);
     const { sha, retry } = verdict.deploy;
-    return await deployTarget(env, fx, { mode, key, projectId, sha, retry: String(retry), run, refs: verdict.refs });
+    const scheduled = effects;
+    // The record this run opened ends with the reason: the schedule starts no target twice, and Deploy logs says why.
+    const refused = async (why: string) => {
+      const recorder = new RunRecorder({ run: verdict.run, environment: mode, target: sha, retry, now: started });
+      recorder.finish('failed', why);
+      await scheduled.writeRecord(recorder.record());
+    };
+    return await deployTarget(env, fx, { mode, key, projectId, sha, retry: String(retry), run, refs: verdict.refs, refused });
   } catch (error) {
     console.error(`[main-job] ${mode}: starts nothing, as ${errorMessage(error)}`);
     return MAIN_JOB_EXIT.failed;
@@ -101,31 +111,49 @@ export async function mainJob(env: NodeJS.ProcessEnv, fx: MainJobEffects): Promi
   }
 }
 
+interface DeployTargetOptions {
+  mode: string;
+  key: DeployKey;
+  projectId: string;
+  sha: string;
+  retry: string;
+  run?: string;
+  refs?: RemoteRef[];
+  /** Ends the record a scheduled run opened, with the reason its target does not deploy. */
+  refused?: (why: string) => Promise<void>;
+}
+
+/**
+ * Why a target does not deploy where the environment deploys releases only: no release tag names it, or the default branch does not
+ * contain it. A tag is one right in the repository and the branch's rules are another, and a release needs both. Undefined when it deploys.
+ * @throws when the repository cannot be read.
+ */
+async function releaseRefusal(fx: MainJobEffects, opts: DeployTargetOptions): Promise<string | undefined> {
+  const { mode, key, projectId, sha } = opts;
+  const refs = opts.refs ?? (await fx.releaseRefs({ mode, key, projectId }));
+  if (!isReleaseCommit(refs, sha)) return `${mode} deploys releases only: ${sha} is no release`;
+  if (await fx.onDefaultBranch({ mode, key, projectId, sha })) return undefined;
+  return `${mode} deploys releases of the default branch only, which does not contain ${commitName(refs, sha)} (${sha})`;
+}
+
 /**
  * Deploy one target in a child, after the release check where the environment deploys releases only. A scheduled run hands its run id,
  * whose record and lease it opened, and the refs it found the target with.
  */
-async function deployTarget(
-  env: NodeJS.ProcessEnv,
-  fx: MainJobEffects,
-  opts: { mode: string; key: DeployKey; projectId: string; sha: string; retry: string; run?: string; refs?: RemoteRef[] },
-): Promise<number> {
-  const { mode, key, projectId, sha, retry } = opts;
+async function deployTarget(env: NodeJS.ProcessEnv, fx: MainJobEffects, opts: DeployTargetOptions): Promise<number> {
+  const { mode, key, sha, retry } = opts;
   if (!COMMIT.test(sha)) {
     console.error(`The main job deploys a full commit id, and TARGET_SHA '${sha}' is none.`);
     return MAIN_JOB_EXIT.failed;
   }
   console.info(`[main-job] ${mode}: ${sha} (retry ${retry})`);
   if (defaultRule(mode)?.kind === 'releases') {
-    const refs =
-      opts.refs ??
-      (await fx.releaseRefs({ mode, key, projectId }).catch((error: unknown) => {
-        console.error(`[main-job] the release tags could not be listed: ${errorMessage(error)}`);
-        return undefined;
-      }));
-    if (!refs) return MAIN_JOB_EXIT.failed;
-    if (!isReleaseCommit(refs, sha)) {
-      console.error(`${mode} deploys releases only: ${sha} is no release`);
+    const refusal = await releaseRefusal(fx, opts).catch(
+      (error: unknown) => `the release check could not read the repository: ${errorMessage(error)}`,
+    );
+    if (refusal) {
+      console.error(`[main-job] ${refusal}`);
+      await opts.refused?.(refusal);
       return MAIN_JOB_EXIT.failed;
     }
   }
@@ -151,21 +179,29 @@ async function deployTarget(
  * the deploy key, and the deploy task in a child.
  */
 function liveEffects(): MainJobEffects {
+  /** The image's repository with the read key a private one needs, and the git reads of it. */
+  const repositoryReads = async ({ mode, key, projectId }: { mode: string; key: DeployKey; projectId: string }) => {
+    process.env.APP_MODE = mode;
+    const [{ engineConfig }, { deriveInfra }, { createSecretManagerClient }, { readRepositoryKey, repositoryUrl }, gitRemote] = await Promise.all([
+      import('../config/engine-config'),
+      import('../lib/naming'),
+      import('../lib/scaleway/scaleway-secret-manager'),
+      import('../lib/deploy/repository-key'),
+      import('../lib/deploy/git-remote'),
+    ]);
+    const { region } = deriveInfra(engineConfig);
+    const readKey = await readRepositoryKey(createSecretManagerClient({ secretKey: key.secretKey, region, projectId }));
+    return { repository: repositoryUrl(), readKey, ...gitRemote };
+  };
   return {
     stamp: () => readEngineStamp(),
-    releaseRefs: async ({ mode, key, projectId }) => {
-      process.env.APP_MODE = mode;
-      const [{ engineConfig }, { deriveInfra }, { createSecretManagerClient }, { readRepositoryKey, repositoryUrl }, { listRemoteRefs }] =
-        await Promise.all([
-          import('../config/engine-config'),
-          import('../lib/naming'),
-          import('../lib/scaleway/scaleway-secret-manager'),
-          import('../lib/deploy/repository-key'),
-          import('../lib/deploy/git-remote'),
-        ]);
-      const { region } = deriveInfra(engineConfig);
-      const readKey = await readRepositoryKey(createSecretManagerClient({ secretKey: key.secretKey, region, projectId }));
-      return listRemoteRefs(repositoryUrl(), readKey)(['refs/tags/*']);
+    releaseRefs: async (opts) => {
+      const { repository, readKey, listRemoteRefs } = await repositoryReads(opts);
+      return listRemoteRefs(repository, readKey)(['refs/tags/*']);
+    },
+    onDefaultBranch: async ({ sha, ...opts }) => {
+      const { repository, readKey, defaultBranchContains } = await repositoryReads(opts);
+      return defaultBranchContains({ repository, key: readKey, dir: await mkdtemp(join(tmpdir(), 'default-branch-')), sha });
     },
     scheduledEffects: async ({ mode, key, projectId }) => {
       process.env.APP_MODE = mode;
