@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { confirm, input } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -21,6 +20,7 @@ import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { type PublishedEngine, pruneEngines, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
+import { confirm, input } from '../prompts/back';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
 import {

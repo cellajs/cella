@@ -1,4 +1,3 @@
-import { confirm, select } from '@inquirer/prompts';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
 import { createApiKey, deleteApiKey, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
@@ -14,6 +13,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { planUploadsKey, writeUploadsKey } from '../../tasks/uploads-key';
+import { confirm, select } from '../prompts/back';
 import { forgetOwnerKey, rememberOperatorKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
 import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared';

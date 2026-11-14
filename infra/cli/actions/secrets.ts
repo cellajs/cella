@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { confirm, input } from '@inquirer/prompts';
 import { blockedValues } from '../../lib/deploy/failure-class';
 import { bucketRunStore } from '../../lib/deploy/run-store';
 import { type ManagedKeyDefinition, managedKeys } from '../../lib/managed-keys';
@@ -28,6 +27,7 @@ import {
 } from '../../tasks/manage-runtime-secrets';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import type { MenuChoice } from '../menu';
+import { confirm, input, PromptBack } from '../prompts/back';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, type MenuSelectOptions, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, type InfraContext } from '../shared';
@@ -303,7 +303,13 @@ export async function secretsMenu(options: SecretsMenuOptions): Promise<{ change
     picked = choice;
     const row = rows.find((candidate) => candidate.definition.id === choice);
     if (choice !== IMPORT && !row) throw new Error(`secrets: prompt returned unknown secret id '${choice}'`);
-    const wrote = row ? await handleRow(ctx, row.definition, containers.get(row.definition.secretName)) : await handleImport(ctx, containers);
+    // Esc at a prompt of the row steps back to the table.
+    const wrote = await (row ? handleRow(ctx, row.definition, containers.get(row.definition.secretName)) : handleImport(ctx, containers)).catch(
+      (error: unknown) => {
+        if (error instanceof PromptBack) return false;
+        throw error;
+      },
+    );
     if (wrote) {
       changed = true;
       containers = await readContainers(reader);

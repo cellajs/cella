@@ -1,4 +1,3 @@
-import { select } from '@inquirer/prompts';
 import {
   accountExcerpt,
   accountFailed,
@@ -32,6 +31,7 @@ import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { select } from '../prompts/back';
 import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 
 const LIST_LENGTH = 10;

@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { confirm } from '@inquirer/prompts';
 import { actionLabel } from '../../lib/operator-actions';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { Interrupted, shieldInterrupt } from '../prompts/abort';
+import { confirm } from '../prompts/back';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { detectPublicIp, prepareClose, prepareExpose, readDbCa, readPublicDsn, removeExposureOverlay } from './db-exposure';
 import { runOperatorApply } from './operator-apply';
@@ -52,11 +53,15 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     if (!dbCa) console.warn(`${warningMark} DB CA output unavailable; seeding over encrypt-only TLS.`);
     console.info(pc.dim('\n-> Running backend seeds against the temporary endpoint...\n'));
     // Dev-mode env from the repo-root .env supplies everything except the database target.
-    const result = spawnSync('pnpm', ['--filter', 'backend', 'seed'], {
-      cwd: resolve(infraDir, '..'),
-      stdio: 'inherit',
-      env: { ...process.env, DATABASE_URL: dsn, DATABASE_ADMIN_URL: dsn, ...(dbCa ? { DATABASE_SSL_CA: dbCa } : {}) },
-    });
+    // A Ctrl-C stops the seed child alone, so the finally below still closes the endpoint.
+    const result = await shieldInterrupt(() =>
+      spawnSync('pnpm', ['--filter', 'backend', 'seed'], {
+        cwd: resolve(infraDir, '..'),
+        stdio: 'inherit',
+        env: { ...process.env, DATABASE_URL: dsn, DATABASE_ADMIN_URL: dsn, ...(dbCa ? { DATABASE_SSL_CA: dbCa } : {}) },
+      }),
+    );
+    if (result.signal === 'SIGINT' || result.status === 130) throw new Interrupted();
     if (result.status !== 0) throw new Error(`backend seed exited ${result.status}`);
     console.info(`\n${checkMark} ${pc.bold('Seeds completed.')}`);
   } finally {
