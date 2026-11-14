@@ -11,5 +11,5 @@ export const setHasNavigated = () => {
   hasNavigated = true;
 };
 
-/** False until a navigation in this document: a page load leaves focus at the start, with the skip link as the first Tab stop. */
+/** False until a navigation in this document: a page load leaves focus at the start, where Tab reaches the skip link or the navigation first. */
 export const getHasNavigated = () => hasNavigated;

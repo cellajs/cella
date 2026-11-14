@@ -37,9 +37,15 @@ const layoutStopClass = tw(
   'focus:shadow-floating sr-only size-px border-0 p-0 focus:not-sr-only focus:fixed focus:z-200 focus:h-10 focus:border focus:px-4',
 );
 
-/** First Tab stop of a layout, visible on focus: moves focus to the page's `<main>`, past the navigation (WCAG 2.4.1). */
+/**
+ * First Tab stop of a layout with a sidebar, visible on focus: moves focus to the page's `<main>`, past the sidebar (WCAG 2.4.1).
+ * Focus view hides every sidebar, and this link with it.
+ */
 export function SkipLink() {
   const { t } = useTranslation();
+  const focusView = useUIStore((state) => state.focusView);
+
+  if (focusView) return null;
 
   return (
     <Button
@@ -53,9 +59,12 @@ export function SkipLink() {
   );
 }
 
-/** Last Tab stop of a layout, visible on focus: takes the page to the top and focus to the skip link, which a focus alone does not scroll to. */
+/** Last Tab stop of a layout with a skip link, visible on focus: takes the page to the top and focus to the skip link, which a focus alone does not scroll to. */
 export function BackToStart() {
   const { t } = useTranslation();
+  const focusView = useUIStore((state) => state.focusView);
+
+  if (focusView) return null;
 
   const handleClick = () => {
     window.scrollTo(0, 0);
