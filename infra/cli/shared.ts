@@ -5,14 +5,11 @@ import { deriveInfra } from '../lib/naming';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
 import { allPrincipalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, pruneLockVersions, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
-import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 import type { StackContext } from '../lib/stack/stack-context';
 import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
 import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
-import { maskedSecret } from './prompts/masked-secret';
-import { passphraseCustody, rememberedPassphrase, rememberPassphrase } from './session';
 
 type AppConfigType = EngineConfig;
 
@@ -85,63 +82,6 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
   }
   if (fromEnv) return fromEnv;
   return input({ message: opts.message, default: opts.default });
-}
-
-/**
- * Resolve and verify the Pulumi passphrase against existing stack encryption metadata. It never comes from the environment: a value on disk
- * would let the CLI run with nobody at the prompt. It comes from Secret Manager, read with the operator key the session is unlocked with,
- * else from the prompt; either way it is kept in memory for this run of the CLI, so a menu session asks once.
- * A passphrase typed while the session is unlocked is stored in Secret Manager, which is how an existing stack gets its copy there.
- * A stack with nothing encrypted yet takes one prompt unverified.
- */
-export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
-  const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return maskedSecret({ message: 'Recovery passphrase' });
-
-  // From earlier in this run: a rotation since then changed the stack's salt, so a stale one fails here and is fetched or asked again.
-  const remembered = rememberedPassphrase();
-  if (remembered && verifyStackPassphrase(stackYaml, remembered)) return remembered;
-
-  const custody = passphraseCustody();
-  const stored = await custody?.read();
-  if (stored && verifyStackPassphrase(stackYaml, stored)) {
-    rememberPassphrase(stored);
-    return stored;
-  }
-  if (stored) console.warn(`${warningMark} The passphrase in Secret Manager does not open this stack: type the current one, and it is stored again.`);
-
-  while (true) {
-    const entered = await maskedSecret({ message: 'Recovery passphrase' });
-    if (verifyStackPassphrase(stackYaml, entered)) {
-      rememberPassphrase(entered);
-      if (await custody?.store(entered)) console.info(pc.dim('  Stored in Secret Manager: from now on the operator key fetches it.'));
-      return entered;
-    }
-    console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`);
-  }
-}
-
-/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, and that copy restores Secret Manager's. */
-async function confirmPassphraseStored(passphrase: string): Promise<void> {
-  console.info(`\n→ ${pc.bold('Recovery passphrase')}`);
-  console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
-  console.info(`  ${pc.bold('Save it in your password manager:')} it restores this environment if the copy in Scaleway is lost. Shown once.`);
-  while (!(await confirm({ message: 'Saved?', default: false }))) {
-    console.warn(`${warningMark} Save it before continuing: this is the only time it is shown.`);
-  }
-}
-
-/**
- * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack defers to the fetch-or-prompt flow.
- * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
- */
-export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ passphrase: string; generated: boolean }> {
-  const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (canVerify) return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
-
-  const passphrase = generatePassphrase();
-  await confirmPassphraseStored(passphrase);
-  return { passphrase, generated: true };
 }
 
 /** The stack name every action targets: derived from the mode on the DIY backend (`organization/infra/<mode>`); `INFRA_STACK_NAME` overrides it for unusual layouts. Never prompted. */

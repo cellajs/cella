@@ -5,13 +5,10 @@ The deploy's steps and the operator tasks. The sequencers keep their live effect
 - **Deploy steps**: [main-job.ts](./main-job.ts) finds a scheduled run's target and ends the run when that target has a record, checks a releases-only target against the release tags and runs [deploy.ts](./deploy.ts), and [deploy-run.ts](./deploy-run.ts) runs the steps in order on the table `deploy-env.ts` builds: the lease, the live record, the engine check, `compose-env --check` (the required values are stored), `build-release`, the description check, `compose-env` (each role's env file), `geoip-refresh`, the switches, `clear-machine-links` and `smoke`.
 - **Build**: `build-release` makes the builder machine, from `build-images` (the image bake into archives) and `frontend-build-env`, then uploads the frontend files from their archive with `frontend-assets`.
 - **Switch**: `switch-machines` switches each role to its new machine, the primary first; `wait-for-version` reads the pools until an address serves or drained.
-- **Apply and operator tasks**: `ensure-state-bucket` (the setup's state bucket), `publish-engine` (the engine image and `applied.json`), `description-hash` (what the apply records and a builder reports), `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `passphrase-custody`, `verify-after-apply`, `repair-certs`, `manage-runtime-secrets`, `reset-database` and `final-dump` (the database into the boot-diag bucket before a teardown).
+- **Apply and operator tasks**: `ensure-state-bucket` (the setup's state bucket), `publish-engine` (the engine image and `applied.json`), `description-hash` (what the apply records and a builder reports), `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `verify-after-apply`, `repair-certs`, `manage-runtime-secrets`, `reset-database` and `final-dump` (the database into the boot-diag bucket before a teardown).
 - **Identity tasks**, written at an Owner moment: `declared-policies`, `uploads-key`, `setup-ci-key`, `setup-operators`, `setup-observer-app`, `provision-managed-key`; `identity-plan` reads where the identities differ from the declared ones.
 - **Pull request checks**: `privileged-check` renders the base and the head with `privileged-footprint`; `release-applied-check`, on the release PR, holds the head's `description-hash` against the one the last apply published.
 - **Status**: `status`, the report behind `pnpm infra status`.
-- **Retired-model migrations**: `admit-operator-buckets`, `move-secret-paths` (each secret's copies into one container of the runtime folder), `retire-program-machines` (the apply's move off the machines the Pulumi program made).
-
-`args.ts` holds the flag helpers the tasks share.
 
 ## Failing a task
 

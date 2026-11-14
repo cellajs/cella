@@ -3,9 +3,9 @@ import { deriveInfra } from '../lib/naming';
 import { getUserData, setUserData } from '../lib/scaleway/machines';
 import { withoutLinks } from '../lib/scaleway/presign';
 import { deployS3Key, makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
+import { getFlag } from '../lib/utils/args';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 import type { MachineEnv } from './compose-env';
 
 /** A machine a deploy made, by its role; `kept` when a failed stop-first switch left it, as a late boot may still serve. */

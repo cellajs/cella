@@ -1,4 +1,5 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
+import { errorMessage } from '../utils/errors';
 import { createApiKey, deleteApiKey, IAM_BASE, listApiKeys, resolveApplicationIdByName } from './iam-client';
 import { principalNames, principalTags } from './principals';
 import { scwFetch, scwSend } from './scw-fetch';
@@ -84,7 +85,7 @@ export async function ensureApplication(
   if (!existingId) log(`  ${changeMark} Created IAM application: ${app.name} (${app.id})`);
   if (mode) {
     await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch((error) => {
-      log(`  ${tildeMark} Group enrollment skipped: ${error instanceof Error ? error.message : String(error)}`);
+      log(`  ${tildeMark} Group enrollment skipped: ${errorMessage(error)}`);
     });
   }
   return app;

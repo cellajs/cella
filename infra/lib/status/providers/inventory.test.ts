@@ -103,15 +103,12 @@ describe('the inventory', () => {
       env: { ...mainJob.env, NODE_OPTIONS: '--import=data:text/javascript,0' },
       secretReferences: [
         { env: 'DEPLOY_KEY_JSON', secretId: 's1', name: 'deploy-key', path: engine },
-        { env: 'PULUMI_CONFIG_PASSPHRASE', secretId: 's2', name: 'pulumi-passphrase', path: engine },
         { env: 'DB_PASSWORD', secretId: 's3', name: 'database-admin-password', path: engine },
       ],
     };
-    // A definition from before the deploy left the state still reads the passphrase: an apply writes it without.
     expect(mainJobDifferences(live, mainJob)).toEqual([
       'image rg.nl-ams.scw.cloud/app/infra-engine:latest',
       'an extra env var NODE_OPTIONS',
-      'an extra secret reference PULUMI_CONFIG_PASSPHRASE (pulumi-passphrase)',
       'an extra secret reference DB_PASSWORD (database-admin-password)',
     ]);
   });

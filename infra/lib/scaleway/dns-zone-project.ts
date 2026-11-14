@@ -1,3 +1,4 @@
+import { errorMessage } from '../utils/errors';
 import { type ScwAuth, scwFetch } from './scw-fetch';
 
 const DOMAIN_BASE = 'https://api.scaleway.com/domain/v2beta1';
@@ -29,7 +30,7 @@ export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): P
 /** Project ids the CI key's DNS grant must cover: the app project plus the serving zone's project when it differs. Falls back to the app project alone when the zone lookup fails. */
 export async function resolveDnsProjectIds(auth: ScwAuth, dnsZone: string, appProjectId: string): Promise<string[]> {
   const zoneProjectId = await resolveDnsZoneProjectId(auth, dnsZone).catch((err: unknown) => {
-    console.warn(`DNS zone project lookup failed (${err instanceof Error ? err.message : String(err)}); scoping DNS to the app project only.`);
+    console.warn(`DNS zone project lookup failed (${errorMessage(err)}); scoping DNS to the app project only.`);
     return undefined;
   });
   return zoneProjectId && zoneProjectId !== appProjectId ? [appProjectId, zoneProjectId] : [appProjectId];

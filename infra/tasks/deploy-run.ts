@@ -11,9 +11,9 @@ import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, run
 import type { MachineRole } from '../lib/machine-roles';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
+import { getFlag } from '../lib/utils/args';
 import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 import type { MachineEnv } from './compose-env';
 import { type AllowedKey, buildDeployEnv } from './deploy-env';
 import type { SwitchResult } from './switch-machines';

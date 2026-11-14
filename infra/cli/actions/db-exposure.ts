@@ -31,7 +31,7 @@ const DB_ACL_KEY = 'infra:dbPublicAcl';
 const DB_CA_OUTPUT = 'caCertificate';
 
 /**
- * Create the exposure overlay by copying the committed stack config, which carries `encryptionsalt` so secret config encrypts with the same passphrase.
+ * Create the exposure overlay by copying the committed stack config, whose `encryptionsalt` its secret config encrypts under.
  * While the returned overlay file exists, the CLI menu treats the endpoint as exposure-managed.
  */
 function writeExposureOverlay(stackPath: string, environment: string): string {

@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { errorMessage } from '../../lib/utils/errors';
+import { sleep } from '../../lib/utils/sleep';
 import { loadArchives } from './archives';
 import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics';
 import { type ExecFn, execCommand, mustExec } from './exec';
@@ -28,10 +29,6 @@ export interface WaitForPrivateNetworkOptions {
   exec: ExecFn;
   timeoutSeconds: number;
   retryDelayMs?: number;
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions): Promise<void> {

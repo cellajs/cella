@@ -46,7 +46,6 @@ export async function acquireOwnerKey(opts: {
       label: 'Owner key',
       howto: 'Paste a key of your own that expires within hours.',
     }));
-  if (!pair) return endAction(1);
 
   let organizationId: string;
   try {

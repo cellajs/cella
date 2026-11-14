@@ -4,9 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { owedWork, owedWorkLines, type PrivilegedFootprint } from '../lib/stack/privileged-footprint';
 import { environments, stackFilePath } from '../lib/stack/project-per-mode';
+import { getFlag } from '../lib/utils/args';
+import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { getFlag } from './args';
 
 const RENDER = join('tasks', 'privileged-footprint.ts');
 
@@ -43,7 +44,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       base = render(baseInfra, mode, join(work, `base-${mode}.json`));
     } catch (error) {
       lines.push(`**${mode}:** the base did not render, so there is nothing to compare with.`, '');
-      console.error(error instanceof Error ? error.message : String(error));
+      console.error(errorMessage(error));
       uncompared = true;
       continue;
     }

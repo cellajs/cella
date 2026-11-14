@@ -1,3 +1,5 @@
+import { errorMessage } from '../utils/errors';
+import { sleep as defaultSleep } from '../utils/sleep';
 import { acquireLock, type LockInfo, releaseLock, renewLock, type S3Like } from './control-store';
 
 /** Default lease lifetime: long enough to ride out a slow renewal, short enough that a dead run frees the stack within minutes. */
@@ -37,8 +39,6 @@ export interface StackLease {
 
 export type LeaseResult = { acquired: true; lease: StackLease } | { acquired: false; held: LockInfo };
 
-const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
 /**
  * Take the lease as a renewed lease. The holder extends the expiry every `renewEveryMs`, so an interrupted run's lock lapses on its own within one
  * lifetime; a caller that finds the lock held may wait up to `waitMs` for that lapse.
@@ -74,7 +74,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
         opts.onRenewFailed?.(reason, true);
       }
     } catch (err) {
-      opts.onRenewFailed?.(err instanceof Error ? err.message : String(err), false);
+      opts.onRenewFailed?.(errorMessage(err), false);
     }
   }, renewEveryMs);
   // A pending renewal must never keep a finished process alive.

@@ -1,3 +1,5 @@
+import { errorMessage } from '../lib/utils/errors';
+
 // Thin loader for the deploy command. ESM hoists imports, and the deploy
 // implementation's import graph evaluates the shared appConfig at load time,
 // so APP_MODE must be in the environment BEFORE that graph loads. Parse the
@@ -16,7 +18,5 @@ await main(argv).catch(async (err: unknown) => {
   const { failWithHint } = await import('../lib/utils/cli-output');
   const { ExitCodeError } = await import('../lib/utils/errors');
   // A run that ended blocked or apply needed keeps its exit code, so the main job can tell it from a failure.
-  failWithHint(err instanceof Error ? err.message : String(err), deployFailureHint(err, mode), err instanceof ExitCodeError ? err.exitCode : 1);
+  failWithHint(errorMessage(err), deployFailureHint(err, mode), err instanceof ExitCodeError ? err.exitCode : 1);
 });
-
-export {};

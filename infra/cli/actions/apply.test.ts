@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InfraContext } from '../shared';
 
 const acquireOperatorKey = vi.fn();
-const admitOperatorOrExit = vi.fn();
+const exitWhenShutOutOfBuckets = vi.fn();
 const reviewPlan = vi.fn();
 const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
@@ -17,15 +17,15 @@ vi.mock('../shared', () => ({
   endAction: (code: number) => {
     throw Object.assign(new Error('ended'), { name: 'ActionEnded', exitCode: code });
   },
-  resolveVerifiedPassphrase: async () => 'correct horse',
   stackNameFor: () => 'cella/production',
 }));
 vi.mock('./plan', () => ({ reviewPlan: (...args: unknown[]) => reviewPlan(...args), askToApply: (...args: unknown[]) => askToApply(...args) }));
 vi.mock('./operator-apply', () => ({
-  admitOperatorOrExit: (...args: unknown[]) => admitOperatorOrExit(...args),
+  exitWhenShutOutOfBuckets: (...args: unknown[]) => exitWhenShutOutOfBuckets(...args),
   runOperatorApply: (...args: unknown[]) => runOperatorApply(...args),
 }));
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
+vi.mock('./drop-passphrase', () => ({ dropKeptPassphrase: async () => {} }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 vi.mock('./releases', () => ({ checkWaitingRelease: async () => {} }));
@@ -38,7 +38,7 @@ const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
 const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
-const reviewed = { passphrase: 'correct horse', checkpoint: '"aaa"' };
+const reviewed = { checkpoint: '"aaa"' };
 const engine = { image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`, imageDigest: `sha256:${'1'.repeat(64)}` };
 
 beforeEach(() => {
@@ -73,7 +73,7 @@ describe('runApply', () => {
 
     await runApply(context);
 
-    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true, engineImage: engine.image });
+    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { engineImage: engine.image });
     expect(runOperatorApply).not.toHaveBeenCalled();
     // The image pushed for the plan goes with it: no definition names it.
     expect(discardEngine).toHaveBeenCalledWith(expect.objectContaining({ engine }));
@@ -81,7 +81,7 @@ describe('runApply', () => {
 
   it('lets the operator into older bucket policies before it plans: the plan reads the state', async () => {
     const order: string[] = [];
-    admitOperatorOrExit.mockImplementation(async () => order.push('admit'));
+    exitWhenShutOutOfBuckets.mockImplementation(async () => order.push('admit'));
     reviewPlan.mockImplementation(async () => {
       order.push('plan');
       return reviewed;
@@ -91,7 +91,7 @@ describe('runApply', () => {
     await runApply(context);
 
     expect(order).toEqual(['admit', 'plan']);
-    expect(admitOperatorOrExit).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR' }));
+    expect(exitWhenShutOutOfBuckets).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR' }));
   });
 
   it('hands the confirmed plan to the converge, which applies it unless the state changed', async () => {

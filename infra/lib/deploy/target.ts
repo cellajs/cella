@@ -1,3 +1,4 @@
+import { errorMessage } from '../utils/errors';
 /**
  * What an environment deploys: production the newest release, any other environment only what its line in the repository's environments
  * file names. A line also pins a release or a commit, or raises the retry counter; an environment that follows the releases takes `releases`
@@ -64,7 +65,7 @@ export function parseEnvironmentsFile(text: string): Map<string, EnvironmentLine
     try {
       rule = parseRule(target);
     } catch (error) {
-      throw new Error(`${where}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`${where}: ${errorMessage(error)}`);
     }
     // Merging a line is not publishing a release: an environment that follows the releases takes no commit and no branch from a line.
     if (defaultRule(environment)?.kind === 'releases' && (rule.kind === 'branch' || (rule.kind === 'pin' && !RELEASE_TAG.test(rule.ref)))) {

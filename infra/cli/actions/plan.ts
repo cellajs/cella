@@ -3,22 +3,13 @@ import { confirm } from '@inquirer/prompts';
 import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectEtag, stateBucket } from '../../lib/stack/control-store';
 import { checkpointKey } from '../../lib/stack/pending-operations';
-import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import {
-  acquireStackLockOrExit,
-  endAction,
-  type InfraContext,
-  pulumiLoginAndSelect,
-  pulumiLoginUrl,
-  resolveVerifiedPassphrase,
-  stackNameFor,
-} from '../shared';
+import { endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 
 /** The `pulumi preview` arguments of a plan an operator reviews. `--refresh` reads every resource live first, so drift made outside Pulumi (a rule re-scoped in the console) is part of the diff. */
 export function planArgs(stack: string, configFile?: string): string[] {
@@ -39,8 +30,6 @@ export function askToApply(environment: string): Promise<boolean> {
 
 /** A plan shown before the stack is locked. */
 export interface ReviewedPlan {
-  /** The passphrase verified for the plan, so the apply does not ask for it again. */
-  passphrase: string;
   /**
    * The etag of the stack's checkpoint the plan was computed from, null when there was none: every `up` changes it, and a preview writes
    * none. Undefined when the state bucket could not be read: the apply then plans again under the lock.
@@ -52,17 +41,12 @@ export interface ReviewedPlan {
  * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the operator apply builds
  * (organization id). Nothing is locked or written: the returned checkpoint lets the apply tell whether the plan still holds once it is.
  */
-export async function reviewPlan(
-  context: InfraContext,
-  key: KeyPair,
-  opts: { forgetRetired?: boolean; engineImage?: string } = {},
-): Promise<ReviewedPlan> {
+export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { engineImage?: string } = {}): Promise<ReviewedPlan> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} A plan needs a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
   }
   const { projectId, appConfig } = context;
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
 
   // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_DEFAULT_ORGANIZATION_ID from the env, else what IAM says about the key.
@@ -77,31 +61,10 @@ export async function reviewPlan(
   }
 
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
-  const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, stateBackendUrl: pulumiLoginUrl(appConfig), organizationId });
+  const env = buildProviderEnv(infraDir, { ...key, projectId, stateBackendUrl: pulumiLoginUrl(appConfig), organizationId });
   // The engine image the apply just pushed, which the plan shows on the main job; without one the program keeps the applied engine's.
   if (opts.engineImage) env.INFRA_ENGINE_IMAGE = opts.engineImage;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
-
-  // An apply first takes retired resources out of the state, under the lease, so its plan shows none of them as deleted: they stay live
-  // (lib/stack/retired-state.ts). A preview leaves the state as it is.
-  if (opts.forgetRetired) {
-    const lock = await acquireStackLockOrExit({
-      appConfig,
-      ...stateKeyOf(key, projectId),
-      stack,
-      operation: 'forget-retired-resources',
-    });
-    try {
-      // The move off the machines the program made is the apply's (operator-apply.ts), which plans again once it ran: a plan declined here
-      // leaves the pools, the stack config and the live record as they were.
-      forgetRetiredResources(stack, env);
-    } catch (error) {
-      console.error(`${warningMark} The retired resources could not leave the state (${errorMessage(error)}). Nothing was planned or applied.`);
-      endAction(1);
-    } finally {
-      await lock.release();
-    }
-  }
 
   // Read before the plan runs, so an apply whose `up` completes and writes the checkpoint while the preview runs counts as a change too.
   const checkpoint = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
@@ -110,8 +73,8 @@ export async function reviewPlan(
 
   const status = showPlan(env, stack);
   if (status !== 0) {
-    console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env) and the passphrase.`);
+    console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env).`);
     endAction(status);
   }
-  return { passphrase, checkpoint };
+  return { checkpoint };
 }

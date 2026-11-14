@@ -109,7 +109,7 @@ export function declaredMainJob(opts: { projectId: string; organizationId: strin
     imageUri: opts.image,
     startupCommands: ['/bin/sh', '-c', MAIN_JOB_SCRIPT],
     env: { SCW_DEFAULT_PROJECT_ID: opts.projectId, SCW_DEFAULT_ORGANIZATION_ID: opts.organizationId },
-    // The deploy key only: a deploy plans no stack, so its runs read no passphrase.
+    // The deploy key only: a deploy plans no stack.
     secretReferences: { DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME } },
     secretFolder: MAIN_JOB_SECRET_FOLDER,
     cron: mainJobSchedule(opts.everyMinutes),

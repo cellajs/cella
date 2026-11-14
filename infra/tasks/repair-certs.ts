@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { type ScwAuth, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { getFlag } from '../lib/utils/args';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { getFlag } from './args';
 
 const CERT_TYPE = 'scaleway:loadbalancers/certificate:Certificate';
 

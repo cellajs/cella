@@ -1,89 +1,48 @@
-import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import type { DeclaredPolicy } from '../../lib/scaleway/declared-identities';
 import { declaredIdentities } from '../../lib/scaleway/declared-identities';
-import { IAM_BASE, type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
+import { IAM_BASE, type IamAuth } from '../../lib/scaleway/iam-client';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, appPrincipalNames, principalNames } from '../../lib/scaleway/principals';
-import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
-import { deleteApplicationCascade, ensureApplication } from '../../lib/scaleway/scaleway-iam';
+import { ensureApplication } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwSend } from '../../lib/scaleway/scw-fetch';
-import { ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
-import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
-import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
+import { errorMessage } from '../../lib/utils/errors';
 import { planDeclaredPolicies, writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { type IdentityChanges, identityChangeLines, planIdentityChanges } from '../../tasks/identity-plan';
 import { declaredObserverPolicy } from '../../tasks/setup-observer-app';
 import { writeUploadsKey } from '../../tasks/uploads-key';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
-import { ensureObserverForEnvironment, type ObserverStep, observerKeyHere, observerStep } from './observer-key';
+import { ensureObserverForEnvironment, type ObserverStep, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
-import { type OwnerKey, printRevokeReminder } from './owner-key';
+import { printRevokeReminder } from './owner-key';
 
-/** The retired admin application of an environment that still has it; removable once no bucket policy needs it (see `retiredAdmin`). */
-export interface RetiredAdmin {
-  name: string;
-  id: string;
-  removable: boolean;
-}
-
-/** What an identity update would change: the identity plan with the observer's policy among its policies, the observer's step on this machine, the retired admin application. */
+/** What an identity update would change: the identity plan with the observer's policy among its policies, and the observer's step on this machine. */
 export interface IdentityPlan extends IdentityChanges {
   observer: ObserverStep;
-  retiredAdmin?: RetiredAdmin;
 }
 
-/** True when the plan changes nothing. A retired admin application that must stay is no change. */
+/** True when the plan changes nothing. */
 export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
   return (
     plan.missingApplications.length === 0 &&
     plan.policies.every((step) => step.change === 'none') &&
     (plan.uploadsKey?.change ?? 'none') === 'none' &&
     plan.extraPolicies.length === 0 &&
-    plan.retiredApplications.length === 0 &&
-    plan.observer === 'none' &&
-    !plan.retiredAdmin?.removable
+    plan.observer === 'none'
   );
 }
 
 /** The plan as lines to print. */
-export function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNames, 'observer'>): string[] {
+function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNames, 'observer'>): string[] {
   const observerWords: Record<ObserverStep, string | undefined> = {
     none: undefined,
     create: 'to create, its key written to this machine',
     key: 'a key for this machine',
   };
   const observer = observerWords[plan.observer];
-  return [
-    ...identityChangeLines(plan),
-    ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
-    ...(plan.retiredAdmin?.removable ? [`application ${plan.retiredAdmin.name}: retired, to delete with its keys and its custody secret`] : []),
-  ];
-}
-
-/**
- * The environment's retired admin application, when it still exists. It is removable once the state bucket admits the observer: a policy that
- * names the observer was written by the program after the operator was admitted, and the admission writes every bucket's policy that lacked
- * it in one run. Before that, the admin application is the only principal those policies name that can rewrite them.
- */
-async function retiredAdmin(
-  auth: IamAuth,
-  organizationId: string,
-  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
-): Promise<RetiredAdmin | undefined> {
-  const { admin: name } = principalNames(context.appConfig.slug, context.environment);
-  const id = await resolveApplicationIdByName(auth, organizationId, name);
-  if (!id) return undefined;
-  const observer = observerKeyHere(context.environment);
-  if (!observer) return { name, id, removable: false };
-  const s3 = await makeS3Client(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
-  const removable = await s3.send(new ListObjectsV2Command({ Bucket: stateBucket(context.appConfig.slug), MaxKeys: 1 })).then(
-    () => true,
-    () => false,
-  );
-  return { name, id, removable };
+  return [...identityChangeLines(plan), ...(observer ? [`observer ${names.observer}: ${observer}`] : [])];
 }
 
 /** A Secret Manager client in the environment's project. */
@@ -113,7 +72,7 @@ export async function exitOnIdentityChanges(
   release?: () => Promise<void>,
 ): Promise<void> {
   const plan = await planChanges(context, key.secretKey, key.organizationId).catch((error) => {
-    console.warn(`${warningMark} Could not read the identities (${error instanceof Error ? error.message : String(error)}).`);
+    console.warn(`${warningMark} Could not read the identities (${errorMessage(error)}).`);
     return undefined;
   });
   const changes = plan ? identityChangeLines(plan) : [];
@@ -149,49 +108,13 @@ async function planIdentities(
     ...changes,
     policies: [...changes.policies, ...(await planDeclaredPolicies(auth, organizationId, observer))],
     observer: observerStep(observer.length > 0, context.environment),
-    retiredAdmin: await retiredAdmin(auth, organizationId, context),
   };
 }
 
-/** Delete the retired admin application with its keys and policy, and the custody secret that held its key. */
-async function deleteRetiredAdmin(
-  ownerKey: OwnerKey,
-  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
-  admin: RetiredAdmin,
-): Promise<void> {
-  await deleteApplicationCascade({ callerSecretKey: ownerKey.secretKey, organizationId: ownerKey.organizationId, applicationId: admin.id });
-  const secrets = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: context.appConfig.s3.region, projectId: context.projectId });
-  const custody = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, ENGINE_FOLDER);
-  if (custody) await secrets.deleteSecret(custody.id);
-  console.info(`  ${changeMark} '${admin.name}' deleted, with its custody secret.`);
-}
-
 /**
- * Delete the retired machine identities with their keys and policies, and what was kept for them: the standing keys in the former deploy
- * folder and every bundle left under `/handoff/`. A machine that booted with one of their keys keeps running until a deploy replaces it.
- */
-async function deleteRetiredMachines(
-  ownerKey: OwnerKey,
-  context: Pick<InfraContext, 'appConfig' | 'projectId'>,
-  applications: IdentityChanges['retiredApplications'],
-): Promise<void> {
-  for (const application of applications) {
-    await deleteApplicationCascade({ callerSecretKey: ownerKey.secretKey, organizationId: ownerKey.organizationId, applicationId: application.id });
-    console.info(`  ${changeMark} '${application.name}' deleted, with its keys and policy.`);
-  }
-  const secrets = secretsFor(context, ownerKey.secretKey);
-  const left = [
-    ...(await secrets.listSecretsUnder('/deploy/')).filter((secret) => secret.name.startsWith('machine-key-')),
-    ...(await secrets.listSecretsUnder('/handoff/')),
-  ];
-  for (const secret of left) await secrets.deleteSecret(secret.id);
-  if (left.length > 0) console.info(`  ${changeMark} ${left.length} secret(s) kept for them deleted.`);
-}
-
-/**
- * Update identities: make the applications the code declares, write their policies and the observer's, make the uploads key, and delete the
- * retired machine identities, at an Owner moment. They are IAM, which neither the operator key nor the deploy key writes. The plan is read
- * first with the observer key when this machine holds it, so an Owner API key is asked for only when something has to change.
+ * Update identities: make the applications the code declares, write their policies and the observer's, and make the uploads key, at an
+ * Owner moment. They are IAM, which neither the operator key nor the deploy key writes. An Owner API key is asked for only when something
+ * has to change: the plan is read first with the observer key when this machine holds it.
  */
 export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -200,9 +123,6 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   console.info(pc.dim(`\n${actionLabel('identity')}: write what differs from the declared identities.\n`));
 
   const show = (plan: IdentityPlan): boolean => {
-    if (plan.retiredAdmin && !plan.retiredAdmin.removable) {
-      console.info(pc.dim(`'${plan.retiredAdmin.name}' is retired and stays until an apply has let the operator and the observer into the buckets.`));
-    }
     if (identityPlanIsEmpty(plan)) {
       console.info(`${checkMark} The identities of ${context.environment} are as declared.`);
       return false;
@@ -251,8 +171,6 @@ export async function runIdentity(context: InfraContext): Promise<void> {
       console.info(`  ${changeMark} Deleted ${policy.name} from ${policy.application}.`);
     }
     if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
-    if (plan.retiredAdmin?.removable) await deleteRetiredAdmin(ownerKey, context, plan.retiredAdmin);
-    if (plan.retiredApplications.length > 0) await deleteRetiredMachines(ownerKey, context, plan.retiredApplications);
     console.info(`${checkMark} The identities of ${context.environment} are written.`);
   } finally {
     await ownerKey.release();

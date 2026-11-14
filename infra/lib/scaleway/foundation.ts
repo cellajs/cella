@@ -26,7 +26,7 @@ function only<T extends { name: string }>(items: readonly T[], name: string, wha
 }
 
 /** The environment's load balancer and its pools, each with the servers it lists; undefined before the first apply made it. */
-export async function readLoadBalancer(
+async function readLoadBalancer(
   auth: ScwAuth,
   opts: { zone: string; projectId: string; naming: InfraDerivations['naming'] },
 ): Promise<{ id: string; backends: Array<{ id: string; name: string; pool: string[] }> } | undefined> {

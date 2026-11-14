@@ -1,4 +1,5 @@
 import { resolveFetch } from '../utils/fetch-like';
+import { sleep } from '../utils/sleep';
 import { type ScwAuth, scwErrorStatus, scwFetch, scwSend } from './scw-fetch';
 
 /** A machine as the Instance API returns it. */
@@ -11,7 +12,6 @@ export interface ScwServer {
 }
 
 const instanceApi = (zone: string) => `https://api.scaleway.com/instance/v1/zones/${zone}`;
-const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
 
 /** What a deploy makes a machine of. */
 export interface MachineSpec {
@@ -124,7 +124,7 @@ export async function deleteMachine(auth: ScwAuth, zone: string, serverId: strin
   }
   await scwSend(auth, 'DELETE', `${instanceApi(zone)}/servers/${server.id}`);
   for (const volume of Object.values(server.volumes ?? {})) {
-    // A local volume, which a machine the Pulumi program made may hold, is the Instance API's; every other one Block Storage's.
+    // A local volume is the Instance API's; every other one Block Storage's.
     const url =
       volume.volume_type === 'l_ssd'
         ? `${instanceApi(zone)}/volumes/${volume.id}`

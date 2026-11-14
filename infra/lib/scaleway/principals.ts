@@ -4,8 +4,6 @@ export interface PrincipalNames {
   group: string;
   /** The deploy application: the key the main job deploys with. */
   ciDeploy: string;
-  /** The retired admin application: its key admits the operator to bucket policies written before it, once, in an apply (ledger L2). */
-  admin: string;
   /** The uploads application: its key, in the runtime folder, signs the backend's uploads and presigned URLs. */
   uploads: string;
 }
@@ -26,7 +24,6 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
   return {
     group: prefix,
     ciDeploy: `${prefix}-ci-deploy`,
-    admin: `${prefix}-admin`,
     uploads: `${prefix}-uploads`,
   };
 }
@@ -44,10 +41,4 @@ export function allPrincipalNames(config: { slug: string; appSlug: string }, mod
 /** Tags stamped on every engine-created IAM resource that supports them. */
 export function principalTags(slug: string, mode: string): string[] {
   return ['managed-by=cella-infra', `app=${slug}`, `env=${mode}`];
-}
-
-/** Whether an application is one of an environment's retired machine identities: a service's (`-vm-<service>`), the builder's or the boot key's. */
-export function isRetiredMachineApplication(name: string, slug: string, mode: string): boolean {
-  const prefix = `${slug}-${mode}`;
-  return name.startsWith(`${prefix}-vm-`) || name === `${prefix}-builder` || name === `${prefix}-boot`;
 }

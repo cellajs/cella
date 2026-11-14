@@ -29,10 +29,11 @@ import { bucketPresigner } from '../lib/scaleway/presign';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { scwErrorStatus, scwFetch } from '../lib/scaleway/scw-fetch';
+import { getFlag } from '../lib/utils/args';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { getFlag } from './args';
+import { sleep } from '../lib/utils/sleep';
 import { bakeDefinition, parseBuildRows } from './build-images';
 import { ENTRY_FILE_NAMES, releaseEntryPrefix, uploadFrontendAssets } from './frontend-assets';
 import { frontendBuildEnv } from './frontend-build-env';
@@ -243,7 +244,6 @@ function liveEffects(opts: {
 }): BuildEffects {
   const auth = { secretKey: opts.secretKey };
   const instance = (zone: string) => `https://api.scaleway.com/instance/v1/zones/${zone}`;
-  const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
   const accessKey = projectAccessKey(opts.accessKey, opts.projectId);
   const s3 = makeS3Client(opts.region, accessKey, opts.secretKey);
