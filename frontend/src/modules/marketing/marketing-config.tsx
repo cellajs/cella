@@ -207,8 +207,6 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'per_field_merge', category: 'consistency', layers: ['api'] },
   { id: 'text_merge', category: 'consistency', layers: ['yjs', 'client'] },
   { id: 'canonical_queries', category: 'consistency', layers: ['client'] },
-  { id: 'cache_integrity', category: 'consistency', layers: ['client', 'api'] },
-  { id: 'ttl_cache', category: 'consistency', layers: ['api'] },
 
   // Resilience & graceful degradation
   { id: 'rest_fallback', category: 'resilience', layers: ['client'] },

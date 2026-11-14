@@ -140,5 +140,5 @@ Flat-root monorepo:
 ├── cdc           PostgreSQL change-data-capture worker
 ├── yjs           Optional collaborative-editing relay
 ├── infra         Deploy engine and the infra CLI
-└── cella         Architecture, guides, changelog, and upgrade migrations
+└── cella         Architecture, guides, changelog, and upgrade alignments
 ```

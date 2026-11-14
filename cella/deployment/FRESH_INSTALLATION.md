@@ -14,7 +14,7 @@ Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. On a s
 
 The wizard opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped.
 
-A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm infra --mode staging`. `--defaults` takes the default answer to every question. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
+A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm infra --mode staging`. `--defaults` takes every optional default. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
 
 ## 1. Prerequisites
 

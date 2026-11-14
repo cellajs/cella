@@ -10,7 +10,7 @@ When the fields returned by the API change incompatibly, add one permanent conve
 
 A breaking schema change, such as renaming `attachment.name` to `attachment.title`, ships as an **append-only lens module**. The lens declares the change once. Everything else derives from it: widened request schemas, key maps for writes, and migrations for cached rows.
 
-- **Canonical inside, dual-emit at the edge.** Database, CDC, activities and stream see only the newest shape.
+- **Canonical inside, dual-emit at the edge.** Writes store the newest shape, and the twin column during expand.
 - **Frozen envelope.** `stx` and `ops`, counter keys and the auth and session contract change only additively.
 - **Messages change with a release.** Stream frames, catchup answers and CDC messages are never stored.
 - **Old tabs read new messages.** A tab open across a deploy meets the new shapes until it reloads.
@@ -91,7 +91,7 @@ export const organizationContract = evolutionContract.channel('organization', { 
 
 No middleware and no body re-parsing. During a lens's expand window, old-shape requests pass validation unchanged: the derived schemas accept both field names.
 
-The merge then sees canonical keys only: the contract's normalize step maps `ops` and `stx.fieldTimestamps` to them. The contract also **mirror-writes** the twin column: a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
+The contract's normalize step maps `ops` and `stx.fieldTimestamps` to canonical keys. The contract also **mirror-writes** the twin column: a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
 
 A later contract PR, made by hand for now, drops the old column. It waits until `X-Client-Version` shows every client past the expand lens for the whole expand window.
 
@@ -106,7 +106,7 @@ The meta record's `schemaVersion` pointer is the global lens ordinal.
 ### CI guards
 
 1. **`lens:check`** runs in `pnpm check` and the CI lint job. It fails on:
-   - a shipped lens module that changed or is impure
+   - a shipped lens module that changed, awaits or imports dynamically
    - a lens on the frozen envelope or another reserved field
    - a contract lens with no earlier expand lens on the same field
    - a configured entity type without an evolution contract

@@ -16,7 +16,7 @@ Everything Pulumi manages, such as the database and the load balancer's pools, i
 - buckets and their policies
 - secret containers and their versions
 - DNS records
-- the main job's definition, schedule and engine image, and the applied description in `applied.json`
+- the main job's definition, schedule and engine image
 
 Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Infrastructure changes** → **Review & apply changes** (`pnpm infra apply`):
 
@@ -42,9 +42,9 @@ Three rules decide what a release owes:
 
 - **Same description:** the release deploys without an apply.
 - **Changed description:** it ends **apply needed** until an apply from a checkout with the change. The run names the changed fields, such as `services.search added`.
-- **Engine code only:** a change to `infra/lib`, `infra/tasks` or `infra/resources` needs no apply.
+- **Engine code only:** a change to `infra/lib` or `infra/tasks` needs no apply.
 
-The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). Before it builds, the apply compares this checkout's description with the waiting release's. When they differ it stops and names the fields, since its engine would leave that release waiting. A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
+The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). Before it builds, the apply compares this checkout's description with the waiting release's. When they differ it names the fields and asks before going on: that release would keep waiting. A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
 
 The database access actions and the seed run an `up` that keeps the main job's image. They refuse to run while no apply has published one, as that `up` would delete the main job.
 

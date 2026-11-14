@@ -4,7 +4,7 @@ Load testing for the backend, cdc, and yjs services: the app's scenarios and che
 
 ### TL;DR
 
-Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: every response accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved and compared with the previous run, as trends.
+Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: responses accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved and compared with the previous run, as trends.
 
 ## Prerequisites
 

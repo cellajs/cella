@@ -11,7 +11,7 @@ One word per layer: **anonymous** is the account and its session, **visitor** a 
 `backend/src/modules/auth/anonymous/anonymous-account.ts`:
 
 - `insertAnonymousUser(ctx, { id, name, slug })` inserts the `users` row under a placeholder address, `<id>@anonymous.invalid`, and no `emails` row. RFC 2606 reserves `.invalid` for names that resolve nowhere, and the mailer drops every recipient under it.
-- `startAnonymousSession(ctx, user, { expiresAt })` signs the browser in with the strategy `anonymous` until `expiresAt`. An anonymous session always has an expiry: a demo's is its tenant's.
+- `startAnonymousSession(ctx, user, { expiresAt })` signs the browser in with the strategy `anonymous` until `expiresAt`, a week at most. An anonymous session always has an expiry: a demo's is its tenant's.
 
 Only a server flow calls these. The flow decides the name, the expiry and what the account is a member of; `createDemo` (`tenants/operations/create-demo.ts`) is the worked example: one transaction builds the account, a tenant of kind `demo`, its organization and the membership, then the app's `onDemoCreated` hooks run.
 
@@ -30,13 +30,13 @@ The rule for admitting a route:
 - A read about the account itself is admitted, since it answers nothing for an anonymous account (`getMe`, `getMyAuth`, `listMyMemberships`, `listMyInvitations`, `listConnectedApps`, the stream, notifications, unseen counts, `updateMe`, the cross-tenant lists).
 - An action that binds, mails, connects or pushes is refused (invitations, `createTenant`, connected apps, sessions, step-up, push, `deleteMe`).
 
-A route an app adds is refused until it says otherwise, and `tests/security/anonymous-gate.test.ts` enumerates the OpenAPI document and names it.
+A route an app adds is refused until it says otherwise, and `backend/tests/security/anonymous-gate.test.ts` enumerates the OpenAPI document and names it.
 
 Two rules hold whatever the routes say. An account without a proven address binds no invitation and accepts none (`isProvenAccount`, 403 `anonymous_account`). Lasting access never depends on the route layer. And no mail reaches a placeholder address.
 
 ## Lifecycle and limits
 
-The session ends at its expiry. The account goes with the last tenant that held it (`removeDueTenants` removes the anonymous accounts a removed tenant leaves with no membership) or with the orphan sweep. An app's fixture account without an `emails` row follows the same rule.
+The session ends at its expiry. The account goes with the last tenant that held it (`removeDueTenants` removes the anonymous accounts a removed tenant leaves with no membership). An app's fixture account without an `emails` row follows the same rule.
 
 What limits the minting is the flow's own business: the demo has `appConfig.demo.perDay`, a per-address limiter and the bot check. Anonymous sessions together hold a tenth of the stream cap: throwaway accounts never crowd out a member's stream.
 

@@ -25,7 +25,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | Frames are missed: the stream was down, or the API restarted, lost a frame or closed a client that stopped reading | | Catchup fetches each view's sequence gap (`processStreamCatchup`) | |
 | A range fetch fails | Retried with a growing delay (`flushGroup`) | The cursor moves past the range and its lists get a refetch mark (`invalidateUndelivered`) | |
 | A range returns fewer rows than announced: a row changed again, became unreadable or left with its channel | | Refetch mark (`invalidateUndelivered`) | |
-| Unseen counts miss rows: a range that may hold creates was not delivered whole, or the stream reconnected | | An exact recount, asked for by the undelivered range (`invalidateUndelivered`) and at the end of every catchup (`processStreamCatchup`) | |
+| Unseen counts miss rows: a range that may hold creates was not delivered whole, or the stream reconnected | | An exact recount, asked for by the undelivered range (`invalidateUndelivered`) and at the end of a catchup (`processStreamCatchup`) | |
 | A change has more rows than a frame names | The `change` frame's `overflow` names their sequence range for a create or update. For a delete or a move-out it names their ids up to the id bound (`maxStreamChangeIds`) | Past the id bound a delete or move-out marks the lists, recounts unseen and drops the type's cached details below the old home (`removeEntityDetailsBelow`). The stored files of those rows stay, an open finding | |
 | A row moves where a reader cannot read it | One `change` frame with the `moveOut` action per reader for the rows one message moved removes them from the caches and purges their stored files (`removeEntity`, the download purge on sync-events) | | |
 | A channel goes private | The same `moveOut`, to the readers who had its rows through their `public` flag alone (`parseUpdate` sets `movedFrom`) | | |
@@ -53,4 +53,4 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | The books get a new generation | | | The API ends every stream with `resync`. Each client resets its cursors and signal versions, runs each versioned signal's handler once and refetches once at its share of a spread (`adoptGeneration`) |
 | A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
 | A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |
-| A frame or signal of a type the bundle does not know | Skipped (`handleStreamChange`, `handleStreamSignal`) | | |
+| A frame or signal of a type the bundle does not know | Skipped (`readFrame`, `handleStreamSignal`) | | |

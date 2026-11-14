@@ -4,7 +4,7 @@ This document covers the jobs worker: the app's job store on [pg-boss](https://g
 
 ### TL;DR
 
-Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. No worker ever migrates the store, and every runtime process connects as the runtime role. The store is a PostgreSQL schema the migrate companion installs.
+Modules declare cron jobs and queues the way they declare routes. One jobs worker per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. No worker ever migrates the store, and each runtime process opens it as the runtime role. The store is a PostgreSQL schema the migrate companion installs.
 
 ## How it fits
 
@@ -23,7 +23,7 @@ The jobs worker runs from the backend image. Its own service cuts over stop-firs
 
 ## Declaring jobs and queues
 
-A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job. It belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job of its own: the nightly `retention` job runs it ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
 ```ts
 defineBackendModule({

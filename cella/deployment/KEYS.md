@@ -4,7 +4,7 @@ This document explains the [Scaleway IAM](https://www.scaleway.com/en/docs/iam/c
 
 ### TL;DR
 
-Every key does one kind of work: an Owner API key for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment. No machine holds a key, and every key a person pastes dies within a day. Rotating keys or secrets deploys the live release again on new machines.
+Every key does one kind of work: an Owner API key for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment. No machine holds the deploy key, and every pasted key dies within a day. Rotating keys or secrets deploys the live release again on new machines.
 
 ## Zones
 
@@ -20,7 +20,7 @@ since whoever chooses the code that runs with an environment's secrets reads the
 
 In the deploy path, the deploy key composes each machine's env file from the runtime values. It also signs the links that machines and the builder fetch and write through.
 
-The code it deploys reads the values its machines receive, and never runs beside the deploy key. The main job runs the engine image an apply published. The target's code builds on the builder, which holds no key.
+The code it deploys reads the values its machines receive, and never runs beside the deploy key. The main job runs the engine image an apply published. The target's code builds on the builder, which holds no Scaleway key.
 
 ## API keys
 
@@ -59,7 +59,7 @@ No key of the engine's pulls the image: Serverless Jobs pulls it for each run fr
 - a secret, an image or the job definition
 - the Pulumi state, which it does not reach at all
 
-It reads secret values in the runtime folder only, never the passphrase or the database passwords. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good.
+It reads the runtime folder's values only, connection strings included, never the passphrase. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good.
 
 It does write private networks and IPAM, which a private NIC at a reserved address needs. A leaked key can attach a machine of its own to the environment's network, or reserve addresses in it.
 
@@ -69,7 +69,7 @@ Of the buckets, it reaches:
 - **Public uploads bucket:** only `geoip/`
 - **Boot-diag bucket:** only `releases/`, `env/`, `boot-diag/`, `runs/` and `control/`, never `dumps/`
 
-**Machines and the builder hold no key.** A machine's user data carries its boot plan, its manifest and links the deploy signed. One link fetches its env file, one loads each image archive, and one uploads its boot account.
+**No machine or builder holds the deploy key.** A machine's user data carries its boot plan, its manifest and links the deploy signed. One link fetches its env file, one loads each image archive, and one uploads its boot account.
 
 A link names one object. A machine's link ends within minutes, the builder's within the hour. Once the boot account arrived, the deploy strips the links from the user data and deletes the env file.
 
@@ -140,7 +140,7 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 **Full status** lists every key's age. No age is a deadline. After a compromise, rotate keys first.
 
-No machine keeps a key or a value from before a rotation: it ends by deploying the live release again on new machines. Then it starts the environment's target when that is another commit with no run yet, so a rollback holds. A target that fails never leaves the machines on what the rotation replaced, since the live release deployed once already.
+A rotation ends by deploying the live release again on new machines: until one succeeds, machines keep the old values. Then it starts the environment's target when that is another commit with no run yet. A rollback holds that way. A target that fails never leaves the machines on what the rotation replaced, since the live release deployed once already.
 
 ### Rotate secrets
 
@@ -158,7 +158,7 @@ Third-party keys are pasted anew in **Env vars & secrets**.
 
 `pnpm infra` → **Operators & keys** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones. It needs an Owner API key and your operator key.
 
-After a compromise, one **Rotate keys** per environment covers every Scaleway key but two. The observer's reads no key, and the operators' end within the day. The inventory names a key an intruder added. Delete it in the console.
+After a compromise, one **Rotate keys** per environment covers the deploy and uploads keys. The observer's reads no key, and the operators' end within the day. The inventory names a key an intruder added. Delete it in the console.
 
 The running backend machines hold the deleted uploads key in their env file. Their uploads and presigned URLs fail until the deploy of the live release replaces them. The rotation ends by printing the inventory. Afterwards, revoke the Owner API key you pasted.
 
@@ -172,7 +172,7 @@ The laptop holds the observer key in `infra/.env.<mode>` and nothing else. A one
 
 ## Someone leaves
 
-A person who only read holds the observer key of their own machine. Delete that key in the console at IAM → Applications → `<app>-observer` → API keys. Each key's description names its machine and the day it was made. The other machines keep theirs.
+A person who only read holds the observer key of their own machine. Delete that key in the console at IAM → Applications → `<app>-observer` → API keys. Each key's description names the day it was made. The other machines keep theirs.
 
 A person who ran privileged actions did so on one-day keys, each gone within its day. Meanwhile they could read every secret of the app's projects. When they leave:
 

@@ -35,12 +35,12 @@ The worker is a `SERVICE` of the backend image. The issuer shares the app origin
 | Client | Identified by | Authenticates with | Consent |
 | --- | --- | --- | --- |
 | MCP client (Claude Desktop, VS Code) | A Client ID Metadata Document: `client_id` is the HTTPS URL of its metadata | Nothing (public client, PKCE) | The person, if the tenant allows consented clients |
-| Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if an admin installed the app in the tenant |
+| Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if the app is installed in the tenant |
 | Service account | Its own id | Any of its live API keys as the client secret, which caps the token at that key's scopes | None: `client_credentials` |
 
 An authorization request brings the browser to the consent page, through sign-in when needed. The page shows who asks, the tenant the grant reaches and the requested scopes. On the MCP face it also names the organization.
 
-A registered app shows the name and logo a system admin set. A client known by its metadata document shows only the host that serves it. Beside either, the page names the host of the redirect URI, which a client's name does not vouch for.
+A registered app shows its registered name and logo. A client known by its metadata document shows only the host that serves it. Beside either, the page names the host of the redirect URI, which a client's name does not vouch for.
 
 A client that registers only through dynamic client registration (RFC 7591) cannot connect. It needs a Client ID Metadata Document or a registered app.
 
@@ -73,7 +73,7 @@ A change to anything else the grant policy reads, such as the user row, counts a
 
 ## Keystore
 
-`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live. `current` signs, and `next` is published ahead of use. Verifiers already know `next` when it takes over. A retired key keeps verifying for one access token lifetime, long enough for its last token to expire.
+`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live. `current` signs, and `next` is published ahead of use. No job rotates them.
 
 ## Store and sweep
 

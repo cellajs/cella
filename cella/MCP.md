@@ -20,7 +20,7 @@ MCP endpoint  /tenants/<tenant>/organizations/<org>/mcp
   └─ tools/call: scope check, input validation, the route in-process
         │
         ▼
-the route: its guards, limiters, cache and handler, as for a REST request
+the route: its guards, limiters and handler, as for a REST request
 ```
 
 The worker is a `SERVICE` of the backend image. The reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls, but serves only the MCP routes.
@@ -70,7 +70,7 @@ The OpenAPI spec shows it under `x-tool`. The rest of a tool is derived from the
 - **Errors as results.** A permission or domain error from the route is a tool result a model can act on.
 - **Invalid params.** Refused arguments or an unknown MCP tool answer a JSON-RPC invalid-params error.
 
-The template registers the five attachment routes as MCP tools. An app adds `xTool` to any organization route that answers JSON. Not every operation is a tool, on purpose.
+The template registers four attachment routes as MCP tools. An app adds `xTool` to any organization route that answers JSON. Not every operation is a tool, on purpose.
 
 ## Transport
 

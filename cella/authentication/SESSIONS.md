@@ -28,17 +28,17 @@ An ended session keeps its row for the sessions list, stamped with who ended it 
 - a newer sign-in in the same browser
 - the session cap
 
-Its streams close at once. Its collaborative editor sockets and the editor tokens minted before the end lapse within five minutes.
+Its streams close within a minute. Its collaborative editor sockets and the editor tokens minted before the end lapse within five minutes.
 
 A copied cookie cannot end each new sign-in of the owner: ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-up). Signing out asks nothing.
 
-A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone. Any other 401 refuses a proof while signed in.
+A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these. Any other 401 refuses a proof while signed in.
 
 A session route's 401 to a request with a session cookie carries no `WWW-Authenticate`. The body's `type` says what ended or failed.
 
 ## Devices
 
-A sign-in sets a long-lived `device-id` cookie and records its per-user hash in `devices`. A database leak cannot correlate browsers across accounts, since `PII_HASH_SECRET` peppers the hash. A sign-in from a browser the account has not used before mails the owner. The address lookup of the sign-in page recognizes a browser by its device id.
+A sign-in sets a long-lived `device-id` cookie and records its per-user hash in `devices`. A database leak cannot correlate browsers across accounts, since `PII_HASH_SECRET` peppers the hash. A sign-in from a new browser mails the owner, unless it came through their inbox. The address lookup of the sign-in page recognizes a browser by its device id.
 
 ## Cookies
 
