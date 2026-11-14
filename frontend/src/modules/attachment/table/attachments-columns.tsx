@@ -1,7 +1,7 @@
 import { TrashIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig, seenWindowMs } from 'shared';
+import { appConfig, isSeenTracked, seenWindowMs } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DescriptionCell, DownloadCell, openDescriptionSheetFromCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
@@ -18,6 +18,8 @@ import { ActorCell } from '~/modules/user/actor-cell';
 import { cn } from '~/utils/cn';
 import { formatBytes } from '~/utils/format-bytes';
 
+const viewsTracked = isSeenTracked('attachment');
+
 /** Views are only counted inside the unseen-count retention window; older rows read 0. */
 const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   if (!createdAt) return false;
@@ -33,6 +35,29 @@ export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attach
 
   const can = useCan();
   const canUpdate = (row: Attachment) => can('update', 'attachment', row);
+
+  const viewsColumn: ColumnOrColumnGroup<Attachment> = {
+    key: 'viewCount',
+    name: t('c:views'),
+    minBreakpoint: 'md',
+    width: 100,
+    renderCell: ({ row }) => {
+      const outsideSeenWindow = isOutsideSeenWindow(row.createdAt);
+
+      return (
+        <span
+          className="inline-flex size-full items-center gap-2"
+          {...(outsideSeenWindow && {
+            'data-tooltip': 'true',
+            'data-tooltip-content': t('c:views_retention_hint', { days: appConfig.retention.activityDays }),
+          })}
+        >
+          <UserIcon className="text-faint-foreground" />
+          <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>
+        </span>
+      );
+    },
+  };
 
   return [
     CheckboxColumn,
@@ -51,7 +76,15 @@ export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attach
       minWidth: 180,
       renderCell: ({ row }) => (
         <>
-          <SeenMark productId={row.id} tenantId={row.tenantId} organizationId={row.organizationId} channelId={channel.id} productType="attachment" />
+          {viewsTracked && (
+            <SeenMark
+              productId={row.id}
+              tenantId={row.tenantId}
+              organizationId={row.organizationId}
+              channelId={channel.id}
+              productType="attachment"
+            />
+          )}
           <span className="min-w-0">
             <span className="block truncate font-medium">
               <HighlightText text={row.name || '-'} />
@@ -115,28 +148,7 @@ export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attach
       width: 100,
       renderCell: ({ row }) => <span className="text-muted-foreground">{formatBytes(row.size)}</span>,
     },
-    {
-      key: 'viewCount',
-      name: t('c:views'),
-      minBreakpoint: 'md',
-      width: 100,
-      renderCell: ({ row }) => {
-        const outsideSeenWindow = isOutsideSeenWindow(row.createdAt);
-
-        return (
-          <span
-            className="inline-flex size-full items-center gap-2"
-            {...(outsideSeenWindow && {
-              'data-tooltip': 'true',
-              'data-tooltip-content': t('c:views_retention_hint', { days: appConfig.retention.activityDays }),
-            })}
-          >
-            <UserIcon className="text-faint-foreground" />
-            <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>
-          </span>
-        );
-      },
-    },
+    ...(viewsTracked ? [viewsColumn] : []),
     dateColumn('createdAt', { name: t('c:created_at') }),
     {
       key: 'createdBy',
