@@ -1,13 +1,14 @@
-import { actionCommand } from '../../lib/operator-actions';
+import { menuPath } from '../../lib/operator-actions';
 import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
-import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
+import { scwErrorStatus, scwUnanswered } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { sleep } from '../../lib/utils/sleep';
 import { keyPairPrompt } from '../prompts/key-pair';
+import { keptKeyNote, LEAVE, leaveRow, type WayOut, whatNow } from '../prompts/what-now';
 import { forgetOperatorKey, operatorKeyMintedThisRun, rememberedOperatorKey, rememberOperatorKey } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
@@ -29,8 +30,8 @@ export function refusalLines(opts: { status: number | undefined; detail: string;
   if (opts.status === 404) return ['Scaleway knows no such access key.', oneDayKeyHowto(names)];
   if (opts.status !== 403) return [`Scaleway did not take the key: ${opts.detail}`];
   return [
-    `Scaleway refused the key: it reads no IAM, so it is no key of '${names.operator}' and none of a member of '${names.operators}'.`,
-    `A policy change can take a few minutes to hold. The organization Owner makes both: \`${actionCommand('operator-key')}\`.`,
+    `Scaleway refused the key (403): it reads no IAM, so it is no key of '${names.operator}' and none of a member of '${names.operators}'.`,
+    `Made it a few minutes ago? Its access can take a few minutes to hold. The organization Owner makes both: "${menuPath('operator-key')}".`,
   ];
 }
 
@@ -49,10 +50,14 @@ async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrin
       return { refusal: `${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. ${oneDayKeyHowto(names)}` };
     }
   } else {
-    const group = await findGroup(pair.secretKey, organizationId, names.operators).catch(() => undefined);
+    // A read Scaleway did not answer is no verdict on the key: it goes to the caller, which keeps the key.
+    const group = await findGroup(pair.secretKey, organizationId, names.operators).catch((error: unknown) => {
+      if (scwUnanswered(error)) throw error;
+      return undefined;
+    });
     if (!group) {
       return {
-        refusal: `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: \`${actionCommand('operator-key')}\`.`,
+        refusal: `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: "${menuPath('operator-key')}".`,
       };
     }
     if (!(group.user_ids ?? []).includes(desc.bearerId)) {
@@ -68,15 +73,6 @@ async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrin
     };
   }
   return { organizationId };
-}
-
-/** Print why the key pasted at the prompt failed, drop it from the session, and end the action. */
-function endOnRefusal(names: AppPrincipalNames, error: unknown): never {
-  forgetOperatorKey();
-  const [first, ...rest] = refusalLines({ status: scwErrorStatus(error), detail: errorMessage(error), names });
-  console.error(`${crossMark} ${first}`);
-  for (const line of rest) console.error(`  ${line}`);
-  return endAction(1);
 }
 
 /** Reads of a key the setup minted after the first, and the pause before each: IAM refuses a new key until its policy holds, about a minute. */
@@ -105,28 +101,81 @@ interface Unlocked {
   organizationId: string;
 }
 
+/** What Scaleway said of a key: the organization it unlocks, or why not, and whether that was a verdict on the key. */
+type Judgement = { organizationId: string } | { lines: string[]; refused: boolean; status?: number };
+
+/** Ask Scaleway who bears the key and whether that bearer unlocks the session. */
+async function judgeKey(pair: KeyPair, names: AppPrincipalNames): Promise<Judgement> {
+  try {
+    const desc = operatorKeyMintedThisRun() ? await describeMintedKey(pair) : await describeKey(pair);
+    const verdict = await bearerVerdict(desc, pair, names);
+    return 'refusal' in verdict ? { lines: [verdict.refusal], refused: true } : verdict;
+  } catch (error) {
+    if (scwUnanswered(error)) {
+      return { lines: [`Could not reach Scaleway: ${errorMessage(error)}`, 'Scaleway did not refuse the key: it never answered.'], refused: false };
+    }
+    const status = scwErrorStatus(error);
+    return { lines: refusalLines({ status, detail: errorMessage(error), names }), refused: true, status };
+  }
+}
+
+/** How long the wait row of a refused key waits before the key is read again: about as long as a new policy takes to hold. */
+const SETTLE_WAIT_MS = 30_000;
+
+type KeyWayOut = 'wait' | 'another' | 'retry' | typeof LEAVE;
+
+/**
+ * Ask what to do with a key Scaleway did not take. A refused key is dropped, and a 403 may be a policy that has not held yet, so waiting
+ * comes first; a key Scaleway never answered on is read again.
+ */
+function keyWaysOut(judged: { refused: boolean; status?: number }): Promise<KeyWayOut> {
+  const rows: Array<WayOut<KeyWayOut>> = judged.refused
+    ? [
+        ...(judged.status === 403
+          ? [
+              {
+                key: 'w',
+                value: 'wait',
+                label: 'Wait 30 s and retry',
+                description: 'Check this key again in 30 s, without pasting it again.',
+              } as const,
+            ]
+          : []),
+        { key: 'k', value: 'another', label: 'Use another operator key', description: 'Paste another key; the action goes on from here.' },
+      ]
+    : [{ key: 'r', value: 'retry', label: 'Retry', description: 'Check the same key again, once your connection or Scaleway is back.' }];
+  const note = judged.refused
+    ? judged.status === 403
+      ? 'Scaleway refused this key: it is forgotten unless you wait and retry.'
+      : undefined
+    : keptKeyNote();
+  return whatNow([...rows, leaveRow()], note);
+}
+
 /**
  * Unlock the session: the operator key, both halves, typed once per run. It is proven by asking IAM who bears it, with the key itself: that
- * names the application or the user and its organization, and needs no right beyond the IAM read the operators hold.
+ * names the application or the user and its organization, and needs no right beyond the IAM read the operators hold. A key Scaleway refuses
+ * is dropped and another is asked for in place; one it never answered on is kept and read again.
  */
 async function unlock(stack: StackRef): Promise<Unlocked> {
   const names = appPrincipalNames(stack.appConfig.appSlug);
-  const pair =
-    rememberedOperatorKey() ?? (await keyPairPrompt({ label: 'Operator key', howto: `Paste a key of '${names.operator}' that expires today.` }));
-  let desc: KeyDescription;
-  try {
-    desc = operatorKeyMintedThisRun() ? await describeMintedKey(pair) : await describeKey(pair);
-  } catch (error) {
-    return endOnRefusal(names, error);
+  let pair = rememberedOperatorKey();
+  for (;;) {
+    pair ??= await keyPairPrompt({ label: 'Operator key', howto: `Paste a key of '${names.operator}' that expires today.` });
+    const judged = await judgeKey(pair, names);
+    if ('organizationId' in judged) {
+      rememberOperatorKey(pair);
+      return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: judged.organizationId };
+    }
+    if (judged.refused) forgetOperatorKey();
+    const [first, ...rest] = judged.lines;
+    console.error(`${crossMark} ${first}`);
+    for (const line of rest) console.error(`  ${pc.dim(line)}`);
+    const picked = await keyWaysOut(judged);
+    if (picked === LEAVE) return endAction(1, { left: true });
+    if (picked === 'wait') await withSpinner('Waiting 30 s for the key to hold', () => sleep(SETTLE_WAIT_MS));
+    if (picked === 'another') pair = undefined;
   }
-  const verdict = await bearerVerdict(desc, pair, names);
-  if ('refusal' in verdict) {
-    forgetOperatorKey();
-    console.error(`${crossMark} ${verdict.refusal}`);
-    return endAction(1);
-  }
-  rememberOperatorKey(pair);
-  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: verdict.organizationId };
 }
 
 /** The operator key a run holds: it ends within the day, writes no IAM, and is kept in memory for the session. */

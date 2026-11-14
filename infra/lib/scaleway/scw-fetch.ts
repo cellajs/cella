@@ -67,6 +67,16 @@ export function scwErrorStatus(error: unknown): number | undefined {
   return status ? Number(status) : undefined;
 }
 
+/**
+ * True when Scaleway gave no verdict on a call: it never answered, its answer was no JSON, or it failed on its own side (5xx, 429). A key
+ * such a call carried was not refused, so the CLI keeps it.
+ */
+export function scwUnanswered(error: unknown): boolean {
+  const status = scwErrorStatus(error);
+  if (status !== undefined) return status >= 500 || status === 429;
+  return error instanceof Error && /Scaleway \S+ \S+ (failed after \d+ attempts|returned an empty body|returned non-JSON body)/.test(error.message);
+}
+
 /** Authenticated Scaleway call whose JSON response body is the result. */
 export async function scwFetch<T>(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<T> {
   const text = await request(auth, method, url, body);

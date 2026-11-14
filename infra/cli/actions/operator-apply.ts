@@ -1,7 +1,6 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { confirm } from '@inquirer/prompts';
 import { rerunReleaseCheck } from '../../lib/deploy/release-gate';
 import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
 import { shutOutOfBuckets } from '../../lib/scaleway/bucket-admission';
@@ -21,9 +20,11 @@ import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../tasks/publish-engine';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
+import { confirm } from '../prompts/back';
+import { forgetOperatorKey } from '../session';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface OperatorApplyOptions {
@@ -84,11 +85,10 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
   const { projectId, appConfig } = context;
 
-  const operator = await acquireOperatorKey(context);
+  const operator = await acquireAdmittedOperatorKey(context);
   const { organizationId } = operator;
   const stack = stackNameFor(context);
 
-  await exitWhenShutOutOfBuckets(context, operator);
   const env = buildProviderEnv(infraDir, {
     accessKey: operator.accessKey,
     secretKey: operator.secretKey,
@@ -276,22 +276,38 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 }
 
 /**
- * End the action for a member of the operators group whom the bucket policies do not name yet, before the bare 403: the first apply since
- * they joined runs on a key the policies admit, and writes them in.
+ * True, after saying so, for a member of the operators group whom the bucket policies do not name yet, before the bare 403: the first
+ * apply since they joined runs on a key the policies admit, and writes them in.
  */
-export async function exitWhenShutOutOfBuckets(context: InfraContext, key: { accessKey: string; secretKey: string }): Promise<void> {
+async function shutOutOfBucketsSaid(context: InfraContext, key: { accessKey: string; secretKey: string }): Promise<boolean> {
   const operator = await describeKey(key).catch(() => undefined);
-  if (!operator || operator.bearer === 'application') return;
+  if (!operator || operator.bearer === 'application') return false;
   const shutOut = await shutOutOfBuckets({
     appConfig: context.appConfig,
     projectId: context.projectId,
     key,
     principal: `user_id:${operator.bearerId}`,
   }).catch(() => false);
-  if (!shutOut) return;
+  if (!shutOut) return false;
   const names = appPrincipalNames(context.appConfig.appSlug);
   console.error(
     `${warningMark} The bucket policies of ${context.environment} do not name ${operator.name} yet: the first "${actionLabel('apply')}" since you joined '${names.operators}' runs on a key of '${names.operator}', or of a member they name, and writes you in. Paste that key.`,
   );
+  return true;
+}
+
+/** End the action for a key the bucket policies shut out (see {@link shutOutOfBucketsSaid}), dropping it so the next action asks for another. */
+export async function exitWhenShutOutOfBuckets(context: InfraContext, key: { accessKey: string; secretKey: string }): Promise<void> {
+  if (!(await shutOutOfBucketsSaid(context, key))) return;
+  forgetOperatorKey();
   endAction(1);
+}
+
+/** The operator key, asked for again in place while the bucket policies shut its bearer out (see {@link shutOutOfBucketsSaid}). */
+export async function acquireAdmittedOperatorKey(context: InfraContext): Promise<OperatorKey> {
+  for (;;) {
+    const operator = await acquireOperatorKey(context);
+    if (!(await shutOutOfBucketsSaid(context, operator))) return operator;
+    forgetOperatorKey();
+  }
 }

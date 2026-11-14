@@ -1,4 +1,4 @@
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { discardEngine, type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
@@ -6,8 +6,7 @@ import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { dropKeptPassphrase } from './drop-passphrase';
 import { exitOnIdentityChanges } from './identity';
-import { exitWhenShutOutOfBuckets, runOperatorApply } from './operator-apply';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireAdmittedOperatorKey, runOperatorApply } from './operator-apply';
 import { askToApply, reviewPlan } from './plan';
 import { checkWaitingRelease } from './releases';
 import { startBlockedTarget } from './start-deploy';
@@ -23,17 +22,16 @@ export async function runApply(context: InfraContext): Promise<void> {
   console.info(pc.dim(`\n${actionLabel('apply')}: plan what differs between code and live stack and apply it.\n`));
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
-  const operator = await acquireOperatorKey(context);
-  await exitWhenShutOutOfBuckets(context, operator);
+  const operator = await acquireAdmittedOperatorKey(context);
   // Before anything runs Pulumi, the close of an open endpoint included.
   await dropKeptPassphrase(context, operator);
   // The committed stack config never records an open endpoint, so its plan keeps the endpoint and deletes the ACL.
   const open = await openDbEndpoints(context, operator.secretKey);
   if (open.length > 0) {
     console.error(
-      `${crossMark} Public DB endpoint ${open.join(', ')} is open, and an apply would remove its ACL. Close it with \`${actionCommand('db-close')}\`, then apply.`,
+      `${crossMark} Public DB endpoint ${open.join(', ')} is open, and an apply would remove its ACL. Close it with "${menuPath('db-close')}", then apply.`,
     );
-    endAction(1);
+    endAction(1, { fix: 'db-close' });
   }
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);

@@ -18,8 +18,7 @@ import {
   pulumiLoginUrl,
   stackNameFor,
 } from '../shared';
-import { exitWhenShutOutOfBuckets } from './operator-apply';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireAdmittedOperatorKey } from './operator-apply';
 import { redeployAfterRotation } from './start-deploy';
 
 /**
@@ -36,9 +35,8 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   );
   if (!(await confirmOrDefault({ message: `Rotate the secrets of ${context.environment}?`, default: false }))) return;
 
-  const operator = await acquireOperatorKey(context);
+  const operator = await acquireAdmittedOperatorKey(context);
   const stack = stackNameFor(context);
-  await exitWhenShutOutOfBuckets(context, operator);
   const env = buildProviderEnv(infraDir, {
     ...operator,
     projectId,
