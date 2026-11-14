@@ -1,10 +1,10 @@
 import { spawnSync } from 'node:child_process';
-import { input } from '@inquirer/prompts';
 import { actionLabel } from '../../lib/operator-actions';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
+import { input } from '../prompts/back';
 import {
   acquireStackLockOrExit,
   confirmOrDefault,

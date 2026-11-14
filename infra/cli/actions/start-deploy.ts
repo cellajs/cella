@@ -9,7 +9,7 @@ import { bucketRunStore, commitRecords } from '../../lib/deploy/run-store';
 import { rotationTarget } from '../../lib/deploy/scheduled-run';
 import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { leaseDeploys, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
@@ -17,7 +17,7 @@ import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-outpu
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
-import { deployAndFollow, type FollowOutcome, followLiveDeploy, liveCommit, liveDeploy } from './deploy-follow';
+import { deployAndFollow, deployFixes, type FollowOutcome, followLiveDeploy, liveCommit, liveDeploy } from './deploy-follow';
 import { acquireOperatorKey } from './operator-unlock';
 
 /**
@@ -41,7 +41,7 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
   // A deploy under way is followed, not doubled: the observer key finds it without a paste, the operator key once it is in hand.
   const observer = resolveOperatorIdentity().observer;
   if (observer && (await followIfLive(context, observer)) === 'deployed') return;
-  if (!opts.asked && !(await confirmOrDefault({ message: `Deploy ${name} to ${environment}?`, default: true }))) return;
+  if (!opts.asked && !(await confirmOrDefault({ id: 'start-deploy.confirm', message: `Deploy ${name} to ${environment}?`, default: true }))) return;
 
   const operator = await acquireOperatorKey(context);
   if (!observer && (await followIfLive(context, operator)) === 'deployed') return;
@@ -50,12 +50,12 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
   const definitionId = await findJobDefinition(auth, { region, projectId, name: naming.resource('main') });
   if (!definitionId) {
     console.error(
-      `${crossMark} ${environment} has no main job yet: an apply makes it (\`${actionCommand('apply')}\`), once the deploy key's copy is in the engine folder (\`${actionCommand('rotate-keys')}\`).`,
+      `${crossMark} ${environment} has no main job yet: "${menuPath('apply')}" makes it, once the deploy key's copy is in the engine folder ("${menuPath('rotate-keys')}").`,
     );
-    return endAction(1);
+    return endAction(1, { fix: ['apply', 'rotate-keys'] });
   }
   const outcome = await deployAndFollow(context, operator, definitionId, target, 'Started');
-  if (outcome !== 'deployed') endAction(1);
+  if (outcome !== 'deployed') endAction(1, { fix: deployFixes(outcome) });
 }
 
 /**
@@ -123,9 +123,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
   if (!definitionId) {
-    console.warn(
-      `${warningMark} ${context.environment} has no main job yet: deploy with \`${actionCommand('start-deploy')}\` once an apply made it.`,
-    );
+    console.warn(`${warningMark} ${context.environment} has no main job yet: deploy with "${menuPath('start-deploy')}" once an apply made it.`);
     return;
   }
   const live = await liveCommit(context, key).catch((error) => {

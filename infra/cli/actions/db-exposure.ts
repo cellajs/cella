@@ -2,7 +2,6 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { confirm, input } from '@inquirer/prompts';
 import { parseAclInput } from '../../lib/db-exposure-acl';
 import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
 import { deriveInfra } from '../../lib/naming';
@@ -21,8 +20,10 @@ import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
 import { rolePasswordSecretName } from '../../tasks/ensure-database';
+import { confirm, input, steps } from '../prompts/back';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { type OperatorApplyOptions, runOperatorApply } from './operator-apply';
+import { acquireOperatorKey } from './operator-unlock';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
@@ -206,33 +207,43 @@ async function convergeOrExit(
  * The endpoint is internet-reachable but restricted to the ACL; run "Close DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
-  console.info(pc.dim(`\n${actionLabel('db-open')}: a temporary public endpoint, open to your IP.\n`));
+  console.info(pc.dim(`\n${actionLabel('db-open')}: the database gets a temporary public address, open to your IP only.\n`));
 
   const detected = await detectPublicIp();
   const suggestion = detected ? `${detected}/32` : '';
-  if (detected) console.info(`Detected your public IP: ${pc.cyan(detected)} → default ACL ${pc.cyan(suggestion)}`);
-  else console.warn(`${warningMark} Could not auto-detect your public IP; enter the client CIDR(s) manually.`);
+  if (!detected) console.warn(`${warningMark} Could not detect your public IP: enter the client CIDR(s) yourself.`);
 
-  const raw = await input({
-    message: 'Allowed client IPv4 CIDR(s), comma-separated',
-    default: suggestion || undefined,
-    validate: (value) => {
-      const parsed = parseAclInput(value);
-      return parsed.ok || parsed.reason;
+  let acl = '';
+  await steps([
+    async () => {
+      const raw = await input({
+        id: 'db-open.acl',
+        message: 'Allow from',
+        default: suggestion || undefined,
+        validate: (value) => {
+          const parsed = parseAclInput(value);
+          return parsed.ok || parsed.reason;
+        },
+      });
+      const parsed = parseAclInput(raw);
+      if (!parsed.ok) {
+        console.error(`${crossMark} ${parsed.reason}`);
+        endAction(1);
+      }
+      acl = parsed.cidrs.join(',');
     },
-  });
-  const parsed = parseAclInput(raw);
-  if (!parsed.ok) {
-    console.error(`${crossMark} ${parsed.reason}`);
-    endAction(1);
-  }
-  const acl = parsed.cidrs.join(',');
-
-  console.warn(`\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n`);
-  if (!(await confirm({ message: 'Proceed with exposing the database?', default: false }))) {
-    console.info('Aborted; no changes made.');
-    return;
-  }
+    async () => {
+      console.warn(`${warningMark} Anyone on the internet can reach this address; only ${pc.cyan(acl)} may connect.`);
+      if (!(await confirm({ id: 'db-open.confirm', message: 'Open the database now?', default: false }))) {
+        console.info('Aborted; no changes made.');
+        endAction(0);
+      }
+    },
+    // Asked here, so Esc at the key goes back to the question above it; the apply below runs on the key the session keeps.
+    async () => {
+      await acquireOperatorKey(context);
+    },
+  ]);
 
   let live: { endpoints: RdbEndpoint[]; aclRules: number } | undefined;
   const { env, stack } = await convergeOrExit(context, 'expose-db', {

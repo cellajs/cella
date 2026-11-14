@@ -20,6 +20,7 @@ import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
 import { BACK, disabledReason, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
+import { startMenuSession } from './session';
 import type { InfraContext } from './shared';
 import { autoAcceptDefaults } from './shared';
 
@@ -264,27 +265,46 @@ if (args.action) {
     process.exit(1);
   }
   if (!pulumiReady(args.action)) process.exit(1);
-  process.exit(await runAction(args.action, context));
+  process.exit((await runAction(args.action, context)).code);
 }
 
-// A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup.
-if (context.state === 'fresh') process.exit(pulumiReady('resume') ? await runAction('resume', context) : 1);
+// A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup. A person at a terminal
+// stays in the CLI: a failure offers the step again, and a setup that succeeds opens the menu.
+if (context.state === 'fresh') {
+  if (!pulumiReady('resume')) process.exit(1);
+  const { code } = await runAction('resume', context, { firstSetup: true });
+  if (code !== 0 || args.once || !process.stdin.isTTY) process.exit(code);
+  context = await loadContext(environment);
+  if (context.state === 'fresh') process.exit(0);
+  printStackNotices(context);
+}
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
 const READ_ONLY: readonly OperatorActionId[] = ['status', 'runs', 'preview'];
 
+// From here an action that fails or is stopped returns to the menu, unless the run leaves after one.
+if (!args.once) startMenuSession();
 let home = await printHome(context);
+/** The action the operator chose from a failure's ways out, run before the menu shows again. */
+let next: OperatorActionId | undefined;
 while (true) {
-  const action = await chooseAction(menuState(context, home));
+  const action = next ?? (await chooseAction(menuState(context, home)));
+  const reason = next ? disabledReason(next, menuState(context, home)) : undefined;
+  next = undefined;
   if (action === QUIT) break;
-  const code = pulumiReady(action) ? await runAction(action, context) : 1;
-  if (args.once) process.exit(code);
+  if (reason) {
+    console.error(`${crossMark} "${actionLabel(action)}" cannot run now: ${reason}.`);
+    continue;
+  }
+  const outcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
+  if (args.once) process.exit(outcome.code);
+  next = outcome.next;
   console.info('');
-  if (READ_ONLY.includes(action)) continue;
+  if (READ_ONLY.includes(action) || outcome.back) continue;
 
   // The action may have changed the stack file, the env file or the live stack: read all three again for the next round.
   context = await loadContext(environment);
   printStackNotices(context);
-  home = await printHome(context);
+  if (!next) home = await printHome(context);
 }
 process.exit(0);

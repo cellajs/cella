@@ -8,6 +8,7 @@ import {
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
 import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
+import { scwUnanswered } from '../../lib/scaleway/scw-fetch';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { keyPairPrompt } from '../prompts/key-pair';
@@ -51,6 +52,7 @@ export async function acquireOwnerKey(opts: {
   try {
     organizationId = await organizationIdOfKey(pair, projectId);
   } catch (error) {
+    if (scwUnanswered(error)) endUnanswered(error);
     forgetOwnerKey();
     console.error(
       `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_DEFAULT_ORGANIZATION_ID (.env) and re-run.`,
@@ -62,6 +64,7 @@ export async function acquireOwnerKey(opts: {
   try {
     ({ desc, role } = await assertIamManager({ pair, names, organizationId }));
   } catch (error) {
+    if (scwUnanswered(error)) endUnanswered(error);
     forgetOwnerKey();
     console.error(`${warningMark} ${errorMessage(error)}`);
     endAction(1);
@@ -78,6 +81,13 @@ export async function acquireOwnerKey(opts: {
   rememberOwnerKey(pair);
   if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
   return { ...pair, organizationId, bearer: desc, release: async () => {} };
+}
+
+/** End the action on a check Scaleway gave no answer to: the key was not refused, so a key the run holds stays for the retry. */
+function endUnanswered(error: unknown): never {
+  console.error(`${warningMark} Could not reach Scaleway to check the Owner key (${errorMessage(error)}).`);
+  if (rememberedOwnerKey()) console.error(pc.dim('  Scaleway did not refuse it: the key is kept for this run.'));
+  return endAction(1);
 }
 
 let revokeReminderShown = false;

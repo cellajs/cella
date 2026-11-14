@@ -1,4 +1,3 @@
-import { confirm } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
@@ -6,6 +5,7 @@ import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { type OperatorsResult, setupOperators } from '../../tasks/setup-operators';
+import { confirm } from '../prompts/back';
 import { endAction, type InfraContext } from '../shared';
 import { oneDayKeyHowto } from './operator-unlock';
 import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';

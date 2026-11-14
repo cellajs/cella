@@ -18,6 +18,7 @@ vi.mock('../prompts/key-pair', () => ({
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
 const { acquireIdentityKey, acquireOperatorKey, refusalLines } = await import('./operator-unlock');
+const { menuPath } = await import('../../lib/operator-actions');
 const { forgetSession, rememberedOperatorKey, rememberOperatorKey } = await import('../session');
 
 const stack = {
@@ -92,7 +93,7 @@ describe('refusalLines', () => {
   it('must not leave a 403 unexplained: a key that reads no IAM is neither the operator application nor a member, and the Owner makes both', () => {
     const lines = refusalLines({ status: 403, detail: 'x', names });
     expect(lines[0]).toContain("no key of 'cella-operator' and none of a member of 'cella-operators'");
-    expect(lines[1]).toContain('pnpm infra operator-key');
+    expect(lines[1]).toContain(menuPath('operator-key'));
   });
 
   it('passes on what Scaleway said for any other failure', () => {
@@ -173,7 +174,7 @@ describe('acquireOperatorKey', () => {
     bearers.set('SCWOPERATOR', { user: 'alice', expiresAt: inHours(1) });
 
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
-    expect(errorsPrinted()).toContain('pnpm infra operator-key');
+    expect(errorsPrinted()).toContain(menuPath('operator-key'));
     expect(rememberedOperatorKey()).toBeUndefined();
   });
 
@@ -186,6 +187,17 @@ describe('acquireOperatorKey', () => {
     bearers.set('SCWOPERATOR', { application: 'cella-operator', expiresAt: inHours(8) });
     await acquireOperatorKey(stack);
     expect(maskedSecret).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not forget a remembered key when Scaleway does not answer: only a refusal drops it', async () => {
+    await acquireOperatorKey(stack);
+    bearers.set('SCWOPERATOR', 503);
+    await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    expect(rememberedOperatorKey()).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
+
+    bearers.set('SCWOPERATOR', 403);
+    await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    expect(rememberedOperatorKey()).toBeUndefined();
   });
 
   it('ends the action on an empty answer, before any call to Scaleway', async () => {

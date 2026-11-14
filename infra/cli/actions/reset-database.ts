@@ -1,9 +1,9 @@
-import { input } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { backupName, ResetIrrecoverableError, type ResetTarget, rebuildSteps, restoreHint, sequenceDatabaseReset } from '../../tasks/reset-database';
+import { input } from '../prompts/back';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { environmentName, printLossWarning } from './loss-warning';
 import { acquireOperatorKey } from './operator-unlock';

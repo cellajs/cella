@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
@@ -10,6 +9,7 @@ import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
 import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
+import { confirm, input, PromptBack } from './prompts/back';
 
 type AppConfigType = EngineConfig;
 
@@ -27,23 +27,39 @@ export interface StepOptions {
   env?: NodeJS.ProcessEnv;
 }
 
+/** What a failed action offers after it printed its failure. */
+export interface EndOptions {
+  /** The actions that fix the failure: a menu session offers each by its menu name, a single-action run prints its command. */
+  fix?: OperatorActionId | readonly OperatorActionId[];
+  /** The retry row's words, for a retry that does more than run the action again. */
+  retry?: string;
+  /** The operator already chose to leave from ways out the action offered, so nothing more is offered. */
+  left?: boolean;
+}
+
 /**
- * Ends the running action after it printed its failure. It is thrown, so every `finally` on the way out runs: the menu then lists its rows
- * again, and a single-action run exits with `exitCode`.
+ * Ends the running action after it printed its failure. It is thrown, so every `finally` on the way out runs: the menu then offers a retry
+ * and the fixes, and a single-action run exits with `exitCode`.
  */
 export class ActionEnded extends Error {
   readonly exitCode: number;
+  readonly fix: readonly OperatorActionId[];
+  readonly retry?: string;
+  readonly left: boolean;
 
-  constructor(exitCode: number) {
+  constructor(exitCode: number, opts: EndOptions = {}) {
     super(`the action ended with exit code ${exitCode}`);
     this.name = 'ActionEnded';
     this.exitCode = exitCode;
+    this.fix = opts.fix === undefined ? [] : typeof opts.fix === 'string' ? [opts.fix] : opts.fix;
+    this.retry = opts.retry;
+    this.left = opts.left === true;
   }
 }
 
 /** End the running action with `code` (see {@link ActionEnded}). Call it after printing what went wrong. */
-export function endAction(code = 1): never {
-  throw new ActionEnded(code);
+export function endAction(code = 1, opts: EndOptions = {}): never {
+  throw new ActionEnded(code, opts);
 }
 
 /** Print a failure with the command that recovers from it, then end the running action. */
@@ -52,9 +68,9 @@ export function endActionWithHint(message: string, hint: Hint, code = 1): never 
   return endAction(code);
 }
 
-/** True for the two errors that end an action on purpose: the action ending itself, and the operator's Ctrl-C at a prompt. A catch-all lets both through. */
+/** True for the errors that end an action on purpose: the action ending itself, the operator's Ctrl-C and Esc. A catch-all lets them through. */
 export function endsAction(error: unknown): boolean {
-  return error instanceof ActionEnded || isPromptAbort(error);
+  return error instanceof ActionEnded || isPromptAbort(error) || error instanceof PromptBack;
 }
 
 /**
@@ -63,8 +79,8 @@ export function endsAction(error: unknown): boolean {
  */
 export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults');
 
-/** `confirm` that resolves to its default under `--defaults`. */
-export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
+/** `confirm` that resolves to its default under `--defaults`; an `id` keeps the answer for a step back or a retry. */
+export async function confirmOrDefault(opts: { message: string; default: boolean; id?: string }): Promise<boolean> {
   if (autoAcceptDefaults()) {
     console.info(pc.dim(`  [defaults] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
     return opts.default;
@@ -127,6 +143,11 @@ export async function releaseHeldLocks(): Promise<number> {
   return leftover.length;
 }
 
+/** An ISO moment as `HH:MM UTC`, for a line that says since when. */
+function utcTime(iso: string): string {
+  return `${iso.slice(11, 16)} UTC`;
+}
+
 /** How long an operator run waits for another holder's lease to lapse: longer than one lifetime, so a dead run always frees the stack in time. */
 const OPERATOR_LOCK_WAIT_MS = 5 * 60_000;
 
@@ -165,18 +186,22 @@ export async function acquireStackLockOrExit(opts: {
       if (Date.now() - lastWaitLine < 30_000) return;
       lastWaitLine = Date.now();
       console.info(
-        `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min for the lease to lapse…`,
+        `${warningMark} Another run holds the lease of ${opts.stack}: ${pc.cyan(held.owner)} (${held.operation}), since ${utcTime(held.acquiredAt)}.`,
       );
+      console.info(pc.dim(`  One deploy or action runs at a time. Waiting up to ${Math.ceil(remainingMs / 60_000)} min for it to end…`));
     },
     onRenewFailed: (reason, lost) =>
       console.warn(`${warningMark} stack lease renewal failed (${reason})${lost ? ': this run no longer holds the lock' : ''}`),
   });
   if (!result.acquired) {
+    const { owner, operation, acquiredAt } = result.held;
     console.error(
-      `${warningMark} Stack ${opts.stack} is still locked by ${pc.cyan(result.held.owner)} (operation: ${result.held.operation}, since ${result.held.acquiredAt}).`,
+      `${crossMark} ${pc.cyan(owner)} still holds the lease of ${opts.stack} (${operation}, since ${utcTime(acquiredAt)}). Nothing was changed.`,
     );
-    console.error(`  If that run is dead, clear it with "${menuPath('unlock')}" in the CLI or remove s3://${bucket}/${key}.`);
-    endAction(1);
+    console.error(
+      pc.dim(`  A run that died lets go within minutes. "${menuPath('unlock')}" clears one that did not, or remove s3://${bucket}/${key}.`),
+    );
+    endAction(1, { fix: 'unlock', retry: 'Wait 5 more minutes' });
   }
   const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`${warningMark} ${msg}`) });
   const handle: StackLockHandle = {

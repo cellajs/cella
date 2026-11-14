@@ -21,7 +21,7 @@ import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-outpu
 import { infraDir } from '../../lib/utils/paths';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
-import { deployAndFollow } from './deploy-follow';
+import { deployAndFollow, deployFixes } from './deploy-follow';
 import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { environmentTarget } from './start-deploy';
 
@@ -208,7 +208,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
     return endAction(1);
   }
   const outcome = await deployAndFollow(context, operator, definitionId, { sha: picked.sha, retry: 0 }, 'Started');
-  if (outcome !== 'deployed') endAction(1);
+  if (outcome !== 'deployed') endAction(1, { fix: deployFixes(outcome) });
 }
 
 /** The target the newest run left waiting on an apply, with the description its manifest holds; none when it ended otherwise or has none. */

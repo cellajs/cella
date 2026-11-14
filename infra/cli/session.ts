@@ -9,7 +9,11 @@ const session: {
   operatorKey?: KeyPair;
   /** The operator key was minted by this run's setup, so IAM may refuse it until its policy holds. */
   operatorKeyMinted?: boolean;
-} = {};
+  /** The run shows the menu, so an action that fails or is stopped returns to it. */
+  menu?: boolean;
+  /** The answers the running action gave, by prompt id: a step back or a retry offers each as its default. */
+  answers: Map<string, string | boolean>;
+} = { answers: new Map() };
 
 /** Keep an Owner API key that passed its validation. */
 export function rememberOwnerKey(pair: KeyPair): void {
@@ -48,9 +52,36 @@ export function forgetOperatorKey(): void {
   session.operatorKeyMinted = undefined;
 }
 
+/** Mark this run as a menu session: a failed or stopped action returns to the menu with the keys kept. */
+export function startMenuSession(): void {
+  session.menu = true;
+}
+
+/** True once the run shows the menu; false for `pnpm infra <action>`, `--once` and a first setup. */
+export function inMenuSession(): boolean {
+  return session.menu === true;
+}
+
+/** Keep the answer to the prompt `id` until the running action ends. */
+export function rememberAnswer(id: string, value: string | boolean): void {
+  session.answers.set(id, value);
+}
+
+/** The answer given to the prompt `id` earlier in the running action, for its default. */
+export function recalledAnswer(id: string): string | boolean | undefined {
+  return session.answers.get(id);
+}
+
+/** Drop the running action's answers once it ends, so the next action asks with the prompts' own defaults. */
+export function forgetAnswers(): void {
+  session.answers.clear();
+}
+
 /** Drop everything the session holds. */
 export function forgetSession(): void {
   session.ownerKey = undefined;
   session.operatorKey = undefined;
   session.operatorKeyMinted = undefined;
+  session.menu = undefined;
+  session.answers.clear();
 }
