@@ -13,6 +13,9 @@ COPY package.json ./
 RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').packageManager.split('+')[0]")"
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+# pnpm refuses the install when a file `patchedDependencies` names is missing, even for a package the filter skips. The glob lets an app
+# without patches build too.
+COPY patche[s] patches/
 COPY shared/package.json shared/
 COPY infra/package.json infra/
 # Production dependencies alone, which is why `tsx` is one of infra's, and without the store and cache pnpm filled to install them:

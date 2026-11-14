@@ -73,6 +73,9 @@ USER app
 FROM base AS manifests
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# pnpm refuses the install when a file `patchedDependencies` names is missing,
+# even for a package the filter skips. The glob lets an app without patches build too.
+COPY patche[s] ./patches/
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/

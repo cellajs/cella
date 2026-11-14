@@ -204,7 +204,7 @@ jobs:
           set -euo pipefail
           if [ "$ALL_TARGETS" = true ]; then
             echo "targets=manifests backend cdc yjs" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet HEAD^1 HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml; then
+          elif git diff --quiet HEAD^1 HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml patches; then
             echo "Image inputs unchanged; skipping the base-stage build."
           else
             echo "targets=manifests" >> "$GITHUB_OUTPUT"
