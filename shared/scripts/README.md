@@ -18,6 +18,6 @@ Tools that live outside this folder:
 
 | Tool | Purpose | Invocation |
 | --- | --- | --- |
-| Style check (`@cellajs/cli`) | Terminology, docs, comments and frontend conventions Biome cannot express, over every file git lists; exits 1 on any finding. Its rules, and the exceptions an app lists in `shared/config/vocabulary-allowlist.ts`: [Style](https://github.com/cellajs/cella-cli#style). | `pnpm cella style [paths…]`. `pnpm lint:fix` and `pnpm check` run it, and the CI lint job on every PR. |
+| Style check (`@cellajs/cli`) | Terminology, docs, comments and frontend conventions Biome cannot express, over every file git lists; exits 1 on any finding. Its rules, and the exceptions an app lists in `shared/config/style-exceptions.ts`: [Style](https://github.com/cellajs/cella-cli#style). | `pnpm cella style [paths…]`. `pnpm lint:fix` and `pnpm check` run it, and the CI lint job on every PR. |
 | Bundle treemap (`frontend/vite.config.ts`) | Per-module view of the shipped frontend chunks, to check which chunk holds a package. | `pnpm deps:bundle:analyze` builds with `ANALYZE=true`, which loads `rollup-plugin-visualizer` and writes `frontend/stats/bundle.html`. |
 | knip (`knip.jsonc`) | Unused files and dependencies. A file cella itself never imports but an app does is an `entry`; string-resolved packages knip cannot see (pino transport target in `shared/src/pino.ts`) sit under `ignoreDependencies`. | `pnpm unused` |

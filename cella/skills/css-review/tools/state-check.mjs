@@ -9,9 +9,9 @@ import { classSources, classStrings, declaredNames, fileScope, freshDesignSystem
 // them all. Emitters come from the whole frontend without stories, consumers from the files in scope. Usage: node state-check.mjs
 
 const read = (file) => readFileSync(join(repoRoot, file), 'utf8');
-const emitterFiles = [...classSources(), ...repoFiles().filter((file) => file === 'frontend/index.html')];
+const emitterFiles = [...classSources(), ...repoFiles(repoRoot).filter((file) => file === 'frontend/index.html')];
 const emitterTexts = emitterFiles.map(read);
-const cssText = repoFiles()
+const cssText = repoFiles(repoRoot)
   .filter((file) => /^frontend\/src\/.*\.css$/.test(file))
   .map(read)
   .join('\n');

@@ -12,7 +12,7 @@ export default defineScenario({
     { name: 'hold 15', duration: 10, arrivalRate: 15 },
     { name: 'hold 20', duration: 15, arrivalRate: 20 },
   ],
-  checks: { maxErrorRate: 1, thresholds: { 'http.response_time.p95': 500, 'http.response_time.p99': 1000 } },
+  checks: { maxErrorShare: 1, thresholds: { 'http.response_time.p95': 500, 'http.response_time.p99': 1000 } },
   async vu(vu) {
     const { cookie } = benchUser(vu.index);
     const headers = { cookie };

@@ -29,8 +29,8 @@ look. No database, lens or `clientCacheVersion` change.
 ## Run
 
 ```sh
-pnpm cella align --run 20261027T1934-text-color-steps                          # report only
-pnpm cella align --run 20261027T1934-text-color-steps -- rewrite frontend/src   # apply
+pnpm cella align run 20261027T1934-text-color-steps                          # report only
+pnpm cella align run 20261027T1934-text-color-steps -- rewrite frontend/src   # apply
 ```
 
 ## Manual steps
@@ -46,7 +46,7 @@ pnpm cella align --run 20261027T1934-text-color-steps -- rewrite frontend/src   
 ## Verify
 
 ```sh
-pnpm cella align --run 20261027T1934-text-color-steps   # empty apart from the accepted template paths it names
+pnpm cella align run 20261027T1934-text-color-steps   # empty apart from the accepted template paths it names
 pnpm check
 ```
 

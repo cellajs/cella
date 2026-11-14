@@ -59,7 +59,7 @@ export default defineScenario({
     { name: 'hold 50', duration: 10, arrivalRate: 50 },
   ],
   counters: ['bench.rows_written'],
-  checks: { maxErrorRate: 1, thresholds: { 'http.response_time.p95': 3000 } },
+  checks: { maxErrorShare: 1, thresholds: { 'http.response_time.p95': 3000 } },
   async vu(vu) {
     const { cookie, userIndex } = benchUser(vu.index);
     for (let i = 0; i < 20; i++) {
@@ -92,7 +92,7 @@ export default defineScenario({
 A failed run is neither compared nor saved. A run fails when one of these fails:
 
 - **Responses.** More non-2xx responses than `maxRejectedShare` allows, also with `--short`.
-- **VU failures.** More VUs did not complete than `maxErrorRate` allows.
+- **VU failures.** More VUs did not complete than `maxErrorShare` allows.
 - **Thresholds.** `thresholds` caps any recorded latency, such as `'http.response_time.p95': 3000`. `--short` skips them.
 - **Counters.** `expect` names counters that must have counted, `forbid` counters that must stay at zero.
 - **Counters with `--short`.** Only `forbid` is checked, since each role plays once.

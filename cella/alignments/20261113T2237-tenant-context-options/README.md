@@ -30,8 +30,8 @@ selection, which becomes `{ includeDeleted: !!range }` on each `read` call. Any 
 mock, is reported for a hand rewrite.
 
 ```sh
-pnpm cella align --run 20261113T2237-tenant-context-options                                       # report only
-pnpm cella align --run 20261113T2237-tenant-context-options -- rewrite backend/src backend/tests   # apply
+pnpm cella align run 20261113T2237-tenant-context-options                                       # report only
+pnpm cella align run 20261113T2237-tenant-context-options -- rewrite backend/src backend/tests   # apply
 ```
 
 ## Manual steps

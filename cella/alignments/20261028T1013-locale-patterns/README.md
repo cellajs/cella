@@ -30,8 +30,8 @@ template-passed `resource` mid-sentence now gets the label form ("Organization")
 ## Run
 
 ```sh
-pnpm cella align --run 20261028T1013-locale-patterns                                    # report only
-pnpm cella align --run 20261028T1013-locale-patterns -- rewrite frontend/src backend/src   # apply
+pnpm cella align run 20261028T1013-locale-patterns                                    # report only
+pnpm cella align run 20261028T1013-locale-patterns -- rewrite frontend/src backend/src   # apply
 ```
 
 ## Manual steps
@@ -46,7 +46,7 @@ pnpm cella align --run 20261028T1013-locale-patterns -- rewrite frontend/src bac
 ## Verify
 
 ```sh
-pnpm cella align --run 20261028T1013-locale-patterns   # no rewrites left; judge lines only where the app decided to keep a key
+pnpm cella align run 20261028T1013-locale-patterns   # no rewrites left; judge lines only where the app decided to keep a key
 pnpm check
 ```
 

@@ -38,7 +38,7 @@ function seed(): Promise<void> {
 }
 
 /** Bench user 0 signs in before anything is measured: with its cookie rejected, every scenario would time 401s. */
-async function beforeAll({ skipSeed }: { skipSeed: boolean }): Promise<void> {
+async function beforeAll(): Promise<void> {
   const status = await benchSignInStatus();
   if (status === 200) return;
   throw new Error(
@@ -48,7 +48,6 @@ async function beforeAll({ skipSeed }: { skipSeed: boolean }): Promise<void> {
       COOKIE_SECRET
         ? '  It is signed with COOKIE_SECRET from .env: the stack must use the same one.'
         : '  COOKIE_SECRET is not set: bench reads it from .env.',
-      ...(skipSeed ? ['  With --skip-seed the bench users must be seeded already: run once without it.'] : []),
     ].join('\n'),
   );
 }
@@ -77,8 +76,8 @@ async function beforeEach(): Promise<PipelineSnapshot | null> {
  * kept its counts; a full run ends with the worker's verify of its books. A run whose responses were rejected is not
  * checked: it timed rejections. The `--all` table shows how long the worker still needed.
  */
-async function afterEach({ counters, checks, short }: RunOutcome, before: PipelineSnapshot | null | undefined): Promise<AppChecks> {
-  if (!before || checks.some((check) => check.id === 'responses' && !check.ok)) return { checks: [] };
+async function afterEach({ counters, rejected, short }: RunOutcome, before: PipelineSnapshot | null | undefined): Promise<AppChecks> {
+  if (!before || rejected) return { checks: [] };
   const written = counters['bench.rows_written'];
   const { snapshot: after, caughtUpMs } = await settlePipeline(written === undefined ? undefined : before.activities + written);
   if (caughtUpMs === null || !after) return { checks: [{ id: 'cdc', ok: false, text: 'the CDC worker did not catch up within 60 s of the run' }] };

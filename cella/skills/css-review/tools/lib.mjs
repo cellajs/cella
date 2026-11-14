@@ -1,28 +1,27 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { classTexts, classTokens, isClassSource, lineColumn, loadTailwindNode, openRepository, parseSource, repoFiles } from '@cellajs/cli/style';
+import { classTexts, classTokens, isClassSource, lineColumn, loadTailwindNode, parseSource, repoFiles } from '@cellajs/cli/style';
 
 /** The checkout these tools live in. */
 export const repoRoot = join(import.meta.dirname, '../../../..');
-await openRepository(repoRoot);
 
 const git = (args, input) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', input, maxBuffer: 1e9 });
 const read = (file) => readFileSync(join(repoRoot, file), 'utf8');
 const isStory = (file) => /\.stories\.tsx?$/.test(file);
 const manifestPath = 'cella/cella.manifest.json';
 
-const stylesheets = () => repoFiles().filter((file) => /^frontend\/src\/.*\.css$/.test(file));
+const stylesheets = () => repoFiles(repoRoot).filter((file) => /^frontend\/src\/.*\.css$/.test(file));
 
 /** Prints which checkout a tool reads, so a report on the wrong repo shows on its first line. */
 export function printHeader() {
-  const app = repoFiles().includes(manifestPath);
+  const app = repoFiles(repoRoot).includes(manifestPath);
   console.info(`repo: ${repoRoot} (${app ? 'app' : 'template'})`);
 }
 
 /** Frontend scripts holding class strings, tests excluded; stories only on request, since a story can make a dead class look alive. */
 export function classSources({ stories = false } = {}) {
-  return repoFiles().filter((file) => isClassSource(file) && (stories || !isStory(file)));
+  return repoFiles(repoRoot).filter((file) => isClassSource(file) && (stories || !isStory(file)));
 }
 
 /** Every string in a class position, as `{ file, line, tokens }`; a token touching a `${...}` placeholder is dropped. */
@@ -45,7 +44,7 @@ export function classStrings(options) {
 export async function freshDesignSystem() {
   const entry = stylesheets().find((file) => /@import\s+['"]tailwindcss['"]/.test(read(file)));
   if (!entry) throw new Error('no frontend stylesheet imports tailwindcss');
-  return (await loadTailwindNode()).__unstable__loadDesignSystem(read(entry), { base: dirname(join(repoRoot, entry)) });
+  return (await loadTailwindNode(repoRoot)).__unstable__loadDesignSystem(read(entry), { base: dirname(join(repoRoot, entry)) });
 }
 
 /** Names of the frontend's own `@utility` (a functional `x-*` without its `-*`) and `@custom-variant` declarations. */
@@ -65,8 +64,8 @@ const isUnder = (file, entry) => file === entry || file.startsWith(`${entry}/`);
  * or `identical` (equals the baseline, so the template owns the fix).
  */
 export function fileScope() {
-  const files = repoFiles().filter((file) => file.startsWith('frontend/src/'));
-  if (!repoFiles().includes(manifestPath)) return new Map(files.map((file) => [file, 'template']));
+  const files = repoFiles(repoRoot).filter((file) => file.startsWith('frontend/src/'));
+  if (!repoFiles(repoRoot).includes(manifestPath)) return new Map(files.map((file) => [file, 'template']));
 
   const { commit } = JSON.parse(read(manifestPath)).upstream;
   try {

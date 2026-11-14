@@ -26,7 +26,7 @@ export default defineScenario({
     { name: 'hold 10', duration: 20, arrivalRate: 10 },
   ],
   counters: ['bench.rows_written', 'bench.rows_created.attachment', 'bench.rows_deleted.attachment'],
-  checks: { maxErrorRate: 1 },
+  checks: { maxErrorShare: 1 },
   async vu(vu) {
     const { cookie } = benchUser(vu.index);
     for (let i = 0; i < 5; i++) {

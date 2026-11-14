@@ -14,7 +14,7 @@ advances one stage (steps 6 and 7).
 ## Vocabulary
 
 - **fork-owned**: exists only in the app; the upgrade never touches it. Preferred home for app code.
-- **ignored / pinned**: `overrides` in `cella.config.ts`. Ignored: never merged. Pinned: the app copy
+- **ignored / pinned**: the two path lists in `cella.config.ts`. Ignored: never merged. Pinned: the app copy
   always wins; the CLI restores every changed pinned file to HEAD right after the merge, so no upstream
   hunk merges in and a pinned file never conflicts. Adopt upstream hunks by hand from the analyze list
   ("protected but behind upstream").
