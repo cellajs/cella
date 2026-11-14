@@ -6,16 +6,16 @@ import { readAppliedEngine } from '../lib/deploy/applied-engine';
 import { commitRefs } from '../lib/deploy/git-remote';
 import { findJobDefinition, listJobRuns, readJobDefinition } from '../lib/deploy/job-runs';
 import { readLiveRecord } from '../lib/deploy/live-record';
-import type { RemoteRef } from '../lib/deploy/target';
+import { commitName, type RemoteRef } from '../lib/deploy/target';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { type KeyPair, resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import { lockKey, makeControlClient, peekLock, stateBucket } from '../lib/stack/control-store';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { nameSubject } from '../lib/status/check';
-import { buildStatusReport } from '../lib/status/registry';
-import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
+import { nameSubject, rowText } from '../lib/status/check';
+import { buildStatusReport, checkGroups, groupOf } from '../lib/status/registry';
+import type { Check, CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { getFlag } from '../lib/utils/args';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadRootEnvFile } from '../lib/utils/env-files';
@@ -149,24 +149,104 @@ export async function buildReport(ctx: StatusContext): Promise<StatusReport> {
 
 const MARKS: Record<CheckStatus, string> = { ok: checkMark, warn: warningMark, missing: crossMark, error: crossMark, unknown: pc.dim('?') };
 
-export function formatReport(report: StatusReport, refs?: readonly RemoteRef[]): string {
+/** The mark a status row starts with. */
+export function markOf(status: CheckStatus): string {
+  return MARKS[status];
+}
+
+/** Where a row's detail starts: the mark, a space, the label padded to 12, a space. */
+const DETAIL_COLUMN = 15;
+/** The widest line a row prints. */
+const ROW_WIDTH = 100;
+const INDENT = ' '.repeat(DETAIL_COLUMN);
+
+/** One status row: mark, bold label padded to the detail column, detail. */
+export function statusRow(mark: string, label: string, detail: string): string {
+  return `${mark} ${pc.bold(label.padEnd(DETAIL_COLUMN - 3))} ${detail}`;
+}
+
+/** A row whose detail runs on: its first line beside the label, the others under it at the detail column. */
+export function statusRows(mark: string, label: string, lines: readonly string[]): string[] {
+  return lines.map((line, index) => (index === 0 ? statusRow(mark, label, line) : `${INDENT}${line}`));
+}
+
+/** Parts joined by `separator` into lines of at most `width` characters, a part never split. */
+export function fill(parts: readonly string[], separator: string, width = ROW_WIDTH - DETAIL_COLUMN): string[] {
   const lines: string[] = [];
+  for (const part of parts) {
+    const last = lines.at(-1);
+    if (last !== undefined && last.length + separator.length + part.length <= width) lines[lines.length - 1] = `${last}${separator}${part}`;
+    else lines.push(part);
+  }
+  return lines;
+}
+
+/** The items a finding names, one per line at the detail column, in columns: the first plain, the others dim. */
+function itemLines(items: readonly string[][]): string[] {
+  const widths: number[] = [];
+  for (const item of items) for (const [index, cell] of item.entries()) widths[index] = Math.max(widths[index] ?? 0, cell.length);
+  return items.map(([first = '', ...rest]) => {
+    const cells = rest.map((cell, index) => (index < rest.length - 1 ? cell.padEnd(widths[index + 1] ?? 0) : cell));
+    return `${INDENT}${cells.length > 0 ? `${first.padEnd(widths[0] ?? 0)}  ${pc.dim(cells.join('  '))}` : first}`;
+  });
+}
+
+/** A check's row; one that needs a person adds the items it names, or the detail its headline shortens, and what fixes it. */
+export function checkLines(check: Check, refs?: readonly RemoteRef[]): string[] {
+  const lines = [statusRow(MARKS[check.status], check.title, rowText(check, refs))];
+  if (check.status === 'ok' || check.status === 'unknown') return lines;
+  if (check.items?.length) lines.push(...itemLines(check.items));
+  else if (check.headline) lines.push(...fill(nameSubject(check, refs).split(' '), ' ').map((line) => `${INDENT}${pc.dim(line)}`));
+  const fixes = [check.fix, check.nextAction?.description].flatMap((fix) => (fix ? fill(fix.split(' '), ' ', ROW_WIDTH - DETAIL_COLUMN - 5) : []));
+  lines.push(...fixes.map((line, index) => `${INDENT}${index === 0 ? pc.bold('Fix') : '   '}  ${line}`));
+  return lines;
+}
+
+/** The ok checks, one line per group: each check's headline or detail once, the services that serve one release counted as one phrase. */
+function okLines(checks: readonly Check[], refs?: readonly RemoteRef[]): string[] {
+  const phrases = new Map<string, Set<string>>();
+  const services = checks.filter((check) => check.id.startsWith('live.') && check.id !== 'live.components');
+  const served = new Set(services.map((check) => (check.subject ? commitName(refs, check.subject) : rowText(check, refs))));
+  const servedOne = `${services.length} service${services.length === 1 ? ' serves' : 's serve'} ${[...served][0]}`;
+  const rank = (check: Check) => groupOf(check.id)?.rank ?? Number.MAX_SAFE_INTEGER;
+  for (const check of [...checks].sort((a, b) => rank(a) - rank(b))) {
+    const group = groupOf(check.id)?.label ?? 'Other';
+    const phrase = served.size === 1 && services.includes(check) ? servedOne : rowText(check, refs);
+    phrases.set(group, (phrases.get(group) ?? new Set()).add(phrase));
+  }
+  return [...checkGroups, 'Other'].flatMap((group) => {
+    const parts = phrases.get(group);
+    return parts ? statusRows(checkMark, group, fill([...parts], ' · ')) : [];
+  });
+}
+
+/**
+ * The full status: a title with how long ago it was read and the counts, then what needs a person (each finding with its items and its
+ * fix), what could not be read, and the ok checks folded into one line per group.
+ */
+export function formatReport(report: StatusReport, refs?: readonly RemoteRef[], opts: { now?: number } = {}): string {
+  const seconds = Math.max(0, Math.round(((opts.now ?? Date.now()) - Date.parse(report.generatedAt)) / 1000));
+  const read = ` · read ${seconds < 2 ? 'just now' : `${seconds} s ago`}`;
   const s = report.summary;
-  lines.push(pc.dim(DIVIDER));
-  lines.push(`${pc.bold('infra status')}  ${pc.cyan(report.mode)}  ${pc.dim(`(${report.stackState})`)}`);
-  lines.push(pc.dim(`${s.ok} ok · ${s.warn} warn · ${s.missing} missing · ${s.error} error · ${s.unknown} unknown`));
-  lines.push(pc.dim(DIVIDER));
-  // Pad the raw title to the widest, then colour, so values align in a column.
-  const width = report.checks.reduce((max, check) => Math.max(max, check.title.length), 0);
-  for (const check of report.checks) {
-    const label = pc.bold(pc.gray(check.title.padEnd(width)));
-    lines.push(`${MARKS[check.status]} ${label}  ${nameSubject(check, refs)}`);
-  }
-  if (report.nextAction) {
-    lines.push(pc.dim(DIVIDER));
-    lines.push(`${pc.bold('Next:')} ${report.nextAction.description}`);
-    lines.push(`  ${pc.cyan(report.nextAction.command)}`);
-  }
+  const counts = (
+    [
+      [s.ok, 'ok'],
+      [s.warn + s.missing + s.error, 'to fix'],
+      [s.unknown, 'not read'],
+    ] as const
+  )
+    .filter(([count]) => count > 0)
+    .map(([count, word]) => `${count} ${word}`)
+    .join(' · ');
+  const gap = ' '.repeat(Math.max(2, DIVIDER.length - 'Full status'.length - read.length - counts.length));
+  const lines = [`${pc.bold('Full status')}${pc.dim(read)}${gap}${pc.dim(counts)}`];
+  const toFix = report.checks.filter((check) => check.status !== 'ok' && check.status !== 'unknown');
+  const unknown = report.checks.filter((check) => check.status === 'unknown');
+  if (toFix.length > 0)
+    lines.push('', pc.bold('To fix'), ...toFix.flatMap((check, index) => [...(index > 0 ? [''] : []), ...checkLines(check, refs)]));
+  if (unknown.length > 0) lines.push('', pc.bold('Not read'), ...unknown.flatMap((check) => checkLines(check, refs)));
+  const ok = report.checks.filter((check) => check.status === 'ok');
+  if (ok.length > 0) lines.push('', pc.bold('OK'), ...okLines(ok, refs));
   return lines.join('\n');
 }
 
@@ -201,7 +281,6 @@ export async function runStatus(context: {
       }),
     ));
   printReport(report, { json: false, refs: await commitRefs() });
-  if (recent) console.info(pc.dim(`As read ${Math.round((Date.now() - Date.parse(recent.generatedAt)) / 1000)} s ago, for the home screen.`));
 }
 
 /** How long a report the home screen read serves the full table too, so one key after the home does not read everything again. */
@@ -232,7 +311,7 @@ export async function printInventory(context: Parameters<typeof runStatus>[0]): 
   });
   const inventory = report.checks.filter((check) => check.id.startsWith('inventory.'));
   console.info(`\n${pc.bold('Inventory')} ${pc.dim('(what exists beside what the environment declares)')}`);
-  for (const check of inventory) console.info(`${MARKS[check.status]} ${pc.bold(check.title)}  ${check.detail}`);
+  for (const check of inventory) for (const line of checkLines(check)) console.info(line);
 }
 
 /** Standalone entry: `pnpm --filter infra status [--mode <m>] [--json]`. */
