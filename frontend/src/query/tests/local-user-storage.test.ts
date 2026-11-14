@@ -8,7 +8,8 @@ import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // A window that delivers events, so another tab's write to `localStorage` reaches this tab as the browser sends it.
 const reload = vi.fn();
-vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload }, setTimeout: window.setTimeout }));
+vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload, assign: vi.fn() }, setTimeout: window.setTimeout }));
+vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ state: { matches: [{ staticData: { boundary: 'app' } }] } }) }));
 
 stubLocalStorage();
 
@@ -20,8 +21,8 @@ const { getLocalUserDb } = await import('~/query/local-user-db');
 const { onError } = await import('~/query/on-error');
 const { queryClient } = await import('~/query/query-client');
 const { persister, persistOptions } = await import('~/query/persister');
-const { forgetStoredUser, localUserStorageReady } = await import('~/query/local-user-storage');
-const { teardownUserState } = await import('~/utils/teardown-user-state');
+const { localUserStorageReady } = await import('~/query/local-user-storage');
+const { endSession } = await import('~/modules/auth/end-session');
 
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
 const admin = { id: 'admin-1', email: 'admin@example.test' };
@@ -113,11 +114,11 @@ describe('the per-user database follows who is signed in', () => {
     expect(await Dexie.exists(dbName(target.id))).toBe(true);
   });
 
-  it('forgets the stored user at boot with their database, which the bind under way must not create anew', async () => {
+  it('forgets an expired user with their database, which the bind under way must not create anew', async () => {
     // The bind starts as the page's first module reads the store, and is still opening the database when the user is forgotten
     userStore.setState({ user: target as never });
     const opening = getLocalUserDb()?.kv.put({ key: 'board', value: '{}' });
-    forgetStoredUser();
+    void endSession('expired');
     await opening?.catch(() => {});
 
     expect(userStore.getState()).toMatchObject({ user: null, lastUser: null });
@@ -135,7 +136,7 @@ describe('the per-user database follows who is signed in', () => {
     expect(await storedQueue()).toMatchObject([{ variables: { name: 'offline edit' } }]);
 
     // The session is lost: the cache is cleared and the database closes, kept on disk.
-    await teardownUserState(false);
+    await endSession('lost');
     expect(queryClient.getMutationCache().getAll()).toEqual([]);
 
     // Signing in again binds the same database with no reload, and the first cache write comes before any restore.
@@ -164,8 +165,8 @@ describe('the per-user database follows who is signed in', () => {
     await persistCache();
     expect(await storedQueue()).toMatchObject([{ isPaused: true, failureCount: 1, variables: { name: 'offline edit' } }]);
 
-    // The session ended meanwhile: the global handler tears the tab down on its 401, as on any lost session's.
-    vi.mocked(onError).mockImplementationOnce(() => void teardownUserState(false));
+    // The session ended meanwhile: the global handler ends it on its 401, as on any lost session's.
+    vi.mocked(onError).mockImplementationOnce(() => void endSession('lost'));
     request.answer(Object.assign(new Error('Unauthorized'), { status: 401, type: 'session_expired' }));
     await vi.waitFor(() => expect(getLocalUserDb()).toBeNull());
 

@@ -5,7 +5,7 @@ import { productTypeOf } from '~/query/cache-migration';
 import { mutationRetry, replayRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
-// Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
+// Lazy import breaks the cycle query-client -> on-error -> end-session -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then(({ onError }) => onError(error, meta));
 
 /** How long a query counts as fresh while online. */

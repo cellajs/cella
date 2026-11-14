@@ -24,8 +24,7 @@ export async function requireSession(location: ParsedLocation): Promise<void> {
     await readMe();
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) throw error;
-    // `fromRoot`: the session was probed here, so the sign-in page does not probe it again
-    throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname + location.searchStr } });
+    throw redirect({ to: '/auth/authenticate', search: { redirect: location.pathname + location.searchStr } });
   }
 }
 
@@ -56,8 +55,7 @@ export async function authenticateBeforeLoad({ cause, search }: { cause: RouteCa
     return;
   }
 
-  // `fromRoot` means a route guard already probed the session and found none; probing again would loop.
-  if (cause !== 'enter' || search.fromRoot) return;
+  if (cause !== 'enter') return;
 
   if (!userStore.getState().user) {
     try {

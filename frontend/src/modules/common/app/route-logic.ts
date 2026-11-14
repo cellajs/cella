@@ -23,7 +23,7 @@ export async function appLayoutBeforeLoad({ location, cause }: { location: Parse
     try {
       await readMe();
     } catch {
-      throw redirect({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true });
+      throw redirect({ to: '/auth/authenticate', replace: true });
     }
   }
   await requireSession(location);

@@ -15,6 +15,7 @@ import { BackToStart, focusTargets, SkipLink } from '~/modules/navigation/focus-
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
+import { useUserStore } from '~/modules/user/user-store';
 import { StreamSync } from '~/query/realtime/stream-sync';
 import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 import { channelRouteConfig } from '~/routes-config';
@@ -58,6 +59,10 @@ function AppContent() {
 }
 
 export function AppLayout() {
+  // A session that ends leaves the page blank until its load: every page below reads the user.
+  const signedIn = useUserStore((state) => state.user !== null);
+  if (!signedIn) return null;
+
   return (
     <div className="max-sm:not-in-[.floating-nav]:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
       {/* Without a nav bar the menu sheet is the navigation, and its own bridges lead to the content */}
