@@ -1,10 +1,10 @@
-import { auditContrast, defineA11yBase, type Page, type SignedIn, settle } from '@cellajs/cli/a11y';
+import { auditContrast, defineA11yBase, type Page, type Session, settle } from '@cellajs/cli/a11y';
 import { createClient, createConfig } from '../sdk/gen/client/index.ts';
 import { getMe, listMyMemberships, listOrganizations, updateMe } from '../sdk/gen/index.ts';
 
 /** The SDK as the signed-in user: its functions check each response against the spec, and a failed one names its request. */
-export const apiClient = ({ backendUrl, cookie }: SignedIn) => {
-  const client = createClient(createConfig({ baseUrl: backendUrl, headers: { cookie }, throwOnError: true }));
+export const apiClient = ({ backendUrl, header }: Session) => {
+  const client = createClient(createConfig({ baseUrl: backendUrl, headers: { cookie: header }, throwOnError: true }));
   client.interceptors.error.use((error, response, _request, options) =>
     response && !response.ok ? new Error(`${options.method} ${options.url} answered ${response.status}`) : error,
   );
@@ -39,6 +39,9 @@ export default defineA11yBase({
     if (me.contrast !== auditContrast) await updateMe({ client, body: { contrast: auditContrast } });
   },
 
+  // The development sign-in banner, fixed over the bottom of the public pages
+  suppress: { alerts: ['test-credentials'] },
+
   placeholders: {
     /** Path prefix of an organization the audit user administers, the first in their menu: settings and the invite dialog need that role. */
     org: async (user) => {
@@ -57,7 +60,7 @@ export default defineA11yBase({
 
   sources: ['frontend/src/**/*.ts', 'frontend/src/**/*.tsx', 'frontend/src/**/*.css', ':!**/*.test.*', ':!**/*.stories.*', ':!**/tests/**'],
 
-  scope: [
+  states: [
     // Public website
     { id: 'marketing-home', path: '/about', auth: false },
     { id: 'features', path: '/features', auth: false },

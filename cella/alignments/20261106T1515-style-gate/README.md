@@ -38,8 +38,8 @@ No script: manual.
 4. In `.github/workflows/ci.yml`, the lint job's style step runs `pnpm cella style`.
 5. Where the upgrade reports a modify/delete conflict on a deleted module, the app had a rule of its own there. Move
    that rule into a script the app owns, run it after `cella style` in `lint:fix` and in CI, and delete the module.
-   App scripts that imported `shared/scripts/` helpers import them from `@cellajs/cli/style` and call
-   `openRepository(<repo root>)` before any other.
+   App scripts that imported `shared/scripts/` helpers import them from `@cellajs/cli/style` and pass the repo root
+   to `repoFiles` and `loadTailwindNode`.
 
 ## Verify
 

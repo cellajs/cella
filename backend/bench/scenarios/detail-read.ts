@@ -13,7 +13,7 @@ export default defineScenario({
     { name: 'warm up', duration: 5, arrivalRate: 10 },
     { name: 'stampede', duration: 0.5, arrivalCount: 300 },
   ],
-  checks: { maxErrorRate: 1, thresholds: { 'http.response_time.p95': 500, 'http.response_time.p99': 1000 } },
+  checks: { maxErrorShare: 1, thresholds: { 'http.response_time.p95': 500, 'http.response_time.p99': 1000 } },
   async vu(vu) {
     const { cookie } = benchUser(vu.index);
     for (let i = 0; i < 10; i++) {

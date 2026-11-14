@@ -27,18 +27,18 @@ pins, ignores or changed). Empty list: up to date, go to step 5.
 
 ## 2. For each open alignment, oldest first
 
-Read the full README first (the list shows only its summary). Before the sync has merged, `--show`
+Read the full README first (the list shows only its summary). Before the upgrade has merged, `align show`
 reads the id from the fetched upstream:
 
 ```sh
-pnpm cella align --show <id>
+pnpm cella align show <id>
 ```
 
 - **`kind: codemod`**: report, read what it will touch, then apply. Files identical to upstream
   stay as they are, so the rewrite only reaches code the app owns or changed:
   ```sh
-  pnpm cella align --run <id>                      # report over the README's roots
-  pnpm cella align --run <id> -- rewrite <roots>   # apply
+  pnpm cella align run <id>                      # report over the README's roots
+  pnpm cella align run <id> -- rewrite <roots>   # apply
   ```
   If the app renamed or added entities, pass the README's customization flag after `--` (e.g.
   `--extra-renames app-renames.json`); never edit the extracted script.
@@ -75,7 +75,7 @@ an alignment handled over a red check.
 ## 4. Record
 
 ```sh
-pnpm cella align --mark <id>
+pnpm cella align mark <id>
 ```
 
 Removes the id from `cella/cella.alignments.json` (the file goes once the list is empty). Commit
