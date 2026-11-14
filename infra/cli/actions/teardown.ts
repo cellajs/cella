@@ -66,7 +66,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     `Deletes what ${environment} runs on and pays for: the machines, load balancer, network,`,
     'database, DNS records, main job, image registry, secrets, and its applications and keys.',
     'The database is dumped first. If the dump fails, nothing is deleted.',
-    'Keeps the uploaded files, the final dump and the secrets that protect stored data.',
+    `Keeps ${kept.some(({ name }) => name === 'public-uploads-bucket') ? 'the uploaded files, ' : ''}the final dump and the secrets that protect stored data.`,
     `A new setup of ${environment} picks them up again.`,
   ]);
   console.info(pc.dim('After the token comes your Owner key: make one in the Scaleway console that ends within hours.'));
