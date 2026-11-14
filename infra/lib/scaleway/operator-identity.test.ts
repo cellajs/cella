@@ -85,11 +85,9 @@ describe('describeKey / classifyPrincipal', () => {
     expect(formatKeyLine(desc, 'ci-deploy')).toBe('SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 12:54 UTC)');
     expect(hoursUntilExpiry(desc, Date.parse('2026-09-24T10:54:29Z'))).toBeCloseTo(2, 5);
   });
-  it('classifies the admin and retired machine applications and outside applications', () => {
-    const app = (name: string) => ({ accessKey: 'k', bearer: 'application' as const, name, bearerId: 'id' });
-    expect(classifyPrincipal(app('cella-production-admin'), names)).toBe('admin');
-    expect(classifyPrincipal(app('cella-production-vm-backend'), names)).toBe('vm-service');
-    expect(classifyPrincipal(app('something-else'), names)).toBe('application');
+  it('classifies an application the engine does not name as an outside application', () => {
+    const desc = { accessKey: 'k', bearer: 'application' as const, name: 'something-else', bearerId: 'id' };
+    expect(classifyPrincipal(desc, names)).toBe('application');
   });
   it('describes a user key as owner or member', async () => {
     const fetchImpl = makeFetch([

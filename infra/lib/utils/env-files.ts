@@ -64,11 +64,10 @@ export const RETIRED_KEY_NAMES = [
 export const OBSERVER_KEY_NAMES = { accessKey: 'SCW_OBSERVER_ACCESS_KEY', secretKey: 'SCW_OBSERVER_SECRET_KEY' } as const;
 
 /**
- * Names whose value a person supplies at the prompt, every run: a privileged key and the Pulumi passphrase. The CLI reads none of them from a
- * file or the environment, in any form, as a value on disk would let it change infrastructure with nobody at the terminal.
+ * Names whose value a person supplies at the prompt, every run: a privileged key. The CLI reads none of them from a file or the environment,
+ * in any form, as a value on disk would let it change infrastructure with nobody at the terminal.
  */
 const PROMPT_ONLY_NAMES = [
-  'PULUMI_CONFIG_PASSPHRASE',
   'SCW_OWNER_ACCESS_KEY',
   'SCW_OWNER_SECRET_KEY',
   'SCW_BOOTSTRAP_ACCESS_KEY',
@@ -94,7 +93,7 @@ export function modeEnvValues(parsed: Record<string, string>, mode: string): { v
   for (const name of stored) delete values[name];
   if (stored.length > 0) {
     warnings.push(
-      `infra/.env.${mode}: ${stored.join(', ')} ${stored.length === 1 ? 'is' : 'are'} not read. The CLI asks for a privileged key at the prompt and fetches the passphrase with it: remove ${stored.length === 1 ? 'the line' : 'these lines'}.`,
+      `infra/.env.${mode}: ${stored.join(', ')} ${stored.length === 1 ? 'is' : 'are'} not read. The CLI asks for a privileged key at the prompt: remove ${stored.length === 1 ? 'the line' : 'these lines'}.`,
     );
   }
   const retired = RETIRED_KEY_NAMES.filter((name) => name in values);

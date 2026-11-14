@@ -7,12 +7,6 @@ import { derivedRuntimeSecretData } from './stores';
 
 // One container per value, in the runtime folder, which only the deploy key reads: the deploy composes each machine's env file from them.
 
-/**
- * The resource name a secret's container had while each consumer held a copy: its first consumer's copy is the one the move to the runtime
- * folder keeps (tasks/move-secret-paths.ts), so the alias carries its id and versions over.
- */
-const copyAlias = (resource: string, definition: RuntimeSecretDefinition) => [{ name: `${resource}@${definition.services[0]}` }];
-
 // The values a store supplies (connection strings, CA data) are bound by the store plugins in resources/stores and written as versions here.
 // Generated and derived values are made by the operator task ensure-secrets, and database connection strings by ensure-database, straight
 // into Secret Manager, so they never pass through the state.
@@ -36,15 +30,11 @@ function secretContainer(definition: RuntimeSecretDefinition): void {
   const secret = new scaleway.secrets.Secret(
     `secret-${definition.secretName}`,
     { name: definition.secretName, path: RUNTIME_FOLDER, description: definition.description, region, tags },
-    { retainOnDelete: protectsStoredData(definition), aliases: copyAlias(`secret-${definition.secretName}`, definition) },
+    { retainOnDelete: protectsStoredData(definition) },
   );
   const supplied = storeSuppliedData(definition);
   if (supplied !== undefined) {
-    new scaleway.secrets.Version(
-      `secret-version-${definition.secretName}`,
-      { secretId: secret.id, data: supplied, region },
-      { aliases: copyAlias(`secret-version-${definition.secretName}`, definition) },
-    );
+    new scaleway.secrets.Version(`secret-version-${definition.secretName}`, { secretId: secret.id, data: supplied, region });
   }
 }
 

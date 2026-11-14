@@ -37,9 +37,9 @@ describe('parseEnvText', () => {
 });
 
 describe('dropPromptOnlyEnv', () => {
-  it('takes a privileged key and the passphrase out of the environment and names what it found', () => {
-    const env: NodeJS.ProcessEnv = { PULUMI_CONFIG_PASSPHRASE: 'p', SCW_OWNER_SECRET_KEY: 's', SCW_ADMIN_SECRET_KEY: 'a', PATH: '/bin' };
-    expect(dropPromptOnlyEnv(env)).toEqual(['PULUMI_CONFIG_PASSPHRASE', 'SCW_OWNER_SECRET_KEY']);
+  it('takes a privileged key out of the environment and names what it found', () => {
+    const env: NodeJS.ProcessEnv = { SCW_OWNER_SECRET_KEY: 's', SCW_ADMIN_SECRET_KEY: 'a', PATH: '/bin' };
+    expect(dropPromptOnlyEnv(env)).toEqual(['SCW_OWNER_SECRET_KEY']);
     expect(env).toEqual({ SCW_ADMIN_SECRET_KEY: 'a', PATH: '/bin' });
   });
 
@@ -59,12 +59,11 @@ describe('modeEnvValues', () => {
     expect(warnings[0]).toMatch(/infra\/\.env\.production: SCW_ADMIN_ACCESS_KEY, SCW_ADMIN_SECRET_KEY, SCW_ACCESS_KEY, SCW_SECRET_KEY are not read/);
   });
 
-  it('must not export a privileged key or the passphrase from the file, in any form: a value on disk would run the CLI unattended', () => {
+  it('must not export a privileged key from the file, in any form: a value on disk would run the CLI unattended', () => {
     const { values, warnings } = modeEnvValues(
       {
         SCW_OBSERVER_ACCESS_KEY: 'SCWO',
         SCW_OBSERVER_SECRET_KEY: 's',
-        PULUMI_CONFIG_PASSPHRASE: 'p',
         SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
         SCW_OWNER_SECRET_KEY: 's',
         SCW_BOOTSTRAP_KEY: 'SCWOLD',
@@ -73,7 +72,7 @@ describe('modeEnvValues', () => {
     );
     expect(values).toEqual({ SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' });
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatch(/PULUMI_CONFIG_PASSPHRASE, SCW_OWNER_ACCESS_KEY, SCW_OWNER_SECRET_KEY, SCW_BOOTSTRAP_KEY are not read/);
+    expect(warnings[0]).toMatch(/SCW_OWNER_ACCESS_KEY, SCW_OWNER_SECRET_KEY, SCW_BOOTSTRAP_KEY are not read/);
   });
 
   it('passes the observer key through untouched', () => {
@@ -94,20 +93,20 @@ describe('writeEnvValues', () => {
 
   it('updates existing keys in place and keeps every other line and comment', () => {
     const path = join(mkdtempSync(join(tmpdir(), 'envw-')), '.env.production');
-    writeFileSync(path, '# operator keys\nPULUMI_CONFIG_PASSPHRASE="pass"\nSCW_ACCESS_KEY=old\nexport SCW_SECRET_KEY=old-secret\n');
+    writeFileSync(path, '# operator keys\nINFRA_MODE="production"\nSCW_ACCESS_KEY=old\nexport SCW_SECRET_KEY=old-secret\n');
     writeEnvValues(path, { SCW_ACCESS_KEY: 'new', SCW_SECRET_KEY: 'new-secret', SCW_STATE_ACCESS_KEY: 'st' });
     expect(readFileSync(path, 'utf8')).toBe(
-      '# operator keys\nPULUMI_CONFIG_PASSPHRASE="pass"\nSCW_ACCESS_KEY=new\nSCW_SECRET_KEY=new-secret\nSCW_STATE_ACCESS_KEY=st\n',
+      '# operator keys\nINFRA_MODE="production"\nSCW_ACCESS_KEY=new\nSCW_SECRET_KEY=new-secret\nSCW_STATE_ACCESS_KEY=st\n',
     );
-    expect(parseEnvFile(path)).toMatchObject({ PULUMI_CONFIG_PASSPHRASE: 'pass', SCW_ACCESS_KEY: 'new', SCW_SECRET_KEY: 'new-secret' });
+    expect(parseEnvFile(path)).toMatchObject({ INFRA_MODE: 'production', SCW_ACCESS_KEY: 'new', SCW_SECRET_KEY: 'new-secret' });
   });
 
   it('removes superseded names on request and reports which ones it found', () => {
     const path = join(mkdtempSync(join(tmpdir(), 'envw-')), '.env.production');
-    writeFileSync(path, 'SCW_ADMIN_ACCESS_KEY=old\nSCW_ADMIN_SECRET_KEY=o\nSCW_STATE_ACCESS_KEY=st\nPULUMI_CONFIG_PASSPHRASE=p\n');
+    writeFileSync(path, 'SCW_ADMIN_ACCESS_KEY=old\nSCW_ADMIN_SECRET_KEY=o\nSCW_STATE_ACCESS_KEY=st\nINFRA_MODE=production\n');
     const removed = writeEnvValues(path, { SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' }, { remove: RETIRED_KEY_NAMES });
     expect(removed).toEqual(['SCW_ADMIN_ACCESS_KEY', 'SCW_ADMIN_SECRET_KEY', 'SCW_STATE_ACCESS_KEY']);
-    expect(readFileSync(path, 'utf8')).toBe('PULUMI_CONFIG_PASSPHRASE=p\nSCW_OBSERVER_ACCESS_KEY=SCWO\nSCW_OBSERVER_SECRET_KEY=s\n');
+    expect(readFileSync(path, 'utf8')).toBe('INFRA_MODE=production\nSCW_OBSERVER_ACCESS_KEY=SCWO\nSCW_OBSERVER_SECRET_KEY=s\n');
   });
 
   it('refuses a value that spans lines', () => {

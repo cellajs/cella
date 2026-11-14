@@ -74,7 +74,7 @@ They find only what an intruder did not disguise: they read the live machines fr
 To clear what they flag:
 
 - **Rotate keys** replaces the environment's keys and deletes the others.
-- **Update identities** deletes a policy or key beside the declared one, and the retired machine identities.
+- **Update identities** deletes a policy or key beside the declared one.
 - **In the console,** delete a key of the operator application that outlives a day.
 - **Anything else** goes in the console once you know who made it.
 
@@ -94,7 +94,7 @@ Stable check `id`s:
 
 The override keeps a staging run from inheriting production values. The CLI keeps the env file at `0600`.
 
-The CLI drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at a setup from its Owner moment, and the passphrase from Secret Manager with it.
+The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at a setup from its Owner moment.
 
 ## Add a service or a store
 
@@ -165,7 +165,6 @@ One name per concept across code and docs:
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure. Not a machine's boot. |
 | **launch checklist** | The steps of a setup: Tools, Repository, Domain, Sign in, Create, Connect, First release, First admin. Each is ticked from what exists and the first open one is marked. A stack not set up yet opens on it. |
-| **recovery passphrase** | The Pulumi passphrase as the screen names it. A setup shows it once for your password manager, and that copy restores the one in Secret Manager. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
 | **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write. A setup's Owner moment makes the first. Later ones are made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address. Kept in `infra/.env.<mode>`. |

@@ -10,10 +10,10 @@ import { deployS3Key, makeS3Client, projectAccessKey } from '../lib/scaleway/s3-
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { carriedServices, deployedServices } from '../lib/services';
+import { getFlag } from '../lib/utils/args';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 
 /** One machine's env file of a release: the env object it is written to and the boot account key its machine uploads to. */
 export interface MachineEnv {

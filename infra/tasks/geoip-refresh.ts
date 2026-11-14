@@ -1,9 +1,9 @@
 import { gunzipSync } from 'node:zlib';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
-import { ExitCodeError } from '../lib/utils/errors';
+import { getFlag, getNumFlag } from '../lib/utils/args';
+import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
-import { getFlag, getNumFlag } from './args';
 
 export type GeoipKind = 'country' | 'asn';
 export const GEOIP_KINDS: readonly GeoipKind[] = ['country', 'asn'];
@@ -67,7 +67,7 @@ export const verifyMmdbArchive = (archive: Uint8Array): { ok: true } | { ok: fal
   try {
     payload = gunzipSync(archive);
   } catch (err) {
-    return { ok: false, reason: `not a gzip stream (${err instanceof Error ? err.message : String(err)})` };
+    return { ok: false, reason: `not a gzip stream (${errorMessage(err)})` };
   }
   // The marker sits at most 128 KiB from the end per the MMDB spec.
   const tail = payload.subarray(Math.max(0, payload.length - 128 * 1024));

@@ -16,8 +16,6 @@ export const tildeMark = pc.bold(pc.yellowBright('~'));
 
 export const DIVIDER = '─'.repeat(60);
 
-export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
 /** True when stderr is a TTY and the run is not automated; automation and piped output get a single static line. */
 function spinnerEnabled(): boolean {
   return Boolean(process.stderr.isTTY) && process.env.CI !== 'true';

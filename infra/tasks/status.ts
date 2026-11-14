@@ -16,11 +16,11 @@ import { loadStackContext } from '../lib/stack/stack-context';
 import { nameSubject } from '../lib/status/check';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
+import { getFlag } from '../lib/utils/args';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadRootEnvFile } from '../lib/utils/env-files';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { getFlag } from './args';
 
 /** Everything the report needs about the target stack, from the menu or standalone. */
 export interface StatusContext {

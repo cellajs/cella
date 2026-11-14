@@ -59,7 +59,7 @@ No key of the engine's pulls the image: Serverless Jobs pulls it for each run fr
 - a secret, an image or the job definition
 - the Pulumi state, which it does not reach at all
 
-It reads the runtime folder's values only, connection strings included, never the passphrase. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good.
+It reads the runtime folder's values only, connection strings included. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good.
 
 It does write private networks and IPAM, which a private NIC at a reserved address needs. A leaked key can attach a machine of its own to the environment's network, or reserve addresses in it.
 
@@ -75,18 +75,16 @@ A link names one object. A machine's link ends within minutes, the builder's wit
 
 The manifest holds no secret: only the role, the release and the drain order the agent reads. The builder writes its archives, the manifest and its reports through signed links too.
 
-Every Pulumi run of the stack needs **the recovery passphrase** (Pulumi's passphrase), the key to the stack's secrets. A first setup shows it once, for your password manager. From then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost.
+The Pulumi state holds no machine and no secret value, and only the operator reads it. Every stack takes Pulumi's empty passphrase, as the state bucket's policy is what guards the state. Nothing is left to store or to lose.
 
-A leaked passphrase opens nothing: only the operator reads the state, and it holds no machine and no secret value.
-
-Nothing on an operator machine changes infrastructure with nobody at the prompt. Its `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key and no passphrase from a file or the environment.
+Nothing on an operator machine changes infrastructure with nobody at the prompt. Its `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key from a file or the environment.
 
 ### Secret folders
 
 An environment's secret folders sit at the root of its own Scaleway project. Each key's policy names the folders it reads in that project:
 
 - `/runtime/`: one container per value, read by the deploy key
-- `/engine/`: the deploy key's copy, the passphrase and the database passwords, read only by the operator
+- `/engine/`: the deploy key's copy and the database passwords, read only by the operator
 
 `/runtime/` holds every runtime secret, the uploads key's two halves and the repository read key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)).
 
@@ -117,7 +115,7 @@ Add members in IAM → Groups → `<app>-operators`. Each member then holds what
 
 **A sitting.** Later keys are made in the console at the start of a sitting. Go to [IAM → API keys](https://console.scaleway.com/iam/api-keys) → Generate API key, with `<app>-operator` as its bearer and an expiration of a day at most. A member of `<app>-operators` can use their user → API keys, with the same expiration. Paste the key at the first action that changes something.
 
-**How a session is unlocked.** The first action that changes something or needs the passphrase asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCWXXXXXXXXXXXXXXXXX` until you type. As you type, it is checked for that form: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. With the key itself, the CLI asks IAM who bears it.
+**How a session is unlocked.** The first action that changes something or reads the state asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCWXXXXXXXXXXXXXXXXX` until you type. As you type, it is checked for that form: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. With the key itself, the CLI asks IAM who bears it.
 
 It accepts the operator application or a user the operators group lists. It refuses a key of anyone else, and a key without an end date or with more than a day left. A key that leaks must die within the day. For a key the setup just made, the CLI asks IAM again a few times, as a new key's policy holds only after a moment.
 
@@ -164,7 +162,7 @@ The running backend machines hold the deleted uploads key in their env file. The
 
 ## A stolen laptop
 
-The laptop holds the observer key in `infra/.env.<mode>` and nothing else. A one-day operator key pasted that day dies by itself, and the passphrase sits in Secret Manager.
+The laptop holds the observer key in `infra/.env.<mode>` and nothing else. A one-day operator key pasted that day dies by itself.
 
 1. Delete the laptop's observer key in the console ([Someone leaves](#someone-leaves)).
 2. When an operator key was made that day, revoke it in the console: IAM → Applications → `<app>-operator` → API keys, or your user's keys.

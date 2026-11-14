@@ -6,13 +6,13 @@ export interface StackProbe {
   yamlText?: string;
 }
 
-/** Any of these keys in the stack yaml means the deploy key has been minted, so the stack counts as bootstrapped. */
-const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const;
+/** The key a setup writes to the stack yaml once the deploy key is made: with it the stack counts as bootstrapped. */
+const bootstrapMarker = 'infra:bootstrapComplete';
 
 export function detectStackState(probe: StackProbe): StackState {
   const yamlText = probe.yamlText;
   if (yamlText == null) return 'fresh';
-  return BOOTSTRAP_MARKERS.some((marker) => yamlText.includes(marker)) ? 'bootstrapped' : 'partial';
+  return yamlText.includes(bootstrapMarker) ? 'bootstrapped' : 'partial';
 }
 
 /** Pick the first stack short-name whose Pulumi file is present, falling back to production for a fresh checkout. Pure: the caller supplies the existence check. */

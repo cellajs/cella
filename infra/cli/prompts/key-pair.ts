@@ -35,14 +35,11 @@ export function accessKeyProgress(value: string): string {
 
 interface AccessKeyConfig {
   message: string;
-  /** What an empty answer means, when one is allowed: shown dim after the placeholder. */
-  optional?: string;
 }
 
 /**
  * The access key prompt: the example key as placeholder while nothing is typed, the count of characters while a key is typed, and a check
- * mark once it has the form of one. Enter with another form says what is wrong and keeps the value; Enter on nothing resolves to '' when
- * the prompt is optional.
+ * mark once it has the form of one. Enter with another form says what is wrong and keeps the value.
  */
 const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => {
   const theme = makeTheme();
@@ -55,11 +52,6 @@ const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => 
     if (status !== 'idle') return;
     if (isEnterKey(key)) {
       const trimmed = value.trim();
-      if (trimmed === '' && config.optional) {
-        setStatus('done');
-        done('');
-        return;
-      }
       const fault = accessKeyFault(trimmed);
       if (fault) {
         rl.write(value);
@@ -76,7 +68,7 @@ const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => 
 
   const message = theme.style.message(config.message, status);
   if (status === 'done') return `${prefix} ${message} ${theme.style.answer(value.trim())}`;
-  const shown = value.length > 0 ? value : pc.dim(ACCESS_KEY_EXAMPLE) + (config.optional ? ` ${pc.dim(`(${config.optional})`)}` : '');
+  const shown = value.length > 0 ? value : pc.dim(ACCESS_KEY_EXAMPLE);
   const progress = accessKeyProgress(value.trim());
   const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✔' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
   return [line, errorMsg ? theme.style.error(errorMsg) : ''];
@@ -87,18 +79,15 @@ export interface KeyPairPromptOptions {
   label: string;
   /** Where the key comes from, printed once above the prompts. */
   howto: string;
-  /** What an empty access key means, when one is allowed; the prompt then resolves to undefined on it. */
-  optional?: string;
 }
 
 /**
  * Both halves of a Scaleway key: the where-to line, the access key with its placeholder and form check, then the secret key masked with
- * its own form check. Undefined when the prompt is optional and left empty.
+ * its own form check.
  */
-export async function keyPairPrompt(opts: KeyPairPromptOptions): Promise<KeyPair | undefined> {
+export async function keyPairPrompt(opts: KeyPairPromptOptions): Promise<KeyPair> {
   console.info(`\n  ${pc.dim(opts.howto)}\n  ${pc.dim('Console:')} ${pc.underline(API_KEYS_URL)}\n`);
-  const accessKey = await accessKeyPrompt({ message: opts.label, optional: opts.optional });
-  if (!accessKey) return undefined;
+  const accessKey = await accessKeyPrompt({ message: opts.label });
   const secretKey = (await maskedSecret({ message: `${opts.label}, secret`, validate: (value) => secretKeyFault(value.trim()) ?? true })).trim();
   return { accessKey, secretKey };
 }

@@ -1,4 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
+import { sleep } from '../lib/utils/sleep';
 
 /** True when every resolver's answer set contains the expected IP. */
 export function dnsAnswersSatisfy(answersPerResolver: string[][], expectedIp: string): boolean {
@@ -22,8 +23,6 @@ const PUBLIC_RESOLVERS = ['8.8.8.8', '1.1.1.1'];
 const DNS_TIMEOUT_MS = 300_000;
 const CERT_TIMEOUT_MS = 600_000;
 const POLL_INTERVAL_MS = 5_000;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface DnsGateState {
   fqdn: string;

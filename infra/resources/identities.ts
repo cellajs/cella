@@ -4,6 +4,7 @@ import { engineConfig as appConfig } from '../config/engine-config';
 import { actionCommand } from '../lib/operator-actions';
 import { declaresUploads } from '../lib/scaleway/declared-identities';
 import { allPrincipalNames } from '../lib/scaleway/principals';
+import { errorMessage } from '../lib/utils/errors';
 import { mode, organizationId } from '../pulumi-context';
 
 const names = allPrincipalNames(appConfig, mode);
@@ -16,7 +17,7 @@ const names = allPrincipalNames(appConfig, mode);
  * (measured on staging).
  */
 export function isAbsentApplication(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorMessage(error);
   return /not.?found|no element found|404|does not exist/i.test(message);
 }
 

@@ -1,4 +1,5 @@
 import type { FetchLike } from '../utils/fetch-like';
+import { sleep as defaultSleep } from '../utils/sleep';
 import { type ScwAuth, scwFetch, scwSend } from './scw-fetch';
 
 const RDB_BASE = 'https://api.scaleway.com/rdb/v1';
@@ -202,7 +203,7 @@ export async function waitForBackupReady(
   const timeoutMs = opts.timeoutMs ?? 10 * 60_000;
   const intervalMs = opts.intervalMs ?? 3_000;
   const now = opts.now ?? (() => Date.now());
-  const sleep = opts.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const sleep = opts.sleep ?? defaultSleep;
 
   const deadline = now() + timeoutMs;
   let last: RdbBackup = await client.getBackup(backupId);

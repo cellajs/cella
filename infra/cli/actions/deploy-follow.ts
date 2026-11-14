@@ -14,7 +14,8 @@ import { actionCommand } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { type LockInfo, leaseDeploys, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
-import { checkMark, crossMark, pc, sleep, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { sleep } from '../../lib/utils/sleep';
 import { autoAcceptDefaults, type InfraContext, stackNameFor } from '../shared';
 
 const POLL_MS = 5_000;

@@ -70,7 +70,7 @@ A deploy or an operator action that dies holds its lease until it lapses within 
 1. `pnpm infra` → **Repair** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra runs` first, since a live lease most likely belongs to a run still going.
 2. A deploy that died mid-switch may have left a machine on the idle slot. You owe nothing for it: the next deploy drains and deletes it before it boots there.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
-4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key and the passphrase from the environment's `/engine/` secret folder.
+4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key, with `PULUMI_CONFIG_PASSPHRASE` set and empty.
 5. An apply may fail to delete a resource the program no longer declares, as its live object is gone already. **Remove from state** (`pnpm infra state-prune`) takes its URN out of the state.
 
 ## A page stuck on the apex

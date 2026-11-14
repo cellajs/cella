@@ -12,7 +12,6 @@ import {
   type InfraContext,
   pulumiLoginAndSelect,
   pulumiLoginUrl,
-  resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
@@ -33,14 +32,12 @@ export async function runStatePrune(context: InfraContext): Promise<void> {
     return endAction(1);
   }
 
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const operator = await acquireOperatorKey(context);
   const stack = stackNameFor(context);
   const env = buildProviderEnv(infraDir, {
     accessKey: operator.accessKey,
     secretKey: operator.secretKey,
     projectId,
-    passphrase,
     stateBackendUrl: pulumiLoginUrl(appConfig),
   });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);

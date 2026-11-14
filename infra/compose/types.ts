@@ -38,8 +38,6 @@ export interface ServiceMeta {
   slug: string;
   /** The service's port: its pools forward to it, and the agent probes its health path there. */
   healthPort: number;
-  /** As {@link AppServiceConfig.healthExpectStatus}. */
-  healthExpectStatus: number;
   /** Whether a one-shot release companion runs before this service starts on a new machine (derived from `release`). */
   runRelease: boolean;
   /** This service's role switches first, as the primary, and under singleVM its machine is the host. At most one enabled service may set this. */
@@ -126,8 +124,6 @@ export interface AppServiceConfig {
   port: number;
   /** Compose healthcheck `start_period`: grace window before failing probes count, roughly the container's cold-boot time. */
   startPeriod: string;
-  /** HTTP status this service's health endpoint returns when healthy. Defaults to 200; bodyless API responses use 204. The agent passes any 2xx; a pool matches this exactly only while it still lists a machine the Pulumi program made. */
-  healthExpectStatus?: number;
   /** `'start-first'` for LB-exposed services; `'stop-first'` for the singleton-slot cdc worker, which cannot overlap because only one process can consume its PostgreSQL replication slot. */
   replacementStrategy: ReplacementStrategy;
   /** A one-shot release step run at a new machine's boot before this service starts. Presence emits a companion container; see {@link ReleaseStep}. */

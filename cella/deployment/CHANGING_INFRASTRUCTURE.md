@@ -66,6 +66,6 @@ No machine and no builder has an identity, as they fetch and write through links
 
 Only an Owner moment writes identities, since they are IAM. A deploy does not read identities. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included.
 
-It makes the uploads application and its key, and writes that key into the runtime folder. It deletes the retired machine identities with their keys. It reads what differs with the observer key, and asks for an Owner API key only when something has to change.
+It makes the uploads application and its key, and writes that key into the runtime folder. It reads what differs with the observer key, and asks for an Owner API key only when something has to change.
 
 The plan also names a policy beside a declared one, and a key beside the uploads key. **Update identities** deletes either. **Rotate keys** replaces the deploy and uploads keys and deletes the rest.

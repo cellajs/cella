@@ -1,10 +1,11 @@
 import { type SpawnSyncReturns, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pc, sleep, warningMark } from '../utils/cli-output';
+import { pc, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 import { infraDir } from '../utils/paths';
+import { sleep } from '../utils/sleep';
 import { repositoryUrl } from './repository-key';
 import { defaultRule, ENVIRONMENTS_FILE, parseEnvironmentsFile } from './target';
 

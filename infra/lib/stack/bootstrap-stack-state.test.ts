@@ -21,14 +21,6 @@ describe('detectStackState', () => {
     expect(detectStackState({ yamlText: 'config:\n  infra:bootstrapComplete: 2025-01-01T00:00:00.000Z\n' })).toBe('bootstrapped');
   });
 
-  it('bootstrapped: legacy infra:vmAccessKey marker still detected (pre-Secret-Manager stacks)', () => {
-    expect(detectStackState({ yamlText: 'config:\n  infra:vmAccessKey:\n    secure: v1:ww0JDbm...\n' })).toBe('bootstrapped');
-  });
-
-  it('bootstrapped: legacy infra:applicationId marker still detected', () => {
-    expect(detectStackState({ yamlText: 'config:\n  infra:applicationId: 11111111-2222-3333-4444-555555555555\n' })).toBe('bootstrapped');
-  });
-
   it('does not mistake a comment mentioning a marker for the real entry', () => {
     // intentional: scanner is line-substring; we want to acknowledge the false-positive
     // surface in writing so the test cannot miss it.

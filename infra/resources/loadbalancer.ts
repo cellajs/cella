@@ -2,14 +2,13 @@ import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import type { ServiceName } from '../compose/compose';
 import { engineConfig as appConfig } from '../config/engine-config';
-import { healthContract } from '../config/health.config';
 import { agentHealthPath, agentPort, internalLbPort } from '../lib/machine-roles';
 import { apexHostIssue, redirectedApexOrigin, routedHostIssue } from '../lib/naming';
 import { enabledServices, type ServiceDefinition } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
 import { privateNetworkId, privateNetworkSubnet } from './network';
-import { legacyServers, poolServers } from './slots';
+import { poolServers } from './slots';
 
 /**
  * A frontend whose ACLs are `Acl` resources of their own. The provider reads a frontend's live ACLs into its `acls` field, which this program
@@ -37,13 +36,9 @@ const shortestCheck = { healthCheckDelay: '1s', healthCheckTimeout: '1s', health
 
 /**
  * A pool's health check. It asks the machine's agent, which answers 200 only while the service serves the release the machine was made for
- * and is not draining, so a deploy moves traffic by health and never edits a pool. While a migration keeps legacy machines in the pools,
- * which run no agent, every pool asks the service's own health path, which both kinds of machine answer: a legacy machine leaves its pool
- * only once its app stops, as the deploy powers it off.
+ * and is not draining. A deploy moves traffic by health and never edits a pool.
  */
 function healthCheck(service: ServiceDefinition) {
-  if (Object.keys(legacyServers).length > 0)
-    return { healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus }, ...shortestCheck };
   return { healthCheckPort: agentPort(service.slug), healthCheckHttp: { uri: agentHealthPath(service.slug), code: 200 }, ...shortestCheck };
 }
 

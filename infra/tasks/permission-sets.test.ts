@@ -22,7 +22,7 @@ describe('deploy key rights', () => {
     expect(all.filter((set) => /^Instances(Image|Snapshot|SecurityGroup)(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
-  it('must not read a secret value outside the runtime folder: the passphrase and the database passwords stay the operator’s', () => {
+  it('must not read a secret value outside the runtime folder: the database passwords stay the operator’s', () => {
     const valueRules = rules.filter((rule) =>
       rule.permission_set_names.some((set) => set === 'SecretManagerSecretAccess' || set === 'SecretManagerFullAccess'),
     );

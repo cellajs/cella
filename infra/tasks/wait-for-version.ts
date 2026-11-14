@@ -1,5 +1,6 @@
 import { healthContract } from '../config/health.config';
 import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
+import { sleep as defaultSleep } from '../lib/utils/sleep';
 
 export interface ProbeResult {
   /** HTTP status of the response, or 0 if the request failed entirely. */
@@ -77,7 +78,7 @@ export async function waitForPools(opts: {
   now?: () => number;
 }): Promise<'done' | 'failed' | 'timeout'> {
   const now = opts.now ?? Date.now;
-  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  const sleep = opts.sleep ?? defaultSleep;
   const deadline = now() + opts.timeoutMs;
   for (;;) {
     const stats = await opts.stats().catch(() => undefined);

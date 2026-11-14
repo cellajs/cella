@@ -1,5 +1,5 @@
+import { sleep as defaultSleep } from './sleep';
 /** Dependency-free sleep: the agent's bundle must not reach into the `shared` workspace package. */
-const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface RetryOptions {
   /** Total number of attempts before giving up. */

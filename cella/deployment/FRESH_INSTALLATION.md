@@ -4,7 +4,7 @@ This document walks through setting up a cella app's first environment on Scalew
 
 ### TL;DR
 
-A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard follows a launch checklist. In one Owner moment it writes the identities and makes a one-day operator key, on which it sets up state storage, the recovery passphrase and the first infrastructure.
+A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard follows a launch checklist. In one Owner moment it writes the identities and makes a one-day operator key, on which it sets up state storage and the first infrastructure.
 
 It commits the stack file and ends at the first deploy or at your first release. From then on the main job's schedule deploys every release, and the first admin signs in with a magic link.
 
@@ -27,9 +27,8 @@ A fresh install defaults to **production**. Staging is optional and billed apart
 
 3. Docker with buildx that builds linux/amd64 images, as Docker Desktop and OrbStack do. A Linux machine on another architecture needs QEMU's binfmt. Every apply builds the engine image the deploys run.
 4. A Scaleway project per environment, optional. The wizard picks or creates one and writes its id to `infra/Pulumi.<mode>.yaml`. Each environment needs a project of its own.
-5. A password manager, for the recovery passphrase the wizard shows once.
-6. The root `package.json`'s `repository` set to the https URL of the app's repository. A new app from create-cella leaves it empty. Every deploy fetches its commit from there.
-7. The GitHub CLI `gh`, signed in with access to the repository's variables. Every apply publishes its description there for the release PR's check.
+5. The root `package.json`'s `repository` set to the https URL of the app's repository. A new app from create-cella leaves it empty. Every deploy fetches its commit from there.
+6. The GitHub CLI `gh`, signed in with access to the repository's variables. Every apply publishes its description there for the release PR's check.
 
 The checklist's first rows check the domain, Pulumi, Docker buildx and the repository URL before anything is made.
 
@@ -57,10 +56,9 @@ The first setup has two parts. The **Owner moment** runs on the Owner API key yo
 
 The **operator part** runs on the key step 4 made. When that key could not be made, it asks for one ([Operator key](./KEYS.md#operator-key)).
 
-1. Generates the recovery passphrase, shows it once and waits until you confirm it is in your password manager. Later runs fetch it from Secret Manager. Your copy restores that one if it is lost.
-2. Asks for the first account's admin email, which is required. The Brevo API key is optional here. **Env vars & secrets** sets it later.
-3. Creates state storage and initializes Pulumi.
-4. Offers the first apply: "Create the database, network and load balancer now?" A yes makes the database, the network, the load balancer with its DNS records and certificates, and the registry. It makes no machine yet. It then builds the engine image from your checkout and pushes it. A second `up` makes the main job on that image, with the schedule that starts its runs. It stores the values step 2 asked for.
+1. Asks for the first account's admin email, which is required. The Brevo API key is optional here. **Env vars & secrets** sets it later.
+2. Creates state storage and initializes Pulumi.
+3. Offers the first apply: "Create the database, network and load balancer now?" A yes makes the database, the network, the load balancer with its DNS records and certificates, and the registry. It makes no machine yet. It then builds the engine image from your checkout and pushes it. A second `up` makes the main job on that image, with the schedule that starts its runs. It stores the values step 1 asked for.
 
 A second environment of the same app runs the same two parts. Its Owner moment adds the environment to the operators' reach and makes its own one-day operator key. A setup of an environment torn down before runs in the project its teardown left in `infra/.env.<mode>`. It adopts what the teardown kept before its first apply ([Teardown](./RUNBOOKS.md#teardown)).
 

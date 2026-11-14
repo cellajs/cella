@@ -9,6 +9,6 @@ describe('principal names', () => {
   it('keeps every other principal to its own environment', () => {
     const production = principalNames('cella', 'production');
     const staging = principalNames('cella-staging', 'staging');
-    for (const name of ['group', 'ciDeploy', 'admin', 'uploads'] as const) expect(production[name]).not.toBe(staging[name]);
+    for (const name of ['group', 'ciDeploy', 'uploads'] as const) expect(production[name]).not.toBe(staging[name]);
   });
 });

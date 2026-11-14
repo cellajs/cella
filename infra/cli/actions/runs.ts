@@ -29,9 +29,9 @@ import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
 import { type LockInfo, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
 import { runOverrides } from '../../lib/status/providers/runs';
+import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { getFlag } from '../../tasks/args';
 import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 
 const LIST_LENGTH = 10;

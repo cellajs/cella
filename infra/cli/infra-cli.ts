@@ -13,21 +13,19 @@ import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runAction } from './actions';
-import { installPassphraseCustody } from './actions/operator-unlock';
 import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
 import { BACK, disabledReason, formatStackLine, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
-import { setPassphraseCustody } from './session';
 import type { InfraContext } from './shared';
 import { autoAcceptDefaults } from './shared';
 
 // Load the repo-root .env so infra child tasks share the app's local config; ambient env keeps precedence over the file.
 loadRootEnvFile();
 
-// A privileged key or the passphrase in the environment would let the CLI run with nobody at the prompt: they are dropped here and asked for.
+// A privileged key in the environment would let the CLI run with nobody at the prompt: it is dropped here and asked for.
 const droppedFromEnv = dropPromptOnlyEnv();
 
 // A Ctrl-C at any prompt below ends the run with one line and releases a held lease.
@@ -107,11 +105,7 @@ async function loadContext(environment: Environment, log?: (message: string) => 
   }
   // A stack file that came with a pull names the project already: the env file's copy goes.
   if (stack.projectIdSource === 'stack-file') removeModeProjectId(environment);
-  const context = { ...stack, hasCiKey: stack.state === 'bootstrapped' };
-  // An existing stack keeps its passphrase in Secret Manager: reading it unlocks the session with the operator key, so nobody types it.
-  setPassphraseCustody(undefined);
-  if (context.state !== 'fresh' && context.projectId) installPassphraseCustody(context);
-  return context;
+  return { ...stack, hasCiKey: stack.state === 'bootstrapped' };
 }
 
 /** What the menu needs to say which entries can run, from the home screen's reads. */
@@ -253,7 +247,7 @@ let context = await loadContext(environment, (message) => console.info(pc.dim(me
 printStackNotices(context);
 if (droppedFromEnv.length > 0) {
   console.warn(
-    `${warningMark} ${droppedFromEnv.join(', ')} ${droppedFromEnv.length === 1 ? 'is' : 'are'} set in this shell or in .env and not read: the CLI asks for a privileged key at the prompt and fetches the passphrase with it.\n`,
+    `${warningMark} ${droppedFromEnv.join(', ')} ${droppedFromEnv.length === 1 ? 'is' : 'are'} set in this shell or in .env and not read: the CLI asks for a privileged key at the prompt.\n`,
   );
 }
 

@@ -1,6 +1,5 @@
 import { type DeclaredPolicy, declaredIdentities, declaresUploads } from '../lib/scaleway/declared-identities';
-import { type IamAuth, listOrganizationApplications, listOrganizationPolicies, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import { isRetiredMachineApplication } from '../lib/scaleway/principals';
+import { type IamAuth, listOrganizationPolicies, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
 import { type DeclaredPolicyStep, planDeclaredPolicies } from './declared-policies';
 import { planUploadsKey, type UploadsKeySecrets, type UploadsKeyStep } from './uploads-key';
 
@@ -18,8 +17,6 @@ export interface IdentityChanges {
   /** The uploads key's step; absent where the registry declares no uploads application. */
   uploadsKey?: UploadsKeyStep;
   extraPolicies: ExtraPolicy[];
-  /** The retired machine identities that still exist: a service's application or the builder's, each with its keys and policy. */
-  retiredApplications: Array<{ id: string; name: string }>;
 }
 
 /** The policies on the declared identities beside the declared ones: each widens what its identity may do, so Update identities deletes it. */
@@ -38,8 +35,7 @@ async function extraPolicies(auth: IamAuth, organizationId: string, declared: re
 
 /**
  * The identity plan: where the deploy key and the uploads application differ from what the environment's code declares, in their
- * applications, policies and the uploads key, and the retired machine identities still there. Read with any key that reads IAM and secret
- * metadata; nothing is written. The apply reads it at its start, and Update identities writes what it names.
+ * applications, policies and the uploads key. Read with any key that reads IAM and secret metadata; nothing is written. The apply reads it at its start, and Update identities writes what it names.
  */
 export async function planIdentityChanges(opts: {
   auth: IamAuth;
@@ -58,9 +54,6 @@ export async function planIdentityChanges(opts: {
     policies: await planDeclaredPolicies(auth, organizationId, declared.policies),
     ...(declaresUploads() ? { uploadsKey: await planUploadsKey({ auth, secrets: opts.secrets, organizationId, slug, mode }) } : {}),
     extraPolicies: await extraPolicies(auth, organizationId, declared.policies),
-    retiredApplications: (await listOrganizationApplications(auth, organizationId)).filter((application) =>
-      isRetiredMachineApplication(application.name, slug, mode),
-    ),
   };
 }
 
@@ -82,6 +75,5 @@ export function identityChangeLines(changes: IdentityChanges): string[] {
         ? [`uploads key of ${key.application}: ${key.extra.length} key(s) beside it to delete`]
         : []),
     ...changes.extraPolicies.map((policy) => `policy ${policy.name} on ${policy.application}: beside the declared one, to delete`),
-    ...changes.retiredApplications.map((application) => `application ${application.name}: retired, to delete with its keys and policy`),
   ];
 }
