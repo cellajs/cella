@@ -92,12 +92,13 @@ const signInWithPrintedLink = async () => {
   const emailInput = page.locator('input[type=email], input[name=email]').first();
   await emailInput.waitFor({ timeout: PAGE_MS });
   await emailInput.fill(EMAIL);
-  await emailInput.press('Enter');
-  const sendLink = page.getByRole('button', { name: /sign in with email/i });
-  await sendLink.waitFor({ timeout: PAGE_MS });
 
+  // The email step mails a browser the app has not seen its link at once
   const logStart = statSync(logPath).size;
-  const [sent] = await Promise.all([page.waitForResponse((response) => response.url().endsWith('/auth/send-magic-link')), sendLink.click()]);
+  const [sent] = await Promise.all([
+    page.waitForResponse((response) => response.url().endsWith('/auth/send-magic-link'), { timeout: PAGE_MS }),
+    emailInput.press('Enter'),
+  ]);
   // Repeated runs on one database reach the limit on links per address, which says nothing about the sign-in
   if (sent.status() === 429) {
     log('skipped', 'the magic link sign-in: this address reached its limit on links');
