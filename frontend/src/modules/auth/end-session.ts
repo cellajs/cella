@@ -83,7 +83,7 @@ async function end(reason: SessionEnd, user: MeUser | null, redirect?: string): 
   // wrote it last. Nulling the user closes the database and resets every per-user store.
   const forget = storedUserIds().userId === (user?.id ?? null) ? ending.forget : 'none';
   if (forget === 'both') userStore.getState().reset();
-  else if (forget === 'user') userStore.setState({ user: null, isSystemAdmin: false });
+  else if (forget === 'user') userStore.setState({ user: null, isSystemAdmin: false, session: null });
   else closeLocalUserDb();
 
   // The badge belongs to the service worker, which outlives this page.

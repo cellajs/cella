@@ -27,9 +27,13 @@ export const meSchema = z
     isSystemAdmin: z
       .boolean()
       .openapi({ description: 'Whether the user holds the system admin role and the request comes from an allowed IP address.' }),
+    session: sessionBaseSchema
+      .pick({ id: true, expiresAt: true })
+      .openapi({ description: 'The session this request presents: its id, and when it ends unless revoked first.' }),
   })
   .openapi('Me', {
-    description: 'The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.',
+    description:
+      'The signed-in user, with whether they have system admin access on this request and the session it presents. A client reads it to learn who is signed in.',
     example: mockMeResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });

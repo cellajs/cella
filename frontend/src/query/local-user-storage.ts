@@ -91,6 +91,10 @@ function reconcileLocalUser(): void {
 /** Resolves once `localUserDb` is open for the current user, all local user stores have rehydrated and the query cache is restored from it. */
 export const localUserStorageReady = (): Promise<void> => readyPromise;
 
+// Before the first bind: an anonymous session past its expiry has signed out by itself, and nothing loads as it.
+const stored = userStore.getState();
+if (stored.user?.isAnonymous && stored.session && Date.parse(stored.session.expiresAt) <= Date.now()) void endSession('expired');
+
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();
 

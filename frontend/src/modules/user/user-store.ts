@@ -42,6 +42,8 @@ interface UserStoreState {
   isSystemAdmin: boolean;
   /** The last user signed in on this browser, kept after sign-out. */
   lastUser: Pick<MeUser, 'id' | 'email'> | null;
+  /** The session `/me` last named: an anonymous one past `expiresAt` signs nobody in. */
+  session: Me['session'] | null;
   /** Stores what `/me` answered in one write; also sets lastUser. */
   setMe: (me: Me) => void;
   /** Merges into the user; also sets lastUser. */
@@ -49,7 +51,12 @@ interface UserStoreState {
   reset: () => void;
 }
 
-const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser'> = { user: null, isSystemAdmin: false, lastUser: null };
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'session'> = {
+  user: null,
+  isSystemAdmin: false,
+  lastUser: null,
+  session: null,
+};
 
 export const useUserStore = create<UserStoreState>()(
   devtools(
@@ -62,11 +69,12 @@ export const useUserStore = create<UserStoreState>()(
           mirrorLanguage(user.languageCode);
           mirrorContrast(user.contrast);
         },
-        setMe: ({ user, isSystemAdmin }) => {
+        setMe: ({ user, isSystemAdmin, session }) => {
           set((state) => {
             state.user = user;
             state.isSystemAdmin = isSystemAdmin;
             state.lastUser = { id: user.id, email: user.email };
+            state.session = session;
           });
 
           mirrorLanguage(user.languageCode);
@@ -79,7 +87,7 @@ export const useUserStore = create<UserStoreState>()(
         version: 2,
         migrate: () => ({}),
         name: userStorageKey,
-        partialize: ({ user, isSystemAdmin, lastUser }) => ({ user, isSystemAdmin, lastUser }),
+        partialize: ({ user, isSystemAdmin, lastUser, session }) => ({ user, isSystemAdmin, lastUser, session }),
         storage: createJSONStorage(() => localStorage),
       },
     ),

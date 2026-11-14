@@ -900,7 +900,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.
+ * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.
  *
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· _auth · cella_
  *

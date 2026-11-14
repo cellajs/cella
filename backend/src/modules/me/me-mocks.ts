@@ -9,6 +9,7 @@ import { TimeSpan } from '#/utils/time-span';
 export const mockMeResponse = (key = 'me:default') => ({
   user: mockUserResponse(`${key}:user`),
   isSystemAdmin: false,
+  session: withFakerSeed(`${key}:session`, () => ({ id: mockUuid(), expiresAt: faker.date.future({ refDate: mockRefDate }).toISOString() })),
 });
 
 export const mockMeAuthResponse = (key = 'me-auth:default') =>
