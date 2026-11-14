@@ -67,7 +67,7 @@ A rotation of keys or secrets keeps the rollback: it deploys the live release ag
 
 A deploy or an operator action that dies holds its lease until it lapses within minutes. The next run waits for it, and `pnpm infra status` reports it.
 
-1. `pnpm infra` → **Repair** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra runs` first, since a live lease most likely belongs to a run still going.
+1. `pnpm infra` → **More** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra runs` first, since a live lease most likely belongs to a run still going.
 2. A deploy that died mid-switch may have left a machine on the idle slot. You owe nothing for it: the next deploy drains and deletes it before it boots there.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
 4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key, with `PULUMI_CONFIG_PASSPHRASE` set and empty.
@@ -148,7 +148,7 @@ The worker makes a new slot when it starts again. Every client then refetches on
 
 Fix a wrong admin email in **Env vars & secrets**. Then run a deploy that makes a new backend machine, such as **Rotate secrets**. A machine keeps the env file it booted with. The new machine's boot seeds the admin while the users table is empty.
 
-On staging, **Open DB access** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
+On staging, **More** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
 
 ```bash
 pnpm --filter backend build
@@ -159,7 +159,7 @@ ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SER
 
 **Reset database** rebuilds the app's logical database from migrations plus the admin seed. **Pre-production only, or with services deliberately quiesced: a hard outage.**
 
-`pnpm infra` → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
+`pnpm infra` → **More** → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
 
 Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../cdc/README.md#verify-and-rebuild)).
 
@@ -194,7 +194,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
+`pnpm infra` → **More** → **Tear down** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
 
 Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 

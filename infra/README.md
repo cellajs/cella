@@ -41,15 +41,23 @@ It builds a release not built yet, switches every role to a machine of the relea
 - the security findings and anything else the checks flag
 - **Up next**: the step it recommends, which leads the menu below
 
-The menu lists its rows by task, each entered by its letter. A row with several actions opens a short pick:
+The menu lists the daily rows by task, each entered by its letter. A row with several actions opens a short pick:
 
 | Group | Rows |
 | --- | --- |
 | Deploys | `d` Deploy now, `r` Releases & roll back, `l` Deploy logs, `s` Full status |
-| Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `i` Update identities |
-| Database | `p` Open DB access (and Seed database) or Close DB access, whichever applies; `x` Reset database |
-| Account | `o` Operators & keys (Rotate keys, Rotate secrets, Set up operators, Set repository read key) |
-| More | `u` Repair (Unlock, Resume setup, Remove from state), `t` Tear down |
+| Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `p` Open DB access or Close DB access, whichever applies |
+
+`m` **More** opens the pick of the rare actions, each with the key it needs:
+
+| Heading | Actions |
+| --- | --- |
+| Keys & access | Rotate keys, Rotate secrets, Set up operators, Update identities, Set repository read key |
+| Repair | Unlock, Resume setup, Remove from state |
+| Database | Seed database, Reset database |
+| Environment | Tear down |
+
+Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
 
 Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `runs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
 

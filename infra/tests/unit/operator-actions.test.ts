@@ -3,7 +3,6 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   actionCommand,
-  actionDescription,
   actionLabel,
   isOperatorActionId,
   MENU_GROUPS,
@@ -51,6 +50,7 @@ const RETIRED_LABELS = [
   'Unlock stack',
   'Start a deploy',
   'Keys & operators',
+  'Operators & keys',
 ];
 
 const DOCS = [
@@ -84,14 +84,6 @@ describe('operator action table', () => {
     expect(isOperatorActionId('toString')).toBe(false);
     expect(actionCommand('db-close')).toBe('pnpm infra db-close');
   });
-
-  it('ends every description with the key the action runs with', () => {
-    expect(actionDescription('apply')).toMatch(/Needs your operator key\.$/);
-    expect(actionDescription('operator-key')).toMatch(/Needs your Owner API key\.$/);
-    expect(actionDescription('preview')).toMatch(/Needs your operator key\.$/);
-    expect(actionDescription('status')).toMatch(/Reads with the observer key\.$/);
-    expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your operator key.');
-  });
 });
 
 describe('menu rows', () => {
@@ -101,8 +93,8 @@ describe('menu rows', () => {
     expect(new Set(listed).size).toBe(listed.length);
   });
 
-  it('keeps the menu to twelve rows: the two DB access rows share one place', () => {
-    expect(rowIds).toHaveLength(13);
+  it('keeps the menu to seven daily rows and More: the two DB access rows share one place', () => {
+    expect(rowIds).toHaveLength(9);
     expect(rowIds).toContain('db-open');
     expect(rowIds).toContain('db-close');
   });
@@ -128,12 +120,12 @@ describe('menu rows', () => {
     expect(menuPath('status')).toBe('Full status');
     expect(menuPath('db-open')).toBe('Open DB access');
     expect(menuPath('db-close')).toBe('Close DB access');
-    expect(menuPath('db-seed')).toBe('Open DB access → Seed database');
+    expect(menuPath('db-seed')).toBe('More → Seed database');
     expect(menuPath('apply')).toBe('Infrastructure changes → Review & apply changes');
     expect(menuPath('preview')).toBe('Infrastructure changes → Preview changes');
-    expect(menuPath('unlock')).toBe('Repair → Unlock');
+    expect(menuPath('unlock')).toBe('More → Unlock');
     expect(menuPath('start-deploy')).toBe('Deploy now');
-    expect(menuPath('rotate-keys')).toBe('Operators & keys → Rotate keys');
+    expect(menuPath('rotate-keys')).toBe('More → Rotate keys');
   });
 });
 

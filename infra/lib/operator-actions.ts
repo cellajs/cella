@@ -5,7 +5,7 @@ export interface OperatorAction {
   /** The one name of the action: its menu entry, every prompt and hint that points at it, and the docs. */
   label: string;
   key: KeyTier;
-  /** What the action does, shown under the menu while its entry is highlighted. */
+  /** What the action does, shown under the menu while its entry is highlighted: one line of at most 96 characters that names no key. */
   description: string;
 }
 
@@ -17,23 +17,22 @@ export const OPERATOR_ACTIONS = {
   status: {
     label: 'Full status',
     key: 'observer',
-    description: 'Every check in one table: what is set up, what is live, the security findings and the next step. Read-only.',
+    description: 'Every check and finding, what it means and what fixes it. Read-only.',
   },
   runs: {
     label: 'Deploy logs',
     key: 'observer',
-    description:
-      'The last deploys: when, which release, how each ended and where a failed one stopped, then one in full with the end of its log. Read-only.',
+    description: 'The last deploys and how each ended, then one in full with the end of its log. Read-only.',
   },
   preview: {
     label: 'Preview changes',
     key: 'operator',
-    description: 'The plan of "Review & apply changes" without its question, refreshed against the live stack. Read-only.',
+    description: 'The changes "Review & apply changes" would make, read fresh against what runs. Read-only.',
   },
   apply: {
     label: 'Review & apply changes',
     key: 'operator',
-    description: 'See what differs between code and live stack, and apply it on your yes.',
+    description: 'See what differs between the code and what runs, and apply it on your yes.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
@@ -53,7 +52,7 @@ export const OPERATOR_ACTIONS = {
   identity: {
     label: 'Update identities',
     key: 'owner',
-    description: 'Write what differs from the declared identities. Asks for your Owner key only when something must change.',
+    description: 'Write what differs from the declared identities. Asks for a key only when something must change.',
   },
   'start-deploy': {
     label: 'Deploy now',
@@ -73,12 +72,12 @@ export const OPERATOR_ACTIONS = {
   secrets: {
     label: 'Env vars & secrets',
     key: 'operator',
-    description: 'The values the services read at boot, in one table. A new value reaches the machines at the next deploy.',
+    description: 'The values the services read at boot. A changed value reaches the machines at the next deploy.',
   },
   'db-open': {
     label: 'Open DB access',
     key: 'operator',
-    description: 'Open a temporary public endpoint locked to your IP and print the admin connection string (close it after).',
+    description: 'Open a public endpoint to your IP and print the admin connection string. Close it when done.',
   },
   'db-seed': {
     label: 'Seed database',
@@ -93,12 +92,12 @@ export const OPERATOR_ACTIONS = {
   'db-reset': {
     label: 'Reset database',
     key: 'operator',
-    description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
+    description: 'Wipe the database and rebuild it empty. A backup is taken first and kept for 7 days.',
   },
   unlock: {
     label: 'Unlock',
     key: 'operator',
-    description: 'Clear a stale lease (one deploy or action runs at a time) and review the operations an interrupted run left in the Pulumi state.',
+    description: 'Clear the lease a stopped run left, and review what it left unfinished in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
@@ -108,24 +107,22 @@ export const OPERATOR_ACTIONS = {
   'state-prune': {
     label: 'Remove from state',
     key: 'operator',
-    description: "Remove one resource from the stack's Pulumi state: one the program no longer declares and whose live object is gone already.",
+    description: 'Take out of the Pulumi state a resource the code no longer declares and that is gone already.',
   },
   teardown: {
     label: 'Tear down',
     key: 'owner',
-    description: 'DESTRUCTIVE: delete everything that runs or costs, after a final dump. Uploads and the dump are kept.',
+    description: 'Delete everything that runs or costs, after a final dump. The uploads and the dump are kept.',
   },
 } as const satisfies Record<string, OperatorAction>;
 
 export type OperatorActionId = keyof typeof OPERATOR_ACTIONS;
 
-/** The groups of the `pnpm infra` menu, in the order the menu lists them. */
+/** The groups of the `pnpm infra` menu, in the order the menu lists them. The More row stands under no heading. */
 export const MENU_GROUPS = {
   deploys: 'Deploys',
   configure: 'Configure',
-  database: 'Database',
-  account: 'Account',
-  more: 'More',
+  more: '',
 } as const;
 
 export type MenuGroup = keyof typeof MENU_GROUPS;
@@ -142,102 +139,44 @@ export interface MenuRow {
   description: string;
 }
 
+/** The actions a person runs rarely, under the headings of the More pick, in pick order. */
+export const MORE_SECTIONS = {
+  'Keys & access': ['rotate-keys', 'rotate-secrets', 'operator-key', 'identity', 'repository-key'],
+  Repair: ['unlock', 'resume', 'state-prune'],
+  Database: ['db-seed', 'db-reset'],
+  Environment: ['teardown'],
+} as const satisfies Record<string, readonly OperatorActionId[]>;
+
+/** A row of the menu for one action, under its label and description. */
+function actionRow(id: OperatorActionId, group: MenuGroup, hotkey: string): MenuRow {
+  return { group, label: actionLabel(id), actions: [id], hotkey, description: OPERATOR_ACTIONS[id].description };
+}
+
 /**
- * The rows of the `pnpm infra` menu, in menu order, grouped by what a person comes to do. `db-open` and `db-close` share one place: the
- * menu lists the one that applies. Every action has a row, so nothing of the CLI is reached by its command alone.
+ * The rows of the `pnpm infra` menu, in menu order: the daily ones by what a person comes to do, then More with the rest. `db-open` and
+ * `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
-  deploy: {
-    group: 'deploys',
-    label: OPERATOR_ACTIONS['start-deploy'].label,
-    actions: ['start-deploy'],
-    hotkey: 'd',
-    description: OPERATOR_ACTIONS['start-deploy'].description,
-  },
-  releases: {
-    group: 'deploys',
-    label: OPERATOR_ACTIONS.releases.label,
-    actions: ['releases'],
-    hotkey: 'r',
-    description: OPERATOR_ACTIONS.releases.description,
-  },
-  runs: {
-    group: 'deploys',
-    label: OPERATOR_ACTIONS.runs.label,
-    actions: ['runs'],
-    hotkey: 'l',
-    description: OPERATOR_ACTIONS.runs.description,
-  },
-  status: {
-    group: 'deploys',
-    label: OPERATOR_ACTIONS.status.label,
-    actions: ['status'],
-    hotkey: 's',
-    description: OPERATOR_ACTIONS.status.description,
-  },
-  secrets: {
-    group: 'configure',
-    label: OPERATOR_ACTIONS.secrets.label,
-    actions: ['secrets'],
-    hotkey: 'e',
-    description: OPERATOR_ACTIONS.secrets.description,
-  },
+  deploy: actionRow('start-deploy', 'deploys', 'd'),
+  releases: actionRow('releases', 'deploys', 'r'),
+  runs: actionRow('runs', 'deploys', 'l'),
+  status: actionRow('status', 'deploys', 's'),
+  secrets: actionRow('secrets', 'configure', 'e'),
   changes: {
     group: 'configure',
     label: 'Infrastructure changes',
     actions: ['apply', 'preview'],
     hotkey: 'a',
-    description: 'What differs between code and live foundation: review and apply it, or only look.',
+    description: 'What differs between the code and what runs: review and apply it, or only look.',
   },
-  identity: {
-    group: 'configure',
-    label: OPERATOR_ACTIONS.identity.label,
-    actions: ['identity'],
-    hotkey: 'i',
-    description: OPERATOR_ACTIONS.identity.description,
-  },
-  'db-open': {
-    group: 'database',
-    label: OPERATOR_ACTIONS['db-open'].label,
-    actions: ['db-open', 'db-seed'],
-    hotkey: 'p',
-    description: 'Open a temporary public endpoint locked to your IP: to connect yourself, or to run the backend seeds and close it again.',
-  },
-  'db-close': {
-    group: 'database',
-    label: OPERATOR_ACTIONS['db-close'].label,
-    actions: ['db-close'],
-    hotkey: 'p',
-    description: OPERATOR_ACTIONS['db-close'].description,
-  },
-  'db-reset': {
-    group: 'database',
-    label: OPERATOR_ACTIONS['db-reset'].label,
-    actions: ['db-reset'],
-    hotkey: 'x',
-    description: OPERATOR_ACTIONS['db-reset'].description,
-  },
-  keys: {
-    group: 'account',
-    label: 'Operators & keys',
-    actions: ['rotate-keys', 'rotate-secrets', 'operator-key', 'repository-key'],
-    // `k` is the menu's vim-style up.
-    hotkey: 'o',
-    description: "Replace keys or secrets, set up the operators, or store a private repository's read key.",
-  },
-  repair: {
+  'db-open': actionRow('db-open', 'configure', 'p'),
+  'db-close': actionRow('db-close', 'configure', 'p'),
+  more: {
     group: 'more',
-    label: 'Repair',
-    actions: ['unlock', 'resume', 'state-prune'],
-    hotkey: 'u',
-    description: 'Clear a stale lease, continue an interrupted setup, or take a resource out of the Pulumi state.',
-  },
-  teardown: {
-    group: 'more',
-    label: OPERATOR_ACTIONS.teardown.label,
-    actions: ['teardown'],
-    hotkey: 't',
-    description: OPERATOR_ACTIONS.teardown.description,
+    label: 'More',
+    actions: Object.values(MORE_SECTIONS).flat(),
+    hotkey: 'm',
+    description: 'Keys and access, repairs, seeding or resetting the database, and tearing the environment down.',
   },
 } as const satisfies Record<string, MenuRow>;
 
@@ -294,23 +233,10 @@ export function menuPath(id: OperatorActionId): string {
   return row.actions.length === 1 || row.label === label ? label : `${row.label} → ${label}`;
 }
 
-const KEY_SENTENCES = {
-  none: 'Works without a Scaleway key.',
-  observer: 'Reads with the observer key.',
-  operator: 'Needs your operator key.',
-  owner: 'Needs your Owner API key.',
-} as const satisfies Record<KeyTier, string>;
-
 const KEY_HINTS = { none: 'no key', observer: 'observer key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<
   KeyTier,
   string
 >;
-
-/** The description of an action in a pick: what it does, then the key it runs with. `what` replaces the table's sentence for an entry that depends on live state. */
-export function actionDescription(id: OperatorActionId, what?: string): string {
-  const action = operatorAction(id);
-  return `${what ?? action.description} ${KEY_SENTENCES[action.key]}`;
-}
 
 /** The note on the right of an action in a pick: the key it runs with. */
 export function actionHint(id: OperatorActionId): string {

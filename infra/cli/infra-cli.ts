@@ -183,22 +183,19 @@ function pulumiReady(action: OperatorActionId): boolean {
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
 let lastRow: MenuRowId | typeof UP_NEXT = 'deploy';
 
-/** Rows whose action destroys data: the cursor never rests on one, so a stray Enter after it cannot start it again. */
-const DESTRUCTIVE_ROWS: readonly MenuRowId[] = ['db-reset', 'teardown'];
-
 /** The row the cursor starts on in this state: the recommended step, else the last row, its DB access counterpart once the endpoint changed side, else the first. */
 function startRow(state: MenuState): MenuRowId | typeof UP_NEXT {
   if (state.upNext) return UP_NEXT;
   const rows = visibleRows(state);
-  if (lastRow === UP_NEXT || DESTRUCTIVE_ROWS.includes(lastRow)) return 'deploy';
+  if (lastRow === UP_NEXT) return 'deploy';
   if (rows.includes(lastRow)) return lastRow;
   return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'deploy';
 }
 
 /**
- * The menu: one flat list of rows under group headings, each with a letter that enters it. A row with one action runs it; a row with
- * several opens a short pick, where Esc or Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run now
- * stays listed with the reason.
+ * The menu: the daily rows under group headings, each with a letter that enters it, then More with the rest. A row with one action runs
+ * it; a row with several opens a pick, where Esc or Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run
+ * now stays listed with the reason. A pick opens on its first entry: a stray Enter after an action never starts one that deletes data.
  */
 async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof QUIT> {
   while (true) {
