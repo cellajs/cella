@@ -33,13 +33,14 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 ## Commands
 
-`pnpm infra` opens the setup wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen:
+`pnpm infra` opens the setup wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen, which shows what serves and since when, then only what needs a person:
 
-- what serves and since when
-- how the last deploy went
-- the database
-- the security findings and anything else the checks flag
-- **Up next**: the step it recommends, which leads the menu below
+- a deploy that failed, waits or runs
+- the database while it is open
+- the security findings, by what they found
+- any other check that found something
+
+When nothing needs a person, the line on what serves says all checks pass. The step the checks recommend leads the menu below.
 
 The menu lists its rows by task, each entered by its letter. A row with several actions opens a short pick:
 
@@ -55,7 +56,7 @@ Every action also runs alone as `pnpm infra <action> [--mode <production|staging
 
 ## Status
 
-`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report: one line each for what serves, the last deploy, the database and the security findings, one per other check that is not ok, and the next step. Menu: `pnpm infra` → **Full status**, every check in one table. Standalone:
+`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report. Menu: `pnpm infra` → **Full status**: each finding with what it names and what fixes it, the checks that could not be read, and the passing checks as one line per area. Standalone:
 
 ```
 pnpm --filter infra status [--mode <production|staging>] [--json]
