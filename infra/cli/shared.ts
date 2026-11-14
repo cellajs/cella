@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
-import { menuPath, type OperatorActionId } from '../lib/operator-actions';
+import { actionCommand, menuPath, type OperatorActionId } from '../lib/operator-actions';
 import { allPrincipalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, pruneLockVersions, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import type { StackContext } from '../lib/stack/stack-context';
@@ -10,6 +10,7 @@ import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
 import { confirm, input, PromptBack } from './prompts/back';
+import { inMenuSession } from './session';
 
 type AppConfigType = EngineConfig;
 
@@ -250,4 +251,9 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
   };
 
   return { must };
+}
+
+/** Where a message sends the operator for an action: its menu name in a menu session, the command a single-action run types. */
+export function pointTo(id: OperatorActionId): string {
+  return inMenuSession() ? `"${menuPath(id)}"` : `\`${actionCommand(id)}\``;
 }

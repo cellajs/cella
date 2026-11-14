@@ -31,6 +31,7 @@ import {
   endAction,
   endActionWithHint,
   endsAction,
+  pointTo,
   pulumiLoginUrl,
   stackNameFor,
 } from '../shared';
@@ -118,7 +119,7 @@ async function adoptKept(ctx: SetupContext): Promise<void> {
 /** The engine image of this checkout, published on the operator key; undefined while the registry does not exist or when the build failed. */
 async function publishEngineOrWarn(ctx: SetupContext): Promise<PublishedEngine | undefined> {
   return publishEngine({ appConfig: ctx.appConfig, projectId: ctx.projectId, secretKey: ctx.secretKey }).catch((error) => {
-    console.warn(`${warningMark} The engine image could not be published (${errorMessage(error)}): \`${actionCommand('apply')}\` publishes it.`);
+    console.warn(`${warningMark} The engine image could not be published (${errorMessage(error)}): ${pointTo('apply')} publishes it.`);
     return undefined;
   });
 }
@@ -202,7 +203,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
       const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
       if (code !== 0) {
-        console.warn(`${warningMark} The main job's definition waits for \`${actionCommand('apply')}\` (pulumi up exited ${code}).`);
+        console.warn(`${warningMark} The main job's definition waits for ${pointTo('apply')} (pulumi up exited ${code}).`);
         engine = undefined;
       }
     }
@@ -345,7 +346,7 @@ export async function copyDeployKeyForMainJob(
   await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), ciKey).catch(
     (error) =>
       console.warn(
-        `${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); \`${actionCommand('rotate-keys')}\` makes a new key and copies it.`,
+        `${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); ${pointTo('rotate-keys')} makes a new key and copies it.`,
       ),
   );
 }

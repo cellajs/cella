@@ -1,8 +1,8 @@
-import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
+import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { discardEngine, type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
-import { endAction, type InfraContext } from '../shared';
+import { endAction, type InfraContext, pointTo } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { dropKeptPassphrase } from './drop-passphrase';
 import { exitOnIdentityChanges } from './identity';
@@ -73,7 +73,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   if (declined) await discard();
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>
-      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
+      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): ${pointTo('start-deploy')} does.`),
     );
   }
   // A verified difference is reported, not a failure of the apply: the target still starts, and the exit code says to look.

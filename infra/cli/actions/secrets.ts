@@ -4,7 +4,6 @@ import { blockedValues } from '../../lib/deploy/failure-class';
 import { bucketRunStore } from '../../lib/deploy/run-store';
 import { type ManagedKeyDefinition, managedKeys } from '../../lib/managed-keys';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand } from '../../lib/operator-actions';
 import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../../lib/runtime-secrets';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
@@ -27,10 +26,11 @@ import {
 } from '../../tasks/manage-runtime-secrets';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import type { MenuChoice } from '../menu';
+import { isPromptAbort } from '../prompts/abort';
 import { confirm, input, PromptBack } from '../prompts/back';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, type MenuSelectOptions, menuSelect } from '../prompts/menu-select';
-import { autoAcceptDefaults, confirmOrDefault, type InfraContext } from '../shared';
+import { ActionEnded, autoAcceptDefaults, confirmOrDefault, type InfraContext, pointTo } from '../shared';
 import { acquireIdentityKey, acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 import { runStartDeploy, startBlockedTarget } from './start-deploy';
@@ -77,7 +77,7 @@ const takesEffect = "A value is written at once; running machines keep what they
 /** Pulumi owns a container: one made here would make the next `pulumi up` fail with "secret already exists". */
 function applyFirst(ctx: MenuContext, secret: RuntimeSecretDefinition, then: string): false {
   ctx.log(
-    `${warningMark} ${secret.envVar} has no secret in Secret Manager yet. Apply first (\`${actionCommand('apply')}\`), which creates it, then ${then} here.`,
+    `${warningMark} ${secret.envVar} has no secret in Secret Manager yet. Apply first (${pointTo('apply')}), which creates it, then ${then} here.`,
   );
   return false;
 }
@@ -169,6 +169,8 @@ async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<
     ctx.log(`${checkMark} Minted ${key.label}`);
     return true;
   } catch (error) {
+    // Esc or Ctrl-C at the Owner key prompt leaves the mint as at any other prompt.
+    if (error instanceof PromptBack || error instanceof ActionEnded || isPromptAbort(error)) throw error;
     ctx.log(`${warningMark} Mint failed: ${errorMessage(error)}`);
     return false;
   }
@@ -376,7 +378,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
   if (identityKey) printRevokeReminder();
   const restarted = operator
     ? await startBlockedTarget(context, operator).catch((error) => {
-        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
         return false;
       })
     : false;

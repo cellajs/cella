@@ -12,7 +12,7 @@ import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, ENVIRONMENTS_FILE, type RemoteRef, sortedReleases } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel, menuRow } from '../../lib/operator-actions';
+import { actionLabel, menuRow } from '../../lib/operator-actions';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/control-store';
@@ -20,7 +20,7 @@ import { accessDenied } from '../../lib/status/providers/runs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
-import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
+import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, pointTo, stackNameFor } from '../shared';
 import { deployAndFollow, deployFixes } from './deploy-follow';
 import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { environmentTarget } from './start-deploy';
@@ -144,7 +144,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: \`${actionCommand('identity')}\` puts one here.`,
+      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: ${pointTo('identity')} puts one here.`,
     );
     return endAction(1);
   }
@@ -204,7 +204,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
   if (!definitionId) {
-    console.error(`${crossMark} ${environment} has no main job yet: an apply makes it (\`${actionCommand('apply')}\`).`);
+    console.error(`${crossMark} ${environment} has no main job yet: an apply makes it (${pointTo('apply')}).`);
     return endAction(1);
   }
   const outcome = await deployAndFollow(context, operator, definitionId, { sha: picked.sha, retry: 0 }, 'Started');

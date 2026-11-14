@@ -22,7 +22,7 @@ import { type Growth, type RunRecord, rewriteNote, runSummaryLine, stepLine, wro
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, type RemoteRef } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
@@ -32,7 +32,7 @@ import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
-import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
+import { autoAcceptDefaults, endAction, type InfraContext, pointTo } from '../shared';
 
 const LIST_LENGTH = 10;
 const LOG_TAIL = 40;
@@ -121,7 +121,7 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
 /** When the last scheduled run that did not fail started, as the sentence above the list says it. */
 function scheduleSentence(jobRuns: readonly JobRun[], now: number): string {
   const last = lastScheduledRun(jobRuns);
-  if (!last?.created_at) return `scheduled runs: none among the main job's newest runs; \`${actionCommand('apply')}\` writes the schedule`;
+  if (!last?.created_at) return `scheduled runs: none among the main job's newest runs; ${pointTo('apply')} writes the schedule`;
   return `scheduled runs: last ${Math.floor((now - Date.parse(last.created_at)) / 60_000)} min ago`;
 }
 
@@ -246,7 +246,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('runs')} reads with the observer key, and this machine has none: \`${actionCommand('identity')}\` puts one here.`,
+      `${crossMark} ${actionLabel('runs')} reads with the observer key, and this machine has none: ${pointTo('identity')} puts one here.`,
     );
     return endAction(1);
   }

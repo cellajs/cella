@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { rerunReleaseCheck } from '../../lib/deploy/release-gate';
-import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
+import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { shutOutOfBuckets } from '../../lib/scaleway/bucket-admission';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { appPrincipalNames } from '../../lib/scaleway/principals';
@@ -22,7 +22,7 @@ import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../t
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { confirm } from '../prompts/back';
 import { forgetOperatorKey } from '../session';
-import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
+import { acquireStackLockOrExit, endAction, type InfraContext, pointTo, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
@@ -255,7 +255,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       console.error(
         `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
       );
-      console.error(pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`.`));
+      console.error(pc.dim(`  Nothing is known to be wrong: run ${pointTo('preview')}.`));
     }
     if (result.problems.length > 0) {
       console.error(

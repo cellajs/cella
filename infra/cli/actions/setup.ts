@@ -1,8 +1,7 @@
-import { actionCommand } from '../../lib/operator-actions';
 import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { printInventory } from '../../tasks/status';
-import { endsAction, type InfraContext } from '../shared';
+import { endsAction, type InfraContext, pointTo } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 import { printLaunchChecklist } from './setup-checklist';
 import { copyDeployKeyForMainJob, recordKeyRotation, runOperatorPart } from './setup-operator-part';
@@ -29,12 +28,12 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
     await recordKeyRotation(context, operatorKey);
     await redeployAfterRotation(context, operatorKey).catch((error) => {
       if (endsAction(error)) throw error;
-      console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+      console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
     });
     // After a compromise the rotation is followed by a look at what an intruder may have left: the inventory, on the observer key and, for
     // the machines, the operator key.
     await printInventory({ ...context, operatorKey }).catch((error) =>
-      console.warn(`${warningMark} Could not read the inventory (${errorMessage(error)}): \`${actionCommand('status')}\` shows it.`),
+      console.warn(`${warningMark} Could not read the inventory (${errorMessage(error)}): ${pointTo('status')} shows it.`),
     );
   } else await runOperatorPart(context, operatorKey, moment);
 }

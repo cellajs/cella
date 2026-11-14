@@ -1,5 +1,5 @@
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -14,6 +14,7 @@ import {
   confirmOrDefault,
   endsAction,
   type InfraContext,
+  pointTo,
   pulumiLoginAndSelect,
   pulumiLoginUrl,
   stackNameFor,
@@ -71,6 +72,6 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   }
   await redeployAfterRotation(context, operator).catch((error) => {
     if (endsAction(error)) throw error;
-    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
   });
 }
