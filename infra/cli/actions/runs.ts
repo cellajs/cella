@@ -191,7 +191,6 @@ export async function showRuns(
         row.reading ? { name: row.line, value: row.reading.newest.run } : { name: row.line, value: `unrecorded-${index}`, disabled: ' ' },
       ),
       default: newest.newest.run,
-      escape: 'back',
     });
     if (picked === ESCAPED) throw new PromptBack();
     chosen = readings.find((reading) => reading.newest.run === picked) ?? newest;

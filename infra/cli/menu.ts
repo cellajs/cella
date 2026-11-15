@@ -95,18 +95,9 @@ function rowLabel(id: MenuRowId): string {
   return row.actions.length > 1 ? `${row.label} ›` : row.label;
 }
 
-/** An entry's name: its hotkey dim, then the label. */
+/** An entry's name: the label, with the open endpoint in yellow. */
 function entryName(id: MenuRowId): string {
-  return `${pc.dim(menuRow(id).hotkey)}  ${rowLabel(id)}`.replace('(OPEN)', pc.yellow('(OPEN)'));
-}
-
-/** The hotkeys of the rows a state lists and can run, by letter. */
-export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
-  return Object.fromEntries(
-    visibleRows(state)
-      .filter((id) => !rowDisabledReason(id, state))
-      .map((id) => [menuRow(id).hotkey, id]),
-  );
+  return rowLabel(id).replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
 /** The main menu: the recommended step first when there is one, then every row after a blank line, then the way out. */
@@ -133,7 +124,7 @@ export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> 
       ...(reason ? { disabled: `(${reason})` } : {}),
     });
   }
-  items.push(RULE, { name: `${pc.dim('q')}  Quit`, value: QUIT, description: 'Leave the CLI.' });
+  items.push(RULE, { name: 'Quit', value: QUIT, description: 'Leave the CLI.' });
   return items;
 }
 

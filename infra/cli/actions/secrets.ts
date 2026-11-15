@@ -214,7 +214,6 @@ async function handleRow(ctx: MenuContext, secret: RuntimeSecretDefinition, cont
   const action = await ctx.prompts.select<RowAction>({
     message: secret.envVar,
     items: [...actions, { name: '← Back', value: 'back', description: 'Return to the table.' }],
-    escape: 'back',
   });
   if (action === 'set') return handleSet(ctx, secret, container);
   if (action === 'delete') return handleDelete(ctx, secret, container);
@@ -299,7 +298,6 @@ export async function secretsMenu(options: SecretsMenuOptions): Promise<{ change
         { name: 'Import a .env file', value: IMPORT, description: 'Set every value a .env file holds for an env var above, after one confirmation.' },
       ],
       default: picked,
-      escape: 'back',
     });
     if (choice === ESCAPED) return { changed };
     picked = choice;

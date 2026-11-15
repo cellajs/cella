@@ -42,18 +42,18 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 When nothing needs a person, the line on what serves says all checks pass. The step the checks recommend leads the menu below.
 
-The menu lists the daily rows, most used first, each entered by the first letter of a word in its name. Each row's command is the same word:
+The menu lists the daily rows, most used first. Each row's command is a word of its name:
 
-| Letter | Row | Command |
-| --- | --- | --- |
-| `s` | Full status | `status` |
-| `a` | Review & apply changes | `apply` |
-| `e` | Env vars & secrets | `env` |
-| `r` | Releases & roll back | `releases` |
-| `l` | Deploy logs | `logs` |
-| `o` or `c` | Open DB access or Close DB access, whichever applies | `db-open`, `db-close` |
+| Row | Command |
+| --- | --- |
+| Full status | `status` |
+| Review & apply changes | `apply` |
+| Env vars & secrets | `env` |
+| Releases & roll back | `releases` |
+| Deploy logs | `logs` |
+| Open DB access or Close DB access, whichever applies | `db-open`, `db-close` |
 
-`m` **More** opens the pick of the rare actions, each with the key it needs:
+**More** opens the pick of the rare actions, each with the key it needs:
 
 | Heading | Actions |
 | --- | --- |
@@ -65,7 +65,7 @@ The menu lists the daily rows, most used first, each entered by the first letter
 
 Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
 
-Esc steps back one prompt, and from an action's first prompt or its list straight to the menu. An action that ends by itself keeps its output on screen under **What now?**: Enter or Esc returns to the home screen and the menu, and `q` quits.
+Esc steps back one prompt, and from an action's first prompt or its list straight to the menu. An action that ends by itself keeps its output on screen until you go back: Full status under one **← Back to menu** row, the others under **What now?**, which also offers Quit.
 
 Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `logs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
 

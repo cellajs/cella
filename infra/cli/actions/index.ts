@@ -3,7 +3,7 @@ import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { isPromptAbort } from '../prompts/abort';
 import { PromptBack } from '../prompts/back';
-import { afterAction, keptKeyNote, LEAVE, leaveRow, QUIT, type WayOut, whatNow } from '../prompts/what-now';
+import { afterAction, backToMenu, keptKeyNote, LEAVE, leaveRow, QUIT, type WayOut, whatNow } from '../prompts/what-now';
 import { forgetAnswers, inMenuSession, rememberedOperatorKey } from '../session';
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
@@ -75,22 +75,13 @@ export interface RunActionOptions {
   close?: typeof afterAction;
 }
 
-/** The letter of a fix row: the first letter of its label that no other row of the frame takes. */
-function fixKey(label: string, taken: Set<string>): string {
-  const key = [...label.toLowerCase()].find((char) => /[a-z]/.test(char) && !taken.has(char)) ?? String(taken.size);
-  taken.add(key);
-  return key;
-}
-
 /** The ways out of a failed action: retry it, each action that fixes it by its menu name (in a menu session), then leave. */
 function waysOut(id: OperatorActionId, ended: ActionEnded, firstSetup: boolean): Array<WayOut<string>> {
   const retry: WayOut<string> = firstSetup
-    ? { key: 'r', value: RETRY, label: 'Retry this step', description: 'Runs the step again. What is made stays, and only the rest is created.' }
-    : { key: 'r', value: RETRY, label: ended.retry ?? `Retry ${actionLabel(id)}`, description: 'Runs the action again, from its first question.' };
-  const taken = new Set(['r', 'm', 'q']);
+    ? { value: RETRY, label: 'Retry this step', description: 'Runs the step again. What is made stays, and only the rest is created.' }
+    : { value: RETRY, label: ended.retry ?? `Retry ${actionLabel(id)}`, description: 'Runs the action again, from its first question.' };
   const fixes = inMenuSession()
     ? ended.fix.map((fix) => ({
-        key: fixKey(actionLabel(fix), taken),
         value: fix,
         label: actionLabel(fix),
         hint: menuPath(fix) === actionLabel(fix) ? undefined : menuPath(fix),
@@ -140,8 +131,10 @@ export async function runAction(id: OperatorActionId, context: InfraContext, opt
     for (;;) {
       const ended = await tryAction(id, context, runners, log);
       if (ended === 'done' || (ended instanceof ActionEnded && ended.exitCode === 0 && !ended.left)) {
-        const stays = inMenuSession() || (firstSetup && process.stdin.isTTY);
-        return stays && (await close(firstSetup)) === QUIT ? { code: 0, quit: true } : { code: 0 };
+        if (!inMenuSession() && !(firstSetup && process.stdin.isTTY)) return { code: 0 };
+        // Full status ends on one back row, the other actions on the frame with Quit.
+        const way = id === 'status' && !firstSetup ? await backToMenu() : await close(firstSetup);
+        return way === QUIT ? { code: 0, quit: true } : { code: 0 };
       }
       if (ended === 'back') {
         if (!inMenuSession()) log(pc.dim('Cancelled.'));

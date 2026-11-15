@@ -1,8 +1,7 @@
 import { emitKeypressEvents } from 'node:readline';
 import { createPrompt, isEnterKey, isTabKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
 import { select as inquirerSelect } from '@inquirer/prompts';
-import { pc } from '../../lib/utils/cli-output';
-import { inMenuSession, recalledAnswer, rememberAnswer } from '../session';
+import { recalledAnswer, rememberAnswer } from '../session';
 
 /** Thrown when the operator presses Esc at a prompt: a flow goes back one step, and its first step back to the menu. */
 export class PromptBack extends Error {
@@ -10,13 +9,6 @@ export class PromptBack extends Error {
     super('the operator stepped back');
     this.name = 'PromptBack';
   }
-}
-
-/** The help line under a prompt: its own keys, then `ctrl-c menu` in a menu session and `esc back`. */
-export function helpTip(keys: Array<[key: string, action: string]>): string {
-  return [...keys, ...(inMenuSession() ? [['ctrl-c', 'menu'] as [string, string]] : []), ['esc', 'back'] as [string, string]]
-    .map(([key, action]) => `${pc.bold(key)} ${pc.dim(action)}`)
-    .join(pc.dim(' • '));
 }
 
 /** The context an Inquirer prompt runs in: its abort signal, and whether it erases itself when it ends. */
@@ -78,8 +70,6 @@ function yesOrNo(line: string, fallback: boolean): boolean | undefined {
 interface ConfirmPromptConfig {
   message: string;
   default: boolean;
-  /** The default is the answer this prompt got earlier in the action. */
-  earlier: boolean;
 }
 
 const confirmPrompt = createPrompt<boolean, ConfirmPromptConfig>((config, done) => {
@@ -109,17 +99,7 @@ const confirmPrompt = createPrompt<boolean, ConfirmPromptConfig>((config, done) 
 
   const message = theme.style.message(config.message, status);
   if (status === 'done') return `${prefix} ${message} ${theme.style.answer(value)}`;
-  const enter = `${config.default ? 'yes' : 'no'}${config.earlier ? ', your earlier answer' : ''}`;
-  const bottom = [
-    errorMsg ? theme.style.error(errorMsg) : '',
-    helpTip([
-      ['y/n', 'answer'],
-      ['⏎', enter],
-    ]),
-  ]
-    .filter(Boolean)
-    .join('\n');
-  return [`${prefix} ${message} ${theme.style.defaultAnswer(config.default ? 'Y/n' : 'y/N')} ${value}`, bottom];
+  return [`${prefix} ${message} ${theme.style.defaultAnswer(config.default ? 'Y/n' : 'y/N')} ${value}`, errorMsg ? theme.style.error(errorMsg) : ''];
 });
 
 /** A prompt's config with the id its answer is kept under, for a step back or a retry. */
@@ -129,9 +109,7 @@ type Recorded<C> = C & { id?: string };
 export async function confirm(config: Recorded<{ message: string; default?: boolean }>): Promise<boolean> {
   const earlier = config.id === undefined ? undefined : recalledAnswer(config.id);
   const fallback = typeof earlier === 'boolean' ? earlier : config.default !== false;
-  const answer = await withBack((context) =>
-    confirmPrompt({ message: config.message, default: fallback, earlier: typeof earlier === 'boolean' }, context),
-  );
+  const answer = await withBack((context) => confirmPrompt({ message: config.message, default: fallback }, context));
   if (config.id !== undefined) rememberAnswer(config.id, answer);
   return answer;
 }
@@ -177,9 +155,7 @@ const inputPrompt = createPrompt<string, InputPromptConfig>((config, done) => {
   const message = theme.style.message(config.message, status);
   if (status === 'done') return `${prefix} ${message} ${theme.style.answer(value)}`;
   const shownDefault = config.default && !value ? theme.style.defaultAnswer(config.default) : undefined;
-  const keys: Array<[string, string]> = [['⏎', 'submit'], ...(config.default ? [['tab', 'edit the default'] as [string, string]] : [])];
-  const bottom = [errorMsg ? theme.style.error(errorMsg) : '', helpTip(keys)].filter(Boolean).join('\n');
-  return [[prefix, message, shownDefault, value].filter((part) => part !== undefined).join(' '), bottom];
+  return [[prefix, message, shownDefault, value].filter((part) => part !== undefined).join(' '), errorMsg ? theme.style.error(errorMsg) : ''];
 });
 
 /** A line of text that Esc steps back from. With an `id` the answer given earlier in the action is the default. */
@@ -192,9 +168,7 @@ export async function input(config: Recorded<InputPromptConfig>): Promise<string
   return answer;
 }
 
-/** Inquirer's select, which Esc steps back from and whose help line says so. */
+/** Inquirer's select, which Esc steps back from, without its help line. */
 export function select<T>(config: Parameters<typeof inquirerSelect<T>>[0]): Promise<T> {
-  return withBack((context) =>
-    inquirerSelect<T>({ ...config, theme: { style: { keysHelpTip: (keys: Array<[string, string]>) => helpTip(keys) } } }, context),
-  );
+  return withBack((context) => inquirerSelect<T>({ ...config, theme: { style: { keysHelpTip: () => '' } } }, context));
 }

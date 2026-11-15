@@ -1,7 +1,7 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { pc } from '../../lib/utils/cli-output';
-import { helpTip, withBack } from './back';
+import { withBack } from './back';
 import { maskedSecret } from './masked-secret';
 
 /** An access key as Scaleway issues them: `SCW` and 17 capitals or digits. The example is the placeholder of the prompt. */
@@ -72,7 +72,7 @@ const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => 
   const shown = value.length > 0 ? value : pc.dim(ACCESS_KEY_EXAMPLE);
   const progress = accessKeyProgress(value.trim());
   const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✓' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
-  return [line, [errorMsg ? theme.style.error(errorMsg) : '', helpTip([['⏎', 'submit']])].filter(Boolean).join('\n')];
+  return [line, errorMsg ? theme.style.error(errorMsg) : ''];
 });
 
 export interface KeyPairPromptOptions {

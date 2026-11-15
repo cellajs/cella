@@ -1,19 +1,7 @@
 import { stripVTControlCharacters } from 'node:util';
 import { Separator } from '@inquirer/prompts';
 import { describe, expect, it } from 'vitest';
-import {
-  BACK,
-  disabledReason,
-  type MenuItem,
-  type MenuState,
-  mainMenuItems,
-  menuHotkeys,
-  pickItems,
-  QUIT,
-  rowDisabledReason,
-  UP_NEXT,
-  visibleRows,
-} from './menu';
+import { BACK, disabledReason, type MenuItem, type MenuState, mainMenuItems, pickItems, QUIT, rowDisabledReason, UP_NEXT, visibleRows } from './menu';
 
 const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', dbExposed: false };
 const partial: MenuState = { ...bootstrapped, stackState: 'partial' };
@@ -30,24 +18,24 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists the daily rows on a healthy stack, each with its letter, then More and Quit', () => {
+  it('lists the daily rows on a healthy stack, then More and Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       '',
-      '  s  Full status',
-      '  a  Review & apply changes',
-      '  e  Env vars & secrets',
-      '  r  Releases & roll back',
-      '  l  Deploy logs',
-      '  o  Open DB access',
-      '  m  More ›',
+      '  Full status',
+      '  Review & apply changes',
+      '  Env vars & secrets',
+      '  Releases & roll back',
+      '  Deploy logs',
+      '  Open DB access',
+      '  More ›',
       ` ${'─'.repeat(40)}`,
-      '  q  Quit',
+      '  Quit',
     ]);
   });
 
   it('leads with the recommended step when the home screen has one', () => {
     const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'deploy', description: 'Deploy 0.35.0 again' } });
-    expect(render(items).slice(0, 4)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', '', '  s  Full status']);
+    expect(render(items).slice(0, 4)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', '', '  Full status']);
     expect(items[1]).toMatchObject({ value: UP_NEXT });
   });
 
@@ -61,7 +49,7 @@ describe('mainMenuItems', () => {
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  c  Close DB access (OPEN)');
+    expect(lines).toContain('  Close DB access (OPEN)');
     expect(lines.some((line) => line.includes('Open DB access'))).toBe(false);
   });
 
@@ -101,22 +89,6 @@ describe('mainMenuItems', () => {
 
   it('ends with the way out', () => {
     expect(mainMenuItems(bootstrapped).at(-1)).toMatchObject({ value: QUIT });
-  });
-});
-
-describe('menuHotkeys', () => {
-  it('gives every listed row its own letter', () => {
-    const open = menuHotkeys(bootstrapped);
-    expect(Object.keys(open)).toHaveLength(visibleRows(bootstrapped).length);
-    expect(open.o).toBe('db-open');
-    expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).c).toBe('db-close');
-    expect(open.q).toBeUndefined();
-  });
-
-  it('gives no letter to a row that cannot run now', () => {
-    const letters = menuHotkeys(partial);
-    expect(letters.a).toBeUndefined();
-    expect(letters.l).toBe('logs');
   });
 });
 

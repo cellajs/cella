@@ -123,8 +123,6 @@ export interface MenuRow {
   label: string;
   /** The actions behind the row; more than one opens a short pick. */
   actions: readonly OperatorActionId[];
-  /** The letter that enters the row from the menu: the first letter of a word of its label. */
-  hotkey: string;
   /** Shown under the menu while the row is highlighted. */
   description: string;
 }
@@ -139,8 +137,8 @@ export const MORE_SECTIONS = {
 } as const satisfies Record<string, readonly OperatorActionId[]>;
 
 /** A row of the menu for one action, under its label and description. */
-function actionRow(id: OperatorActionId, hotkey: string): MenuRow {
-  return { label: actionLabel(id), actions: [id], hotkey, description: OPERATOR_ACTIONS[id].description };
+function actionRow(id: OperatorActionId): MenuRow {
+  return { label: actionLabel(id), actions: [id], description: OPERATOR_ACTIONS[id].description };
 }
 
 /**
@@ -148,17 +146,16 @@ function actionRow(id: OperatorActionId, hotkey: string): MenuRow {
  * `db-open` and `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
-  status: actionRow('status', 's'),
-  apply: actionRow('apply', 'a'),
-  env: actionRow('env', 'e'),
-  releases: actionRow('releases', 'r'),
-  logs: actionRow('logs', 'l'),
-  'db-open': actionRow('db-open', 'o'),
-  'db-close': actionRow('db-close', 'c'),
+  status: actionRow('status'),
+  apply: actionRow('apply'),
+  env: actionRow('env'),
+  releases: actionRow('releases'),
+  logs: actionRow('logs'),
+  'db-open': actionRow('db-open'),
+  'db-close': actionRow('db-close'),
   more: {
     label: 'More',
     actions: Object.values(MORE_SECTIONS).flat(),
-    hotkey: 'm',
     description: 'Deploying now, keys and access, repairs, seeding or resetting the database, and tearing down.',
   },
 } as const satisfies Record<string, MenuRow>;

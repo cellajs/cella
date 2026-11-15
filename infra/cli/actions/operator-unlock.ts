@@ -134,16 +134,15 @@ function keyWaysOut(judged: { refused: boolean; status?: number }): Promise<KeyW
         ...(judged.status === 403
           ? [
               {
-                key: 'w',
                 value: 'wait',
                 label: 'Wait 30 s and retry',
                 description: 'Check this key again in 30 s, without pasting it again.',
               } as const,
             ]
           : []),
-        { key: 'k', value: 'another', label: 'Use another operator key', description: 'Paste another key; the action goes on from here.' },
+        { value: 'another', label: 'Use another operator key', description: 'Paste another key; the action goes on from here.' },
       ]
-    : [{ key: 'r', value: 'retry', label: 'Retry', description: 'Check the same key again, once your connection or Scaleway is back.' }];
+    : [{ value: 'retry', label: 'Retry', description: 'Check the same key again, once your connection or Scaleway is back.' }];
   const note = judged.refused
     ? judged.status === 403
       ? 'Scaleway refused this key: it is forgotten unless you wait and retry.'

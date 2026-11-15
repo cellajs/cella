@@ -3,9 +3,8 @@ import { inMenuSession, rememberedOperatorKey } from '../session';
 import { isPromptAbort } from './abort';
 import { ESCAPED, menuSelect } from './menu-select';
 
-/** One way out of a failure: the letter that picks it, what it does, and the line under the list while it is highlighted. */
+/** One way out of a failure: what it does, and the line under the list while it is highlighted. */
 export interface WayOut<T extends string> {
-  key: string;
   value: T;
   label: string;
   /** Dim on the right: where the row leads. */
@@ -19,8 +18,8 @@ export const LEAVE = 'leave';
 /** The row that leaves a failure: back to the menu in a menu session, out of the CLI otherwise. */
 export function leaveRow(): WayOut<typeof LEAVE> {
   return inMenuSession()
-    ? { key: 'm', value: LEAVE, label: 'Back to the menu', description: 'The menu lists every action again.' }
-    : { key: 'q', value: LEAVE, label: 'Quit', description: 'End this run.' };
+    ? { value: LEAVE, label: 'Back to the menu', description: 'The menu lists every action again.' }
+    : { value: LEAVE, label: 'Quit', description: 'End this run.' };
 }
 
 /** The dim line under a failure's ways out when the run holds an operator key, or undefined. */
@@ -32,7 +31,7 @@ export function keptKeyNote(): string | undefined {
 export const QUIT = 'quit';
 
 /**
- * Ask what to do after a failure: `? What now?` over letter rows, with `note` dim under the highlighted row's line. Esc and Ctrl-C pick the
+ * Ask what to do after a failure: `? What now?` over its rows, with `note` dim under the highlighted row's line. Esc and Ctrl-C pick the
  * row that leaves, else the last one; without a terminal nobody can answer, so it is picked at once.
  */
 export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, note?: string): Promise<T> {
@@ -42,13 +41,11 @@ export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, 
   const width = Math.max(...rows.map((row) => row.label.length));
   const picked = await menuSelect<T>({
     message: 'What now?',
-    escape: 'back',
     items: rows.map((row) => ({
       value: row.value,
-      name: `${pc.dim(row.key)}  ${row.hint ? `${row.label.padEnd(width)}  ${pc.dim(row.hint)}` : row.label}`,
+      name: row.hint ? `${row.label.padEnd(width)}  ${pc.dim(row.hint)}` : row.label,
       description: note ? `${row.description}\n${pc.dim(note)}` : row.description,
     })),
-    hotkeys: Object.fromEntries(rows.map((row) => [row.key, row.value])),
   }).catch((error: unknown): typeof ESCAPED => {
     if (isPromptAbort(error)) return ESCAPED;
     throw error;
@@ -62,7 +59,16 @@ export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, 
  */
 export async function afterAction(firstSetup = false): Promise<typeof LEAVE | typeof QUIT> {
   const menu: WayOut<typeof LEAVE> = firstSetup
-    ? { key: 'm', value: LEAVE, label: 'Open the menu', description: 'Every action of the CLI, under the home screen.' }
+    ? { value: LEAVE, label: 'Open the menu', description: 'Every action of the CLI, under the home screen.' }
     : leaveRow();
-  return whatNow<typeof LEAVE | typeof QUIT>([menu, { key: 'q', value: QUIT, label: 'Quit', description: 'Leave the CLI.' }]);
+  return whatNow<typeof LEAVE | typeof QUIT>([menu, { value: QUIT, label: 'Quit', description: 'Leave the CLI.' }]);
+}
+
+/** The one row under Full status: Enter, Esc and Ctrl-C all return to the menu, with a blank line between it and the report. */
+export async function backToMenu(): Promise<typeof LEAVE> {
+  if (!process.stdin.isTTY) return LEAVE;
+  await menuSelect({ message: '', items: [{ group: '' }, { name: '← Back to menu', value: LEAVE }] }).catch((error: unknown) => {
+    if (!isPromptAbort(error)) throw error;
+  });
+  return LEAVE;
 }

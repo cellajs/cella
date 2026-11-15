@@ -104,22 +104,6 @@ describe('menu rows', () => {
     expect(ids.filter((id) => !listed.has(id))).toEqual([]);
   });
 
-  it('gives every row a letter of its own that starts a word of its label', () => {
-    const letters = rowIds.map((id) => menuRow(id).hotkey);
-    expect(new Set(letters).size).toBe(letters.length);
-    for (const id of rowIds) {
-      const { hotkey, label } = menuRow(id);
-      expect(hotkey).toMatch(/^[a-z]$/);
-      expect(
-        label
-          .toLowerCase()
-          .split(/[^a-z]+/)
-          .some((word) => word.startsWith(hotkey)),
-      ).toBe(true);
-    }
-    expect(letters).not.toContain('q');
-  });
-
   it('says where an action is found: the row, the pick inside a row, or the command', () => {
     expect(menuPath('status')).toBe('Full status');
     expect(menuPath('db-open')).toBe('Open DB access');

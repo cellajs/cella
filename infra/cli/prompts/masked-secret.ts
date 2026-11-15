@@ -1,5 +1,5 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
-import { helpTip, withBack } from './back';
+import { withBack } from './back';
 
 /**
  * Render a secret as one mask character per character, and nothing of the value. The prompt redraws at every keystroke, so a character shown
@@ -49,7 +49,7 @@ const maskedSecretPrompt = createPrompt<string, MaskedSecretConfig>((config, don
   const masked = maskSecret(value);
   const display = status === 'done' ? theme.style.answer(masked) : masked;
   const counter = status === 'idle' && value.length > 0 ? ` ${theme.style.help(`(${value.length} chars)`)}` : '';
-  const bottom = status === 'done' ? '' : [errorMsg ? theme.style.error(errorMsg) : '', helpTip([['⏎', 'submit']])].filter(Boolean).join('\n');
+  const bottom = status === 'done' ? '' : errorMsg ? theme.style.error(errorMsg) : '';
 
   return [`${prefix} ${message} ${display}${counter}`.trimEnd(), bottom];
 });

@@ -17,7 +17,7 @@ import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
 import { checkoutVersion, formatHeader } from './header';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
-import { BACK, disabledReason, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
+import { BACK, disabledReason, type MenuState, mainMenuItems, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import { LEAVE } from './prompts/what-now';
@@ -205,8 +205,6 @@ async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof
       message: 'What do you want to do?',
       items: mainMenuItems(state),
       default: startRow(state),
-      escape: 'quit',
-      hotkeys: menuHotkeys(state),
     });
     if (picked === ESCAPED || picked === QUIT) return QUIT;
     lastRow = picked;
@@ -219,7 +217,7 @@ async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof
     const row = menuRow(picked);
     const [only] = row.actions;
     if (row.actions.length === 1 && only) return only;
-    const action = await menuSelect({ message: row.label, items: pickItems(picked, state), escape: 'back' });
+    const action = await menuSelect({ message: row.label, items: pickItems(picked, state) });
     if (action !== ESCAPED && action !== BACK) return action;
   }
 }

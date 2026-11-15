@@ -178,7 +178,6 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const tag = await menuSelect({
     message: 'Deploy which release again?',
     items: earlier.map((row) => ({ name: row.tag, value: row.tag, description: deployText(row) })),
-    escape: 'back',
   });
   // Esc at the pick leaves the action: the table was read, and the menu comes back at once.
   if (tag === ESCAPED) throw new PromptBack();

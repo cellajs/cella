@@ -95,10 +95,10 @@ describe('runAction in a menu session', () => {
 
     await expect(runAction('apply', context, { runners: runnersOf(runner), choose })).resolves.toEqual({ code: 1, next: 'unlock' });
     expect(runner).toHaveBeenCalledTimes(2);
-    expect(choose.mock.calls[0]?.[0].map((row: { key: string; label: string }) => `${row.key} ${row.label}`)).toEqual([
-      'r Retry Review & apply changes',
-      'u Unlock',
-      'm Back to the menu',
+    expect(choose.mock.calls[0]?.[0].map((row: { label: string }) => row.label)).toEqual([
+      'Retry Review & apply changes',
+      'Unlock',
+      'Back to the menu',
     ]);
   });
 
