@@ -14,6 +14,7 @@ vi.mock('pg-logical-replication', async () => {
 });
 
 vi.mock('../lib/db', () => ({ cdcDb: { execute: vi.fn() }, sslCa: undefined }));
+vi.mock('../pipeline/process-flush', () => ({ processFlush: vi.fn() }));
 
 vi.mock('../network/websocket-client', () => ({
   wsClient: {
@@ -28,6 +29,7 @@ const { createReplicationService } = await import('../pipeline/replication');
 const { replicationState } = await import('../services/replication-state');
 
 const { handleDataMessage, resetBuffers } = await import('../pipeline/handle-message');
+const { processFlush } = await import('../pipeline/process-flush');
 const { dmlMessage } = await import('./factories');
 
 // Two ticks: the idle check runs once the turn of the keepalive is over.
@@ -127,6 +129,13 @@ describe('a keepalive from Postgres', () => {
     it('must not acknowledge a keepalive past messages of the same socket read that still wait for their handler', async () => {
       const service = subscribe();
       replicationState.lastAckedLsn = '0/AB';
+      let release: () => void = () => {};
+      vi.mocked(processFlush).mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            release = resolve;
+          }),
+      );
       // One socket read, as the client parses it: a commit with nothing to record, a whole transaction, a keepalive.
       // The keepalive is announced at once; the data messages reach their handlers one after another, with no turn
       // of the event loop between them.
@@ -137,8 +146,10 @@ describe('a keepalive from Postgres', () => {
       await handleDataMessage('0/E0', { tag: 'commit', commitEndLsn: '0/E0' } as never);
       await settle();
 
-      // The transaction waits for its flush: 0/1F0 would acknowledge past it, and a crash now would lose it.
+      // The transaction's flush still records: 0/1F0 would acknowledge past it, and a crash now would lose it.
       expect(acknowledge).not.toHaveBeenCalledWith('0/1F0');
+      release();
+      await settle();
     });
 
     it('forgets the keepalive position of a stream that ended', async () => {

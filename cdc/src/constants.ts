@@ -44,7 +44,7 @@ export const resourceLimits = {
 
   /** What the worker holds in memory. */
   buffers: {
-    /** A flush starts this long after the first change is pending, when fewer than `flushBatchSize` arrive meanwhile. */
+    /** The shortest time between the starts of two flushes, unless `flushBatchSize` changes are pending. */
     flushWindowMs: 50,
     /** A flush starts at once when this many changes are pending, and the stream is held until they are flushed. */
     flushBatchSize: 100,
