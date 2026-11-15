@@ -221,25 +221,11 @@ function okLines(checks: readonly Check[], refs?: readonly RemoteRef[]): string[
 }
 
 /**
- * The full status: a title with how long ago it was read and the counts, then what needs a person (each finding with its items and its
- * fix), what could not be read, and the ok checks folded into one line per group.
+ * The full status: a title under the header's rule, then what needs a person (each finding with its items and its fix), what could not
+ * be read, and the ok checks folded into one line per group.
  */
-export function formatReport(report: StatusReport, refs?: readonly RemoteRef[], opts: { now?: number } = {}): string {
-  const seconds = Math.max(0, Math.round(((opts.now ?? Date.now()) - Date.parse(report.generatedAt)) / 1000));
-  const read = ` · read ${seconds < 2 ? 'just now' : `${seconds} s ago`}`;
-  const s = report.summary;
-  const counts = (
-    [
-      [s.ok, 'ok'],
-      [s.warn + s.missing + s.error, 'to fix'],
-      [s.unknown, 'not read'],
-    ] as const
-  )
-    .filter(([count]) => count > 0)
-    .map(([count, word]) => `${count} ${word}`)
-    .join(' · ');
-  const gap = ' '.repeat(Math.max(2, DIVIDER.length - 'Full status'.length - read.length - counts.length));
-  const lines = [`${pc.bold('Full status')}${pc.dim(read)}${gap}${pc.dim(counts)}`];
+export function formatReport(report: StatusReport, refs?: readonly RemoteRef[]): string {
+  const lines = [pc.bold('Full status'), DIVIDER];
   const toFix = report.checks.filter((check) => check.status !== 'ok' && check.status !== 'unknown');
   const unknown = report.checks.filter((check) => check.status === 'unknown');
   if (toFix.length > 0)
