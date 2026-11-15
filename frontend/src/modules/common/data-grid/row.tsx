@@ -1,5 +1,5 @@
 import { type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import type { RenderRowProps } from './types';
 import { cn, getColSpan } from './utils/grid-utils';
@@ -67,10 +67,7 @@ function Row<R, SR>({
     }
   }
 
-  const selectionValue = useMemo(
-    (): RowSelectionContextValue => ({ isRowSelected, isRowSelectionDisabled }),
-    [isRowSelectionDisabled, isRowSelected],
-  );
+  const selectionValue: RowSelectionContextValue = { isRowSelected, isRowSelectionDisabled };
 
   const rowStyle = { gridRowStart, '--rdg-row-height': `${height}px`, ...style };
 

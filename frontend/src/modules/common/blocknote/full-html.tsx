@@ -179,31 +179,39 @@ export function BlockNoteFullHtml({
     fireReady();
   }, [renderState.ready]);
 
+  // A re-run for the document already shown (an upload arrived, the tenant changed) keeps its HTML until the resolved pass replaces it
+  const shownKeyRef = useRef<string | null>(null);
+
   useLayoutEffect(() => {
+    const cacheKey = firstPassKey(defaultValue, organizationId);
+    const sameDocument = shownKeyRef.current === cacheKey;
+    shownKeyRef.current = cacheKey;
+
     const parsed = getParsedContent(defaultValue);
     if (!parsed) {
       setRenderState({ html: '', mediaItems: [], ready: true });
       return;
     }
     const blocks = renderableBlocks(parsed, { organizationId });
-    const cacheKey = firstPassKey(defaultValue, organizationId);
 
     let cancelled = false;
 
     const cached = firstPassHtmlCache.get(cacheKey);
-    if (cached !== undefined) {
-      // Covers defaultValue changes after mount; on first mount the initializer already painted it.
-      setRenderState((prev) => (prev.html === cached && prev.ready ? prev : { html: cached, mediaItems: [], ready: true }));
-    } else {
-      queueFirstPass(() => {
-        if (cancelled) return;
-        let html = firstPassHtmlCache.get(cacheKey);
-        if (html === undefined) {
-          html = toFullHtml(blocks) ?? '';
-          cacheFirstPass(cacheKey, html);
-        }
-        return () => setRenderState({ html, mediaItems: [], ready: true });
-      });
+    if (!sameDocument || !renderState.ready) {
+      if (cached !== undefined) {
+        // Covers defaultValue changes after mount; on first mount the initializer already painted it.
+        setRenderState((prev) => (prev.html === cached && prev.ready ? prev : { html: cached, mediaItems: [], ready: true }));
+      } else {
+        queueFirstPass(() => {
+          if (cancelled) return;
+          let html = firstPassHtmlCache.get(cacheKey);
+          if (html === undefined) {
+            html = toFullHtml(blocks) ?? '';
+            cacheFirstPass(cacheKey, html);
+          }
+          return () => setRenderState({ html, mediaItems: [], ready: true });
+        });
+      }
     }
 
     async function resolveUrls(blocks: CustomBlock[]) {

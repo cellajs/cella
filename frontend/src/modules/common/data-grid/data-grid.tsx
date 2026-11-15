@@ -1,5 +1,5 @@
 import type { Key, KeyboardEvent } from 'react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useCurrentBreakpoint } from '~/hooks/use-breakpoints';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
@@ -234,39 +234,24 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const reparentEnabled = onRowReparent != null;
   const canDropRowEnabled = canDropRow != null;
   const dragPreviewEnabled = renderRowDragPreview != null;
-  const rowDragConfig = useMemo<RowDragConfig<R> | null>(
-    () =>
-      rowDragEnabled
-        ? {
-            onRowReorder: onRowReorderLatest,
-            onRowReparent: reparentEnabled ? onRowReparentLatest : undefined,
-            canDropRow: canDropRowEnabled ? canDropRowLatest : undefined,
-            renderRowDragPreview: dragPreviewEnabled ? renderRowDragPreviewLatest : undefined,
-          }
-        : null,
-    [
-      rowDragEnabled,
-      reparentEnabled,
-      canDropRowEnabled,
-      dragPreviewEnabled,
-      onRowReorderLatest,
-      onRowReparentLatest,
-      canDropRowLatest,
-      renderRowDragPreviewLatest,
-    ],
-  );
+  const rowDragConfig: RowDragConfig<R> | null = rowDragEnabled
+    ? {
+        onRowReorder: onRowReorderLatest,
+        onRowReparent: reparentEnabled ? onRowReparentLatest : undefined,
+        canDropRow: canDropRowEnabled ? canDropRowLatest : undefined,
+        renderRowDragPreview: dragPreviewEnabled ? renderRowDragPreviewLatest : undefined,
+      }
+    : null;
   // Row DnD: handle cells become drag sources and each row box becomes one drop target.
-  const renderCell = useMemo(() => {
-    if (!rowDragConfig) return userRenderCell;
-    return (key: Key, props: CellRendererProps<R, SR>) =>
-      props.column.rowDragHandle === true ? <RowDragCell<R, SR> key={key} {...props} config={rowDragConfig} /> : userRenderCell(key, props);
-  }, [rowDragConfig, userRenderCell]);
-  const renderRow = useMemo(() => {
-    if (!rowDragConfig) return userRenderRow;
-    return (key: Key, props: RenderRowProps<R, SR>) => (
-      <RowDropTarget<R, SR> key={key} rowKey={key} {...props} config={rowDragConfig} renderRow={userRenderRow} />
-    );
-  }, [rowDragConfig, userRenderRow]);
+  const renderCell = rowDragConfig
+    ? (key: Key, props: CellRendererProps<R, SR>) =>
+        props.column.rowDragHandle === true ? <RowDragCell<R, SR> key={key} {...props} config={rowDragConfig} /> : userRenderCell(key, props)
+    : userRenderCell;
+  const renderRow = rowDragConfig
+    ? (key: Key, props: RenderRowProps<R, SR>) => (
+        <RowDropTarget<R, SR> key={key} rowKey={key} {...props} config={rowDragConfig} renderRow={userRenderRow} />
+      )
+    : userRenderRow;
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
@@ -276,7 +261,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   // 'compact' is the density toggle, 'mobile' is the xs breakpoint; columns key `modes` overrides off both.
   const isMobileBreakpoint = currentBreakpoint === 'xs';
-  const activeModes = useMemo<ActiveModes>(() => ({ compact: isCompact ?? false, mobile: isMobileBreakpoint }), [isCompact, isMobileBreakpoint]);
+  const activeModes: ActiveModes = { compact: isCompact ?? false, mobile: isMobileBreakpoint };
 
   // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
@@ -303,7 +288,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       }
     : setColumnWidthsInternal;
 
-  const getColumnWidth = useCallback((column: CalculatedColumn<R, SR>) => columnWidths.get(column.key)?.width ?? column.width, [columnWidths]);
+  const getColumnWidth = (column: CalculatedColumn<R, SR>) => columnWidths.get(column.key)?.width ?? column.width;
 
   const { gridRef, viewportHeight, scrollTop, measured } = useGridDimensions(undefined, enableRowVirtualization);
 
@@ -555,15 +540,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const selectCellLatest = useLatestCallback(selectCell);
   const selectHeaderCellLatest = useLatestCallback(selectHeaderCell);
 
-  const focusCell = useCallback(
-    (shouldScroll = true) => {
-      const cell = getCellToScroll(gridRef.current!);
-      if (cell === null) return;
-      if (shouldScroll) scrollIntoView(cell);
-      cell.focus({ preventScroll: true });
-    },
-    [gridRef],
-  );
+  const focusCell = (shouldScroll = true) => {
+    const cell = getCellToScroll(gridRef.current!);
+    if (cell === null) return;
+    if (shouldScroll) scrollIntoView(cell);
+    cell.focus({ preventScroll: true });
+  };
 
   useLayoutEffect(() => {
     if (!shouldFocusCellRef.current) return;

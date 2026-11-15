@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const hideThreshold = 10; // Downward travel that hides
 const showThreshold = 64; // Upward travel that shows again: a finger settling or correcting a few pixels should not bring the buttons back
@@ -23,7 +23,7 @@ export const useScrollVisibility = (enabled = true) => {
   const tickingRef = useRef(false);
   const cooldownUntilRef = useRef(Date.now() + initialCooldownMs);
 
-  const reset = useCallback(() => {
+  const reset = () => {
     isVisibleRef.current = true;
     setIsVisible(true);
     shownAtRef.current = Date.now();
@@ -31,7 +31,7 @@ export const useScrollVisibility = (enabled = true) => {
     lastScrollHeightRef.current = scrollHeight();
     travelRef.current = 0;
     cooldownUntilRef.current = Date.now() + resetCooldownMs;
-  }, []);
+  };
 
   useEffect(() => {
     if (!enabled) {

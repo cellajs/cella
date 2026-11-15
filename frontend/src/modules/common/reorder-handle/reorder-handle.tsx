@@ -1,16 +1,5 @@
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon } from 'lucide-react';
-import {
-  type FocusEvent,
-  type KeyboardEvent,
-  type MouseEvent,
-  type ReactNode,
-  type Ref,
-  useCallback,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMoreContrast } from '~/hooks/use-more-contrast';
 import { announce, prepareAnnouncement } from '~/modules/common/announce';
@@ -108,14 +97,11 @@ export function ReorderHandle({
   const isDraggingRef = useRef(false);
 
   const gripRef = useRef<HTMLButtonElement | null>(null);
-  const setGrip = useCallback(
-    (element: HTMLButtonElement | null) => {
-      gripRef.current = element;
-      if (typeof ref === 'function') ref(element);
-      else if (ref) ref.current = element;
-    },
-    [ref],
-  );
+  const setGrip = (element: HTMLButtonElement | null) => {
+    gripRef.current = element;
+    if (typeof ref === 'function') ref(element);
+    else if (ref) ref.current = element;
+  };
 
   // Null at mount: a followed item mounting here came from another list, which is a move too
   const placedAtRef = useRef<number | null>(null);

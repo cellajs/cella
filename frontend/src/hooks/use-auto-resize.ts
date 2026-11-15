@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-export const useAutoResize = (autoResize: boolean) => {
+/** Grows a textarea with its content; `value` re-measures after a change made from code, such as a form reset. */
+export const useAutoResize = (autoResize: boolean, value: unknown) => {
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export const useAutoResize = (autoResize: boolean) => {
     updateAreaHeight();
     textarea.addEventListener('input', updateAreaHeight);
     return () => textarea.removeEventListener('input', updateAreaHeight);
-  }, [autoResize]);
+  }, [autoResize, value]);
 
   return { areaRef };
 };

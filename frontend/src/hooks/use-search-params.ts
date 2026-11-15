@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { appConfig } from 'shared';
 import { getProductDeepLink } from '~/lib/entity-modules';
 import type { router } from '~/routes/router';
@@ -74,11 +74,12 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     }
   };
 
-  // The URL write from setSearch reaches this effect too; only a change made elsewhere (back, link, defaults) needs new state.
-  useEffect(() => {
-    if (!saveDataInSearch || serializeSearch(currentSearch) === searchKey) return;
-    setCurrentSearch(readSearch());
-  }, [searchKey]);
+  // The URL write from setSearch reaches this check too; only a change made elsewhere (back, link, defaults) needs new state.
+  const [readSearchKey, setReadSearchKey] = useState(searchKey);
+  if (readSearchKey !== searchKey) {
+    setReadSearchKey(searchKey);
+    if (saveDataInSearch && serializeSearch(currentSearch) !== searchKey) setCurrentSearch(readSearch());
+  }
 
   const search = { ...currentSearch };
   for (const key of objectKeys(defaults)) {

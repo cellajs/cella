@@ -31,13 +31,18 @@ export function useStaticDocumentsReady(documents: string[] | null, organization
     if (ready || startedRef.current || !documents) return;
     startedRef.current = true;
     (async () => {
-      // The async continuation runs outside React's render/commit, which blocksToFullHTML requires.
-      const [fullHtml, helpers] = await loadRenderer();
-      if (!mountedRef.current) return;
-      helpers.getHeadlessEditor();
-      for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);
-      rendererWarm = true;
-      setReady(true);
+      try {
+        // The async continuation runs outside React's render/commit, which blocksToFullHTML requires.
+        const [fullHtml, helpers] = await loadRenderer();
+        if (!mountedRef.current) return;
+        helpers.getHeadlessEditor();
+        for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);
+        rendererWarm = true;
+      } catch (error) {
+        // A failed warm-up still reveals the list: each document then renders on demand
+        console.info('Static document renderer warm-up failed', error);
+      }
+      if (mountedRef.current) setReady(true);
     })();
   }, [ready, documents, organizationId]);
   return ready;

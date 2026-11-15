@@ -1,6 +1,6 @@
 import { CheckIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
@@ -60,11 +60,12 @@ export function SelectionActionBar({ count, onClear, receipt, onReceiptEnd, chil
   // unmounts under the pointer never gets its pointerleave.
   const [heldId, setHeldId] = useState<number | null>(null);
   const isHeld = !!receipt && heldId === receipt.id;
+  const endReceipt = useEffectEvent(() => onReceiptEnd?.());
   useEffect(() => {
     if (!receipt || isHeld) return;
-    const timer = setTimeout(() => onReceiptEnd?.(), receiptHoldMs);
+    const timer = setTimeout(() => endReceipt(), receiptHoldMs);
     return () => clearTimeout(timer);
-  }, [receipt, isHeld, onReceiptEnd]);
+  }, [receipt, isHeld]);
 
   // Swapping the faces removes the focused button, which drops focus to the page: the face that replaced it takes it.
   // A removed element fires no blur, so the flag still holds then.

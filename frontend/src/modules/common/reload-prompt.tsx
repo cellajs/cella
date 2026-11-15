@@ -25,7 +25,9 @@ export function ReloadPrompt() {
     void (async () => {
       const serwist = await getSerwist();
       if (!serwist || cancelled) return;
-      serwist.addEventListener('waiting', () => setWaiting(true));
+      const onWaiting = () => setWaiting(true);
+      serwist.addEventListener('waiting', onWaiting);
+      cleanups.push(() => serwist.removeEventListener('waiting', onWaiting));
       const registration = await serwist.register().catch((error: unknown) => console.info('SW registration error', error));
       if (!registration || cancelled) return;
       console.debug('[ServiceWorker] Registered');

@@ -1,21 +1,18 @@
-import { useEffect } from 'react';
 import { appConfig } from 'shared';
+import { useEventListener } from '~/hooks/use-event-listener';
+
+const message = 'You have unsaved changes. Are you sure you want to leave?';
 
 /** Warns before leaving with unsaved changes (`beforeunload`); dev mode only logs. */
 export const useBeforeUnload = (isChanged: boolean) => {
-  useEffect(() => {
-    const message = 'You have unsaved changes. Are you sure you want to leave?';
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isChanged) return;
+  useEventListener(
+    'beforeunload',
+    (event) => {
       if (appConfig.mode === 'development') return console.info('Beforeunload warning is triggered but not shown in dev mode.');
 
       event.preventDefault();
       event.returnValue = message;
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isChanged]);
+    },
+    { enabled: isChanged },
+  );
 };

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 type KeyboardModifiers = { alt: boolean; ctrl: boolean; meta: boolean; mod: boolean; shift: boolean };
 
@@ -58,23 +58,23 @@ const isNativeActivation = ({ key, target }: KeyboardEvent) =>
 
 /** Register global shortcuts as `[combination, handler, options?]` tuples. */
 export function useHotkeys(hotkeys: HotkeyItem[], tagsToIgnore: string[] = defaultIgnoredTags, triggerOnContentEditable = false) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // A key the focused control handles, e.g. Enter on a link or an arrow in a menu, is not a shortcut
-      if (event.defaultPrevented || isNativeActivation(event)) return;
-      const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));
-      if (isFormElement) return;
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    // A key the focused control handles, e.g. Enter on a link or an arrow in a menu, is not a shortcut
+    if (event.defaultPrevented || isNativeActivation(event)) return;
+    const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));
+    if (isFormElement) return;
 
-      for (const [hotkey, handler, options] of hotkeys) {
-        if (isExactHotkey(parseHotkey(hotkey), event) && shouldFireEvent(event, tagsToIgnore, triggerOnContentEditable)) {
-          // Without options a hotkey prevents the default; with options only when they say so.
-          if (options ? options.preventDefault : true) event.preventDefault();
-          handler(event);
-        }
+    for (const [hotkey, handler, options] of hotkeys) {
+      if (isExactHotkey(parseHotkey(hotkey), event) && shouldFireEvent(event, tagsToIgnore, triggerOnContentEditable)) {
+        // Without options a hotkey prevents the default; with options only when they say so.
+        if (options ? options.preventDefault : true) event.preventDefault();
+        handler(event);
       }
-    };
+    }
+  });
 
+  useEffect(() => {
     document.documentElement.addEventListener('keydown', handleKeyDown);
     return () => document.documentElement.removeEventListener('keydown', handleKeyDown);
-  }, [hotkeys, tagsToIgnore, triggerOnContentEditable]);
+  }, []);
 }

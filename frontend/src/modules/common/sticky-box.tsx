@@ -97,6 +97,7 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
 
   const [stuck, setStuck] = useState(false);
   const [phase, setPhase] = useState<HidePhase>('flow');
+  if (!hideWhenOutOfView && phase !== 'flow') setPhase('flow');
 
   // `data-sticky` follows the sentinel: once it scrolls past the pin line the bar counts as stuck
   useEffect(() => {
@@ -118,19 +119,17 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const bar = barRef.current;
-    if (!hideWhenOutOfView || !sentinel || !bar) {
-      setPhase('flow');
-      return;
-    }
+    if (!hideWhenOutOfView || !sentinel || !bar) return;
     const scrollParent = getScrollParent(sentinel);
     let lastScrollY = scrollTopOf(scrollParent);
     let accumulated = 0;
     let scrollingUp = false;
     let ticking = false;
+    let frame = 0;
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
         const currentY = scrollTopOf(scrollParent);
         const delta = currentY - lastScrollY;
         // A direction counts once it has carried 10px; a programmatic scroll never reveals the bar
@@ -156,7 +155,10 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
       });
     };
     scrollParent.addEventListener('scroll', onScroll, { passive: true });
-    return () => scrollParent.removeEventListener('scroll', onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      scrollParent.removeEventListener('scroll', onScroll);
+    };
   }, [hideWhenOutOfView, offsetTop, publishVar]);
 
   // Publish the height on the parent so dependent sticky bars can pin below this one

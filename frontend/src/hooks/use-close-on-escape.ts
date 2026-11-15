@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useEventListener } from '~/hooks/use-event-listener';
 
 interface UseCloseOnEscapeOptions<Details> {
   /** Controlled state: the caller then handles Escape itself. */
@@ -16,14 +17,13 @@ export function useCloseOnEscape<Details>({ open, defaultOpen = false, onOpenCha
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const controlled = open !== undefined;
 
-  useEffect(() => {
-    if (controlled || !uncontrolledOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
+  useEventListener(
+    'keydown',
+    (event) => {
       if (event.key === 'Escape') setUncontrolledOpen(false);
-    };
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [controlled, uncontrolledOpen]);
+    },
+    { enabled: !controlled && uncontrolledOpen, capture: true },
+  );
 
   const handleOpenChange = (nextOpen: boolean, eventDetails: Details) => {
     setUncontrolledOpen(nextOpen);

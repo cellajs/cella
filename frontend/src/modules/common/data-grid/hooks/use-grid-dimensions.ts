@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { type RefObject, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { getScrollParent, viewportTopOf } from '~/utils/scroll-parent';
 
 interface GridDimensions {
@@ -14,6 +14,7 @@ interface GridDimensionsResult extends GridDimensions {
 }
 
 const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, measured: false };
+const getServerSnapshot = () => initialDimensions;
 
 /**
  * scrollTop is rounded to this step, so scrolling commits a snapshot at most once per step. The row window shifts by at
@@ -28,15 +29,14 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
   // The notifier from useSyncExternalStore's subscribe lives in a ref, so the layout effect does not re-run when subscribe is re-invoked.
   const notifyRef = useRef<() => void>(() => {});
 
-  const subscribe = useCallback((onStoreChange: () => void) => {
+  const subscribe = (onStoreChange: () => void) => {
     notifyRef.current = onStoreChange;
     return () => {
       notifyRef.current = () => {};
     };
-  }, []);
+  };
 
-  const getSnapshot = useCallback(() => snapshotRef.current, []);
-  const getServerSnapshot = useCallback(() => initialDimensions, []);
+  const getSnapshot = () => snapshotRef.current;
 
   const dimensions = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
