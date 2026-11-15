@@ -9,7 +9,9 @@ import { createOrganizationAdminUser, createTestOrganization, createTestSession,
 import { clearSecurityTestData } from './security/helpers';
 import { createAppClient } from './test-client';
 
-const [first, second] = appConfig.languageCodes;
+// Widened from the config's tuple: an app with one language still typechecks, and the suite skips
+const languages: readonly Language[] = appConfig.languageCodes;
+const [first, second] = languages;
 
 describe.skipIf(!second)('Organization default language', async () => {
   const call = await createAppClient();

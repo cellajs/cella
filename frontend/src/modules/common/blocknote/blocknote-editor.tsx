@@ -85,7 +85,8 @@ const getDictionary = () => {
   const user = userStore.getState().user;
   if (!user) return { ...blocknoteLocales.en };
 
-  const locale = user.languageCode in blocknoteLocales ? blocknoteLocales[user.languageCode] : blocknoteLocales.en;
+  // Not `in`: with one app language it narrows the fallback branch to never
+  const locale = Object.hasOwn(blocknoteLocales, user.languageCode) ? blocknoteLocales[user.languageCode] : blocknoteLocales.en;
 
   return { ...locale };
 };

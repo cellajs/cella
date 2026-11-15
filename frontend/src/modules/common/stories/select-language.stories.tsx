@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import { appConfig, type Language } from 'shared';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 
 const meta = { title: 'common/SelectLanguage', component: SelectLanguage, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
@@ -9,35 +10,40 @@ const meta = { title: 'common/SelectLanguage', component: SelectLanguage, tags: 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// The app's own languages: with only one, every story shows it
+const languages: Language[] = [...appConfig.languageCodes];
+const [first] = appConfig.languageCodes;
+const last = languages[languages.length - 1];
+
 export const Default: Story = {
   args: {
-    value: 'en',
-    options: ['en', 'nl'],
+    value: first,
+    options: languages,
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<'en' | 'nl'>('en');
+    const [value, setValue] = useState<Language>(first);
 
     return (
       <div className="w-80">
-        <SelectLanguage value={value} options={['en', 'nl']} onChange={setValue} />
+        <SelectLanguage value={value} options={languages} onChange={setValue} />
       </div>
     );
   },
 };
 
-export const DutchSelected: Story = {
+export const LastSelected: Story = {
   args: {
-    value: 'nl',
-    options: ['en', 'nl'],
+    value: last,
+    options: languages,
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<'en' | 'nl'>('nl');
+    const [value, setValue] = useState<Language>(last);
 
     return (
       <div className="w-80">
-        <SelectLanguage value={value} options={['en', 'nl']} onChange={setValue} />
+        <SelectLanguage value={value} options={languages} onChange={setValue} />
       </div>
     );
   },
@@ -45,16 +51,16 @@ export const DutchSelected: Story = {
 
 export const SingleOption: Story = {
   args: {
-    value: 'en',
-    options: ['en'],
+    value: first,
+    options: [first],
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<'en' | 'nl'>('en');
+    const [value, setValue] = useState<Language>(first);
 
     return (
       <div className="w-80">
-        <SelectLanguage value={value} options={['en']} onChange={(next) => setValue(next)} />
+        <SelectLanguage value={value} options={[first]} onChange={(next) => setValue(next)} />
       </div>
     );
   },
