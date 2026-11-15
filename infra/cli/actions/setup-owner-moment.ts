@@ -1,5 +1,4 @@
-import { confirm, select } from '@inquirer/prompts';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
 import { createApiKey, deleteApiKey, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
@@ -14,9 +13,10 @@ import { errorMessage } from '../../lib/utils/errors';
 import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { planUploadsKey, writeUploadsKey } from '../../tasks/uploads-key';
+import { confirm, select } from '../prompts/back';
 import { forgetOwnerKey, rememberOperatorKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
-import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared';
+import { autoAcceptDefaults, confirmOrDefault, inputOrDefault, pointTo } from '../shared';
 import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
 import { acquireOwnerKey } from './owner-key';
@@ -60,10 +60,7 @@ async function mintCiKey(
 
 function printSummary(opts: { rotated: boolean; ciAccessKey: string }): void {
   if (opts.ciAccessKey) console.info(`\n${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Deploy keys created.'))}`);
-  else
-    console.info(
-      `\n${warningMark} ${pc.bold(pc.yellowBright('Done, but the deploy key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`,
-    );
+  else console.info(`\n${warningMark} ${pc.bold(pc.yellowBright('Done, but the deploy key was not created.'))} Run ${pointTo('rotate-keys')}.`);
 }
 
 /** How long the operator key a setup mints lives: within the day the session accepts. */
@@ -188,7 +185,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
       const step = mode === 'rotate-keys' ? { ...planned, change: 'make' as const } : planned;
       await writeUploadsKey({ auth, secrets, organizationId, projectId, step });
     } catch (error) {
-      console.warn(`${warningMark} Uploads key incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
+      console.warn(`${warningMark} Uploads key incomplete: ${errorMessage(error)}. Run ${pointTo('identities')}.`);
     }
   }
 
@@ -201,7 +198,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');
   await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId).catch((error) =>
-    console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
+    console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run ${pointTo('identities')}.`),
   );
 
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey });

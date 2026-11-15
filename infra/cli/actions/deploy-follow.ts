@@ -1,4 +1,3 @@
-import { confirm } from '@inquirer/prompts';
 import { accountExcerpt } from '../../lib/deploy/boot-accounts';
 import { classifyRun } from '../../lib/deploy/failure-class';
 import { commitRefs } from '../../lib/deploy/git-remote';
@@ -10,12 +9,14 @@ import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand } from '../../lib/operator-actions';
+import { actionLabel, menuPath, type OperatorActionId } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { type LockInfo, leaseDeploys, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { sleep } from '../../lib/utils/sleep';
+import { Interrupted, untilInterrupt } from '../prompts/abort';
+import { confirm } from '../prompts/back';
 import { autoAcceptDefaults, type InfraContext, stackNameFor } from '../shared';
 
 const POLL_MS = 5_000;
@@ -25,6 +26,12 @@ const BOOT_EXCERPT_LINES = 20;
 
 /** How a followed deploy ended, for the caller: as the main job reports it. */
 export type FollowOutcome = ReturnType<typeof mainJobOutcome>;
+
+/** The actions that help after a deploy that did not deploy: its log and the env vars for a failure, the env vars or an apply for a block. */
+export function deployFixes(outcome: FollowOutcome): OperatorActionId[] {
+  if (outcome === 'failed') return ['logs', 'env'];
+  return outcome === 'blocked' ? ['env', 'apply'] : [];
+}
 
 /** The run store and the control client of the environment, on a key the bucket admits: the observer's for reading, the operator's for both. */
 async function deployStores(
@@ -77,20 +84,31 @@ async function followRun(
   store: RunStore,
   sha: string,
   started: JobRun,
+  signal: AbortSignal,
 ): Promise<{ run: JobRun; record?: RunRecord }> {
   let run = started;
   let record: RunRecord | undefined;
   let shownState = '';
   let shownSteps = 0;
   for (;;) {
+    if (signal.aborted) return { run, record };
     if (!record && !runEnded(run) && run.state !== shownState) console.info(`  ${pc.dim(new Date().toISOString().slice(11, 19))} ${run.state}`);
     shownState = run.state;
     record = (await recordOf(store, run, sha, record?.run).catch(() => undefined)) ?? record;
+    if (signal.aborted) return { run, record };
     shownSteps = printNewSteps(record, shownSteps);
     if (runEnded(run)) return { run, record };
     await sleep(POLL_MS);
     run = await readJobRun(auth, { region, runId: run.id });
   }
+}
+
+/** Follow a deploy until it ends, or until a Ctrl-C stops the following: the deploy goes on, and the action ends as a Ctrl-C does. */
+async function stoppable<T>(follow: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  return untilInterrupt(follow).catch((error: unknown) => {
+    if (error instanceof Interrupted) console.info(`\n${pc.dim(`Stopped following. The deploy goes on: ${actionLabel('logs')} shows it.`)}`);
+    throw error;
+  });
 }
 
 /** The outcome a record alone says, for a deploy followed without its job run. */
@@ -122,15 +140,15 @@ async function reportEnd(
   if (outcome === 'blocked') {
     if (!verdict) {
       console.warn(
-        `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A runtime value: \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes. "apply needed": \`${actionCommand('apply')}\` from a checkout at this commit. Either deploys this commit again.`,
+        `${warningMark} Blocked: "${menuPath('logs')}" names what is owed. A runtime value: "${menuPath('env')}" stores it, or "${menuPath('apply')}" for one it makes. "apply needed": "${menuPath('apply')}" from a checkout at this commit. Either deploys this commit again.`,
       );
       return undefined;
     }
     console.warn(`${warningMark} ${verdict.sentence}`);
     console.warn(
       record?.outcome === 'apply needed'
-        ? `  \`${actionCommand('apply')}\` from a checkout at this commit applies it and deploys the commit again.`
-        : `  \`${actionCommand('secrets')}\` stores it and deploys the commit again.`,
+        ? `  "${menuPath('apply')}" from a checkout at this commit applies it and deploys the commit again.`
+        : `  "${menuPath('env')}" stores it and deploys the commit again.`,
     );
     return undefined;
   }
@@ -170,7 +188,7 @@ export async function deployAndFollow(
   for (let tries = 1; ; tries++) {
     const start = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
     console.info(`  ${checkMark} ${started}.`);
-    const { run, record } = await followRun(auth, region, store, commit.sha, start);
+    const { run, record } = await stoppable((signal) => followRun(auth, region, store, commit.sha, start, signal));
     const outcome = mainJobOutcome(run);
     const unended = `The run ended ${run.state} before ${record ? 'its record did' : 'it wrote a record'}${run.error_message ? `: ${run.error_message}` : '.'}`;
     const verdict = await reportEnd(context, key, store, outcome, commit.sha, record, unended);
@@ -209,16 +227,20 @@ export async function followLiveDeploy(context: InfraContext, key: KeyPair, live
   let record = live.record;
   console.info(`  ${pc.dim(`Run ${record.run}, started ${record.startedAt.slice(11, 16)} UTC: following it.`)}`);
   let shown = printNewSteps(record, 0);
-  for (;;) {
-    await sleep(POLL_MS);
-    record = (await store.readRecord(record.run).catch(() => undefined))?.newest ?? record;
-    shown = printNewSteps(record, shown);
-    if (record.outcome !== 'running') break;
-    const lock = await peekLock(control, bucket, lockKey(context.environment)).catch(() => live.lock);
-    if (!leaseHeldByRun(lock, record.run)) {
-      console.error(`${crossMark} The deploy stopped without ending its record: no deploy holds the lease under run ${record.run} any more.`);
-      return 'failed';
+  const died = await stoppable(async (signal) => {
+    for (;;) {
+      await sleep(POLL_MS);
+      record = (await store.readRecord(record.run).catch(() => undefined))?.newest ?? record;
+      if (signal.aborted) return false;
+      shown = printNewSteps(record, shown);
+      if (record.outcome !== 'running') return false;
+      const lock = await peekLock(control, bucket, lockKey(context.environment)).catch(() => live.lock);
+      if (!signal.aborted && !leaseHeldByRun(lock, record.run)) return true;
     }
+  });
+  if (died) {
+    console.error(`${crossMark} The deploy stopped without ending its record: no deploy holds the lease under run ${record.run} any more.`);
+    return 'failed';
   }
   const outcome = recordOutcome(record.outcome);
   await reportEnd(context, key, store, outcome, record.target, record, `The run ended ${record.outcome}.`);

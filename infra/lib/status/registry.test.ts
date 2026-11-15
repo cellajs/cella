@@ -7,7 +7,7 @@ import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { RunsFacts } from './providers/runs';
 import type { ScheduleFacts } from './providers/schedule';
 import type { IdentityFacts } from './providers/stack';
-import { assembleReport, statusProviders } from './registry';
+import { assembleReport, groupOf, statusProviders } from './registry';
 import type { Check, ProbeSession, ScalewayFacts } from './types';
 
 /**
@@ -119,6 +119,16 @@ describe('report envelope', () => {
   });
 });
 
+describe('check groups', () => {
+  it('folds every check the registry reports into a group: the full status shows an ok check only through its group', () => {
+    expect(
+      reportFor(base())
+        .checks.filter((check) => !groupOf(check.id))
+        .map((check) => check.id),
+    ).toEqual([]);
+  });
+});
+
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
     const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined, runs: undefined }), { scalewayKeyAvailable: false });
@@ -150,7 +160,7 @@ describe('the last deploy', () => {
       'runs.last',
     );
     expect(blocked?.status).toBe('warn');
-    expect(blocked?.nextAction?.command).toContain('runs');
+    expect(blocked?.nextAction?.command).toContain('logs');
     // A deploy a scheduled run started: its job run sets no target, its record names it.
     const newest = {
       run: 'r3',
@@ -163,7 +173,7 @@ describe('the last deploy', () => {
     const scheduled = { id: 'r3', state: 'failed', exit_code: 1, created_at: '2026-11-06T12:00:00Z', terminated_at: '2026-11-06T12:09:00Z' };
     const failed = find(reportFor(base({ runs: { runs: [scheduled], record: { newest } } })).checks, 'runs.last');
     expect(failed?.status).toBe('error');
-    expect(failed?.nextAction?.command).toContain('runs');
+    expect(failed?.nextAction?.command).toContain('logs');
   });
 });
 
@@ -266,7 +276,7 @@ describe('primary components check (same verdict rule as the smoke step)', () =>
     const check = find(report.checks, 'live.components');
     expect(check?.status).toBe('error');
     expect(check?.detail).toBe('cdc=unhealthy(rls_bypass_missing)');
-    expect(check?.nextAction?.command).toContain('runs');
+    expect(check?.nextAction?.command).toContain('logs');
   });
 
   it('an unreachable aggregate is missing', () => {
@@ -351,30 +361,31 @@ describe('expectedRelease', () => {
 });
 
 describe('database public endpoint', () => {
-  const live = (endpoints: string[], aclRules?: number): DbEndpointFacts => ({ instance: 'cella-postgres', found: true, endpoints, aclRules });
+  const live = (endpoints: string[], allowed?: string[]): DbEndpointFacts => ({ instance: 'cella-postgres', found: true, endpoints, allowed });
 
   it('a private-only instance with exposure off is ok', () => {
     expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', key: 'scaleway' });
   });
 
   it('warns about a public endpoint left open while exposure is off', () => {
-    const report = reportFor(base({ db: live(['51.158.210.62:6317'], 0) }));
+    const report = reportFor(base({ db: live(['51.158.210.62:6317'], []) }));
     const check = find(report.checks, 'db.publicEndpoint');
     expect(check).toMatchObject({ status: 'warn', detail: '51.158.210.62:6317 is open although exposure is off (0 ACL rule(s))' });
     expect(check?.nextAction?.description).toContain('Close DB access');
     expect(report.nextAction?.description).toContain('Close DB access');
   });
 
-  it('shows the ACL rule count of an endpoint opened on purpose', () => {
-    const report = reportFor(base({ db: live(['51.158.210.62:6317'], 1) }), { dbExposureConfigured: true });
+  it('shows whom an endpoint opened on purpose admits', () => {
+    const report = reportFor(base({ db: live(['51.158.210.62:6317'], ['83.84.12.7/32']) }), { dbExposureConfigured: true });
     expect(find(report.checks, 'db.publicEndpoint')).toMatchObject({
       status: 'warn',
       detail: 'open at 51.158.210.62:6317 with 1 ACL rule(s); close it when done',
+      headline: 'open to 83.84.12.7/32',
     });
   });
 
   it('warns when exposure is on but no endpoint exists', () => {
-    const report = reportFor(base({ db: live([], 1) }), { dbExposureConfigured: true });
+    const report = reportFor(base({ db: live([], ['83.84.12.7/32']) }), { dbExposureConfigured: true });
     expect(find(report.checks, 'db.publicEndpoint')?.detail).toContain('no public endpoint');
   });
 

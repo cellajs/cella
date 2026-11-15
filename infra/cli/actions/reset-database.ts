@@ -1,10 +1,11 @@
-import { input } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { backupName, ResetIrrecoverableError, type ResetTarget, rebuildSteps, restoreHint, sequenceDatabaseReset } from '../../tasks/reset-database';
+import { input } from '../prompts/back';
 import { endAction, endsAction, type InfraContext } from '../shared';
+import { environmentName, printLossWarning } from './loss-warning';
 import { acquireOperatorKey } from './operator-unlock';
 
 /** Roles the operator task ensure-database makes on the instance (`tasks/ensure-database.ts`). Both must be re-granted. */
@@ -21,12 +22,8 @@ function describeTarget(target: ResetTarget, region: string): string {
     '',
     pc.bold('Reset target'),
     `  instance   ${pc.bold(target.instanceName)} ${pc.dim(`(${target.instanceId}, ${region})`)}`,
-    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim(': will be DELETED and recreated empty')}`,
+    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim('deleted and made again, empty')}`,
     `  survives   ${others.length ? others.join(', ') : pc.dim('(none)')}`,
-    '',
-    `${warningMark} ${pc.bold('Everything in')} ${pc.red(target.databaseName)} ${pc.bold('is destroyed.')} A backup is taken first, and the`,
-    '  reset aborts unless it reports ready. Nothing else stops this: Scaleway deletes a live',
-    '  database with connected clients and an active replication slot without complaint.',
     '',
   ].join('\n');
 }
@@ -42,13 +39,17 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     endAction(1);
   }
 
-  const { appConfig } = context;
+  const { appConfig, environment } = context;
   const { naming, region } = deriveInfra(appConfig);
   const instanceName = naming.resource('postgres');
   const databaseName = naming.dbName;
 
-  console.info(pc.dim('\nReset database: wipe it and rebuild it empty.'));
-  console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
+  printLossWarning('db-reset', environment, [
+    `Everything in the ${environmentName(environment)} database is deleted, and the database is made again, empty.`,
+    `A backup is taken first and kept for ${BACKUP_RETENTION_DAYS} days. If the backup does not finish, nothing is deleted.`,
+    'Nothing else stops it: the database goes even while the app is using it.',
+    'Then you reboot the backend machine, which rebuilds the tables and the admin account.',
+  ]);
 
   // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.
   const operator = await acquireOperatorKey(context);
@@ -75,7 +76,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
 
       confirm: async (target) => {
         console.info(describeTarget(target, region));
-        const typed = await input({ message: `Type ${pc.bold(target.token)} to reset it, anything else to abort:` });
+        const typed = await input({ message: `Type ${pc.cyan(target.token)} to reset the database` });
         return typed.trim() === target.token;
       },
     });

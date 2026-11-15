@@ -2,10 +2,13 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { actionCommand } from '../operator-actions';
 import { exitCodeOf } from '../utils/child-exit';
-import { crossMark, pc, warningMark } from '../utils/cli-output';
+import { pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
-/** Set one stack config key, exiting on failure. `secret` encrypts the value; `configFile` targets an alternate stack config file. */
+/**
+ * Set one stack config key. `secret` encrypts the value; `configFile` targets an alternate stack config file.
+ * @throws when pulumi exits non-zero: a caller under a lease releases it on the way out
+ */
 export function pulumiConfigSet(
   env: NodeJS.ProcessEnv,
   stack: string,
@@ -24,10 +27,7 @@ export function pulumiConfigSet(
     ...(opts.configFile ? ['--config-file', opts.configFile] : []),
   ];
   const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' });
-  if (result.status !== 0) {
-    console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`);
-    process.exit(result.status ?? 1);
-  }
+  if (result.status !== 0) throw new Error(`pulumi config set ${key} exited ${result.status}`);
 }
 
 /** Remove one stack config key. Best-effort: a missing key is not an error here. */
@@ -151,7 +151,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
       // The callers (runOperatorApply for an apply, the seed and the database exposure; the setup's operator part) all run on the operator
       // key, so a denial is a set that key lacks.
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the operator key may not write ${pc.cyan(denied)}.`);
-      console.error(`  A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operator-key'))} writes it.`);
+      console.error(`  A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operators'))} writes it.`);
     }
   }
 

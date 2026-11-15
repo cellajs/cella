@@ -33,29 +33,45 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 ## Commands
 
-`pnpm infra` opens the setup wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen:
+`pnpm infra` opens the setup wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen, which shows what serves and since when, then only what needs a person:
 
-- what serves and since when
-- how the last deploy went
-- the database
-- the security findings and anything else the checks flag
-- **Up next**: the step it recommends, which leads the menu below
+- a deploy that failed, waits or runs
+- the database while it is open
+- the security findings, by what they found
+- any other check that found something
 
-The menu lists its rows by task, each entered by its letter. A row with several actions opens a short pick:
+When nothing needs a person, the line on what serves says all checks pass. The step the checks recommend leads the menu below.
 
-| Group | Rows |
+The menu lists the daily rows, most used first. Each row's command is a word of its name:
+
+| Row | Command |
 | --- | --- |
-| Deploys | `d` Deploy now, `r` Releases & roll back, `l` Deploy logs, `s` Full status |
-| Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `i` Update identities |
-| Database | `p` Open DB access (and Seed database) or Close DB access, whichever applies; `x` Reset database |
-| Account | `o` Operators & keys (Rotate keys, Rotate secrets, Set up operators, Set repository read key) |
-| More | `u` Repair (Unlock, Resume setup, Remove from state), `t` Tear down |
+| Full status | `status` |
+| Review & apply changes | `apply` |
+| Env vars & secrets | `env` |
+| Releases & roll back | `releases` |
+| Deploy logs | `logs` |
+| Open DB access or Close DB access, whichever applies | `db-open`, `db-close` |
 
-Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `runs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
+**More** opens the pick of the rare actions, each with the key it needs:
+
+| Heading | Actions |
+| --- | --- |
+| Deploys & changes | Deploy now, Preview changes |
+| Keys & access | Rotate keys, Rotate secrets, Set up operators, Update identities, Set repository read key |
+| Repair | Unlock, Resume setup, Remove from state |
+| Database | Seed database, Reset database |
+| Environment | Tear down |
+
+Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
+
+Esc steps back one prompt, and from an action's first prompt or its list straight to the menu. An action that ends by itself keeps its output on screen until you go back: Full status under one **← Back to menu** row, the others under **What now?**, which also offers Quit.
+
+Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `logs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
 
 ## Status
 
-`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report: one line each for what serves, the last deploy, the database and the security findings, one per other check that is not ok, and the next step. Menu: `pnpm infra` → **Full status**, every check in one table. Standalone:
+`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report. Menu: `pnpm infra` → **Full status**: each finding with what it names and what fixes it, the checks that could not be read, and the passing checks as one line per area. Standalone:
 
 ```
 pnpm --filter infra status [--mode <production|staging>] [--json]
@@ -150,7 +166,7 @@ One name per concept across code and docs:
 | **scheduled run** | A run of the main job its schedule starts. Under the lease, it deploys the target when no run record names that target and retry counter. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry. The main job names it by digest. |
 | **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
-| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
+| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra logs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after. It writes through links, holds no key and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
 | **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |

@@ -19,7 +19,7 @@ describe('accessKeyProgress', () => {
   it('counts while the key is typed and ticks once it has the form of one', () => {
     expect(accessKeyProgress('')).toBe('');
     expect(accessKeyProgress('SCWQ2M3K7X')).toBe('10 of 20');
-    expect(accessKeyProgress(ACCESS_KEY_EXAMPLE)).toBe('✔');
+    expect(accessKeyProgress(ACCESS_KEY_EXAMPLE)).toBe('✓');
   });
 });
 

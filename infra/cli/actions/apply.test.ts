@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InfraContext } from '../shared';
 
 const acquireOperatorKey = vi.fn();
-const exitWhenShutOutOfBuckets = vi.fn();
 const reviewPlan = vi.fn();
 const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
@@ -11,7 +10,6 @@ const publishEngine = vi.fn();
 const discardEngine = vi.fn();
 const startBlockedTarget = vi.fn();
 
-vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
 vi.mock('./start-deploy', () => ({ startBlockedTarget: (...args: unknown[]) => startBlockedTarget(...args) }));
 vi.mock('../shared', () => ({
   endAction: (code: number) => {
@@ -21,7 +19,7 @@ vi.mock('../shared', () => ({
 }));
 vi.mock('./plan', () => ({ reviewPlan: (...args: unknown[]) => reviewPlan(...args), askToApply: (...args: unknown[]) => askToApply(...args) }));
 vi.mock('./operator-apply', () => ({
-  exitWhenShutOutOfBuckets: (...args: unknown[]) => exitWhenShutOutOfBuckets(...args),
+  acquireAdmittedOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args),
   runOperatorApply: (...args: unknown[]) => runOperatorApply(...args),
 }));
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
@@ -81,7 +79,10 @@ describe('runApply', () => {
 
   it('lets the operator into older bucket policies before it plans: the plan reads the state', async () => {
     const order: string[] = [];
-    exitWhenShutOutOfBuckets.mockImplementation(async () => order.push('admit'));
+    acquireOperatorKey.mockImplementation(async () => {
+      order.push('admit');
+      return operator;
+    });
     reviewPlan.mockImplementation(async () => {
       order.push('plan');
       return reviewed;
@@ -91,7 +92,7 @@ describe('runApply', () => {
     await runApply(context);
 
     expect(order).toEqual(['admit', 'plan']);
-    expect(exitWhenShutOutOfBuckets).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR' }));
+    expect(acquireOperatorKey).toHaveBeenCalledWith(context);
   });
 
   it('hands the confirmed plan to the converge, which applies it unless the state changed', async () => {

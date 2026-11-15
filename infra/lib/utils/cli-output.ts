@@ -4,15 +4,15 @@ import pc from 'picocolors';
 
 export { pc };
 
-export const checkMark = pc.bold(pc.greenBright('✔'));
+export const checkMark = pc.green('✓');
 
-export const crossMark = pc.bold(pc.redBright('✖'));
+export const crossMark = pc.red('✗');
 
-export const warningMark = pc.bold(pc.yellowBright('⚠'));
+export const warningMark = pc.yellow('⚠');
 
-export const changeMark = pc.bold(pc.yellowBright('✎'));
+export const changeMark = pc.yellow('✎');
 
-export const tildeMark = pc.bold(pc.yellowBright('~'));
+export const tildeMark = pc.yellow('~');
 
 export const DIVIDER = '─'.repeat(60);
 

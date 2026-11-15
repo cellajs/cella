@@ -18,8 +18,8 @@ describe('parseCliArgs', () => {
   });
 
   it('reports a word that names no action', () => {
-    expect(parseCliArgs(['deploy'])).toMatchObject({ unknownAction: 'deploy' });
-    expect(parseCliArgs(['deploy']).action).toBeUndefined();
+    expect(parseCliArgs(['runs'])).toMatchObject({ unknownAction: 'runs' });
+    expect(parseCliArgs(['runs']).action).toBeUndefined();
   });
 
   it('reads --once and the help forms', () => {

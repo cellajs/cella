@@ -10,8 +10,8 @@ const spawnSync = vi.fn();
 const writeFinalDump = vi.fn();
 const deleteApplicationCascade = vi.fn();
 
-vi.mock('@inquirer/prompts', async (original) => ({
-  ...(await original<typeof import('@inquirer/prompts')>()),
+vi.mock('../prompts/back', async (original) => ({
+  ...(await original<typeof import('../prompts/back')>()),
   input: (...args: unknown[]) => input(...args),
 }));
 vi.mock('node:child_process', async (original) => ({

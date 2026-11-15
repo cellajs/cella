@@ -53,8 +53,12 @@ describe('acquireOwnerKey in one run of the CLI', () => {
     expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret' });
   });
 
-  it('must not offer a key again that failed its validation: the next action asks for one', async () => {
+  it('must not offer a key again that failed its validation, and keeps one whose check Scaleway never answered', async () => {
     await acquire();
+    assertIamManager.mockRejectedValueOnce(new Error('Scaleway GET https://api.scaleway.com/iam failed after 3 attempts: fetch failed'));
+    await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });
+    expect(rememberedOwnerKey()).toEqual(typed);
+
     assertIamManager.mockRejectedValueOnce(new Error('the key was revoked'));
 
     await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });

@@ -1,19 +1,7 @@
 import { stripVTControlCharacters } from 'node:util';
+import { Separator } from '@inquirer/prompts';
 import { describe, expect, it } from 'vitest';
-import {
-  BACK,
-  disabledReason,
-  formatStackLine,
-  type MenuItem,
-  type MenuState,
-  mainMenuItems,
-  menuHotkeys,
-  pickItems,
-  QUIT,
-  rowDisabledReason,
-  UP_NEXT,
-  visibleRows,
-} from './menu';
+import { BACK, disabledReason, type MenuItem, type MenuState, mainMenuItems, pickItems, QUIT, rowDisabledReason, UP_NEXT, visibleRows } from './menu';
 
 const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', dbExposed: false };
 const partial: MenuState = { ...bootstrapped, stackState: 'partial' };
@@ -23,69 +11,44 @@ const plain = (text: string) => stripVTControlCharacters(text);
 /** The menu as an operator reads it: one line per item, group headings flush left, disabled entries as the prompt renders them. */
 function render(items: Array<MenuItem<string>>): string[] {
   return items.map((item) => {
+    if (item instanceof Separator) return ` ${plain(item.separator)}`;
     if ('group' in item) return item.group;
     return item.disabled ? `- ${plain(item.name)} ${item.disabled}` : `  ${plain(item.name)}`;
   });
 }
 
 describe('mainMenuItems', () => {
-  it('lists twelve rows by task under five groups on a healthy stack, each with its letter, then Quit', () => {
+  it('lists the daily rows on a healthy stack, then More and Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
-      'Deploys',
-      '  d  Deploy now',
-      '  r  Releases & roll back',
-      '  l  Deploy logs',
-      '  s  Full status',
-      'Configure',
-      '  e  Env vars & secrets',
-      '  a  Infrastructure changes ›',
-      '  i  Update identities',
-      'Database',
-      '  p  Open DB access ›',
-      '  x  Reset database  destructive',
-      'Account',
-      '  o  Operators & keys ›',
-      'More',
-      '  u  Repair ›',
-      '  t  Tear down  destructive',
-      '',
-      '  q  Quit',
+      '  Full status',
+      '  Review & apply changes',
+      '  Env vars & secrets',
+      '  Releases & roll back',
+      '  Deploy logs',
+      '  Open DB access',
+      '  More ›',
+      ` ${'─'.repeat(40)}`,
+      '  Quit',
     ]);
   });
 
   it('leads with the recommended step when the home screen has one', () => {
-    const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'start-deploy', description: 'Deploy 0.35.0 again' } });
-    expect(render(items).slice(0, 3)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', 'Deploys']);
-    expect(items[1]).toMatchObject({ value: UP_NEXT });
+    const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'deploy', description: 'Deploy 0.35.0 again' } });
+    expect(render(items).slice(0, 3)).toEqual(['  ▶  Deploy 0.35.0 again', '', '  Full status']);
+    expect(items[0]).toMatchObject({ value: UP_NEXT });
   });
 
   it('keeps every row on a stack whose setup is unfinished and says why a row cannot run', () => {
-    expect(render(mainMenuItems(partial))).toEqual([
-      'Deploys',
-      '- Deploy now (needs a set-up environment: run "Resume setup")',
+    expect(render(mainMenuItems(partial)).filter((line) => line.startsWith('-'))).toEqual([
+      '- Review & apply changes (needs a set-up environment: run "Resume setup")',
       '- Releases & roll back (needs a set-up environment: run "Resume setup")',
-      '  l  Deploy logs',
-      '  s  Full status',
-      'Configure',
-      '  e  Env vars & secrets',
-      '- Infrastructure changes › (needs a set-up environment: run "Resume setup")',
-      '  i  Update identities',
-      'Database',
-      '- Open DB access › (needs a set-up environment: run "Resume setup")',
-      '- Reset database (needs a set-up environment: run "Resume setup")',
-      'Account',
-      '  o  Operators & keys ›',
-      'More',
-      '  u  Repair ›',
-      '  t  Tear down  destructive',
-      '',
-      '  q  Quit',
+      '- Open DB access (needs a set-up environment: run "Resume setup")',
     ]);
   });
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  p  Close DB access (OPEN)');
+    expect(lines).toContain('  Close DB access (OPEN)');
     expect(lines.some((line) => line.includes('Open DB access'))).toBe(false);
   });
 
@@ -102,7 +65,7 @@ describe('mainMenuItems', () => {
     expect(visibleRows({ ...bootstrapped, liveEndpoints: [] })).not.toContain('db-close');
   });
 
-  it('fits every row on one 80-column line in every state', () => {
+  it('fits every row on one 80-column line and every description on one 96-column line that names no key, in every state', () => {
     const states: MenuState[] = [
       bootstrapped,
       partial,
@@ -111,8 +74,15 @@ describe('mainMenuItems', () => {
       { ...partial, environment: 'production', dbExposed: true },
     ];
     for (const state of states) {
-      for (const line of render(mainMenuItems(state))) expect(line.length).toBeLessThanOrEqual(80);
-      for (const id of visibleRows(state)) for (const line of render(pickItems(id, state))) expect(line.length).toBeLessThanOrEqual(80);
+      const menus = [mainMenuItems(state), ...visibleRows(state).map((id) => pickItems(id, state))];
+      for (const items of menus) {
+        for (const line of render(items)) expect(line.length).toBeLessThanOrEqual(80);
+        for (const item of items) {
+          const description = 'description' in item ? (item.description ?? '') : '';
+          expect(description.length).toBeLessThanOrEqual(96);
+          expect(description).not.toMatch(/destructive|observer key|operator key|owner key/i);
+        }
+      }
     }
   });
 
@@ -121,56 +91,36 @@ describe('mainMenuItems', () => {
   });
 });
 
-describe('menuHotkeys', () => {
-  it('gives every listed row its own letter, the two DB access rows sharing theirs', () => {
-    const open = menuHotkeys(bootstrapped);
-    expect(Object.keys(open)).toHaveLength(visibleRows(bootstrapped).length);
-    expect(open.p).toBe('db-open');
-    expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).p).toBe('db-close');
-    expect(open.q).toBeUndefined();
-  });
-
-  it('gives no letter to a row that cannot run now', () => {
-    const letters = menuHotkeys(partial);
-    expect(letters.d).toBeUndefined();
-    expect(letters.l).toBe('runs');
-  });
-});
-
 describe('pickItems', () => {
-  it('offers the actions of a row with the key each runs with, then Back', () => {
-    expect(render(pickItems('keys', bootstrapped))).toEqual([
+  it('lists the rare actions under headings with the key each runs with, then Back', () => {
+    expect(render(pickItems('more', { ...bootstrapped, environment: 'production' }))).toEqual([
+      '',
+      'Deploys & changes',
+      '  Deploy now               operator key',
+      '  Preview changes          operator key',
+      '',
+      'Keys & access',
       '  Rotate keys              Owner key',
       '  Rotate secrets           operator key',
       '  Set up operators         Owner key',
+      '  Update identities        Owner key',
       '  Set repository read key  operator key',
-      '  ← Back',
-    ]);
-    expect(render(pickItems('repair', bootstrapped))).toEqual([
-      '  Unlock             operator key',
-      '  Resume setup       operator key',
-      '  Remove from state  operator key',
-      '  ← Back',
-    ]);
-    expect(pickItems('repair', bootstrapped).at(-1)?.value).toBe(BACK);
-  });
-
-  it('disables seeding on production and leaves the plain open available', () => {
-    expect(render(pickItems('db-open', { ...bootstrapped, environment: 'production' }))).toEqual([
-      '  Open DB access  operator key',
+      '',
+      'Repair',
+      '  Unlock                   operator key',
+      '  Resume setup             operator key',
+      '  Remove from state        operator key',
+      '',
+      'Database',
       '- Seed database (seed data never goes to production)',
+      '  Reset database           operator key',
+      '',
+      'Environment',
+      '  Tear down                Owner key',
+      ` ${'─'.repeat(40)}`,
       '  ← Back',
     ]);
-  });
-
-  it('ends every description with the key the action runs with', () => {
-    for (const id of ['keys', 'db-open', 'repair', 'changes'] as const) {
-      for (const choice of pickItems(id, bootstrapped).filter((entry) => entry.value !== BACK)) {
-        expect(choice.description).toMatch(
-          /(Needs your operator key|Needs your Owner API key|Reads with the observer key|Works without a Scaleway key)\.$/,
-        );
-      }
-    }
+    expect(pickItems('more', bootstrapped).at(-1)).toMatchObject({ value: BACK });
   });
 });
 
@@ -182,7 +132,7 @@ describe('disabledReason', () => {
   });
 
   it('leaves the actions that repair a stack available on an unfinished one', () => {
-    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'secrets', 'status'] as const) {
+    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'env', 'status'] as const) {
       expect(disabledReason(id, partial)).toBeUndefined();
     }
   });
@@ -190,20 +140,7 @@ describe('disabledReason', () => {
 
 describe('rowDisabledReason', () => {
   it('disables a row only when every action behind it is blocked', () => {
-    expect(rowDisabledReason('changes', partial)).toBe('needs a set-up environment: run "Resume setup"');
-    expect(rowDisabledReason('keys', partial)).toBeUndefined();
-    expect(rowDisabledReason('db-open', { ...bootstrapped, environment: 'production' })).toBeUndefined();
-    expect(rowDisabledReason('repair', partial)).toBeUndefined();
-  });
-});
-
-describe('formatStackLine', () => {
-  it('names the app and the mode, and says when the setup is unfinished', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'production', state: 'bootstrapped' }))).toBe('⧈ acme · production');
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'partial' }))).toBe('⧈ acme · staging · setup not finished');
-  });
-
-  it('says new on a fresh install', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'fresh' }))).toBe('⧈ acme · staging · new');
+    expect(rowDisabledReason('apply', partial)).toBe('needs a set-up environment: run "Resume setup"');
+    expect(rowDisabledReason('more', partial)).toBeUndefined();
   });
 });

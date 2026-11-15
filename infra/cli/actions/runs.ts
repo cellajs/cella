@@ -1,4 +1,3 @@
-import { select } from '@inquirer/prompts';
 import {
   accountExcerpt,
   accountFailed,
@@ -23,7 +22,7 @@ import { type Growth, type RunRecord, rewriteNote, runSummaryLine, stepLine, wro
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, type RemoteRef } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
@@ -32,7 +31,9 @@ import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
+import { PromptBack } from '../prompts/back';
+import { ESCAPED, menuSelect } from '../prompts/menu-select';
+import { autoAcceptDefaults, endAction, type InfraContext, pointTo } from '../shared';
 
 const LIST_LENGTH = 10;
 const LOG_TAIL = 40;
@@ -121,7 +122,7 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
 /** When the last scheduled run that did not fail started, as the sentence above the list says it. */
 function scheduleSentence(jobRuns: readonly JobRun[], now: number): string {
   const last = lastScheduledRun(jobRuns);
-  if (!last?.created_at) return `scheduled runs: none among the main job's newest runs; \`${actionCommand('apply')}\` writes the schedule`;
+  if (!last?.created_at) return `scheduled runs: none among the main job's newest runs; ${pointTo('apply')} writes the schedule`;
   return `scheduled runs: last ${Math.floor((now - Date.parse(last.created_at)) / 60_000)} min ago`;
 }
 
@@ -163,26 +164,37 @@ export async function showRuns(
         !records.some((record) => wroteRecord(run, run.environment_variables?.TARGET_SHA, record))) ||
       ownValues(run, opts.definition) !== '',
   );
-  const rows = [
-    ...readings.map(({ newest: record, rewrite }) => {
+  const rows: Array<{ at: string; line: string; reading?: Growth<RunRecord> }> = [
+    ...readings.map((reading) => {
+      const { newest: record, rewrite } = reading;
       const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
-      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}` };
+      return { at: record.startedAt, line: `${runSummaryLine(record, opts.refs)}${rewritten}${interrupted(record, opts.lock)}`, reading };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
       line: `${runWithoutRecordLine(run, opts.environment ?? '')}${ownValues(run, opts.definition)}`,
     })),
-  ].sort((a, b) => b.at.localeCompare(a.at));
+  ]
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, LIST_LENGTH);
   if (rows.length === 0) return print('No run has left a record yet.');
-  for (const row of rows.slice(0, LIST_LENGTH)) print(`  ${row.line}`);
   const [newest] = readings;
+  // The picker is the list: a run without a record stays in it, not selectable, its line saying why.
+  const pick = opts.pick && rows.some((row) => row.reading);
+  if (!pick) for (const row of rows) print(`  ${row.line}`);
   if (!newest) return;
-  const chosen = opts.pick
-    ? await select({
-        message: 'Show which run?',
-        choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest, opts.refs), value: reading })),
-      })
-    : newest;
+  let chosen = newest;
+  if (pick) {
+    const picked = await menuSelect({
+      message: 'Show which run?',
+      items: rows.map((row, index) =>
+        row.reading ? { name: row.line, value: row.reading.newest.run } : { name: row.line, value: `unrecorded-${index}`, disabled: ' ' },
+      ),
+      default: newest.newest.run,
+    });
+    if (picked === ESCAPED) throw new PromptBack();
+    chosen = readings.find((reading) => reading.newest.run === picked) ?? newest;
+  }
   print('');
   for (const line of await runDetailLines(chosen, store, opts.refs)) print(line);
 }
@@ -234,7 +246,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('runs')} reads with the observer key, and this machine has none: \`${actionCommand('identity')}\` puts one here.`,
+      `${crossMark} ${actionLabel('logs')} reads with the observer key, and this machine has none: ${pointTo('identities')} puts one here.`,
     );
     return endAction(1);
   }
@@ -268,7 +280,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   ]);
   const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
-  console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
+  console.info(pc.dim(`\n${actionLabel('logs')} of ${context.environment}, newest first:\n`));
   await showRuns(bucketRunStore(s3, naming.bootDiagBucket), {
     pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
     jobRuns,

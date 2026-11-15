@@ -1,6 +1,7 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { pc } from '../../lib/utils/cli-output';
+import { withBack } from './back';
 import { maskedSecret } from './masked-secret';
 
 /** An access key as Scaleway issues them: `SCW` and 17 capitals or digits. The example is the placeholder of the prompt. */
@@ -30,7 +31,7 @@ export function secretKeyFault(value: string): string | undefined {
 /** What the prompt shows after the value while it is typed: how far a key is, or the check mark once it has the form of one. */
 export function accessKeyProgress(value: string): string {
   if (value.length === 0) return '';
-  return accessKeyFault(value) ? `${value.length} of ${ACCESS_KEY_EXAMPLE.length}` : '✔';
+  return accessKeyFault(value) ? `${value.length} of ${ACCESS_KEY_EXAMPLE.length}` : '✓';
 }
 
 interface AccessKeyConfig {
@@ -70,7 +71,7 @@ const accessKeyPrompt = createPrompt<string, AccessKeyConfig>((config, done) => 
   if (status === 'done') return `${prefix} ${message} ${theme.style.answer(value.trim())}`;
   const shown = value.length > 0 ? value : pc.dim(ACCESS_KEY_EXAMPLE);
   const progress = accessKeyProgress(value.trim());
-  const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✔' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
+  const line = `${prefix} ${message} ${shown}${progress ? ` ${progress === '✓' ? pc.green(progress) : pc.dim(progress)}` : ''}`;
   return [line, errorMsg ? theme.style.error(errorMsg) : ''];
 });
 
@@ -83,11 +84,11 @@ export interface KeyPairPromptOptions {
 
 /**
  * Both halves of a Scaleway key: the where-to line, the access key with its placeholder and form check, then the secret key masked with
- * its own form check.
+ * its own form check. Esc at either half steps back from the key as one step.
  */
 export async function keyPairPrompt(opts: KeyPairPromptOptions): Promise<KeyPair> {
   console.info(`\n  ${pc.dim(opts.howto)}\n  ${pc.dim('Console:')} ${pc.underline(API_KEYS_URL)}\n`);
-  const accessKey = await accessKeyPrompt({ message: opts.label });
+  const accessKey = await withBack((context) => accessKeyPrompt({ message: opts.label }, context));
   const secretKey = (await maskedSecret({ message: `${opts.label}, secret`, validate: (value) => secretKeyFault(value.trim()) ?? true })).trim();
   return { accessKey, secretKey };
 }

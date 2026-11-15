@@ -12,16 +12,17 @@ import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, ENVIRONMENTS_FILE, type RemoteRef, sortedReleases } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel, menuRow } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/control-store';
 import { accessDenied } from '../../lib/status/providers/runs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
+import { PromptBack } from '../prompts/back';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
-import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
-import { deployAndFollow } from './deploy-follow';
+import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, pointTo, stackNameFor } from '../shared';
+import { deployAndFollow, deployFixes } from './deploy-follow';
 import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { environmentTarget } from './start-deploy';
 
@@ -129,7 +130,7 @@ function deployable(tag: string, manifest: ReleaseManifest | undefined, applied:
     console.info(`  ${checkMark} Same infrastructure as the applied one: no apply needed.`);
     return true;
   }
-  console.warn(`  ${warningMark} It needs an apply from a checkout at ${tag} first (${menuRow('changes').label}).`);
+  console.warn(`  ${warningMark} It needs an apply from a checkout at ${tag} first (${actionLabel('apply')}).`);
   if (manifest.describes && applied.describes) console.warn(pc.dim(`    ${describeChanges(applied.describes, manifest.describes).join(', ')}`));
   return false;
 }
@@ -144,7 +145,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: \`${actionCommand('identity')}\` puts one here.`,
+      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: ${pointTo('identities')} puts one here.`,
     );
     return endAction(1);
   }
@@ -177,9 +178,9 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const tag = await menuSelect({
     message: 'Deploy which release again?',
     items: earlier.map((row) => ({ name: row.tag, value: row.tag, description: deployText(row) })),
-    escape: 'back',
   });
-  if (tag === ESCAPED) return;
+  // Esc at the pick leaves the action: the table was read, and the menu comes back at once.
+  if (tag === ESCAPED) throw new PromptBack();
   const picked = earlier.find((row) => row.tag === tag);
   if (!picked) return;
 
@@ -204,11 +205,11 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
   if (!definitionId) {
-    console.error(`${crossMark} ${environment} has no main job yet: an apply makes it (\`${actionCommand('apply')}\`).`);
+    console.error(`${crossMark} ${environment} has no main job yet: an apply makes it (${pointTo('apply')}).`);
     return endAction(1);
   }
   const outcome = await deployAndFollow(context, operator, definitionId, { sha: picked.sha, retry: 0 }, 'Started');
-  if (outcome !== 'deployed') endAction(1);
+  if (outcome !== 'deployed') endAction(1, { fix: deployFixes(outcome) });
 }
 
 /** The target the newest run left waiting on an apply, with the description its manifest holds; none when it ended otherwise or has none. */

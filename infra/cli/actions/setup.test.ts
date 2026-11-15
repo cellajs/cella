@@ -9,7 +9,7 @@ const runOperatorPart = vi.fn();
 
 vi.mock('./setup-owner-moment', () => ({ runOwnerMoment: (...args: unknown[]) => runOwnerMoment(...args) }));
 vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
-vi.mock('../session', () => ({ rememberOperatorKey: () => {} }));
+vi.mock('../session', () => ({ rememberOperatorKey: () => {}, inMenuSession: () => false }));
 vi.mock('./setup-checklist', () => ({ printLaunchChecklist: async () => {} }));
 vi.mock('./setup-operator-part', () => ({
   copyDeployKeyForMainJob: (...args: unknown[]) => copyDeployKeyForMainJob(...args),

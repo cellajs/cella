@@ -1,5 +1,5 @@
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -14,12 +14,12 @@ import {
   confirmOrDefault,
   endsAction,
   type InfraContext,
+  pointTo,
   pulumiLoginAndSelect,
   pulumiLoginUrl,
   stackNameFor,
 } from '../shared';
-import { exitWhenShutOutOfBuckets } from './operator-apply';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireAdmittedOperatorKey } from './operator-apply';
 import { redeployAfterRotation } from './start-deploy';
 
 /**
@@ -36,9 +36,8 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   );
   if (!(await confirmOrDefault({ message: `Rotate the secrets of ${context.environment}?`, default: false }))) return;
 
-  const operator = await acquireOperatorKey(context);
+  const operator = await acquireAdmittedOperatorKey(context);
   const stack = stackNameFor(context);
-  await exitWhenShutOutOfBuckets(context, operator);
   const env = buildProviderEnv(infraDir, {
     ...operator,
     projectId,
@@ -67,12 +66,12 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
     console.info(
       `\n${checkMark} Database role passwords and ${rotated.length} generated secret(s) rotated; rotation ${rotations.counter} recorded. Keys that protect stored data were left as they are.`,
     );
-    console.info(`  Third-party keys are pasted anew in "${actionLabel('secrets')}".`);
+    console.info(`  Third-party keys are pasted anew in "${actionLabel('env')}".`);
   } finally {
     await lock.release();
   }
   await redeployAfterRotation(context, operator).catch((error) => {
     if (endsAction(error)) throw error;
-    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('deploy')} does.`);
   });
 }

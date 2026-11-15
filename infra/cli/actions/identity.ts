@@ -1,4 +1,4 @@
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import type { DeclaredPolicy } from '../../lib/scaleway/declared-identities';
 import { declaredIdentities } from '../../lib/scaleway/declared-identities';
 import { IAM_BASE, type IamAuth } from '../../lib/scaleway/iam-client';
@@ -13,7 +13,7 @@ import { planDeclaredPolicies, writeDeclaredPolicies } from '../../tasks/declare
 import { type IdentityChanges, identityChangeLines, planIdentityChanges } from '../../tasks/identity-plan';
 import { declaredObserverPolicy } from '../../tasks/setup-observer-app';
 import { writeUploadsKey } from '../../tasks/uploads-key';
-import { confirmOrDefault, endAction, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext, pointTo } from '../shared';
 import { ensureObserverForEnvironment, type ObserverStep, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
@@ -80,7 +80,7 @@ export async function exitOnIdentityChanges(
   await release?.();
   console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
   for (const line of changes) console.error(`  ${tildeMark} ${line}`);
-  console.error(`  \`${actionCommand('identity')}\` writes them. Nothing applied.`);
+  console.error(`  ${pointTo('identities')} writes them. Nothing applied.`);
   endAction(1);
 }
 
@@ -120,7 +120,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
   const names = appPrincipalNames(appConfig.appSlug);
-  console.info(pc.dim(`\n${actionLabel('identity')}: write what differs from the declared identities.\n`));
+  console.info(pc.dim(`\n${actionLabel('identities')}: write what differs from the declared identities.\n`));
 
   const show = (plan: IdentityPlan): boolean => {
     if (identityPlanIsEmpty(plan)) {

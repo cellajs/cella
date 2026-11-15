@@ -1,8 +1,52 @@
 import { crossMark, pc } from '../../lib/utils/cli-output';
+import { PromptBack } from './back';
 
-/** True for the rejection an Inquirer prompt throws when the operator presses Ctrl-C at it, or when its input closes. */
+/** Thrown where the operator's Ctrl-C stops work that holds no prompt, such as a deploy being followed: it ends the action as a Ctrl-C at a prompt does. */
+export class Interrupted extends Error {
+  constructor() {
+    super('the operator pressed Ctrl-C');
+    this.name = 'Interrupted';
+  }
+}
+
+/** True for the operator's Ctrl-C: the rejection an Inquirer prompt throws for it (or when its input closes), or {@link Interrupted}. */
 export function isPromptAbort(error: unknown): boolean {
-  return error instanceof Error && error.name === 'ExitPromptError';
+  return error instanceof Interrupted || (error instanceof Error && error.name === 'ExitPromptError');
+}
+
+/**
+ * Run work that waits without a prompt, such as a poll, where a Ctrl-C rejects it with {@link Interrupted} at once. The work reads `signal`
+ * between its steps and stops printing once it is aborted.
+ */
+export async function untilInterrupt<T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  const onInterrupt = () => controller.abort();
+  process.on('SIGINT', onInterrupt);
+  const running = work(controller.signal);
+  running.catch(() => {});
+  try {
+    return await Promise.race([
+      running,
+      new Promise<never>((_, reject) => controller.signal.addEventListener('abort', () => reject(new Interrupted()), { once: true })),
+    ]);
+  } finally {
+    process.removeListener('SIGINT', onInterrupt);
+  }
+}
+
+/**
+ * Run a child process to its end while a Ctrl-C reaches the child alone: this process lives on and its `finally` runs. The signal a
+ * blocking spawn received is handled on the next tick, and the listener stays until then.
+ */
+export async function shieldInterrupt<T>(run: () => T): Promise<T> {
+  const ignore = () => {};
+  process.on('SIGINT', ignore);
+  try {
+    return run();
+  } finally {
+    await new Promise((resolve) => setImmediate(resolve));
+    process.removeListener('SIGINT', ignore);
+  }
 }
 
 /** What ends a run whose prompt was aborted; the process state it reads and the calls it makes, replaceable in a test. */
@@ -53,7 +97,7 @@ export function endOnPromptAbort(overrides: Partial<PromptAbortEffects> = {}): v
  */
 export function installPromptAbortHandler(): void {
   process.on('uncaughtException', (error) => {
-    if (isPromptAbort(error)) {
+    if (isPromptAbort(error) || error instanceof PromptBack) {
       endOnPromptAbort();
       return;
     }
