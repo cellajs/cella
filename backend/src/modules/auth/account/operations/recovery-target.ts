@@ -5,7 +5,7 @@ import { findUserById } from '#/modules/user/user-queries';
 
 /**
  * The user a system administrator may recover: not themselves (the account page is theirs), and not another system
- * administrator, so one compromised administrator cannot strip the others.
+ * administrator. One compromised administrator then cannot strip the others.
  * @throws AppError 404 when no user has the id, 400 `invalid_request` for the administrator's own account, 403 `forbidden`
  *   for another system administrator.
  */

@@ -12,8 +12,8 @@ const baseAuthStrategies = [...oauthProviders, 'passkey', 'totp', 'email', 'magi
 export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;
 
 /**
- * Every {@link AuthStrategy}: the enum of the columns and request fields that hold one. Built when the backend loads, so
- * a federation the test setup adds to the config is in.
+ * Every {@link AuthStrategy}: the enum of the columns and request fields that hold one. Built when the backend loads,
+ * after the test setup has added its federation to the config.
  */
 export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as const;
 
