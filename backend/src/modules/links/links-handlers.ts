@@ -1,0 +1,42 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { DbContext, Env } from '#/core/context';
+import { AppError } from '#/core/error';
+import { getAdminDb } from '#/db/db';
+import { type ChannelShareLink, onBackendModuleRegister, type ProductShareLink } from '#/lib/module';
+import { linkPreviewPage } from '#/modules/links/link-preview-page';
+import { findChannelByCode } from '#/modules/links/links-queries';
+import { linkRoutes } from '#/modules/links/links-routes';
+import { defaultHook } from '#/utils/default-hook';
+
+const channelPreviews = new Map<string, ChannelShareLink['preview']>();
+const productPreviews = new Map<string, ProductShareLink['preview']>();
+
+onBackendModuleRegister(({ channelShareLink, productShareLink }) => {
+  if (channelShareLink) channelPreviews.set(channelShareLink.channelType, channelShareLink.preview);
+  if (productShareLink) productPreviews.set(productShareLink.letter, productShareLink.preview);
+});
+
+// Share links resolve for anonymous visitors, with no tenant context to scope RLS by: previews read as admin.
+// Resolved per request so a process without the admin credential still boots and only these routes fail.
+const adminCtx = (): DbContext => ({ var: { db: getAdminDb('share link preview') } });
+
+const notFound = () => new AppError(404, 'not_found', 'warn', { willRedirect: true });
+
+const app = new OpenAPIHono<Env>({ defaultHook });
+
+app.openapi(linkRoutes.previewChannelLink, async (ctx) => {
+  const channel = await findChannelByCode(adminCtx(), ctx.req.valid('param').code);
+  const preview = channel && channelPreviews.get(channel.channelType);
+  if (!channel || !preview) throw notFound();
+  return ctx.html(linkPreviewPage(await preview(adminCtx(), channel)));
+});
+
+app.openapi(linkRoutes.previewProductLink, async (ctx) => {
+  const { code, key } = ctx.req.valid('param');
+  const channel = await findChannelByCode(adminCtx(), code);
+  const preview = productPreviews.get(key[0]);
+  if (!channel || !preview) throw notFound();
+  return ctx.html(linkPreviewPage(await preview(adminCtx(), channel, Number(key.slice(1)))));
+});
+
+export const linkHandlers = app;

@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { inviteMembers, invokeToken, resendInvitation, resendInvitationWithToken } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type Language } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -167,7 +167,10 @@ describe('Resend an invitation', async () => {
   });
 
   it("must not mail past its tenant's caps via resend-invitation, and mails in its organization's language", async () => {
-    const organization = await createTestOrganization({ defaultLanguageCode: 'nl' });
+    const languages: readonly Language[] = appConfig.languageCodes;
+    // Another language than the app's default shows the mail follows the organization; an app with one has no other
+    const language = languages.find((code) => code !== appConfig.defaultLanguageCode) ?? appConfig.defaultLanguageCode;
+    const organization = await createTestOrganization({ defaultLanguageCode: language });
     const restrictions = defaultRestrictions();
     await db
       .update(tenantsTable)
@@ -178,7 +181,7 @@ describe('Resend an invitation', async () => {
     const second = await createInvitation({ organization, email: 'second-invitee@example.com', createdBy: inviter.id });
 
     expect((await resend({ tokenId: first.token.id })).response.status).toBe(204);
-    expect(sentMails()).toEqual([expect.objectContaining({ recipient: expect.objectContaining({ email: invitedEmail, lng: 'nl' }) })]);
+    expect(sentMails()).toEqual([expect.objectContaining({ recipient: expect.objectContaining({ email: invitedEmail, lng: language }) })]);
 
     // The address had its mail for the day and the tenant its one mail: each answers as an unknown id does.
     const [fresh] = await invitationTokensOf(invitedEmail);

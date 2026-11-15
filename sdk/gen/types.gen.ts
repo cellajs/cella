@@ -621,6 +621,7 @@ export type Organization = {
       }
     | null;
   slug: string;
+  code: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   publishedAt: string | null;
@@ -3673,6 +3674,73 @@ export type CatchUpMyStreamResponses = {
 };
 
 export type CatchUpMyStreamResponse = CatchUpMyStreamResponses[keyof CatchUpMyStreamResponses];
+
+export type PreviewChannelLinkData = {
+  body?: never;
+  path: {
+    code: string;
+  };
+  query?: never;
+  url: '/links/{code}';
+};
+
+export type PreviewChannelLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type PreviewChannelLinkError = PreviewChannelLinkErrors[keyof PreviewChannelLinkErrors];
+
+export type PreviewChannelLinkResponses = {
+  /**
+   * Success
+   */
+  200: unknown;
+};
+
+export type PreviewProductLinkData = {
+  body?: never;
+  path: {
+    code: string;
+    key: string;
+  };
+  query?: never;
+  url: '/links/{code}/{key}';
+};
+
+export type PreviewProductLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type PreviewProductLinkError = PreviewProductLinkErrors[keyof PreviewProductLinkErrors];
+
+export type PreviewProductLinkResponses = {
+  /**
+   * Success
+   */
+  200: unknown;
+};
 
 export type GetMcpProtectedResourceMetadataData = {
   body?: never;

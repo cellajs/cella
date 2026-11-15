@@ -69,6 +69,7 @@ export const mockProductColumns = <T extends ProductEntityType>(entityType: T, o
 
 type MockChannelColumns<T extends ChannelEntityType> = MockTenantEntityColumns<T> & {
   slug: string;
+  code: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   createdBy: string | null;
@@ -90,6 +91,8 @@ export const mockChannelColumns = <T extends ChannelEntityType>(entityType: T, o
   return {
     ...base,
     slug: options.slug ?? slugFromName(base.name),
+    // An insert takes the code its trigger draws, whatever this says
+    code: options.code ?? `${faker.string.numeric(1)}${faker.string.alphanumeric({ length: 6, casing: 'lower' })}`,
     thumbnailUrl: options.thumbnailUrl ?? null,
     bannerUrl: options.bannerUrl ?? null,
     createdBy: options.createdBy ?? null,

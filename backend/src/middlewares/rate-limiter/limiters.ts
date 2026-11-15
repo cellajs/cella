@@ -40,6 +40,13 @@ export const demoLimiter = rateLimiter('limit', 'demo', ['ip'], {
   description: 'Demos taken from each IP address a day; a browser that holds a demo gets it back without taking another.',
 });
 
+/** Share links that name nothing, per IP: what guessing channel codes runs into. A link that resolves costs nothing. */
+export const shareLinkLimiter = rateLimiter('fail', 'shareLink', ['ip'], {
+  limits: { points: 100, duration: 60 * 60, blockDuration: 60 * 60 },
+  name: 'Unknown share links',
+  description: 'Share links that name nothing, for each IP address.',
+});
+
 /** Failed proofs per IP, one series per kind of proof (`tokenType`: a provider, a link type, `passkey`) under its own key prefix. */
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
   rateLimiter('failseries', `token_${tokenType}`, ['ip'], {

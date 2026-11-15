@@ -114,6 +114,16 @@
               "duration": 86400
             }
           },
+          "shareLinkLimiter": {
+            "name": "Unknown share links",
+            "description": "Share links that name nothing, for each IP address.",
+            "policy": {
+              "mode": "fail",
+              "points": 100,
+              "duration": 3600,
+              "blockDuration": 3600
+            }
+          },
           "oneClickUnsubscribeLimiter": {
             "name": "One-click unsubscribes",
             "description": "Requests for each IP address, whatever the answer: a mail provider posts many recipients' unsubscribes from one address.",
@@ -360,6 +370,12 @@
     {
       "name": "entities",
       "description": "Endpoints that operate across multiple entity types, such as users and organizations. Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like. These routes check slug availability and serve the stream and its catchup, which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
+      "x-parent": "cella",
+      "x-kind": "module"
+    },
+    {
+      "name": "links",
+      "description": "Share links: `/{code}` names a channel by the code it was given at creation, and `/{code}/t42` a numbered product in it. The routes serve the preview a module declares for it, which unfurls in chats and sends a browser on into the app.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2726,6 +2742,10 @@
             "type": "string",
             "maxLength": 255
           },
+          "code": {
+            "type": "string",
+            "maxLength": 7
+          },
           "thumbnailUrl": {
             "type": ["string", "null"],
             "maxLength": 2048
@@ -2929,6 +2949,7 @@
           "updatedAt",
           "updatedBy",
           "slug",
+          "code",
           "thumbnailUrl",
           "bannerUrl",
           "publishedAt",
@@ -2959,6 +2980,7 @@
           "name": "Spencer, Pouros and Bergnaum",
           "updatedAt": "2024-12-25T15:04:42.969Z",
           "slug": "spencer-pouros-and-bergnaum",
+          "code": "8vuvhag",
           "thumbnailUrl": null,
           "bannerUrl": null,
           "createdBy": null,
@@ -2969,15 +2991,15 @@
           "toolsConfig": {},
           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
-          "regionCode": "TD",
-          "timeZone": "Europe/Vaduz",
+          "regionCode": "NZ",
+          "timeZone": "America/Lower_Princes",
           "defaultLanguageCode": "en",
           "languageCodes": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-          "color": "#cda6af",
+          "color": "#b9e6c9",
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-          "chatSupport": true,
+          "chatSupport": false,
           "organizationFlags": {},
           "setupConfig": {},
           "included": {
@@ -8953,6 +8975,92 @@
         }
       }
     },
+    "/links/{code}": {
+      "get": {
+        "security": [],
+        "operationId": "previewChannelLink",
+        "tags": ["links", "cella"],
+        "summary": "Preview channel link",
+        "description": "Serves the link preview of the channel a code names and sends a browser on to it: the target of its share link.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["shareLinkLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 7,
+              "maxLength": 7,
+              "pattern": "^[0-9][a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/links/{code}/{key}": {
+      "get": {
+        "security": [],
+        "operationId": "previewProductLink",
+        "tags": ["links", "cella"],
+        "summary": "Preview product link",
+        "description": "Serves the link preview of a product named by its number in the channel a code names, such as `t42`, and sends a browser on to it.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["shareLinkLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 7,
+              "maxLength": 7,
+              "pattern": "^[0-9][a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 11,
+              "pattern": "^[a-z][1-9][0-9]*$"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/organizations/{organizationId}/mcp/.well-known/oauth-protected-resource": {
       "get": {
         "security": [],
@@ -12567,6 +12675,7 @@
                       "name": "Anderson - Ferry",
                       "updatedAt": "2024-11-21T01:19:53.533Z",
                       "slug": "anderson-ferry",
+                      "code": "0cwpxta",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "createdBy": null,
@@ -12577,12 +12686,12 @@
                       "toolsConfig": {},
                       "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "shortName": "Anderson",
-                      "regionCode": "BA",
-                      "timeZone": "America/Moncton",
+                      "regionCode": "NC",
+                      "timeZone": "America/Indiana/Marengo",
                       "defaultLanguageCode": "en",
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
-                      "color": "#dfeb6e",
+                      "color": "#eebf5e",
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "chatSupport": true,
@@ -12631,6 +12740,7 @@
                       "name": "Wiegand, Harber and Stark-Abshire",
                       "updatedAt": "2024-10-29T04:35:17.725Z",
                       "slug": "wiegand-harber-and-stark-abshire",
+                      "code": "0sr6ute",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "createdBy": null,
@@ -12641,15 +12751,15 @@
                       "toolsConfig": {},
                       "path": "772a771f-c150-465e-9635-46594859fc3d",
                       "shortName": "Wiegand,",
-                      "regionCode": "AS",
-                      "timeZone": "Europe/Gibraltar",
+                      "regionCode": "GN",
+                      "timeZone": "Australia/Eucla",
                       "defaultLanguageCode": "en",
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
-                      "color": "#a3cb87",
+                      "color": "#1e01df",
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "organizationFlags": {},
                       "setupConfig": {},
                       "included": {
@@ -12807,6 +12917,7 @@
                       "name": "Conroy, Kerluke and Rowe",
                       "updatedAt": "2024-04-18T21:12:59.543Z",
                       "slug": "conroy-kerluke-and-rowe",
+                      "code": "8lwtksu",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "createdBy": null,
@@ -12817,15 +12928,15 @@
                       "toolsConfig": {},
                       "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "shortName": "Conroy,",
-                      "regionCode": "SJ",
-                      "timeZone": "Asia/Kuala_Lumpur",
+                      "regionCode": "BH",
+                      "timeZone": "Pacific/Noumea",
                       "defaultLanguageCode": "en",
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
-                      "color": "#dbcbc1",
+                      "color": "#77b86b",
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "organizationFlags": {},
                       "setupConfig": {},
                       "included": {
@@ -12871,6 +12982,7 @@
                       "name": "Lemke, Bode and Reichel-Klocko",
                       "updatedAt": "2024-02-24T16:36:46.247Z",
                       "slug": "lemke-bode-and-reichel-klocko",
+                      "code": "654qw5f",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "createdBy": null,
@@ -12881,15 +12993,15 @@
                       "toolsConfig": {},
                       "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "shortName": "Lemke,",
-                      "regionCode": "NR",
-                      "timeZone": "America/Aruba",
+                      "regionCode": "PW",
+                      "timeZone": "Asia/Tokyo",
                       "defaultLanguageCode": "en",
                       "languageCodes": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
-                      "color": "#2ad39a",
+                      "color": "#6ddad3",
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "organizationFlags": {},
                       "setupConfig": {},
                       "included": {
@@ -13030,6 +13142,7 @@
                           "name": "Spencer, Pouros and Bergnaum",
                           "updatedAt": "2024-12-25T15:04:42.969Z",
                           "slug": "spencer-pouros-and-bergnaum",
+                          "code": "8vuvhag",
                           "thumbnailUrl": null,
                           "bannerUrl": null,
                           "createdBy": null,
@@ -13040,15 +13153,15 @@
                           "toolsConfig": {},
                           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "shortName": "Spencer,",
-                          "regionCode": "TD",
-                          "timeZone": "Europe/Vaduz",
+                          "regionCode": "NZ",
+                          "timeZone": "America/Lower_Princes",
                           "defaultLanguageCode": "en",
                           "languageCodes": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                          "color": "#cda6af",
+                          "color": "#b9e6c9",
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                          "chatSupport": true,
+                          "chatSupport": false,
                           "organizationFlags": {},
                           "setupConfig": {},
                           "included": {
@@ -13321,7 +13434,7 @@
             "application/json": {
               "example": {
                 "name": "Spencer, Pouros and Bergnaum Group",
-                "timeZone": "Europe/Vaduz"
+                "timeZone": "America/Lower_Princes"
               },
               "schema": {
                 "type": "object",
@@ -13458,7 +13571,7 @@
             "application/merge-patch+json": {
               "example": {
                 "name": "Spencer, Pouros and Bergnaum Group",
-                "timeZone": "Europe/Vaduz"
+                "timeZone": "America/Lower_Princes"
               },
               "schema": {
                 "type": "object",
@@ -13696,6 +13809,7 @@
                     "name": "Spencer, Pouros and Bergnaum",
                     "updatedAt": "2024-12-25T15:04:42.969Z",
                     "slug": "spencer-pouros-and-bergnaum",
+                    "code": "8vuvhag",
                     "thumbnailUrl": null,
                     "bannerUrl": null,
                     "createdBy": null,
@@ -13706,15 +13820,15 @@
                     "toolsConfig": {},
                     "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                     "shortName": "Spencer,",
-                    "regionCode": "TD",
-                    "timeZone": "Europe/Vaduz",
+                    "regionCode": "NZ",
+                    "timeZone": "America/Lower_Princes",
                     "defaultLanguageCode": "en",
                     "languageCodes": ["en"],
                     "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                    "color": "#cda6af",
+                    "color": "#b9e6c9",
                     "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                     "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                    "chatSupport": true,
+                    "chatSupport": false,
                     "organizationFlags": {},
                     "setupConfig": {},
                     "included": {

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { servicePaths } from 'shared';
+import { shareLinkPath } from 'shared/share-link';
 import { describe, expect, it } from 'vitest';
 import { deriveInfra } from '../../lib/naming';
 import { SECURITY_HEADERS } from '../../tasks/smoke';
@@ -100,6 +102,13 @@ describe('frontend Caddyfile', () => {
     }
     // Handles with named matchers run in the order written: this one before the bucket's /.well-known/*.
     expect(caddyfile.indexOf('handle @oauthMetadata')).toBeLessThan(caddyfile.indexOf('handle @wellKnown'));
+  });
+
+  it("redirects a share link to its preview under the API's links, with the pattern the service worker and Vite use", () => {
+    // A drifted copy would leave the service worker or dev passing links that production serves as the SPA shell.
+    expect(caddyfile.match(/@shareLink\s+path_regexp\s+(\S+)/)?.[1]).toBe(shareLinkPath);
+    expect(caddyfile).toMatch(new RegExp(`handle @shareLink \\{\\s*\\n\\s*redir \\* ${servicePaths.backend}/links\\{uri\\}\\s*\\n`));
+    expect(caddyfile.indexOf('handle @shareLink')).toBeLessThan(caddyfile.indexOf('handle @root'));
   });
 
   it("serves the build's brotli copies, and the original when a release before them has none", () => {

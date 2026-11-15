@@ -18,6 +18,7 @@ import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig, originEnvName, servicePaths } from '../shared/index.ts';
+import { shareLinkPath } from '../shared/src/share-link.ts';
 import { frontendDevPort } from '../shared/src/utils/tool-ports.ts';
 import { codeTheme } from './src/utils/code-theme.ts';
 import { docsEditor } from './vite/docs-editor.ts';
@@ -152,6 +153,8 @@ const viteConfig = {
           });
         },
       },
+      // Production's Caddy redirects a share link to the same path under the API's links.
+      [shareLinkPath]: { target: `http://localhost:${appConfig.services.backend.port}`, rewrite: (path) => `${servicePaths.backend}/links${path}` },
       [servicePaths.yjs]: { target: `ws://localhost:${appConfig.services.yjs.port}`, ws: true },
       [servicePaths.mcp]: { target: `http://localhost:${appConfig.services.mcp.port}` },
       [servicePaths.oauth]: { target: `http://localhost:${appConfig.services.oauth.port}` },

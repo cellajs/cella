@@ -103,6 +103,34 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
 }
 
+/** A share link's preview page: its title, the Open Graph title and description, and the frontend url it sends a browser on to. */
+export interface LinkPreview {
+  title: string;
+  ogTitle: string;
+  description: string;
+  redirectUrl: string;
+}
+
+/** The channel a share link's code names. */
+export interface LinkedChannel {
+  code: string;
+  tenantId: string;
+  channelType: ChannelEntityType;
+  channelId: string;
+}
+
+/** What a channel module's share link `/{code}` shows, served by the links module outside any tenant; a 404 for what it does not show. */
+export interface ChannelShareLink {
+  channelType: ChannelEntityType;
+  preview(ctx: DbContext, channel: LinkedChannel): Promise<LinkPreview>;
+}
+
+/** What a numbered product module's share link `/{code}/{letter}{n}` shows: its row numbered `n` in that channel, or a 404. */
+export interface ProductShareLink {
+  letter: string;
+  preview(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview>;
+}
+
 /** The channel a membership is being inserted for. */
 export type MembershipEntity = EntityModel<ChannelEntityType> & { [key: string]: unknown; tenantId: string };
 
@@ -149,6 +177,10 @@ export interface BackendModule extends ModuleConfig {
   notifications?: true | ModuleNotifications;
   /** Signals this module sends on the stream. */
   signals?: StreamSignalDeclaration[];
+  /** The preview of its channel's share link (see {@link ChannelShareLink}). */
+  channelShareLink?: ChannelShareLink;
+  /** The preview of its numbered rows' share links (see {@link ProductShareLink}). */
+  productShareLink?: ProductShareLink;
   /** Handler apps the API entrypoint mounts (see {@link BackendRoute}); the composition root is the mount list. */
   routes?: BackendRoute[];
 }
@@ -172,6 +204,8 @@ export function defineBackendModule(module: BackendModule): void {
     routes = [],
     notifications: _notifications,
     signals: _signals,
+    channelShareLink: _channelShareLink,
+    productShareLink: _productShareLink,
     ...metadata
   } = module;
   registerModule(metadata);

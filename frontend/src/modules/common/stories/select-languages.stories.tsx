@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import { appConfig, type Language } from 'shared';
 import { expect, userEvent, within } from 'storybook/test';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
@@ -11,8 +12,8 @@ const meta = { title: 'common/SelectLanguages', component: SelectLanguages, tags
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function SelectLanguagesStory({ initialValue }: { initialValue: Array<'en' | 'nl'> }) {
-  const [value, setValue] = useState<Array<'en' | 'nl'>>(initialValue);
+function SelectLanguagesStory({ initialValue }: { initialValue: Language[] }) {
+  const [value, setValue] = useState<Language[]>(initialValue);
 
   return (
     <>
@@ -46,11 +47,11 @@ export const SingleSelected: Story = {
 
 export const MultipleSelected: Story = {
   args: {
-    value: ['en', 'nl'],
+    value: [...appConfig.languageCodes],
     onChange: () => {},
   },
   render: function Render() {
-    return <SelectLanguagesStory initialValue={['en', 'nl']} />;
+    return <SelectLanguagesStory initialValue={[...appConfig.languageCodes]} />;
   },
 };
 
@@ -58,11 +59,11 @@ export const ShouldOpenAndToggleLanguage: Story = {
   name: 'when opening the language picker, should toggle a language',
   tags: ['!dev', '!autodocs'],
   args: {
-    value: ['en'],
+    value: [],
     onChange: () => {},
   },
   render: function Render() {
-    return <SelectLanguagesStory initialValue={['en']} />;
+    return <SelectLanguagesStory initialValue={[]} />;
   },
   play: async ({ canvasElement, step }) => {
     const body = within(canvasElement.ownerDocument.body);
@@ -72,10 +73,12 @@ export const ShouldOpenAndToggleLanguage: Story = {
       expect(await body.findByRole('listbox')).toBeInTheDocument();
     });
 
-    await step('toggle the second language', async () => {
+    // Starts empty: an app with one language has no second to toggle
+    await step('toggle the last language', async () => {
       const options = await body.findAllByRole('option');
-      await userEvent.click(options[1]);
-      expect(options[1]).toHaveAttribute('aria-selected', 'true');
+      const last = options[options.length - 1];
+      await userEvent.click(last);
+      expect(last).toHaveAttribute('aria-selected', 'true');
     });
   },
 };

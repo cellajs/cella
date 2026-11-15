@@ -123,6 +123,13 @@
 		}
 	}
 
+	# A share link (shared/src/share-link.ts) goes to its preview under the API's
+	# links, which unfurls in chats and sends a browser on into the app.
+	@shareLink path_regexp ^/[0-9][a-z0-9]{6}(?:/[a-z][1-9][0-9]*)?(?:\?|$)
+	handle @shareLink {
+		redir * /api/links{uri}
+	}
+
 	# Root path maps to an empty S3 object key, which the REST endpoint answers
 	# with 403 (not 404), so the deep-link fallback below never triggers. Serve
 	# index.html directly for "/".
