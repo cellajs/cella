@@ -286,16 +286,31 @@ describe('the cache as the provider saves it and the bind restores it', () => {
     expect((await tabRecords()).map(({ mutations }) => mutations?.length)).toEqual([1, 1]);
   });
 
-  it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
+  it('stores a change made just before the tab closes, without waiting out the write throttle', async () => {
     const client = new QueryClient();
-    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'last edit' } });
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'last edit' }]);
     await persistQueryClientSave({ queryClient: client, ...persistOptions });
 
     expect(pageHideListeners).not.toHaveLength(0);
     for (const listener of pageHideListeners) listener();
 
     // Under the one-second throttle: only the hide listener can have written it.
+    await vi.waitFor(async () => expect(await getLocalUserDb()!.queries.count()).toBe(1), { timeout: 500 });
+  });
+
+  // A queued write and its optimistic rows waited out the write throttle: a tab killed without a pagehide lost both.
+  it('stores a write paused offline with its optimistic rows before the write throttle ends', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'offline edit' }]);
+    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'offline edit' } });
+    await persistQueryClientSave({ queryClient: client, ...persistOptions });
+    // The clock stops short of the throttle, and real timers drop the throttled write: only one that skips it can store the queue.
+    await vi.advanceTimersByTimeAsync(999);
+    vi.useRealTimers();
+
     await vi.waitFor(async () => expect((await tabRecords()).length).toBe(1), { timeout: 500 });
+    expect(await getLocalUserDb()!.queries.count()).toBe(1);
   });
 });
 

@@ -199,7 +199,7 @@ Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp 
 
 ### Paused writes
 
-Paused mutations persist to IndexedDB and survive a reload. Their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue. A tab that starts takes over the queue of a closed one. The attachment module is the reference.
+Paused mutations persist to IndexedDB as they queue and survive a reload or a crash. Their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue. A tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
 The queue can reason about pending work, since a product's create, update and delete each carry one fixed shape:
 
