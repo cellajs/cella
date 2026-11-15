@@ -63,7 +63,7 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm infra deploy` start one too.
 
 ### What a deploy deploys
 
@@ -108,7 +108,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-**Deploy now** (`pnpm infra start-deploy`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
+**Deploy now** (`pnpm infra deploy`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
 
 A run ends in one of five outcomes:
 
@@ -118,11 +118,13 @@ A run ends in one of five outcomes:
 - **Apply needed:** the target describes the app otherwise, or the run ran outside the engine image ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)).
 - **Failed:** roles it did not switch keep their machines, and the target waits for a change in git or a start by hand.
 
-**Releases only.** In production, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
+**Releases only.** In production, the engine refuses a target that no release tag names, and a release that the default branch does not contain. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
 
 The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Deploy logs flags such a run.
 
-The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
+A tag alone deploys nothing. A `99.0.0` pushed on a commit outside the default branch is refused, and its run ends failed with that reason. Delete the tag, or merge the commit and raise the retry counter.
+
+The rule is as strong as the two rulesets together. Whoever may push a tag chooses among the commits the default branch holds, an old release included. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
 The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The apply keeps the description beside its hash in `control/<mode>/applied.json`. From that copy the CLI names the fields an earlier or waiting release would change. A run installs nothing. The image starts its deploy from the target, the retry counter, the deploy key, the project and the organization. A deploy reads no Pulumi state.
 
@@ -149,7 +151,7 @@ Every deploy writes one record to the environment's boot-diag bucket and updates
 
 Every new machine also uploads a **boot account** at the end of its first boot: its boot log and a crashed container's output. Both are scrubbed of secrets before upload. A failed switch's record names each new machine's account.
 
-**Deploy logs**, `pnpm infra runs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
+**Deploy logs**, `pnpm infra logs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
 
 Records, boot accounts and archives are kept for 60 days. The deploy key cannot erase a record, since the bucket keeps versions. Deploy logs flags three anomalies:
 

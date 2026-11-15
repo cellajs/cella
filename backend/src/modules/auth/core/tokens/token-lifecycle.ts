@@ -227,8 +227,8 @@ export const redeemToken = async (ctx: Context<Env>, { kind, rawToken, claimHold
 export const spendRedeemedLink = (tokenId: string) => updateTokenSpent(dbCtx, { id: tokenId });
 
 /**
- * Gives up the link of `kind` this browser holds for confirmation, at sign-out: the link goes too, so the next person at a
- * shared computer can neither confirm it here nor reopen it from the history. The `<kind>-pending` cookie is the caller's
+ * Gives up the link of `kind` this browser holds for confirmation, at sign-out: the link goes too. The next person at a
+ * shared computer can then neither confirm it here nor reopen it from the history. The `<kind>-pending` cookie is the caller's
  * to delete, once every write of the sign-out succeeded.
  */
 export const dropHeldLink = async (ctx: Context<Env>, kind: LinkTokenKind) => {

@@ -29,7 +29,7 @@ export default defineScenario({
   histograms: YJS_HISTOGRAMS,
   primary: 'yjs.peer_latency_ms.p95',
   checks: {
-    maxErrorRate: 0,
+    maxErrorShare: 0,
     expect: ['yjs.keystrokes', 'yjs.materializations'],
     forbid: ['yjs.unsaved_frames', 'yjs.docs_not_persisted', 'yjs.docs_diverged'],
   },

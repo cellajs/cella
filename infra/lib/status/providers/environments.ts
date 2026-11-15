@@ -21,7 +21,7 @@ export const environmentsProvider: StatusProvider<EnvironmentsFacts> = {
     return { text: existsSync(file) ? readFileSync(file, 'utf8') : '', stacks };
   },
   evaluate(facts) {
-    const environments = check('environments.lines', 'Environments file');
+    const environments = check('environments.lines', 'Environments');
     if (!facts) return [environments.unknown(`could not read ${ENVIRONMENTS_FILE} or the stack files`)];
     let lines: string[];
     try {
@@ -38,6 +38,7 @@ export const environmentsProvider: StatusProvider<EnvironmentsFacts> = {
         .map((name) => `${name} has a line but is not set up (no infra/Pulumi.${name}.yaml): set it up, or remove the line`),
     ];
     if (findings.length > 0) return [environments.warn(findings.join('; '))];
-    return [environments.ok(`set up and deployed: ${facts.stacks.join(', ') || 'none'}`)];
+    const stacks = facts.stacks.join(', ') || 'none';
+    return [{ ...environments.ok(`set up and deployed: ${stacks}`), headline: `${stacks} set up` }];
   },
 };

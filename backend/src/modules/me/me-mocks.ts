@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, mockPaginated, mockRefDate, withFakerSeed } from '#/mocks';
+import { mockNanoid, mockPaginated, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
 import { mockInviteeInvitationResponse } from '#/modules/memberships/memberships-mocks';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
@@ -8,6 +8,7 @@ import { mockChannelBase } from '#/schemas/entity-base-mocks';
 export const mockMeResponse = (key = 'me:default') => ({
   user: mockUserResponse(`${key}:user`),
   isSystemAdmin: false,
+  session: withFakerSeed(`${key}:session`, () => ({ id: mockUuid(), expiresAt: faker.date.future({ refDate: mockRefDate }).toISOString() })),
 });
 
 export const mockUploadTokenResponse = (key = 'upload-token:default') =>

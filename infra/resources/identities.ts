@@ -47,31 +47,31 @@ function requirePrincipalId(
   return resolved.apply((id) => {
     if (id) return id;
     if (opts.pendingOnPreview && pulumi.runtime.isDryRun()) {
-      pulumi.log.warn(`IAM application for ${label} does not exist yet: \`${actionCommand('identity')}\` creates it.`);
+      pulumi.log.warn(`IAM application for ${label} does not exist yet: \`${actionCommand('identities')}\` creates it.`);
       // The engine shows an unknown input as "known after apply"; the type has no word for it.
       return pulumi.unknown as unknown as string;
     }
     throw new Error(
-      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('identity')}\` after a registry change.`,
+      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('identities')}\` after a registry change.`,
     );
   });
 }
 
 /**
- * Operator application id: the app's privileged human principal, one per app. Optional: until `operator-key` creates it, its bucket-policy
+ * Operator application id: the app's privileged human principal, one per app. Optional: until `operators` creates it, its bucket-policy
  * statements are dropped with a warning.
  */
 export const operatorApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.operator).apply((id) => {
   if (id) return id;
   pulumi.log.warn(
-    `Operator IAM application '${names.operator}' not found: its bucket-policy statements are dropped this update. \`${actionCommand('operator-key')}\` creates it.`,
+    `Operator IAM application '${names.operator}' not found: its bucket-policy statements are dropped this update. \`${actionCommand('operators')}\` creates it.`,
   );
   return undefined;
 });
 
 /**
  * The operators group's members, by user id, as IAM lists them at apply time: the people whose own one-day keys the bucket policies admit
- * beside the operator application. Empty, with a warning, until `operator-key` makes the group.
+ * beside the operator application. Empty, with a warning, until `operators` makes the group.
  */
 export const operatorMemberUserIds: pulumi.Output<string[]> = pulumi.output(
   scaleway.iam
@@ -80,7 +80,7 @@ export const operatorMemberUserIds: pulumi.Output<string[]> = pulumi.output(
     .catch((error: unknown) => {
       if (!isAbsentApplication(error)) throw error;
       pulumi.log.warn(
-        `Operators IAM group '${names.operators}' not found: only '${names.operator}' is admitted to the buckets this update. \`${actionCommand('operator-key')}\` creates it.`,
+        `Operators IAM group '${names.operators}' not found: only '${names.operator}' is admitted to the buckets this update. \`${actionCommand('operators')}\` creates it.`,
       );
       return [];
     }),

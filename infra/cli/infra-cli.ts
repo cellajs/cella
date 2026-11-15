@@ -8,17 +8,20 @@ import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { crossMark, DIVIDER, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { crossMark, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
-import { runAction } from './actions';
+import { type ActionOutcome, runAction } from './actions';
 import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
+import { checkoutVersion, formatHeader } from './header';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
-import { BACK, disabledReason, formatStackLine, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
+import { BACK, disabledReason, type MenuState, mainMenuItems, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
+import { LEAVE } from './prompts/what-now';
+import { startMenuSession } from './session';
 import type { InfraContext } from './shared';
 import { autoAcceptDefaults } from './shared';
 
@@ -42,7 +45,7 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(`\n  ${pc.dim('Releases deploy by themselves within minutes of a merge; start-deploy deploys one now.')}`);
+  console.info(`\n  ${pc.dim('Releases deploy by themselves within minutes of a merge; deploy starts one now.')}`);
 }
 
 /**
@@ -119,10 +122,17 @@ function menuState(context: InfraContext, home?: HomeFacts): MenuState {
   };
 }
 
-/** The environment line with the app's address, then the notices that hold for the whole run: key misconfigurations and deferred compute. */
+/** The header, then the notices that hold for the whole run: key misconfigurations and deferred compute. */
 function printStackNotices(context: InfraContext): void {
-  const url = context.appConfig.frontendUrl ? `  ${pc.underline(context.appConfig.frontendUrl)}` : '';
-  console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}${url}\n`);
+  const host = context.appConfig.frontendUrl ? new URL(context.appConfig.frontendUrl).host : undefined;
+  const [line, divider] = formatHeader({
+    slug: context.appConfig.slug,
+    version: checkoutVersion(),
+    environment: context.environment,
+    state: context.state,
+    host,
+  });
+  console.info(`${line}\n${divider}\n`);
 
   // One line per key misconfiguration (a superseded name in the env file, a key the CLI no longer reads, …) before any action trips over it.
   for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
@@ -133,15 +143,15 @@ function printStackNotices(context: InfraContext): void {
 }
 
 /**
- * The home screen: one round of reads under a spinner, then the lines. Resolves to what it read, for the menu. A stack not set up yet gets
- * the launch checklist.
+ * The home screen: one round of reads under a spinner, then the lines, or the lines of `read` after an action that changed nothing.
+ * Resolves to what it read, for the menu. A stack not set up yet gets the launch checklist.
  */
-async function printHome(context: InfraContext): Promise<HomeFacts | undefined> {
+async function printHome(context: InfraContext, read?: HomeFacts): Promise<HomeFacts | undefined> {
   if (context.state !== 'bootstrapped') {
     await printLaunchChecklist(context);
     return undefined;
   }
-  const home = await withSpinner(`Checking ${context.environment}`, () => collectHome(context));
+  const home = read ?? (await withSpinner(`Checking ${context.environment}`, () => collectHome(context)));
   for (const line of formatHome(home)) console.info(line);
   console.info('');
   return home;
@@ -173,46 +183,39 @@ function pulumiReady(action: OperatorActionId): boolean {
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
-let lastRow: MenuRowId | typeof UP_NEXT = 'deploy';
-
-/** Rows whose action destroys data: the cursor never rests on one, so a stray Enter after it cannot start it again. */
-const DESTRUCTIVE_ROWS: readonly MenuRowId[] = ['db-reset', 'teardown'];
+let lastRow: MenuRowId | typeof UP_NEXT = 'status';
 
 /** The row the cursor starts on in this state: the recommended step, else the last row, its DB access counterpart once the endpoint changed side, else the first. */
 function startRow(state: MenuState): MenuRowId | typeof UP_NEXT {
   if (state.upNext) return UP_NEXT;
   const rows = visibleRows(state);
-  if (lastRow === UP_NEXT || DESTRUCTIVE_ROWS.includes(lastRow)) return 'deploy';
+  if (lastRow === UP_NEXT) return 'status';
   if (rows.includes(lastRow)) return lastRow;
-  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'deploy';
+  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'status';
 }
 
 /**
- * The menu: one flat list of rows under group headings, each with a letter that enters it. A row with one action runs it; a row with
- * several opens a short pick, where Esc or Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run now
- * stays listed with the reason.
+ * The menu: the daily rows by use, then More with the rest. A row with one action runs it; a row with several opens a pick, where Esc or
+ * Back returns to the list. Esc on the list leaves the CLI. A row that cannot run now stays listed with the reason. A pick opens on its
+ * first entry: a stray Enter after an action never starts one that deletes data.
  */
 async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof QUIT> {
   while (true) {
-    const picked = await menuSelect({
-      message: 'What do you want to do?',
-      items: mainMenuItems(state),
-      default: startRow(state),
-      escape: 'quit',
-      hotkeys: menuHotkeys(state),
-    });
+    const picked = await menuSelect({ message: '', items: mainMenuItems(state), default: startRow(state) });
     if (picked === ESCAPED || picked === QUIT) return QUIT;
     lastRow = picked;
     if (picked === UP_NEXT) {
-      const reason = state.upNext ? disabledReason(state.upNext.action, state) : 'nothing is recommended';
-      if (state.upNext && !reason) return state.upNext.action;
-      console.error(`${crossMark} "${state.upNext ? actionLabel(state.upNext.action) : 'Up next'}" cannot run now: ${reason}.`);
+      const next = state.upNext;
+      if (!next) continue;
+      const reason = disabledReason(next.action, state);
+      if (!reason) return next.action;
+      console.error(`${crossMark} "${actionLabel(next.action)}" cannot run now: ${reason}.`);
       continue;
     }
     const row = menuRow(picked);
     const [only] = row.actions;
     if (row.actions.length === 1 && only) return only;
-    const action = await menuSelect({ message: row.label, items: pickItems(picked, state), escape: 'back' });
+    const action = await menuSelect({ message: row.label, items: pickItems(picked, state) });
     if (action !== ESCAPED && action !== BACK) return action;
   }
 }
@@ -259,28 +262,47 @@ if (args.action) {
     process.exit(1);
   }
   if (!pulumiReady(args.action)) process.exit(1);
-  process.exit(await runAction(args.action, context));
+  process.exit((await runAction(args.action, context)).code);
 }
 
-// A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup.
-if (context.state === 'fresh') process.exit(pulumiReady('resume') ? await runAction('resume', context) : 1);
+// A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup. A person at a terminal
+// stays in the CLI: a failure offers the step again, and a setup that succeeds opens the menu.
+if (context.state === 'fresh') {
+  if (!pulumiReady('resume')) process.exit(1);
+  const { code, quit } = await runAction('resume', context, { firstSetup: true, ...(args.once ? { close: async () => LEAVE } : {}) });
+  if (code !== 0 || quit || args.once || !process.stdin.isTTY) process.exit(code);
+  context = await loadContext(environment);
+  if (context.state === 'fresh') process.exit(0);
+  printStackNotices(context);
+}
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
-const READ_ONLY: readonly OperatorActionId[] = ['status', 'runs', 'preview'];
+const READ_ONLY: readonly OperatorActionId[] = ['status', 'logs', 'preview'];
 
+// From here an action that fails or is stopped returns to the menu, unless the run leaves after one.
+if (!args.once) startMenuSession();
 let home = await printHome(context);
+/** The action the operator chose from a failure's ways out, run before the menu shows again. */
+let next: OperatorActionId | undefined;
 while (true) {
-  const action = await chooseAction(menuState(context, home));
+  const action = next ?? (await chooseAction(menuState(context, home)));
+  const reason = next ? disabledReason(next, menuState(context, home)) : undefined;
+  next = undefined;
   if (action === QUIT) break;
-  const code = pulumiReady(action) ? await runAction(action, context) : 1;
-  if (args.once) process.exit(code);
+  if (reason) {
+    console.error(`${crossMark} "${actionLabel(action)}" cannot run now: ${reason}.`);
+    continue;
+  }
+  const outcome: ActionOutcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
+  if (args.once) process.exit(outcome.code);
+  next = outcome.next;
   console.info('');
-  if (READ_ONLY.includes(action)) continue;
-
-  // The action may have changed the stack file, the env file or the live stack: read all three again for the next round.
-  console.info(pc.dim(DIVIDER));
-  context = await loadContext(environment);
+  // An action may have changed the stack file, the env file or the live stack: all three are read again for the next round.
+  const changed = !READ_ONLY.includes(action) && !outcome.back;
+  if (changed) context = await loadContext(environment);
+  if (next) continue;
+  // The menu comes back under its header and home: a short terminal shows the action is over.
   printStackNotices(context);
-  home = await printHome(context);
+  home = await printHome(context, changed ? undefined : home);
 }
 process.exit(0);

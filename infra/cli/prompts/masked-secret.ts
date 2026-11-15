@@ -1,4 +1,5 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
+import { withBack } from './back';
 
 /**
  * Render a secret as one mask character per character, and nothing of the value. The prompt redraws at every keystroke, so a character shown
@@ -15,12 +16,7 @@ interface MaskedSecretConfig {
   validate?: (value: string) => boolean | string | Promise<boolean | string>;
 }
 
-/**
- * A password-style prompt that shows a mask and the length of what was typed or pasted: the length catches a wrong paste before it is stored,
- * and no character of the value reaches the terminal, its scrollback, or anything that records its output.
- * Drop-in replacement for `@inquirer/prompts`' `password`: same `{ message, validate? }` config and `Promise<string>` result.
- */
-export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, done) => {
+const maskedSecretPrompt = createPrompt<string, MaskedSecretConfig>((config, done) => {
   const { validate = () => true } = config;
   const theme = makeTheme();
   const [status, setStatus] = useState<Status>('idle');
@@ -53,7 +49,16 @@ export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, do
   const masked = maskSecret(value);
   const display = status === 'done' ? theme.style.answer(masked) : masked;
   const counter = status === 'idle' && value.length > 0 ? ` ${theme.style.help(`(${value.length} chars)`)}` : '';
-  const error = errorMsg ? theme.style.error(errorMsg) : '';
+  const bottom = status === 'done' ? '' : errorMsg ? theme.style.error(errorMsg) : '';
 
-  return [`${prefix} ${message} ${display}${counter}`.trimEnd(), error];
+  return [`${prefix} ${message} ${display}${counter}`.trimEnd(), bottom];
 });
+
+/**
+ * A password-style prompt that shows a mask and the length of what was typed or pasted: the length catches a wrong paste before it is stored,
+ * and no character of the value reaches the terminal, its scrollback, or anything that records its output. Esc steps back from it.
+ * Drop-in replacement for `@inquirer/prompts`' `password`: same `{ message, validate? }` config and `Promise<string>` result.
+ */
+export function maskedSecret(config: MaskedSecretConfig): Promise<string> {
+  return withBack((context) => maskedSecretPrompt(config, context));
+}

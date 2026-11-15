@@ -26,7 +26,7 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
     }
   },
   evaluate(facts, session) {
-    const secrets = check('secrets.required', 'Runtime secrets', 'scaleway');
+    const secrets = check('secrets.required', 'Env vars', 'scaleway');
     return [
       probed(secrets, session.scalewayKeyAvailable, facts, 'could not read Secret Manager', (missing) =>
         missing.length === 0

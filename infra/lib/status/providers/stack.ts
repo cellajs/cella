@@ -12,13 +12,13 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
     return {};
   },
   evaluate(_facts, session) {
-    const stack = check('config.stackState', 'Stack');
+    const stack = check('config.stackState', 'Setup');
     return [
       session.stackState === 'fresh'
         ? stack.missing(`no Pulumi.${session.mode}.yaml; this stack has not been set up`, runSetup)
         : session.stackState === 'partial'
           ? stack.warn('stack file exists but bootstrap is incomplete (no deploy key)', runSetup)
-          : stack.ok(`bootstrapped (${session.mode})`),
+          : { ...stack.ok(`bootstrapped (${session.mode})`), headline: `${session.mode} set up` },
     ];
   },
 };
@@ -35,13 +35,20 @@ export interface KeyAge {
  */
 export type IdentityFacts = { observerAppId: string | null; keyAges: KeyAge[] };
 
+const ageInDays = (createdAt: string, now: number) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
+
 /** The keys' ages as one line, oldest first, in days. No age is a deadline: the line only says how old each key is. */
 export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
-  const days = (createdAt: string) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
   return [...ages]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .map((age) => `${age.application} ${days(age.createdAt)} d`)
+    .map((age) => `${age.application} ${ageInDays(age.createdAt, now)} d`)
     .join(', ');
+}
+
+/** The keys as a count and the oldest one's age: `24 API keys, oldest 19 d`. */
+function keyAgesHeadline(ages: readonly KeyAge[], now = Date.now()): string {
+  const oldest = Math.max(...ages.map((age) => ageInDays(age.createdAt, now)));
+  return `${ages.length} API key${ages.length === 1 ? '' : 's'}, oldest ${oldest} d`;
 }
 
 /**
@@ -72,20 +79,20 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
     }
   },
   evaluate(facts, session) {
-    const project = check('identity.project', 'Scaleway project');
+    const project = check('identity.project', 'Project');
     const own = projectVerdict(session.projectId, projectsOfOtherModes(session.mode));
     const checks = [
       own.status === 'missing'
         ? project.missing(`infra/Pulumi.${session.mode}.yaml names no project; setup picks or creates one`, runSetup)
         : own.status === 'shared'
           ? project.error(`${session.projectId} is also the project of ${own.sharedWith}: every environment needs a project of its own`)
-          : project.ok(session.projectId ?? ''),
+          : { ...project.ok(session.projectId ?? ''), headline: `project ${(session.projectId ?? '').slice(0, 8)}-…` },
     ];
     if (session.stackState === 'bootstrapped') {
       const ages = check('identity.keyAges', 'Key ages', 'scaleway');
       checks.push(
         probed(ages, session.scalewayKeyAvailable, facts, 'could not read the keys', ({ keyAges }) =>
-          ages.ok(keyAges.length > 0 ? keyAgesLine(keyAges) : 'no key found'),
+          keyAges.length > 0 ? { ...ages.ok(keyAgesLine(keyAges)), headline: keyAgesHeadline(keyAges) } : ages.ok('no key found'),
         ),
       );
     }

@@ -36,7 +36,7 @@ Two rules hold whatever the routes say. An account without a proven address bind
 
 ## Lifecycle and limits
 
-The session ends at its expiry. The account goes with the last tenant that held it (`removeDueTenants` removes the anonymous accounts a removed tenant leaves with no membership). An app's fixture account without an `emails` row follows the same rule.
+The session ends at its expiry, or at its sign-out, which deletes the account at once, with an organization only it manages, as a demo's: nothing could sign it back in. Otherwise the account goes with the last tenant that held it (`removeDueTenants` removes the anonymous accounts a removed tenant leaves with no membership). An app's fixture account without an `emails` row follows the same rule.
 
 What limits the minting is the flow's own business: the demo has `appConfig.demo.perDay`, a per-address limiter and the bot check. Anonymous sessions together hold a tenth of the stream cap: throwaway accounts never crowd out a member's stream.
 

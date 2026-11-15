@@ -17,7 +17,7 @@ const definition = (overrides: Partial<RuntimeSecretDefinition>): RuntimeSecretD
 
 describe('secretsTable', () => {
   it.each([
-    { state: 'missing · required', mark: '✖', secret: { required: true }, container: undefined },
+    { state: 'missing · required', mark: '✗', secret: { required: true }, container: undefined },
     { state: 'empty · optional', mark: '○', secret: {}, container: { version_count: 0 } },
     { state: 'set Nov 8', mark: '●', secret: {}, container: { version_count: 2, setAt: '2026-11-08T12:00:00Z' } },
     { state: 'made by infra', mark: '◇', secret: { valueSource: 'engine', generation: 'random', rotatable: true }, container: undefined },

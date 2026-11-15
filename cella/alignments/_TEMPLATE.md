@@ -38,11 +38,11 @@ lens, or touches the database. Say when an app that never customized this area i
 ## Run
 
 <The codemod invocation, or "No script: manual." Always from the repo root. Without arguments after
-`--`, `--run` reports what it would change over the roots.>
+`--`, `align run` reports what it would change over the roots.>
 
 ```sh
-pnpm cella align --run <id>                      # report only
-pnpm cella align --run <id> -- rewrite <roots>   # apply
+pnpm cella align run <id>                      # report only
+pnpm cella align run <id> -- rewrite <roots>   # apply
 ```
 
 ## Manual steps

@@ -462,7 +462,7 @@ export type ProtectedResourceMetadata = {
 };
 
 /**
- * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request and the session it presents. A client reads it to learn who is signed in.
  */
 export type Me = {
   user: User;
@@ -470,6 +470,13 @@ export type Me = {
    * Whether the user holds the system admin role and the request comes from an allowed IP address.
    */
   isSystemAdmin: boolean;
+  /**
+   * The session this request presents: its id, and when it ends unless revoked first.
+   */
+  session: {
+    id: string;
+    expiresAt: string;
+  };
 };
 
 /**

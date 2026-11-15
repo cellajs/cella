@@ -6,6 +6,7 @@ import { readBrowserSession } from '#/modules/auth/core/sessions/operations/reso
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import { dropHeldLink, spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { linkTokenKinds } from '#/modules/auth/core/tokens/token-policies';
+import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { log } from '#/utils/logger';
 
 /**
@@ -27,8 +28,9 @@ const deleteSignedOutCookies = (ctx: Context<Env>) => {
 
 /**
  * Signs this browser out: ends what it holds of a sign-in in progress (a link held for confirmation, a second-factor
- * challenge), then its session. Every write runs before any cookie goes, so a failure leaves this browser all its
- * cookies and a retry finishes the job: a spend added here defers its cookie delete as well.
+ * challenge), then its session. An anonymous session is all its account has: the account goes with it, and so does
+ * an organization it alone manages, as a demo's. Every write runs before any cookie goes: a failure leaves this browser
+ * all its cookies, and a retry finishes the job. A spend added here defers its cookie delete as well.
  * @throws AppError 401 when the browser holds no session and no second-factor challenge.
  */
 export const signOutOp = async (ctx: Context<Env>) => {
@@ -50,8 +52,9 @@ export const signOutOp = async (ctx: Context<Env>) => {
 
   try {
     const { session } = await readBrowserSession(getAuthCookie(ctx, 'session'));
-    await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'sign_out', by: session.userId });
-    log.info('User signed out', { userId: session.userId });
+    if (session.authStrategy === 'anonymous') await deleteAccounts(ctx, { userIds: [session.userId], by: session.userId });
+    else await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'sign_out', by: session.userId });
+    log.info('User signed out', { userId: session.userId, anonymous: session.authStrategy === 'anonymous' });
   } catch (err) {
     // A refusal means no live session is left to end, so the cookies go all the same; a failed read or write keeps them.
     if (err instanceof AppError && err.status === 401) deleteSignedOutCookies(ctx);

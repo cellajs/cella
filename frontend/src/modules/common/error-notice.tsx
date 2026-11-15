@@ -16,7 +16,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
 import { getErrorInfo } from '~/utils/get-error-info';
-import { isTearingDown } from '~/utils/teardown-user-state';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
@@ -78,9 +77,6 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
     resetErrorBoundary?.();
     window.location.replace(homePath);
   };
-
-  // The tab is leaving a page whose session is gone, which is all its errors say.
-  if (isTearingDown()) return null;
 
   return (
     <>

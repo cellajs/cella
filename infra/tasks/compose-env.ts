@@ -69,7 +69,7 @@ export function composeMachineEnvs(
 /** The blocked end that names every value owed and what stores each kind. */
 function blocked(owed: string[]): ExitCodeError {
   return new ExitCodeError(
-    `Blocked: ${owed.join('; ')}. Store an operator value with \`${actionCommand('secrets')}\`, which starts this target again; a generated or database value is made by \`${actionCommand('apply')}\`, the uploads key by \`${actionCommand('identity')}\`.`,
+    `Blocked: ${owed.join('; ')}. Store an operator value with \`${actionCommand('env')}\`, which starts this target again; a generated or database value is made by \`${actionCommand('apply')}\`, the uploads key by \`${actionCommand('identities')}\`.`,
     MAIN_JOB_EXIT.blocked,
   );
 }

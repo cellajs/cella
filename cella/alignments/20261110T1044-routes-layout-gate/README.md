@@ -32,8 +32,8 @@ wire, cache or schema change.
 ## Run
 
 ```sh
-pnpm cella align --run 20261110T1044-routes-layout-gate                          # report only
-pnpm cella align --run 20261110T1044-routes-layout-gate -- rewrite frontend/src   # apply
+pnpm cella align run 20261110T1044-routes-layout-gate                          # report only
+pnpm cella align run 20261110T1044-routes-layout-gate -- rewrite frontend/src   # apply
 ```
 
 ## Manual steps

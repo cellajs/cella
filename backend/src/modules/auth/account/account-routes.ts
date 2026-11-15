@@ -5,10 +5,10 @@ import {
   factorRemovedSchema,
   meAuthDataSchema,
   recoverableFactorParamSchema,
-  sessionBaseSchema,
   sessionsRevokedSchema,
   toggleMfaBodySchema,
 } from '#/modules/auth/account/account-schema';
+import { sessionBaseSchema } from '#/modules/auth/core/sessions/sessions-schema';
 import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, idsBodySchema, userIdParamSchema } from '#/schemas';
 

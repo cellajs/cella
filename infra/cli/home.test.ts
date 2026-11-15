@@ -52,18 +52,11 @@ const healthy: HomeFacts = {
 };
 
 describe('formatHome', () => {
-  it('names the release that serves, counts the healthy services and says nothing needs doing', () => {
-    expect(plain(formatHome(healthy))).toEqual([
-      '● Serving      0.34.0 since Nov 2 · 2 services healthy',
-      '● Last deploy  deployed 0.34.0',
-      '● Database     private',
-      '● Security     no findings',
-      '',
-      '✔ Nothing needs doing.',
-    ]);
+  it('names the release that serves, counts the healthy services and shows nothing else when every check passes', () => {
+    expect(plain(formatHome(healthy))).toEqual(['✓ Live         0.34.0 since Nov 2 · 2 services healthy · all checks pass']);
   });
 
-  it('counts the findings, flags what else needs doing and ends with the recommended step', () => {
+  it('shows only what needs a person: the failed deploy beside what keeps serving, the findings by what they found, the lease', () => {
     const facts: HomeFacts = {
       ...healthy,
       jobRuns: [
@@ -73,32 +66,43 @@ describe('formatHome', () => {
       ],
       report: report(
         [
-          { ...ok('inventory.keys', 'API keys', ''), status: 'error', detail: 'a durable key' },
-          { ...ok('identity.keyAges', 'Key ages', ''), status: 'warn', detail: 'old' },
-          { ...ok('runs.last', 'Last deploy', '', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'), status: 'error', detail: 'a6696b654e failed' },
+          {
+            ...ok('inventory.applications', 'Applications', ''),
+            status: 'error',
+            detail: '…',
+            headline: '4 outside applications can act on production',
+          },
+          { ...ok('inventory.keys', 'API keys', ''), status: 'error', detail: '…', headline: '2 operator keys outlive a day' },
+          ok('identity.keyAges', 'Key ages', 'fine'),
+          {
+            ...ok('runs.last', 'Last deploy', '', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+            status: 'error',
+            detail: 'a6696b654e failed at "Switch machines": the new backend machine crashed at boot',
+            headline: 'a6696b654e failed at "Switch machines"',
+            at: '2026-11-08T09:00:00Z',
+          },
           { ...ok('live.backend', 'Service backend', ''), status: 'missing', detail: 'unreachable' },
           ok('live.frontend', 'Service frontend', 'serving c19588d'),
           ok('db.publicEndpoint', 'DB public endpoint', 'private only'),
           { ...ok('state.lock', 'Lease', ''), status: 'warn', detail: 'held by job:a6696b654e' },
         ],
-        { description: 'Read how it ended', command: 'pnpm infra runs' },
+        { description: 'Read how it ended', command: 'pnpm infra logs' },
       ),
     };
     expect(plain(formatHome(facts, { now: Date.parse('2026-11-08T10:00:00Z') }))).toEqual([
-      '● Serving      0.34.0 since Nov 2 · 1 of 2 services unhealthy',
-      '✖ Last deploy  0.35.0 failed · 2 failed runs today',
-      '● Database     private',
-      '! Security     2 findings ("Full status" lists them)',
-      '! Lease        held by job:a6696b654e',
-      '',
-      'Up next      Read how it ended',
-      '             pnpm infra runs',
+      '✗ Live         0.34.0 since Nov 2 · 1 of 2 services unhealthy',
+      '✗ Last deploy  0.35.0 failed at "Switch machines" an hour ago · 0.34.0 keeps serving',
+      '               2 failed runs today',
+      '⚠ Security     4 outside applications can act on production · 2 operator keys outlive a day',
+      '⚠ Lease        held by job:a6696b654e',
     ]);
   });
 
   it('says when nothing was read for lack of a key, and renders nothing before the setup is done', () => {
-    const lines = plain(formatHome({ ...healthy, keyConfigured: false }));
-    expect(lines[0]).toContain('no observer key');
+    expect(plain(formatHome({ ...healthy, keyConfigured: false }))).toEqual([
+      '? Live         not read',
+      '⚠ Not read     this machine has no observer key: "More → Update identities" puts one here',
+    ]);
     expect(formatHome({ ...healthy, report: { ...healthy.report, stackState: 'partial' } })).toEqual([]);
   });
 
@@ -113,27 +117,32 @@ describe('formatHome', () => {
         },
       },
     };
-    expect(plain(formatHome(facts))[0]).toBe('● Serving      backend main@4be21c0, frontend deadbee · 2 services healthy');
+    expect(plain(formatHome(facts))[0]).toBe('✓ Live         backend main@4be21c0, frontend deadbee · 2 services healthy');
   });
 });
 
 describe('upNextOf', () => {
   it('maps a next action to the menu action its command names, and nothing else', () => {
-    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm infra runs --mode production' }))).toEqual({
-      action: 'runs',
+    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm infra logs --mode production' }))).toEqual({
+      action: 'logs',
       description: 'Read how it ended',
     });
     expect(upNextOf(report([], { description: 'Do it by hand', command: 'scw rdb ...' }))).toBeUndefined();
     expect(upNextOf(report([]))).toBeUndefined();
   });
 
-  it('offers to follow the deploy under way, named by its release', () => {
+  it('names the deploy by its release: one under way to follow, a failed one to read the boot log of', () => {
     const deploying = report([ok('runs.last', 'Last deploy', 'a6696b654e is deploying', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')]);
-    expect(upNextOf(deploying, refs)).toEqual({ action: 'start-deploy', description: 'Follow the deploy of 0.35.0' });
+    expect(upNextOf(deploying, refs)).toEqual({ action: 'deploy', description: 'Follow the deploy of 0.35.0' });
+    const failed = report([{ ...deploying.checks[0]!, status: 'error', detail: 'a6696b654e failed' }], {
+      description: 'Read how it ended',
+      command: 'pnpm infra logs',
+    });
+    expect(upNextOf(failed, refs)).toEqual({ action: 'logs', description: 'Read the boot log of 0.35.0' });
   });
 
   it('sends a person to the full status when only the security checks found something', () => {
     const findings = report([{ ...ok('inventory.keys', 'API keys', ''), status: 'error', detail: 'a durable key' }]);
-    expect(upNextOf(findings)).toEqual({ action: 'status', description: 'Read the security finding' });
+    expect(upNextOf(findings)).toEqual({ action: 'status', description: 'Review the security finding' });
   });
 });

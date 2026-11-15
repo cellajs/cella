@@ -6,12 +6,10 @@ import { appConfig } from 'shared';
 import { reportUnanswered, settleOrReport } from '~/lib/tracing';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { endSession } from '~/modules/auth/end-session';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { UnsavedEdit } from '~/modules/auth/unsaved-edits-dialog';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
-import { teardownUserState } from '~/utils/teardown-user-state';
 import { longWaitMs, shortWaitMs } from '~/utils/wait-for';
 
 const loadUnsavedEdits = () => import('~/modules/auth/unsaved-edits-dialog');
@@ -25,7 +23,7 @@ void loadUnsavedEdits().catch(() => {});
  * sign-out continues by itself once they all saved. `force` (the account is gone) skips the question: nothing can save.
  * No read on this device keeps the session alive: a list that does not answer in time has nothing to ask. A sign-out
  * the server did not confirm keeps the page and the app as they were, and offers a retry and the way back. A confirmed
- * one opens the about page, or the same-origin page `redirect` names.
+ * one loads the about page, or the same-origin page `redirect` names.
  */
 export function SignOutPage() {
   const { t } = useTranslation();
@@ -57,17 +55,13 @@ export function SignOutPage() {
   const signOut = async () => {
     setStatus('ending');
     try {
-      // `force` means the session is already gone: only this browser's state is left to clear.
-      if (force) await teardownUserState();
-      else await endSession({ wipe: true });
+      await endSession('sign-out', { redirect });
     } catch (error) {
       console.error('Sign out error:', error);
       setStatus('failed');
       return;
     }
     setStatus('done');
-    // Full page reload so every store and cache is rebuilt
-    window.location.href = safeRedirectPath(redirect) ?? appConfig.aboutUrl;
   };
 
   const signOutTriggeredRef = useRef(false);

@@ -95,7 +95,7 @@ export async function offerFirstDeploy(context: InfraContext): Promise<void> {
     } catch (error) {
       // A first deploy that ends blocked or failed is read in Deploy logs; the setup itself is done.
       if (!(error instanceof ActionEnded)) throw error;
-      console.warn(`${warningMark} The first deploy did not end deployed: "${actionLabel('runs')}" says why. The setup itself is done.`);
+      console.warn(`${warningMark} The first deploy did not end deployed: "${actionLabel('logs')}" says why. The setup itself is done.`);
     }
   }
   await printLaunchChecklist(context);

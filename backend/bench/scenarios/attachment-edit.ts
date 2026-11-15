@@ -15,7 +15,7 @@ export default defineScenario({
     { name: 'hold 100', duration: 10, arrivalRate: 100 },
   ],
   counters: ['bench.rows_written'],
-  checks: { maxErrorRate: 1, thresholds: { 'http.response_time.p95': 3000 } },
+  checks: { maxErrorShare: 1, thresholds: { 'http.response_time.p95': 3000 } },
   async vu(vu) {
     const { cookie, userIndex } = benchUser(vu.index);
     for (let i = 0; i < 20; i++) {

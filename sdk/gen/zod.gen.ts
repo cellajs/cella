@@ -371,11 +371,15 @@ export const zProtectedResourceMetadata = z.object({
 });
 
 /**
- * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request and the session it presents. A client reads it to learn who is signed in.
  */
 export const zMe = z.object({
   user: zUser,
   isSystemAdmin: z.boolean(),
+  session: z.object({
+    id: z.uuid(),
+    expiresAt: z.string(),
+  }),
 });
 
 /**

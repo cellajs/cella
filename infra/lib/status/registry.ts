@@ -44,12 +44,36 @@ const NEXT_ACTION_PRIORITY = [
   'state.lock',
 ];
 
+/** True when a table key names the check: a key with a trailing `.` matches by id prefix. */
+const matches = (key: string, id: string): boolean => (key.endsWith('.') ? id.startsWith(key) : id === key);
+
+/** The groups the full status folds its ok checks into, in screen order, by the same keys as the priority above. */
+const CHECK_GROUPS: Readonly<Record<string, readonly string[]>> = {
+  App: ['live.', 'dns.zone'],
+  Deploys: ['runs.last', 'schedule.last', 'state.lock'],
+  'Env vars': ['secrets.required'],
+  Database: ['db.publicEndpoint'],
+  Access: ['inventory.applications', 'inventory.keys', 'inventory.policies', 'inventory.machines', 'identity.keyAges'],
+  Setup: ['config.stackState', 'identity.project', 'state.bucket', 'inventory.mainJob', 'environments.lines'],
+};
+
+/** The group labels, in screen order. */
+export const checkGroups: readonly string[] = Object.keys(CHECK_GROUPS);
+
+const GROUP_KEYS = Object.entries(CHECK_GROUPS).flatMap(([label, keys]) => keys.map((key) => ({ label, key })));
+
+/** The group a check folds into on the full status and its rank in the table, or undefined for an id no group names. */
+export function groupOf(id: string): { label: string; rank: number } | undefined {
+  const rank = GROUP_KEYS.findIndex(({ key }) => matches(key, id));
+  return rank < 0 ? undefined : { label: GROUP_KEYS[rank]?.label ?? '', rank };
+}
+
 /** A check contributes a top-level action only when it actually needs doing. */
 const ACTIONABLE: ReadonlySet<CheckStatus> = new Set<CheckStatus>(['error', 'missing', 'warn']);
 
 function pickNextAction(checks: Check[]): NextAction | undefined {
   for (const key of NEXT_ACTION_PRIORITY) {
-    const match = checks.find((c) => (key.endsWith('.') ? c.id.startsWith(key) : c.id === key));
+    const match = checks.find((c) => matches(key, c.id));
     if (match?.nextAction && ACTIONABLE.has(match.status)) return match.nextAction;
   }
   return undefined;

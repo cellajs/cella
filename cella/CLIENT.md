@@ -116,11 +116,37 @@ Only the server's answer decides a sign-out. A step on the device that does not 
 
 Signing out in one tab signs out every tab of that user. A tab whose signed-in user changes in another tab reloads before it resumes queued writes. Those writes stay on disk for their user's next session, until another user signs in on this browser.
 
+## Ending a session
+
+Every way a tab stops being its user goes through one function, `endSession(reason)` in `frontend/src/modules/auth/end-session.ts`. Five rules hold for all of them:
+
+1. A stored user is live until a lost session's 401 says otherwise, on any page.
+2. The server ends the session before the browser forgets anything.
+3. The query cache and the queued writes leave memory before anything waits. Collaborative edits are stored before the database closes.
+4. Ending a session loads a page. Only signing in happens in place.
+5. The only databases on this device are the stored user's and the last user's.
+
+The user hint is the stored `user` and `lastUser` in `localStorage`. A tab writes it only while it still names that tab's user. When another tab has stored someone else, or no one, its write stands.
+
+| Reason | When | Server | Database | Hint | Then |
+| --- | --- | --- | --- | --- | --- |
+| `sign-out` | The sign-out page, after it asks about unsaved edits | Ends the session first. A 401 counts as done | Deleted | Both forgotten | Loads `redirect`, else the about page |
+| `lost` | A lost session's 401 | None | Kept. Anonymous: deleted | `user` forgotten. Anonymous: both | A page that needs an account loads sign-in with the way back (anonymous: the about page). Any other page loads again |
+| `elsewhere` | Another tab stored another user, or none | None | Closed | Untouched: the other tab wrote it | Loads the page again |
+| `expired` | At load, an anonymous session past its expiry | None | Deleted | Both forgotten | Stays: nothing has rendered yet |
+| `replaced` | `/me` names another user than the live one | None | Kept | `user` forgotten | Loads the page again |
+
+`frontend/src/modules/auth/end-session.test.ts` runs this table row by row. Without a stored user, only `sign-out` does anything. A second call while one runs joins it.
+
+A stored anonymous user who opens the sign-in page goes through the sign-out page first. Its sign-out deletes the account ([Anonymous sessions](./ANONYMOUS_SESSIONS.md#lifecycle-and-limits)). The about page offers a demo only when no user is stored.
+
+Every persisted store says where it lives. The name of a `localStorage` store starts with `${appConfig.slug}-`. A per-user store is listed in `localUserStores`, or in `extraLocalUserStores` for an app's own. `frontend/src/query/tests/store-lifetime.test.ts` checks both. In development, `reset-local` in the 🐞 menu clears every `localStorage` key with that prefix except the hint, then signs out.
+
 ## Cold start to live
 
 Boot order, cached data first:
 
-1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
+1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request. An anonymous session past its expiry ends here, before its database binds.
 2. The app route waits until the per-user database is bound, its stores hydrated and the cache restored from it. A database that does not answer in time is closed: the tab runs online without it until its next load.
 3. The app reads the memberships, so the first catchup declares every organization.
 4. One tab is elected leader. It performs catchup and owns the live connection.

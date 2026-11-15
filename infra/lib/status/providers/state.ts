@@ -13,10 +13,10 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
     const lock = check('state.lock', 'Lease', 'scaleway');
     return [
       probed(bucket, creds, facts?.stateBucketExists, 'could not read the state bucket', (exists) =>
-        exists ? bucket.ok('present') : bucket.missing('absent; run setup to create it', runSetup),
+        exists ? { ...bucket.ok('present'), headline: 'state bucket' } : bucket.missing('absent; run setup to create it', runSetup),
       ),
       probed(lock, creds, facts?.lock, 'could not read the lease', (held) => {
-        if (!held.held) return lock.ok('free');
+        if (!held.held) return { ...lock.ok('free'), headline: 'no run in progress' };
         const who = `${held.owner ?? 'unknown'} (${held.operation ?? 'unknown op'})`;
         return held.stale
           ? lock.warn(`stale lease held by ${who}, expired ${held.expiresAt ?? '?'}`, unlock)

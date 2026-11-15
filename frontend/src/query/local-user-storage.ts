@@ -1,6 +1,7 @@
 import { persistQueryClientRestore } from '@tanstack/react-query-persist-client';
 import { settleOrReport } from '~/lib/tracing';
 import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
+import { endSession, sweepForgottenUserDbs } from '~/modules/auth/end-session';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { boardStore } from '~/modules/common/board/board-store';
 import { draftStore } from '~/modules/common/form-draft/draft-store';
@@ -8,13 +9,11 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { storedUserIds, userStorageKey, userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, getLocalUserDb, notifyLocalUserChange } from '~/query/local-user-db';
+import { bindLocalUserDb, closeLocalUserDb, getLocalUserDb, notifyLocalUserChange } from '~/query/local-user-db';
 import { persistOptions, resetPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
-import { getRouter } from '~/routes/-router-instance';
-import { clearUserState, isTearingDown, sweepForgottenUserDbs, teardownUserState } from '~/utils/teardown-user-state';
 import { longWaitMs } from '~/utils/wait-for';
 
 /** Minimal contract a per-user store must satisfy to join {@link localUserStores}: hydrate on bind, reset on sign-out. */
@@ -24,7 +23,16 @@ export interface LocalUserStore {
 }
 
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
-const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, offlineFilesStore, ...extraLocalUserStores];
+export const localUserStores = [
+  seenStore,
+  syncStore,
+  navigationStore,
+  draftStore,
+  alertStore,
+  boardStore,
+  offlineFilesStore,
+  ...extraLocalUserStores,
+];
 
 let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
@@ -92,42 +100,17 @@ function reconcileLocalUser(): void {
 /** Resolves once `localUserDb` is open for the current user, all local user stores have rehydrated and the query cache is restored from it. */
 export const localUserStorageReady = (): Promise<void> => readyPromise;
 
+// Before the first bind: an anonymous session past its expiry has signed out by itself, and nothing loads as it.
+const stored = userStore.getState();
+if (stored.user?.isAnonymous && stored.session && Date.parse(stored.session.expiresAt) <= Date.now()) void endSession('expired');
+
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();
 
 // A delete that a sign-out could not finish, as while another tab held the database open, is made here.
 void sweepForgottenUserDbs();
 
-/**
- * Forgets the stored user at boot, before anything loads as them, as a hard sign-out would: the store resets at once,
- * which unbinds, and the database is deleted once the bind under way has settled, as its open request would otherwise
- * create the database anew behind the delete.
- */
-export function forgetStoredUser(): void {
-  if (!userStore.getState().user) return;
-  const bound = readyPromise;
-  userStore.getState().reset();
-  void bound.then(sweepForgottenUserDbs);
-}
-
-// Another tab stored another signed-in user, or none: this tab's queued writes would replay on whatever session the
-// browser holds next. They leave memory before a focus or online event can resume them, and the tab boots as whoever
-// is signed in. It stores no user, which the other tab would read as a sign-out.
+// Another tab stored another signed-in user, or none: this tab boots again as whoever it names.
 window.addEventListener('storage', (event) => {
-  const userId = userStore.getState().user?.id;
-  // A tab tearing down keeps its user only until it has left its page.
-  if (event.key !== userStorageKey || !userId || isTearingDown() || storedUserIds(event.newValue).userId === userId) return;
-  void clearUserState().finally(() => {
-    closeLocalUserDb();
-    window.location.reload();
-  });
-});
-
-// Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app.
-deletedElsewhereListeners.add(() => {
-  // A tab that slept through the sign-out hears of it late. With a user stored since, a wipe here would forget them:
-  // the `storage` listener reloads this tab as that user.
-  if (storedUserIds().userId) return;
-  // `fromRoot`: no session is left to probe, and the user this tab holds until it has left would have sign-in send it back
-  void teardownUserState(true, () => getRouter().navigate({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true }));
+  if (event.key === userStorageKey && storedUserIds(event.newValue).userId !== userStore.getState().user?.id) void endSession('elsewhere');
 });

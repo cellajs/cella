@@ -54,7 +54,7 @@ export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 // Observer app (`<app>-observer`): reads, from any address
 
 /**
- * Project-scoped sets for the observer application, the key a person and their agents read with: what `status`, `runs` and the plan of an
+ * Project-scoped sets for the observer application, the key a person and their agents read with: what `status`, `logs` and the plan of an
  * identity update read, each set named one by one, so a set that also reads secret values never comes in by a wider name. The key works from
  * any address, so it holds no set that reads a secret in the clear: no Instances set, as a machine's user data holds the links to its env
  * file until the deploy strips them, and no registry set. Object Storage reads need the bucket policy too: the state and boot-diagnostics

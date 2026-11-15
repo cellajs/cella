@@ -85,9 +85,6 @@ let localUserId: string | null = null;
 /** The databases this tab bound: one whose first open is still under way is in no listing yet. */
 const boundNames = new Set<string>();
 
-/** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
-export const deletedElsewhereListeners = new Set<() => void>();
-
 const localUserListeners = new Set<(userId: string | null) => void>();
 
 /** Fires after the DB is rebound or closed, so callbacks see the live instance via `getLocalUserDb()`. Long-lived holders of a `liveQuery` must re-subscribe here. */
@@ -142,16 +139,14 @@ export class LocalUserDatabase extends Dexie {
           .delete(),
       );
 
-    // A delete from another connection is a hard sign-out in another tab: close for good and unbind, so a late write
-    // here cannot recreate the database (Dexie's default handler keeps auto-open). Upgrades keep the default: a tab on
-    // an older version closes so another tab's upgrade can run, and its next query reopens on the newer version.
+    // A delete from another connection is a hard sign-out in another tab, whose hint reaches this tab as `elsewhere`.
+    // Closed for good and unbound, a late write here skips and cannot recreate the database (Dexie's default handler
+    // keeps auto-open). Upgrades keep the default: a tab on an older version closes so another tab's upgrade can run,
+    // and its next query reopens on the newer version.
     this.on('versionchange', (event) => {
       if (event.newVersion !== null) return;
       this.close();
-      if (currentDb !== this) return false;
-      currentDb = null;
-      localUserId = null;
-      for (const listener of deletedElsewhereListeners) listener();
+      if (currentDb === this) closeLocalUserDb();
       return false;
     });
   }

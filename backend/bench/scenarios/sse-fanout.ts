@@ -31,7 +31,7 @@ export default defineScenario({
   counters: ['bench.rows_written', 'sse.changes', 'sync.range_fetches', 'sse.errors'],
   histograms: ['sync.fetch_ms', 'sync.reaction_delay_ms'],
   primary: 'sync.fetch_ms.p95',
-  checks: { maxErrorRate: 5, expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] },
+  checks: { maxErrorShare: 5, expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] },
   roles: [
     {
       name: 'subscriber',

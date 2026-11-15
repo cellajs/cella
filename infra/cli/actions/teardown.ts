@@ -2,7 +2,6 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { input } from '@inquirer/prompts';
 import { deleteAppliedEngine } from '../../lib/deploy/applied-engine';
 import { deleteLiveRecord } from '../../lib/deploy/live-record';
 import { machineRoles } from '../../lib/machine-roles';
@@ -26,7 +25,9 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { writeFinalDump } from '../../tasks/final-dump';
+import { input } from '../prompts/back';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, pulumiLoginUrl, stackNameFor } from '../shared';
+import { environmentName, printLossWarning } from './loss-warning';
 import { acquireIdentityKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 
@@ -60,15 +61,17 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   const confirmToken = `${appConfig.slug}-${context.environment}`;
   const kept = keptResources(appConfig);
 
-  console.info(`\n${pc.bold(pc.redBright(actionLabel('teardown')))} ${pc.dim(`(${confirmToken})`)}\n`);
-  console.info(
-    pc.dim(
-      'Deletes the machines, the load balancer, the network, the database after a final dump, the DNS records, the main job, the registry, the secrets and the identities of this environment.',
-    ),
-  );
-  console.info(pc.dim(`Keeps, with their contents: ${keptNames(context, kept)}.`));
+  const environment = environmentName(context.environment);
+  printLossWarning('teardown', context.environment, [
+    `Deletes what ${environment} runs on and pays for: the machines, load balancer, network,`,
+    'database, DNS records, main job, image registry, secrets, and its applications and keys.',
+    'The database is dumped first. If the dump fails, nothing is deleted.',
+    `Keeps ${kept.some(({ name }) => name === 'public-uploads-bucket') ? 'the uploaded files, ' : ''}the final dump and the secrets that protect stored data.`,
+    `A new setup of ${environment} picks them up again.`,
+  ]);
+  console.info(pc.dim('After the token comes your Owner key: make one in the Scaleway console that ends within hours.'));
 
-  const typed = await input({ message: `Type ${pc.bold(confirmToken)} to continue` });
+  const typed = await input({ message: `Type ${pc.cyan(confirmToken)} to tear down ${environment}` });
   if (typed.trim() !== confirmToken) {
     console.info('Token mismatch; nothing was touched.');
     return;

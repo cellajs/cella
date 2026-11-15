@@ -1,15 +1,11 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { mockMeAuthResponse } from '#/modules/auth/auth-mocks';
 import { federationRefSchema } from '#/modules/auth/core/federations/federations-schema';
-import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import { sessionBaseSchema } from '#/modules/auth/core/sessions/sessions-schema';
 import { passkeySchema } from '#/modules/auth/flows/passkeys/passkeys-schema';
 import { enabledOAuthProvidersSchema } from '#/modules/user/user-schema';
 import { userIdParamSchema } from '#/schemas';
-
-/** A session row as stored, secret and revoker omitted: what a revoke returns. */
-export const sessionBaseSchema = createSelectSchema(sessionsTable).omit({ revokedBy: true });
 
 /** A session as the account page lists it. */
 const sessionSchema = sessionBaseSchema.extend({

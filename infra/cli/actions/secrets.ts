@@ -1,11 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { confirm, input } from '@inquirer/prompts';
 import { blockedValues } from '../../lib/deploy/failure-class';
 import { bucketRunStore } from '../../lib/deploy/run-store';
 import { type ManagedKeyDefinition, managedKeys } from '../../lib/managed-keys';
 import { deriveInfra } from '../../lib/naming';
-import { actionCommand } from '../../lib/operator-actions';
 import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../../lib/runtime-secrets';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
@@ -28,9 +26,11 @@ import {
 } from '../../tasks/manage-runtime-secrets';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import type { MenuChoice } from '../menu';
+import { isPromptAbort } from '../prompts/abort';
+import { confirm, input, PromptBack } from '../prompts/back';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, type MenuSelectOptions, menuSelect } from '../prompts/menu-select';
-import { autoAcceptDefaults, confirmOrDefault, type InfraContext } from '../shared';
+import { ActionEnded, autoAcceptDefaults, confirmOrDefault, type InfraContext, pointTo } from '../shared';
 import { acquireIdentityKey, acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 import { runStartDeploy, startBlockedTarget } from './start-deploy';
@@ -77,7 +77,7 @@ const takesEffect = "A value is written at once; running machines keep what they
 /** Pulumi owns a container: one made here would make the next `pulumi up` fail with "secret already exists". */
 function applyFirst(ctx: MenuContext, secret: RuntimeSecretDefinition, then: string): false {
   ctx.log(
-    `${warningMark} ${secret.envVar} has no secret in Secret Manager yet. Apply first (\`${actionCommand('apply')}\`), which creates it, then ${then} here.`,
+    `${warningMark} ${secret.envVar} has no secret in Secret Manager yet. Apply first (${pointTo('apply')}), which creates it, then ${then} here.`,
   );
   return false;
 }
@@ -169,6 +169,8 @@ async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<
     ctx.log(`${checkMark} Minted ${key.label}`);
     return true;
   } catch (error) {
+    // Esc or Ctrl-C at the Owner key prompt leaves the mint as at any other prompt.
+    if (error instanceof PromptBack || error instanceof ActionEnded || isPromptAbort(error)) throw error;
     ctx.log(`${warningMark} Mint failed: ${errorMessage(error)}`);
     return false;
   }
@@ -212,7 +214,6 @@ async function handleRow(ctx: MenuContext, secret: RuntimeSecretDefinition, cont
   const action = await ctx.prompts.select<RowAction>({
     message: secret.envVar,
     items: [...actions, { name: '← Back', value: 'back', description: 'Return to the table.' }],
-    escape: 'back',
   });
   if (action === 'set') return handleSet(ctx, secret, container);
   if (action === 'delete') return handleDelete(ctx, secret, container);
@@ -297,13 +298,18 @@ export async function secretsMenu(options: SecretsMenuOptions): Promise<{ change
         { name: 'Import a .env file', value: IMPORT, description: 'Set every value a .env file holds for an env var above, after one confirmation.' },
       ],
       default: picked,
-      escape: 'back',
     });
     if (choice === ESCAPED) return { changed };
     picked = choice;
     const row = rows.find((candidate) => candidate.definition.id === choice);
     if (choice !== IMPORT && !row) throw new Error(`secrets: prompt returned unknown secret id '${choice}'`);
-    const wrote = row ? await handleRow(ctx, row.definition, containers.get(row.definition.secretName)) : await handleImport(ctx, containers);
+    // Esc at a prompt of the row steps back to the table.
+    const wrote = await (row ? handleRow(ctx, row.definition, containers.get(row.definition.secretName)) : handleImport(ctx, containers)).catch(
+      (error: unknown) => {
+        if (error instanceof PromptBack) return false;
+        throw error;
+      },
+    );
     if (wrote) {
       changed = true;
       containers = await readContainers(reader);
@@ -347,6 +353,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
     : undefined;
   let identityKey: OwnerKey | undefined;
   let changed = false;
+  const pick = Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
 
   try {
     ({ changed } = await secretsMenu({
@@ -360,17 +367,19 @@ export async function runSecrets(context: InfraContext): Promise<void> {
       region: appConfig.s3.region,
       slug: appConfig.slug,
       mode: context.environment,
-      pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
+      pick,
       notice,
       prompts: { select: menuSelect, password: maskedSecret, confirm, input },
     }));
   } finally {
     await identityKey?.release();
   }
+  // Esc on a table that took no key leaves the action: the menu comes back at once.
+  if (pick && !changed && !operator && !identityKey) throw new PromptBack();
   if (identityKey) printRevokeReminder();
   const restarted = operator
     ? await startBlockedTarget(context, operator).catch((error) => {
-        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('deploy')} does.`);
         return false;
       })
     : false;

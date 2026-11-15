@@ -1,12 +1,12 @@
+import { Separator } from '@inquirer/prompts';
 import {
-  actionDescription,
   actionHint,
   actionLabel,
-  MENU_GROUPS,
   MENU_ROWS,
-  type MenuGroup,
   type MenuRowId,
+  MORE_SECTIONS,
   menuRow,
+  OPERATOR_ACTIONS,
   type OperatorActionId,
 } from '../lib/operator-actions';
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
@@ -37,8 +37,11 @@ export interface MenuChoice<T extends string> {
   disabled?: string;
 }
 
-/** A menu entry, or the heading of a group of entries. */
-export type MenuItem<T extends string> = MenuChoice<T> | { group: string };
+/** A menu entry, the heading of a group of entries (an empty one is a blank line), or a rule. */
+export type MenuItem<T extends string> = MenuChoice<T> | { group: string } | Separator;
+
+/** The rule above the way out of a menu. */
+const RULE = new Separator(pc.dim('─'.repeat(40)));
 
 export const BACK = 'back';
 export const QUIT = 'quit';
@@ -55,7 +58,7 @@ const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = [
   'db-seed',
   'db-open',
   'db-close',
-  'start-deploy',
+  'deploy',
   'releases',
 ];
 
@@ -92,51 +95,35 @@ function rowLabel(id: MenuRowId): string {
   return row.actions.length > 1 ? `${row.label} ›` : row.label;
 }
 
-/** An entry's name: its hotkey dim, then the label; the destructive ones say so. */
+/** An entry's name: the label, with the open endpoint in yellow. */
 function entryName(id: MenuRowId): string {
-  const destructive = id === 'db-reset' || id === 'teardown' ? `  ${pc.red('destructive')}` : '';
-  return `${pc.dim(menuRow(id).hotkey)}  ${rowLabel(id)}${destructive}`.replace('(OPEN)', pc.yellow('(OPEN)'));
+  return rowLabel(id).replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
-/** The hotkeys of the rows a state lists and can run, by letter: the two DB access rows share theirs, as one of them is listed. */
-export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
-  return Object.fromEntries(
-    visibleRows(state)
-      .filter((id) => !rowDisabledReason(id, state))
-      .map((id) => [menuRow(id).hotkey, id]),
-  );
-}
-
-/** The main menu: the recommended step first when there is one, then every row under its group heading, then the way out. */
+/** The main menu: the recommended step and a blank line first when there is one, then every row, then the way out. */
 export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> {
-  const rows = visibleRows(state);
   const items: Array<MenuItem<MainMenuValue>> = [];
   if (state.upNext) {
-    items.push({ group: '' });
     items.push({
-      name: `${pc.cyan('▶')}  Up next: ${state.upNext.description}`,
+      name: `${pc.cyan('▶')}  ${state.upNext.description}`,
       value: UP_NEXT,
-      description: actionDescription(state.upNext.action),
+      description: OPERATOR_ACTIONS[state.upNext.action].description,
+    });
+    items.push({ group: '' });
+  }
+  for (const id of visibleRows(state)) {
+    const row = menuRow(id);
+    const reason = rowDisabledReason(id, state);
+    const live = state.liveEndpoints ?? [];
+    const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
+    items.push({
+      name: reason ? rowLabel(id) : entryName(id),
+      value: id,
+      description: stray ? `Public endpoint ${live.join(', ')} is open, though no exposure is configured: close it.` : row.description,
+      ...(reason ? { disabled: `(${reason})` } : {}),
     });
   }
-  for (const group of Object.keys(MENU_GROUPS) as MenuGroup[]) {
-    items.push({ group: MENU_GROUPS[group] });
-    for (const id of rows.filter((rowId) => menuRow(rowId).group === group)) {
-      const row = menuRow(id);
-      const reason = rowDisabledReason(id, state);
-      const live = state.liveEndpoints ?? [];
-      const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
-      items.push({
-        name: reason ? rowLabel(id) : entryName(id),
-        value: id,
-        description: stray
-          ? `The instance serves public endpoint ${live.join(', ')} although no exposure is configured: delete it.`
-          : row.description,
-        ...(reason ? { disabled: `(${reason})` } : {}),
-      });
-    }
-  }
-  items.push({ group: '' }, { name: `${pc.dim('q')}  Quit`, value: QUIT, description: 'Leave the CLI.' });
+  items.push(RULE, { name: 'Quit', value: QUIT, description: 'Leave the CLI.' });
   return items;
 }
 
@@ -145,25 +132,26 @@ function pickName(action: OperatorActionId, width: number, disabled: boolean): s
   return disabled ? actionLabel(action) : `${actionLabel(action).padEnd(width)}  ${pc.dim(actionHint(action))}`;
 }
 
-/** The pick a row with several actions opens: its actions, then the way back. */
-export function pickItems(id: MenuRowId, state: MenuState): Array<MenuChoice<OperatorActionId | typeof BACK>> {
-  const actions = menuRow(id).actions;
-  const width = Math.max(...actions.map((action) => actionLabel(action).length));
-  const choices = actions.map((action): MenuChoice<OperatorActionId> => {
-    const reason = disabledReason(action, state);
-    return {
-      name: pickName(action, width, Boolean(reason)),
-      value: action,
-      description: actionDescription(action),
-      ...(reason ? { disabled: `(${reason})` } : {}),
-    };
-  });
-  return [...choices, { name: '← Back', value: BACK, description: 'Return to the menu.' }];
+/** The headings a row's pick lists its actions under: the More pick's sections, one section without a heading for any other row. */
+function pickSections(id: MenuRowId): Array<[heading: string, actions: readonly OperatorActionId[]]> {
+  return id === 'more' ? Object.entries(MORE_SECTIONS) : [['', menuRow(id).actions]];
 }
 
-/** The line that says which environment this run targets. Production is red, so a run against it never looks like a staging run. */
-export function formatStackLine(stack: { slug: string; environment: Environment; state: StackState }): string {
-  const mode = stack.environment === 'production' ? pc.bold(pc.red(stack.environment)) : pc.cyan(stack.environment);
-  const state = stack.state === 'bootstrapped' ? '' : stack.state === 'fresh' ? pc.dim(' · new') : pc.dim(' · setup not finished');
-  return `${pc.cyan('⧈')} ${pc.bold(stack.slug)} · ${mode}${state}`;
+/** The pick a row with several actions opens: its actions, under a heading after a blank line where the row has sections, then the way back. */
+export function pickItems(id: MenuRowId, state: MenuState): Array<MenuItem<OperatorActionId | typeof BACK>> {
+  const width = Math.max(...menuRow(id).actions.map((action) => actionLabel(action).length));
+  const items: Array<MenuItem<OperatorActionId | typeof BACK>> = [];
+  for (const [heading, actions] of pickSections(id)) {
+    if (heading) items.push({ group: '' }, { group: heading });
+    for (const action of actions) {
+      const reason = disabledReason(action, state);
+      items.push({
+        name: pickName(action, width, Boolean(reason)),
+        value: action,
+        description: OPERATOR_ACTIONS[action].description,
+        ...(reason ? { disabled: `(${reason})` } : {}),
+      });
+    }
+  }
+  return [...items, RULE, { name: '← Back', value: BACK, description: 'Return to the menu.' }];
 }

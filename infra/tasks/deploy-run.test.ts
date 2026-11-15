@@ -332,7 +332,7 @@ describe('deployFailureHint', () => {
     const switchError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
     expect(deployFailureHint(switchError, 'staging')).toMatchObject({
       description: expect.stringContaining('"Switch machines"'),
-      command: 'pnpm infra runs --mode staging',
+      command: 'pnpm infra logs --mode staging',
     });
   });
 });
