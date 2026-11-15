@@ -8,6 +8,7 @@ import type { ItemData } from '~/query/basic/types';
 import { productTypeOf } from '~/query/cache-migration';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
 import { deletedIdsOf } from '~/query/offline/mutation-variables';
+import { excludingRangeReads } from '~/query/realtime/fetch-prioritizer';
 import { syncStore } from '~/query/realtime/sync-store';
 import type { PageParam, QueryData } from '~/query/types';
 
@@ -168,7 +169,10 @@ async function readAgainstDeltas(
   try {
     const startCursor = scopeCursor(entityType, scope);
     const data = await read();
-    const rows = await readOverlapped(entityType, scope, startCursor, isCurrent).catch((error) => {
+    if (scopeCursor(entityType, scope) <= startCursor) return data;
+    // The chase holds the scope's range reads: of those, only one already in flight moves the cursor on, and a second pass reads to it.
+    const chase = () => readOverlapped(entityType, scope, startCursor, isCurrent);
+    const rows = await excludingRangeReads(entityType, scope.organizationId, chase).catch((error) => {
       // A list with no data takes the read and a mark, the engine's answer to a range it cannot read.
       if (client.getQueryData(queryKey) !== undefined) throw error;
       markOnceCached(client, queryHash, data);

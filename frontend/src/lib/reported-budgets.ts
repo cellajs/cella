@@ -19,8 +19,21 @@ const parseMembers = (field: string | null) => {
   return members;
 };
 
-/** Keeps the budgets a response reports, in the `RateLimit` and `RateLimit-Policy` fields of the IETF httpapi draft. */
-export const recordReportedBudgets = (headers: Headers) => {
+/** The share of the read budget the warm-up and the viewed scopes leave to what the user opens. */
+export const userReadShare = 0.3;
+
+/**
+ * Keeps the budgets a response reports, in the `RateLimit` and `RateLimit-Policy` fields of the IETF httpapi draft. A
+ * refusal reports none. A refused GET books the read budget, which every GET without a limiter of its own spends, as
+ * spent until its `Retry-After`.
+ */
+export const recordReportedBudgets = (method: string, response: Response) => {
+  const { headers } = response;
+  if (response.status === 429 && method === 'GET') {
+    const resetsAt = Date.now() + (Number(headers.get('retry-after')) || 1) * 1000;
+    budgets.set('read', { quota: budgets.get('read')?.quota ?? 0, remaining: 0, resetsAt });
+    return;
+  }
   const left = headers.get('ratelimit');
   if (!left) return;
   const policies = parseMembers(headers.get('ratelimit-policy'));

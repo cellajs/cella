@@ -66,7 +66,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   if (!gatewayStatuses.has(response.status)) reportReachable();
   // Below 500 the API itself answered, so the service is back; a 5xx leaves a raised alert as it is.
   if (response.status < 500) alertStore.getState().setDownAlert(false);
-  recordReportedBudgets(response.headers);
+  recordReportedBudgets(request.method, response);
 
   if (response.ok) return response;
   throw await failedResponseError(response);

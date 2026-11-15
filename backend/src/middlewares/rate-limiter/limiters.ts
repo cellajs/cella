@@ -197,11 +197,12 @@ export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'],
 
 /**
  * The pace of every read: `createXRoute` mounts it on each GET route that declares no limiter of its own, so one
- * client cannot hold the event loop with reads. It is also the backpressure for the read fan-out one SSE notification
- * triggers; a 429 rides the client's invalidate-and-backoff. A pace, in a short window: a client catching up reads once
- * per product type and organization, and one watching a busy scope reads at each notification, so a spent key has to
- * be back within minutes. Counted in process: a transaction on each read would cost as much as the read. Reported, so
- * the client's background warm-up stops short of the budget and leaves it to what the user opens.
+ * client cannot hold the event loop with reads. It is also the backpressure for the reads change frames trigger: a
+ * range read it refuses keeps its range and waits for `Retry-After`. A pace, in a short window: a client catching up
+ * reads once per product type and organization, and one watching a busy scope reads one range at a time while changes
+ * keep coming. A spent key has to be back within minutes. Counted in process: a transaction on each read would cost as
+ * much as the read. Reported: below the user's share of it, the client's background warm-up waits and its viewed
+ * scopes read on the background tier, which leaves the rest to what the user opens.
  */
 export const readLimiter = rateLimiter('limit', 'read', [['actorId', 'ip']], {
   limits: { points: 1000, duration: 60 * 5 },

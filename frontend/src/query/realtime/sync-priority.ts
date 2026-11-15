@@ -1,5 +1,6 @@
 import type { ListMyMembershipsResponse } from 'sdk';
 import { hierarchy } from 'shared';
+import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
 import { meKeys } from '~/modules/me/query';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { queryClient } from '~/query/query-client';
@@ -70,9 +71,12 @@ function isMutedHiddenOrArchived(organizationId: string, channelId: string | nul
   return hierarchy.channelTypes.some((type) => type !== 'organization' && findInCache<{ id: string; archived: boolean }>(type, targetId)?.archived);
 }
 
-/** The one sync priority: viewed scopes live, muted, hidden and archived scopes on open, the others in the background. */
+/**
+ * The one sync priority: viewed scopes live, muted, hidden and archived scopes on open, the others in the background. A
+ * viewed scope reads in the background too while its tab is hidden or the read budget is down to the user's share.
+ */
 export function getSyncTier(organizationId: string, channelId: string | null): SyncTier {
-  if (isViewingChannel(organizationId, channelId)) return tierViewing;
+  if (isViewingChannel(organizationId, channelId)) return document.hidden || msUntilBudget('read', userReadShare) > 0 ? tierBackground : tierViewing;
   if (isMutedHiddenOrArchived(organizationId, channelId)) return tierOnOpen;
   return tierBackground;
 }

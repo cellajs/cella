@@ -1,6 +1,8 @@
 import '~/query/tests/query-client-env';
 import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '~/lib/api';
+import { recordReportedBudgets } from '~/lib/reported-budgets';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -26,7 +28,8 @@ const resolveChannelPath = vi.fn((_channelId: string): string | null => null);
 vi.mock('~/query/realtime/view-declaration', () => ({ resolveChannelPath: (channelId: string) => resolveChannelPath(channelId) }));
 
 // Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
-vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
+const documentListeners = new Map<string, () => void>();
+vi.stubGlobal('document', { addEventListener: (type: string, listener: () => void) => documentListeners.set(type, listener), hidden: false });
 
 const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
@@ -37,6 +40,11 @@ const viewing = { min: 0, max: 0 };
 const onOpen = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
+const cursor = () => syncStore.getState().getOrgSeq('org-1', 'attachment');
+
+/** What the API client books when the read budget refuses a GET. */
+const refuseReads = (seconds: number) =>
+  recordReportedBudgets('GET', new Response(null, { status: 429, headers: { 'Retry-After': String(seconds) } }));
 
 describe('fetch-prioritizer', () => {
   beforeEach(() => {
@@ -51,6 +59,8 @@ describe('fetch-prioritizer', () => {
   afterEach(() => {
     resetFetchPrioritizer();
     vi.clearAllMocks();
+    // The read budget is module state: the next test starts with it unspent.
+    recordReportedBudgets('GET', new Response(null, { headers: { RateLimit: '"read";r=1000;t=300', 'RateLimit-Policy': '"read";q=1000;w=300' } }));
     vi.useRealTimers();
   });
 
@@ -100,6 +110,79 @@ describe('fetch-prioritizer', () => {
       expect(invalidateUnseenCounts).toHaveBeenCalledOnce();
     },
   );
+
+  it('holds every range read while the read budget is spent, keeps the cursor and marks no list, then reads the held ranges once and refetches the list on screen it refused', async () => {
+    getSyncTier.mockReturnValue(viewing);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 3);
+    const listRead = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError({ status: 429 }))
+      .mockResolvedValue({ results: [], totalSize: 0 });
+    const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1'], queryFn: listRead, retry: false });
+    const unsubscribe = observer.subscribe(() => {});
+
+    // Three refusals of 20 s each: a refusal is no failed attempt, so none moves the cursor or marks a list.
+    fetchRangeAndPatch.mockImplementation(async () => {
+      if (fetchRangeAndPatch.mock.calls.length > 3) return { status: 'ok', items: [], reachedSeq: 7 };
+      refuseReads(20);
+      return { status: 'limited', items: [], reachedSeq: 0 };
+    });
+    enqueueRange({ ...base, afterSeq: 3, untilSeq: 5 });
+    await vi.advanceTimersByTimeAsync(0);
+    enqueueRange({ ...base, afterSeq: 5, untilSeq: 7 });
+    await vi.advanceTimersByTimeAsync(19_999);
+
+    expect(fetchRangeAndPatch).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(40_000);
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(3);
+    expect(cursor()).toBe(3);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(4);
+    expect(fetchRangeAndPatch.mock.calls[3][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
+    expect(cursor()).toBe(7);
+    expect(invalidateEntityListForOrg).not.toHaveBeenCalled();
+    expect(listRead).toHaveBeenCalledTimes(2);
+
+    unsubscribe();
+    queryClient.clear();
+  });
+
+  it('keeps one range read in flight per product type and organization: changes announced during it join one read from the cursor it moved to', async () => {
+    getSyncTier.mockReturnValue(viewing);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 3);
+    fetchRangeAndPatch.mockImplementation(async (_type, _organizationId, _tenantId, range: { untilSeq: number }) => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return { status: 'ok', items: [], reachedSeq: range.untilSeq };
+    });
+
+    enqueueRange({ ...base, afterSeq: 3, untilSeq: 4 });
+    await vi.advanceTimersByTimeAsync(30);
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 5 });
+    await vi.advanceTimersByTimeAsync(30);
+    enqueueRange({ ...base, afterSeq: 5, untilSeq: 6 });
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(fetchRangeAndPatch.mock.calls.map((call) => call[3])).toEqual([
+      { afterSeq: 3, untilSeq: 4 },
+      { afterSeq: 4, untilSeq: 6 },
+    ]);
+    expect(cursor()).toBe(6);
+  });
+
+  it('reads a viewed scope of a hidden tab on the background tier, and at once when the tab is shown', async () => {
+    // A hidden tab gives its viewed scopes the background tier.
+    enqueueRange({ ...base, afterSeq: 3, untilSeq: 5 });
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(fetchRangeAndPatch).not.toHaveBeenCalled();
+
+    getSyncTier.mockReturnValue(viewing);
+    documentListeners.get('visibilitychange')?.();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetchRangeAndPatch).toHaveBeenCalledOnce();
+  });
 
   it('publishes fetched rows once per merged flush (no endpoint recount)', async () => {
     const syncedRows = vi.fn();

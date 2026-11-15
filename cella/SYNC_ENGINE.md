@@ -145,9 +145,11 @@ No frame carries an event id. A reconnecting client resumes through catchup from
 
 An announced range is queued, not fetched at once. Its channel's tier decides when:
 
-- **Viewed:** at once.
+- **Viewed:** at once, and on the background tier while the tab is hidden or the read budget is under the user's share.
 - **Muted or hidden:** when it is opened.
 - **Any other:** in the background, spread over a window that grows with the online audience.
+
+One range read per product type and organization runs at a time, and changes announced meanwhile join the next one.
 
 A new generation refetches through the same tiers: every synced list is marked, the viewed organization's lists read in the client's slot of that window once the tab is visible, and the rest when opened or by the background fill.
 
@@ -235,6 +237,7 @@ The client's own catchup repairs missed frames. Every client refetches everythin
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
 | A bulk transaction: a migration's writes, or one transaction past the worker's size limit | Every client refetches once, the lists on screen first | The worker discards it and rebuilds the books at its commit | Its activities and notifications |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
+| A user's read budget is spent: a busy board, a large import or replay, several tabs | Live updates pause until the budget's wait ends. A page the user opens meanwhile answers with a warning and the wait | The held ranges read once the wait ends, and the refused lists on screen refetch | Nothing |
 
 A rebuild starts a new sync generation. The API then ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
 
