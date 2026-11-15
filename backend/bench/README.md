@@ -47,7 +47,7 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 | `edit-propagation-busy` | The same while other writers edit at a steady rate | As `edit-propagation` |
 | `reconnect-catchup` | What a deploy costs: every stream ends at once and every client catches up together | The clients missed the edits while away, all caught up, rows equal the database's |
 | `offline-replay` | How a queue of offline edits merges, and what draining it one write at a time costs | Last writer wins on every row, rows equal the database's |
-| `access-revocation` | Whether a removed member stops hearing and reading the organization while others write | No frame or read after the removal, the removal heard, the bystander still hears |
+| `access-revocation` | Whether a removed member stops hearing and reading the organization while others write | No frame or read after the removal, none with a range key past its lifetime, the removal heard, the bystander still hears |
 | `full-list-read` | What a fresh client pays to read a whole large list | Every row read, rows equal the database's |
 
 ## Writing a scenario

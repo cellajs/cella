@@ -88,6 +88,7 @@ export function createSyncClient(options: SyncClientOptions) {
   let spreadWindow: number | null = null;
   /** The `rangeKey` of the newest frame, which a range read sends so readers of the same rows share one answer. */
   let rangeKey: string | undefined;
+  let lastRangeUrl: string | undefined;
   let reading = false;
   let timer: NodeJS.Timeout | null = null;
   let stream: AbortController | null = null;
@@ -108,10 +109,12 @@ export function createSyncClient(options: SyncClientOptions) {
     let from = afterSeq;
     try {
       while (from < untilSeq) {
-        const res = await client.http.get(`${listPath}?afterSeq=${from}&untilSeq=${untilSeq}&maxPageSize=${chunkSize}`, {
+        const url = `${listPath}?afterSeq=${from}&untilSeq=${untilSeq}&maxPageSize=${chunkSize}`;
+        const res = await client.http.get(url, {
           headers: SYNC_RANGE_KEY && rangeKey ? { ...headers, 'x-range-key': rangeKey } : headers,
           name: `${listName} (range)`,
         });
+        if (res.ok) lastRangeUrl = url;
         if (res.headers['x-range-answer'] === 'kept') metrics.counter('sync.kept_answers');
         // A spent read budget is backpressure, as for the frontend: wait the server's `Retry-After`, then read on.
         if (res.status === 429) {
@@ -298,6 +301,13 @@ export function createSyncClient(options: SyncClientOptions) {
     /** Whether a read is queued or running. */
     get busy() {
       return reading || timer !== null;
+    },
+    /** The key of the newest frame heard, and the URL of the last range read that was answered. */
+    get rangeKey() {
+      return rangeKey;
+    },
+    get lastRangeUrl() {
+      return lastRangeUrl;
     },
     connect,
     disconnect,

@@ -30,7 +30,7 @@ const envSchema = z.object({
   SSE_HOLD_MS: z.coerce.number().default(25_000),
   SSE_SYNC_MODE: z.enum(['immediate', 'lazy']).default('lazy'),
   RANGE_KEY: z.enum(['on', 'off']).default('on'),
-  PROPAGATION_EDITS: z.coerce.number().int().positive().default(50),
+  PROPAGATION_EDITS: z.coerce.number().int().positive().default(200),
   PROPAGATION_WARMUPS: z.coerce.number().int().min(0).default(5),
   // Background edits per second of `edit-propagation-busy`, across its writers.
   PROPAGATION_LOAD: z.coerce.number().positive().default(50),

@@ -17,6 +17,7 @@ export const REVOCATION_COUNTERS = [
   'bench.rows_written',
   'sync.frames_after_revoke',
   'sync.reads_after_revoke',
+  'sync.kept_in_tolerance',
   'sync.bystander_frames',
   'sync.revoke_unheard',
 ] as const;
@@ -33,6 +34,8 @@ const writerUser = TOTAL_USERS - 4;
 const editEveryMs = 100;
 const beforeMs = 1_000;
 const afterMs = 3_000;
+/** A range key answers for 10 s (`rangeKeyLifetimeMs` in `range-answers.ts`): past this the target's key is dead. */
+const keyDeadAfterMs = 11_000;
 
 /** Puts the target's membership back as the seed made it. Later scenarios sign in as the user too. */
 async function restoreMembership(): Promise<void> {
@@ -50,6 +53,9 @@ async function restoreMembership(): Promise<void> {
  * A target and a bystander hold streams while a writer edits; then a third member removes the target. Right after the
  * removal answers, the organization's frontier is read: any change frame the target hears that names a later row
  * leaked, and so does any read of the list the target still gets answered. The bystander must keep hearing.
+ *
+ * The target also replays the bystander's last range read with the range key it heard before its removal. A kept
+ * answer may serve it while the key lives, which is counted; once the key's lifetime passed it must be refused.
  */
 export async function runRevocation(vu: RevocationVu, product: BenchProduct): Promise<void> {
   let removedAt: number | null = null;
@@ -112,12 +118,22 @@ export async function runRevocation(vu: RevocationVu, product: BenchProduct): Pr
     });
     if (!res.ok) throw new Error(`removing the target answered ${res.status}`);
     removedAt = calledAt;
+    const staleKey = target.rangeKey;
+    const probe = vu.client().http;
+    const keyedReplay = () => {
+      const url = bystander.lastRangeUrl;
+      if (!url || !staleKey) return null;
+      return probe.get(url, {
+        headers: { cookie: benchCookie(targetUser), 'x-range-key': staleKey },
+        name: `GET ${product.listPath('')} (revoked, keyed)`,
+      });
+    };
     const answer = await revoker.catchup();
     if (answer.frontier === null) throw new Error(`the revoker's catchup answered ${answer.status}`);
     frontier = answer.frontier;
 
     await vu.think(vu.short ? 500 : afterMs);
-    const read = await vu.client().http.get(`${product.listPath(ORG_PATH)}?afterSeq=0&untilSeq=${frontier}&maxPageSize=1`, {
+    const read = await probe.get(`${product.listPath(ORG_PATH)}?afterSeq=0&untilSeq=${frontier}&maxPageSize=1`, {
       headers: { cookie: benchCookie(targetUser) },
       name: `GET ${product.listPath('')} (revoked)`,
     });
@@ -125,6 +141,10 @@ export async function runRevocation(vu: RevocationVu, product: BenchProduct): Pr
     if ((await target.catchup()).status === 'ok') vu.counter('sync.reads_after_revoke');
     if (signalAt === null) vu.counter('sync.revoke_unheard');
     else vu.histogram('sync.revoke_signal_ms', signalAt - calledAt);
+
+    if ((await keyedReplay())?.headers['x-range-answer'] === 'kept') vu.counter('sync.kept_in_tolerance');
+    await vu.think(Math.max(0, keyDeadAfterMs - (performance.now() - calledAt)));
+    if ((await keyedReplay())?.ok) vu.counter('sync.reads_after_revoke');
   } finally {
     stop.abort();
     await writer;
