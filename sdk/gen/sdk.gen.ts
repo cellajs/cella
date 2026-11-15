@@ -250,6 +250,12 @@ import type {
   PresignPublicAttachmentUrlsData,
   PresignPublicAttachmentUrlsErrors,
   PresignPublicAttachmentUrlsResponses,
+  PreviewChannelLinkData,
+  PreviewChannelLinkErrors,
+  PreviewChannelLinkResponses,
+  PreviewProductLinkData,
+  PreviewProductLinkErrors,
+  PreviewProductLinkResponses,
   PublishOrganizationData,
   PublishOrganizationErrors,
   PublishOrganizationResponses,
@@ -1775,6 +1781,47 @@ export const catchUpMyStream = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Preview channel link
+ *
+ * Serves the link preview of the channel a code names and sends a browser on to it: the target of its share link.
+ *
+ * **GET /links/{code}** ·· [previewChannelLink](https://www.cellajs.com/docs/operations?operationTag=links#tag/links/GET/links/{code}) ·· _links · cella_
+ *
+ * @param {previewChannelLinkData} options
+ * @param {string} options.path.code - `string`
+ * @returns Possible status codes: 200, 400, 404, 429
+ */
+export const previewChannelLink = <ThrowOnError extends boolean = true>(
+  options: Options<PreviewChannelLinkData, ThrowOnError>,
+): RequestResult<PreviewChannelLinkResponses, PreviewChannelLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<PreviewChannelLinkResponses, PreviewChannelLinkErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/links/{code}',
+    ...options,
+  });
+
+/**
+ * Preview product link
+ *
+ * Serves the link preview of a product named by its number in the channel a code names, such as `t42`, and sends a browser on to it.
+ *
+ * **GET /links/{code}/{key}** ·· [previewProductLink](https://www.cellajs.com/docs/operations?operationTag=links#tag/links/GET/links/{code}/{key}) ·· _links · cella_
+ *
+ * @param {previewProductLinkData} options
+ * @param {string} options.path.code - `string`
+ * @param {string} options.path.key - `string`
+ * @returns Possible status codes: 200, 400, 404, 429
+ */
+export const previewProductLink = <ThrowOnError extends boolean = true>(
+  options: Options<PreviewProductLinkData, ThrowOnError>,
+): RequestResult<PreviewProductLinkResponses, PreviewProductLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<PreviewProductLinkResponses, PreviewProductLinkErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/links/{code}/{key}',
+    ...options,
   });
 
 /**

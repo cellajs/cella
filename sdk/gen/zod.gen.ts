@@ -521,6 +521,7 @@ export const zOrganization = z.object({
     ])
     .nullable(),
   slug: z.string().max(255),
+  code: z.string().max(7),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
   publishedAt: z.string().nullable(),
@@ -1664,6 +1665,24 @@ export const zCatchUpMyStreamResponse = z.object({
     }),
   ),
   generation: z.int(),
+});
+
+export const zPreviewChannelLinkPath = z.object({
+  code: z
+    .string()
+    .length(7)
+    .regex(/^[0-9][a-z0-9]{6}$/),
+});
+
+export const zPreviewProductLinkPath = z.object({
+  code: z
+    .string()
+    .length(7)
+    .regex(/^[0-9][a-z0-9]{6}$/),
+  key: z
+    .string()
+    .max(11)
+    .regex(/^[a-z][1-9][0-9]*$/),
 });
 
 export const zGetMcpProtectedResourceMetadataPath = z.object({

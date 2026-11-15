@@ -1,0 +1,255 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "aae4a745-326c-4380-8142-44a80fb1d76b",
+  "prevIds": [
+    "91786d69-08d5-470b-9a58-3c03b23bcd11"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "channel_codes"
+      ],
+      "writes": [
+        "s|tbl|public.channel_codes",
+        "n|tbl|public.channel_codes",
+        "e|tbl|public.channel_codes",
+        "n|rel|public.channel_codes",
+        "n|type|public.channel_codes",
+        "n|rel|public.channel_codes_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "code"
+      ],
+      "writes": [
+        "s|col|public.organizations.code",
+        "n|col|public.organizations.code",
+        "e|col|public.organizations.code"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "channel_codes",
+        "channel_codes_channel_id_unique"
+      ],
+      "writes": [
+        "s|idx|public.channel_codes_channel_id_unique",
+        "n|idx|public.channel_codes_channel_id_unique",
+        "e|idx|public.channel_codes_channel_id_unique",
+        "n|rel|public.channel_codes_channel_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.channel_codes",
+        "n|sch|public",
+        "n|col|public.channel_codes.channel_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "channel_codes"
+      ],
+      "writes": [
+        "s|fk|public.channel_codes.channel_codes_tenant_id_tenants_id_fkey",
+        "n|fk|public.channel_codes.channel_codes_tenant_id_tenants_id_fkey",
+        "e|fk|public.channel_codes.channel_codes_tenant_id_tenants_id_fkey",
+        "n|con|public.channel_codes.channel_codes_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.channel_codes",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.channel_codes.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "channel_codes",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "code",
+        "type": "varchar(7)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "channel_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organizations",
+        "name": "code",
+        "type": "varchar(7)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "''",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "channel_codes_channel_id_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "channel_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "channel_codes_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "channel_codes",
+        "name": "channel_codes_pkey",
+        "columns": [
+          "code"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

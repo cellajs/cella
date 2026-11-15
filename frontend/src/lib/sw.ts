@@ -3,6 +3,7 @@ import type { ListNotificationsResponse } from 'sdk';
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 import type { ConfigMode } from 'shared';
 import type { NotificationPushPayload } from 'shared/push-payload';
+import { shareLinkPath } from 'shared/share-link';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
 import { canonicalOriginUrl } from '~/utils/canonical-origin';
 
@@ -13,9 +14,14 @@ declare const __FRONTEND_URL__: string;
 declare const __APP_MODE__: ConfigMode;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network,
-// and text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell.
+// text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell, and share links,
+// which the server redirects to their preview.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
-const navigationDenylist = [/\.(?:txt|md|json)$/i, ...(apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : [])];
+const navigationDenylist = [
+  /\.(?:txt|md|json)$/i,
+  new RegExp(shareLinkPath),
+  ...(apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : []),
+];
 
 /** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
 const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/static/zod.gen.ts']);
