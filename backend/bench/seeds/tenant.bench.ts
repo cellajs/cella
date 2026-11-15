@@ -1,6 +1,21 @@
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
-import { registerBenchSeed } from '../registry';
+import { type BenchSeedContext, registerBenchSeed } from '../registry';
 import { TENANT_ID } from './ids';
+
+/** Upserts a bench tenant with the full current restrictions shape, so the tenants list validates. */
+export async function upsertBenchTenant(pool: BenchSeedContext['pool'], id: string, name: string, now: string): Promise<void> {
+  // attachment 0 means unlimited: the seeded attachments exceed the default org quota of 100 and would 429 every create.
+  const defaults = defaultRestrictions();
+  const restrictions = JSON.stringify({
+    ...defaults,
+    quotas: { ...defaults.quotas, attachment: 0 },
+    rateLimits: { apiPointsPerHour: 10_000_000 },
+  });
+  await pool.query(
+    'INSERT INTO tenants (id, name, restrictions, created_at) VALUES ($1, $2, $3::jsonb, $4) ON CONFLICT (id) DO UPDATE SET restrictions = $3::jsonb',
+    [id, name, restrictions, now],
+  );
+}
 
 registerBenchSeed({
   kind: 'custom',
@@ -9,20 +24,7 @@ registerBenchSeed({
   cleanup: async ({ client }) => {
     await client.query('DELETE FROM tenants WHERE id = $1', [TENANT_ID]);
   },
-  seed: async ({ now, pool }) => {
-    // The full current shape, so the tenants list validates. attachment 0 means unlimited: the seeded 500 attachments
-    // exceed the default org quota of 100 and would 429 every create.
-    const defaults = defaultRestrictions();
-    const restrictions = JSON.stringify({
-      ...defaults,
-      quotas: { ...defaults.quotas, attachment: 0 },
-      rateLimits: { apiPointsPerHour: 10_000_000 },
-    });
-    await pool.query(
-      'INSERT INTO tenants (id, name, restrictions, created_at) VALUES ($1, $2, $3::jsonb, $4) ON CONFLICT (id) DO UPDATE SET restrictions = $3::jsonb',
-      [TENANT_ID, 'Load Test Tenant', restrictions, now],
-    );
-  },
+  seed: ({ now, pool }) => upsertBenchTenant(pool, TENANT_ID, 'Load Test Tenant', now),
 });
 
 registerBenchSeed({
