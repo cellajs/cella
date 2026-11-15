@@ -355,6 +355,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
     : undefined;
   let identityKey: OwnerKey | undefined;
   let changed = false;
+  const pick = Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
 
   try {
     ({ changed } = await secretsMenu({
@@ -368,13 +369,15 @@ export async function runSecrets(context: InfraContext): Promise<void> {
       region: appConfig.s3.region,
       slug: appConfig.slug,
       mode: context.environment,
-      pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
+      pick,
       notice,
       prompts: { select: menuSelect, password: maskedSecret, confirm, input },
     }));
   } finally {
     await identityKey?.release();
   }
+  // Esc on a table that took no key leaves the action: the menu comes back at once.
+  if (pick && !changed && !operator && !identityKey) throw new PromptBack();
   if (identityKey) printRevokeReminder();
   const restarted = operator
     ? await startBlockedTarget(context, operator).catch((error) => {

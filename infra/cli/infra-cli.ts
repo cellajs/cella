@@ -12,7 +12,7 @@ import { crossMark, pc, printFailureHint, warningMark, withSpinner } from '../li
 import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
-import { runAction } from './actions';
+import { type ActionOutcome, runAction } from './actions';
 import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
 import { checkoutVersion, formatHeader } from './header';
@@ -20,6 +20,7 @@ import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
 import { BACK, disabledReason, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
+import { LEAVE } from './prompts/what-now';
 import { startMenuSession } from './session';
 import type { InfraContext } from './shared';
 import { autoAcceptDefaults } from './shared';
@@ -142,15 +143,15 @@ function printStackNotices(context: InfraContext): void {
 }
 
 /**
- * The home screen: one round of reads under a spinner, then the lines. Resolves to what it read, for the menu. A stack not set up yet gets
- * the launch checklist.
+ * The home screen: one round of reads under a spinner, then the lines, or the lines of `read` after an action that changed nothing.
+ * Resolves to what it read, for the menu. A stack not set up yet gets the launch checklist.
  */
-async function printHome(context: InfraContext): Promise<HomeFacts | undefined> {
+async function printHome(context: InfraContext, read?: HomeFacts): Promise<HomeFacts | undefined> {
   if (context.state !== 'bootstrapped') {
     await printLaunchChecklist(context);
     return undefined;
   }
-  const home = await withSpinner(`Checking ${context.environment}`, () => collectHome(context));
+  const home = read ?? (await withSpinner(`Checking ${context.environment}`, () => collectHome(context)));
   for (const line of formatHome(home)) console.info(line);
   console.info('');
   return home;
@@ -272,8 +273,8 @@ if (args.action) {
 // stays in the CLI: a failure offers the step again, and a setup that succeeds opens the menu.
 if (context.state === 'fresh') {
   if (!pulumiReady('resume')) process.exit(1);
-  const { code } = await runAction('resume', context, { firstSetup: true });
-  if (code !== 0 || args.once || !process.stdin.isTTY) process.exit(code);
+  const { code, quit } = await runAction('resume', context, { firstSetup: true, ...(args.once ? { close: async () => LEAVE } : {}) });
+  if (code !== 0 || quit || args.once || !process.stdin.isTTY) process.exit(code);
   context = await loadContext(environment);
   if (context.state === 'fresh') process.exit(0);
   printStackNotices(context);
@@ -296,15 +297,17 @@ while (true) {
     console.error(`${crossMark} "${actionLabel(action)}" cannot run now: ${reason}.`);
     continue;
   }
-  const outcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
+  const outcome: ActionOutcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
   if (args.once) process.exit(outcome.code);
+  if (outcome.quit) break;
   next = outcome.next;
   console.info('');
-  if (READ_ONLY.includes(action) || outcome.back) continue;
-
-  // The action may have changed the stack file, the env file or the live stack: read all three again for the next round.
-  context = await loadContext(environment);
+  // An action may have changed the stack file, the env file or the live stack: all three are read again for the next round.
+  const changed = !READ_ONLY.includes(action) && !outcome.back;
+  if (changed) context = await loadContext(environment);
+  if (next) continue;
+  // The menu comes back under its header and home: a short terminal shows the action is over.
   printStackNotices(context);
-  if (!next) home = await printHome(context);
+  home = await printHome(context, changed ? undefined : home);
 }
 process.exit(0);

@@ -31,6 +31,7 @@ import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { PromptBack } from '../prompts/back';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, endAction, type InfraContext, pointTo } from '../shared';
 
@@ -192,7 +193,7 @@ export async function showRuns(
       default: newest.newest.run,
       escape: 'back',
     });
-    if (picked === ESCAPED) return;
+    if (picked === ESCAPED) throw new PromptBack();
     chosen = readings.find((reading) => reading.newest.run === picked) ?? newest;
   }
   print('');

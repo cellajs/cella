@@ -28,12 +28,15 @@ export function keptKeyNote(): string | undefined {
   return rememberedOperatorKey() ? 'Your operator key is kept for this run.' : undefined;
 }
 
+/** The value of the row that quits the CLI from the frame after an action. */
+export const QUIT = 'quit';
+
 /**
  * Ask what to do after a failure: `? What now?` over letter rows, with `note` dim under the highlighted row's line. Esc and Ctrl-C pick the
- * last row, which leaves; without a terminal nobody can answer, so it is picked at once.
+ * row that leaves, else the last one; without a terminal nobody can answer, so it is picked at once.
  */
 export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, note?: string): Promise<T> {
-  const leave = rows.at(-1);
+  const leave = rows.find((row) => row.value === LEAVE) ?? rows.at(-1);
   if (!leave) throw new Error('a failure needs a way out');
   if (!process.stdin.isTTY) return leave.value;
   const width = Math.max(...rows.map((row) => row.label.length));
@@ -51,4 +54,15 @@ export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, 
     throw error;
   });
   return picked === ESCAPED ? leave.value : picked;
+}
+
+/**
+ * The frame under an action that ended by itself: its output stays on screen until the operator goes on. Back to the menu is the first row,
+ * on Enter, Esc and Ctrl-C alike; a first setup opens the menu for the first time.
+ */
+export async function afterAction(firstSetup = false): Promise<typeof LEAVE | typeof QUIT> {
+  const menu: WayOut<typeof LEAVE> = firstSetup
+    ? { key: 'm', value: LEAVE, label: 'Open the menu', description: 'Every action of the CLI, under the home screen.' }
+    : leaveRow();
+  return whatNow<typeof LEAVE | typeof QUIT>([menu, { key: 'q', value: QUIT, label: 'Quit', description: 'Leave the CLI.' }]);
 }
