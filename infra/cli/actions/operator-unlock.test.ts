@@ -93,7 +93,7 @@ describe('refusalLines', () => {
   it('must not leave a 403 unexplained: a key that reads no IAM is neither the operator application nor a member, and the Owner makes both', () => {
     const lines = refusalLines({ status: 403, detail: 'x', names });
     expect(lines[0]).toContain("no key of 'cella-operator' and none of a member of 'cella-operators'");
-    expect(lines[1]).toContain(menuPath('operator-key'));
+    expect(lines[1]).toContain(menuPath('operators'));
   });
 
   it('passes on what Scaleway said for any other failure', () => {
@@ -174,7 +174,7 @@ describe('acquireOperatorKey', () => {
     bearers.set('SCWOPERATOR', { user: 'alice', expiresAt: inHours(1) });
 
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
-    expect(errorsPrinted()).toContain(menuPath('operator-key'));
+    expect(errorsPrinted()).toContain(menuPath('operators'));
     expect(rememberedOperatorKey()).toBeUndefined();
   });
 

@@ -378,7 +378,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
   if (identityKey) printRevokeReminder();
   const restarted = operator
     ? await startBlockedTarget(context, operator).catch((error) => {
-        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
+        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('deploy')} does.`);
         return false;
       })
     : false;

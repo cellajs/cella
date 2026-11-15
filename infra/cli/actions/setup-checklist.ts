@@ -75,7 +75,7 @@ function firstReleaseRow(facts: ChecklistFacts): ChecklistRow {
 
 function firstAdminDetail(done: boolean | undefined): string {
   if (done) return 'admin email set: request a magic link with it';
-  if (done === false) return `set the admin email in "${actionLabel('secrets')}"`;
+  if (done === false) return `set the admin email in "${actionLabel('env')}"`;
   return 'the email the first account signs in with';
 }
 

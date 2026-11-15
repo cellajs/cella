@@ -160,7 +160,7 @@ describe('the last deploy', () => {
       'runs.last',
     );
     expect(blocked?.status).toBe('warn');
-    expect(blocked?.nextAction?.command).toContain('runs');
+    expect(blocked?.nextAction?.command).toContain('logs');
     // A deploy a scheduled run started: its job run sets no target, its record names it.
     const newest = {
       run: 'r3',
@@ -173,7 +173,7 @@ describe('the last deploy', () => {
     const scheduled = { id: 'r3', state: 'failed', exit_code: 1, created_at: '2026-11-06T12:00:00Z', terminated_at: '2026-11-06T12:09:00Z' };
     const failed = find(reportFor(base({ runs: { runs: [scheduled], record: { newest } } })).checks, 'runs.last');
     expect(failed?.status).toBe('error');
-    expect(failed?.nextAction?.command).toContain('runs');
+    expect(failed?.nextAction?.command).toContain('logs');
   });
 });
 
@@ -276,7 +276,7 @@ describe('primary components check (same verdict rule as the smoke step)', () =>
     const check = find(report.checks, 'live.components');
     expect(check?.status).toBe('error');
     expect(check?.detail).toBe('cdc=unhealthy(rls_bypass_missing)');
-    expect(check?.nextAction?.command).toContain('runs');
+    expect(check?.nextAction?.command).toContain('logs');
   });
 
   it('an unreachable aggregate is missing', () => {

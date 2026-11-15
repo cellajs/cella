@@ -105,7 +105,7 @@ On a shared host the services share their secrets: they read one env file.
 
 A privileged action runs on a key that ends within a day. It is a key of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. It dies by itself. Nothing is stored, and nothing is revoked after.
 
-`pnpm infra` → **More** → **Set up operators** (`pnpm infra operator-key`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy for each with the same rules. It makes no key.
+`pnpm infra` → **More** → **Set up operators** (`pnpm infra operators`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy for each with the same rules. It makes no key.
 
 A key of either keeps working, since the policies are written in place. A new environment's setup adds its project to both. Staging and production share one set of operators, since the name is production's slug.
 

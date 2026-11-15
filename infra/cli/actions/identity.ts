@@ -80,7 +80,7 @@ export async function exitOnIdentityChanges(
   await release?.();
   console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
   for (const line of changes) console.error(`  ${tildeMark} ${line}`);
-  console.error(`  ${pointTo('identity')} writes them. Nothing applied.`);
+  console.error(`  ${pointTo('identities')} writes them. Nothing applied.`);
   endAction(1);
 }
 
@@ -120,7 +120,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
   const names = appPrincipalNames(appConfig.appSlug);
-  console.info(pc.dim(`\n${actionLabel('identity')}: write what differs from the declared identities.\n`));
+  console.info(pc.dim(`\n${actionLabel('identities')}: write what differs from the declared identities.\n`));
 
   const show = (plan: IdentityPlan): boolean => {
     if (identityPlanIsEmpty(plan)) {

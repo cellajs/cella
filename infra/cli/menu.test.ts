@@ -30,20 +30,15 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists the daily rows under two groups on a healthy stack, each with its letter, then More and Quit', () => {
+  it('lists the daily rows on a healthy stack, each with its letter, then More and Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       '',
-      'Deploys',
-      '  d  Deploy now',
+      '  s  Full status',
+      '  a  Review & apply changes',
+      '  e  Env vars & secrets',
       '  r  Releases & roll back',
       '  l  Deploy logs',
-      '  s  Full status',
-      '',
-      'Configure',
-      '  e  Env vars & secrets',
-      '  a  Infrastructure changes ›',
-      '  p  Open DB access',
-      '',
+      '  o  Open DB access',
       '  m  More ›',
       ` ${'─'.repeat(40)}`,
       '  q  Quit',
@@ -51,23 +46,22 @@ describe('mainMenuItems', () => {
   });
 
   it('leads with the recommended step when the home screen has one', () => {
-    const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'start-deploy', description: 'Deploy 0.35.0 again' } });
-    expect(render(items).slice(0, 4)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', '', 'Deploys']);
+    const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'deploy', description: 'Deploy 0.35.0 again' } });
+    expect(render(items).slice(0, 4)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', '', '  s  Full status']);
     expect(items[1]).toMatchObject({ value: UP_NEXT });
   });
 
   it('keeps every row on a stack whose setup is unfinished and says why a row cannot run', () => {
     expect(render(mainMenuItems(partial)).filter((line) => line.startsWith('-'))).toEqual([
-      '- Deploy now (needs a set-up environment: run "Resume setup")',
+      '- Review & apply changes (needs a set-up environment: run "Resume setup")',
       '- Releases & roll back (needs a set-up environment: run "Resume setup")',
-      '- Infrastructure changes › (needs a set-up environment: run "Resume setup")',
       '- Open DB access (needs a set-up environment: run "Resume setup")',
     ]);
   });
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  p  Close DB access (OPEN)');
+    expect(lines).toContain('  c  Close DB access (OPEN)');
     expect(lines.some((line) => line.includes('Open DB access'))).toBe(false);
   });
 
@@ -111,24 +105,28 @@ describe('mainMenuItems', () => {
 });
 
 describe('menuHotkeys', () => {
-  it('gives every listed row its own letter, the two DB access rows sharing theirs', () => {
+  it('gives every listed row its own letter', () => {
     const open = menuHotkeys(bootstrapped);
     expect(Object.keys(open)).toHaveLength(visibleRows(bootstrapped).length);
-    expect(open.p).toBe('db-open');
-    expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).p).toBe('db-close');
+    expect(open.o).toBe('db-open');
+    expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).c).toBe('db-close');
     expect(open.q).toBeUndefined();
   });
 
   it('gives no letter to a row that cannot run now', () => {
     const letters = menuHotkeys(partial);
-    expect(letters.d).toBeUndefined();
-    expect(letters.l).toBe('runs');
+    expect(letters.a).toBeUndefined();
+    expect(letters.l).toBe('logs');
   });
 });
 
 describe('pickItems', () => {
   it('lists the rare actions under headings with the key each runs with, then Back', () => {
     expect(render(pickItems('more', { ...bootstrapped, environment: 'production' }))).toEqual([
+      '',
+      'Deploys & changes',
+      '  Deploy now               operator key',
+      '  Preview changes          operator key',
       '',
       'Keys & access',
       '  Rotate keys              Owner key',
@@ -163,7 +161,7 @@ describe('disabledReason', () => {
   });
 
   it('leaves the actions that repair a stack available on an unfinished one', () => {
-    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'secrets', 'status'] as const) {
+    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'env', 'status'] as const) {
       expect(disabledReason(id, partial)).toBeUndefined();
     }
   });
@@ -171,7 +169,7 @@ describe('disabledReason', () => {
 
 describe('rowDisabledReason', () => {
   it('disables a row only when every action behind it is blocked', () => {
-    expect(rowDisabledReason('changes', partial)).toBe('needs a set-up environment: run "Resume setup"');
+    expect(rowDisabledReason('apply', partial)).toBe('needs a set-up environment: run "Resume setup"');
     expect(rowDisabledReason('more', partial)).toBeUndefined();
   });
 });

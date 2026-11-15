@@ -5,8 +5,8 @@ import type { Check, CheckStatus, KeyTier, NextAction } from './types';
 /** The local setup/manage entrypoint. */
 export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
 export const manageSecrets: NextAction = {
-  description: `Set the missing runtime secret(s) via "${menuPath('secrets')}"`,
-  command: actionCommand('secrets'),
+  description: `Set the missing runtime secret(s) via "${menuPath('env')}"`,
+  command: actionCommand('env'),
 };
 export const unlock: NextAction = {
   description: `Clear the stale lease via "${menuPath('unlock')}" (only when no run is in progress)`,
@@ -19,14 +19,14 @@ export const manageDbEndpoint: NextAction = {
 
 /** Deploy the environment's target: a scheduled run does once its target moves, this starts a run now. */
 export function deployAction(mode: string): NextAction {
-  return { description: `Start a run of ${mode}'s main job for its target`, command: `${actionCommand('start-deploy')} --mode ${mode}` };
+  return { description: `Start a run of ${mode}'s main job for its target`, command: `${actionCommand('deploy')} --mode ${mode}` };
 }
 
 /** Read the last runs and the machines' boot accounts when a live service is wrong, then deploy again. */
 export function diagAction(mode: string): NextAction {
   return {
     description: "Read the last runs and the release's boot accounts, then start a run again",
-    command: `${actionCommand('runs')} --mode ${mode} --machines`,
+    command: `${actionCommand('logs')} --mode ${mode} --machines`,
   };
 }
 

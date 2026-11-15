@@ -42,17 +42,22 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 When nothing needs a person, the line on what serves says all checks pass. The step the checks recommend leads the menu below.
 
-The menu lists the daily rows by task, each entered by its letter. A row with several actions opens a short pick:
+The menu lists the daily rows, most used first, each entered by the first letter of a word in its name. Each row's command is the same word:
 
-| Group | Rows |
-| --- | --- |
-| Deploys | `d` Deploy now, `r` Releases & roll back, `l` Deploy logs, `s` Full status |
-| Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `p` Open DB access or Close DB access, whichever applies |
+| Letter | Row | Command |
+| --- | --- | --- |
+| `s` | Full status | `status` |
+| `a` | Review & apply changes | `apply` |
+| `e` | Env vars & secrets | `env` |
+| `r` | Releases & roll back | `releases` |
+| `l` | Deploy logs | `logs` |
+| `o` or `c` | Open DB access or Close DB access, whichever applies | `db-open`, `db-close` |
 
 `m` **More** opens the pick of the rare actions, each with the key it needs:
 
 | Heading | Actions |
 | --- | --- |
+| Deploys & changes | Deploy now, Preview changes |
 | Keys & access | Rotate keys, Rotate secrets, Set up operators, Update identities, Set repository read key |
 | Repair | Unlock, Resume setup, Remove from state |
 | Database | Seed database, Reset database |
@@ -60,7 +65,7 @@ The menu lists the daily rows by task, each entered by its letter. A row with se
 
 Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
 
-Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `runs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
+Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`. `pnpm infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `logs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
 
 ## Status
 
@@ -159,7 +164,7 @@ One name per concept across code and docs:
 | **scheduled run** | A run of the main job its schedule starts. Under the lease, it deploys the target when no run record names that target and retry counter. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry. The main job names it by digest. |
 | **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
-| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
+| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra logs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after. It writes through links, holds no key and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
 | **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |

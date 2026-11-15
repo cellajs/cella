@@ -2,9 +2,7 @@ import { Separator } from '@inquirer/prompts';
 import {
   actionHint,
   actionLabel,
-  MENU_GROUPS,
   MENU_ROWS,
-  type MenuGroup,
   type MenuRowId,
   MORE_SECTIONS,
   menuRow,
@@ -60,7 +58,7 @@ const NEEDS_BOOTSTRAPPED_STACK: readonly OperatorActionId[] = [
   'db-seed',
   'db-open',
   'db-close',
-  'start-deploy',
+  'deploy',
   'releases',
 ];
 
@@ -102,7 +100,7 @@ function entryName(id: MenuRowId): string {
   return `${pc.dim(menuRow(id).hotkey)}  ${rowLabel(id)}`.replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
-/** The hotkeys of the rows a state lists and can run, by letter: the two DB access rows share theirs, as one of them is listed. */
+/** The hotkeys of the rows a state lists and can run, by letter. */
 export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
   return Object.fromEntries(
     visibleRows(state)
@@ -111,9 +109,8 @@ export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
   );
 }
 
-/** The main menu: the recommended step first when there is one, then every row under its group heading, each group after a blank line, then the way out. */
+/** The main menu: the recommended step first when there is one, then every row after a blank line, then the way out. */
 export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> {
-  const rows = visibleRows(state);
   const items: Array<MenuItem<MainMenuValue>> = [];
   if (state.upNext) {
     items.push({ group: '' });
@@ -123,21 +120,18 @@ export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> 
       description: OPERATOR_ACTIONS[state.upNext.action].description,
     });
   }
-  for (const group of Object.keys(MENU_GROUPS) as MenuGroup[]) {
-    items.push({ group: '' });
-    if (MENU_GROUPS[group]) items.push({ group: MENU_GROUPS[group] });
-    for (const id of rows.filter((rowId) => menuRow(rowId).group === group)) {
-      const row = menuRow(id);
-      const reason = rowDisabledReason(id, state);
-      const live = state.liveEndpoints ?? [];
-      const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
-      items.push({
-        name: reason ? rowLabel(id) : entryName(id),
-        value: id,
-        description: stray ? `Public endpoint ${live.join(', ')} is open, though no exposure is configured: close it.` : row.description,
-        ...(reason ? { disabled: `(${reason})` } : {}),
-      });
-    }
+  items.push({ group: '' });
+  for (const id of visibleRows(state)) {
+    const row = menuRow(id);
+    const reason = rowDisabledReason(id, state);
+    const live = state.liveEndpoints ?? [];
+    const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
+    items.push({
+      name: reason ? rowLabel(id) : entryName(id),
+      value: id,
+      description: stray ? `Public endpoint ${live.join(', ')} is open, though no exposure is configured: close it.` : row.description,
+      ...(reason ? { disabled: `(${reason})` } : {}),
+    });
   }
   items.push(RULE, { name: `${pc.dim('q')}  Quit`, value: QUIT, description: 'Leave the CLI.' });
   return items;

@@ -24,7 +24,7 @@ import { acquireOperatorKey } from './operator-unlock';
 export async function runStatePrune(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(
-    pc.dim(`\n${actionLabel('state-prune')}: one resource out of the state of ${context.environment}; the live object must be gone already.\n`),
+    pc.dim(`\n${actionLabel('state-remove')}: one resource out of the state of ${context.environment}; the live object must be gone already.\n`),
   );
   const urn = (await input({ message: 'The URN to remove (verbatim, as `pulumi stack --show-urns` prints it)' })).trim();
   if (!urn.startsWith('urn:pulumi:')) {
@@ -42,7 +42,7 @@ export async function runStatePrune(context: InfraContext): Promise<void> {
   });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
   const stateKey = stateKeyOf(operator, projectId);
-  const lock = await acquireStackLockOrExit({ appConfig, ...stateKey, stack, operation: 'state-prune' });
+  const lock = await acquireStackLockOrExit({ appConfig, ...stateKey, stack, operation: 'state-remove' });
   try {
     const listed = spawnSync('pulumi', ['stack', '--show-urns', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' });
     if (!listed.stdout?.includes(urn)) {

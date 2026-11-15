@@ -12,7 +12,7 @@ import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, ENVIRONMENTS_FILE, type RemoteRef, sortedReleases } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
-import { actionLabel, menuRow } from '../../lib/operator-actions';
+import { actionLabel } from '../../lib/operator-actions';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/control-store';
@@ -129,7 +129,7 @@ function deployable(tag: string, manifest: ReleaseManifest | undefined, applied:
     console.info(`  ${checkMark} Same infrastructure as the applied one: no apply needed.`);
     return true;
   }
-  console.warn(`  ${warningMark} It needs an apply from a checkout at ${tag} first (${menuRow('changes').label}).`);
+  console.warn(`  ${warningMark} It needs an apply from a checkout at ${tag} first (${actionLabel('apply')}).`);
   if (manifest.describes && applied.describes) console.warn(pc.dim(`    ${describeChanges(applied.describes, manifest.describes).join(', ')}`));
   return false;
 }
@@ -144,7 +144,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: ${pointTo('identity')} puts one here.`,
+      `${crossMark} ${actionLabel('releases')} reads with the observer key, and this machine has none: ${pointTo('identities')} puts one here.`,
     );
     return endAction(1);
   }

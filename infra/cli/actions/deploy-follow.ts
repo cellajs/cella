@@ -29,8 +29,8 @@ export type FollowOutcome = ReturnType<typeof mainJobOutcome>;
 
 /** The actions that help after a deploy that did not deploy: its log and the env vars for a failure, the env vars or an apply for a block. */
 export function deployFixes(outcome: FollowOutcome): OperatorActionId[] {
-  if (outcome === 'failed') return ['runs', 'secrets'];
-  return outcome === 'blocked' ? ['secrets', 'apply'] : [];
+  if (outcome === 'failed') return ['logs', 'env'];
+  return outcome === 'blocked' ? ['env', 'apply'] : [];
 }
 
 /** The run store and the control client of the environment, on a key the bucket admits: the observer's for reading, the operator's for both. */
@@ -106,7 +106,7 @@ async function followRun(
 /** Follow a deploy until it ends, or until a Ctrl-C stops the following: the deploy goes on, and the action ends as a Ctrl-C does. */
 async function stoppable<T>(follow: (signal: AbortSignal) => Promise<T>): Promise<T> {
   return untilInterrupt(follow).catch((error: unknown) => {
-    if (error instanceof Interrupted) console.info(`\n${pc.dim(`Stopped following. The deploy goes on: ${actionLabel('runs')} shows it.`)}`);
+    if (error instanceof Interrupted) console.info(`\n${pc.dim(`Stopped following. The deploy goes on: ${actionLabel('logs')} shows it.`)}`);
     throw error;
   });
 }
@@ -140,7 +140,7 @@ async function reportEnd(
   if (outcome === 'blocked') {
     if (!verdict) {
       console.warn(
-        `${warningMark} Blocked: "${menuPath('runs')}" names what is owed. A runtime value: "${menuPath('secrets')}" stores it, or "${menuPath('apply')}" for one it makes. "apply needed": "${menuPath('apply')}" from a checkout at this commit. Either deploys this commit again.`,
+        `${warningMark} Blocked: "${menuPath('logs')}" names what is owed. A runtime value: "${menuPath('env')}" stores it, or "${menuPath('apply')}" for one it makes. "apply needed": "${menuPath('apply')}" from a checkout at this commit. Either deploys this commit again.`,
       );
       return undefined;
     }
@@ -148,7 +148,7 @@ async function reportEnd(
     console.warn(
       record?.outcome === 'apply needed'
         ? `  "${menuPath('apply')}" from a checkout at this commit applies it and deploys the commit again.`
-        : `  "${menuPath('secrets')}" stores it and deploys the commit again.`,
+        : `  "${menuPath('env')}" stores it and deploys the commit again.`,
     );
     return undefined;
   }

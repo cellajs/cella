@@ -86,7 +86,7 @@ describe('formatHome', () => {
           ok('db.publicEndpoint', 'DB public endpoint', 'private only'),
           { ...ok('state.lock', 'Lease', ''), status: 'warn', detail: 'held by job:a6696b654e' },
         ],
-        { description: 'Read how it ended', command: 'pnpm infra runs' },
+        { description: 'Read how it ended', command: 'pnpm infra logs' },
       ),
     };
     expect(plain(formatHome(facts, { now: Date.parse('2026-11-08T10:00:00Z') }))).toEqual([
@@ -123,8 +123,8 @@ describe('formatHome', () => {
 
 describe('upNextOf', () => {
   it('maps a next action to the menu action its command names, and nothing else', () => {
-    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm infra runs --mode production' }))).toEqual({
-      action: 'runs',
+    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm infra logs --mode production' }))).toEqual({
+      action: 'logs',
       description: 'Read how it ended',
     });
     expect(upNextOf(report([], { description: 'Do it by hand', command: 'scw rdb ...' }))).toBeUndefined();
@@ -133,12 +133,12 @@ describe('upNextOf', () => {
 
   it('names the deploy by its release: one under way to follow, a failed one to read the boot log of', () => {
     const deploying = report([ok('runs.last', 'Last deploy', 'a6696b654e is deploying', 'a6696b654eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')]);
-    expect(upNextOf(deploying, refs)).toEqual({ action: 'start-deploy', description: 'Follow the deploy of 0.35.0' });
+    expect(upNextOf(deploying, refs)).toEqual({ action: 'deploy', description: 'Follow the deploy of 0.35.0' });
     const failed = report([{ ...deploying.checks[0]!, status: 'error', detail: 'a6696b654e failed' }], {
       description: 'Read how it ended',
-      command: 'pnpm infra runs',
+      command: 'pnpm infra logs',
     });
-    expect(upNextOf(failed, refs)).toEqual({ action: 'runs', description: 'Read the boot log of 0.35.0' });
+    expect(upNextOf(failed, refs)).toEqual({ action: 'logs', description: 'Read the boot log of 0.35.0' });
   });
 
   it('sends a person to the full status when only the security checks found something', () => {

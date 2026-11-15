@@ -44,7 +44,7 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(`\n  ${pc.dim('Releases deploy by themselves within minutes of a merge; start-deploy deploys one now.')}`);
+  console.info(`\n  ${pc.dim('Releases deploy by themselves within minutes of a merge; deploy starts one now.')}`);
 }
 
 /**
@@ -182,15 +182,15 @@ function pulumiReady(action: OperatorActionId): boolean {
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
-let lastRow: MenuRowId | typeof UP_NEXT = 'deploy';
+let lastRow: MenuRowId | typeof UP_NEXT = 'status';
 
 /** The row the cursor starts on in this state: the recommended step, else the last row, its DB access counterpart once the endpoint changed side, else the first. */
 function startRow(state: MenuState): MenuRowId | typeof UP_NEXT {
   if (state.upNext) return UP_NEXT;
   const rows = visibleRows(state);
-  if (lastRow === UP_NEXT) return 'deploy';
+  if (lastRow === UP_NEXT) return 'status';
   if (rows.includes(lastRow)) return lastRow;
-  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'deploy';
+  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'status';
 }
 
 /**
@@ -280,7 +280,7 @@ if (context.state === 'fresh') {
 }
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
-const READ_ONLY: readonly OperatorActionId[] = ['status', 'runs', 'preview'];
+const READ_ONLY: readonly OperatorActionId[] = ['status', 'logs', 'preview'];
 
 // From here an action that fails or is stopped returns to the menu, unless the run leaves after one.
 if (!args.once) startMenuSession();

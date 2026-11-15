@@ -84,8 +84,8 @@ function deployVerdict(
     const verdict = runs.warn(
       `${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`,
       {
-        description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
-        command: actionCommand('runs'),
+        description: 'Read what is owed; the apply or storing the secret starts this target again, Deploy now after an identity update',
+        command: actionCommand('logs'),
       },
       target,
     );
@@ -93,7 +93,7 @@ function deployVerdict(
   }
   const step = record?.failedStep ? ` at "${record.failedStep}"` : '';
   const failed = record ? `${sha} failed${step}: ${classifyRun(record).sentence}` : `${sha} failed (${state})`;
-  const verdict = runs.error(failed, { description: 'Read how it ended', command: actionCommand('runs') }, target);
+  const verdict = runs.error(failed, { description: 'Read how it ended', command: actionCommand('logs') }, target);
   return { ...verdict, ...(record ? { headline: `${sha} failed${step}` } : {}), ...when };
 }
 
@@ -123,7 +123,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         if (started && definition) {
           return runs.error(
             `${label(started).slice(0, 10)} was started with its own values (${runOverrides(started, definition).join(', ')}): no start of the engine does that`,
-            { description: 'Read the run, then rotate the keys that may start one', command: actionCommand('runs') },
+            { description: 'Read the run, then rotate the keys that may start one', command: actionCommand('logs') },
           );
         }
         if (record && 'denied' in record) {
@@ -135,14 +135,14 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         if (record && 'error' in record) {
           return runs.warn(`the newest run record could not be read (${record.error})`, {
             description: 'Read the run',
-            command: actionCommand('runs'),
+            command: actionCommand('logs'),
           });
         }
         const newest = record?.newest;
         if (record?.rewrite && newest) {
           return runs.error(`the record of run ${newest.run} was ${rewriteNote(record.rewrite)}: only a key that may write the bucket does that`, {
             description: 'Read the run as it stood, then rotate the keys',
-            command: actionCommand('runs'),
+            command: actionCommand('logs'),
           });
         }
         // A run started by hand after the newest record that wrote none: it runs still, or ended before its record.
@@ -156,7 +156,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         if (newest.outcome === 'running' && !leaseHeldByRun(lock, newest.run)) {
           const verdict = runs.error(`${sha} was interrupted: its record says running, and no deploy holds the lease under run ${newest.run}`, {
             description: 'Read how far it came; a scheduled run does not start this target again',
-            command: actionCommand('runs'),
+            command: actionCommand('logs'),
           });
           return { ...verdict, headline: `${sha} was interrupted`, at: newest.startedAt };
         }

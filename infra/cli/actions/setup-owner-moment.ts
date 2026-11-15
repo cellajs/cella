@@ -185,7 +185,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
       const step = mode === 'rotate-keys' ? { ...planned, change: 'make' as const } : planned;
       await writeUploadsKey({ auth, secrets, organizationId, projectId, step });
     } catch (error) {
-      console.warn(`${warningMark} Uploads key incomplete: ${errorMessage(error)}. Run ${pointTo('identity')}.`);
+      console.warn(`${warningMark} Uploads key incomplete: ${errorMessage(error)}. Run ${pointTo('identities')}.`);
     }
   }
 
@@ -198,7 +198,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');
   await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId).catch((error) =>
-    console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run ${pointTo('identity')}.`),
+    console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run ${pointTo('identities')}.`),
   );
 
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey });

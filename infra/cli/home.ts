@@ -128,13 +128,13 @@ export function upNextOf(report: StatusReport, refs?: readonly RemoteRef[]): UpN
   const word = next ? /^pnpm infra ([a-z][a-z-]*)/.exec(next.command)?.[1] : undefined;
   const last = report.checks.find((entry) => entry.id === 'runs.last');
   if (next && word && isOperatorActionId(word)) {
-    const name = word === 'runs' && last?.subject && needsPerson(last) ? commitName(refs, last.subject) : undefined;
+    const name = word === 'logs' && last?.subject && needsPerson(last) ? commitName(refs, last.subject) : undefined;
     const read = name && (last?.status === 'warn' ? `Read what ${name} waits for` : `Read the boot log of ${name}`);
     return { action: word, description: read || next.description };
   }
   if (next) return undefined;
   if (last?.subject && / is deploying$/.test(last.detail)) {
-    return { action: 'start-deploy', description: `Follow the deploy of ${commitName(refs, last.subject)}` };
+    return { action: 'deploy', description: `Follow the deploy of ${commitName(refs, last.subject)}` };
   }
   const findings = securityFindings(report);
   if (findings.length === 0) return undefined;
@@ -155,7 +155,7 @@ export function formatHome(facts: HomeFacts, opts: { now?: number } = {}): strin
   if (report.stackState !== 'bootstrapped') return [];
   const lines: string[] = [];
   if (!facts.keyConfigured) {
-    lines.push(statusRow(warningMark, 'Not read', `this machine has no observer key: "${menuPath('identity')}" puts one here`));
+    lines.push(statusRow(warningMark, 'Not read', `this machine has no observer key: "${menuPath('identities')}" puts one here`));
   }
   // A last deploy shows when it needs a person, or when it is not what serves: one that runs, or one a roll back replaced.
   const last = check('runs.last');

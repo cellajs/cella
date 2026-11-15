@@ -14,7 +14,7 @@ import { startBlockedTarget } from './start-deploy';
 /**
  * Publish the engine image of this checkout, plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged
  * resources (DB, VPC, private network, buckets, DNS, the main job and its engine) the read-only CI key cannot make.
- * The declared applications and their policies are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
+ * The declared applications and their policies are IAM, written by `pnpm infra identities` with an Owner API key, never by this apply.
  * The plan is made before the lease is taken, so it is taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
@@ -73,7 +73,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   if (declined) await discard();
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>
-      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): ${pointTo('start-deploy')} does.`),
+      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): ${pointTo('deploy')} does.`),
     );
   }
   // A verified difference is reported, not a failure of the apply: the target still starts, and the exit code says to look.

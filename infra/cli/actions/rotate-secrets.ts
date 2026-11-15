@@ -66,12 +66,12 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
     console.info(
       `\n${checkMark} Database role passwords and ${rotated.length} generated secret(s) rotated; rotation ${rotations.counter} recorded. Keys that protect stored data were left as they are.`,
     );
-    console.info(`  Third-party keys are pasted anew in "${actionLabel('secrets')}".`);
+    console.info(`  Third-party keys are pasted anew in "${actionLabel('env')}".`);
   } finally {
     await lock.release();
   }
   await redeployAfterRotation(context, operator).catch((error) => {
     if (endsAction(error)) throw error;
-    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('deploy')} does.`);
   });
 }

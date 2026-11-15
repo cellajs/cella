@@ -60,7 +60,7 @@ export function owedWorkLines(owed: OwedWork): string[] {
   return [
     ...(owed.ownerMoment.length > 0
       ? [
-          `**${owed.environment} needs an Owner moment** (\`pnpm infra identity\`, with an Owner API key) before its next deploy:`,
+          `**${owed.environment} needs an Owner moment** (\`pnpm infra identities\`, with an Owner API key) before its next deploy:`,
           ...owed.ownerMoment.map((line) => `- \`${line}\``),
         ]
       : []),

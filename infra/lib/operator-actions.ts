@@ -19,7 +19,7 @@ export const OPERATOR_ACTIONS = {
     key: 'observer',
     description: 'Every check and finding, what it means and what fixes it. Read-only.',
   },
-  runs: {
+  logs: {
     label: 'Deploy logs',
     key: 'observer',
     description: 'The last deploys and how each ended, then one in full with the end of its log. Read-only.',
@@ -44,20 +44,20 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: 'New database passwords and generated values, then a redeploy of what serves.',
   },
-  'operator-key': {
+  operators: {
     label: 'Set up operators',
     key: 'owner',
     description: "Make or repair the app's operator application and operators group.",
   },
-  identity: {
+  identities: {
     label: 'Update identities',
     key: 'owner',
     description: 'Write what differs from the declared identities. Asks for a key only when something must change.',
   },
-  'start-deploy': {
+  deploy: {
     label: 'Deploy now',
     key: 'operator',
-    description: "Deploy the environment's target now and follow it step by step.",
+    description: 'Deploy the target now, without waiting for the scheduled run, and follow it step by step.',
   },
   releases: {
     label: 'Releases & roll back',
@@ -69,7 +69,7 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: 'Store, replace or remove the read-only GitHub key a private repository needs.',
   },
-  secrets: {
+  env: {
     label: 'Env vars & secrets',
     key: 'operator',
     description: 'The values the services read at boot. A changed value reaches the machines at the next deploy.',
@@ -104,7 +104,7 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: 'Continue an interrupted setup: re-sync config and self-heal missing keys.',
   },
-  'state-prune': {
+  'state-remove': {
     label: 'Remove from state',
     key: 'operator',
     description: 'Take out of the Pulumi state a resource the code no longer declares and that is gone already.',
@@ -118,22 +118,12 @@ export const OPERATOR_ACTIONS = {
 
 export type OperatorActionId = keyof typeof OPERATOR_ACTIONS;
 
-/** The groups of the `pnpm infra` menu, in the order the menu lists them. The More row stands under no heading. */
-export const MENU_GROUPS = {
-  deploys: 'Deploys',
-  configure: 'Configure',
-  more: '',
-} as const;
-
-export type MenuGroup = keyof typeof MENU_GROUPS;
-
 export interface MenuRow {
-  group: MenuGroup;
   /** The row's name. A row with one action carries that action's label. */
   label: string;
   /** The actions behind the row; more than one opens a short pick. */
   actions: readonly OperatorActionId[];
-  /** The letter that enters the row from the menu. */
+  /** The letter that enters the row from the menu: the first letter of a word of its label. */
   hotkey: string;
   /** Shown under the menu while the row is highlighted. */
   description: string;
@@ -141,42 +131,35 @@ export interface MenuRow {
 
 /** The actions a person runs rarely, under the headings of the More pick, in pick order. */
 export const MORE_SECTIONS = {
-  'Keys & access': ['rotate-keys', 'rotate-secrets', 'operator-key', 'identity', 'repository-key'],
-  Repair: ['unlock', 'resume', 'state-prune'],
+  'Deploys & changes': ['deploy', 'preview'],
+  'Keys & access': ['rotate-keys', 'rotate-secrets', 'operators', 'identities', 'repository-key'],
+  Repair: ['unlock', 'resume', 'state-remove'],
   Database: ['db-seed', 'db-reset'],
   Environment: ['teardown'],
 } as const satisfies Record<string, readonly OperatorActionId[]>;
 
 /** A row of the menu for one action, under its label and description. */
-function actionRow(id: OperatorActionId, group: MenuGroup, hotkey: string): MenuRow {
-  return { group, label: actionLabel(id), actions: [id], hotkey, description: OPERATOR_ACTIONS[id].description };
+function actionRow(id: OperatorActionId, hotkey: string): MenuRow {
+  return { label: actionLabel(id), actions: [id], hotkey, description: OPERATOR_ACTIONS[id].description };
 }
 
 /**
- * The rows of the `pnpm infra` menu, in menu order: the daily ones by what a person comes to do, then More with the rest. `db-open` and
- * `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
+ * The rows of the `pnpm infra` menu, in menu order: the daily ones by how often a person comes for them, then More with the rest.
+ * `db-open` and `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
-  deploy: actionRow('start-deploy', 'deploys', 'd'),
-  releases: actionRow('releases', 'deploys', 'r'),
-  runs: actionRow('runs', 'deploys', 'l'),
-  status: actionRow('status', 'deploys', 's'),
-  secrets: actionRow('secrets', 'configure', 'e'),
-  changes: {
-    group: 'configure',
-    label: 'Infrastructure changes',
-    actions: ['apply', 'preview'],
-    hotkey: 'a',
-    description: 'What differs between the code and what runs: review and apply it, or only look.',
-  },
-  'db-open': actionRow('db-open', 'configure', 'p'),
-  'db-close': actionRow('db-close', 'configure', 'p'),
+  status: actionRow('status', 's'),
+  apply: actionRow('apply', 'a'),
+  env: actionRow('env', 'e'),
+  releases: actionRow('releases', 'r'),
+  logs: actionRow('logs', 'l'),
+  'db-open': actionRow('db-open', 'o'),
+  'db-close': actionRow('db-close', 'c'),
   more: {
-    group: 'more',
     label: 'More',
     actions: Object.values(MORE_SECTIONS).flat(),
     hotkey: 'm',
-    description: 'Keys and access, repairs, seeding or resetting the database, and tearing the environment down.',
+    description: 'Deploying now, keys and access, repairs, seeding or resetting the database, and tearing down.',
   },
 } as const satisfies Record<string, MenuRow>;
 
@@ -193,7 +176,7 @@ export const PULUMI_ACTIONS: readonly OperatorActionId[] = [
   'db-close',
   'db-reset',
   'unlock',
-  'state-prune',
+  'state-remove',
   'teardown',
 ];
 

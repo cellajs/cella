@@ -28,7 +28,7 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
     await recordKeyRotation(context, operatorKey);
     await redeployAfterRotation(context, operatorKey).catch((error) => {
       if (endsAction(error)) throw error;
-      console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('start-deploy')} does.`);
+      console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('deploy')} does.`);
     });
     // After a compromise the rotation is followed by a look at what an intruder may have left: the inventory, on the observer key and, for
     // the machines, the operator key.

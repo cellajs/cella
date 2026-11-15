@@ -151,7 +151,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
       // The callers (runOperatorApply for an apply, the seed and the database exposure; the setup's operator part) all run on the operator
       // key, so a denial is a set that key lacks.
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the operator key may not write ${pc.cyan(denied)}.`);
-      console.error(`  A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operator-key'))} writes it.`);
+      console.error(`  A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operators'))} writes it.`);
     }
   }
 

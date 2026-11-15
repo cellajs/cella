@@ -34,7 +34,7 @@ export const scheduleProvider: StatusProvider<ScheduleFacts> = {
         if (minutes !== undefined && minutes <= 2 * read.everyMinutes + 1) return schedule.ok(`last scheduled run ${minutes} min ago`);
         const since = minutes === undefined ? 'among its newest runs' : `for ${minutes} min`;
         return schedule.error(`no scheduled run that did not fail ${since}: the schedule is missing from the definition, or its runs fail`, {
-          description: `An apply writes the schedule; \`${actionCommand('runs')}\` says when the last scheduled run started`,
+          description: `An apply writes the schedule; \`${actionCommand('logs')}\` says when the last scheduled run started`,
           command: actionCommand('apply'),
         });
       }),

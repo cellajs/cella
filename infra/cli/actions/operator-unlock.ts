@@ -31,7 +31,7 @@ export function refusalLines(opts: { status: number | undefined; detail: string;
   if (opts.status !== 403) return [`Scaleway did not take the key: ${opts.detail}`];
   return [
     `Scaleway refused the key (403): it reads no IAM, so it is no key of '${names.operator}' and none of a member of '${names.operators}'.`,
-    `Made it a few minutes ago? Its access can take a few minutes to hold. The organization Owner makes both: "${menuPath('operator-key')}".`,
+    `Made it a few minutes ago? Its access can take a few minutes to hold. The organization Owner makes both: "${menuPath('operators')}".`,
   ];
 }
 
@@ -57,7 +57,7 @@ async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrin
     });
     if (!group) {
       return {
-        refusal: `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: "${menuPath('operator-key')}".`,
+        refusal: `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: "${menuPath('operators')}".`,
       };
     }
     if (!(group.user_ids ?? []).includes(desc.bearerId)) {
@@ -187,7 +187,7 @@ export interface OperatorKey extends KeyPair {
  * The key every privileged action runs on: a one-day key of the operator application, or of a member of the operators group, pasted once
  * per session or minted by a setup's Owner moment, and kept in this process's memory. It holds no IAM write, so nothing is minted from it,
  * and it ends by itself within the day, so nothing is left to revoke when the action ends. An Owner key never runs one, as the buckets
- * admit no Owner; an app without operators gets them from `operator-key` or its setup, with an Owner API key.
+ * admit no Owner; an app without operators gets them from `operators` or its setup, with an Owner API key.
  */
 export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
   const unlocked = await unlock(stack);

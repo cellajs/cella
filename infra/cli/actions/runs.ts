@@ -246,7 +246,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
   if (!observer) {
     console.error(
-      `${crossMark} ${actionLabel('runs')} reads with the observer key, and this machine has none: ${pointTo('identity')} puts one here.`,
+      `${crossMark} ${actionLabel('logs')} reads with the observer key, and this machine has none: ${pointTo('identities')} puts one here.`,
     );
     return endAction(1);
   }
@@ -280,7 +280,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   ]);
   const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
-  console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
+  console.info(pc.dim(`\n${actionLabel('logs')} of ${context.environment}, newest first:\n`));
   await showRuns(bucketRunStore(s3, naming.bootDiagBucket), {
     pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
     jobRuns,
