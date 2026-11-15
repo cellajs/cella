@@ -29,6 +29,7 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().default(''),
   HOLD_MS: z.coerce.number().default(25_000),
   SYNC_MODE: z.enum(['immediate', 'lazy']).default('lazy'),
+  RANGE_KEY: z.enum(['on', 'off']).default('on'),
   DATABASE_ADMIN_URL: z.string().default(localDatabaseUrl('dev', 'postgres')),
 });
 
@@ -73,6 +74,8 @@ export const COOKIE_SECRET = env.COOKIE_SECRET;
 export const SSE_HOLD_MS = env.HOLD_MS;
 /** Whether the SSE benchmark merges notifications or fetches each range immediately. */
 export const SSE_SYNC_MODE = env.SYNC_MODE;
+/** Whether a subscriber sends the range key of a change frame with its fetch; `off` measures the fetches without shared answers. */
+export const SSE_RANGE_KEY = env.RANGE_KEY === 'on';
 
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
 export const DB_URL = env.DATABASE_ADMIN_URL;

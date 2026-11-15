@@ -196,7 +196,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
- * order: the error page (a 302 or 303 route), the config switch gate (`xEnabledBy`), `xGuard` with, right after the
+ * order: the error page (a 302 or 303 route), the config switch gate (`xEnabledBy`), `xCache`, `xGuard` with, right after the
  * guard that authenticates the session, the anonymous gate of a user-level route that does not admit an anonymous
  * session (`xAnonymous`, documented as `x-anonymous`), `xRateLimiter`, the preconditions of a route for one channel or
  * product (`preconditionTarget`: entity tags and `If-Match`), the route's own `middleware`, then validation and the
@@ -275,6 +275,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
   const {
+    xCache: _cache,
     xGuard: _guard,
     xAnonymous: _anonymous,
     xRateLimiter: _rateLimiter,

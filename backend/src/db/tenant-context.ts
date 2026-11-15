@@ -7,15 +7,28 @@ import { type TenantSessionVars, tenantTransactionOpening } from '#/db/tenant-tr
 /** What each live tenant transaction runs as, so a nested request for the same tenant joins it on its connection. */
 const openTransactions = new WeakMap<DbOrTx, TenantSessionVars & { readOnly: boolean }>();
 
+/** Read-write tenant transactions this process committed, per tenant. */
+const committedWrites = new Map<string, number>();
+
 /**
- * A transaction on the runtime pool that starts with the session variables the RLS policies read.
+ * How many read-write tenant transactions this process committed for a tenant. Two equal counts say no write of the
+ * tenant committed here between them, which is what lets a stored read stand in for a new one.
+ */
+export const tenantWriteCount = (tenantId: string): number => committedWrites.get(tenantId) ?? 0;
+
+/**
+ * A transaction on the runtime pool that starts with the session variables the RLS policies read. A read-write one
+ * counts in `tenantWriteCount` once it committed, before its caller goes on.
  * @throws A tenant id outside the id alphabet, before a connection is taken.
  */
-const tenantTransaction = async <T>(vars: TenantSessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> =>
-  transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), (tx) => {
+const tenantTransaction = async <T>(vars: TenantSessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> => {
+  const result = await transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), (tx) => {
     openTransactions.set(tx, { ...vars, readOnly });
     return fn(tx);
   });
+  if (!readOnly) committedWrites.set(vars.tenantId, tenantWriteCount(vars.tenantId) + 1);
+  return result;
+};
 
 /** `set_config` is transaction-local; inside a savepoint it reverts on rollback but survives release. */
 const setIncludeDeleted = (tx: DbOrTx, value: boolean) => tx.execute(sql`SELECT set_config('app.include_deleted', ${String(value)}, true)`);

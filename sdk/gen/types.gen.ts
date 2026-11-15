@@ -420,6 +420,10 @@ export type StreamChange = {
      */
     remove: Array<string>;
   } | null;
+  /**
+   * Key of the receivers who read the same rows, valid for seconds. Sent in `x-range-key` with the range fetch this frame causes, it lets the fetch take the answer another receiver was just given; absent for a receiver who shares its read scope with no one
+   */
+  rangeKey?: string;
 };
 
 /**
@@ -926,6 +930,12 @@ export type Connection = {
 
 export type ListAttachmentsData = {
   body?: never;
+  headers?: {
+    /**
+     * The `rangeKey` of the change frame that caused a range read (`afterSeq`, `untilSeq`): the read may then take the answer just given to a reader of the same rows.
+     */
+    'x-range-key'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;

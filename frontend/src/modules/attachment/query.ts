@@ -57,8 +57,8 @@ const keys = {
   },
 };
 // A narrowed range fetch names the channel that covers the due views; org-wide passes none.
-registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channelId, query }) => {
-  return listAttachments({ path: { tenantId, organizationId }, query: { ...query, channelId } });
+registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channelId, query, rangeKey }) => {
+  return listAttachments({ path: { tenantId, organizationId }, query: { ...query, channelId }, headers: { 'x-range-key': rangeKey } });
 });
 export const attachmentQueryKeys = keys;
 

@@ -2,7 +2,7 @@ import { defineScenario } from '@cellajs/cli/bench';
 import type { StreamChange } from '#/schemas/stream-schemas';
 import { attachmentEdit } from '../attachment-requests';
 import { benchUser, ORG_PATH } from '../bench-user';
-import { SSE_HOLD_MS, SSE_SYNC_MODE } from '../config';
+import { SSE_HOLD_MS, SSE_RANGE_KEY, SSE_SYNC_MODE } from '../config';
 
 const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (the spread itself is measured), ceiling like the background tier. */
@@ -28,7 +28,7 @@ export default defineScenario({
     { name: 'ramp subscribers', duration: 10, arrivalRate: 8 },
     { name: 'hold with writes', duration: 20, arrivalRate: 12 },
   ],
-  counters: ['bench.rows_written', 'sse.changes', 'sync.range_fetches', 'sse.errors'],
+  counters: ['bench.rows_written', 'sse.changes', 'sync.range_fetches', 'sync.kept_answers', 'sse.errors'],
   histograms: ['sync.fetch_ms', 'sync.reaction_delay_ms'],
   primary: 'sync.fetch_ms.p95',
   checks: { maxErrorShare: 5, expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] },
@@ -39,18 +39,19 @@ export default defineScenario({
       async vu(vu) {
         const { cookie, userIndex } = benchUser(vu.index);
         const clientId = `vu-${userIndex}`;
-        const pending = new Map<string, { from: number; until: number }>();
+        const pending = new Map<string, { from: number; until: number; rangeKey?: string }>();
         const timers = new Set<NodeJS.Timeout>();
 
-        const rangeFetch = async (from: number, until: number) => {
+        const rangeFetch = async (from: number, until: number, rangeKey?: string) => {
           const started = performance.now();
           try {
             const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&maxPageSize=1000`, {
-              headers: { cookie },
+              headers: { cookie, ...(SSE_RANGE_KEY && rangeKey && { 'x-range-key': rangeKey }) },
               name: 'GET /attachments (range)',
             });
             vu.histogram('sync.fetch_ms', performance.now() - started);
             vu.counter('sync.range_fetches');
+            if (res.headers['x-range-answer'] === 'kept') vu.counter('sync.kept_answers');
             if (!res.ok) vu.counter('sse.errors');
           } catch {
             vu.counter('sse.errors');
@@ -68,7 +69,7 @@ export default defineScenario({
 
           if (SSE_SYNC_MODE === 'immediate') {
             vu.histogram('sync.reaction_delay_ms', 0);
-            void rangeFetch(from, until);
+            void rangeFetch(from, until, n.rangeKey);
             return;
           }
           const entry = pending.get(scope);
@@ -76,18 +77,19 @@ export default defineScenario({
             // The pending flush covers this range too.
             entry.from = Math.min(entry.from, from);
             entry.until = Math.max(entry.until, until);
+            entry.rangeKey = n.rangeKey ?? entry.rangeKey;
             return;
           }
           // As the frontend's scheduler: the server's window where it sends one, and no spread inside a window of 0.
           const window = n.spreadWindow ?? DEFAULT_WINDOW_MS;
           const delay = window > 0 ? Math.min(hashSpread(`${clientId}:${scope}`) % window, TIER_MAX_MS) : 0;
           vu.histogram('sync.reaction_delay_ms', delay);
-          const range = { from, until };
+          const range = { from, until, rangeKey: n.rangeKey };
           pending.set(scope, range);
           const timer = setTimeout(() => {
             pending.delete(scope);
             timers.delete(timer);
-            void rangeFetch(range.from, range.until);
+            void rangeFetch(range.from, range.until, range.rangeKey);
           }, delay);
           timers.add(timer);
         };
@@ -113,7 +115,7 @@ export default defineScenario({
           for (const timer of timers) clearTimeout(timer);
           const leftovers = [...pending.values()];
           pending.clear();
-          await Promise.all(leftovers.map((range) => rangeFetch(range.from, range.until)));
+          await Promise.all(leftovers.map((range) => rangeFetch(range.from, range.until, range.rangeKey)));
         }
       },
     },

@@ -25,6 +25,7 @@ const extensionMap = {
     required: false,
     kind: 'metadata',
   },
+  'x-cache': { id: 'xCache', description: 'Answers the endpoint may give from memory, ahead of its guards', required: false, kind: 'middleware' },
   'x-guard': { id: 'xGuard', description: 'Authorization middleware applied to the endpoint', required: true, kind: 'middleware' },
   'x-anonymous': {
     id: 'xAnonymous',
@@ -59,7 +60,7 @@ export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __limiters?: XMiddlewareHandler[];
 };
 
-/** The extension types whose values are middleware: `x-guard` and `x-rate-limiter`. */
+/** The extension types whose values are middleware: `x-cache`, `x-guard` and `x-rate-limiter`. */
 type MiddlewareExtensionType = { [K in ExtensionType]: (typeof extensionMap)[K]['kind'] extends 'middleware' ? K : never }[ExtensionType];
 
 type SpecificationExtensions = Record<MiddlewareExtensionType, string[]>;
@@ -94,6 +95,8 @@ export type XRouteProps = {
   xScope?: AccessScope;
   /** The config switch the route belongs to; `createXRoute` refuses the route while it is off, before its guards. */
   xEnabledBy?: ConfigSwitch;
+  /** Runs ahead of the guards and may answer in their place, as `sharedRangeAnswers` does for a key that stands for a read scope. */
+  xCache?: MiddlewareArray;
   xGuard: MiddlewareArray;
   /**
    * Admits an anonymous session to a route that binds the session to no tenant; such a route refuses one by default.
@@ -106,7 +109,7 @@ export type XRouteProps = {
 
 export type ExtensionPropId = keyof XRouteProps;
 
-/** The middleware a route's extension props hold (`xGuard`, `xRateLimiter`), in the order they apply. */
+/** The middleware a route's extension props hold (`xCache`, `xGuard`, `xRateLimiter`), in the order they apply. */
 export const collectExtensionMiddleware = (config: XRouteProps): MiddlewareHandler<Env>[] =>
   Object.values(extensionMap)
     .filter((extension) => extension.kind === 'middleware')
@@ -120,12 +123,16 @@ export const createMetadataExtensions = (config: XRouteProps): Record<string, un
       .map(([key, { id }]) => [key, config[id]]),
   );
 
-/** A route's `x-guard` and `x-rate-limiter` lists: `getValue` names the route's middleware of each type. */
-export function createSpecificationExtensions(getValue: (key: MiddlewareExtensionType) => string[]): SpecificationExtensions {
+/**
+ * A route's `x-cache`, `x-guard` and `x-rate-limiter` lists: `getValue` names the route's middleware of each type. A
+ * list no route has to declare is left out while it is empty.
+ */
+export function createSpecificationExtensions(getValue: (key: MiddlewareExtensionType) => string[]): Partial<SpecificationExtensions> {
   const keys = (Object.keys(extensionMap) as ExtensionType[]).filter(
     (key): key is MiddlewareExtensionType => extensionMap[key].kind === 'middleware',
   );
-  return Object.fromEntries(keys.map((key) => [key, getValue(key)])) as SpecificationExtensions;
+  const lists = keys.map((key) => [key, getValue(key)] as const).filter(([key, names]) => extensionMap[key].required || names.length > 0);
+  return Object.fromEntries(lists);
 }
 
 /**

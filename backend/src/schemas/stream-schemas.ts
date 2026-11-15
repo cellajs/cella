@@ -84,6 +84,13 @@ export const streamChangeSchema = z
         'Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds',
       ),
     propagation: propagationHintSchema.nullable().describe('Embedded-product propagation hint for cross-product cache invalidation'),
+    rangeKey: z
+      .string()
+      .max(64)
+      .optional()
+      .describe(
+        'Key of the receivers who read the same rows, valid for seconds. Sent in `x-range-key` with the range fetch this frame causes, it lets the fetch take the answer another receiver was just given; absent for a receiver who shares its read scope with no one',
+      ),
   })
   .openapi('StreamChange', {
     description:

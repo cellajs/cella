@@ -40,6 +40,8 @@ type RangeFetch = (request: {
   tenantId: string;
   channelId?: string;
   query: SeqRange & { maxPageSize: number };
+  /** The `rangeKey` of the change frame that announced the range, for the list request's `x-range-key` header. */
+  rangeKey?: string;
 }) => Promise<{ results: ItemData[]; totalSize: number }>;
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
