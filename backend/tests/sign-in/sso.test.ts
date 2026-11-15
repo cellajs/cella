@@ -20,6 +20,7 @@ import {
   cookieChange,
   createTestOrganization,
   createTestUser,
+  enableMFAForUser,
   expectRefusal,
   getUserByEmail,
   insertTestSession,
@@ -259,6 +260,29 @@ describe('SSO sign-in through an institution', async () => {
     // Positive control: a recent MFA steps the session up, its window counted from the authentication.
     const authTime = secondsAgo(60);
     await signInThrough(connection.id, claimsOf({ acr: mfa, auth_time: authTime }));
+    const steppedUpAt = new Date(authTime * 1000).toISOString();
+    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id, steppedUpVia: 'sso', steppedUpAt }]);
+  });
+
+  it('an account with MFA on is not challenged again when the institution asserted MFA just now', async () => {
+    const { connection } = await seedConnection();
+    const mfa = 'https://refeds.org/profile/mfa';
+    const authTime = Math.floor(Date.now() / 1000) - 60;
+    const landing = (response: Response) => new URL(response.headers.get('location') ?? 'http://x').pathname;
+
+    await signInThrough(connection.id);
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, subject));
+    await enableMFAForUser(identity.userId);
+    const sessionsBefore = vi.mocked(setUserSession).mock.calls.length;
+
+    // Without an asserted factor the app's own challenge runs, and no session is set yet.
+    const { response: challenged } = await signInThrough(connection.id);
+    expect(landing(challenged)).toBe('/auth/mfa');
+    expect(vi.mocked(setUserSession).mock.calls.length).toBe(sessionsBefore);
+
+    // The institution's MFA is the second factor: the challenge is skipped and the session starts stepped up by it.
+    const { response: signedIn } = await signInThrough(connection.id, claimsOf({ acr: mfa, auth_time: authTime }));
+    expect(landing(signedIn)).not.toBe('/auth/mfa');
     const steppedUpAt = new Date(authTime * 1000).toISOString();
     expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id, steppedUpVia: 'sso', steppedUpAt }]);
   });

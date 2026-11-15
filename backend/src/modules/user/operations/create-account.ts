@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import type { UserId } from '#/db/utils/ids';
 import { extractPgError } from '#/lib/error';
 import { generateUniqueSlugs } from '#/modules/entities/operations/generate-unique-slugs';
 import type { EmailProof } from '#/modules/user/emails-db';
@@ -16,10 +17,11 @@ const isAddressConstraint = (constraint = '') => /^(users|emails)_email_/.test(c
 
 interface CreateAccountOpts {
   /**
-   * What a sign-up may set on the new account. A provider's avatar is left out on purpose: avatars are served from
-   * the app's own CDN only, so a profile picture hosted elsewhere is never stored.
+   * What a sign-up may set on the new account, with the id when another party named the person first (an authenticator's
+   * subject): a person has one id everywhere. A provider's avatar is left out on purpose: avatars are served from the
+   * app's own CDN only, so a profile picture hosted elsewhere is never stored.
    */
-  newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'givenName' | 'familyName'>;
+  newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'givenName' | 'familyName'> & { id?: UserId };
   /** What proved the inbox before the account is created: a magic-link click, or a provider's verification mail. */
   via: EmailProof;
 }
@@ -39,6 +41,7 @@ export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAcco
     const [user] = await insertUsers(ctx, {
       users: [
         {
+          id: newUser.id,
           slug,
           givenName: newUser.givenName,
           // Providers assert an empty string for a missing family name; the column holds null for "none".
