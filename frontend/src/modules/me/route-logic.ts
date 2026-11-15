@@ -1,7 +1,7 @@
 import { redirect } from '@tanstack/react-router';
 import type { z } from 'zod';
+import { meAuthQueryOptions } from '~/modules/auth/account/query';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { meAuthQueryOptions } from '~/modules/me/query';
 import type { accountRouteSearchParamsSchema } from '~/modules/me/search-params-schemas';
 import { toastTypeBySeverity } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';

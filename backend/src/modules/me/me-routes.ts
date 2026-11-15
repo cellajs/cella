@@ -1,23 +1,20 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockConnectedApp, mockPaginatedInvitationsResponse } from '#/modules/me/me-mocks';
 import {
   connectedAppParamSchema,
   connectedAppSchema,
-  meAuthDataSchema,
   mePendingInvitationSchema,
   meSchema,
   myInvitationParamSchema,
-  sessionBaseSchema,
-  toggleMfaBodySchema,
   updateMeBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, pageQuerySchema, paginationSchema } from '#/schemas';
+import { entityWithTypeSchema, pageQuerySchema, paginationSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 export const meRoutes = createXRoutes(['me', 'cella'], {
@@ -82,26 +79,6 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
       "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
     responses: { 204: { description: 'User deleted' }, ...errors(409) },
   }),
-  getMyAuth: xRoute({
-    method: 'get',
-    path: '/auth',
-    xGuard: [userGuard],
-    xAnonymous: true,
-    summary: 'Get auth data',
-    description: 'Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.',
-    responses: { 200: json('Sign-in methods and sessions', meAuthDataSchema) },
-  }),
-  revokeMySessions: xRoute({
-    method: 'post',
-    path: '/sessions/~revoke',
-    xGuard: [userGuard],
-    xRateLimiter: [bulkPointsLimiter],
-    summary: 'Revoke sessions',
-    description:
-      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).',
-    request: { body: jsonBody(idsBodySchema()) },
-    responses: { 200: json('Sessions were revoked', batchResponseSchema(sessionBaseSchema)) },
-  }),
   leaveMembership: xRoute({
     method: 'post',
     path: '/memberships/~leave',
@@ -129,16 +106,6 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
       ),
       ...errors(403, 404),
     },
-  }),
-  toggleMfa: xRoute({
-    method: 'post',
-    path: '/~toggle-mfa',
-    xGuard: [userGuard, stepUpGuard],
-    xRateLimiter: [singlePointsLimiter],
-    summary: 'Toggle MFA',
-    description: 'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
-    request: { body: jsonBody(toggleMfaBodySchema) },
-    responses: { 200: json('User', userSchema) },
   }),
   listMyMemberships: xRoute({
     method: 'get',

@@ -1,13 +1,13 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { FingerprintPatternIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DeviceTile } from '~/modules/auth/account/device-tile';
+import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/auth/account/query';
+import type { Passkey } from '~/modules/auth/account/types';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { HelpText } from '~/modules/common/help-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
-import { DeviceTile } from '~/modules/me/device-tile';
-import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
-import type { Passkey } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';

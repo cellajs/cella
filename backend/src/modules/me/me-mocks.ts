@@ -1,62 +1,14 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, mockPaginated, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockNanoid, mockPaginated, mockRefDate, withFakerSeed } from '#/mocks';
 import { mockInviteeInvitationResponse } from '#/modules/memberships/memberships-mocks';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
-import { TimeSpan } from '#/utils/time-span';
 
 export const mockMeResponse = (key = 'me:default') => ({
   user: mockUserResponse(`${key}:user`),
   isSystemAdmin: false,
 });
-
-export const mockMeAuthResponse = (key = 'me-auth:default') =>
-  withFakerSeed(key, () => {
-    const sessionCreatedAt = faker.date.past({ refDate: mockRefDate });
-    // One session lifetime later.
-    const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + new TimeSpan(1, 'w').milliseconds());
-
-    return {
-      oauthIdentities: [
-        {
-          provider: 'github' as const,
-          email: faker.internet.email(),
-          createdAt: sessionCreatedAt.toISOString(),
-          lastUsedAt: sessionCreatedAt.toISOString(),
-        },
-      ],
-      institutions: [],
-      totp: null,
-      sessions: [
-        {
-          id: mockUuid(),
-          userId: mockUuid(),
-          kind: 'regular' as const,
-          createdAt: sessionCreatedAt.toISOString(),
-          expiresAt: sessionExpiresAt.toISOString(),
-          deviceName: faker.helpers.arrayElement(['Chrome on Mac', 'Firefox on Windows', 'Safari on iPhone']),
-          deviceType: faker.helpers.arrayElement(['desktop', 'mobile'] as const),
-          deviceOs: faker.helpers.arrayElement(['macOS', 'Windows', 'iOS', 'Android']),
-          browser: faker.helpers.arrayElement(['Chrome', 'Firefox', 'Safari', 'Edge']),
-          authStrategy: 'passkey' as const,
-          connectionId: null,
-          ipHash: null,
-          ipSubnetHash: null,
-          ipRegionCode: null,
-          ipAsn: null,
-          deviceIdHash: faker.string.hexadecimal({ length: 32, prefix: '', casing: 'lower' }),
-          revokedAt: null,
-          revocationReason: null,
-          steppedUpAt: null,
-          steppedUpVia: null,
-          current: true,
-          newDevice: false,
-        },
-      ],
-      passkeys: [],
-    };
-  });
 
 export const mockUploadTokenResponse = (key = 'upload-token:default') =>
   withFakerSeed(key, () => {

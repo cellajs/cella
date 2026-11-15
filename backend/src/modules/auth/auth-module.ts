@@ -1,4 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
+import { authAccountHandlers } from '#/modules/auth/account/account-handlers';
 import { authGeneralHandlers } from '#/modules/auth/core/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/flows/magic/magic-handlers';
 import { authOAuthHandlers } from '#/modules/auth/flows/oauth/oauth-handlers';
@@ -16,6 +17,7 @@ defineBackendModule({
     sign-up, sign-in, MFA, step-up, email verification and account linking.`,
   routes: [
     { path: '/auth/', app: authGeneralHandlers },
+    { path: '/auth/', app: authAccountHandlers },
     { path: '/auth/', app: authMagicLinkHandlers },
     { path: '/auth/', app: authTotpsHandlers },
     { path: '/auth/', app: authPasskeysHandlers },

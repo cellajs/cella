@@ -1564,398 +1564,6 @@
         },
         "x-tags": ["embedded", "entities", "cella"]
       },
-      "StreamChange": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": ["create", "update", "delete", "moveOut"],
-            "description": "Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there"
-          },
-          "productType": {
-            "type": "string",
-            "enum": ["attachment"]
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "tenantId": {
-            "type": "string"
-          },
-          "channelId": {
-            "type": ["string", "null"],
-            "description": "Deepest channel entity ID above the rows, which groups unseen counts"
-          },
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "subjectId": {
-                  "type": "string"
-                },
-                "seq": {
-                  "type": ["integer", "null"],
-                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table"
-                },
-                "stx": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/StxBase"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "actorId": {
-                  "type": ["string", "null"],
-                  "description": "Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user"
-                }
-              },
-              "required": ["subjectId", "seq", "stx", "actorId"]
-            },
-            "description": "The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave"
-          },
-          "overflow": {
-            "type": ["object", "null"],
-            "properties": {
-              "afterSeq": {
-                "type": ["integer", "null"]
-              },
-              "untilSeq": {
-                "type": ["integer", "null"]
-              },
-              "subjectIds": {
-                "type": ["array", "null"],
-                "items": {
-                  "type": "string"
-                },
-                "description": "The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type"
-              }
-            },
-            "required": ["afterSeq", "untilSeq", "subjectIds"],
-            "description": "Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out"
-          },
-          "spreadWindow": {
-            "type": ["integer", "null"],
-            "description": "Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
-          },
-          "propagation": {
-            "type": ["object", "null"],
-            "properties": {
-              "embeddedProductType": {
-                "type": "string",
-                "enum": ["attachment"],
-                "description": "Embedded product type whose change triggered the propagation"
-              },
-              "update": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Embedded row IDs whose cached copies in host rows need a refresh"
-              },
-              "remove": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
-              }
-            },
-            "required": ["embeddedProductType", "update", "remove"],
-            "description": "Embedded-product propagation hint for cross-product cache invalidation"
-          }
-        },
-        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
-        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.",
-        "example": {
-          "action": "update",
-          "productType": "attachment",
-          "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
-          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
-          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
-          "rows": [
-            {
-              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
-              "seq": 143,
-              "stx": {
-                "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
-                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
-                "fieldTimestamps": {}
-              },
-              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
-            }
-          ],
-          "overflow": null,
-          "spreadWindow": null,
-          "propagation": null
-        },
-        "x-tags": ["stream", "entities", "cella"]
-      },
-      "StreamSignal": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)"
-          },
-          "organizationId": {
-            "type": ["string", "null"]
-          },
-          "subjectId": {
-            "type": ["string", "null"],
-            "description": "The one row the signal is about; null when it is about the organization as a whole"
-          },
-          "version": {
-            "type": "integer",
-            "description": "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again"
-          }
-        },
-        "required": ["type", "organizationId", "subjectId"],
-        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.",
-        "example": {
-          "type": "membership.changed",
-          "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
-          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
-        },
-        "x-tags": ["stream", "entities", "cella"]
-      },
-      "StreamError": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["code", "message"],
-        "description": "Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
-        "example": {
-          "code": "session_replaced",
-          "message": "Session replaced"
-        },
-        "x-tags": ["stream", "entities", "cella"]
-      },
-      "ProtectedResourceMetadata": {
-        "type": "object",
-        "properties": {
-          "resource": {
-            "type": "string"
-          },
-          "resource_name": {
-            "type": "string"
-          },
-          "authorization_servers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "scopes_supported": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "bearer_methods_supported": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "resource_documentation": {
-            "type": "string"
-          }
-        },
-        "required": ["resource", "resource_name", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
-        "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
-        "example": {
-          "resource": "http://localhost:3000/api/tenants/m5jfjs",
-          "resource_name": "Cella DEVELOPMENT API",
-          "authorization_servers": ["http://localhost:3000/oauth"],
-          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
-          "bearer_methods_supported": ["header"],
-          "resource_documentation": "http://localhost:3000/docs"
-        },
-        "x-tags": ["data", "oauth-server", "cella"]
-      },
-      "Me": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
-          "isSystemAdmin": {
-            "type": "boolean",
-            "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
-          }
-        },
-        "required": ["user", "isSystemAdmin"],
-        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
-        "example": {
-          "user": {
-            "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
-            "entityType": "user",
-            "name": "Agnes Fritsch DVM",
-            "givenName": "Agnes",
-            "familyName": "Fritsch",
-            "email": "agnes_fritsch@hotmail.com",
-            "slug": "agnesfritsch34",
-            "description": null,
-            "thumbnailUrl": null,
-            "bannerUrl": null,
-            "languageCode": "en",
-            "newsletter": true,
-            "contrast": "system",
-            "mfaRequired": false,
-            "userFlags": {},
-            "createdAt": "2024-05-02T20:53:18.498Z",
-            "updatedAt": "2024-05-02T20:53:18.498Z",
-            "updatedBy": null,
-            "isAnonymous": false,
-            "lastSignInAt": "2024-05-02T20:53:18.498Z",
-            "lastSeenAt": "2024-05-02T20:53:18.498Z"
-          },
-          "isSystemAdmin": false
-        },
-        "x-tags": ["data", "me", "cella"]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["user"]
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "slug": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"],
-            "maxLength": 2048
-          },
-          "bannerUrl": {
-            "type": ["string", "null"],
-            "maxLength": 2048
-          },
-          "email": {
-            "type": ["string", "null"],
-            "format": "email"
-          },
-          "mfaRequired": {
-            "type": "boolean"
-          },
-          "givenName": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "familyName": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "languageCode": {
-            "type": "string",
-            "enum": ["en", "nl"]
-          },
-          "newsletter": {
-            "type": "boolean"
-          },
-          "contrast": {
-            "type": "string",
-            "enum": ["system", "more"]
-          },
-          "userFlags": {
-            "type": "object",
-            "properties": {}
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "isAnonymous": {
-            "type": "boolean",
-            "description": "The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null."
-          },
-          "lastSeenAt": {
-            "type": ["string", "null"]
-          },
-          "lastSignInAt": {
-            "type": ["string", "null"]
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "entityType",
-          "name",
-          "description",
-          "slug",
-          "thumbnailUrl",
-          "bannerUrl",
-          "email",
-          "mfaRequired",
-          "givenName",
-          "familyName",
-          "languageCode",
-          "newsletter",
-          "contrast",
-          "userFlags",
-          "updatedAt",
-          "isAnonymous",
-          "lastSeenAt",
-          "lastSignInAt"
-        ],
-        "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
-        "example": {
-          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-          "entityType": "user",
-          "name": "Isai Senger",
-          "givenName": "Isai",
-          "familyName": "Senger",
-          "email": "isai_senger@hotmail.com",
-          "slug": "isaisenger90",
-          "description": null,
-          "thumbnailUrl": null,
-          "bannerUrl": null,
-          "languageCode": "en",
-          "newsletter": false,
-          "contrast": "system",
-          "mfaRequired": false,
-          "userFlags": {},
-          "createdAt": "2024-06-15T02:53:22.776Z",
-          "updatedAt": "2024-06-15T02:53:22.776Z",
-          "updatedBy": null,
-          "isAnonymous": false,
-          "lastSignInAt": "2024-06-15T02:53:22.776Z",
-          "lastSeenAt": "2024-06-15T02:53:22.776Z"
-        },
-        "x-tags": ["data", "users", "cella"],
-        "x-aep-resource": {
-          "type": "cella/user",
-          "singular": "user",
-          "plural": "users",
-          "patterns": ["users/{userId}"]
-        }
-      },
       "MeAuthData": {
         "type": "object",
         "properties": {
@@ -2285,6 +1893,398 @@
             }
           ],
           "passkeys": []
+        },
+        "x-tags": ["data", "auth", "cella"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["user"]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"],
+            "maxLength": 2048
+          },
+          "bannerUrl": {
+            "type": ["string", "null"],
+            "maxLength": 2048
+          },
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "mfaRequired": {
+            "type": "boolean"
+          },
+          "givenName": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "familyName": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "languageCode": {
+            "type": "string",
+            "enum": ["en", "nl"]
+          },
+          "newsletter": {
+            "type": "boolean"
+          },
+          "contrast": {
+            "type": "string",
+            "enum": ["system", "more"]
+          },
+          "userFlags": {
+            "type": "object",
+            "properties": {}
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "isAnonymous": {
+            "type": "boolean",
+            "description": "The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null."
+          },
+          "lastSeenAt": {
+            "type": ["string", "null"]
+          },
+          "lastSignInAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "entityType",
+          "name",
+          "description",
+          "slug",
+          "thumbnailUrl",
+          "bannerUrl",
+          "email",
+          "mfaRequired",
+          "givenName",
+          "familyName",
+          "languageCode",
+          "newsletter",
+          "contrast",
+          "userFlags",
+          "updatedAt",
+          "isAnonymous",
+          "lastSeenAt",
+          "lastSignInAt"
+        ],
+        "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
+        "example": {
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+          "entityType": "user",
+          "name": "Isai Senger",
+          "givenName": "Isai",
+          "familyName": "Senger",
+          "email": "isai_senger@hotmail.com",
+          "slug": "isaisenger90",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "languageCode": "en",
+          "newsletter": false,
+          "contrast": "system",
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-06-15T02:53:22.776Z",
+          "updatedAt": "2024-06-15T02:53:22.776Z",
+          "updatedBy": null,
+          "isAnonymous": false,
+          "lastSignInAt": "2024-06-15T02:53:22.776Z",
+          "lastSeenAt": "2024-06-15T02:53:22.776Z"
+        },
+        "x-tags": ["data", "users", "cella"],
+        "x-aep-resource": {
+          "type": "cella/user",
+          "singular": "user",
+          "plural": "users",
+          "patterns": ["users/{userId}"]
+        }
+      },
+      "StreamChange": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["create", "update", "delete", "moveOut"],
+            "description": "Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["attachment"]
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "channelId": {
+            "type": ["string", "null"],
+            "description": "Deepest channel entity ID above the rows, which groups unseen counts"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string"
+                },
+                "seq": {
+                  "type": ["integer", "null"],
+                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table"
+                },
+                "stx": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/StxBase"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "actorId": {
+                  "type": ["string", "null"],
+                  "description": "Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user"
+                }
+              },
+              "required": ["subjectId", "seq", "stx", "actorId"]
+            },
+            "description": "The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave"
+          },
+          "overflow": {
+            "type": ["object", "null"],
+            "properties": {
+              "afterSeq": {
+                "type": ["integer", "null"]
+              },
+              "untilSeq": {
+                "type": ["integer", "null"]
+              },
+              "subjectIds": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "string"
+                },
+                "description": "The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type"
+              }
+            },
+            "required": ["afterSeq", "untilSeq", "subjectIds"],
+            "description": "Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out"
+          },
+          "spreadWindow": {
+            "type": ["integer", "null"],
+            "description": "Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
+          },
+          "propagation": {
+            "type": ["object", "null"],
+            "properties": {
+              "embeddedProductType": {
+                "type": "string",
+                "enum": ["attachment"],
+                "description": "Embedded product type whose change triggered the propagation"
+              },
+              "update": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Embedded row IDs whose cached copies in host rows need a refresh"
+              },
+              "remove": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
+              }
+            },
+            "required": ["embeddedProductType", "update", "remove"],
+            "description": "Embedded-product propagation hint for cross-product cache invalidation"
+          }
+        },
+        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
+        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.",
+        "example": {
+          "action": "update",
+          "productType": "attachment",
+          "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
+          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
+          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
+          "rows": [
+            {
+              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
+              "seq": 143,
+              "stx": {
+                "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
+                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
+                "fieldTimestamps": {}
+              },
+              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
+            }
+          ],
+          "overflow": null,
+          "spreadWindow": null,
+          "propagation": null
+        },
+        "x-tags": ["stream", "entities", "cella"]
+      },
+      "StreamSignal": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)"
+          },
+          "organizationId": {
+            "type": ["string", "null"]
+          },
+          "subjectId": {
+            "type": ["string", "null"],
+            "description": "The one row the signal is about; null when it is about the organization as a whole"
+          },
+          "version": {
+            "type": "integer",
+            "description": "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again"
+          }
+        },
+        "required": ["type", "organizationId", "subjectId"],
+        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.",
+        "example": {
+          "type": "membership.changed",
+          "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
+          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
+        },
+        "x-tags": ["stream", "entities", "cella"]
+      },
+      "StreamError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "description": "Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
+        "example": {
+          "code": "session_replaced",
+          "message": "Session replaced"
+        },
+        "x-tags": ["stream", "entities", "cella"]
+      },
+      "ProtectedResourceMetadata": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "authorization_servers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bearer_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_documentation": {
+            "type": "string"
+          }
+        },
+        "required": ["resource", "resource_name", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
+        "example": {
+          "resource": "http://localhost:3000/api/tenants/m5jfjs",
+          "resource_name": "Cella DEVELOPMENT API",
+          "authorization_servers": ["http://localhost:3000/oauth"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+          "bearer_methods_supported": ["header"],
+          "resource_documentation": "http://localhost:3000/docs"
+        },
+        "x-tags": ["data", "oauth-server", "cella"]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "isSystemAdmin": {
+            "type": "boolean",
+            "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
+          }
+        },
+        "required": ["user", "isSystemAdmin"],
+        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
+        "example": {
+          "user": {
+            "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
+            "entityType": "user",
+            "name": "Agnes Fritsch DVM",
+            "givenName": "Agnes",
+            "familyName": "Fritsch",
+            "email": "agnes_fritsch@hotmail.com",
+            "slug": "agnesfritsch34",
+            "description": null,
+            "thumbnailUrl": null,
+            "bannerUrl": null,
+            "languageCode": "en",
+            "newsletter": true,
+            "contrast": "system",
+            "mfaRequired": false,
+            "userFlags": {},
+            "createdAt": "2024-05-02T20:53:18.498Z",
+            "updatedAt": "2024-05-02T20:53:18.498Z",
+            "updatedBy": null,
+            "isAnonymous": false,
+            "lastSignInAt": "2024-05-02T20:53:18.498Z",
+            "lastSeenAt": "2024-05-02T20:53:18.498Z"
+          },
+          "isSystemAdmin": false
         },
         "x-tags": ["data", "me", "cella"]
       },
@@ -6000,6 +6000,292 @@
         }
       }
     },
+    "/auth/me": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getMyAuth",
+        "tags": ["auth", "cella"],
+        "summary": "Get auth data",
+        "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
+        "x-anonymous": true,
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "responses": {
+          "200": {
+            "description": "Sign-in methods and sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeAuthData"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth:toggle-mfa": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "toggleMfa",
+        "tags": ["auth", "cella"],
+        "summary": "Toggle MFA",
+        "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
+        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mfaRequired": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["mfaRequired"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/sessions:revoke": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeMySessions",
+        "tags": ["auth", "cella"],
+        "summary": "Revoke sessions",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": ["ids"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessions were revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": ["regular", "mfa"]
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "deviceName": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "deviceType": {
+                            "type": "string",
+                            "enum": ["desktop", "mobile"]
+                          },
+                          "deviceOs": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "browser": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "authStrategy": {
+                            "type": "string",
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                          },
+                          "connectionId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
+                          },
+                          "ipHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipSubnetHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipRegionCode": {
+                            "type": ["string", "null"],
+                            "maxLength": 2
+                          },
+                          "ipAsn": {
+                            "type": ["integer", "null"],
+                            "minimum": -2147483648,
+                            "maximum": 2147483647
+                          },
+                          "deviceIdHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "string"
+                          },
+                          "revokedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "revocationReason": {
+                            "type": ["string", "null"],
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                          },
+                          "steppedUpAt": {
+                            "type": ["string", "null"]
+                          },
+                          "steppedUpVia": {
+                            "type": ["string", "null"],
+                            "enum": ["passkey", "totp", "email", "sso", null]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "userId",
+                          "deviceName",
+                          "deviceType",
+                          "deviceOs",
+                          "browser",
+                          "authStrategy",
+                          "connectionId",
+                          "ipHash",
+                          "ipSubnetHash",
+                          "ipRegionCode",
+                          "ipAsn",
+                          "deviceIdHash",
+                          "createdAt",
+                          "expiresAt",
+                          "revokedAt",
+                          "revocationReason",
+                          "steppedUpAt",
+                          "steppedUpVia"
+                        ]
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["results", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/send-magic-link": {
       "post": {
         "security": [],
@@ -8929,101 +9215,6 @@
         }
       }
     },
-    "/me:toggle-mfa": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "toggleMfa",
-        "tags": ["me", "cella"],
-        "summary": "Toggle MFA",
-        "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
-        "x-guard": ["userGuard", "stepUpGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "mfaRequired": {
-                    "type": "boolean"
-                  }
-                },
-                "required": ["mfaRequired"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "User",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/me/auth": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getMyAuth",
-        "tags": ["me", "cella"],
-        "summary": "Get auth data",
-        "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
-        "x-anonymous": true,
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["readLimiter"],
-        "responses": {
-          "200": {
-            "description": "Sign-in methods and sessions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MeAuthData"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/me/invitations": {
       "get": {
         "security": [
@@ -9466,197 +9657,6 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/me/sessions:revoke": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "revokeMySessions",
-        "tags": ["me", "cella"],
-        "summary": "Revoke sessions",
-        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "maxLength": 50
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": ["ids"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Sessions were revoked",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "results": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "kind": {
-                            "type": "string",
-                            "enum": ["regular", "mfa"]
-                          },
-                          "userId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "deviceName": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "deviceType": {
-                            "type": "string",
-                            "enum": ["desktop", "mobile"]
-                          },
-                          "deviceOs": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "browser": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "authStrategy": {
-                            "type": "string",
-                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
-                          },
-                          "connectionId": {
-                            "type": ["string", "null"],
-                            "format": "uuid"
-                          },
-                          "ipHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "ipSubnetHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "ipRegionCode": {
-                            "type": ["string", "null"],
-                            "maxLength": 2
-                          },
-                          "ipAsn": {
-                            "type": ["integer", "null"],
-                            "minimum": -2147483648,
-                            "maximum": 2147483647
-                          },
-                          "deviceIdHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "expiresAt": {
-                            "type": "string"
-                          },
-                          "revokedAt": {
-                            "type": ["string", "null"]
-                          },
-                          "revocationReason": {
-                            "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
-                          },
-                          "steppedUpAt": {
-                            "type": ["string", "null"]
-                          },
-                          "steppedUpVia": {
-                            "type": ["string", "null"],
-                            "enum": ["passkey", "totp", "email", "sso", null]
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "kind",
-                          "userId",
-                          "deviceName",
-                          "deviceType",
-                          "deviceOs",
-                          "browser",
-                          "authStrategy",
-                          "connectionId",
-                          "ipHash",
-                          "ipSubnetHash",
-                          "ipRegionCode",
-                          "ipAsn",
-                          "deviceIdHash",
-                          "createdAt",
-                          "expiresAt",
-                          "revokedAt",
-                          "revocationReason",
-                          "steppedUpAt",
-                          "steppedUpVia"
-                        ]
-                      }
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": ["results", "rejectedIds"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

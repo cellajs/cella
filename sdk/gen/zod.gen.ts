@@ -205,104 +205,6 @@ export const zChannelBase = z.object({
 });
 
 /**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
- */
-export const zStreamChange = z.object({
-  action: z.enum(['create', 'update', 'delete', 'moveOut']),
-  productType: z.enum(['attachment']),
-  organizationId: z.string(),
-  tenantId: z.string(),
-  channelId: z.string().nullable(),
-  rows: z.array(
-    z.object({
-      subjectId: z.string(),
-      seq: z.int().nullable(),
-      stx: zStxBase.nullable(),
-      actorId: z.string().nullable(),
-    }),
-  ),
-  overflow: z
-    .object({
-      afterSeq: z.int().nullable(),
-      untilSeq: z.int().nullable(),
-      subjectIds: z.array(z.string()).nullable(),
-    })
-    .nullable(),
-  spreadWindow: z.int().nullable(),
-  propagation: z
-    .object({
-      embeddedProductType: z.enum(['attachment']),
-      update: z.array(z.string()),
-      remove: z.array(z.string()),
-    })
-    .nullable(),
-});
-
-/**
- * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.
- */
-export const zStreamSignal = z.object({
-  type: z.string(),
-  organizationId: z.string().nullable(),
-  subjectId: z.string().nullable(),
-  version: z.int().optional(),
-});
-
-/**
- * Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
- */
-export const zStreamError = z.object({
-  code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
-  message: z.string(),
-});
-
-/**
- * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
- */
-export const zProtectedResourceMetadata = z.object({
-  resource: z.string(),
-  resource_name: z.string(),
-  authorization_servers: z.array(z.string()),
-  scopes_supported: z.array(z.string()),
-  bearer_methods_supported: z.array(z.string()),
-  resource_documentation: z.string(),
-});
-
-/**
- * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
- */
-export const zUser = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  entityType: z.enum(['user']),
-  name: z.string().max(255),
-  description: z.string().nullable(),
-  slug: z.string().max(255),
-  thumbnailUrl: z.string().max(2048).nullable(),
-  bannerUrl: z.string().max(2048).nullable(),
-  email: z.email().nullable(),
-  mfaRequired: z.boolean(),
-  givenName: z.string().max(255).nullable(),
-  familyName: z.string().max(255).nullable(),
-  languageCode: z.enum(['en', 'nl']),
-  newsletter: z.boolean(),
-  contrast: z.enum(['system', 'more']),
-  userFlags: z.record(z.string(), z.unknown()),
-  updatedAt: z.string().nullable(),
-  isAnonymous: z.boolean(),
-  lastSeenAt: z.string().nullable(),
-  lastSignInAt: z.string().nullable(),
-});
-
-/**
- * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
- */
-export const zMe = z.object({
-  user: zUser,
-  isSystemAdmin: z.boolean(),
-});
-
-/**
  * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export const zMeAuthData = z.object({
@@ -375,6 +277,104 @@ export const zMeAuthData = z.object({
       createdAt: z.string(),
     }),
   ),
+});
+
+/**
+ * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
+ */
+export const zUser = z.object({
+  createdAt: z.string(),
+  id: z.uuid(),
+  entityType: z.enum(['user']),
+  name: z.string().max(255),
+  description: z.string().nullable(),
+  slug: z.string().max(255),
+  thumbnailUrl: z.string().max(2048).nullable(),
+  bannerUrl: z.string().max(2048).nullable(),
+  email: z.email().nullable(),
+  mfaRequired: z.boolean(),
+  givenName: z.string().max(255).nullable(),
+  familyName: z.string().max(255).nullable(),
+  languageCode: z.enum(['en', 'nl']),
+  newsletter: z.boolean(),
+  contrast: z.enum(['system', 'more']),
+  userFlags: z.record(z.string(), z.unknown()),
+  updatedAt: z.string().nullable(),
+  isAnonymous: z.boolean(),
+  lastSeenAt: z.string().nullable(),
+  lastSignInAt: z.string().nullable(),
+});
+
+/**
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
+ */
+export const zStreamChange = z.object({
+  action: z.enum(['create', 'update', 'delete', 'moveOut']),
+  productType: z.enum(['attachment']),
+  organizationId: z.string(),
+  tenantId: z.string(),
+  channelId: z.string().nullable(),
+  rows: z.array(
+    z.object({
+      subjectId: z.string(),
+      seq: z.int().nullable(),
+      stx: zStxBase.nullable(),
+      actorId: z.string().nullable(),
+    }),
+  ),
+  overflow: z
+    .object({
+      afterSeq: z.int().nullable(),
+      untilSeq: z.int().nullable(),
+      subjectIds: z.array(z.string()).nullable(),
+    })
+    .nullable(),
+  spreadWindow: z.int().nullable(),
+  propagation: z
+    .object({
+      embeddedProductType: z.enum(['attachment']),
+      update: z.array(z.string()),
+      remove: z.array(z.string()),
+    })
+    .nullable(),
+});
+
+/**
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/me/stream`; the handler the type registers refetches what it shows.
+ */
+export const zStreamSignal = z.object({
+  type: z.string(),
+  organizationId: z.string().nullable(),
+  subjectId: z.string().nullable(),
+  version: z.int().optional(),
+});
+
+/**
+ * Why the server ends a stream. It arrives as an `error` event on `/me/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export const zStreamError = z.object({
+  code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
+  message: z.string(),
+});
+
+/**
+ * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
+ */
+export const zProtectedResourceMetadata = z.object({
+  resource: z.string(),
+  resource_name: z.string(),
+  authorization_servers: z.array(z.string()),
+  scopes_supported: z.array(z.string()),
+  bearer_methods_supported: z.array(z.string()),
+  resource_documentation: z.string(),
+});
+
+/**
+ * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
+ */
+export const zMe = z.object({
+  user: zUser,
+  isSystemAdmin: z.boolean(),
 });
 
 /**
@@ -1153,6 +1153,56 @@ export const zResendInvitationWithTokenResponse = z.void();
  */
 export const zSignOutResponse = z.void();
 
+/**
+ * Sign-in methods and sessions
+ */
+export const zGetMyAuthResponse = zMeAuthData;
+
+export const zToggleMfaBody = z.object({
+  mfaRequired: z.boolean(),
+});
+
+/**
+ * User
+ */
+export const zToggleMfaResponse = zUser;
+
+export const zRevokeMySessionsBody = z.object({
+  ids: z.array(z.string().max(50)).min(1).max(50),
+});
+
+/**
+ * Sessions were revoked
+ */
+export const zRevokeMySessionsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.enum(['regular', 'mfa']),
+      userId: z.uuid(),
+      deviceName: z.string().max(255).nullable(),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      connectionId: z.uuid().nullable(),
+      ipHash: z.string().max(64).nullable(),
+      ipSubnetHash: z.string().max(64).nullable(),
+      ipRegionCode: z.string().max(2).nullable(),
+      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
+      deviceIdHash: z.string().max(64).nullable(),
+      createdAt: z.string(),
+      expiresAt: z.string(),
+      revokedAt: z.string().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
+    }),
+  ),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
 export const zSendMagicLinkBody = z.object({
   email: z.email().min(4).max(255),
   redirectPath: z.string().max(2048).optional(),
@@ -1636,20 +1686,6 @@ export const zUpdateMeBody = z.object({
  */
 export const zUpdateMeResponse = zUser;
 
-export const zToggleMfaBody = z.object({
-  mfaRequired: z.boolean(),
-});
-
-/**
- * User
- */
-export const zToggleMfaResponse = zUser;
-
-/**
- * Sign-in methods and sessions
- */
-export const zGetMyAuthResponse = zMeAuthData;
-
 export const zListMyInvitationsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
@@ -1722,42 +1758,6 @@ export const zDeclineInvitationPath = z.object({
  * The invitation's organization
  */
 export const zDeclineInvitationResponse = zChannelBase;
-
-export const zRevokeMySessionsBody = z.object({
-  ids: z.array(z.string().max(50)).min(1).max(50),
-});
-
-/**
- * Sessions were revoked
- */
-export const zRevokeMySessionsResponse = z.object({
-  results: z.array(
-    z.object({
-      id: z.uuid(),
-      kind: z.enum(['regular', 'mfa']),
-      userId: z.uuid(),
-      deviceName: z.string().max(255).nullable(),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.string().max(255).nullable(),
-      browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
-      connectionId: z.uuid().nullable(),
-      ipHash: z.string().max(64).nullable(),
-      ipSubnetHash: z.string().max(64).nullable(),
-      ipRegionCode: z.string().max(2).nullable(),
-      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
-      deviceIdHash: z.string().max(64).nullable(),
-      createdAt: z.string(),
-      expiresAt: z.string(),
-      revokedAt: z.string().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
-      steppedUpAt: z.string().nullable(),
-      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
-    }),
-  ),
-  rejectedIds: z.array(z.string()),
-  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
-});
 
 export const zLeaveMembershipBody = z.object({
   entityId: z.string().max(50),

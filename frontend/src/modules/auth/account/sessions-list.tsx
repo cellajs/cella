@@ -1,12 +1,12 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { LogOutIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { meAuthQueryOptions, useRevokeSessionsMutation } from '~/modules/auth/account/query';
+import { isLiveSession, SessionTile, sessionEndedAt } from '~/modules/auth/account/session-tile';
+import type { Session } from '~/modules/auth/account/types';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { TileListHeading } from '~/modules/common/expandable-tile';
 import { toastOffline } from '~/modules/common/toaster/toaster';
-import { meAuthQueryOptions, useRevokeSessionsMutation } from '~/modules/me/query';
-import { isLiveSession, SessionTile, sessionEndedAt } from '~/modules/me/session-tile';
-import type { Session } from '~/modules/me/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 

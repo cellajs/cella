@@ -116,16 +116,16 @@ describe('Secret columns in responses', async () => {
   // In order: later cases revoke or roll what earlier ones listed and created.
   const cases: Case[] = [
     {
-      route: 'GET /me/auth',
+      route: 'GET /auth/me',
       tables: ['sessions', 'totps'],
-      send: () => rawJsonRequest('/me/auth', invitee.sessionCookie),
+      send: () => rawJsonRequest('/auth/me', invitee.sessionCookie),
       status: 200,
       shows: () => [invitee.otherSessionId],
     },
     {
-      route: 'POST /me/sessions:revoke',
+      route: 'POST /auth/sessions:revoke',
       tables: ['sessions'],
-      send: () => rawJsonRequest('/me/sessions:revoke', invitee.sessionCookie, { method: 'POST', body: { ids: [invitee.otherSessionId] } }),
+      send: () => rawJsonRequest('/auth/sessions:revoke', invitee.sessionCookie, { method: 'POST', body: { ids: [invitee.otherSessionId] } }),
       status: 200,
       shows: () => [invitee.otherSessionId],
     },

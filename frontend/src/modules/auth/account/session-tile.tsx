@@ -1,10 +1,10 @@
 import { LogOutIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type FederationKey } from 'shared';
+import { DeviceTile } from '~/modules/auth/account/device-tile';
+import type { Session } from '~/modules/auth/account/types';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { ExpandableTileDetail, type TileTone } from '~/modules/common/expandable-tile';
-import { DeviceTile } from '~/modules/me/device-tile';
-import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { dateRelative } from '~/utils/date-mini';

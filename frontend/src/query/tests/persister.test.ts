@@ -41,7 +41,7 @@ const { registerVariablesVersion } = await import('~/query/offline/mutation-vari
 const { resetBundleStale } = await import('~/query/schema-version-guard');
 const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
-const { totpKeyQueryOptions } = await import('~/modules/me/query');
+const { totpKeyQueryOptions } = await import('~/modules/auth/account/query');
 const { organizationsListQueryOptions } = await import('~/modules/organization/query');
 
 /** What a browser runs on pagehide: every listener the modules registered for it, taken now since the harness clears a mock's calls before each test. */

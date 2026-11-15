@@ -918,6 +918,76 @@ export const signOut = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get auth data
+ *
+ * Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.
+ *
+ * **GET /auth/me** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/me) ·· _auth · cella_
+ *
+ * @param {getMyAuthData} options
+ * @returns Possible status codes: 200, 400, 401, 429
+ */
+export const getMyAuth = <ThrowOnError extends boolean = true>(
+  options?: Options<GetMyAuthData, ThrowOnError>,
+): RequestResult<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetMyAuthResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/me',
+    ...options,
+  });
+
+/**
+ * Toggle MFA
+ *
+ * Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.
+ *
+ * **POST /auth:toggle-mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth:toggle-mfa) ·· _auth · cella_
+ *
+ * @param {toggleMfaData} options
+ * @param {boolean} options.body.mfaRequired - `boolean`
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ */
+export const toggleMfa = <ThrowOnError extends boolean = true>(
+  options: Options<ToggleMfaData, ThrowOnError>,
+): RequestResult<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zToggleMfaResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth:toggle-mfa',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Revoke sessions
+ *
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).
+ *
+ * **POST /auth/sessions:revoke** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sessions:revoke) ·· _auth · cella_
+ *
+ * @param {revokeMySessionsData} options
+ * @param {string[]} options.body.ids - `string[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ */
+export const revokeMySessions = <ThrowOnError extends boolean = true>(
+  options: Options<RevokeMySessionsData, ThrowOnError>,
+): RequestResult<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRevokeMySessionsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sessions:revoke',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Send magic link
  *
  * Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.
@@ -1777,51 +1847,6 @@ export const updateMe = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Toggle MFA
- *
- * Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.
- *
- * **POST /me:toggle-mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me:toggle-mfa) ·· _me · cella_
- *
- * @param {toggleMfaData} options
- * @param {boolean} options.body.mfaRequired - `boolean`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
- */
-export const toggleMfa = <ThrowOnError extends boolean = true>(
-  options: Options<ToggleMfaData, ThrowOnError>,
-): RequestResult<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zToggleMfaResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/me:toggle-mfa',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get auth data
- *
- * Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.
- *
- * **GET /me/auth** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· _me · cella_
- *
- * @param {getMyAuthData} options
- * @returns Possible status codes: 200, 400, 401, 429
- */
-export const getMyAuth = <ThrowOnError extends boolean = true>(
-  options?: Options<GetMyAuthData, ThrowOnError>,
-): RequestResult<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetMyAuthResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/me/auth',
-    ...options,
-  });
-
-/**
  * Get list of invitations
  *
  * Returns the pending invitations of the signed-in user, each with its channel.
@@ -1884,31 +1909,6 @@ export const declineInvitation = <ThrowOnError extends boolean = true>(
     responseStyle: 'data',
     url: '/me/invitations/{invitationId}:decline',
     ...options,
-  });
-
-/**
- * Revoke sessions
- *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).
- *
- * **POST /me/sessions:revoke** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/sessions:revoke) ·· _me · cella_
- *
- * @param {revokeMySessionsData} options
- * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
- */
-export const revokeMySessions = <ThrowOnError extends boolean = true>(
-  options: Options<RevokeMySessionsData, ThrowOnError>,
-): RequestResult<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zRevokeMySessionsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/me/sessions:revoke',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 
 /**

@@ -1,19 +1,11 @@
-import { WebAuthnError } from '@simplewebauthn/browser';
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type {
   AcceptInvitationResponse,
   AcceptInvitationTokenResponse,
-  CreateTotpData,
-  CreateTotpResponses,
   DeleteConnectedAppData,
   DeleteConnectedAppResponse,
   DeleteMeResponse,
-  DeletePasskeyData,
-  DeletePasskeyResponse,
-  DeleteTotpResponse,
-  RevokeMySessionsResponse,
-  ToggleMfaData,
   UpdateMeData,
   User,
 } from 'sdk';
@@ -21,29 +13,18 @@ import {
   acceptInvitation,
   acceptInvitationToken,
   confirmInvitationAddress,
-  createPasskey,
-  createTotp,
   declineInvitation,
   deleteConnectedApp,
   deleteMe,
-  deletePasskey,
-  deleteTotp,
-  generateTotpKey,
-  getMyAuth,
   listConnectedApps,
   listMyInvitations,
   listMyMemberships,
-  revokeMySessions,
-  toggleMfa,
   updateMe,
 } from 'sdk';
-import { ApiError } from '~/lib/api';
-import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
-import { ensureStepUp, withStepUp } from '~/modules/auth/step-up';
-import { StepUpDismissedError } from '~/modules/auth/step-up-retry';
+import type { ApiError } from '~/lib/api';
+import { withStepUp } from '~/modules/auth/step-up';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe } from '~/modules/me/helpers';
-import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
 import { userStore } from '~/modules/user/user-store';
 import { getEntityQueryKeys, syncChunkSize } from '~/query/basic/entity-query-registry';
@@ -53,18 +34,12 @@ import type { MutationData } from '~/query/types';
 
 export const meKeys = {
   all: ['me'] as const,
-  auth: ['me', 'auth'] as const,
   invites: ['me', 'invites'] as const,
   connectedApps: ['me', 'connected-apps'] as const,
   memberships: ['me', 'memberships'] as const,
-  totpKey: ['me', 'totp-key'] as const,
-  register: { passkey: ['me', 'register', 'passkey'] as const, totp: ['me', 'register', 'totp'] as const },
   update: { info: ['me', 'update', 'info'] as const },
   delete: {
-    passkey: ['me', 'delete', 'passkey'] as const,
     connectedApp: ['me', 'delete', 'connected-app'] as const,
-    totp: ['me', 'delete', 'totp'] as const,
-    sessions: ['me', 'delete', 'sessions'] as const,
     self: ['me', 'delete', 'self'] as const,
   },
   handleInvitation: ['me', 'handle-invitation'] as const,
@@ -78,9 +53,6 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 /** The signed-in user's profile from the cache whatever its age, fetched once when none is cached; the fetch sets the user store. */
 export const readMe = () => queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
 
-// A mount past the stale time refetches: a session, passkey or connected app added elsewhere must show.
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
-
 export const meConnectedAppsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.connectedApps,
@@ -91,107 +63,12 @@ export const meConnectedAppsQueryOptions = () =>
 export const meInvitationsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.invites, queryFn: () => fetchAllPages((page) => listMyInvitations({ query: page }), syncChunkSize) });
 
-/** A new authenticator key with its QR code; once confirmed it is the second factor, so it is never persisted and leaves with the setup. */
-export const totpKeyQueryOptions = () =>
-  queryOptions({
-    queryKey: meKeys.totpKey,
-    queryFn: () => withStepUp(() => generateTotpKey()),
-    // Only the setup's refresh asks again: a key requested after the step-up window opens the re-auth dialog.
-    staleTime: 'static',
-    gcTime: 0,
-    meta: { persist: false },
-  });
-
 export const useUpdateSelfMutation = () =>
   useMutation<User, ApiError, UpdateMeData['body']>({
     mutationKey: meKeys.update.info,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
-  });
-
-export const useToggleMfaMutation = () =>
-  useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
-    mutationKey: meKeys.update.info,
-    mutationFn: (body) => withStepUp(() => toggleMfa({ body })),
-    onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
-      applyUpdatedSelf(updatedUser);
-      if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
-      toaster.success(t(updatedUser.mfaRequired ? 'c:mfa_enabled' : 'c:mfa_disabled'));
-    },
-    gcTime: 1000 * 10,
-  });
-
-export const useCreatePasskeyMutation = () =>
-  useMutation<Passkey, ApiError | Error, void>({
-    mutationKey: meKeys.register.passkey,
-    mutationFn: async () => {
-      // Stepped up before the ceremony, so the authenticator prompts once.
-      await ensureStepUp('enroll');
-      return withStepUp(async () => {
-        const credentialData = await getPasskeyRegistrationCredential();
-        return createPasskey({ body: credentialData });
-      });
-    },
-    onSuccess: (newPasskey) => {
-      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, passkeys: [newPasskey, ...oldData.passkeys] };
-      });
-      toaster.success(t('c:success.add_resource', { resource: t('c:passkey') }));
-    },
-    onError(error) {
-      // The global handler toasts the server's refusals; a failure in the browser, a cancelled prompt included, gets this toast.
-      if (error instanceof StepUpDismissedError || error instanceof ApiError) return;
-      if (error instanceof WebAuthnError && error.code === 'ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED') {
-        return toaster.info(t('error:passkey_already_registered'));
-      }
-      console.error('Error during passkey registration:', error);
-      toaster.error(t('error:passkey_registration_failed'));
-    },
-  });
-
-export const useDeletePasskeyMutation = () =>
-  useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
-    mutationKey: meKeys.delete.passkey,
-    mutationFn: ({ path }) => withStepUp(() => deletePasskey({ path })),
-    onSuccess: (_data, { path: { passkeyId } }) => {
-      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, passkeys: oldData.passkeys.filter((passkey) => passkeyId !== passkey.id) };
-      });
-      toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
-    },
-  });
-
-/** Confirms the authenticator key with its first code; the key leaves the cache with it. */
-export const useCreateTotpMutation = () =>
-  useMutation<CreateTotpResponses[201], ApiError, CreateTotpData['body']>({
-    mutationKey: meKeys.register.totp,
-    mutationFn: (body) => withStepUp(() => createTotp({ body })),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: meKeys.totpKey });
-      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        // The setup confirmed the key with a code, which counts as its first use
-        const now = new Date().toISOString();
-        return { ...oldData, totp: { createdAt: now, lastUsedAt: now } };
-      });
-      toaster.success(t('c:success.add_resource', { resource: t('c:totp') }));
-    },
-  });
-
-export const useDeleteTotpMutation = () =>
-  useMutation<DeleteTotpResponse, ApiError, void>({
-    mutationKey: meKeys.delete.totp,
-    mutationFn: () => withStepUp(() => deleteTotp()),
-    onSuccess: () => {
-      toaster.success(t('c:success.delete_resource', { resource: t('c:totp') }));
-      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, totp: null };
-      });
-    },
   });
 
 /** Deletes the signed-in account; the caller signs out. */
@@ -201,7 +78,8 @@ export const useDeleteSelfMutation = () =>
     mutationFn: () => withStepUp(() => deleteMe()),
   });
 
-const applyUpdatedSelf = (updatedUser: User) => {
+/** Writes a changed profile where the app reads itself: the user's detail entry and the user store. */
+export const applyUpdatedSelf = (updatedUser: User) => {
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   userStore.getState().updateUser(updatedUser);
 };
@@ -273,22 +151,4 @@ export const useRevokeConnectedAppMutation = () =>
       toaster.success(t('c:success.revoke_resource', { resource: t('c:connected_app') }));
     },
     onError: (error) => console.error('Error revoking connected app:', error),
-  });
-
-/** Revokes sessions by id, stepping up when another session is among them; each cached session takes its revoked row and moves to history. */
-export const useRevokeSessionsMutation = () =>
-  useMutation<RevokeMySessionsResponse['results'], ApiError, string[]>({
-    mutationKey: meKeys.delete.sessions,
-    mutationFn: async (ids) => {
-      const { results } = await withStepUp(() => revokeMySessions({ body: { ids } }));
-      return results;
-    },
-    onSuccess: (revoked) => {
-      const revokedById = new Map(revoked.map((session) => [session.id, session]));
-      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
-      });
-      toaster.success(t('c:success.sessions_signed_out', { count: revoked.length }));
-    },
   });

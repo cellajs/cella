@@ -9,7 +9,7 @@ export { authEvents } from '#/modules/auth/core/auth-events';
 export { isRecognizedBrowser } from '#/modules/auth/core/devices/operations/recognized-browser';
 export { isFederationConfigured, isFederationKey } from '#/modules/auth/core/federations/federations';
 export { federationKeySchema } from '#/modules/auth/core/federations/federations-schema';
-export { authCookieName, cookieSecrets, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+export { authCookieName, cookieSecrets, deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 export { sendSecurityInboxEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
 export { findSession, type ResolvedSession, resolveSession, sessionRefusal } from '#/modules/auth/core/sessions/operations/resolve-session';
 export { closeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';

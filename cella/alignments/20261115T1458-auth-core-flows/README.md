@@ -44,6 +44,7 @@ pnpm cella align --run 20261115T1458-auth-core-flows -- rewrite backend/src fron
 2. An app file outside `modules/auth` that imports a path the index does not export: import it from `#/modules/auth/core` when it is contract, else move the file into the module, as the account page did.
 3. Import `AuthStrategy`, `StepUpProof` and `stepUpProofs` from `shared`, `authStrategiesEnum` from `#/modules/auth/core`.
 4. An app that added a link token kind registers its opener with `registerLinkHandler` or `registerHeldLink` where its handlers load.
+5. Frontend: the account hooks (`meAuthQueryOptions`, `totpKeyQueryOptions`, `useToggleMfaMutation`, the passkey, TOTP and session mutations) are in `~/modules/auth/account/query`, the `Session` and `Passkey` types in `~/modules/auth/account/types`, and the sessions and authentication cards are tools of the `auth` module (`auth-module.tsx`); an app that re-registers or re-orders those `account.settings` tools does so there.
 5. An app that reads `auth_strategy` off an access token may read `amr` (RFC 8176) and `auth_time` as well.
 6. `pnpm generate` is not needed: the passkey migration ships with the template.
 

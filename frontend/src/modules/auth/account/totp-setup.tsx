@@ -3,11 +3,11 @@ import { CircleAlertIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/auth/account/query';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { SecretBox } from '~/modules/common/secret-box';
-import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 
 /** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */

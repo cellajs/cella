@@ -37,7 +37,7 @@ const RULES: readonly [from: string, to: string][] = [
   ['#/modules/me/operations/toggle-mfa', '#/modules/auth/account/operations/toggle-mfa'],
   ['#/modules/me/operations/revoke-my-sessions', '#/modules/auth/account/operations/revoke-my-sessions'],
   ['~/modules/auth/legal/', '~/modules/marketing/legal/'],
-  ...['account-tools', 'passkeys-list', 'sessions-list', 'totp', 'totp-setup', 'mfa-switch', 'device-tile', 'session-tile'].map(
+  ...['passkeys-list', 'sessions-list', 'totp', 'totp-setup', 'mfa-switch', 'device-tile', 'session-tile'].map(
     (file): [string, string] => [`~/modules/me/${file}'`, `~/modules/auth/account/${file}'`],
   ),
   ...['sessions', 'devices', 'tokens', 'general', 'invitations', 'anonymous'].map(

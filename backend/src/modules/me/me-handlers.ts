@@ -1,16 +1,13 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { deleteAuthCookie } from '#/modules/auth/core';
 import { meRoutes } from '#/modules/me/me-routes';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
 import { getMeOp } from '#/modules/me/operations/get-me';
-import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { leaveMembershipOp } from '#/modules/me/operations/leave-membership';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
-import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
-import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
 import { updateMeOp } from '#/modules/me/operations/update-me';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
@@ -23,10 +20,6 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(meRoutes.getMe, async (ctx) => ctx.json(await getMeOp(ctx), 200));
 
-app.openapi(meRoutes.toggleMfa, async (ctx) => ctx.json(await toggleMfaOp(ctx, ctx.req.valid('json').mfaRequired), 200));
-
-app.openapi(meRoutes.getMyAuth, async (ctx) => ctx.json(await getMyAuthOp(ctx), 200));
-
 app.openapi(meRoutes.listMyInvitations, async (ctx) => {
   const invitations = await getMyInvitationsOp(ctx);
   return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(invitations, page)), 200);
@@ -38,13 +31,6 @@ app.openapi(meRoutes.acceptInvitation, async (ctx) => {
 
 app.openapi(meRoutes.declineInvitation, async (ctx) => {
   return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'decline'), 200);
-});
-
-app.openapi(meRoutes.revokeMySessions, async (ctx) => {
-  const { ids } = ctx.req.valid('json');
-  const { results, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
-  if (signedOut) deleteAuthCookie(ctx, 'session');
-  return ctx.json({ results, rejectedIds }, 200);
 });
 
 app.openapi(meRoutes.updateMe, async (ctx) => ctx.json(await updateMeOp(ctx, ctx.req.valid('json')), 200));
