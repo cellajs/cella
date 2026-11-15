@@ -1,5 +1,9 @@
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { type DigestSection, htmlToExcerpt, renderSectionsHtml } from './render-digest-html';
+
+/** Widened, since an app may drop the template's Dutch. */
+const languages: readonly string[] = appConfig.languageCodes;
 
 describe('htmlToExcerpt', () => {
   it('strips markup and collapses whitespace', () => {
@@ -39,7 +43,7 @@ const section: DigestSection = { channelId: 'c1', channelName: 'Ontwerp', lines:
 
 describe('renderSectionsHtml', () => {
   // The committed locale bundles, so a language missing the line fails here.
-  it("writes the overflow line in the recipient's language", () => {
+  it.runIf(languages.includes('nl'))("writes the overflow line in the recipient's language", () => {
     expect(renderSectionsHtml([section], 'nl')).toBe('<h3>Ontwerp</h3><ul><li>Nieuwe reactie op <strong>Roadmap</strong></li><li>en nog 3</li></ul>');
     expect(renderSectionsHtml([section], 'en')).toContain('<li>and 3 more</li>');
   });
