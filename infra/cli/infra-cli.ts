@@ -295,7 +295,6 @@ while (true) {
   }
   const outcome: ActionOutcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
   if (args.once) process.exit(outcome.code);
-  if (outcome.quit) break;
   next = outcome.next;
   console.info('');
   // An action may have changed the stack file, the env file or the live stack: all three are read again for the next round.

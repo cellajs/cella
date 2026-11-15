@@ -15,10 +15,12 @@ export interface WayOut<T extends string> {
 /** The value of the row that leaves a failure. */
 export const LEAVE = 'leave';
 
+const BACK_LABEL = '← Back to menu';
+
 /** The row that leaves a failure: back to the menu in a menu session, out of the CLI otherwise. */
 export function leaveRow(): WayOut<typeof LEAVE> {
   return inMenuSession()
-    ? { value: LEAVE, label: 'Back to the menu', description: 'The menu lists every action again.' }
+    ? { value: LEAVE, label: BACK_LABEL, description: 'The menu lists every action again.' }
     : { value: LEAVE, label: 'Quit', description: 'End this run.' };
 }
 
@@ -27,7 +29,7 @@ export function keptKeyNote(): string | undefined {
   return rememberedOperatorKey() ? 'Your operator key is kept for this run.' : undefined;
 }
 
-/** The value of the row that quits the CLI from the frame after an action. */
+/** The value of the row that quits the CLI from the frame after a first setup. */
 export const QUIT = 'quit';
 
 /**
@@ -53,21 +55,21 @@ export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, 
   return picked === ESCAPED ? leave.value : picked;
 }
 
-/**
- * The frame under an action that ended by itself: its output stays on screen until the operator goes on. Back to the menu is the first row,
- * on Enter, Esc and Ctrl-C alike; a first setup opens the menu for the first time.
- */
-export async function afterAction(firstSetup = false): Promise<typeof LEAVE | typeof QUIT> {
-  const menu: WayOut<typeof LEAVE> = firstSetup
-    ? { value: LEAVE, label: 'Open the menu', description: 'Every action of the CLI, under the home screen.' }
-    : leaveRow();
-  return whatNow<typeof LEAVE | typeof QUIT>([menu, { value: QUIT, label: 'Quit', description: 'Leave the CLI.' }]);
+/** The frame under a finished first setup, which has shown no menu yet: Open the menu first, on Enter, Esc and Ctrl-C alike, then Quit. */
+export async function afterFirstSetup(): Promise<typeof LEAVE | typeof QUIT> {
+  return whatNow<typeof LEAVE | typeof QUIT>([
+    { value: LEAVE, label: 'Open the menu', description: 'Every action of the CLI, under the home screen.' },
+    { value: QUIT, label: 'Quit', description: 'Leave the CLI.' },
+  ]);
 }
 
-/** The one row under Full status: Enter, Esc and Ctrl-C all return to the menu, with a blank line between it and the report. */
+/**
+ * The one row under an action that ended by itself: its output stays on screen until the operator goes on. Enter, Esc and Ctrl-C all return
+ * to the menu, with a blank line between the row and the output.
+ */
 export async function backToMenu(): Promise<typeof LEAVE> {
   if (!process.stdin.isTTY) return LEAVE;
-  await menuSelect({ message: '', items: [{ group: '' }, { name: '← Back to menu', value: LEAVE }] }).catch((error: unknown) => {
+  await menuSelect({ message: '', items: [{ group: '' }, { name: BACK_LABEL, value: LEAVE }] }).catch((error: unknown) => {
     if (!isPromptAbort(error)) throw error;
   });
   return LEAVE;
