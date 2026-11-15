@@ -31,6 +31,7 @@ interface EnqueueInput {
   isCreate: boolean;
   spreadWindowMs?: number;
   propagation?: StreamChange['propagation'];
+  rangeKey?: string;
 }
 
 interface DirtyEntry {
@@ -44,6 +45,8 @@ interface DirtyEntry {
   hasCreates: boolean;
   attempts: number;
   propagations: NonNullable<StreamChange['propagation']>[];
+  /** The `rangeKey` of the newest frame that announced this range: the server takes a key for seconds. */
+  rangeKey?: string;
 }
 
 const dirty = new Map<string, DirtyEntry>();
@@ -104,11 +107,13 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
     hasCreates: isCreate,
     attempts: 0,
     propagations: propagation ? [propagation] : [],
+    rangeKey: input.rangeKey,
   };
 
   const existing = dirty.get(key);
   if (existing) {
     mergeRange(existing, entry);
+    if (entry.rangeKey) existing.rangeKey = entry.rangeKey;
     // More news never postpones.
     existing.dueAt = Math.min(existing.dueAt, dueAt);
   } else {
@@ -233,7 +238,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
   const keys = getEntityQueryKeys(entityType);
   const channelId = coveringChannelId(entries);
-  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId);
+  const rangeKey = entries.find((entry) => entry.rangeKey)?.rangeKey;
+  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId, rangeKey);
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < maxFlushAttempts)) {
     for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, retryBaseMs * 2 ** entry.attempts);

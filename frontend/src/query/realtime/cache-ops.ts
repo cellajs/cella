@@ -154,6 +154,7 @@ export async function fetchRangeAndPatch(
   range: SeqRange,
   keys: EntityQueryKeys,
   channelId?: string,
+  rangeKey?: string,
 ): Promise<RangeFetchResult> {
   if (!tenantId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} range fetch, falling back to invalidation`);
@@ -166,7 +167,7 @@ export async function fetchRangeAndPatch(
   const { afterSeq, untilSeq } = range;
   const label = `${entityType} after ${afterSeq} until ${untilSeq}`;
   try {
-    const { results: items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, maxPageSize: syncChunkSize } });
+    const { results: items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, maxPageSize: syncChunkSize }, rangeKey });
 
     // A stream flush fetches no backlog past one chunk: it reports overflow, and its caller marks the lists of the range.
     if (items.length >= syncChunkSize) {

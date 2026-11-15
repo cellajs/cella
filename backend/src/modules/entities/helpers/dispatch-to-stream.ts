@@ -11,6 +11,7 @@ import {
 } from 'shared';
 import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import type { ActivityRow } from '#/lib/activity-bus';
+import { issueRangeKey, readClassOf } from '#/middlewares/range-answers';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
@@ -70,6 +71,17 @@ function rowReadSubject(event: StreamProductEvent, row: PermissionRowData): Subj
 /** Stream subscribers hold sessions: never a key or token mask. */
 function accessesOf(subscribers: readonly SubscriberAccess[]): Access[] {
   return subscribers.map(({ userId, isSystemAdmin, memberships }) => ({ actorId: userId, isSystemAdmin, memberships, scopes: null }));
+}
+
+const scopeOf = ({ tenantId, organizationId, entityType }: StreamProductEvent) => ({ tenantId, organizationId, entityType });
+
+/** The read class a subscriber's range fetch for the event's type runs under; null, and so no shared answer, when it cannot be told. */
+function readClassOfSubscriber({ userId, isSystemAdmin, memberships }: SubscriberAccess, event: StreamProductEvent): string | null {
+  try {
+    return readClassOf({ actorId: userId, isSystemAdmin, memberships, scopes: null }, event.entityType, event.organizationId);
+  } catch {
+    return null;
+  }
 }
 
 /** The decisions of `accessDecisions` for accesses built once. */
@@ -162,9 +174,13 @@ export async function dispatchChange(event: StreamProductEvent): Promise<void> {
   // A create or update row without seq is a redelivery whose row has since left its table: no reader can fetch it.
   const fetchable = event.action === 'delete' ? event.rows : event.rows.filter(({ seq }) => seq !== undefined);
   await Promise.all(
-    readerFrames(subscribers, { ...event, rows: fetchable }).map(({ rows, readers }) => {
+    readerFrames(subscribers, { ...event, rows: fetchable }).flatMap(({ rows, readers }) => {
       log.trace('Dispatching stream change', { action: event.action, rowCount: rows.length, subscriberCount: readers.length });
-      return sendToSubscribers(readers, { event: 'change', data: buildStreamChange(event, rows) }, 'Failed to dispatch stream change');
+      const change = buildStreamChange(event, rows);
+      return [...Map.groupBy(readers, (reader) => readClassOfSubscriber(reader, event)).entries()].map(([readClass, group]) => {
+        const data = readClass === null ? change : { ...change, rangeKey: issueRangeKey({ ...scopeOf(event), readClass }, group.length) };
+        return sendToSubscribers(group, { event: 'change', data }, 'Failed to dispatch stream change');
+      });
     }),
   );
 }

@@ -125,7 +125,7 @@ Up: a bigger machine for the API and a bigger managed database. Apart: each work
 
 Every worker is a singleton. The CDC worker holds the one replication slot, the jobs worker the one scheduler.
 
-The client carries work too. It keeps its own cache and fetches what the sync engine announces. The server spreads those fetches over time.
+The client carries work too. It keeps its own cache and fetches what the sync engine announces. The server spreads those fetches over time, and the readers of the same rows share one answer.
 
 ## Repository map
 

@@ -338,6 +338,7 @@ export const zStreamChange = z.object({
       remove: z.array(z.string()),
     })
     .nullable(),
+  rangeKey: z.string().max(64).optional(),
 });
 
 /**
@@ -815,6 +816,10 @@ export const zConnection = z.object({
       }),
     ])
     .nullable(),
+});
+
+export const zListAttachmentsHeaders = z.object({
+  'x-range-key': z.string().max(64).optional(),
 });
 
 export const zListAttachmentsPath = z.object({

@@ -258,6 +258,11 @@ exist need a data migration that gives them the new id column.
   route of its own: read the row with `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })`,
   return a published row as it is, store `<name>Contract.resolveServerUpdateOps(row, { publishedAt })`
   and dispatch `<name>.updated`.
+- **Shared range answers** ([Sync engine](../../SYNC_ENGINE.md#shared-answers)): on the list route
+  `xCache: [sharedRangeAnswers('<name>')]` and `parameters: [rangeKeyParameter]`, and in `query.ts`
+  the range fetch sends its `rangeKey` as the `x-range-key` header, as attachment does. Only for a
+  list whose range answer depends on the read scope and the URL alone: a field that differs per
+  viewer rules it out.
 - **Public read**: `publicRead()` in the policy case. A row whose `public` flag is set then reads for
   anonymous actors too, on reads and on the stream, and the flag follows the home channel's at create,
   on a move and when the channel's flag changes, with nothing to register. Keep `public` out of the

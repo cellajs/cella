@@ -17,6 +17,19 @@
         "kind": "metadata"
       },
       {
+        "key": "x-cache",
+        "id": "xCache",
+        "description": "Answers the endpoint may give from memory, ahead of its guards",
+        "required": false,
+        "kind": "middleware",
+        "values": {
+          "sharedRangeAnswers": {
+            "name": "Shared range answers",
+            "description": "The readers of one change frame share the answer to its range fetch for 2 seconds. A request that sends the frame key in `x-range-key` may get that answer without passing the guards: the key came over the stream of a reader with the same read scope and lasts 10 seconds."
+          }
+        }
+      },
+      {
         "key": "x-guard",
         "id": "xGuard",
         "description": "Authorization middleware applied to the endpoint",
@@ -2148,6 +2161,11 @@
             },
             "required": ["embeddedProductType", "update", "remove"],
             "description": "Embedded-product propagation hint for cross-product cache invalidation"
+          },
+          "rangeKey": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Key of the receivers who read the same rows, valid for seconds. Sent in `x-range-key` with the range fetch this frame causes, it lets the fetch take the answer another receiver was just given; absent for a receiver who shares its read scope with no one"
           }
         },
         "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
@@ -3947,14 +3965,16 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachments",
         "description": "Returns a paginated list of attachments for the organization.",
-        "x-tool": {
-          "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
-          "approvalRequired": false,
-          "entity": "attachment"
-        },
-        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
+          {
+            "name": "x-range-key",
+            "in": "header",
+            "description": "The `rangeKey` of the change frame that caused a range read (`afterSeq`, `untilSeq`): the read may then take the answer just given to a reader of the same rows.",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -4073,6 +4093,14 @@
             "in": "query"
           }
         ],
+        "x-tool": {
+          "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
+          "approvalRequired": false,
+          "entity": "attachment"
+        },
+        "x-cache": ["sharedRangeAnswers"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "responses": {
           "200": {
             "description": "Attachments",
@@ -6032,7 +6060,6 @@
         "summary": "Sign out",
         "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
         "responses": {
           "204": {
             "description": "User signed out"
@@ -12152,7 +12179,6 @@
         "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
         "x-anonymous": true,
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -12269,7 +12295,6 @@
         "description": "Partial update; unspecified keys keep their stored value.",
         "x-anonymous": true,
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -14146,7 +14171,6 @@
         "summary": "Remove a Web Push subscription",
         "description": "Deletes the given endpoint for the current user; an unknown endpoint, or one owned by someone else, is a no-op.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
         "requestBody": {
           "required": true,
           "content": {

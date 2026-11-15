@@ -54,3 +54,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
 | A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |
 | A frame or signal of a type the bundle does not know | Skipped (`readFrame`, `handleStreamSignal`) | | |
+| A kept range answer predates a write | A write that commits moves its tenant's count, and an answer read under an earlier count is served to no one, a request that waited for that read included (`tenantWriteCount`, `sharedRangeAnswers`) | | |
+| A range key outlives its reader's access | The key answers until it ends, as long as a session that ended in another process still passes (`rangeKeyLifetimeMs`) | | |
+| One client replays a range key | A kept answer serves a bounded number of requests, and the next one runs the route and its limiter (`sharedRangeAnswers`) | | |
+| A row is written outside the API process's tenant transactions: by another API process, or by the worker's reference strip | | A kept answer holds the older row until it ends (`rangeAnswerLifetimeMs`) | None, an open finding: a tab that takes it keeps the older row until the row changes again. An app runs one API process |

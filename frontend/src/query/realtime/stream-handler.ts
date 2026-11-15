@@ -70,6 +70,7 @@ function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
     isCreate: change.action === 'create',
     spreadWindowMs: change.spreadWindow ?? undefined,
     propagation: change.propagation ?? undefined,
+    rangeKey: change.rangeKey,
   });
 }
 

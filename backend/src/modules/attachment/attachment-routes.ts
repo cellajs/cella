@@ -1,5 +1,6 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { rangeKeyParameter, sharedRangeAnswers } from '#/middlewares/range-answers';
 import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   mockBatchAttachmentsResponse,
@@ -28,6 +29,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   listAttachments: xRoute({
     method: 'get',
     path: '/',
+    xCache: [sharedRangeAnswers('attachment')],
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xTool: {
       description: 'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
@@ -37,6 +39,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
     summary: 'Get attachments',
     description: 'Returns a paginated list of attachments for the organization.',
     request: { params: tenantOrgParamSchema, query: attachmentListQuerySchema },
+    parameters: [rangeKeyParameter],
     responses: { 200: json('Attachments', productListResponseSchema('attachment', attachmentSchema), mockPaginatedAttachmentsResponse()) },
   }),
   batchCreateAttachments: xRoute({

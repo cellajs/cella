@@ -125,7 +125,7 @@ Accounts are portable. `pnpm --filter backend auth:export` writes every account 
 
 ## Rate limits
 
-Every read runs through a default limiter, keyed per user or service account, or per IP address when anonymous. A route that declares its own limiter replaces it. A write declares one in `xRateLimiter`.
+Every read runs through a default limiter, keyed per user or service account, or per IP address when anonymous. A route that declares its own limiter replaces it. A write declares one in `xRateLimiter`. A range read that takes a [shared answer](./SYNC_ENGINE.md#shared-answers) spends nothing.
 
 The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The default read limiter also reports what is left of its budget in `RateLimit` header fields.
 

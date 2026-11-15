@@ -102,6 +102,14 @@ When an update moves rows where a subscriber can no longer read them, that subsc
 | `opaque` | The user reads some rows: its grants reach part of the organization or carry a row condition | Reveal no numbers. Refetch the cached lists on screen and mark the others to refetch when opened. |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
 
+### Shared answers
+
+The readers of one change fetch the same range at the same moment. A change frame carries a **range key** for the receivers who read the same rows, and each sends it with its range fetch. The first fetch runs as any request does. Its answer is kept for a moment, and the fetches behind it take it without passing the guards or reading the database.
+
+A key stands for a read scope, never for a user. Receivers whose scopes differ get different keys, and a receiver bound to its own rows gets none. A key answers only for the URL its answer was read under, and only for seconds: about as long as a session that ended elsewhere still passes.
+
+A kept answer never outlives a write of its tenant: the writer's next fetch reads the database. A product list route opts in with `xCache`, when its range answer depends on the read scope and the URL alone.
+
 ## Client
 
 ### Changes
