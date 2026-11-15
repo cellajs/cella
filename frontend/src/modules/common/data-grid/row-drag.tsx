@@ -96,7 +96,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
       return true;
     };
 
-    return dropTargetForElements({
+    const unregister = dropTargetForElements({
       element: el,
       canDrop: ({ source }) => {
         if (!isRowDragData(source.data) || source.data.rowIdx === rowIdx) return false;
@@ -139,6 +139,11 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         else config.onRowReorder(source.data.rowIdx, rowIdx, zone);
       },
     });
+    // A row that unmounts or re-registers mid-drag gets no onDragLeave, which would leave its scroll listener behind
+    return () => {
+      unregister();
+      window.removeEventListener('scroll', onScroll, { capture: true });
+    };
   }, [el, rowIdx, allowCenter, canDropRow, config]);
 
   return renderRow(rowKey, { ...props, ref: setEl });

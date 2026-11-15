@@ -17,14 +17,13 @@ export function TableBarContainer({ children, className, searchVars, pinned = fa
   const barRef = useRef<HTMLDivElement>(null);
   const pinStyle = useStackedPin(barRef, pinned);
 
-  const isInitialRenderRef = useRef(true);
   const serialized = searchVars ? JSON.stringify(searchVars) : undefined;
+  // The vars the last reset ran for: StrictMode's simulated remount re-runs the effect with the same vars
+  const resetForRef = useRef(serialized);
 
   useEffect(() => {
-    if (isInitialRenderRef.current) {
-      isInitialRenderRef.current = false;
-      return;
-    }
+    if (resetForRef.current === serialized) return;
+    resetForRef.current = serialized;
     scrollToReset();
     // The reset lands a step above a pinned bar's own place, which would leave a gap under the stack
     if (pinned && barRef.current) scrollToPinLine(barRef.current);

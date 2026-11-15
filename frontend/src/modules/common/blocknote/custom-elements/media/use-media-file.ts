@@ -11,9 +11,12 @@ export function useMediaFile(editor: AnyBlockNoteEditor, url: string, attachment
 
   useEffect(() => {
     let active = true;
+    let latest = 0;
     const resolve = async () => {
+      const run = latest + 1;
+      latest = run;
       const src = await Promise.resolve(editor.resolveFileUrl ? editor.resolveFileUrl(url) : url).catch(() => '');
-      if (!active) return;
+      if (!active || run !== latest) return;
       const pending = getBlockPendingUpload({ url, attachmentId });
       if (pending) setFile({ status: 'pending', pending });
       else setFile(src ? { status: 'ready', src } : { status: 'gone' });

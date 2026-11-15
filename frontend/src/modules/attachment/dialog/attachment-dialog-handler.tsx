@@ -24,7 +24,9 @@ export function AttachmentDialogHandler() {
       navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
     };
 
+    let cancelled = false;
     queueMicrotask(() => {
+      if (cancelled) return;
       dialoger.getState().create(
         <AttachmentDialog />,
         attachmentDialogOptions({
@@ -39,7 +41,10 @@ export function AttachmentDialogHandler() {
       );
     });
 
-    return () => dialoger.getState().remove(attachmentUrlDialogId, { isCleanup: true });
+    return () => {
+      cancelled = true;
+      dialoger.getState().remove(attachmentUrlDialogId, { isCleanup: true });
+    };
   }, [isOpen, organizationId]);
 
   return null;
