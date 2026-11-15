@@ -66,7 +66,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
       const auth = { secretKey: session.secretKey };
       const names = allPrincipalNames(session.appConfig, session.mode);
       const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
-      const applications = [names.operator, names.observer, names.ciDeploy, names.uploads];
+      const applications = [names.operator, names.observer, names.ciDeploy, names.uploads, names.transloadit];
       const keyAges: KeyAge[] = [];
       for (const application of applications) {
         const id = application === names.observer ? observerAppId : await resolveApplicationIdByName(auth, organizationId, application);

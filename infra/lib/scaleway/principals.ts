@@ -16,6 +16,8 @@ export interface AppPrincipalNames {
   operators: string;
   /** Observer application: the read-only key on the person's machine, from any address. */
   observer: string;
+  /** Transloadit application: its key sits in Transloadit's Template Credentials and writes objects of the upload buckets. */
+  transloadit: string;
 }
 
 /** Derive the principal names of one environment. */
@@ -30,7 +32,12 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
 
 /** Derive the principal names an app has one of, from its own slug (`appSlug` in the engine config). */
 export function appPrincipalNames(appSlug: string): AppPrincipalNames {
-  return { operator: `${appSlug}-operator`, operators: `${appSlug}-operators`, observer: `${appSlug}-observer` };
+  return {
+    operator: `${appSlug}-operator`,
+    operators: `${appSlug}-operators`,
+    observer: `${appSlug}-observer`,
+    transloadit: `${appSlug}-transloadit`,
+  };
 }
 
 /** Every principal name one environment of the app meets: its own, and the app's. */

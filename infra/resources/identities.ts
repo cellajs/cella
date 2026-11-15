@@ -103,3 +103,11 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
 export const uploadsApplicationId: pulumi.Output<string | undefined> = declaresUploads()
   ? requirePrincipalId(findApplicationId(names.uploads), `uploads ('${names.uploads}')`, { pendingOnPreview: true })
   : pulumi.output(undefined);
+
+/**
+ * Transloadit application id, for the upload buckets' statements: Transloadit stores uploaded files with its key. Undefined in an app that
+ * has none, which stores no Transloadit auth key, and without upload buckets.
+ */
+export const transloaditApplicationId: pulumi.Output<string | undefined> = declaresUploads()
+  ? findApplicationId(names.transloadit)
+  : pulumi.output(undefined);

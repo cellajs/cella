@@ -48,8 +48,8 @@ export async function ensureObserverForEnvironment(context: InfraContext, ownerK
   const reach = await observerReach(auth, organizationId, slug);
 
   if (!reach) {
-    const operator = await readPolicy(auth, organizationId, `${names.operator}-policy`);
-    const projectIds = [...new Set([...(operator ? operatorPolicyReach(operator.rules).projectIds : []), projectId])];
+    const operators = await readPolicy(auth, organizationId, `${names.operators}-policy`);
+    const projectIds = [...new Set([...(operators ? operatorPolicyReach(operators.rules).projectIds : []), projectId])];
     const key = await setupObserverApp({ callerSecretKey: ownerKey.secretKey, organizationId, projectId, projectIds, slug });
     console.info(`  ${changeMark} '${names.observer}' created.`);
     storeObserverKey(mode, key);

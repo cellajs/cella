@@ -101,6 +101,25 @@ describe('storage module', () => {
     }
   });
 
+  it('must not let a key that leaks at Transloadit read, list or delete a stored file: it writes objects of the two upload buckets and nothing else', () => {
+    type Statement = { Sid: string; Principal: unknown; Action: string[]; Resource: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const bucket = String(h.resources.find((r) => r.name === policy.name.replace(/-policy$/, '-bucket'))?.inputs.name);
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const transloadit = Statement.filter((statement) =>
+        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(appConfig.appSlug).transloadit}-id`),
+      );
+      if (policy.name === 'public-uploads-policy' || policy.name === 'private-uploads-policy') {
+        expect(
+          transloadit.map(({ Action, Resource }) => ({ Action, Resource })),
+          policy.name,
+        ).toEqual([{ Action: ['s3:PutObject', 's3:AbortMultipartUpload'], Resource: [`${bucket}/*`] }]);
+      } else {
+        expect(transloadit, policy.name).toEqual([]);
+      }
+    }
+  });
+
   it('must not let the observer or a machine read an env file: machines write through links, within the 10 statements Scaleway allows', () => {
     type Statement = { Sid: string; Principal: { SCW: string | string[] }; Action: string[]; Resource: string[] };
     const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);

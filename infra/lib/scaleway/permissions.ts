@@ -91,3 +91,9 @@ export const OPERATOR_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
  * Granular object sets, not FullAccess; the upload buckets' policies are the ones that admit it, and no other bucket names it.
  */
 export const UPLOADS_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const;
+
+/**
+ * The Transloadit application's set (`<app>-transloadit`): object writes, for the files Transloadit stores. No read and no delete: a key
+ * that leaks at Transloadit reads no stored file. The upload buckets' policies are the ones that admit it.
+ */
+export const TRANSLOADIT_PERMISSION_SETS = ['ObjectStorageObjectsWrite'] as const;

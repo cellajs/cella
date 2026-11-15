@@ -53,7 +53,10 @@ export interface InventoryExpectation {
   projectId: string;
   /** Every application name of this environment starts with it (`<slug>-<mode>-`). */
   environmentPrefix: string;
-  /** This environment's applications and the app's own (operator, observer), each with the name of its one policy. */
+  /**
+   * This environment's applications and the app's own (operator, observer, Transloadit), each with the name of the one policy that grants
+   * to it. The operator's is its group's: any policy bound to the application itself is a finding.
+   */
   declared: Readonly<Record<string, string>>;
   /** Applications that hold exactly one key; the observer holds one per machine, the operator one per sitting. */
   oneKey: readonly string[];
@@ -255,16 +258,16 @@ function mainJobVerdict(
   return { ...builder.ok('runs the declared script, image, env and secret references'), headline: 'deploy job as declared' };
 }
 
-/** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
+/** The environment's expectation, from the identities Update identities writes and the app's own. */
 function expectationOf(appConfig: { slug: string; appSlug: string }, mode: string, projectId: string): InventoryExpectation {
   const app = appPrincipalNames(appConfig.appSlug);
-  const appLevel = [app.operator, app.observer];
   const declared = Object.fromEntries([
     ...declaredIdentities({ slug: appConfig.slug, mode }, { projectId, organizationId: '' }).policies.map((policy) => [
       policy.applicationName,
       policy.name,
     ]),
-    ...appLevel.map((name) => [name, `${name}-policy`]),
+    [app.operator, `${app.operators}-policy`],
+    ...[app.observer, app.transloadit].map((name) => [name, `${name}-policy`]),
   ]);
   return {
     projectId,

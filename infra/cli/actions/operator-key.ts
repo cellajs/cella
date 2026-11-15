@@ -16,8 +16,8 @@ export function operatorReach(mode: string, projectId: string, others: ReadonlyM
 }
 
 /**
- * Write the app's operators with an Owner key the caller holds: the operator application, the operators group and a policy for each, over
- * `reach` and every project the operator policy reaches today, one that no environment file on this machine names included.
+ * Write the app's operators with an Owner key the caller holds: the operator application, the operators group and the group's policy, over
+ * `reach` and every project that policy reaches today, one that no environment file on this machine names included.
  */
 async function writeOperators(
   context: InfraContext,
@@ -41,9 +41,9 @@ async function writeOperators(
 }
 
 /**
- * Set up the app's operators: the `<app>-operator` application and the `<app>-operators` group, each with a policy that holds every
+ * Set up the app's operators: the `<app>-operator` application as a member of the `<app>-operators` group, whose policy holds every
  * product of the app's projects and no condition. No key is made or shown: a person makes a one-day key in the console at each sitting.
- * A run rewrites both policies in place, so the caller is the organization Owner (or another IAMManager principal); a new environment is
+ * A run rewrites the policy in place: the caller is the organization Owner (or another IAMManager principal). A new environment is
  * added by its setup.
  */
 export async function runOperatorKey(context: InfraContext): Promise<void> {
@@ -69,7 +69,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
 }
 
 /**
- * Make sure the app's operators reach this environment, at an Owner moment: the application, the group and both policies are written as
+ * Make sure the app's operators reach this environment, at an Owner moment: the application, the group and its policy are written as
  * declared, with this environment's project added to the projects they reach today, so a key of either keeps working.
  */
 export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<void> {
