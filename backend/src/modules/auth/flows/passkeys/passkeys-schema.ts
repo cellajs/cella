@@ -10,7 +10,18 @@ const base64urlString = z.string().max(maxLength.url);
 const passkeyKindSchema = z.enum(['authentication', 'mfa']);
 const challengeKindSchema = z.enum([...passkeyKindSchema.options, 'registration']);
 
-export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true, counter: true, transports: true });
+/** A passkey as a response carries it: without its credential, counter and the portability columns an export reads. */
+export const passkeySchema = createSelectSchema(passkeysTable).omit({
+  credentialId: true,
+  publicKey: true,
+  counter: true,
+  transports: true,
+  aaguid: true,
+  attestationFormat: true,
+  backupEligible: true,
+  backupState: true,
+  userHandle: true,
+});
 
 /** WebAuthn registration response (`RegistrationResponseJSON`); binary fields are base64url strings. */
 const webAuthnAttestationSchema = z.object({
@@ -47,7 +58,12 @@ export const webAuthnAssertionSchema = z.object({
 });
 export type WebAuthnAssertion = z.infer<typeof webAuthnAssertionSchema>;
 
-export const passkeyCreateBodySchema = z.object({ attestation: webAuthnAttestationSchema, nameOnDevice: z.string().max(maxLength.field) });
+export const passkeyCreateBodySchema = z.object({
+  attestation: webAuthnAttestationSchema,
+  nameOnDevice: z.string().max(maxLength.field),
+  /** The user id the browser registered the credential under, kept for an export; a client from before it is sent sends none. */
+  userHandle: base64urlString.optional(),
+});
 
 export const passkeyChallengeBodySchema = z.object({ kind: challengeKindSchema });
 

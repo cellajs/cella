@@ -100,7 +100,7 @@ describe('Passkey Authentication', async () => {
         body: { attestation: softwarePasskey().attest(value), nameOnDevice: 'Test device' },
       });
       expect(created.status).toBe(201);
-      const listed = await rawJsonRequest('/me/auth', sessionCookie);
+      const listed = await rawJsonRequest('/auth/me', sessionCookie);
 
       const fields = Object.keys(passkeySchema.shape).sort();
       expect(Object.keys(created.body).sort()).toEqual(fields);

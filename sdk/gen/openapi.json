@@ -1847,9 +1847,12 @@
                 },
                 "createdAt": {
                   "type": "string"
+                },
+                "lastUsedAt": {
+                  "type": ["string", "null"]
                 }
               },
-              "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
+              "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt", "lastUsedAt"]
             }
           }
         },
@@ -6719,6 +6722,10 @@
                   "nameOnDevice": {
                     "type": "string",
                     "maxLength": 255
+                  },
+                  "userHandle": {
+                    "type": "string",
+                    "maxLength": 2048
                   }
                 },
                 "required": ["attestation", "nameOnDevice"]
@@ -6747,7 +6754,8 @@
                   "deviceOs": "iOS",
                   "browser": "Safari",
                   "nameOnDevice": "Safari on iPhone",
-                  "createdAt": "2024-06-08T07:07:34.910Z"
+                  "createdAt": "2024-06-08T07:07:34.910Z",
+                  "lastUsedAt": null
                 },
                 "schema": {
                   "type": "object",
@@ -6782,9 +6790,12 @@
                     },
                     "createdAt": {
                       "type": "string"
+                    },
+                    "lastUsedAt": {
+                      "type": ["string", "null"]
                     }
                   },
-                  "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
+                  "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt", "lastUsedAt"]
                 }
               }
             }

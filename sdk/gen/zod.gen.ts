@@ -275,6 +275,7 @@ export const zMeAuthData = z.object({
       browser: z.string().max(255).nullable(),
       nameOnDevice: z.string().max(255),
       createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
     }),
   ),
 });
@@ -1273,6 +1274,7 @@ export const zCreatePasskeyBody = z.object({
     type: z.enum(['public-key']),
   }),
   nameOnDevice: z.string().max(255),
+  userHandle: z.string().max(2048).optional(),
 });
 
 /**
@@ -1287,6 +1289,7 @@ export const zCreatePasskeyResponse = z.object({
   browser: z.string().max(255).nullable(),
   nameOnDevice: z.string().max(255),
   createdAt: z.string(),
+  lastUsedAt: z.string().nullable(),
 });
 
 export const zDeletePasskeyPath = z.object({

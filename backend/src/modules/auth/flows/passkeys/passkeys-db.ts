@@ -1,8 +1,8 @@
-import { bigint, index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, boolean, index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
 export const passkeysTable = snakeCase.table(
@@ -26,7 +26,20 @@ export const passkeysTable = snakeCase.table(
     deviceOs: varchar({ length: maxLength.field }),
     browser: varchar({ length: maxLength.field }),
     nameOnDevice: varchar({ length: maxLength.field }).notNull(),
+    /**
+     * What an export needs to carry the passkey to another authenticator, as registration reported it; null on a passkey
+     * registered before the columns existed. The AAGUID names the authenticator model, the attestation format is `none`
+     * for every passkey this app registers, the backup flags say whether the credential syncs, and the user handle is
+     * the random id the browser registered it under.
+     */
+    aaguid: varchar({ length: 36 }),
+    attestationFormat: varchar({ length: maxLength.field }),
+    backupEligible: boolean(),
+    backupState: boolean(),
+    userHandle: varchar({ length: maxLength.field }),
     createdAt: timestampColumns.createdAt,
+    /** The newest assertion that verified; null until the passkey signs in once. */
+    lastUsedAt: isoTimestamp(),
   },
   (table) => [
     index('passkeys_user_id_idx').on(table.userId),

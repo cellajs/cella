@@ -20,6 +20,7 @@ export const mockPasskeyResponse = (key = 'passkey:default') =>
       ...device,
       nameOnDevice: `${device.browser} on ${device.deviceName}`,
       createdAt: mockPastIsoDate(),
+      lastUsedAt: null,
     };
   });
 

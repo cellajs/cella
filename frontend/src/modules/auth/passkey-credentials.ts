@@ -78,7 +78,7 @@ export const getPasskeyRegistrationCredential = async () => {
     },
   });
 
-  return { attestation, nameOnDevice };
+  return { attestation, nameOnDevice, userHandle };
 };
 
 /** Assertion plus challenge kind. Only an MFA challenge lists the account's passkeys; otherwise the browser offers its discoverable ones. */

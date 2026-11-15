@@ -53,7 +53,7 @@ An address an external party asserts becomes proven only under its connection's 
 
 ## Tokens
 
-The `auth/tokens/` module issues, opens and spends every token, with one policy per kind. Only a hash is stored. The raw value exists only in the link, the cookie or the mailed code that carries it.
+The `auth/core/tokens/` module issues, opens and spends every token, with one policy per kind. Only a hash is stored. The raw value exists only in the link, the cookie or the mailed code that carries it.
 
 | Kind | Carrier | Used for | Lives |
 | --- | --- | --- | --- |
@@ -110,6 +110,16 @@ An account-security action needs a session that proved its user present within t
 On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
 
 Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
+
+## Module boundary
+
+The auth module is three folders. `core/` is the session substrate: sessions, step-up, devices, tokens, invitations, anonymous accounts, federations, cookies and mails. `flows/` holds the app's own sign-in methods: magic links, passkeys, TOTP, OAuth, the MFA challenge and the SSO round trip. `account/` is the account page's surface: sign-in methods, sessions and the MFA switch.
+
+`core/index.ts` names what the rest of the app may import, and `backend/tests/auth-boundary.test.ts` holds three rules: outside code imports the index only, the core imports no flow but the one read of the factors a user holds, and the token engine has an opener for every link kind. A flow registers its link kinds with `registerLinkHandler` when its handlers load.
+
+Every sign-in ends in `finishSignIn`, whose extras report the proof: a second factor already proven skips the app's own challenge. Every account comes from `createAccount`, under the id another party named the person by when one did. An external subject is an `identities` row keyed by kind, provider and subject. Another authenticator replaces `flows/` and exchanges its proof for a session through `setUserSession`.
+
+Accounts are portable. `pnpm --filter backend auth:export` writes every account with a proven address in the import shape of [Hanko](https://docs.hanko.io): its id, addresses, passkeys with AAGUID, attestation format, backup flags and user handle, and its authenticator secret. The file holds decrypted secrets and goes where database dumps go.
 
 ## Rate limits
 

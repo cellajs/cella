@@ -323,6 +323,7 @@ export type MeAuthData = {
     browser: string | null;
     nameOnDevice: string;
     createdAt: string;
+    lastUsedAt: string | null;
   }>;
 };
 
@@ -2383,6 +2384,7 @@ export type CreatePasskeyData = {
       type: 'public-key';
     };
     nameOnDevice: string;
+    userHandle?: string;
   };
   path?: never;
   query?: never;
@@ -2431,6 +2433,7 @@ export type CreatePasskeyResponses = {
     browser: string | null;
     nameOnDevice: string;
     createdAt: string;
+    lastUsedAt: string | null;
   };
 };
 

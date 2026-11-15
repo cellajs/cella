@@ -2,14 +2,20 @@ import { and, eq, getColumns, lt } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
 import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
 
-/** Every column but the credential id, public key, signature counter and transports: what a response carries of a passkey. */
+/** Every column but the credential, its counter and the portability columns an export reads: what a response carries of a passkey. */
 const {
   credentialId: _credentialId,
   publicKey: _publicKey,
   counter: _counter,
   transports: _transports,
+  aaguid: _aaguid,
+  attestationFormat: _attestationFormat,
+  backupEligible: _backupEligible,
+  backupState: _backupState,
+  userHandle: _userHandle,
   ...passkeyColumns
 } = getColumns(passkeysTable);
 
@@ -54,14 +60,15 @@ export const insertPasskey = async (ctx: DbContext, { values }: { values: Insert
 };
 
 /**
- * Stores the new signature counter only while the stored one is still lower (or both are 0, for an authenticator
- * without a counter); undefined otherwise, so of two copies of one authenticator answering at once, one fails.
+ * Stores the new signature counter, and the moment of this use, only while the stored counter is still lower (or both
+ * are 0, for an authenticator without a counter); undefined otherwise, so of two copies of one authenticator answering
+ * at once, one fails.
  */
 export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: { id: string; counter: number }) => {
   const counterAdvances = counter > 0 ? lt(passkeysTable.counter, counter) : eq(passkeysTable.counter, 0);
   const [stored] = await ctx.var.db
     .update(passkeysTable)
-    .set({ counter })
+    .set({ counter, lastUsedAt: getIsoDate() })
     .where(and(eq(passkeysTable.id, id), counterAdvances))
     .returning({ id: passkeysTable.id });
   return stored;

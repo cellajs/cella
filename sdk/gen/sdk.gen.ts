@@ -1151,6 +1151,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  * @param {createPasskeyData} options
  * @param {object} options.body.attestation - `object`
  * @param {string} options.body.nameOnDevice - `string`
+ * @param {string=} options.body.userHandle - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(

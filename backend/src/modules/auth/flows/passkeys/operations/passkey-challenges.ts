@@ -111,8 +111,8 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
 /**
  * Verifies a passkey (WebAuthn) registration response against the registration challenge this browser holds for
  * `userId`: attestation, relying party, origin, challenge, user verification, algorithm and credential id length.
- * @returns The credential to store: its id, COSE public key (base64url), signature counter and the transports the
- *   browser reported, null for none.
+ * @returns The credential to store: its id, COSE public key (base64url), signature counter, the transports the browser
+ *   reported (null for none), the authenticator's AAGUID, the attestation format and the backup flags.
  * @throws AppError 401 `passkey_verification_failed` without a live registration challenge, 400
  *   `passkey_registration_failed` for a response that does not verify.
  */
@@ -133,7 +133,7 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
 
   if (!verified || !registrationInfo) throw registrationFailed();
 
-  const { credential } = registrationInfo;
+  const { credential, aaguid, fmt, credentialDeviceType, credentialBackedUp } = registrationInfo;
   if (Buffer.from(credential.id, 'base64url').byteLength > maxCredentialIdBytes) throw registrationFailed();
 
   return {
@@ -141,6 +141,10 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
     publicKey: Buffer.from(credential.publicKey).toString('base64url'),
     counter: credential.counter,
     transports: credential.transports?.length ? credential.transports : null,
+    aaguid,
+    attestationFormat: fmt,
+    backupEligible: credentialDeviceType === 'multiDevice',
+    backupState: credentialBackedUp,
   };
 };
 
