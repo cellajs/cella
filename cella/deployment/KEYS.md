@@ -4,7 +4,7 @@ This document explains the [Scaleway IAM](https://www.scaleway.com/en/docs/iam/c
 
 ### TL;DR
 
-Every key does one kind of work: an Owner API key for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment. No machine holds the deploy key, and every pasted key dies within a day. Rotating keys or secrets deploys the live release again on new machines.
+Every key does one kind of work: an Owner API key for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment. Transloadit holds a write-only key of its own. No machine holds the deploy key, and every pasted key dies within a day. Rotating keys or secrets deploys the live release again on new machines.
 
 ## Zones
 
@@ -29,10 +29,11 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | Key | Does | Works from | Lives in | Replaced by |
 | --- | --- | --- | --- | --- |
 | **Owner API key**: your own, as organization Owner | Everything. The one key that writes IAM | Any address | Nowhere: typed at the prompt | Made per occasion with an expiry of hours, revoked after |
-| **Operator**: `<app>-operator`, or your own user in `<app>-operators` | Every product in the app's projects, the engine image's push included, and IAM read. No IAM write | Any address, within the day | Nowhere: made by a first setup, then in the console at each sitting | Ends by itself. **Set up operators** rewrites the policies |
+| **Operator**: `<app>-operator`, or your own user in `<app>-operators` | Every product in the app's projects, the engine image's push included, and IAM read. No IAM write | Any address, within the day | Nowhere: made by a first setup, then in the console at each sitting | Ends by itself. **Set up operators** rewrites the policy |
 | **Deploy**: `<slug>-<mode>-ci-deploy` | One environment's machines with their private NICs, and its boot-diag bucket but the final dumps. Reads the load balancer and the runtime folder | Any address | `deploy-key` in the engine folder | **Rotate keys** |
 | **Observer**: `<app>-observer` | Read-only on the app's projects, and on the boot accounts, run records and `control/` of the boot-diag bucket. No machine, archive, env file or state | Any address | `SCW_OBSERVER_*` in `infra/.env.<mode>` | Deleted in the console. **Update identities** makes a machine a new one |
 | **Uploads**: `<slug>-<mode>-uploads` | Objects of the two upload buckets: the backend's uploads and presigned URLs | Any address | The runtime folder, and the env file of each machine that signs uploads | **Rotate keys** |
+| **Transloadit**: `<app>-transloadit` | Writes objects of the upload buckets. No read, no list, no delete | Any address | Transloadit's Template Credentials. Shown once when made | A new key in the console ([Transloadit key](#transloadit-key)) |
 
 **Owner moments.** The CLI asks for an Owner API key only where IAM is written:
 
@@ -99,15 +100,16 @@ On a shared host the services share their secrets: they read one env file.
 | Observer key | Read-only views, no machine, image or secret value, from any address | Delete that machine's key in the console ([Someone leaves](#someone-leaves)) |
 | Deploy key | Its environment's runtime secrets, machines, private networks, archives and env files, from any address | **Rotate keys**, then **Rotate secrets** |
 | Uploads key | The objects of its environment's upload buckets | **Rotate keys** |
+| Transloadit key | Writes to the upload buckets of every environment. It reads no file, and a file it replaces keeps its earlier version | A new key in the console, then delete the lost one ([Transloadit key](#transloadit-key)) |
 | A machine's links | While they last, its own env file and the release's archives | They end within minutes. **Rotate secrets** when a link may have been read |
 
 ## Operator key
 
 A privileged action runs on a key that ends within a day. It is a key of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. It dies by itself. Nothing is stored, and nothing is revoked after.
 
-`pnpm infra` → **More** → **Set up operators** (`pnpm infra operators`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy for each with the same rules. It makes no key.
+`pnpm infra` → **More** → **Set up operators** (`pnpm infra operators`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy, the group's. The application is a member of the group, so it holds what every member holds. It makes no key.
 
-A key of either keeps working, since the policies are written in place. A new environment's setup adds its project to both. Staging and production share one set of operators, since the name is production's slug.
+A key of either keeps working, since the policy is written in place. A new environment's setup adds its project to it. Staging and production share one set of operators, since the name is production's slug.
 
 Add members in IAM → Groups → `<app>-operators`. Each member then holds what the application holds.
 
@@ -159,6 +161,18 @@ Third-party keys are pasted anew in **Env vars & secrets**.
 After a compromise, one **Rotate keys** per environment covers the deploy and uploads keys. The observer's reads no key, and the operators' end within the day. The inventory names a key an intruder added. Delete it in the console.
 
 The running backend machines hold the deleted uploads key in their env file. Their uploads and presigned URLs fail until the deploy of the live release replaces them. The rotation ends by printing the inventory. Afterwards, revoke the Owner API key you pasted.
+
+### Transloadit key
+
+Transloadit stores each uploaded file in an upload bucket with a key of the `<app>-transloadit` application. The key writes objects and nothing else. A leak at Transloadit reads no stored file. One application serves every environment of the app.
+
+**Update identities** makes the application once an environment stores its Transloadit auth key in **Env vars & secrets**. It shows the key once and stores it nowhere. Paste it into the Template Credentials Transloadit holds for the two upload buckets, each named after its bucket. The buckets admit the key from the next **Review & apply changes**.
+
+**Rotate keys** leaves this key alone. To replace it:
+
+1. In the console, go to IAM → Applications → `<app>-transloadit` → API keys and generate a key without an end date.
+2. Paste it into both Template Credentials of every environment.
+3. Delete the old key in the console.
 
 ## A stolen laptop
 

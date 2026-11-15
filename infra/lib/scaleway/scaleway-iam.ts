@@ -237,6 +237,22 @@ export async function ensureGroup(opts: {
   }
 }
 
+/**
+ * Add an application to a group that does not list it. Needs IAM write.
+ * @returns False when the group lists it already.
+ */
+export async function addApplicationToGroup(callerSecretKey: string, group: ScwGroup, applicationId: string): Promise<boolean> {
+  if ((group.application_ids ?? []).includes(applicationId)) return false;
+  try {
+    await scwFetch<ScwGroup>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/groups/${group.id}/add-member`, {
+      application_id: applicationId,
+    });
+  } catch (error) {
+    if (!isAlreadyExists(error)) throw error;
+  }
+  return true;
+}
+
 /** Ensure the `<slug>-<mode>` IAM group exists and contains the application. Never a policy principal: a group policy would grant every member. */
 async function ensureGroupMembership(opts: {
   callerSecretKey: string;
@@ -256,16 +272,8 @@ async function ensureGroupMembership(opts: {
     log: opts.log,
   });
   if (!group) return;
-  if ((group.application_ids ?? []).includes(opts.applicationId)) return;
   const log = opts.log ?? ((msg) => console.info(msg));
-  try {
-    await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups/${group.id}/add-member`, {
-      application_id: opts.applicationId,
-    });
-    log(`  ${checkMark} Enrolled in IAM group ${groupName}`);
-  } catch (error) {
-    if (!isAlreadyExists(error)) throw error;
-  }
+  if (await addApplicationToGroup(opts.callerSecretKey, group, opts.applicationId)) log(`  ${checkMark} Enrolled in IAM group ${groupName}`);
 }
 
 /** IAM principal inventory for one app and mode, from the per-mode group's members. Drives teardown, so nothing is deleted by name-guessing. */

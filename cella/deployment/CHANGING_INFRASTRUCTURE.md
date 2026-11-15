@@ -69,3 +69,5 @@ Only an Owner moment writes identities, since they are IAM. A deploy does not re
 It makes the uploads application and its key, and writes that key into the runtime folder. It reads what differs with the observer key, and asks for an Owner API key only when something has to change.
 
 The plan also names a policy beside a declared one, and a key beside the uploads key. **Update identities** deletes either. **Rotate keys** replaces the deploy and uploads keys and deletes the rest.
+
+An environment that stores a Transloadit auth key also gets the app's Transloadit application. **Update identities** makes it and adds the environment's project to its policy. The upload buckets admit it at the next apply ([Transloadit key](./KEYS.md#transloadit-key)).

@@ -8,7 +8,14 @@ import { resolvePerMode } from '../lib/general-config';
 import { appStorageNeeds, services } from '../lib/services';
 import { CONTROL_PREFIX, lockKey } from '../lib/stack/control-store';
 import { deployMode, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
-import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
+import {
+  ciDeployApplicationId,
+  observerApplicationId,
+  operatorApplicationId,
+  operatorMemberUserIds,
+  transloaditApplicationId,
+  uploadsApplicationId,
+} from './identities';
 
 // The app's buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
@@ -80,6 +87,26 @@ const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
               's3:AbortMultipartUpload',
             ],
             Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+          },
+        ]
+      : [],
+  );
+
+/**
+ * The Transloadit application's statement on the upload buckets: it writes objects and ends a multipart upload of its own, nothing else.
+ * No read, no list and no delete: a key that leaks at Transloadit reads no stored file. A write there can replace an object, whose
+ * earlier version the bucket keeps.
+ */
+const transloaditStoreAccess = (bucketName: pulumi.Input<string>) =>
+  transloaditApplicationId.apply((transloaditId) =>
+    transloaditId
+      ? [
+          {
+            Sid: 'TransloaditStore',
+            Effect: 'Allow',
+            Principal: { SCW: `application_id:${transloaditId}` },
+            Action: ['s3:PutObject', 's3:AbortMultipartUpload'],
+            Resource: [pulumi.interpolate`${bucketName}/*`],
           },
         ]
       : [],
@@ -177,19 +204,26 @@ if (publicUploadsBucket) {
       region,
       policy: pulumi.jsonStringify({
         Version: '2023-04-17',
-        Statement: pulumi.all([humanAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
-          {
-            Sid: 'PublicRead',
-            Effect: 'Allow',
-            Principal: '*',
-            Action: ['s3:GetObject'],
-            Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
-          },
-          // The deploy writes GeoIP data and nothing else here: the users' files are the backend's.
-          deployAccess(publicUploadsBucket.name, ['geoip/']),
-          ...admin,
-          ...signers,
-        ]),
+        Statement: pulumi
+          .all([
+            humanAccess(publicUploadsBucket.name),
+            uploadsSignerAccess(publicUploadsBucket.name),
+            transloaditStoreAccess(publicUploadsBucket.name),
+          ])
+          .apply(([admin, signers, transloadit]) => [
+            {
+              Sid: 'PublicRead',
+              Effect: 'Allow',
+              Principal: '*',
+              Action: ['s3:GetObject'],
+              Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
+            },
+            // The deploy writes GeoIP data and nothing else here: the users' files are the backend's.
+            deployAccess(publicUploadsBucket.name, ['geoip/']),
+            ...admin,
+            ...signers,
+            ...transloadit,
+          ]),
       }),
     },
     kept,
@@ -219,7 +253,10 @@ const privateUploadsBucket = needs.uploadBuckets
     )
   : undefined;
 
-/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer and the people's applications; every other key, the deploy key included, is denied. */
+/**
+ * Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer, the people's applications and Transloadit's
+ * writes; every other key, the deploy key included, is denied.
+ */
 if (privateUploadsBucket) {
   new scaleway.object.BucketPolicy(
     'private-uploads-policy',
@@ -229,8 +266,12 @@ if (privateUploadsBucket) {
       policy: pulumi.jsonStringify({
         Version: '2023-04-17',
         Statement: pulumi
-          .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
-          .apply(([admin, signers]) => [...admin, ...signers]),
+          .all([
+            humanAccess(privateUploadsBucket.name),
+            uploadsSignerAccess(privateUploadsBucket.name),
+            transloaditStoreAccess(privateUploadsBucket.name),
+          ])
+          .apply(([admin, signers, transloadit]) => [...admin, ...signers, ...transloadit]),
       }),
     },
     kept,

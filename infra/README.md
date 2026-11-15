@@ -186,6 +186,7 @@ One name per concept across code and docs:
 | **observer key** | The read-only `<app>-observer` key, from any address. Kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |
+| **Transloadit key** | The app's `<app>-transloadit` key, which only writes objects of the upload buckets. Kept in Transloadit's Template Credentials. |
 | **privileged** | A resource only an apply on the operator key changes. |
 | **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports. No key and no secret value. |
 | **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |

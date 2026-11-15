@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { uploadsPolicy } from '../lib/scaleway/declared-identities';
 import { deployRules } from '../lib/scaleway/deploy-policy';
+import { transloaditPolicy } from './transloadit-key';
 
 // The deploy key's rights: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
@@ -63,5 +64,12 @@ describe('uploads key rights', () => {
     expect(uploads).toEqual([
       { permission_set_names: ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'], project_ids: ['proj'] },
     ]);
+  });
+});
+
+describe('Transloadit key rights', () => {
+  it("must not read or delete a stored file: object writes alone, in the app's projects", () => {
+    const { rules: transloadit } = transloaditPolicy({ slug: 'app', projectIds: ['proj', 'proj-staging', 'proj'] });
+    expect(transloadit).toEqual([{ permission_set_names: ['ObjectStorageObjectsWrite'], project_ids: ['proj', 'proj-staging'] }]);
   });
 });

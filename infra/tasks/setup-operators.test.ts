@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
-import { ensureApplication, ensureGroup } from '../lib/scaleway/scaleway-iam';
+import { addApplicationToGroup, ensureApplication, ensureGroup } from '../lib/scaleway/scaleway-iam';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 import { OPERATOR_POLICY_DESCRIPTION as DESCRIPTION, operatorPolicyReach, operatorRules, setupOperators } from './setup-operators';
 
-vi.mock('../lib/scaleway/scaleway-iam', () => ({ ensureApplication: vi.fn(), ensureGroup: vi.fn() }));
+vi.mock('../lib/scaleway/scaleway-iam', () => ({ addApplicationToGroup: vi.fn(), ensureApplication: vi.fn(), ensureGroup: vi.fn() }));
 vi.mock('../lib/scaleway/dns-zone-project', () => ({ resolveDnsProjectIds: vi.fn() }));
 vi.mock('../lib/scaleway/scw-fetch', () => ({ scwFetch: vi.fn(), scwSend: vi.fn() }));
 
@@ -24,6 +24,7 @@ const live = new Map<string, { id: string; application_id?: string; group_id?: s
 beforeEach(() => {
   vi.mocked(ensureApplication).mockReset().mockResolvedValue({ id: 'app-1', name: 'cella-operator' });
   vi.mocked(ensureGroup).mockReset().mockResolvedValue({ id: 'group-1', name: 'cella-operators' });
+  vi.mocked(addApplicationToGroup).mockReset().mockResolvedValue(true);
   vi.mocked(resolveDnsProjectIds).mockReset().mockResolvedValue(['proj']);
   vi.mocked(scwSend).mockReset().mockResolvedValue(undefined);
   live.clear();
@@ -78,28 +79,43 @@ describe('operatorRules', () => {
 describe('setupOperators', () => {
   const rules = operatorRules({ projectIds: ['proj', 'proj-staging'], organizationId: 'org-1', dnsProjectIds: ['proj'] });
 
-  it('replaces the rules and the description of a policy that differs in place, so its keys keep working, says when a condition went, and leaves one that matches alone', async () => {
+  it("grants through the group's policy alone: its rules are replaced in place, the application joins the group, and only then is the application's own policy deleted, saying when a condition went with it", async () => {
     live.set('cella-operator-policy', {
       id: 'pol-app',
       application_id: 'app-1',
       description: 'conditioned on the dedicated IP address',
       rules: [{ ...rules[0], condition: "request.ip in ['203.0.113.7']" }],
     });
-    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'group-1', description: DESCRIPTION, rules });
+    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'group-1', description: DESCRIPTION, rules: [rules[0]] });
 
     const result = await setupOperators(base);
 
-    expect(result).toEqual({ applicationPolicy: 'updated', groupPolicy: 'unchanged', conditionDropped: true });
+    expect(result).toEqual({ policy: 'updated', applicationPolicyDeleted: true, conditionDropped: true });
     expect(posted()).toEqual([]);
     expect(vi.mocked(scwSend).mock.calls).toEqual([
-      [expect.anything(), 'PUT', expect.stringMatching(/\/rules$/), { policy_id: 'pol-app', rules }],
-      [expect.anything(), 'PATCH', expect.stringMatching(/\/policies\/pol-app$/), { description: DESCRIPTION }],
+      [expect.anything(), 'PUT', expect.stringMatching(/\/rules$/), { policy_id: 'pol-group', rules }],
+      [expect.anything(), 'DELETE', expect.stringMatching(/\/policies\/pol-app$/)],
     ]);
+    // A key of the application keeps its rights in between: it is a member before its own policy goes.
+    expect(addApplicationToGroup).toHaveBeenCalledWith('owner-secret', { id: 'group-1', name: 'cella-operators' }, 'app-1');
+    const [joined] = vi.mocked(addApplicationToGroup).mock.invocationCallOrder;
+    const [, deleted] = vi.mocked(scwSend).mock.invocationCallOrder;
+    expect(joined).toBeLessThan(deleted ?? 0);
   });
 
-  it('must not take over a policy bound to another principal', async () => {
-    live.set('cella-operator-policy', { id: 'pol-app', application_id: 'someone-else', rules });
+  it('must not take over or delete a policy bound to another principal', async () => {
+    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'someone-else', rules });
     await expect(setupOperators(base)).rejects.toThrow(/another principal/);
+    expect(scwSend).not.toHaveBeenCalled();
+
+    // Nor does such a policy add a project of its own to what the operators reach.
+    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'group-1', description: DESCRIPTION, rules });
+    live.set('cella-operator-policy', {
+      id: 'pol-app',
+      application_id: 'someone-else',
+      rules: [{ permission_set_names: ['AllProductsFullAccess'], project_ids: ['proj-of-another-app'] }],
+    });
+    expect(await setupOperators(base)).toEqual({ policy: 'unchanged', applicationPolicyDeleted: false, conditionDropped: false });
     expect(scwSend).not.toHaveBeenCalled();
   });
 

@@ -212,7 +212,7 @@ The teardown deletes:
 - the deploy and uploads applications with their policies and keys
 - the `<slug>-<mode>` group
 
-The app's operators and observer stay, since they serve the other environments.
+The app's operators, observer and Transloadit application stay, since they serve the other environments. The Transloadit key still writes to the kept upload buckets: delete it in the console when no environment uses it.
 
 It keeps these, with their contents:
 

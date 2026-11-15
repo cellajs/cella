@@ -12,7 +12,7 @@ const expect_ = {
   declared: {
     'app-staging-boot': 'app-vm-boot-policy',
     'app-staging-ci-deploy': 'app-staging-ci-deploy-policy',
-    'app-operator': 'app-operator-policy',
+    'app-operator': 'app-operators-policy',
     'app-observer': 'app-observer-policy',
   },
   oneKey: ['app-staging-boot', 'app-staging-ci-deploy'],
@@ -31,7 +31,7 @@ describe('the inventory', () => {
         { id: 'other-ci', name: 'other-production-ci-deploy' },
         { id: 'reader', name: 'other-production-admin' },
       ],
-      groups: [],
+      groups: [{ id: 'ops', name: 'app-operators', application_ids: ['op'] }],
       apiKeys: [
         { access_key: 'SCWBOOT', application_id: 'boot' },
         { access_key: 'SCWPLANTED', application_id: 'boot', description: 'planted' },
@@ -50,6 +50,13 @@ describe('the inventory', () => {
           rules: [{ project_ids: ['p-staging'], permission_set_names: ['ContainerRegistryReadOnly'] }],
         },
         { name: 'boot-extra', application_id: 'boot', rules: [{ project_ids: ['p-staging'], permission_set_names: ['SecretManagerFullAccess'] }] },
+        // The operator is granted to as a member of its group; a policy bound to the application itself is planted or left over.
+        { name: 'app-operators-policy', group_id: 'ops', rules: [{ project_ids: ['p-staging'], permission_set_names: ['AllProductsFullAccess'] }] },
+        {
+          name: 'app-operator-policy',
+          application_id: 'op',
+          rules: [{ project_ids: ['p-staging'], permission_set_names: ['AllProductsFullAccess'] }],
+        },
         {
           name: 'other-production-ci-deploy-policy',
           application_id: 'other-ci',
@@ -73,7 +80,10 @@ describe('the inventory', () => {
       applications: ['other-production-ci-deploy: can act in this environment through other-production-ci-deploy-policy: IAMApplicationManager'],
       keys: ['app-staging-boot holds 2 keys: SCWBOOT (no description), SCWPLANTED (planted)'],
       operatorKeys: ['app-operator holds a key that outlives a day: SCWOPDURABLE (forever)'],
-      policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
+      policies: [
+        'boot-extra on app-staging-boot, beside the declared app-vm-boot-policy',
+        'app-operator-policy on app-operator, beside the declared app-operators-policy',
+      ],
       machines: [
         'app-backend-b: a machine the live record does not name, older than a deploy runs (a failed run left it, or someone named it so)',
         'app-builder-abc: a builder, older than a deploy runs (a failed run left it, or someone named it so)',

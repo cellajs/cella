@@ -12,15 +12,21 @@ import { errorMessage } from '../../lib/utils/errors';
 import { planDeclaredPolicies, writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { type IdentityChanges, identityChangeLines, planIdentityChanges } from '../../tasks/identity-plan';
 import { declaredObserverPolicy } from '../../tasks/setup-observer-app';
+import { planTransloadit, type TransloaditStep, writeTransloadit } from '../../tasks/transloadit-key';
 import { writeUploadsKey } from '../../tasks/uploads-key';
 import { confirmOrDefault, endAction, type InfraContext, pointTo } from '../shared';
 import { ensureObserverForEnvironment, type ObserverStep, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
 
-/** What an identity update would change: the identity plan with the observer's policy among its policies, and the observer's step on this machine. */
+/**
+ * What an identity update would change: the identity plan with the policies of the app's observer and Transloadit application among its
+ * policies, and the step of each.
+ */
 export interface IdentityPlan extends IdentityChanges {
   observer: ObserverStep;
+  /** Absent where the environment stores no Transloadit auth key. */
+  transloadit?: TransloaditStep;
 }
 
 /** True when the plan changes nothing. */
@@ -30,19 +36,30 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
     plan.policies.every((step) => step.change === 'none') &&
     (plan.uploadsKey?.change ?? 'none') === 'none' &&
     plan.extraPolicies.length === 0 &&
-    plan.observer === 'none'
+    plan.observer === 'none' &&
+    (plan.transloadit ?? 'none') === 'none'
   );
 }
 
 /** The plan as lines to print. */
-function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNames, 'observer'>): string[] {
+function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNames, 'observer' | 'transloadit'>): string[] {
   const observerWords: Record<ObserverStep, string | undefined> = {
     none: undefined,
     create: 'to create, its key written to this machine',
     key: 'a key for this machine',
   };
+  const transloaditWords: Record<TransloaditStep, string | undefined> = {
+    none: undefined,
+    create: 'to create, its key shown once',
+    key: 'a key, shown once',
+  };
   const observer = observerWords[plan.observer];
-  return [...identityChangeLines(plan), ...(observer ? [`observer ${names.observer}: ${observer}`] : [])];
+  const transloadit = transloaditWords[plan.transloadit ?? 'none'];
+  return [
+    ...identityChangeLines(plan),
+    ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
+    ...(transloadit ? [`Transloadit application ${names.transloadit}: ${transloadit}`] : []),
+  ];
 }
 
 /** A Secret Manager client in the environment's project. */
@@ -104,17 +121,48 @@ async function planIdentities(
 ): Promise<IdentityPlan> {
   const changes = await planChanges(context, auth.secretKey, organizationId);
   const observer = await observerPolicies(auth, organizationId, context);
+  const transloadit = await planTransloadit({
+    auth,
+    secrets: secretsFor(context, auth.secretKey),
+    organizationId,
+    projectId: context.projectId,
+    slug: context.appConfig.appSlug,
+  });
+  const appPolicies = [...observer, ...(transloadit?.policy ? [transloadit.policy] : [])];
   return {
     ...changes,
-    policies: [...changes.policies, ...(await planDeclaredPolicies(auth, organizationId, observer))],
+    policies: [...changes.policies, ...(await planDeclaredPolicies(auth, organizationId, appPolicies))],
     observer: observerStep(observer.length > 0, context.environment),
+    ...(transloadit ? { transloadit: transloadit.step } : {}),
   };
 }
 
 /**
- * Update identities: make the applications the code declares, write their policies and the observer's, and make the uploads key, at an
- * Owner moment. They are IAM, which neither the operator key nor the deploy key writes. An Owner API key is asked for only when something
- * has to change: the plan is read first with the observer key when this machine holds it.
+ * Make the app's Transloadit application reach the environment, and show a key it had to make: nothing stores that key, so this is the one
+ * time it is readable.
+ */
+async function ensureTransloaditForEnvironment(context: InfraContext, auth: IamAuth, organizationId: string): Promise<void> {
+  const { appConfig, projectId } = context;
+  const { transloadit } = appPrincipalNames(appConfig.appSlug);
+  const key = await writeTransloadit({ auth, organizationId, projectId, slug: appConfig.appSlug });
+  if (!key) {
+    console.info(`  ${checkMark} '${transloadit}' reaches ${context.environment}; its key is left alone.`);
+    return;
+  }
+  console.info(`  ${changeMark} A key of '${transloadit}', shown this once:`);
+  console.info(`      access key  ${key.access_key}`);
+  console.info(`      secret key  ${key.secret_key}`);
+  console.info(
+    `    Paste both into Transloadit's Template Credentials '${appConfig.s3.publicBucketName}' and '${appConfig.s3.privateBucketName}' (region ${appConfig.s3.region}).`,
+  );
+  console.info(`    The upload buckets admit the key from the next ${pointTo('apply')}.`);
+}
+
+/**
+ * Update identities: make the applications the code declares, write their policies and the observer's, make the uploads key and, where
+ * the environment stores a Transloadit auth key, the app's Transloadit application with its key, at an Owner moment. They are IAM, which
+ * neither the operator key nor the deploy key writes. An Owner API key is asked for only when something has to change: the plan is read
+ * first with the observer key when this machine holds it.
  */
 export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -171,6 +219,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
       console.info(`  ${changeMark} Deleted ${policy.name} from ${policy.application}.`);
     }
     if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
+    if (plan.transloadit) await ensureTransloaditForEnvironment(context, auth, ownerKey.organizationId);
     console.info(`${checkMark} The identities of ${context.environment} are written.`);
   } finally {
     await ownerKey.release();
