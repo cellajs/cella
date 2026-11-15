@@ -1,26 +1,21 @@
+import { performance } from 'node:perf_hooks';
 import { defineScenario } from '@cellajs/cli/bench';
-import type { StreamChange } from '#/schemas/stream-schemas';
-import { attachmentEdit } from '../attachment-requests';
-import { benchUser, ORG_PATH } from '../bench-user';
-import { SSE_HOLD_MS, SSE_RANGE_KEY, SSE_SYNC_MODE } from '../config';
+import { nanoid } from 'nanoid';
+import { uuidv7 } from 'uuidv7';
+import { attachmentProduct } from '../attachment-requests';
+import { benchUser } from '../bench-user';
+import { SSE_FANOUT } from '../config';
+import { createSyncClient, SYNC_COUNTERS, SYNC_HISTOGRAMS } from '../sync/client';
 
-const DEFAULT_WINDOW_MS = 15_000;
-/** Bench tier: no floor (the spread itself is measured), ceiling like the background tier. */
-const TIER_MAX_MS = 30_000;
-
-/** FNV-1a 32-bit: same deterministic jitter as the frontend scheduler. */
-function hashSpread(key: string): number {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < key.length; i++) {
-    hash ^= key.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return hash >>> 0;
-}
+/** Subscribers whose stream is open, by VU index: an edit waits for the ones open when it was sent. */
+const listening = new Set<number>();
+/** Edits not yet heard by every subscriber that was listening: when the writer sent each, and who has not heard it. */
+const edits = new Map<string, { sentAt: number; waiting: Set<number> }>();
 
 /**
- * Nine in ten VUs subscribe and react like the frontend's lazy-sync scheduler (merge per scope, then a slot in the
- * server's spread window); one in ten writes edits. `SYNC_MODE=immediate` fetches per change for comparison.
+ * Nine in ten VUs subscribe and read what the stream announces in the slot the frontend's scheduler takes (one read per
+ * scope at a time, in the server's spread window); one in ten writes edits. `SSE_SYNC_MODE=immediate` reads each
+ * announcement at once, for comparison. `sync.heard_ms` and `sync.all_heard_ms` count from the writer's call.
  */
 export default defineScenario({
   description: 'SSE fan-out: many live subscribers fetching what the stream announces.',
@@ -28,8 +23,8 @@ export default defineScenario({
     { name: 'ramp subscribers', duration: 10, arrivalRate: 8 },
     { name: 'hold with writes', duration: 20, arrivalRate: 12 },
   ],
-  counters: ['bench.rows_written', 'sse.changes', 'sync.range_fetches', 'sync.kept_answers', 'sse.errors'],
-  histograms: ['sync.fetch_ms', 'sync.reaction_delay_ms'],
+  counters: [...SYNC_COUNTERS, 'bench.rows_written'],
+  histograms: [...SYNC_HISTOGRAMS, 'sync.heard_ms', 'sync.all_heard_ms'],
   primary: 'sync.fetch_ms.p95',
   checks: { maxErrorShare: 5, expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] },
   roles: [
@@ -37,85 +32,33 @@ export default defineScenario({
       name: 'subscriber',
       weight: 9,
       async vu(vu) {
-        const { cookie, userIndex } = benchUser(vu.index);
-        const clientId = `vu-${userIndex}`;
-        const pending = new Map<string, { from: number; until: number; rangeKey?: string }>();
-        const timers = new Set<NodeJS.Timeout>();
-
-        const rangeFetch = async (from: number, until: number, rangeKey?: string) => {
-          const started = performance.now();
-          try {
-            const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&maxPageSize=1000`, {
-              headers: { cookie, ...(SSE_RANGE_KEY && rangeKey && { 'x-range-key': rangeKey }) },
-              name: 'GET /attachments (range)',
-            });
-            vu.histogram('sync.fetch_ms', performance.now() - started);
-            vu.counter('sync.range_fetches');
-            if (res.headers['x-range-answer'] === 'kept') vu.counter('sync.kept_answers');
-            if (!res.ok) vu.counter('sse.errors');
-          } catch {
-            vu.counter('sse.errors');
-          }
-        };
-
-        const onChange = (n: StreamChange) => {
-          const seqs = n.rows.flatMap(({ seq }) => (seq == null ? [] : [seq]));
-          if (n.overflow?.untilSeq != null) seqs.push((n.overflow.afterSeq ?? 0) + 1, n.overflow.untilSeq);
-          if (seqs.length === 0) return;
-          vu.counter('sse.changes');
-          const from = Math.min(...seqs);
-          const until = Math.max(...seqs);
-          const scope = `${n.productType}:${n.channelId ?? n.organizationId}`;
-
-          if (SSE_SYNC_MODE === 'immediate') {
-            vu.histogram('sync.reaction_delay_ms', 0);
-            void rangeFetch(from, until, n.rangeKey);
-            return;
-          }
-          const entry = pending.get(scope);
-          if (entry) {
-            // The pending flush covers this range too.
-            entry.from = Math.min(entry.from, from);
-            entry.until = Math.max(entry.until, until);
-            entry.rangeKey = n.rangeKey ?? entry.rangeKey;
-            return;
-          }
-          // As the frontend's scheduler: the server's window where it sends one, and no spread inside a window of 0.
-          const window = n.spreadWindow ?? DEFAULT_WINDOW_MS;
-          const delay = window > 0 ? Math.min(hashSpread(`${clientId}:${scope}`) % window, TIER_MAX_MS) : 0;
-          vu.histogram('sync.reaction_delay_ms', delay);
-          const range = { from, until, rangeKey: n.rangeKey };
-          pending.set(scope, range);
-          const timer = setTimeout(() => {
-            pending.delete(scope);
-            timers.delete(timer);
-            void rangeFetch(range.from, range.until, range.rangeKey);
-          }, delay);
-          timers.add(timer);
-        };
-
+        const { cookie } = benchUser(vu.index);
+        const client = createSyncClient({
+          client: vu,
+          cookie,
+          product: attachmentProduct,
+          mode: SSE_FANOUT.syncMode === 'immediate' ? 'immediate' : 'spread',
+          metrics: vu,
+          onChange(change, at) {
+            for (const row of change.rows) {
+              const edit = row.stx ? edits.get(row.stx.mutationId) : undefined;
+              if (!edit?.waiting.delete(vu.index)) continue;
+              vu.histogram('sync.heard_ms', at - edit.sentAt);
+              if (edit.waiting.size > 0) continue;
+              vu.histogram('sync.all_heard_ms', at - edit.sentAt);
+              edits.delete(row.stx?.mutationId ?? '');
+            }
+          },
+        });
+        await client.connect();
+        listening.add(vu.index);
         try {
-          const status = await vu.sse(
-            '/me/stream',
-            ({ event, data }) => {
-              if (event !== 'change') return;
-              try {
-                onChange(JSON.parse(data) as StreamChange);
-              } catch {
-                vu.counter('sse.errors');
-              }
-            },
-            { headers: { cookie }, signal: AbortSignal.timeout(SSE_HOLD_MS), name: 'SSE /me/stream' },
-          );
-          if (status !== 200) vu.counter('sse.errors');
-        } catch {
-          vu.counter('sse.errors');
+          await vu.think(SSE_FANOUT.holdMs).catch(() => {});
         } finally {
-          // Pending merged ranges are fetched before the VU exits, like the tab-hide top-up.
-          for (const timer of timers) clearTimeout(timer);
-          const leftovers = [...pending.values()];
-          pending.clear();
-          await Promise.all(leftovers.map((range) => rangeFetch(range.from, range.until, range.rangeKey)));
+          listening.delete(vu.index);
+          for (const [mutationId, edit] of edits) if (edit.waiting.delete(vu.index) && edit.waiting.size === 0) edits.delete(mutationId);
+          // A queued read is made before the VU ends, as a tab reads when it hides.
+          await client.disconnect({ flush: true });
         }
       },
     },
@@ -125,9 +68,14 @@ export default defineScenario({
       async vu(vu) {
         const { cookie, userIndex } = benchUser(vu.index);
         for (let i = 0; i < 20; i++) {
-          const { path, json } = attachmentEdit(userIndex);
-          const res = await vu.http.patch(path, { json, headers: { cookie }, name: 'PATCH /attachments/:id' });
+          const edit = attachmentProduct.edit(userIndex % attachmentProduct.total, `bench-attachment-${nanoid(8)}`, {
+            sourceId: uuidv7(),
+            intentMs: Date.now(),
+          });
+          if (listening.size > 0) edits.set(edit.mutationId, { sentAt: performance.now(), waiting: new Set(listening) });
+          const res = await vu.http.patch(edit.path, { json: edit.json, headers: { cookie }, name: 'PATCH /attachments/:id' });
           if (res.status === 200) vu.counter('bench.rows_written');
+          else edits.delete(edit.mutationId);
           await vu.think(500);
         }
       },

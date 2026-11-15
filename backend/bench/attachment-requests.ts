@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { hierarchy } from 'shared';
-import { hashSourceId } from 'shared/utils/hash-source-id';
+import { formatHlc } from 'shared/utils/hlc';
 import { uuidv7 } from 'uuidv7';
 import type { z } from 'zod';
 import type { attachmentCreateManyStxBodySchema, attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
@@ -9,22 +9,37 @@ import { ORG_PATH } from './bench-user';
 import { TOTAL_ATTACHMENTS } from './seeds/attachment-constants';
 import { benchAttachmentHome } from './seeds/attachment-home';
 import { attachmentId } from './seeds/ids';
+import type { BenchProduct } from './sync/product';
 
 /** Rows per create and per delete request of a churn batch. */
 export const CHURN_BATCH_SIZE = 10;
 /** Past the seeded attachments and still inside the bench id band, so the next seed removes what a run leaves. */
 const FIRST_CHURN_INDEX = 0x1000000;
 
-const hlcTimestamp = (sourceId: string, counter = 0) => `${Date.now()}:${String(counter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
+/** The template's sync product: a rename of a seeded attachment, with the field timestamp a client sends. */
+export const attachmentProduct: BenchProduct = {
+  type: 'attachment',
+  field: 'name',
+  total: TOTAL_ATTACHMENTS,
+  rowId: attachmentId,
+  listPath: (orgPath) => `${orgPath}/attachments`,
+  edit(index, value, { sourceId, intentMs, counter = 0, replayed }) {
+    const mutationId = uuidv7();
+    const json: z.input<typeof attachmentUpdateStxBodySchema> = {
+      ops: { name: value },
+      stx: { mutationId, sourceId, fieldTimestamps: { name: formatHlc(intentMs, counter, sourceId) }, ...(replayed && { replayed }) },
+    };
+    return { path: `${ORG_PATH}/attachments/${attachmentId(index)}`, json, mutationId };
+  },
+};
 
-/** A rename of the user's own seeded attachment, with the field timestamp a client sends. */
-export function attachmentEdit(userIndex: number): { path: string; json: z.input<typeof attachmentUpdateStxBodySchema> } {
-  const sourceId = uuidv7();
-  const stx = { mutationId: uuidv7(), sourceId, fieldTimestamps: { name: hlcTimestamp(sourceId) } };
-  return {
-    path: `${ORG_PATH}/attachments/${attachmentId(userIndex % TOTAL_ATTACHMENTS)}`,
-    json: { ops: { name: `bench-attachment-${nanoid(8)}` }, stx },
-  };
+/** A rename of the user's own seeded attachment, made now. */
+export function attachmentEdit(userIndex: number): { path: string; json: object } {
+  const { path, json } = attachmentProduct.edit(userIndex % TOTAL_ATTACHMENTS, `bench-attachment-${nanoid(8)}`, {
+    sourceId: uuidv7(),
+    intentMs: Date.now(),
+  });
+  return { path, json };
 }
 
 /** The placement field of a create body: the deepest home id alone, since the server reads the chain above it off that channel. None for an attachment in the organization. */

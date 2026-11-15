@@ -27,9 +27,24 @@ const envSchema = z.object({
   YJS_STAGGER_S: z.coerce.number().default(10),
   YJS_DOC_OFFSET: z.coerce.number().default(0),
   COOKIE_SECRET: z.string().default(''),
-  HOLD_MS: z.coerce.number().default(25_000),
-  SYNC_MODE: z.enum(['immediate', 'lazy']).default('lazy'),
+  SSE_HOLD_MS: z.coerce.number().default(25_000),
+  SSE_SYNC_MODE: z.enum(['immediate', 'lazy']).default('lazy'),
   RANGE_KEY: z.enum(['on', 'off']).default('on'),
+  PROPAGATION_EDITS: z.coerce.number().int().positive().default(50),
+  PROPAGATION_WARMUPS: z.coerce.number().int().min(0).default(5),
+  // Background edits per second of `edit-propagation-busy`, across its writers.
+  PROPAGATION_LOAD: z.coerce.number().positive().default(50),
+  CATCHUP_CLIENTS: z.coerce.number().int().positive().default(100),
+  CATCHUP_EDITS: z.coerce.number().int().positive().default(100),
+  CATCHUP_MODE: z.enum(['immediate', 'spread']).default('immediate'),
+  // Queue sizes of `offline-replay`, comma-separated.
+  REPLAY_SIZES: z
+    .string()
+    .regex(/^\d+(,\d+)*$/, 'REPLAY_SIZES lists queue sizes, such as 100,500,1000')
+    .default('100,500,1000')
+    .transform((sizes) => sizes.split(',').map(Number)),
+  LIST_ROWS: z.coerce.number().int().positive().default(10_000),
+  LIST_READS: z.coerce.number().int().positive().default(5),
   DATABASE_ADMIN_URL: z.string().default(localDatabaseUrl('dev', 'postgres')),
 });
 
@@ -70,12 +85,23 @@ export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookie
 /** Signs the bench session cookies like the app does; read from the repo's `.env`. */
 export const COOKIE_SECRET = env.COOKIE_SECRET;
 
-/** How long an SSE benchmark subscriber remains connected. */
-export const SSE_HOLD_MS = env.HOLD_MS;
-/** Whether the SSE benchmark merges notifications or fetches each range immediately. */
-export const SSE_SYNC_MODE = env.SYNC_MODE;
-/** Whether a subscriber sends the range key of a change frame with its fetch; `off` measures the fetches without shared answers. */
-export const SSE_RANGE_KEY = env.RANGE_KEY === 'on';
+/** Whether a sync client sends the range key of a change frame with its fetch; `off` measures the fetches without shared answers. */
+export const SYNC_RANGE_KEY = env.RANGE_KEY === 'on';
+
+/** Shape of `sse-fanout`: how long a subscriber stays connected, and whether it fetches in its spread slot or at once. */
+export const SSE_FANOUT = { holdMs: env.SSE_HOLD_MS, syncMode: env.SSE_SYNC_MODE };
+
+/** Shape of `edit-propagation` and its busy variant: measured edits after warmups, and the busy variant's background rate. */
+export const PROPAGATION = { edits: env.PROPAGATION_EDITS, warmups: env.PROPAGATION_WARMUPS, loadPerSecond: env.PROPAGATION_LOAD };
+
+/** Shape of `reconnect-catchup`: clients that drop their streams together, edits made while they are away, how they read the gap. */
+export const CATCHUP = { clients: env.CATCHUP_CLIENTS, edits: env.CATCHUP_EDITS, mode: env.CATCHUP_MODE };
+
+/** Shape of `offline-replay`: the queue sizes it replays, one after another. */
+export const REPLAY = { sizes: env.REPLAY_SIZES };
+
+/** Shape of `full-list-read`: rows of the large-list organization (a seed size, re-seed after a change) and cold reads per run. */
+export const LIST = { rows: env.LIST_ROWS, reads: env.LIST_READS };
 
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
 export const DB_URL = env.DATABASE_ADMIN_URL;
