@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { addRecentSearch, withoutRecentSearch } from '~/utils/recent-searches';
@@ -23,6 +24,6 @@ export const useDocsSearchStore = create<DocsSearchStoreState>()(
         if (recentSearches !== get().recentSearches) set({ recentSearches });
       },
     }),
-    { name: 'docs-search', storage: createJSONStorage(() => localStorage) },
+    { name: `${appConfig.slug}-docs-search`, storage: createJSONStorage(() => localStorage) },
   ),
 );

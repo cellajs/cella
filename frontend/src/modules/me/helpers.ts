@@ -1,15 +1,15 @@
 import { getMe } from 'sdk';
+import { endSession } from '~/modules/auth/end-session';
 import { userStore } from '~/modules/user/user-store';
 
-/** Fetches who is signed in and writes the answer to the user store. */
+/** Fetches who is signed in and writes the answer to the user store. Another user than the live one ends this tab's session as `replaced`. */
 export const getAndSetMe = async () => {
   const me = await getMe();
-  const previousUserId = userStore.getState().lastUser?.id;
+  const live = userStore.getState().user;
 
-  userStore.getState().setMe(me);
-
-  // Per-user storage namespaces bind at boot, so a different user id needs a full reload to rebind every cache and store.
-  if (previousUserId && previousUserId !== me.user.id) window.location.reload();
+  // This tab's cache and queued writes are the live user's: stored under another session, they would reach that account.
+  if (live && live.id !== me.user.id) void endSession('replaced');
+  else userStore.getState().setMe(me);
 
   return me.user;
 };

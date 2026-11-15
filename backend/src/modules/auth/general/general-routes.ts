@@ -139,7 +139,8 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     path: '/sign-out',
     xGuard: [publicGuard],
     summary: 'Sign out',
-    description: 'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.',
+    description:
+      'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.',
     responses: { 204: { description: 'User signed out' }, ...errors(401) },
   }),
 });

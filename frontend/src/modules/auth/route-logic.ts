@@ -24,8 +24,7 @@ export async function requireSession(location: ParsedLocation): Promise<void> {
     await readMe();
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) throw error;
-    // `fromRoot`: the session was probed here, so the sign-in page does not probe it again
-    throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname + location.searchStr } });
+    throw redirect({ to: '/auth/authenticate', search: { redirect: location.pathname + location.searchStr } });
   }
 }
 
@@ -38,11 +37,24 @@ export function publicLayoutBeforeLoad({ location, cause }: { location: ParsedLo
 type AuthenticateSearch = z.output<typeof authenticateRouteSearchParamsSchema>;
 
 /**
- * `beforeLoad` of the sign-in page. A signed-in visitor leaves for where sign-in would have taken them, since the session
- * cookie is the authority: after a magic-link or OAuth sign-in it is valid while the store is empty. An invitation
- * (`tokenId`) keeps a signed-in visitor on the page, to confirm the invitation as their account.
+ * `beforeLoad` of the sign-in page. An anonymous account asking to sign in goes through the sign-out page first, which
+ * ends its session and loads this page again. A signed-in visitor leaves for where sign-in would have taken them, since
+ * the session cookie is the authority: after a magic-link or OAuth sign-in it is valid while the store is empty. An
+ * invitation (`tokenId`) keeps a signed-in visitor on the page, to confirm the invitation as their account.
  */
-export async function authenticateBeforeLoad({ cause, search }: { cause: RouteCause; search: AuthenticateSearch }): Promise<void> {
+export async function authenticateBeforeLoad({
+  cause,
+  search,
+  location,
+}: {
+  cause: RouteCause;
+  search: AuthenticateSearch;
+  location: ParsedLocation;
+}): Promise<void> {
+  if (cause === 'enter' && userStore.getState().user?.isAnonymous) {
+    throw redirect({ to: '/auth/sign-out', search: { redirect: location.pathname + location.searchStr }, replace: true });
+  }
+
   authStore.getState().reset();
   if (search.waitlist && joinsWaitlist && !search.tokenId) authStore.getState().setStep('waitlist', '');
 
@@ -56,8 +68,7 @@ export async function authenticateBeforeLoad({ cause, search }: { cause: RouteCa
     return;
   }
 
-  // `fromRoot` means a route guard already probed the session and found none; probing again would loop.
-  if (cause !== 'enter' || search.fromRoot) return;
+  if (cause !== 'enter') return;
 
   if (!userStore.getState().user) {
     try {

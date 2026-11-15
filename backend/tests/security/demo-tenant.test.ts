@@ -13,6 +13,7 @@ import {
   listTenants,
   listUsers,
   sendStepUpCode,
+  signOut,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
@@ -117,6 +118,9 @@ describe('Demo tenants', async () => {
     const demo = await takeDemo();
     const [session] = await db.select({ expiresAt: sessionsTable.expiresAt }).from(sessionsTable).where(eq(sessionsTable.userId, demo.user.id));
     expect(session.expiresAt <= String(demo.tenant.expiresAt)).toBe(true);
+    // The browser forgets the demo at this time without asking: `/me` names it.
+    const me = (await call(getMe, { headers: demo.headers })).data as { session: { expiresAt: string } };
+    expect(me.session.expiresAt).toBe(session.expiresAt);
 
     await db
       .update(tenantsTable)
@@ -156,6 +160,21 @@ describe('Demo tenants', async () => {
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, demo.user.id), eq(membershipsTable.tenantId, live.tenantId)));
     expect(elsewhere).toEqual([]);
+  });
+
+  it('must not let a signed-out demo come back: its account goes at the sign-out, with the organization it alone held', async () => {
+    const demo = await takeDemo();
+    const out = await call(signOut, { headers: demo.headers });
+    expect(out.response.status).toBe(204);
+
+    expect(await rows(usersTable, demo.user.id)).toBe(0);
+    const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, demo.tenant.id));
+    expect(tenant.status).toBe('deleted');
+    // The cookie a browser kept signs nobody in, and takes a new demo.
+    await expectRefusal(await call(getMe, { headers: demo.headers }), 401, 'no_session');
+    const next = await call(createDemo, { headers: { ...demo.headers, 'x-forwarded-for': '10.201.0.1' } });
+    expect([201, 503]).toContain(next.response.status);
+    expect((next.data as TenantAnswer | undefined)?.id).not.toBe(demo.tenant.id);
   });
 
   it('gives a browser its demo back, refuses a signed-in account and is gone while the feature is off', async () => {
