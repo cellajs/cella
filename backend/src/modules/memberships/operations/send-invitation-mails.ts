@@ -2,7 +2,7 @@ import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
-import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
+import { tokenLinkUrl } from '#/modules/auth/core';
 import { findAccountNamesAndLanguages } from '#/modules/memberships/memberships-queries';
 import { log } from '#/utils/logger';
 import { displayNameFromEmail } from '#/utils/slug';

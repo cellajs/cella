@@ -1,5 +1,5 @@
+import { deviceInfo } from '#/lib/device-info';
 import { lookupIp } from '#/lib/geoip';
-import { deviceInfo } from '#/modules/auth/sessions/helpers/device-info';
 import { getIp } from '#/utils/get-ip';
 import { getIsoDate } from '#/utils/iso-date';
 import { ambientRequest } from '#/utils/logger';

@@ -20,7 +20,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { removeDueTenants } from '#/modules/tenants/operations/remove-due-tenants';

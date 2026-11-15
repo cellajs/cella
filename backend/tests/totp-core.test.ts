@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createTOTPKeyURI, generateTOTP, matchTOTPStep } from '#/modules/auth/totps/helpers/totp-core';
+import { createTOTPKeyURI, generateTOTP, matchTOTPStep } from '#/modules/auth/flows/totps/helpers/totp-core';
 
 // RFC 6238 Appendix B test vectors: HMAC-SHA1, 8 digits, 30s interval, ASCII secret "12345678901234567890"
 const rfcKey = new TextEncoder().encode('12345678901234567890');

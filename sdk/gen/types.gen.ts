@@ -252,6 +252,113 @@ export type ChannelBase = {
 };
 
 /**
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
+ */
+export type MeAuthData = {
+  oauthIdentities: Array<{
+    provider: 'github';
+    email: string | null;
+    createdAt: string;
+    lastUsedAt: string | null;
+  }>;
+  institutions: Array<{
+    connectionId: string;
+    name: string;
+    federation: {
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
+      name: string;
+    };
+    /**
+     * The identity the account holds through this connection; null when not connected
+     */
+    identity: {
+      email: string | null;
+      createdAt: string;
+      lastUsedAt: string | null;
+    } | null;
+  }>;
+  /**
+   * Null without TOTP. Its last use is the start of the time step of the newest code it accepted.
+   */
+  totp: {
+    createdAt: string;
+    lastUsedAt: string | null;
+  } | null;
+  sessions: Array<{
+    id: string;
+    kind: 'regular' | 'mfa';
+    userId: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+    connectionId: string | null;
+    ipHash: string | null;
+    ipSubnetHash: string | null;
+    ipRegionCode: string | null;
+    ipAsn: number | null;
+    deviceIdHash: string | null;
+    createdAt: string;
+    expiresAt: string;
+    revokedAt: string | null;
+    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'admin_revoke' | 'session_cap' | 'replaced' | null;
+    steppedUpAt: string | null;
+    steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
+    current: boolean;
+    /**
+     * The browser was first seen recently and is not the first one known.
+     */
+    newDevice: boolean;
+  }>;
+  passkeys: Array<{
+    id: string;
+    userId: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    nameOnDevice: string;
+    createdAt: string;
+    lastUsedAt: string | null;
+  }>;
+};
+
+/**
+ * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
+ */
+export type User = {
+  createdAt: string;
+  id: string;
+  entityType: 'user';
+  name: string;
+  description: string | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
+  email: string | null;
+  mfaRequired: boolean;
+  givenName: string | null;
+  familyName: string | null;
+  languageCode: 'en' | 'nl';
+  newsletter: boolean;
+  contrast: 'system' | 'more';
+  userFlags: {
+    [key: string]: unknown;
+  };
+  updatedAt: string | null;
+  /**
+   * The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null.
+   */
+  isAnonymous: boolean;
+  lastSeenAt: string | null;
+  lastSignInAt: string | null;
+};
+
+/**
  * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
@@ -370,112 +477,6 @@ export type Me = {
     id: string;
     expiresAt: string;
   };
-};
-
-/**
- * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
- */
-export type User = {
-  createdAt: string;
-  id: string;
-  entityType: 'user';
-  name: string;
-  description: string | null;
-  slug: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-  email: string | null;
-  mfaRequired: boolean;
-  givenName: string | null;
-  familyName: string | null;
-  languageCode: 'en' | 'nl';
-  newsletter: boolean;
-  contrast: 'system' | 'more';
-  userFlags: {
-    [key: string]: unknown;
-  };
-  updatedAt: string | null;
-  /**
-   * The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null.
-   */
-  isAnonymous: boolean;
-  lastSeenAt: string | null;
-  lastSignInAt: string | null;
-};
-
-/**
- * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
- */
-export type MeAuthData = {
-  oauthIdentities: Array<{
-    provider: 'github';
-    email: string | null;
-    createdAt: string;
-    lastUsedAt: string | null;
-  }>;
-  institutions: Array<{
-    connectionId: string;
-    name: string;
-    federation: {
-      /**
-       * A federation key in appConfig.federations
-       */
-      key: 'surfconext';
-      name: string;
-    };
-    /**
-     * The identity the account holds through this connection; null when not connected
-     */
-    identity: {
-      email: string | null;
-      createdAt: string;
-      lastUsedAt: string | null;
-    } | null;
-  }>;
-  /**
-   * Null without TOTP. Its last use is the start of the time step of the newest code it accepted.
-   */
-  totp: {
-    createdAt: string;
-    lastUsedAt: string | null;
-  } | null;
-  sessions: Array<{
-    id: string;
-    kind: 'regular' | 'mfa';
-    userId: string;
-    deviceName: string | null;
-    deviceType: 'desktop' | 'mobile';
-    deviceOs: string | null;
-    browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
-    connectionId: string | null;
-    ipHash: string | null;
-    ipSubnetHash: string | null;
-    ipRegionCode: string | null;
-    ipAsn: number | null;
-    deviceIdHash: string | null;
-    createdAt: string;
-    expiresAt: string;
-    revokedAt: string | null;
-    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
-    steppedUpAt: string | null;
-    steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
-    current: boolean;
-    /**
-     * The browser was first seen recently and is not the first one known.
-     */
-    newDevice: boolean;
-  }>;
-  passkeys: Array<{
-    id: string;
-    userId: string;
-    deviceName: string | null;
-    deviceType: 'desktop' | 'mobile';
-    deviceOs: string | null;
-    browser: string | null;
-    nameOnDevice: string;
-    createdAt: string;
-  }>;
 };
 
 /**
@@ -1932,6 +1933,259 @@ export type SignOutResponses = {
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 
+export type GetMyAuthData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/me';
+};
+
+export type GetMyAuthErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
+
+export type GetMyAuthResponses = {
+  /**
+   * Sign-in methods and sessions
+   */
+  200: MeAuthData;
+};
+
+export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
+
+export type ToggleMfaData = {
+  body: {
+    mfaRequired: boolean;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth:toggle-mfa';
+};
+
+export type ToggleMfaErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ToggleMfaError = ToggleMfaErrors[keyof ToggleMfaErrors];
+
+export type ToggleMfaResponses = {
+  /**
+   * User
+   */
+  200: User;
+};
+
+export type ToggleMfaResponse = ToggleMfaResponses[keyof ToggleMfaResponses];
+
+export type RevokeMySessionsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/sessions:revoke';
+};
+
+export type RevokeMySessionsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeMySessionsError = RevokeMySessionsErrors[keyof RevokeMySessionsErrors];
+
+export type RevokeMySessionsResponses = {
+  /**
+   * Sessions were revoked
+   */
+  200: {
+    results: Array<{
+      id: string;
+      kind: 'regular' | 'mfa';
+      userId: string;
+      deviceName: string | null;
+      deviceType: 'desktop' | 'mobile';
+      deviceOs: string | null;
+      browser: string | null;
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+      connectionId: string | null;
+      ipHash: string | null;
+      ipSubnetHash: string | null;
+      ipRegionCode: string | null;
+      ipAsn: number | null;
+      deviceIdHash: string | null;
+      createdAt: string;
+      expiresAt: string;
+      revokedAt: string | null;
+      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'admin_revoke' | 'session_cap' | 'replaced' | null;
+      steppedUpAt: string | null;
+      steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
+    }>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
+
+export type RevokeUserSessionsData = {
+  body?: never;
+  path: {
+    userId: string;
+  };
+  query?: never;
+  url: '/auth/users/{userId}/sessions';
+};
+
+export type RevokeUserSessionsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
+
+export type RevokeUserSessionsResponses = {
+  /**
+   * Sessions ended
+   */
+  200: {
+    /**
+     * Sessions ended
+     */
+    revoked: number;
+  };
+};
+
+export type RevokeUserSessionsResponse = RevokeUserSessionsResponses[keyof RevokeUserSessionsResponses];
+
+export type RemoveUserFactorData = {
+  body?: never;
+  path: {
+    userId: string;
+    factor: 'passkey' | 'totp';
+  };
+  query?: never;
+  url: '/auth/users/{userId}/factors/{factor}';
+};
+
+export type RemoveUserFactorErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RemoveUserFactorError = RemoveUserFactorErrors[keyof RemoveUserFactorErrors];
+
+export type RemoveUserFactorResponses = {
+  /**
+   * Factor removed
+   */
+  200: {
+    /**
+     * Passkeys removed, or 1 for the authenticator app
+     */
+    removed: number;
+    /**
+     * Whether MFA turned off because a required method is gone
+     */
+    mfaDisabled: boolean;
+  };
+};
+
+export type RemoveUserFactorResponse = RemoveUserFactorResponses[keyof RemoveUserFactorResponses];
+
 export type SendMagicLinkData = {
   body: {
     email: string;
@@ -2238,6 +2492,7 @@ export type CreatePasskeyData = {
       type: 'public-key';
     };
     nameOnDevice: string;
+    userHandle?: string;
   };
   path?: never;
   query?: never;
@@ -2286,6 +2541,7 @@ export type CreatePasskeyResponses = {
     browser: string | null;
     nameOnDevice: string;
     createdAt: string;
+    lastUsedAt: string | null;
   };
 };
 
@@ -3638,82 +3894,6 @@ export type UpdateMeResponses = {
 
 export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
 
-export type ToggleMfaData = {
-  body: {
-    mfaRequired: boolean;
-  };
-  path?: never;
-  query?: never;
-  url: '/me:toggle-mfa';
-};
-
-export type ToggleMfaErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type ToggleMfaError = ToggleMfaErrors[keyof ToggleMfaErrors];
-
-export type ToggleMfaResponses = {
-  /**
-   * User
-   */
-  200: User;
-};
-
-export type ToggleMfaResponse = ToggleMfaResponses[keyof ToggleMfaResponses];
-
-export type GetMyAuthData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/auth';
-};
-
-export type GetMyAuthErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
-
-export type GetMyAuthResponses = {
-  /**
-   * Sign-in methods and sessions
-   */
-  200: MeAuthData;
-};
-
-export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
-
 export type ListMyInvitationsData = {
   body?: never;
   path?: never;
@@ -3905,82 +4085,6 @@ export type DeclineInvitationResponses = {
 };
 
 export type DeclineInvitationResponse = DeclineInvitationResponses[keyof DeclineInvitationResponses];
-
-export type RevokeMySessionsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/me/sessions:revoke';
-};
-
-export type RevokeMySessionsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type RevokeMySessionsError = RevokeMySessionsErrors[keyof RevokeMySessionsErrors];
-
-export type RevokeMySessionsResponses = {
-  /**
-   * Sessions were revoked
-   */
-  200: {
-    results: Array<{
-      id: string;
-      kind: 'regular' | 'mfa';
-      userId: string;
-      deviceName: string | null;
-      deviceType: 'desktop' | 'mobile';
-      deviceOs: string | null;
-      browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
-      connectionId: string | null;
-      ipHash: string | null;
-      ipSubnetHash: string | null;
-      ipRegionCode: string | null;
-      ipAsn: number | null;
-      deviceIdHash: string | null;
-      createdAt: string;
-      expiresAt: string;
-      revokedAt: string | null;
-      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
-      steppedUpAt: string | null;
-      steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
-    }>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
 
 export type LeaveMembershipData = {
   body: {

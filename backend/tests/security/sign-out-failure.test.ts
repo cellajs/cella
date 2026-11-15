@@ -17,8 +17,8 @@ const failIfAsked = (write: 'revoke') => {
   throw new Error('timeout exceeded when trying to connect');
 };
 
-vi.mock('#/modules/auth/sessions/operations/revoke-sessions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/auth/sessions/operations/revoke-sessions')>();
+vi.mock('#/modules/auth/core/sessions/operations/revoke-sessions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/core/sessions/operations/revoke-sessions')>();
   return {
     ...actual,
     revokeSessions: async (...args: Parameters<typeof actual.revokeSessions>) => {

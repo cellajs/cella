@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { HeldLinkKind } from '#/modules/auth/tokens/token-policies';
+import type { HeldLinkKind } from '#/modules/auth/core/tokens/token-policies';
 import { cookieChange, createTestOrganization, createTestUser, insertTestToken, linkIdentity, openHeldLink, tokenRow } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { setTestConfig } from '../test-utils';

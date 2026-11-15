@@ -1,7 +1,7 @@
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { clearActorActivity, deleteDanglingActors } from '#/modules/actors/actors-queries';
-import { closeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
+import { closeSessions } from '#/modules/auth/core';
 import { deleteProviderRowsByUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { findOrganizationsHeldOnlyBy } from '#/modules/organization/organization-queries';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';

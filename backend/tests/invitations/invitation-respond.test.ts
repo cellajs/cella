@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { acceptInvitation, declineInvitation, invokeToken } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { channelBaseSchema } from '#/schemas/entity-base';

@@ -1,0 +1,57 @@
+import type { z } from '@hono/zod-openapi';
+import type { DbContext } from '#/core/context';
+import { isFederationConfigured, isFederationKey } from '#/modules/auth/core/federations/federations';
+import type { tokenWithDataSchema } from '#/modules/auth/core/general/general-schema';
+import type { TokenRecord } from '#/modules/auth/core/tokens/tokens-queries';
+import { findSsoConnectionByTenant } from '#/modules/connections/connections-queries';
+import { resolveEntity } from '#/modules/entities/entities-queries';
+import { findInvitationById } from '#/modules/memberships/invitations-queries';
+import { findUserById } from '#/modules/user/user-queries';
+
+type TokenData = z.infer<typeof tokenWithDataSchema>;
+
+/** What a validated single-use token stands for. An invitation names its sender; a membership invitation also says what it grants, for the confirm step. */
+export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): Promise<TokenData> {
+  // An absent id is left out of the answer: JSON drops an undefined field.
+  const tokenData: TokenData = {
+    email: tokenRecord.email,
+    userId: tokenRecord.userId ?? undefined,
+    invitationId: tokenRecord.invitationId ?? undefined,
+  };
+
+  if (tokenRecord.kind === 'invitation' && tokenRecord.createdBy) {
+    const sender = await findUserById(ctx, { id: tokenRecord.createdBy });
+    if (sender) tokenData.inviterName = sender.name;
+  }
+
+  if (!tokenRecord.invitationId) return tokenData;
+
+  const inactiveMembership = await findInvitationById(ctx, { id: tokenRecord.invitationId });
+  if (inactiveMembership) {
+    const { channelType, channelId, organizationId } = inactiveMembership;
+    const [entity, organization, inviter, connection] = await Promise.all([
+      resolveEntity(ctx, { entityType: channelType, identifier: channelId }),
+      channelType === 'organization' ? null : resolveEntity(ctx, { entityType: 'organization', identifier: organizationId }),
+      findUserById(ctx, { id: inactiveMembership.createdBy }),
+      findSsoConnectionByTenant(ctx, { tenantId: inactiveMembership.tenantId }),
+    ]);
+    // The invited organization's institution, so the invitee is offered that sign-in first.
+    if (connection?.status === 'active' && isFederationKey(connection.federation) && isFederationConfigured(connection.federation)) {
+      tokenData.ssoConnectionId = connection.id;
+    }
+    if (entity) {
+      tokenData.invitation = {
+        entityType: channelType,
+        tenantId: inactiveMembership.tenantId,
+        organizationId,
+        channelId,
+        entityName: entity.name,
+        organizationName: organization?.name,
+        role: inactiveMembership.role,
+        inviterName: inviter?.name ?? '',
+      };
+    }
+  }
+
+  return tokenData;
+}

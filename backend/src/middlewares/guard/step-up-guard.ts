@@ -1,6 +1,5 @@
 import { xMiddleware } from '#/core/x-middleware';
-import { type StepUpTier, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
-import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
+import { requireStepUp, type StepUpTier, stepUpWindow } from '#/modules/auth/core';
 
 const stepUpMinutes = stepUpWindow.seconds() / 60;
 

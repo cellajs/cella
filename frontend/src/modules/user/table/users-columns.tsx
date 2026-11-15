@@ -1,5 +1,6 @@
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AccountRecovery } from '~/modules/auth/account/account-recovery';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -19,7 +20,12 @@ export const openUpdateUserSheet = (user: BaseUser, triggerRef: TriggerRef) =>
     resource: 'c:user',
     triggerRef,
     className: 'container',
-    children: <UpdateUserForm user={user} sheet />,
+    children: (
+      <div className="flex flex-col gap-8">
+        <UpdateUserForm user={user} sheet />
+        <AccountRecovery user={user} />
+      </div>
+    ),
   });
 
 export const useColumns = () => {

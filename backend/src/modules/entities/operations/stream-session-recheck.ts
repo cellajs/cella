@@ -1,7 +1,5 @@
 import { baseDb } from '#/db/db';
-import { sessionRefusal } from '#/modules/auth/sessions/operations/resolve-session';
-import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
-import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
+import { findSessionStates, type SessionModel, sessionRefusal } from '#/modules/auth/core';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeStreams, type EndingReason } from '#/modules/entities/helpers/session-streams';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';

@@ -5,6 +5,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getStepUp, type StepUpData, sendStepUpCode, stepUp } from 'sdk';
 import { isStrategyEnabled } from 'shared';
+import { useCreatePasskeyMutation } from '~/modules/auth/account/query';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
 import { StepUpDismissedError, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
@@ -12,12 +13,11 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useCreatePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { getCurrentUser } from '~/modules/user/user-store';
 
-const TotpSetup = lazy(() => import('~/modules/me/totp-setup').then((module) => ({ default: module.TotpSetup })));
+const TotpSetup = lazy(() => import('~/modules/auth/account/totp-setup').then((module) => ({ default: module.TotpSetup })));
 
 const dialogId = 'step-up';
 

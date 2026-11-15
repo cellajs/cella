@@ -6,7 +6,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
-import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
+import { amrOf, authStrategiesEnum, cookieSecrets, stepUpProofs } from '#/modules/auth/core';
 import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
@@ -50,11 +50,28 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
 
 /**
  * Claims this server adds to every access token; the guard reads them to build the actor, and asks the grant policy
- * about the grant (`gid`) or API key (`key_id`) the token rests on.
+ * about the grant (`gid`) or API key (`key_id`) the token rests on. A person's token also says how they signed in, in
+ * the app's words (`auth_strategy`, `connection_id`, which a tenant's sign-in policy reads) and in the standard ones
+ * (`amr` per RFC 8176, `auth_time` as the moment the proof the consent rested on was made).
  */
 export type IssuedTokenClaims =
-  | { actor_kind: 'user'; tenant_id: string; gid: string; auth_strategy: string | null; connection_id: string | null }
+  | {
+      actor_kind: 'user';
+      tenant_id: string;
+      gid: string;
+      auth_strategy: string | null;
+      connection_id: string | null;
+      amr: string[];
+      auth_time?: number;
+    }
   | { actor_kind: 'service'; tenant_id: string; key_id: string };
+
+/** The `amr` values of a grant's stamped sign-in; empty for a method or proof this app no longer knows. */
+const amrOfStamp = (authStrategy: string | null, proof: string | null) => {
+  const strategy = authStrategiesEnum.find((known) => known === authStrategy);
+  const stamp = stepUpProofs.find((known) => known === proof) ?? null;
+  return strategy ? amrOf(strategy, stamp) : [];
+};
 
 /** The code or refresh token a grant is used through at the token endpoint, as `findAccount` receives it. */
 type GrantSource = { clientId?: string; grantId?: string; resource?: unknown };
@@ -196,6 +213,8 @@ export async function createProvider(): Promise<Provider> {
           gid: token.grantId,
           auth_strategy: signIn.authStrategy,
           connection_id: signIn.connectionId,
+          amr: amrOfStamp(signIn.authStrategy, signIn.proof),
+          ...(signIn.authTime && { auth_time: Math.floor(Date.parse(signIn.authTime) / 1000) }),
         } satisfies IssuedTokenClaims;
       }
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.

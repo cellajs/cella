@@ -1,4 +1,4 @@
-import type { SessionRevocationReason } from '#/modules/auth/sessions/sessions-db';
+import type { SessionRevocationReason } from '#/modules/auth/core';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { endStream, writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
@@ -29,6 +29,7 @@ const streamEndings: Record<EndingReason, StreamErrorPayload> = {
   sign_out: revoked,
   other_session: revoked,
   mfa_enabled: revoked,
+  admin_revoke: revoked,
   session_cap: revoked,
   user_deleted: revoked,
   session_revoked: revoked,

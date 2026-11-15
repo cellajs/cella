@@ -105,7 +105,7 @@ export function setTestConfig({ selfRegistration, ...overrides }: ConfigOverride
 
 /**
  * In-memory cookie store standing in for the real cookie helpers.
- * Use at top level: vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock())
+ * Use at top level: vi.mock('#/modules/auth/core/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock())
  * Call clearCookieStore() in afterEach; pre-populate by writing to mockCookieStore.
  */
 export const mockCookieStore = new Map<string, string>();
@@ -131,7 +131,7 @@ export const cookieMock = () => ({
   }),
 });
 
-/** Use at top level: vi.mock('#/modules/auth/sessions/operations/create-session', createSessionMock). The module's other exports stay real. */
+/** Use at top level: vi.mock('#/modules/auth/core/sessions/operations/create-session', createSessionMock). The module's other exports stay real. */
 export const createSessionMock = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
@@ -141,7 +141,7 @@ export const createSessionMock = async (importOriginal: () => Promise<object>) =
   }),
 });
 
-/** Use at top level: vi.mock('#/modules/auth/sessions/operations/resolve-session', resolveSessionMock). The module's other exports stay real. */
+/** Use at top level: vi.mock('#/modules/auth/core/sessions/operations/resolve-session', resolveSessionMock). The module's other exports stay real. */
 export const resolveSessionMock = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),

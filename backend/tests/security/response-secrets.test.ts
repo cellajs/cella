@@ -3,11 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type SecretColumnTable, secretColumns } from '#/db/secret-columns';
 import { mockPastIsoDate } from '#/mocks';
-import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
-import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
+import { encryptTotpSecret } from '#/modules/auth/flows/totps/helpers/totp-secret-encryption';
+import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
@@ -116,16 +116,16 @@ describe('Secret columns in responses', async () => {
   // In order: later cases revoke or roll what earlier ones listed and created.
   const cases: Case[] = [
     {
-      route: 'GET /me/auth',
+      route: 'GET /auth/me',
       tables: ['sessions', 'totps'],
-      send: () => rawJsonRequest('/me/auth', invitee.sessionCookie),
+      send: () => rawJsonRequest('/auth/me', invitee.sessionCookie),
       status: 200,
       shows: () => [invitee.otherSessionId],
     },
     {
-      route: 'POST /me/sessions:revoke',
+      route: 'POST /auth/sessions:revoke',
       tables: ['sessions'],
-      send: () => rawJsonRequest('/me/sessions:revoke', invitee.sessionCookie, { method: 'POST', body: { ids: [invitee.otherSessionId] } }),
+      send: () => rawJsonRequest('/auth/sessions:revoke', invitee.sessionCookie, { method: 'POST', body: { ids: [invitee.otherSessionId] } }),
       status: 200,
       shows: () => [invitee.otherSessionId],
     },

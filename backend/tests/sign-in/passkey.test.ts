@@ -3,8 +3,8 @@ import { deletePasskey, generatePasskeyChallenge } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
+import { passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
+import { passkeySchema } from '#/modules/auth/flows/passkeys/passkeys-schema';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, expectRefusal, mailsTo, rawJsonRequest } from '../helpers';
@@ -100,7 +100,7 @@ describe('Passkey Authentication', async () => {
         body: { attestation: softwarePasskey().attest(value), nameOnDevice: 'Test device' },
       });
       expect(created.status).toBe(201);
-      const listed = await rawJsonRequest('/me/auth', sessionCookie);
+      const listed = await rawJsonRequest('/auth/me', sessionCookie);
 
       const fields = Object.keys(passkeySchema.shape).sort();
       expect(Object.keys(created.body).sort()).toEqual(fields);

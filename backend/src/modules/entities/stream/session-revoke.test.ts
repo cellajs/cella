@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authEvents } from '#/modules/auth/auth-events';
+import { authEvents } from '#/modules/auth/core/auth-events';
 import '#/modules/entities/entities-listeners';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from './subscriber-manager';

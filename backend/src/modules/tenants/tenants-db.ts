@@ -5,7 +5,7 @@ import { nanoidTenant } from 'shared/utils/nanoid';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
-import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
+import type { AuthStrategy } from '#/modules/auth/core';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
 

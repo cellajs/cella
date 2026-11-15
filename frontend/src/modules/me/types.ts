@@ -1,9 +1,6 @@
-import type { GetUploadTokenData, ListMyInvitationsResponse, MeAuthData, MembershipBase, User } from 'sdk';
+import type { GetUploadTokenData, ListMyInvitationsResponse, MembershipBase, User } from 'sdk';
 import type { MenuSection } from 'shared';
 import type { EnrichedChannel } from '~/modules/entities/types';
-
-export type Session = MeAuthData['sessions'][number];
-export type Passkey = MeAuthData['passkeys'][number];
 
 export type MeUser = User;
 

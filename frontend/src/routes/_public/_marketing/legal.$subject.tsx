@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { z } from 'zod';
-import { defaultLegalSubject, legalConfig, legalSubjects } from '~/modules/auth/legal/legal-config';
+import { defaultLegalSubject, legalConfig, legalSubjects } from '~/modules/marketing/legal/legal-config';
 import { LegalPage } from '~/modules/marketing/legal/legal-page';
 import { pageHead } from '~/utils/app-title';
 

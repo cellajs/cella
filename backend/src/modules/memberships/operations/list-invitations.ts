@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { withCreatorRefs } from '#/modules/actors/actor-refs';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { tokenPolicies } from '#/modules/auth/core';
 import { findInvitationsPaginated } from '#/modules/memberships/invitations-queries';
 import type { invitationListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';

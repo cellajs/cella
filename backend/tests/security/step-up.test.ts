@@ -4,7 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
 import { stepUpEmail } from '../../emails';

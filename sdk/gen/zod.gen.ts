@@ -205,6 +205,108 @@ export const zChannelBase = z.object({
 });
 
 /**
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
+ */
+export const zMeAuthData = z.object({
+  oauthIdentities: z.array(
+    z.object({
+      provider: z.enum(['github']),
+      email: z.string().nullable(),
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    }),
+  ),
+  institutions: z.array(
+    z.object({
+      connectionId: z.string(),
+      name: z.string(),
+      federation: z.object({
+        key: z.enum(['surfconext']),
+        name: z.string(),
+      }),
+      identity: z
+        .object({
+          email: z.string().nullable(),
+          createdAt: z.string(),
+          lastUsedAt: z.string().nullable(),
+        })
+        .nullable(),
+    }),
+  ),
+  totp: z
+    .object({
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    })
+    .nullable(),
+  sessions: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.enum(['regular', 'mfa']),
+      userId: z.uuid(),
+      deviceName: z.string().max(255).nullable(),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      connectionId: z.uuid().nullable(),
+      ipHash: z.string().max(64).nullable(),
+      ipSubnetHash: z.string().max(64).nullable(),
+      ipRegionCode: z.string().max(2).nullable(),
+      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
+      deviceIdHash: z.string().max(64).nullable(),
+      createdAt: z.string(),
+      expiresAt: z.string(),
+      revokedAt: z.string().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced']).nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
+      current: z.boolean(),
+      newDevice: z.boolean(),
+    }),
+  ),
+  passkeys: z.array(
+    z.object({
+      id: z.uuid(),
+      userId: z.uuid(),
+      deviceName: z.string().max(255).nullable(),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
+      nameOnDevice: z.string().max(255),
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
+ */
+export const zUser = z.object({
+  createdAt: z.string(),
+  id: z.uuid(),
+  entityType: z.enum(['user']),
+  name: z.string().max(255),
+  description: z.string().nullable(),
+  slug: z.string().max(255),
+  thumbnailUrl: z.string().max(2048).nullable(),
+  bannerUrl: z.string().max(2048).nullable(),
+  email: z.email().nullable(),
+  mfaRequired: z.boolean(),
+  givenName: z.string().max(255).nullable(),
+  familyName: z.string().max(255).nullable(),
+  languageCode: z.enum(['en', 'nl']),
+  newsletter: z.boolean(),
+  contrast: z.enum(['system', 'more']),
+  userFlags: z.record(z.string(), z.unknown()),
+  updatedAt: z.string().nullable(),
+  isAnonymous: z.boolean(),
+  lastSeenAt: z.string().nullable(),
+  lastSignInAt: z.string().nullable(),
+});
+
+/**
  * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.
  */
 export const zStreamChange = z.object({
@@ -269,32 +371,6 @@ export const zProtectedResourceMetadata = z.object({
 });
 
 /**
- * A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
- */
-export const zUser = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  entityType: z.enum(['user']),
-  name: z.string().max(255),
-  description: z.string().nullable(),
-  slug: z.string().max(255),
-  thumbnailUrl: z.string().max(2048).nullable(),
-  bannerUrl: z.string().max(2048).nullable(),
-  email: z.email().nullable(),
-  mfaRequired: z.boolean(),
-  givenName: z.string().max(255).nullable(),
-  familyName: z.string().max(255).nullable(),
-  languageCode: z.enum(['en', 'nl']),
-  newsletter: z.boolean(),
-  contrast: z.enum(['system', 'more']),
-  userFlags: z.record(z.string(), z.unknown()),
-  updatedAt: z.string().nullable(),
-  isAnonymous: z.boolean(),
-  lastSeenAt: z.string().nullable(),
-  lastSignInAt: z.string().nullable(),
-});
-
-/**
  * The signed-in user, with whether they have system admin access on this request and the session it presents. A client reads it to learn who is signed in.
  */
 export const zMe = z.object({
@@ -304,81 +380,6 @@ export const zMe = z.object({
     id: z.uuid(),
     expiresAt: z.string(),
   }),
-});
-
-/**
- * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
- */
-export const zMeAuthData = z.object({
-  oauthIdentities: z.array(
-    z.object({
-      provider: z.enum(['github']),
-      email: z.string().nullable(),
-      createdAt: z.string(),
-      lastUsedAt: z.string().nullable(),
-    }),
-  ),
-  institutions: z.array(
-    z.object({
-      connectionId: z.string(),
-      name: z.string(),
-      federation: z.object({
-        key: z.enum(['surfconext']),
-        name: z.string(),
-      }),
-      identity: z
-        .object({
-          email: z.string().nullable(),
-          createdAt: z.string(),
-          lastUsedAt: z.string().nullable(),
-        })
-        .nullable(),
-    }),
-  ),
-  totp: z
-    .object({
-      createdAt: z.string(),
-      lastUsedAt: z.string().nullable(),
-    })
-    .nullable(),
-  sessions: z.array(
-    z.object({
-      id: z.uuid(),
-      kind: z.enum(['regular', 'mfa']),
-      userId: z.uuid(),
-      deviceName: z.string().max(255).nullable(),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.string().max(255).nullable(),
-      browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
-      connectionId: z.uuid().nullable(),
-      ipHash: z.string().max(64).nullable(),
-      ipSubnetHash: z.string().max(64).nullable(),
-      ipRegionCode: z.string().max(2).nullable(),
-      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
-      deviceIdHash: z.string().max(64).nullable(),
-      createdAt: z.string(),
-      expiresAt: z.string(),
-      revokedAt: z.string().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
-      steppedUpAt: z.string().nullable(),
-      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
-      current: z.boolean(),
-      newDevice: z.boolean(),
-    }),
-  ),
-  passkeys: z.array(
-    z.object({
-      id: z.uuid(),
-      userId: z.uuid(),
-      deviceName: z.string().max(255).nullable(),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.string().max(255).nullable(),
-      browser: z.string().max(255).nullable(),
-      nameOnDevice: z.string().max(255),
-      createdAt: z.string(),
-    }),
-  ),
 });
 
 /**
@@ -1157,6 +1158,80 @@ export const zResendInvitationWithTokenResponse = z.void();
  */
 export const zSignOutResponse = z.void();
 
+/**
+ * Sign-in methods and sessions
+ */
+export const zGetMyAuthResponse = zMeAuthData;
+
+export const zToggleMfaBody = z.object({
+  mfaRequired: z.boolean(),
+});
+
+/**
+ * User
+ */
+export const zToggleMfaResponse = zUser;
+
+export const zRevokeMySessionsBody = z.object({
+  ids: z.array(z.string().max(50)).min(1).max(50),
+});
+
+/**
+ * Sessions were revoked
+ */
+export const zRevokeMySessionsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.enum(['regular', 'mfa']),
+      userId: z.uuid(),
+      deviceName: z.string().max(255).nullable(),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      connectionId: z.uuid().nullable(),
+      ipHash: z.string().max(64).nullable(),
+      ipSubnetHash: z.string().max(64).nullable(),
+      ipRegionCode: z.string().max(2).nullable(),
+      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
+      deviceIdHash: z.string().max(64).nullable(),
+      createdAt: z.string(),
+      expiresAt: z.string(),
+      revokedAt: z.string().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced']).nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
+    }),
+  ),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+export const zRevokeUserSessionsPath = z.object({
+  userId: z.string().max(50),
+});
+
+/**
+ * Sessions ended
+ */
+export const zRevokeUserSessionsResponse = z.object({
+  revoked: z.number(),
+});
+
+export const zRemoveUserFactorPath = z.object({
+  userId: z.string().max(50),
+  factor: z.enum(['passkey', 'totp']),
+});
+
+/**
+ * Factor removed
+ */
+export const zRemoveUserFactorResponse = z.object({
+  removed: z.number(),
+  mfaDisabled: z.boolean(),
+});
+
 export const zSendMagicLinkBody = z.object({
   email: z.email().min(4).max(255),
   redirectPath: z.string().max(2048).optional(),
@@ -1227,6 +1302,10 @@ export const zCreatePasskeyBody = z.object({
     type: z.enum(['public-key']),
   }),
   nameOnDevice: z.string().max(255),
+  userHandle: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,86}$/)
+    .optional(),
 });
 
 /**
@@ -1241,6 +1320,7 @@ export const zCreatePasskeyResponse = z.object({
   browser: z.string().max(255).nullable(),
   nameOnDevice: z.string().max(255),
   createdAt: z.string(),
+  lastUsedAt: z.string().nullable(),
 });
 
 export const zDeletePasskeyPath = z.object({
@@ -1277,7 +1357,10 @@ export const zSignInWithPasskeyBody = z.object({
       clientDataJSON: z.string().max(2048),
       authenticatorData: z.string().max(2048),
       signature: z.string().max(2048),
-      userHandle: z.string().max(2048).optional(),
+      userHandle: z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{1,86}$/)
+        .optional(),
     }),
     authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
     clientExtensionResults: z.unknown().optional(),
@@ -1423,7 +1506,10 @@ export const zStepUpBody = z.object({
         clientDataJSON: z.string().max(2048),
         authenticatorData: z.string().max(2048),
         signature: z.string().max(2048),
-        userHandle: z.string().max(2048).optional(),
+        userHandle: z
+          .string()
+          .regex(/^[A-Za-z0-9_-]{1,86}$/)
+          .optional(),
       }),
       authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
       clientExtensionResults: z.unknown().optional(),
@@ -1640,20 +1726,6 @@ export const zUpdateMeBody = z.object({
  */
 export const zUpdateMeResponse = zUser;
 
-export const zToggleMfaBody = z.object({
-  mfaRequired: z.boolean(),
-});
-
-/**
- * User
- */
-export const zToggleMfaResponse = zUser;
-
-/**
- * Sign-in methods and sessions
- */
-export const zGetMyAuthResponse = zMeAuthData;
-
 export const zListMyInvitationsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
@@ -1726,42 +1798,6 @@ export const zDeclineInvitationPath = z.object({
  * The invitation's organization
  */
 export const zDeclineInvitationResponse = zChannelBase;
-
-export const zRevokeMySessionsBody = z.object({
-  ids: z.array(z.string().max(50)).min(1).max(50),
-});
-
-/**
- * Sessions were revoked
- */
-export const zRevokeMySessionsResponse = z.object({
-  results: z.array(
-    z.object({
-      id: z.uuid(),
-      kind: z.enum(['regular', 'mfa']),
-      userId: z.uuid(),
-      deviceName: z.string().max(255).nullable(),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.string().max(255).nullable(),
-      browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
-      connectionId: z.uuid().nullable(),
-      ipHash: z.string().max(64).nullable(),
-      ipSubnetHash: z.string().max(64).nullable(),
-      ipRegionCode: z.string().max(2).nullable(),
-      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
-      deviceIdHash: z.string().max(64).nullable(),
-      createdAt: z.string(),
-      expiresAt: z.string(),
-      revokedAt: z.string().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
-      steppedUpAt: z.string().nullable(),
-      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
-    }),
-  ),
-  rejectedIds: z.array(z.string()),
-  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
-});
 
 export const zLeaveMembershipBody = z.object({
   entityId: z.string().max(50),

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type LinkTokenKind, tokenPolicies } from '#/modules/auth/core';
 import { TimeSpan } from '#/utils/time-span';
 import { i18n, plainText } from './i18n';
 

@@ -281,7 +281,7 @@
                 "patterns": [
                   {
                     "group": ["**/tokens-db"],
-                    "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
+                    "message": "Only the token lifecycle module (modules/auth/core/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
                   }
                 ]
               }
@@ -292,7 +292,7 @@
     },
     {
       // The token lifecycle module is the one importer of the tokens table.
-      "includes": ["backend/src/modules/auth/tokens/**"],
+      "includes": ["backend/src/modules/auth/core/tokens/**"],
       "linter": {
         "rules": {
           "style": {
@@ -331,7 +331,7 @@
                 "patterns": [
                   {
                     "group": ["**/tokens-db"],
-                    "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
+                    "message": "Only the token lifecycle module (modules/auth/core/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
                   },
                   {
                     "group": ["**/*-queries", "**/operations/**"],
@@ -360,7 +360,7 @@
                 "patterns": [
                   {
                     "group": ["**/tokens-db"],
-                    "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
+                    "message": "Only the token lifecycle module (modules/auth/core/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
                   }
                 ]
               }

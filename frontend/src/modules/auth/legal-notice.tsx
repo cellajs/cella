@@ -1,11 +1,11 @@
 import { type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
-import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
-import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { Spinner } from '~/modules/common/spinner';
+import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
+import { LegalDialogNavProvider } from '~/modules/marketing/legal/legal-cross-link';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 

@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { deleteInvitationTokens } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import {
   bindInvitations,

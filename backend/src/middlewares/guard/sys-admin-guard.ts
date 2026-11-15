@@ -1,7 +1,7 @@
 import { scrubUrl } from 'shared/utils/scrub-url';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/core';
 import { getIp } from '#/utils/get-ip';
 
 /**

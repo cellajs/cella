@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { getMe } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { authCookieName, sealAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createTestUser, insertTestSession } from '../helpers';
 import { createAppClient } from '../test-client';

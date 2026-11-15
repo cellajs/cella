@@ -1,0 +1,217 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "91786d69-08d5-470b-9a58-3c03b23bcd11",
+  "prevIds": [
+    "d19dc527-59d3-4eef-827b-73efb8ba7797"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "aaguid"
+      ],
+      "writes": [
+        "s|col|public.passkeys.aaguid",
+        "n|col|public.passkeys.aaguid",
+        "e|col|public.passkeys.aaguid"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "attestation_format"
+      ],
+      "writes": [
+        "s|col|public.passkeys.attestation_format",
+        "n|col|public.passkeys.attestation_format",
+        "e|col|public.passkeys.attestation_format"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "backup_eligible"
+      ],
+      "writes": [
+        "s|col|public.passkeys.backup_eligible",
+        "n|col|public.passkeys.backup_eligible",
+        "e|col|public.passkeys.backup_eligible"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "backup_state"
+      ],
+      "writes": [
+        "s|col|public.passkeys.backup_state",
+        "n|col|public.passkeys.backup_state",
+        "e|col|public.passkeys.backup_state"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "user_handle"
+      ],
+      "writes": [
+        "s|col|public.passkeys.user_handle",
+        "n|col|public.passkeys.user_handle",
+        "e|col|public.passkeys.user_handle"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "last_used_at"
+      ],
+      "writes": [
+        "s|col|public.passkeys.last_used_at",
+        "n|col|public.passkeys.last_used_at",
+        "e|col|public.passkeys.last_used_at"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "aaguid",
+        "type": "varchar(36)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "attestation_format",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "backup_eligible",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "backup_state",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "user_handle",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "last_used_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

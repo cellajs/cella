@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
-import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
+import { isRecognizedBrowser } from '#/modules/auth/core';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
 /**

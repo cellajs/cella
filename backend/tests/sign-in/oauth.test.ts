@@ -5,14 +5,14 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#/modules/auth/oauth/helpers/providers';
-import { identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { resolveSession } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#/modules/auth/flows/oauth/helpers/providers';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -38,8 +38,8 @@ vi.mock('oauth4webapi', async () => (await import('../test-utils')).oauth4webapi
 
 setTestConfig({ enabledAuthStrategies: ['oauth'], enabledOAuthProviders: ['github', 'google', 'microsoft'], selfRegistration: true });
 
-vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
-  OAuthCodeExchangeError: (await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>()).OAuthCodeExchangeError,
+vi.mock('#/modules/auth/flows/oauth/helpers/providers', async (importOriginal) => ({
+  OAuthCodeExchangeError: (await importOriginal<typeof import('#/modules/auth/flows/oauth/helpers/providers')>()).OAuthCodeExchangeError,
   githubAuth: {
     configured: true,
     oidc: false,
@@ -59,7 +59,7 @@ vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token', claims: {} }),
   },
 }));
-vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
+vi.mock('#/modules/auth/flows/oauth/helpers/transform-user-data', () => ({
   transformGithubUserData: vi.fn().mockReturnValue({
     id: 'github-user-id',
     slug: 'testuser',
@@ -81,11 +81,11 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
     familyName: userData.family_name || 'User',
   })),
 }));
-vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
-vi.mock('#/modules/auth/sessions/operations/create-session', async (importOriginal) =>
+vi.mock('#/modules/auth/core/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
+vi.mock('#/modules/auth/core/sessions/operations/create-session', async (importOriginal) =>
   (await import('../test-utils')).createSessionMock(importOriginal),
 );
-vi.mock('#/modules/auth/sessions/operations/resolve-session', async (importOriginal) =>
+vi.mock('#/modules/auth/core/sessions/operations/resolve-session', async (importOriginal) =>
   (await import('../test-utils')).resolveSessionMock(importOriginal),
 );
 afterEach(async () => {
@@ -734,9 +734,9 @@ describe('OAuth Authentication', async () => {
 
     /** The verified claims of a Google sign-in, read by the real transform, so its rule of which addresses Google hosts runs. */
     const googleAsserts = async (claims: Record<string, unknown>) => {
-      type TransformModule = typeof import('#/modules/auth/oauth/helpers/transform-user-data');
-      const { transformSocialUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
-      const actual = await vi.importActual<TransformModule>('#/modules/auth/oauth/helpers/transform-user-data');
+      type TransformModule = typeof import('#/modules/auth/flows/oauth/helpers/transform-user-data');
+      const { transformSocialUserData } = await import('#/modules/auth/flows/oauth/helpers/transform-user-data');
+      const actual = await vi.importActual<TransformModule>('#/modules/auth/flows/oauth/helpers/transform-user-data');
       vi.mocked(transformSocialUserData).mockImplementationOnce(actual.transformSocialUserData);
       const profile = { sub: 'google-user-id', name: 'Test User', given_name: 'Test', family_name: 'User', email_verified: true };
       vi.mocked(googleAuth.validateAuthorizationCode).mockResolvedValueOnce({ accessToken: 'mock-access-token', claims: { ...profile, ...claims } });
@@ -770,7 +770,7 @@ describe('OAuth Authentication', async () => {
     it('must not create an account via an invite round trip whose provider has not verified the address', async () => {
       // An invitation link can be forwarded, so only a provider's own verification stands for the inbox with it.
       await openedInvitation(providerEmail);
-      const { transformGithubUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
+      const { transformGithubUserData } = await import('#/modules/auth/flows/oauth/helpers/transform-user-data');
       vi.mocked(transformGithubUserData).mockReturnValueOnce({
         id: 'github-user-id',
         slug: 'testuser',
@@ -927,7 +927,7 @@ describe('OAuth Authentication', async () => {
       await signUpCallback();
       await openVerificationLink(mailedLink('verificationLink').token);
 
-      const { transformGithubUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
+      const { transformGithubUserData } = await import('#/modules/auth/flows/oauth/helpers/transform-user-data');
       vi.mocked(transformGithubUserData).mockReturnValueOnce({
         id: 'another-github-user-id',
         slug: 'someone',

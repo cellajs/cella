@@ -3,7 +3,7 @@ import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import type { EntityRole } from 'shared';
 import { expect } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, setCookiePair } from '../helpers';

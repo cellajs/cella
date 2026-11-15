@@ -31,7 +31,7 @@ A connect links the institution account to a signed-in user, as a provider conne
 
 ## The membership role
 
-The role of that membership comes from `backend/src/modules/auth/sso/role-from-claims.ts`. An app fills this pinned file to map institution claims, such as `eduperson_affiliation`, to its own organization roles. The default is the least-privileged role. It is asked once, when the membership is created. Later sign-ins never change a role.
+The role of that membership comes from `backend/src/modules/auth/flows/sso/role-from-claims.ts`. An app fills this pinned file to map institution claims, such as `eduperson_affiliation`, to its own organization roles. The default is the least-privileged role. It is asked once, when the membership is created. Later sign-ins never change a role.
 
 ## An existing account
 

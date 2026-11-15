@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
+import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import {

@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { federationKeySchema } from '#/modules/auth/sso/sso-schema';
+import { federationKeySchema } from '#/modules/auth/core';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
 import { tenantOnlyParamSchema, validDomainSchema, validIdSchema, validNameSchema, validUrlSchema } from '#/schemas';

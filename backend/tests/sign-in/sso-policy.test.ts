@@ -9,8 +9,8 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -33,8 +33,8 @@ import { clearDatabase, setTestConfig } from '../test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic', 'sso'] });
 
 // The deployment under test holds no federation client; the registry answers as if it did.
-vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/modules/auth/sso/helpers/federations')>()),
+vi.mock('#/modules/auth/core/federations/federations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/modules/auth/core/federations/federations')>()),
   isFederationConfigured: () => true,
 }));
 

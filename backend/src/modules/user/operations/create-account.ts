@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import type { UserId } from '#/db/utils/ids';
 import { extractPgError } from '#/lib/error';
 import { generateUniqueSlugs } from '#/modules/entities/operations/generate-unique-slugs';
 import type { EmailProof } from '#/modules/user/emails-db';
@@ -20,6 +21,8 @@ interface CreateAccountOpts {
    * the app's own CDN only, so a profile picture hosted elsewhere is never stored.
    */
   newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'givenName' | 'familyName'>;
+  /** The id another party named the person by first (an authenticator's subject): a person has one id everywhere. */
+  id?: UserId;
   /** What proved the inbox before the account is created: a magic-link click, or a provider's verification mail. */
   via: EmailProof;
 }
@@ -30,7 +33,7 @@ interface CreateAccountOpts {
  * unproven account would hold its address hostage, and nothing sweeps such accounts up.
  * @throws AppError 409 `email_exists` when the address is taken.
  */
-export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAccountOpts): Promise<UserModel> => {
+export const createAccount = async (ctx: DbContext, { newUser, via, id }: CreateAccountOpts): Promise<UserModel> => {
   const [slug] = await generateUniqueSlugs(ctx, [newUser.slug], 'user');
 
   try {
@@ -39,6 +42,7 @@ export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAcco
     const [user] = await insertUsers(ctx, {
       users: [
         {
+          id,
           slug,
           givenName: newUser.givenName,
           // Providers assert an empty string for a missing family name; the column holds null for "none".

@@ -3,7 +3,7 @@ import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { routeTarget } from '#/middlewares/guard/route-target';
-import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
+import { isFederationKey } from '#/modules/auth/core';
 import { findUserSsoConnection } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';

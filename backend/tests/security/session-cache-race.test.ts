@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import { getMe } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
+import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import { createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
@@ -14,8 +14,8 @@ import { expectSignedOut, insertSession, warmSession } from './session-helpers';
  */
 const lookup = vi.hoisted(() => ({ started: 0, read: 0, held: undefined as Promise<void> | undefined }));
 
-vi.mock('#/modules/auth/sessions/sessions-queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/auth/sessions/sessions-queries')>();
+vi.mock('#/modules/auth/core/sessions/sessions-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/core/sessions/sessions-queries')>();
   return {
     ...actual,
     findSessionBySecret: async (...args: Parameters<typeof actual.findSessionBySecret>) => {

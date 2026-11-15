@@ -4,8 +4,6 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const accountTools = () => import('~/modules/me/account-tools');
 const AccountGeneralCard = lazyNamed(accountTools, 'AccountGeneralCard');
-const AccountSessionsCard = lazyNamed(accountTools, 'AccountSessionsCard');
-const AccountAuthenticationCard = lazyNamed(accountTools, 'AccountAuthenticationCard');
 const AccountConnectedAppsCard = lazyNamed(accountTools, 'AccountConnectedAppsCard');
 const AccountDeleteCard = lazyNamed(accountTools, 'AccountDeleteCard');
 
@@ -16,18 +14,6 @@ defineFrontendModule({
   description: 'UI for current user profile, settings, and account management.',
   tools: [
     { slot: 'account.settings', id: 'general', label: 'c:general', order: 10, locked: true, render: () => <AccountGeneralCard /> },
-    { slot: 'account.settings', id: 'sessions', label: 'c:sessions', order: 20, render: () => <AccountSessionsCard /> },
-    ...(appConfig.enabledAuthStrategies.length
-      ? [
-          {
-            slot: 'account.settings',
-            id: 'authentication',
-            label: 'c:authentication',
-            order: 30,
-            render: () => <AccountAuthenticationCard />,
-          } as const,
-        ]
-      : []),
     ...(appConfig.services.oauth.enabled
       ? [
           {

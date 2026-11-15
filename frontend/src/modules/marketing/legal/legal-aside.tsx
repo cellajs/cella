@@ -6,10 +6,10 @@ import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import type { TKey } from '~/lib/i18n-locales';
-import type { LegalSubject } from '~/modules/auth/legal/legal-config';
-import { type LegalSectionConfig, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
+import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
+import { type LegalSectionConfig, legalOverviewId } from '~/modules/marketing/legal/legal-types';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 

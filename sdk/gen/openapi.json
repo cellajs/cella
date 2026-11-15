@@ -1564,6 +1564,472 @@
         },
         "x-tags": ["embedded", "entities", "cella"]
       },
+      "MeAuthData": {
+        "type": "object",
+        "properties": {
+          "oauthIdentities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "enum": ["github"]
+                },
+                "email": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["provider", "email", "createdAt", "lastUsedAt"]
+            }
+          },
+          "institutions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "connectionId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "federation": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "description": "A federation key in appConfig.federations",
+                      "enum": ["surfconext"]
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["key", "name"]
+                },
+                "identity": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "lastUsedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["email", "createdAt", "lastUsedAt"]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The identity the account holds through this connection; null when not connected"
+                }
+              },
+              "required": ["connectionId", "name", "federation", "identity"]
+            }
+          },
+          "totp": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "lastUsedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["createdAt", "lastUsedAt"]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null without TOTP. Its last use is the start of the time step of the newest code it accepted."
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": ["regular", "mfa"]
+                },
+                "userId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "deviceName": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "deviceType": {
+                  "type": "string",
+                  "enum": ["desktop", "mobile"]
+                },
+                "deviceOs": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "browser": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "authStrategy": {
+                  "type": "string",
+                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                },
+                "connectionId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
+                "ipHash": {
+                  "type": ["string", "null"],
+                  "maxLength": 64
+                },
+                "ipSubnetHash": {
+                  "type": ["string", "null"],
+                  "maxLength": 64
+                },
+                "ipRegionCode": {
+                  "type": ["string", "null"],
+                  "maxLength": 2
+                },
+                "ipAsn": {
+                  "type": ["integer", "null"],
+                  "minimum": -2147483648,
+                  "maximum": 2147483647
+                },
+                "deviceIdHash": {
+                  "type": ["string", "null"],
+                  "maxLength": 64
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "type": "string"
+                },
+                "revokedAt": {
+                  "type": ["string", "null"]
+                },
+                "revocationReason": {
+                  "type": ["string", "null"],
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "admin_revoke", "session_cap", "replaced", null]
+                },
+                "steppedUpAt": {
+                  "type": ["string", "null"]
+                },
+                "steppedUpVia": {
+                  "type": ["string", "null"],
+                  "enum": ["passkey", "totp", "email", "sso", null]
+                },
+                "current": {
+                  "type": "boolean"
+                },
+                "newDevice": {
+                  "type": "boolean",
+                  "description": "The browser was first seen recently and is not the first one known."
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "userId",
+                "deviceName",
+                "deviceType",
+                "deviceOs",
+                "browser",
+                "authStrategy",
+                "connectionId",
+                "ipHash",
+                "ipSubnetHash",
+                "ipRegionCode",
+                "ipAsn",
+                "deviceIdHash",
+                "createdAt",
+                "expiresAt",
+                "revokedAt",
+                "revocationReason",
+                "steppedUpAt",
+                "steppedUpVia",
+                "current",
+                "newDevice"
+              ]
+            }
+          },
+          "passkeys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "deviceName": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "deviceType": {
+                  "type": "string",
+                  "enum": ["desktop", "mobile"]
+                },
+                "deviceOs": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "browser": {
+                  "type": ["string", "null"],
+                  "maxLength": 255
+                },
+                "nameOnDevice": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "lastUsedAt": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt", "lastUsedAt"]
+            }
+          }
+        },
+        "required": ["oauthIdentities", "institutions", "totp", "sessions", "passkeys"],
+        "description": "How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.",
+        "example": {
+          "oauthIdentities": [
+            {
+              "provider": "github",
+              "email": "Lonie.Littel11@gmail.com",
+              "createdAt": "2024-05-28T17:45:48.607Z",
+              "lastUsedAt": "2024-05-28T17:45:48.607Z"
+            }
+          ],
+          "institutions": [],
+          "totp": null,
+          "sessions": [
+            {
+              "id": "bf531073-c93c-4225-b553-bcd3fdbee2ac",
+              "userId": "b301e7af-e587-410c-8dd4-a5c678f6be37",
+              "kind": "regular",
+              "createdAt": "2024-05-28T17:45:48.607Z",
+              "expiresAt": "2024-06-04T17:45:48.607Z",
+              "deviceName": "Firefox on Windows",
+              "deviceType": "desktop",
+              "deviceOs": "macOS",
+              "browser": "Edge",
+              "authStrategy": "passkey",
+              "connectionId": null,
+              "ipHash": null,
+              "ipSubnetHash": null,
+              "ipRegionCode": null,
+              "ipAsn": null,
+              "deviceIdHash": "e73e1e9b96a7acab442bcbafafbc1c5f",
+              "revokedAt": null,
+              "revocationReason": null,
+              "steppedUpAt": null,
+              "steppedUpVia": null,
+              "current": true,
+              "newDevice": false
+            }
+          ],
+          "passkeys": []
+        },
+        "x-tags": ["data", "auth", "cella"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["user"]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"],
+            "maxLength": 2048
+          },
+          "bannerUrl": {
+            "type": ["string", "null"],
+            "maxLength": 2048
+          },
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "mfaRequired": {
+            "type": "boolean"
+          },
+          "givenName": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "familyName": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "languageCode": {
+            "type": "string",
+            "enum": ["en", "nl"]
+          },
+          "newsletter": {
+            "type": "boolean"
+          },
+          "contrast": {
+            "type": "string",
+            "enum": ["system", "more"]
+          },
+          "userFlags": {
+            "type": "object",
+            "properties": {}
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "isAnonymous": {
+            "type": "boolean",
+            "description": "The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null."
+          },
+          "lastSeenAt": {
+            "type": ["string", "null"]
+          },
+          "lastSignInAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "entityType",
+          "name",
+          "description",
+          "slug",
+          "thumbnailUrl",
+          "bannerUrl",
+          "email",
+          "mfaRequired",
+          "givenName",
+          "familyName",
+          "languageCode",
+          "newsletter",
+          "contrast",
+          "userFlags",
+          "updatedAt",
+          "isAnonymous",
+          "lastSeenAt",
+          "lastSignInAt"
+        ],
+        "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
+        "example": {
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+          "entityType": "user",
+          "name": "Isai Senger",
+          "givenName": "Isai",
+          "familyName": "Senger",
+          "email": "isai_senger@hotmail.com",
+          "slug": "isaisenger90",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "languageCode": "en",
+          "newsletter": false,
+          "contrast": "system",
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-06-15T02:53:22.776Z",
+          "updatedAt": "2024-06-15T02:53:22.776Z",
+          "updatedBy": null,
+          "isAnonymous": false,
+          "lastSignInAt": "2024-06-15T02:53:22.776Z",
+          "lastSeenAt": "2024-06-15T02:53:22.776Z"
+        },
+        "x-tags": ["data", "users", "cella"],
+        "x-aep-resource": {
+          "type": "cella/user",
+          "singular": "user",
+          "plural": "users",
+          "patterns": ["users/{userId}"]
+        }
+      },
       "StreamChange": {
         "type": "object",
         "properties": {
@@ -1840,469 +2306,6 @@
             "id": "d74bee86-cce8-4556-a2c0-30cd55d07b78",
             "expiresAt": "2025-04-12T07:07:55.505Z"
           }
-        },
-        "x-tags": ["data", "me", "cella"]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["user"]
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "slug": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"],
-            "maxLength": 2048
-          },
-          "bannerUrl": {
-            "type": ["string", "null"],
-            "maxLength": 2048
-          },
-          "email": {
-            "type": ["string", "null"],
-            "format": "email"
-          },
-          "mfaRequired": {
-            "type": "boolean"
-          },
-          "givenName": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "familyName": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "languageCode": {
-            "type": "string",
-            "enum": ["en", "nl"]
-          },
-          "newsletter": {
-            "type": "boolean"
-          },
-          "contrast": {
-            "type": "string",
-            "enum": ["system", "more"]
-          },
-          "userFlags": {
-            "type": "object",
-            "properties": {}
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "isAnonymous": {
-            "type": "boolean",
-            "description": "The account has no proven address: an anonymous session alone signs it in, it binds no invitation, and `email` is null."
-          },
-          "lastSeenAt": {
-            "type": ["string", "null"]
-          },
-          "lastSignInAt": {
-            "type": ["string", "null"]
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "entityType",
-          "name",
-          "description",
-          "slug",
-          "thumbnailUrl",
-          "bannerUrl",
-          "email",
-          "mfaRequired",
-          "givenName",
-          "familyName",
-          "languageCode",
-          "newsletter",
-          "contrast",
-          "userFlags",
-          "updatedAt",
-          "isAnonymous",
-          "lastSeenAt",
-          "lastSignInAt"
-        ],
-        "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting, whether it is anonymous, and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
-        "example": {
-          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-          "entityType": "user",
-          "name": "Isai Senger",
-          "givenName": "Isai",
-          "familyName": "Senger",
-          "email": "isai_senger@hotmail.com",
-          "slug": "isaisenger90",
-          "description": null,
-          "thumbnailUrl": null,
-          "bannerUrl": null,
-          "languageCode": "en",
-          "newsletter": false,
-          "contrast": "system",
-          "mfaRequired": false,
-          "userFlags": {},
-          "createdAt": "2024-06-15T02:53:22.776Z",
-          "updatedAt": "2024-06-15T02:53:22.776Z",
-          "updatedBy": null,
-          "isAnonymous": false,
-          "lastSignInAt": "2024-06-15T02:53:22.776Z",
-          "lastSeenAt": "2024-06-15T02:53:22.776Z"
-        },
-        "x-tags": ["data", "users", "cella"],
-        "x-aep-resource": {
-          "type": "cella/user",
-          "singular": "user",
-          "plural": "users",
-          "patterns": ["users/{userId}"]
-        }
-      },
-      "MeAuthData": {
-        "type": "object",
-        "properties": {
-          "oauthIdentities": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "provider": {
-                  "type": "string",
-                  "enum": ["github"]
-                },
-                "email": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "createdAt": {
-                  "type": "string"
-                },
-                "lastUsedAt": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              },
-              "required": ["provider", "email", "createdAt", "lastUsedAt"]
-            }
-          },
-          "institutions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "connectionId": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "federation": {
-                  "type": "object",
-                  "properties": {
-                    "key": {
-                      "type": "string",
-                      "description": "A federation key in appConfig.federations",
-                      "enum": ["surfconext"]
-                    },
-                    "name": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["key", "name"]
-                },
-                "identity": {
-                  "anyOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "email": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "createdAt": {
-                          "type": "string"
-                        },
-                        "lastUsedAt": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "required": ["email", "createdAt", "lastUsedAt"]
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "The identity the account holds through this connection; null when not connected"
-                }
-              },
-              "required": ["connectionId", "name", "federation", "identity"]
-            }
-          },
-          "totp": {
-            "anyOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "createdAt": {
-                    "type": "string"
-                  },
-                  "lastUsedAt": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  }
-                },
-                "required": ["createdAt", "lastUsedAt"]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Null without TOTP. Its last use is the start of the time step of the newest code it accepted."
-          },
-          "sessions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "kind": {
-                  "type": "string",
-                  "enum": ["regular", "mfa"]
-                },
-                "userId": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "deviceName": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "deviceType": {
-                  "type": "string",
-                  "enum": ["desktop", "mobile"]
-                },
-                "deviceOs": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "browser": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "authStrategy": {
-                  "type": "string",
-                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
-                },
-                "connectionId": {
-                  "type": ["string", "null"],
-                  "format": "uuid"
-                },
-                "ipHash": {
-                  "type": ["string", "null"],
-                  "maxLength": 64
-                },
-                "ipSubnetHash": {
-                  "type": ["string", "null"],
-                  "maxLength": 64
-                },
-                "ipRegionCode": {
-                  "type": ["string", "null"],
-                  "maxLength": 2
-                },
-                "ipAsn": {
-                  "type": ["integer", "null"],
-                  "minimum": -2147483648,
-                  "maximum": 2147483647
-                },
-                "deviceIdHash": {
-                  "type": ["string", "null"],
-                  "maxLength": 64
-                },
-                "createdAt": {
-                  "type": "string"
-                },
-                "expiresAt": {
-                  "type": "string"
-                },
-                "revokedAt": {
-                  "type": ["string", "null"]
-                },
-                "revocationReason": {
-                  "type": ["string", "null"],
-                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
-                },
-                "steppedUpAt": {
-                  "type": ["string", "null"]
-                },
-                "steppedUpVia": {
-                  "type": ["string", "null"],
-                  "enum": ["passkey", "totp", "email", "sso", null]
-                },
-                "current": {
-                  "type": "boolean"
-                },
-                "newDevice": {
-                  "type": "boolean",
-                  "description": "The browser was first seen recently and is not the first one known."
-                }
-              },
-              "required": [
-                "id",
-                "kind",
-                "userId",
-                "deviceName",
-                "deviceType",
-                "deviceOs",
-                "browser",
-                "authStrategy",
-                "connectionId",
-                "ipHash",
-                "ipSubnetHash",
-                "ipRegionCode",
-                "ipAsn",
-                "deviceIdHash",
-                "createdAt",
-                "expiresAt",
-                "revokedAt",
-                "revocationReason",
-                "steppedUpAt",
-                "steppedUpVia",
-                "current",
-                "newDevice"
-              ]
-            }
-          },
-          "passkeys": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "userId": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "deviceName": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "deviceType": {
-                  "type": "string",
-                  "enum": ["desktop", "mobile"]
-                },
-                "deviceOs": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "browser": {
-                  "type": ["string", "null"],
-                  "maxLength": 255
-                },
-                "nameOnDevice": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "createdAt": {
-                  "type": "string"
-                }
-              },
-              "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
-            }
-          }
-        },
-        "required": ["oauthIdentities", "institutions", "totp", "sessions", "passkeys"],
-        "description": "How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.",
-        "example": {
-          "oauthIdentities": [
-            {
-              "provider": "github",
-              "email": "Lonie.Littel11@gmail.com",
-              "createdAt": "2024-05-28T17:45:48.607Z",
-              "lastUsedAt": "2024-05-28T17:45:48.607Z"
-            }
-          ],
-          "institutions": [],
-          "totp": null,
-          "sessions": [
-            {
-              "id": "bf531073-c93c-4225-b553-bcd3fdbee2ac",
-              "userId": "b301e7af-e587-410c-8dd4-a5c678f6be37",
-              "kind": "regular",
-              "createdAt": "2024-05-28T17:45:48.607Z",
-              "expiresAt": "2024-06-04T17:45:48.607Z",
-              "deviceName": "Firefox on Windows",
-              "deviceType": "desktop",
-              "deviceOs": "macOS",
-              "browser": "Edge",
-              "authStrategy": "passkey",
-              "connectionId": null,
-              "ipHash": null,
-              "ipSubnetHash": null,
-              "ipRegionCode": null,
-              "ipAsn": null,
-              "deviceIdHash": "e73e1e9b96a7acab442bcbafafbc1c5f",
-              "revokedAt": null,
-              "revocationReason": null,
-              "steppedUpAt": null,
-              "steppedUpVia": null,
-              "current": true,
-              "newDevice": false
-            }
-          ],
-          "passkeys": []
         },
         "x-tags": ["data", "me", "cella"]
       },
@@ -6018,6 +6021,425 @@
         }
       }
     },
+    "/auth/me": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getMyAuth",
+        "tags": ["auth", "cella"],
+        "summary": "Get auth data",
+        "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
+        "x-anonymous": true,
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "responses": {
+          "200": {
+            "description": "Sign-in methods and sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeAuthData"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth:toggle-mfa": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "toggleMfa",
+        "tags": ["auth", "cella"],
+        "summary": "Toggle MFA",
+        "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
+        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mfaRequired": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["mfaRequired"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/sessions:revoke": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeMySessions",
+        "tags": ["auth", "cella"],
+        "summary": "Revoke sessions",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": ["ids"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessions were revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": ["regular", "mfa"]
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "deviceName": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "deviceType": {
+                            "type": "string",
+                            "enum": ["desktop", "mobile"]
+                          },
+                          "deviceOs": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "browser": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "authStrategy": {
+                            "type": "string",
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                          },
+                          "connectionId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
+                          },
+                          "ipHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipSubnetHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipRegionCode": {
+                            "type": ["string", "null"],
+                            "maxLength": 2
+                          },
+                          "ipAsn": {
+                            "type": ["integer", "null"],
+                            "minimum": -2147483648,
+                            "maximum": 2147483647
+                          },
+                          "deviceIdHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "string"
+                          },
+                          "revokedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "revocationReason": {
+                            "type": ["string", "null"],
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "admin_revoke", "session_cap", "replaced", null]
+                          },
+                          "steppedUpAt": {
+                            "type": ["string", "null"]
+                          },
+                          "steppedUpVia": {
+                            "type": ["string", "null"],
+                            "enum": ["passkey", "totp", "email", "sso", null]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "userId",
+                          "deviceName",
+                          "deviceType",
+                          "deviceOs",
+                          "browser",
+                          "authStrategy",
+                          "connectionId",
+                          "ipHash",
+                          "ipSubnetHash",
+                          "ipRegionCode",
+                          "ipAsn",
+                          "deviceIdHash",
+                          "createdAt",
+                          "expiresAt",
+                          "revokedAt",
+                          "revocationReason",
+                          "steppedUpAt",
+                          "steppedUpVia"
+                        ]
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["results", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/sessions": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeUserSessions",
+        "tags": ["auth", "cella"],
+        "summary": "Sign a user out everywhere",
+        "description": "Ends every session of the user and every app they consented to, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessions ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": {
+                      "type": "number",
+                      "description": "Sessions ended"
+                    }
+                  },
+                  "required": ["revoked"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/factors/{factor}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "removeUserFactor",
+        "tags": ["auth", "cella"],
+        "summary": "Remove a user's lost factor",
+        "description": "Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["passkey", "totp"]
+            },
+            "required": true,
+            "name": "factor",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factor removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "number",
+                      "description": "Passkeys removed, or 1 for the authenticator app"
+                    },
+                    "mfaDisabled": {
+                      "type": "boolean",
+                      "description": "Whether MFA turned off because a required method is gone"
+                    }
+                  },
+                  "required": ["removed", "mfaDisabled"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/send-magic-link": {
       "post": {
         "security": [],
@@ -6451,6 +6873,10 @@
                   "nameOnDevice": {
                     "type": "string",
                     "maxLength": 255
+                  },
+                  "userHandle": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,86}$"
                   }
                 },
                 "required": ["attestation", "nameOnDevice"]
@@ -6479,7 +6905,8 @@
                   "deviceOs": "iOS",
                   "browser": "Safari",
                   "nameOnDevice": "Safari on iPhone",
-                  "createdAt": "2024-06-08T07:07:34.910Z"
+                  "createdAt": "2024-06-08T07:07:34.910Z",
+                  "lastUsedAt": null
                 },
                 "schema": {
                   "type": "object",
@@ -6514,9 +6941,12 @@
                     },
                     "createdAt": {
                       "type": "string"
+                    },
+                    "lastUsedAt": {
+                      "type": ["string", "null"]
                     }
                   },
-                  "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
+                  "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt", "lastUsedAt"]
                 }
               }
             }
@@ -6724,7 +7154,7 @@
                           },
                           "userHandle": {
                             "type": "string",
-                            "maxLength": 2048
+                            "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]
@@ -7828,7 +8258,7 @@
                           },
                           "userHandle": {
                             "type": "string",
-                            "maxLength": 2048
+                            "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]
@@ -8947,101 +9377,6 @@
         }
       }
     },
-    "/me:toggle-mfa": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "toggleMfa",
-        "tags": ["me", "cella"],
-        "summary": "Toggle MFA",
-        "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
-        "x-guard": ["userGuard", "stepUpGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "mfaRequired": {
-                    "type": "boolean"
-                  }
-                },
-                "required": ["mfaRequired"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "User",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/me/auth": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getMyAuth",
-        "tags": ["me", "cella"],
-        "summary": "Get auth data",
-        "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
-        "x-anonymous": true,
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["readLimiter"],
-        "responses": {
-          "200": {
-            "description": "Sign-in methods and sessions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MeAuthData"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/me/invitations": {
       "get": {
         "security": [
@@ -9484,197 +9819,6 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/me/sessions:revoke": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "revokeMySessions",
-        "tags": ["me", "cella"],
-        "summary": "Revoke sessions",
-        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "maxLength": 50
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": ["ids"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Sessions were revoked",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "results": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "kind": {
-                            "type": "string",
-                            "enum": ["regular", "mfa"]
-                          },
-                          "userId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "deviceName": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "deviceType": {
-                            "type": "string",
-                            "enum": ["desktop", "mobile"]
-                          },
-                          "deviceOs": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "browser": {
-                            "type": ["string", "null"],
-                            "maxLength": 255
-                          },
-                          "authStrategy": {
-                            "type": "string",
-                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
-                          },
-                          "connectionId": {
-                            "type": ["string", "null"],
-                            "format": "uuid"
-                          },
-                          "ipHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "ipSubnetHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "ipRegionCode": {
-                            "type": ["string", "null"],
-                            "maxLength": 2
-                          },
-                          "ipAsn": {
-                            "type": ["integer", "null"],
-                            "minimum": -2147483648,
-                            "maximum": 2147483647
-                          },
-                          "deviceIdHash": {
-                            "type": ["string", "null"],
-                            "maxLength": 64
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "expiresAt": {
-                            "type": "string"
-                          },
-                          "revokedAt": {
-                            "type": ["string", "null"]
-                          },
-                          "revocationReason": {
-                            "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
-                          },
-                          "steppedUpAt": {
-                            "type": ["string", "null"]
-                          },
-                          "steppedUpVia": {
-                            "type": ["string", "null"],
-                            "enum": ["passkey", "totp", "email", "sso", null]
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "kind",
-                          "userId",
-                          "deviceName",
-                          "deviceType",
-                          "deviceOs",
-                          "browser",
-                          "authStrategy",
-                          "connectionId",
-                          "ipHash",
-                          "ipSubnetHash",
-                          "ipRegionCode",
-                          "ipAsn",
-                          "deviceIdHash",
-                          "createdAt",
-                          "expiresAt",
-                          "revokedAt",
-                          "revocationReason",
-                          "steppedUpAt",
-                          "steppedUpVia"
-                        ]
-                      }
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": ["results", "rejectedIds"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
