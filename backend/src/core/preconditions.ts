@@ -117,6 +117,16 @@ export const assertNoWriteBetween = (ctx: PreconditionContext, entityType: Singl
   if (target === id.toLowerCase() && (conditions.pinned || leftUnchecked(conditions))) throw preconditionFailed(entityType);
 };
 
+/**
+ * For a single-entity write that writes nothing: preconditions no read compared refuse it, as `preconditionWhere`
+ * refuses an update that writes.
+ * @throws AppError 412 `precondition_failed`.
+ */
+export const assertPreconditionsChecked = (ctx: PreconditionContext, entityType: SingleEntityType) => {
+  const conditions = ctx.var.preconditions;
+  if (conditions?.entityType === entityType && leftUnchecked(conditions)) throw preconditionFailed(entityType);
+};
+
 const entityTypeOfIdParam = new Map<string, SingleEntityType>(
   Object.entries(appConfig.entityIdColumnKeys).flatMap(([type, key]) =>
     hierarchy.isChannel(type) || hierarchy.isProduct(type) ? [[key, type] as const] : [],

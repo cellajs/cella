@@ -18,6 +18,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 /** Within the 16 millis digits the stamp shape takes, and far past any wall clock. */
 const farFutureStamp = '9999999999999999:0000:abcde';
 
+type RenameStx = ReturnType<typeof mockStxFor> & { replayed?: boolean };
+
 /**
  * The server merges field edits by HLC stamps from one clock per process, which client stamps advance, and the stored
  * `stx` tells the CDC worker and the writer's tab who made a row's last write. A stamp from any tenant must not order
@@ -45,14 +47,14 @@ describe('Write integrity', async () => {
     return { id, status: response.status };
   };
 
-  const rename = async (id: string, name: string, stx: ReturnType<typeof mockStxFor> & { replayed?: boolean }) => {
-    const { response } = await call(updateAttachment, {
+  const renameAs = (cookie: string, id: string, name: string, stx: RenameStx) =>
+    call(updateAttachment, {
       path: { tenantId: victim.tenantId, organizationId: victim.organization.id, attachmentId: id },
       body: { ops: { name }, stx },
-      headers: headers(victim.sessionCookie),
+      headers: headers(cookie),
     });
-    return response.status;
-  };
+
+  const rename = async (id: string, name: string, stx: RenameStx) => (await renameAs(victim.sessionCookie, id, name, stx)).response.status;
 
   const remove = async (body: { ids: string[]; stx?: { mutationId: string; sourceId: string } }) => {
     const { response } = await call(batchDeleteAttachments, {
@@ -118,6 +120,21 @@ describe('Write integrity', async () => {
 
     expect(await rename(renamedOver.id, 'Online', mockStxFor('name'))).toBe(200);
     expect(await nameStampMillis(renamedOver.id)).toBeLessThanOrEqual(BigInt(Date.now() + maxClockSkewMs));
+  });
+
+  it('must not let a replay that loses every field rewrite the row', async () => {
+    const [victimPlan] = plans;
+    const { id } = await createIn(victim, victimPlan);
+    // The victim's offline rename, made a second before the rival's online one and replayed after it.
+    const lostStx = { ...mockStxFor(), fieldTimestamps: { name: `${Date.now() - 1000}:0000:aaaaa` }, replayed: true };
+    expect((await renameAs(deleter.sessionCookie, id, 'Rival', mockStxFor('name'))).response.status).toBe(200);
+    const { updatedAt, updatedBy, stx } = await storedRow(id);
+
+    // The loser must not become the row's writer, move its tag or send every reader a change.
+    const { response, data } = await renameAs(victim.sessionCookie, id, 'Lost', lostStx);
+    expect(response.status).toBe(200);
+    expect(data).toMatchObject({ name: 'Rival' });
+    expect(await storedRow(id)).toMatchObject({ name: 'Rival', updatedAt, updatedBy, stx });
   });
 
   it('must record a delete with its own stx', async () => {

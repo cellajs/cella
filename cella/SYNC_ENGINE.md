@@ -192,7 +192,7 @@ Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp 
 
 - **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
 - **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time.
-- **No conflict response:** losing fields are skipped, and the server returns the stored row.
+- **No conflict response:** losing fields are skipped. A write that loses every field writes nothing, and the server returns the stored row.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 
 ### Paused writes
