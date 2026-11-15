@@ -98,7 +98,7 @@ describe('runAction in a menu session', () => {
     expect(choose.mock.calls[0]?.[0].map((row: { label: string }) => row.label)).toEqual([
       'Retry Review & apply changes',
       'Unlock',
-      'Back to the menu',
+      '← Back to menu',
     ]);
   });
 

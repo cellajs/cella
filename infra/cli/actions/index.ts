@@ -3,7 +3,7 @@ import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { isPromptAbort } from '../prompts/abort';
 import { PromptBack } from '../prompts/back';
-import { afterAction, backToMenu, keptKeyNote, LEAVE, leaveRow, QUIT, type WayOut, whatNow } from '../prompts/what-now';
+import { afterFirstSetup, backToMenu, keptKeyNote, LEAVE, leaveRow, QUIT, type WayOut, whatNow } from '../prompts/what-now';
 import { forgetAnswers, inMenuSession, rememberedOperatorKey } from '../session';
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
@@ -57,7 +57,7 @@ export interface ActionOutcome {
   next?: OperatorActionId;
   /** The operator stepped back out of the action with Esc, so it changed nothing. */
   back?: boolean;
-  /** The operator chose to quit the CLI at the frame under the action. */
+  /** The operator chose to quit the CLI at the frame under a first setup. */
   quit?: boolean;
 }
 
@@ -71,8 +71,8 @@ export interface RunActionOptions {
   firstSetup?: boolean;
   /** Asks what to do after a failure; a test answers in its place. */
   choose?: typeof whatNow;
-  /** Asks where to go once the action ended by itself; a test answers in its place. */
-  close?: typeof afterAction;
+  /** Asks where a first setup goes once it ended by itself; a test answers in its place. */
+  close?: typeof afterFirstSetup;
 }
 
 /** The ways out of a failed action: retry it, each action that fixes it by its menu name (in a menu session), then leave. */
@@ -126,14 +126,19 @@ async function tryAction(id: OperatorActionId, context: InfraContext, runners: A
  * to the handler that ends the run.
  */
 export async function runAction(id: OperatorActionId, context: InfraContext, opts: RunActionOptions = {}): Promise<ActionOutcome> {
-  const { runners = ACTION_RUNNERS, log = (line: string) => console.error(line), firstSetup = false, choose = whatNow, close = afterAction } = opts;
+  const {
+    runners = ACTION_RUNNERS,
+    log = (line: string) => console.error(line),
+    firstSetup = false,
+    choose = whatNow,
+    close = afterFirstSetup,
+  } = opts;
   try {
     for (;;) {
       const ended = await tryAction(id, context, runners, log);
       if (ended === 'done' || (ended instanceof ActionEnded && ended.exitCode === 0 && !ended.left)) {
         if (!inMenuSession() && !(firstSetup && process.stdin.isTTY)) return { code: 0 };
-        // Full status ends on one back row, the other actions on the frame with Quit.
-        const way = id === 'status' && !firstSetup ? await backToMenu() : await close(firstSetup);
+        const way = firstSetup ? await close() : await backToMenu();
         return way === QUIT ? { code: 0, quit: true } : { code: 0 };
       }
       if (ended === 'back') {
