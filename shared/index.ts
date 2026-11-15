@@ -1,6 +1,7 @@
 import { hierarchy } from './config/config.default.ts';
 
 export { hierarchy, roles } from './config/config.default.ts';
+export { type AuthStrategy, amrOf, baseAuthStrategies, isSecondFactor, type StepUpProof, stepUpProofs } from './src/auth-strategies.ts';
 export { appConfig, originEnvName, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
 export { type ConfigSwitch, isStrategyEnabled, isSwitchOn } from './src/config-builder/config-switch.ts';
 export { authPath, servicePaths } from './src/config-builder/service-paths.ts';

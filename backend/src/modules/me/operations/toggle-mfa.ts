@@ -2,12 +2,12 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
-import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
-import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
+import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { sendAccountSecurityEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
+import { setUserSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
+import { readStepUp } from '#/modules/auth/core/step-up/operations/read-step-up';
+import { mfaFactorRules } from '#/modules/auth/flows/mfa/operations/factor-rules';
 import { findMfaRequired, findServedUserById, updateUserMfa } from '#/modules/user/user-queries';
 
 /**

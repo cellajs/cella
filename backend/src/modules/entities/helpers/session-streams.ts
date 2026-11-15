@@ -1,4 +1,4 @@
-import type { SessionRevocationReason } from '#/modules/auth/sessions/sessions-db';
+import type { SessionRevocationReason } from '#/modules/auth/core';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { endStream, writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';

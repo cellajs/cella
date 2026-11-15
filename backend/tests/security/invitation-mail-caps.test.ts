@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';

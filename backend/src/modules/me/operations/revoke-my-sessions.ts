@@ -1,6 +1,6 @@
 import type { UserContext } from '#/core/context';
-import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
+import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
+import { requireStepUp } from '#/modules/auth/core/step-up/operations/read-step-up';
 
 /**
  * Revokes the user's own sessions by id. Revoking the session behind this request is a sign-out and needs nothing

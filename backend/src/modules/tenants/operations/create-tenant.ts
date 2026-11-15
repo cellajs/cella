@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
-import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/core';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import { insertTenant } from '#/modules/tenants/tenants-queries';
 import { log } from '#/utils/logger';

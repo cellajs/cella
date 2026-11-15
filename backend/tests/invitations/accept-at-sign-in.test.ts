@@ -4,7 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';

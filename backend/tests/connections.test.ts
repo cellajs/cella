@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { type Connection, createConnection, deleteConnection, listConnections, updateConnection } from 'sdk';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { isFederationConfigured } from '#/modules/auth/sso/helpers/federations';
+import { isFederationConfigured } from '#/modules/auth/core/federations/federations';
 import { defaultHeaders } from './fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, createTestUser, expectRefusal } from './helpers';
 import { createAppClient } from './test-client';
@@ -10,8 +10,8 @@ import { clearDatabase, setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'] });
 
 // The deployment under test holds no federation client; the registry answers as if it did, except where a test says otherwise.
-vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/modules/auth/sso/helpers/federations')>()),
+vi.mock('#/modules/auth/core/federations/federations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/modules/auth/core/federations/federations')>()),
   isFederationConfigured: vi.fn(() => true),
 }));
 

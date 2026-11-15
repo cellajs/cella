@@ -3,9 +3,9 @@ import { nanoid } from 'nanoid';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
-import { transformGithubUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { transformGithubUserData } from '#/modules/auth/flows/oauth/helpers/transform-user-data';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, magicLinkEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
@@ -16,11 +16,11 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge } from './helpers';
 
 // GitHub's code exchange succeeds, and its profile is the one each test hands `transformGithubUserData`.
-vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>()),
+vi.mock('#/modules/auth/flows/oauth/helpers/providers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/modules/auth/flows/oauth/helpers/providers')>()),
   githubAuth: { validateAuthorizationCode: vi.fn(async () => ({ accessToken: 'provider-access-token' })) },
 }));
-vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({ transformGithubUserData: vi.fn(), transformSocialUserData: vi.fn() }));
+vi.mock('#/modules/auth/flows/oauth/helpers/transform-user-data', () => ({ transformGithubUserData: vi.fn(), transformSocialUserData: vi.fn() }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic', 'oauth'], enabledOAuthProviders: ['github'] });
 

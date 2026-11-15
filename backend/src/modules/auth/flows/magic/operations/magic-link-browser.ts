@@ -1,0 +1,53 @@
+import type { Context } from 'hono';
+import { appConfig } from 'shared';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
+import { baseDb } from '#/db/db';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { heldLinkLifetime, isMagicLinkRequestedHere, refuseUnredeemable } from '#/modules/auth/core/tokens/token-lifecycle';
+import { findLinkToken } from '#/modules/auth/core/tokens/tokens-queries';
+
+/** Magic links are read on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
+
+/** The frontend page where a link opened in another browser is confirmed. */
+const confirmSignInPath = '/auth/confirm-sign-in';
+
+/**
+ * The unredeemed, unexpired magic link a raw value names.
+ * @throws AppError 401 `magic_not_found` without a link, else what `refuseUnredeemable` throws.
+ */
+export const findOpenableMagicLink = async (rawToken: string) => {
+  const token = await findLinkToken(dbCtx, { kind: 'magic', rawToken });
+  if (!token) throw new AppError(401, 'magic_not_found', 'warn');
+  refuseUnredeemable('magic', token);
+  return token;
+};
+
+/**
+ * The raw value of the magic link this browser holds for confirmation.
+ * @throws AppError 401 `magic_expired` when it holds none.
+ */
+export const readHeldMagicLink = (ctx: Context<Env>) => {
+  const rawToken = getAuthCookie(ctx, 'magic-pending');
+  if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
+  return rawToken;
+};
+
+/**
+ * A magic link signs in whoever opens it, so it does so directly only in the browser that asked for it, or that opened it
+ * before (the redemption then proves that with the link's own single-use cookie). Anywhere else the link is held in this
+ * browser and its holder confirms on the app's own page: a link planted in someone's browser, or fetched by an email
+ * scanner, signs nobody in and is not used up. Returns the redirect to that page, or null to open the link directly.
+ */
+export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken: string) => {
+  const token = await findLinkToken(dbCtx, { kind: 'magic', rawToken });
+  // An unknown link takes the direct path, which refuses it the same way it always has. So does a redeemed one: only the
+  // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
+  if (!token || token.redeemedAt) return null;
+  if (isMagicLinkRequestedHere(ctx, token.id)) return null;
+
+  refuseUnredeemable('magic', token);
+  setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);
+  return ctx.redirect(new URL(confirmSignInPath, appConfig.frontendUrl), 302);
+};

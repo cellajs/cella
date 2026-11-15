@@ -1,5 +1,5 @@
 import { TTLCache } from '#/lib/ttl-cache';
-import type { ResolvedSession } from '#/modules/auth/sessions/operations/resolve-session';
+import type { ResolvedSession } from '#/modules/auth/core';
 
 /**
  * Sessions by the hash of their token, for 10 seconds, so a page's burst of requests reads its session once: requests

@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { getMe, sendStepUpCode, stepUp } from 'sdk';
+import type { StepUpProof } from 'shared';
 import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { type SessionKind, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
+import { type SessionKind, sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import { updateSessionSteppedUp } from '#/modules/auth/core/sessions/sessions-queries';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';

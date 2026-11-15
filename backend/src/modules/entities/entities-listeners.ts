@@ -9,7 +9,7 @@ import {
   type ResourceType,
 } from 'shared';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
-import { authEvents } from '#/modules/auth/auth-events';
+import { authEvents } from '#/modules/auth/core';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeStreams } from '#/modules/entities/helpers/session-streams';
 import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';

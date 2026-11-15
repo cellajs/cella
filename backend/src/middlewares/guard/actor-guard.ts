@@ -1,7 +1,7 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { serviceGuard } from '#/middlewares/guard/service-guard';
 import { userGuard } from '#/middlewares/guard/user-guard';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getAuthCookie } from '#/modules/auth/core';
 import { bearerChallenge } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';

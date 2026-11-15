@@ -4,8 +4,8 @@ import { nanoid } from 'nanoid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { getAdminDb } from '#/db/db';
+import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import type { RateLimiterOpts, RateLimitMode } from '#/middlewares/rate-limiter/types';
-import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 
 // Undo the setup.ts mock: these tests drive the real middleware against the real database store.
 vi.unmock('#/middlewares/rate-limiter/core');

@@ -1,5 +1,5 @@
 import type { DbContext } from '#/core/context';
-import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { deleteInvitationTokens } from '#/modules/auth/core';
 import { bindInvitationsByEmail } from '#/modules/memberships/invitations-queries';
 
 /**

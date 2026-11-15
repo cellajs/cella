@@ -1,16 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { getMyAuth, type MeAuthData, signInWithTotp } from 'sdk';
+import type { AuthStrategy } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { devicesTable } from '#/modules/auth/devices/devices-db';
-import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
-import { notifyNewSignIn } from '#/modules/auth/devices/operations/notify-sign-in';
-import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
-import { createSession } from '#/modules/auth/sessions/operations/create-session';
-import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
+import { devicesTable } from '#/modules/auth/core/devices/devices-db';
+import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
+import { notifyNewSignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
+import type { SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
+import { createSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails, setCookiePair } from '../helpers';
@@ -18,7 +18,7 @@ import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 // New-device notices are under test, not authenticator codes: every TOTP check passes.
-vi.mock('#/modules/auth/totps/operations/verify-totp', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
+vi.mock('#/modules/auth/flows/totps/operations/verify-totp', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 

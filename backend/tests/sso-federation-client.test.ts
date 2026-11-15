@@ -3,8 +3,8 @@ import type { LogFn } from 'shared/pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '#/core/error';
 import { toClientError } from '#/lib/error';
-import { createFederationAuthorizationUrl, exchangeFederationCode, forgetFederation } from '#/modules/auth/sso/helpers/federation-client';
-import type { Federation } from '#/modules/auth/sso/helpers/federations';
+import type { Federation } from '#/modules/auth/core/federations/federations';
+import { createFederationAuthorizationUrl, exchangeFederationCode, forgetFederation } from '#/modules/auth/flows/sso/helpers/federation-client';
 
 // `log` and `toClientError` write here through a logger with the backend's redaction, each line through a fresh facade:
 // one facade's dedup window would keep the second refusal's line out.

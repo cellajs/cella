@@ -1,0 +1,90 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'shared';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
+import { deviceColumns, deviceInfo } from '#/lib/device-info';
+import { sendAccountSecurityEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
+import { setUserSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { stampStepUp } from '#/modules/auth/core/step-up/operations/stamp-step-up';
+import { spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { mfaFactorRules } from '#/modules/auth/flows/mfa/operations/factor-rules';
+import { completeMfaChallenge, validateConfirmMfaToken } from '#/modules/auth/flows/mfa/operations/mfa-challenge';
+import {
+  issuePasskeyChallenge,
+  verifyPasskeyAssertion,
+  verifyPasskeyRegistration,
+} from '#/modules/auth/flows/passkeys/operations/passkey-challenges';
+import { deletePasskey, insertPasskey } from '#/modules/auth/flows/passkeys/passkeys-queries';
+import { authPasskeysRoutes } from '#/modules/auth/flows/passkeys/passkeys-routes';
+import { findUserById } from '#/modules/user/user-queries';
+import { defaultHook } from '#/utils/default-hook';
+
+const app = new OpenAPIHono<Env>({ defaultHook });
+
+app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
+  const user = ctx.var.user;
+
+  const { attestation, nameOnDevice } = ctx.req.valid('json');
+
+  const { credentialId, publicKey, counter, transports } = await verifyPasskeyRegistration(ctx, attestation, user.id);
+
+  // A credential id names one account: an authenticator presenting one that is registered already is refused.
+  const newPasskey = await insertPasskey(ctx, {
+    values: { userId: user.id, credentialId, publicKey, counter, transports, nameOnDevice, ...deviceColumns(deviceInfo(ctx)) },
+  });
+  if (!newPasskey) throw new AppError(409, 'resource_already_exists', 'warn');
+
+  // The registration proved the new passkey on this session: it steps the session up, so the action that asked runs next.
+  await stampStepUp(ctx, 'passkey');
+  sendAccountSecurityEmail(user, 'passkey-added', { passkeyName: newPasskey.nameOnDevice });
+
+  return ctx.json(newPasskey, 201, { Location: `${appConfig.backendAuthUrl}/passkeys/${newPasskey.id}` });
+});
+
+app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
+  const user = ctx.var.user;
+
+  const { passkeyId } = ctx.req.valid('param');
+
+  // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
+  const deleted = await mfaFactorRules.removeFactor(user.id, (txCtx) => deletePasskey(txCtx, { userId: user.id, id: passkeyId }));
+
+  // An id the user holds no passkey by answers 204 as well, but only a deletion mails the user.
+  if (deleted) sendAccountSecurityEmail(user, 'passkey-deleted', { passkeyName: deleted.nameOnDevice });
+
+  return ctx.body(null, 204);
+});
+
+app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
+  const { kind } = ctx.req.valid('json');
+
+  // The second factor of an MFA challenge has a known account, whose passkeys may be offered, and a registration the
+  // signed-in one, whose passkeys the browser excludes. A sign-in challenge names none: the passkey the browser picks
+  // names its account.
+  const user = kind === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : kind === 'registration' ? (await findSession(ctx))?.user : undefined;
+
+  return ctx.json(await issuePasskeyChallenge(ctx, { purpose: kind, userId: user?.id }), 200);
+});
+
+app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
+  const { kind, assertion } = ctx.req.valid('json');
+
+  if (kind === 'mfa') {
+    await completeMfaChallenge(ctx, { strategy: 'passkey', assertion });
+    return ctx.body(null, 204);
+  }
+
+  const userId = await verifyPasskeyAssertion(ctx, { assertion, purpose: 'authentication' });
+  const user = await findUserById(ctx, { id: userId });
+  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
+
+  // A regular passkey sign-in also ends a challenge this browser left open.
+  await spendCookieToken(ctx, 'confirm-mfa');
+
+  await setUserSession(ctx, user, 'passkey', 'regular');
+
+  return ctx.body(null, 204);
+});
+
+export const authPasskeysHandlers = app;

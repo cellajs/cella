@@ -1,13 +1,13 @@
 import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
 import type { UserContext } from '#/core/context';
-import { findNewDevices } from '#/modules/auth/devices/devices-queries';
-import { findSsoIdentities, findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
-import { findPasskeysByUser } from '#/modules/auth/passkeys/passkeys-queries';
-import { sessionLifetime } from '#/modules/auth/sessions/operations/create-session';
-import { findUserSessions } from '#/modules/auth/sessions/sessions-queries';
-import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/helpers/federations';
-import { findTotp } from '#/modules/auth/totps/totps-queries';
+import { findNewDevices } from '#/modules/auth/core/devices/devices-queries';
+import { isFederationConfigured, isFederationKey } from '#/modules/auth/core/federations/federations';
+import { sessionLifetime } from '#/modules/auth/core/sessions/operations/create-session';
+import { findUserSessions } from '#/modules/auth/core/sessions/sessions-queries';
+import { findPasskeysByUser } from '#/modules/auth/flows/passkeys/passkeys-queries';
+import { findTotp } from '#/modules/auth/flows/totps/totps-queries';
 import { findActiveSsoConnectionsByTenants } from '#/modules/connections/connections-queries';
+import { findSsoIdentities, findVerifiedOAuthIdentities } from '#/modules/user/identities-queries';
 import { isoDateAgo } from '#/utils/iso-date';
 
 /** How long a browser counts as new in the sessions list: one session lifetime. */

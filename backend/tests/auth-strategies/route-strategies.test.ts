@@ -1,9 +1,9 @@
 import type { ConfigSwitch } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
-import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
-import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
-import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
+import { authMagicLinkRoutes } from '#/modules/auth/flows/magic/magic-routes';
+import { authOAuthRoutes } from '#/modules/auth/flows/oauth/oauth-routes';
+import { authPasskeysRoutes } from '#/modules/auth/flows/passkeys/passkeys-routes';
+import { authTotpsRoutes } from '#/modules/auth/flows/totps/totps-routes';
 
 /**
  * Every route of a sign-in method names that method as its config switch (`xEnabledBy`), so switching the method off

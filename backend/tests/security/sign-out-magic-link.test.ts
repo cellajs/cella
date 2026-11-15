@@ -1,7 +1,7 @@
 import { confirmMagicLink, getPendingMagicLink, getTokenData, invokeToken, revokeMySessions, signOut } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { authCookieName } from '#/modules/auth/core/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, cookieChange, cookiesAfter, createTestUser, expectRefusal, insertTestToken, sessionRow, tokenRow } from '../helpers';
 import { createAppClient } from '../test-client';

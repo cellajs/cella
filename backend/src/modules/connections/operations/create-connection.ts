@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { withActorRef } from '#/modules/actors/actor-refs';
-import { isFederationConfigured } from '#/modules/auth/sso/helpers/federations';
+import { isFederationConfigured } from '#/modules/auth/core';
 import { insertConnection } from '#/modules/connections/connections-queries';
 import type { createConnectionBodySchema } from '#/modules/connections/connections-schema';
 import { assertClaimValuesFree } from '#/modules/connections/operations/assert-claim-values-free';

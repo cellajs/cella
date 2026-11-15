@@ -1,4 +1,4 @@
-import type { InsertSessionModel } from '#/modules/auth/sessions/sessions-db';
+import type { InsertSessionModel } from '#/modules/auth/core/sessions/sessions-db';
 import type { InsertUserModel } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { emailId, sessionId, userEmail, userId } from './ids';

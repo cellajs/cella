@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { createPasskey } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, cookieChange, createMfaToken, createTestSession, createTestUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';

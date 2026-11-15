@@ -1,0 +1,91 @@
+import { and, eq, getColumns, lt } from 'drizzle-orm';
+import type { DbContext } from '#/core/context';
+import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
+import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
+import { pick } from '#/utils/pick';
+
+/** Every column but the credential id, public key, signature counter and transports: what a response carries of a passkey. */
+const {
+  credentialId: _credentialId,
+  publicKey: _publicKey,
+  counter: _counter,
+  transports: _transports,
+  ...passkeyColumns
+} = getColumns(passkeysTable);
+
+/** The credential ids of the user's passkeys and their transports, which a challenge for the user names to the browser. */
+export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db
+    .select({ credentialId: passkeysTable.credentialId, transports: passkeysTable.transports })
+    .from(passkeysTable)
+    .where(eq(passkeysTable.userId, userId));
+
+/** The user's passkeys as a response carries them ({@link passkeyColumns}), for the account page. */
+export const findPasskeysByUser = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db.select(passkeyColumns).from(passkeysTable).where(eq(passkeysTable.userId, userId));
+
+interface FindPasskeyByCredentialIdOpts {
+  credentialId: string;
+  /** The account the passkey must belong to; any account when omitted. */
+  userId?: string;
+}
+
+/** The passkey a credential id names, public key and counter included: for verifying an assertion, never for a response. */
+export const findPasskeyByCredentialId = async (ctx: DbContext, { credentialId, userId }: FindPasskeyByCredentialIdOpts) => {
+  const [passkey] = await ctx.var.db
+    .select()
+    .from(passkeysTable)
+    .where(and(eq(passkeysTable.credentialId, credentialId), userId ? eq(passkeysTable.userId, userId) : undefined))
+    .limit(1);
+  return passkey;
+};
+
+/**
+ * Stores a passkey and returns it as a response carries it ({@link passkeyColumns}); undefined when its credential id is
+ * registered already, to this account or another.
+ */
+export const insertPasskey = async (ctx: DbContext, { values }: { values: InsertPasskeyModel }) => {
+  const [newPasskey] = await ctx.var.db
+    .insert(passkeysTable)
+    .values(values)
+    .onConflictDoNothing({ target: passkeysTable.credentialId })
+    .returning(passkeyColumns);
+  return newPasskey;
+};
+
+/**
+ * Stores the new signature counter only while the stored one is still lower (or both are 0, for an authenticator
+ * without a counter); undefined otherwise, so of two copies of one authenticator answering at once, one fails.
+ */
+export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: { id: string; counter: number }) => {
+  const counterAdvances = counter > 0 ? lt(passkeysTable.counter, counter) : eq(passkeysTable.counter, 0);
+  const [stored] = await ctx.var.db
+    .update(passkeysTable)
+    .set({ counter })
+    .where(and(eq(passkeysTable.id, id), counterAdvances))
+    .returning({ id: passkeysTable.id });
+  return stored;
+};
+
+/** Deletes the user's passkey with this id; undefined when the user holds none by that id. */
+export const deletePasskey = async (ctx: DbContext, { userId, id }: { userId: string; id: string }) => {
+  const [deleted] = await ctx.var.db
+    .delete(passkeysTable)
+    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.id, id)))
+    .returning({ id: passkeysTable.id, nameOnDevice: passkeysTable.nameOnDevice });
+  return deleted;
+};
+
+/** Stores a challenge handed out to a browser. */
+export const insertPasskeyChallenge = async (ctx: DbContext, { values }: { values: typeof passkeyChallengesTable.$inferInsert }) => {
+  await ctx.var.db.insert(passkeyChallengesTable).values(values);
+};
+
+/** Takes a challenge out of play; returns what it was issued for, or undefined when it does not exist. */
+export const deletePasskeyChallenge = async (ctx: DbContext, { challengeHash }: { challengeHash: string }) => {
+  const [issued] = await ctx.var.db
+    .delete(passkeyChallengesTable)
+    .where(eq(passkeyChallengesTable.challengeHash, challengeHash))
+    .returning(pick(passkeyChallengesTable, ['purpose', 'userId', 'expiresAt']));
+  return issued;
+};

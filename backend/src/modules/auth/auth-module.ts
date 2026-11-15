@@ -1,11 +1,11 @@
 import { defineBackendModule } from '#/lib/module';
-import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
-import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';
-import { authOAuthHandlers } from '#/modules/auth/oauth/oauth-handlers';
-import { authPasskeysHandlers } from '#/modules/auth/passkeys/passkeys-handlers';
-import { authSsoHandlers } from '#/modules/auth/sso/sso-handlers';
-import { authStepUpHandlers } from '#/modules/auth/step-up/step-up-handlers';
-import { authTotpsHandlers } from '#/modules/auth/totps/totps-handlers';
+import { authGeneralHandlers } from '#/modules/auth/core/general/general-handlers';
+import { authMagicLinkHandlers } from '#/modules/auth/flows/magic/magic-handlers';
+import { authOAuthHandlers } from '#/modules/auth/flows/oauth/oauth-handlers';
+import { authPasskeysHandlers } from '#/modules/auth/flows/passkeys/passkeys-handlers';
+import { authSsoHandlers } from '#/modules/auth/flows/sso/sso-handlers';
+import { authStepUpHandlers } from '#/modules/auth/flows/step-up/step-up-handlers';
+import { authTotpsHandlers } from '#/modules/auth/flows/totps/totps-handlers';
 
 defineBackendModule({
   name: 'auth',

@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { meRoutes } from '#/modules/me/me-routes';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
 import { getMeOp } from '#/modules/me/operations/get-me';

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { env } from '#/env';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
 import { overrideConfig } from '../fixtures';

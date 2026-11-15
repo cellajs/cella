@@ -1,5 +1,5 @@
 import { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
-import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
+import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import { db } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';

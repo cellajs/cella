@@ -2,8 +2,7 @@ import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
+import { getAuthCookie, resolveSession } from '#/modules/auth/core';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 
 /**

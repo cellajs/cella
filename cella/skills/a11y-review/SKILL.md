@@ -111,7 +111,7 @@ pnpm cella a11y report
 ## In an app
 
 - `cella/a11y-ledger.json` is the app's own (`ignored` in `cella/cella.config.ts`): the first full run writes it, and a ledger of another product is never read.
-- `accessibilityReview` in `frontend/src/modules/auth/legal/legal-config.ts` holds what the accessibility statement claims. `pnpm cella a11y report --publish` prints it from the app's ledger and puts the PDF under `frontend/public/static/common`; shorten its descriptions for the statement's reader.
+- `accessibilityReview` in `frontend/src/modules/marketing/legal/legal-config.ts` holds what the accessibility statement claims. `pnpm cella a11y report --publish` prints it from the app's ledger and puts the PDF under `frontend/public/static/common`; shorten its descriptions for the statement's reader.
 
 ## With sub-agents
 

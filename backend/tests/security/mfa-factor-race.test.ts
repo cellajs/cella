@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { deleteTotp, toggleMfa } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';

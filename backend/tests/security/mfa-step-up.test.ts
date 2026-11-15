@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { deletePasskey, deleteTotp, toggleMfa } from 'sdk';
+import type { StepUpProof } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import type { StepUpProof } from '#/modules/auth/sessions/sessions-db';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser, expectRefusal, mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';

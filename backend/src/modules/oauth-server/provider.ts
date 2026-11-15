@@ -6,7 +6,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
-import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
+import { cookieSecrets } from '#/modules/auth/core';
 import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';

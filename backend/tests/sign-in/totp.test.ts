@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm';
 import { createTotp, deleteTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { decryptTotpSecret } from '#/modules/auth/flows/totps/helpers/totp-secret-encryption';
+import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {

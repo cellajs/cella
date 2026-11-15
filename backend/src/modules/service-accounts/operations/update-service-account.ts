@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
-import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
+import { requireStepUp } from '#/modules/auth/core';
 import { organizationRole } from '#/modules/service-accounts/helpers/organization-role';
 import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
 import { updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';

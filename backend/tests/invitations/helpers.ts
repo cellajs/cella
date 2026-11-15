@@ -4,7 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { isoDateIn } from '#/utils/iso-date';
 import { defaultHeaders, memberRole } from '../fixtures';

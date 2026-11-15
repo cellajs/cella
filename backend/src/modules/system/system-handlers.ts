@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { countLiveSystemInvitations } from '#/modules/auth/tokens/tokens-queries';
+import { countLiveSystemInvitations } from '#/modules/auth/core';
 import { createInviteOp } from '#/modules/system/operations/create-invite';
 import { deleteUsersOp } from '#/modules/system/operations/delete-users';
 import { sendNewsletterOp } from '#/modules/system/operations/send-newsletter';

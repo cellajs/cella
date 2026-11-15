@@ -1,10 +1,10 @@
 import { and, arrayOverlaps, eq, inArray, ne } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { identitiesTable } from '#/modules/user/identities-db';
 import { pick } from '#/utils/pick';
 
 /** The tenant's connections, oldest first. */

@@ -1,6 +1,6 @@
 import { baseDb } from '#/db/db';
 import { activityBus, getEventData, type RowActivityEvent } from '#/lib/activity-bus';
-import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/core';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';

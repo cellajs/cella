@@ -2,11 +2,11 @@ import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { RegisterSpySections } from '~/hooks/use-scroll-spy';
-import { legalConfig } from '~/modules/auth/legal/legal-config';
-import { legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
+import { legalConfig } from '~/modules/marketing/legal/legal-config';
+import { legalOverviewId } from '~/modules/marketing/legal/legal-types';
 import { objectEntries } from '~/utils/object-entries';
 
 const subjects = objectEntries(legalConfig).map(([subject, { label, sections }]) => ({ id: subject, label, sections }));

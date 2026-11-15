@@ -8,7 +8,7 @@ One word per layer: **anonymous** is the account and its session, **visitor** a 
 
 ## Minting
 
-`backend/src/modules/auth/anonymous/anonymous-account.ts`:
+`backend/src/modules/auth/core/anonymous/anonymous-account.ts`:
 
 - `insertAnonymousUser(ctx, { id, name, slug })` inserts the `users` row under a placeholder address, `<id>@anonymous.invalid`, and no `emails` row. RFC 2606 reserves `.invalid` for names that resolve nowhere, and the mailer drops every recipient under it.
 - `startAnonymousSession(ctx, user, { expiresAt })` signs the browser in with the strategy `anonymous` until `expiresAt`, a week at most. An anonymous session always has an expiry: a demo's is its tenant's.

@@ -9,7 +9,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** replay, a link opened in another browser, expiry, single-use races, hash-only storage, randomness and length, every carrier (magic, invitation, oauth-verification, confirm-mfa, oauth-connect, step-up code, unsubscribe).
 - **Advisories:** 9 (nanoid predictability and looping on bad sizes).
 - **Files:**
-  - `backend/src/modules/auth/tokens/`: `token-lifecycle.ts`, `token-policies.ts`, `tokens-queries.ts` (the compare-and-set), `tokens-db.ts`, `operations/open-link-token.ts`, tests `token-lifecycle.test.ts`, `token-policies.test.ts`.
+  - `backend/src/modules/auth/core/tokens/`: `token-lifecycle.ts`, `token-policies.ts`, `tokens-queries.ts` (the compare-and-set), `tokens-db.ts`, `operations/open-link-token.ts`, tests `token-lifecycle.test.ts`, `token-policies.test.ts`.
   - Token kinds in `shared/config/config.default.ts` (and `config.template.ts`): six, `oauth-verification, invitation, confirm-mfa, magic, oauth-connect, step-up`; policies are exhaustive through `satisfies Record<TokenType, TokenPolicy>`.
   - Issuers: `auth/magic/operations/send-magic-link.ts`, `auth/oauth/operations/send-oauth-verification-email.ts`, `auth/oauth/oauth-handlers.ts` (connect pin), `auth/mfa/operations/mfa-challenge.ts`, `auth/step-up/operations/send-step-up-code.ts`.
   - Invitation issuers: `modules/memberships/operations/mail-invitations.ts` (every membership invitation link), `auth/invitations/operations/{resend-invitation,confirm-invitation-address}.ts`, `modules/system/operations/create-invite.ts`.
@@ -32,8 +32,8 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** the cookie MAC, attributes, injection through a name or attribute value, fixation at sign-in, the session cap, sign-out ending the stream and the cache entry, last-seen, session cache races.
 - **Advisories:** 5 (hono cookie name and attribute injection, NBSP prefix on read).
 - **Files:**
-  - `backend/src/modules/auth/general/helpers/cookie.ts`: the only module importing `hono/cookie` (`setCookie`, `getCookie`, `deleteCookie`).
-  - `backend/src/modules/auth/sessions/`: `operations/{create-session,resolve-session,sign-out,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
+  - `backend/src/modules/auth/core/general/helpers/cookie.ts`: the only module importing `hono/cookie` (`setCookie`, `getCookie`, `deleteCookie`).
+  - `backend/src/modules/auth/core/sessions/`: `operations/{create-session,resolve-session,sign-out,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
   - `backend/src/middlewares/guard/session-cache.ts` (TTL 10 s), `backend/src/middlewares/update-last-seen.ts`.
   - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-recheck.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
@@ -81,8 +81,8 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** state, nonce, PKCE, id_token verification, which provider claims are trusted (`email_verified`), account linking and its 409 family, the verification mail, every `ctx.redirect` target, SAML and OIDC federation (assertion signature, audience, replay, metadata trust), the tenant sign-in policy.
 - **Advisories:** none.
 - **Files:**
-  - `backend/src/modules/auth/oauth/`: `oauth-handlers.ts`, `oauth-routes.ts`, `oauth-schema.ts`, `identities-{db,queries}.ts`, `helpers/{providers,code-flow,oauth-cookie,transform-user-data}.ts`, `operations/{provider-round-trip,handle-oauth-initiation,handle-oauth-callback,handle-oauth-verification,send-oauth-verification-email,spend-connect-pin}.ts`.
-  - `backend/src/modules/auth/sso/`: `sso-routes.ts`, `role-from-claims.ts`, `helpers/{federation-client,federations,federation-keys,transform-sso-claims}.ts`, `operations/{start-sso,sso-callback,complete-sso-sign-in,connect-sso-identity,provision-sso-user,sso-recovery,insert-sso-membership,get-sso-entry,list-sign-in-federations}.ts`.
+  - `backend/src/modules/auth/flows/oauth/`: `oauth-handlers.ts`, `oauth-routes.ts`, `oauth-schema.ts`, `identities-{db,queries}.ts`, `helpers/{providers,code-flow,oauth-cookie,transform-user-data}.ts`, `operations/{provider-round-trip,handle-oauth-initiation,handle-oauth-callback,handle-oauth-verification,send-oauth-verification-email,spend-connect-pin}.ts`.
+  - `backend/src/modules/auth/flows/sso/`: `sso-routes.ts`, `role-from-claims.ts`, `helpers/{federation-client,federations,federation-keys,transform-sso-claims}.ts`, `operations/{start-sso,sso-callback,complete-sso-sign-in,connect-sso-identity,provision-sso-user,sso-recovery,insert-sso-membership,get-sso-entry,list-sign-in-federations}.ts`.
   - `backend/src/modules/connections/`: routes, queries, `operations/{create,update,delete,get,assert-claim-values-free}`.
   - Tenant strategies: no tenants strategy module; the policy field is `tenants.authStrategies` in `modules/tenants/tenants-db.ts`, enforced in `backend/src/middlewares/guard/tenant-guard.ts`.
   - Redirect: `backend/src/lib/error.ts` (redirect handling).
@@ -188,7 +188,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Advisories:** 2 (hono improper authorization, JWT scheme).
 - **Files:**
   - `backend/src/modules/memberships/` (also holds the invitation routes in `memberships-routes.ts`).
-  - `backend/src/modules/auth/invitations/operations/{accept-invitation-token,confirm-invitation-address,get-token-data,may-sign-up,resend-invitation}.ts`.
+  - `backend/src/modules/auth/core/invitations/operations/{accept-invitation-token,confirm-invitation-address,get-token-data,may-sign-up,resend-invitation}.ts`.
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
   - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
@@ -236,7 +236,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
   - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every stream on a new generation).
   - `backend/src/modules/entities/helpers/session-streams.ts` (`closeStreams`, `closeStreamsWhere`, `closeOrganizationStreams`, `resyncStreams`); `backend/src/modules/entities/operations/stream-session-recheck.ts` (60 s recheck).
-  - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
+  - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/core/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{stream-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
 - **Holds:**
@@ -554,7 +554,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Advisories:** none.
 - **Files:**
   - `backend/tests/security/brute-force-limits.test.ts`, `backend/src/middlewares/rate-limiter/tests/` (7 files), `backend/tests/sign-in/session-cap.test.ts`.
-  - The limiter family in `backend/src/middlewares/rate-limiter/`: `limiters.ts`, `core.ts` (`rateLimiter`, modes `limit`, `success`, `fail`, `failseries`), `helpers.ts` (stores, reserve, pseudonym, `chargeLimiter`), `tiers.ts` (`reserveTiers`, `settleTiers`, `slowTier`), `points-cache.ts` (in-process fast path for `pointsLimiter` and `readLimiter`, which `createXRoute` mounts on every GET route without a limiter); `backend/src/modules/auth/rate-limits-db.ts` (table `rate_limits`).
+  - The limiter family in `backend/src/middlewares/rate-limiter/`: `limiters.ts`, `core.ts` (`rateLimiter`, modes `limit`, `success`, `fail`, `failseries`), `helpers.ts` (stores, reserve, pseudonym, `chargeLimiter`), `tiers.ts` (`reserveTiers`, `settleTiers`, `slowTier`), `points-cache.ts` (in-process fast path for `pointsLimiter` and `readLimiter`, which `createXRoute` mounts on every GET route without a limiter); `backend/src/middlewares/rate-limiter/rate-limits-db.ts` (table `rate_limits`).
   - Declared in routes through `xRateLimiter` and exported to the OpenAPI document as `x-rate-limiter` (`backend/src/core/openapi-extensions.ts`); `route-guards.test.ts` reads `x-guard` and `x-enabled-by` from `app.getOpenAPI31Document`. `insertEntityLock` is listed as a rate limiter (`backend/src/middlewares/insert-entity-lock.ts`).
   - Limiters outside routes: `serviceBurstLimiter` in `service-guard.ts`; `totp-budget.ts` (account tier); `create-request.ts` (one account-exists mail per address per day); `notify-sign-in.ts` (daily sign-in notice budget per user); `clientMetadataFetchLimiter` through `chargeLimiter`.
 - **Holds:**
@@ -599,7 +599,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Mail: `backend/src/lib/mailer.ts` (`sendBatch`, `postToBrevo`).
   - Storage: `backend/src/lib/object-storage.ts`, `modules/attachment/helpers/stored-file.ts`, `operations/{create-attachments,link-attachment-keys}.ts`, `signed-url.ts`, `backend/src/lib/transloadit.ts`, `modules/me/operations/get-upload-token.ts`.
   - OAuth: `backend/src/modules/oauth-server/{verify-access-token,keystore,grant-policy}.ts`, `backend/src/middlewares/guard/{token-grant-cache,service-guard}.ts`.
-  - Sessions: `backend/src/modules/auth/sessions/operations/{resolve-session,create-session}.ts`, `notify-sign-in.ts`.
+  - Sessions: `backend/src/modules/auth/core/sessions/operations/{resolve-session,create-session}.ts`, `notify-sign-in.ts`.
   - CDC: `cdc/src/pipeline/{replication,handle-message}.ts`, `cdc/src/services/{flush-buffer,replication-state,failure,setup-check,cdc-metrics,transaction-buffer}.ts`, `cdc/src/network/health-reporter.ts`. Yjs: `yjs/src/server/{upgrade,rate-limiter}.ts`, `yjs/src/data/permissions.ts`.
   - `shared/src/otel.ts`, `shared/src/pino.ts`, `backend/src/lib/tracing.ts`.
   - Migrations: `backend/scripts/migrations/{10-cdc,10-rls,10-immutability,10-unlogged,10-jobs,99-verify}.migration.ts`, `backend/tests/integration/schema-verification.test.ts`.

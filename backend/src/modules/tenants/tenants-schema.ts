@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { recordFromKeys, tenantKindValues } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
+import { authStrategiesEnum } from '#/modules/auth/core';
 import { quotaKeys } from '#/modules/tenants/tenant-restrictions';
 import { tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockTenantResponse } from '#/modules/tenants/tenants-mocks';

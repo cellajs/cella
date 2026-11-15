@@ -6,7 +6,7 @@ import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openapi-validation';
 import { getExtensionValueMetadata } from '#/core/x-middleware';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { authCookieName } from '#/modules/auth/core';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 
 /** `attachment:read` reads as "Read attachments"; `write` covers create, update and delete. */

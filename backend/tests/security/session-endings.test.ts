@@ -4,9 +4,9 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
-import { createSession } from '#/modules/auth/sessions/operations/create-session';
+import { authCookieName } from '#/modules/auth/core/general/helpers/cookie';
+import type { SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
+import { createSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, memberRole, overrideConfig } from '../fixtures';
 import {

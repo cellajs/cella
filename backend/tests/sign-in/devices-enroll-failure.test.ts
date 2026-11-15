@@ -1,11 +1,11 @@
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createSession } from '#/modules/auth/sessions/operations/create-session';
+import { createSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { signUpUser } from '../fixtures';
 import { createTestUser, sessionsOf } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
-vi.mock('#/modules/auth/devices/operations/enroll-device', () => ({
+vi.mock('#/modules/auth/core/devices/operations/enroll-device', () => ({
   enrollDevice: vi.fn().mockRejectedValue(new Error('devices table unavailable')),
 }));
 

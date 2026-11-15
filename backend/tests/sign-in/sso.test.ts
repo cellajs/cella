@@ -4,17 +4,17 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
-import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
-import { exchangeFederationCode } from '#/modules/auth/sso/helpers/federation-client';
-import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
-import { tokensTable } from '#/modules/auth/tokens/tokens-db';
+import { setUserSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { resolveSession } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { exchangeFederationCode } from '#/modules/auth/flows/sso/helpers/federation-client';
+import { roleFromClaims } from '#/modules/auth/flows/sso/role-from-claims';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { identitiesTable } from '#/modules/user/identities-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   cookieChange,
@@ -34,7 +34,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'], selfRegistration: fal
 
 // The federation itself is out of reach: the client answers with the claims a test hands it, and the authorization URL
 // echoes the state and the IdP pin so the round trip can be followed.
-vi.mock('#/modules/auth/sso/helpers/federation-client', () => ({
+vi.mock('#/modules/auth/flows/sso/helpers/federation-client', () => ({
   createFederationAuthorizationUrl: vi.fn(async (_federation: unknown, { state, loginHint }: { state: string; loginHint?: string }) => {
     const url = new URL('https://connect.test.surfconext.nl/oidc/authorize');
     url.searchParams.set('state', state);
@@ -46,8 +46,8 @@ vi.mock('#/modules/auth/sso/helpers/federation-client', () => ({
   forgetFederation: vi.fn(),
 }));
 // The deployment under test holds no federation client; the registry answers as if it did.
-vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/auth/sso/helpers/federations')>();
+vi.mock('#/modules/auth/core/federations/federations', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/core/federations/federations')>();
   return {
     ...actual,
     isFederationConfigured: () => true,
@@ -63,15 +63,15 @@ vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
   };
 });
 // `roleFromClaims` is the app's to fill: a test stands in for an app's mapping, the default stays real.
-vi.mock('#/modules/auth/sso/role-from-claims', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/auth/sso/role-from-claims')>();
+vi.mock('#/modules/auth/flows/sso/role-from-claims', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/flows/sso/role-from-claims')>();
   return { ...actual, roleFromClaims: vi.fn(actual.roleFromClaims) };
 });
-vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
-vi.mock('#/modules/auth/sessions/operations/create-session', async (importOriginal) =>
+vi.mock('#/modules/auth/core/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
+vi.mock('#/modules/auth/core/sessions/operations/create-session', async (importOriginal) =>
   (await import('../test-utils')).createSessionMock(importOriginal),
 );
-vi.mock('#/modules/auth/sessions/operations/resolve-session', async (importOriginal) =>
+vi.mock('#/modules/auth/core/sessions/operations/resolve-session', async (importOriginal) =>
   (await import('../test-utils')).resolveSessionMock(importOriginal),
 );
 

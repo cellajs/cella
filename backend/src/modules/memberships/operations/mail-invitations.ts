@@ -1,7 +1,7 @@
 import type { ChannelEntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { UserId } from '#/db/utils/ids';
-import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
+import { issueTokens } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { InvitationModel } from '#/modules/memberships/invitations-db';
 import { lockPendingInvitations, releaseHeldInvitations, stampInvitationsMailed } from '#/modules/memberships/invitations-queries';

@@ -1,6 +1,5 @@
 import type { UserContext } from '#/core/context';
-import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
-import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { findSystemInvitationTokens, issueTokens } from '#/modules/auth/core';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { stampWaitlistRequestMailed } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
