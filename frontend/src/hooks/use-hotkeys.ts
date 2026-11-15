@@ -52,12 +52,16 @@ export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], tr
 
 const defaultIgnoredTags = ['INPUT', 'TEXTAREA', 'SELECT'];
 
+// The browser activates these after the keydown, so `defaultPrevented` cannot show the key as handled
+const isNativeActivation = ({ key, target }: KeyboardEvent) =>
+  target instanceof Element && ((key === 'Enter' && !!target.closest('a[href], button')) || (key === ' ' && !!target.closest('button')));
+
 /** Register global shortcuts as `[combination, handler, options?]` tuples. */
 export function useHotkeys(hotkeys: HotkeyItem[], tagsToIgnore: string[] = defaultIgnoredTags, triggerOnContentEditable = false) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // A key the focused control already handled, e.g. Enter or an arrow in a menu, is not a shortcut
-      if (event.defaultPrevented) return;
+      // A key the focused control handles, e.g. Enter on a link or an arrow in a menu, is not a shortcut
+      if (event.defaultPrevented || isNativeActivation(event)) return;
       const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));
       if (isFormElement) return;
 
