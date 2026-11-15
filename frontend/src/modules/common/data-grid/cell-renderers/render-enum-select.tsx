@@ -36,16 +36,13 @@ export function RenderEnumSelect<TRow extends { id: string; name?: string | null
   currentValue: currentValueProp,
   setValue,
 }: Props<TRow, TValue>) {
-  const probeRef = useRef<HTMLSpanElement>(null);
-  // Resolved on mount: base-ui accepts a `null` anchor and repositions once it is set.
+  // Resolved once the probe mounts: base-ui accepts a `null` anchor and repositions once it is set.
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const isMobile = useBreakpointBelow('sm');
 
-  useEffect(() => {
-    const probe = probeRef.current;
-    if (!probe) return;
-    setAnchor((probe.closest('[role="gridcell"]') as HTMLElement | null) ?? probe);
-  }, []);
+  const resolveAnchor = (probe: HTMLSpanElement | null) => {
+    if (probe) setAnchor(probe.closest<HTMLElement>('[role="gridcell"]') ?? probe);
+  };
 
   const currentValue: TValue | undefined = field !== undefined ? (row[field] as unknown as TValue) : currentValueProp;
 
@@ -89,7 +86,7 @@ export function RenderEnumSelect<TRow extends { id: string; name?: string | null
 
   return (
     <>
-      <span ref={probeRef} aria-hidden className="hidden" />
+      <span ref={resolveAnchor} aria-hidden className="hidden" />
       <Popover open onOpenChange={handleOpenChange}>
         <PopoverContent
           anchor={anchor}

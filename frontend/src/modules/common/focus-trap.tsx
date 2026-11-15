@@ -1,4 +1,5 @@
-import { type CSSProperties, type FocusEventHandler, type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import { type CSSProperties, type FocusEventHandler, type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { isTouchInteraction } from '~/utils/input-modality';
 
 const candidateSelector = 'a[href], button, textarea, input, select, [tabindex], [contenteditable="true"]';
@@ -74,34 +75,23 @@ export function FocusTrap({ children, active = true, initialFocus, returnFocus, 
     };
   }, [active]);
 
-  useEffect(() => {
-    const trap = trapRef.current;
-    if (!active || !containFocus || !trap) return;
-
-    const onFocusIn = (event: FocusEvent) => {
+  useEventListener(
+    'focusin',
+    (event) => {
+      const trap = trapRef.current;
       const target = event.target;
-      if (!(target instanceof Element) || trap.contains(target) || target.hasAttribute('data-focus-guard')) return;
+      if (!trap || !(target instanceof Element) || trap.contains(target) || target.hasAttribute('data-focus-guard')) return;
       const focusable = getFocusableElements(trap);
       // preventScroll: the redirect is involuntary and must not scroll off-screen content into view
       (focusable[0] ?? trap).focus({ preventScroll: true });
-    };
-
-    document.addEventListener('focusin', onFocusIn);
-    return () => document.removeEventListener('focusin', onFocusIn);
-  }, [active, containFocus]);
+    },
+    { enabled: active && !!containFocus },
+  );
 
   // Prevent Tab from escaping a trap with no focusable elements
-  useEffect(() => {
-    const trap = trapRef.current;
-    if (!active || !trap) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Tab' && getFocusableElements(trap).length === 0) event.preventDefault();
-    };
-
-    trap.addEventListener('keydown', onKeyDown);
-    return () => trap.removeEventListener('keydown', onKeyDown);
-  }, [active]);
+  const preventEmptyTab = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Tab' && getFocusableElements(event.currentTarget).length === 0) event.preventDefault();
+  };
 
   // `relatedTarget` tells a Tab off one edge (wrap to the other edge) from focus entering the trap (go to the guard's own edge)
   const focusFromGuard = (relatedTarget: EventTarget | null, guard: 'before' | 'after') => {
@@ -116,7 +106,7 @@ export function FocusTrap({ children, active = true, initialFocus, returnFocus, 
   };
 
   return (
-    <div ref={trapRef} tabIndex={-1}>
+    <div ref={trapRef} tabIndex={-1} onKeyDown={active ? preventEmptyTab : undefined}>
       {active && <FocusGuard onFocus={(event) => focusFromGuard(event.relatedTarget, 'before')} />}
       {children}
       {active && <FocusGuard onFocus={(event) => focusFromGuard(event.relatedTarget, 'after')} />}

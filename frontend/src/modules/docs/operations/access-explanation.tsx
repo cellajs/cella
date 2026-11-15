@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { createPopoverHandle, Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
@@ -120,11 +121,7 @@ export function AccessCell({ label, items, tabIndex, className }: AccessCellProp
 /** The popup every `AccessCell` of a table opens. */
 export function AccessCellPopover() {
   // A row scrolled out of the virtualized grid takes its trigger along, which would drop the card in the window's corner
-  useEffect(() => {
-    const close = () => cellHandle.close();
-    window.addEventListener('scroll', close, { capture: true, passive: true });
-    return () => window.removeEventListener('scroll', close, { capture: true });
-  }, []);
+  useEventListener('scroll', () => cellHandle.close(), { capture: true, passive: true });
 
   return (
     <Popover handle={cellHandle}>

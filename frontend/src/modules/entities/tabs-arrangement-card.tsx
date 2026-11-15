@@ -1,5 +1,5 @@
 import { LockIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
@@ -52,10 +52,10 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   const slotConfig = entity.toolsConfig[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
-  // Draft order applied at drop time so the reorder does not wait on the mutation round-trip
-  const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
+  // Draft order applied at drop time so the reorder does not wait on the mutation round-trip. A new persisted order drops it.
   const persistedOrderKey = (slotConfig?.order ?? []).join();
-  useEffect(() => setDraftOrder(null), [persistedOrderKey]);
+  const [draft, setDraft] = useState<{ order: string[]; persistedOrderKey: string } | null>(null);
+  const draftOrder = draft?.persistedOrderKey === persistedOrderKey ? draft.order : null;
 
   const rows = arrangePlacements(slot, getNavTabCandidates(parentRouteId), draftOrder ? { order: draftOrder } : slotConfig).map((tab) => {
     const resource = tab.resource ? t(tab.resource) : '';
@@ -75,7 +75,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   };
 
   const reorder = (ids: string[]) => {
-    setDraftOrder(ids);
+    setDraft({ order: ids, persistedOrderKey });
     persistSlot({ order: ids, hidden: [...hidden] });
   };
 

@@ -4,7 +4,7 @@ import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/eleme
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
-import { type ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { PanelCollapseContext, PanelDragHandleContext } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
@@ -86,11 +86,11 @@ export function BoardLayout({
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
 
-  const handleReady = useCallback((api: PanelGroupApi) => {
+  const handleReady = (api: PanelGroupApi) => {
     panelGroupApiRef.current = api;
-  }, []);
+  };
 
-  const handlePanelToggle = useCallback((panelId: string) => panelGroupApiRef.current?.togglePanel(panelId), []);
+  const handlePanelToggle = (panelId: string) => panelGroupApiRef.current?.togglePanel(panelId);
 
   // The store only holds the state, so a panel marked open from outside, to reveal a form in it, gets its width here
   useEffect(
@@ -116,18 +116,15 @@ export function BoardLayout({
     },
   }));
 
-  // `idbKvStorage` debounces writes, so per-frame onLayoutChanged calls need no throttling here
-  const handleLayoutChanged = useCallback((layout: Record<string, number>) => onLayoutChanged?.(layout), [onLayoutChanged]);
-
   // Keep a ref to current panel IDs so drag wrappers can read it without needing deps
   const panelIdsRef = useLatestRef(panels.map((p) => p.panelId));
 
   const [dropIndicator, setDropIndicator] = useState<{ panelId: string; edge: Edge } | null>(null);
 
   // pdnd's onDrag fires continuously over a target; keeping the previous object skips re-renders while the edge holds
-  const updateDropIndicator = useCallback((next: { panelId: string; edge: Edge } | null) => {
+  const updateDropIndicator = (next: { panelId: string; edge: Edge } | null) => {
     setDropIndicator((prev) => (prev?.panelId === next?.panelId && prev?.edge === next?.edge ? prev : next));
-  }, []);
+  };
 
   useEffect(() => {
     if (!reorderable) return;
@@ -149,11 +146,11 @@ export function BoardLayout({
     });
   }, [reorderable, onPanelReorder]);
 
+  // `idbKvStorage` debounces writes, so per-frame onLayoutChanged calls need no throttling here
   const panelGroup = (
     <ResizablePanelGroup
       id={`panels-${boardId}`}
-      {...{ defaultLayout, mustFit }}
-      onLayoutChanged={handleLayoutChanged}
+      {...{ defaultLayout, mustFit, onLayoutChanged }}
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
       className="group/board h-[inherit]"
@@ -213,8 +210,7 @@ export function BoardLayout({
 }
 
 function PanelCollapseScope({ panelId, onToggle, children }: { panelId: string; onToggle: (panelId: string) => void; children: ReactNode }) {
-  const value = useMemo(() => ({ panelId, onToggleCollapsed: () => onToggle(panelId) }), [panelId, onToggle]);
-  return <PanelCollapseContext.Provider value={value}>{children}</PanelCollapseContext.Provider>;
+  return <PanelCollapseContext.Provider value={{ panelId, onToggleCollapsed: () => onToggle(panelId) }}>{children}</PanelCollapseContext.Provider>;
 }
 
 /** Wraps a panel with drag-and-drop reorder support. Provides drag handle ref via context. */
@@ -241,28 +237,26 @@ function PanelDragWrapper({
   const [handleEl, setHandleEl] = useState<HTMLElement | null>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
 
-  const registerHandle = useCallback((el: HTMLElement | null) => setHandleEl(el), []);
+  const handleMove = (step: -1 | 1) => {
+    const currentOrder = panelIdsRef.current;
+    const currentIdx = currentOrder.indexOf(panelId);
+    const targetIdx = currentIdx + step;
+    if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
 
-  const handleMove = useCallback(
-    (step: -1 | 1) => {
-      const currentOrder = panelIdsRef.current;
-      const currentIdx = currentOrder.indexOf(panelId);
-      const targetIdx = currentIdx + step;
-      if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
+    const newOrder = [...currentOrder];
+    [newOrder[currentIdx], newOrder[targetIdx]] = [newOrder[targetIdx], newOrder[currentIdx]];
+    onPanelReorder?.(newOrder, panelId);
+  };
 
-      const newOrder = [...currentOrder];
-      [newOrder[currentIdx], newOrder[targetIdx]] = [newOrder[targetIdx], newOrder[currentIdx]];
-      onPanelReorder?.(newOrder, panelId);
-    },
-    [panelId, panelIdsRef, onPanelReorder],
-  );
-
-  const handleToggleCollapsed = useCallback(() => onPanelToggle(panelId), [onPanelToggle, panelId]);
-
-  const ctxValue = useMemo(
-    () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
-    [panelId, registerHandle, handleMove, handleToggleCollapsed, previewContainer, index, total],
-  );
+  const ctxValue = {
+    panelId,
+    registerHandle: setHandleEl,
+    onMove: handleMove,
+    onToggleCollapsed: () => onPanelToggle(panelId),
+    previewContainer,
+    index,
+    total,
+  };
 
   useEffect(() => {
     const wrapper = wrapperRef.current;

@@ -42,17 +42,14 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   const [resolvedKey, setResolvedKey] = useState<string | null>(null);
   const blobUrlsRef = useRef<Map<string, string>>(new Map());
 
-  // Bumped to re-run resolution after a transient failure; reset when the item set changes.
-  const [retrySignal, setRetrySignal] = useState(0);
-  const retryCountRef = useRef(0);
   // The original key counts: a fetched row bringing the keys an id-only item lacked resolves again.
   const itemsKey = items.map((item) => `${item.id}:${item.url ?? ''}:${item.keys?.original ?? ''}`).join(',');
+  // Bumped to re-run resolution after a transient failure; the count restarts when the item set changes.
+  const [retrySignal, setRetrySignal] = useState(0);
+  const retryRef = useRef({ itemsKey, count: 0 });
 
   useEffect(() => {
-    retryCountRef.current = 0;
-  }, [itemsKey]);
-
-  useEffect(() => {
+    if (retryRef.current.itemsKey !== itemsKey) retryRef.current = { itemsKey, count: 0 };
     if (!items.length) {
       setResolvedItems([]);
       setIsLoading(false);
@@ -123,8 +120,8 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
       setResolvedKey(itemsKey);
 
       // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
-      if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
-        retryCountRef.current += 1;
+      if (hasTransientErrors && retryRef.current.count < resolveRetryLimit) {
+        retryRef.current.count += 1;
         retryTimer = setTimeout(() => setRetrySignal((signal) => signal + 1), resolveRetryDelayMs);
       }
     };

@@ -62,12 +62,6 @@ export function Carousel({
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-  const onSelect = React.useCallback((api: CarouselApi) => {
-    if (!api) return;
-    setCanScrollPrev(api.canScrollPrev());
-    setCanScrollNext(api.canScrollNext());
-  }, []);
-
   const scrollPrev = () => api?.scrollPrev();
 
   const scrollNext = () => api?.scrollNext();
@@ -80,7 +74,11 @@ export function Carousel({
 
   React.useEffect(() => {
     if (!api) return;
-    onSelect(api);
+    const onSelect = () => {
+      setCanScrollPrev(api.canScrollPrev());
+      setCanScrollNext(api.canScrollNext());
+    };
+    onSelect();
     api.on('reInit', onSelect);
     api.on('select', onSelect);
 
@@ -88,7 +86,7 @@ export function Carousel({
       api.off('reInit', onSelect);
       api.off('select', onSelect);
     };
-  }, [api, onSelect]);
+  }, [api]);
 
   // Arrow keys page the carousel in a dialog, or while the pointer or focus is inside it; text fields and a held slide keep their arrows.
   const [pointerInside, setPointerInside] = React.useState(false);

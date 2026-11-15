@@ -31,17 +31,17 @@ const italicBit = 1;
 
 export function CodeViewer({ code }: CodeViewerProps) {
   // Undefined while highlighting or after it failed: plain text takes the highlighted code's height, so the panel keeps its size
-  const [lines, setLines] = useState<ThemedToken[][]>();
+  const [highlighted, setHighlighted] = useState<{ code: string; lines: ThemedToken[][] }>();
+  const lines = highlighted?.code === code ? highlighted.lines : undefined;
 
   useEffect(() => {
     let cancelled = false;
-    setLines(undefined);
 
     const highlight = async () => {
       try {
         const highlighter = await getHighlighter();
         const { tokens } = highlighter.codeToTokens(code, { lang: 'typescript', theme: codeTheme.name });
-        if (!cancelled) setLines(tokens);
+        if (!cancelled) setHighlighted({ code, lines: tokens });
       } catch {
         // The code stays plain text
       }

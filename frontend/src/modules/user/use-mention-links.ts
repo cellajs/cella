@@ -1,5 +1,4 @@
-import { type RefObject, useEffect } from 'react';
-import { useLatestRef } from '~/hooks/use-latest-ref';
+import { type RefObject, useEffect, useEffectEvent } from 'react';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 
 /**
@@ -8,7 +7,7 @@ import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
  */
 export function useMentionLinks(ref: RefObject<HTMLElement | null>, html: string) {
   const openUserSheet = useOpenUserSheet();
-  const openRef = useLatestRef(openUserSheet);
+  const openSheet = useEffectEvent(openUserSheet);
 
   useEffect(() => {
     const element = ref.current;
@@ -28,7 +27,7 @@ export function useMentionLinks(ref: RefObject<HTMLElement | null>, html: string
       if (!userId || !element.contains(mention)) return;
       event.preventDefault();
       event.stopPropagation();
-      openRef.current(userId);
+      openSheet(userId);
     };
 
     element.addEventListener('click', open);
@@ -37,5 +36,5 @@ export function useMentionLinks(ref: RefObject<HTMLElement | null>, html: string
       element.removeEventListener('click', open);
       element.removeEventListener('keydown', open);
     };
-  }, [ref, html, openRef]);
+  }, [ref, html]);
 }

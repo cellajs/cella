@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { FingerprintPatternIcon, MailIcon, SmartphoneIcon } from 'lucide-react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getStepUp, type StepUpData, sendStepUpCode, stepUp } from 'sdk';
 import { isStrategyEnabled } from 'shared';
@@ -48,13 +48,16 @@ const headings = (view: View, holdsFactor: boolean) => {
 function StepUpDialog({ methods, onStepUp }: { methods: StepUpMethod[]; onStepUp: () => void }) {
   const { t } = useTranslation();
   const holdsFactor = methods.some(isFactor);
-  const [view, setView] = useState<View>(firstView(methods));
+  const [view, setViewState] = useState<View>(firstView(methods));
+  // The first view's headings come with the dialog's creation
+  const setView = (nextView: View) => {
+    setViewState(nextView);
+    dialoger.getState().update(dialogId, headings(nextView, holdsFactor));
+  };
   // The factor to set up once the emailed code is in; null when the code is the step-up itself.
   const [next, setNext] = useState<Factor | null>(null);
   // A wrong code remounts the form, so the code is entered again.
   const [codeVersion, setCodeVersion] = useState(0);
-
-  useEffect(() => dialoger.getState().update(dialogId, headings(view, holdsFactor)), [view, holdsFactor]);
 
   const { mutate: prove, isPending: proving } = useMutation({ mutationFn: (body: StepUpData['body']) => stepUp({ body }) });
   const { mutate: sendCode, isPending: sending } = useMutation({ mutationFn: () => sendStepUpCode(), onSuccess: () => setView('code') });

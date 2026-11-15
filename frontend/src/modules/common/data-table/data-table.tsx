@@ -1,5 +1,5 @@
 import { ServerCrashIcon } from 'lucide-react';
-import { type Key, type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type Key, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -120,27 +120,20 @@ export function DataTable<TData>({
   const [nearEnd, setNearEnd] = useState(false);
   useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, hasError: !!error, fetchMore });
 
-  // Memoized because `DataGrid` passes it to memoized rows; a fresh function each render defeats that memo.
-  const handleSelectedRowsChange = useCallback(
-    (newSelectedRows: Set<string>) => {
-      if (!onSelectedRowsChange) return;
+  const handleSelectedRowsChange = (newSelectedRows: Set<string>) => {
+    if (!onSelectedRowsChange) return;
 
-      const currentSize = selectedRows?.size ?? 0;
-      const newSize = newSelectedRows.size;
+    const currentSize = selectedRows?.size ?? 0;
+    const newSize = newSelectedRows.size;
 
-      if (newSize > maxSelectableRows) {
-        // A jump of more than one row is a "select all" attempt.
-        toaster.warning(t(newSize - currentSize > 1 ? 'c:selection_limit_all' : 'c:selection_limit', { max: maxSelectableRows }));
-        return;
-      }
+    if (newSize > maxSelectableRows) {
+      // A jump of more than one row is a "select all" attempt.
+      toaster.warning(t(newSize - currentSize > 1 ? 'c:selection_limit_all' : 'c:selection_limit', { max: maxSelectableRows }));
+      return;
+    }
 
-      onSelectedRowsChange(newSelectedRows);
-    },
-    [onSelectedRowsChange, selectedRows, t],
-  );
-
-  // A fresh `{ renderRow, renderCell }` literal each render would invalidate Row's memo.
-  const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
+    onSelectedRowsChange(newSelectedRows);
+  };
 
   const sortKey = JSON.stringify(gridProps.sortColumns);
   const [loaded, setLoaded] = useState({ rows, sortKey });
@@ -199,7 +192,7 @@ export function DataTable<TData>({
             selectedRows={selectedRows}
             onSelectedRowsChange={handleSelectedRowsChange}
             onNearEndChange={enableVirtualization ? setNearEnd : undefined}
-            renderers={renderers}
+            renderers={{ renderRow, renderCell }}
           />
         </EditStatusContext>
         {(hasNextPage || !hideEndMarker) && (

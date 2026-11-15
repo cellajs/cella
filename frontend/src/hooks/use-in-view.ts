@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 interface UseInViewOptions {
   /** Stop observing after the first intersection, so `inView` stays true. */
@@ -14,29 +14,26 @@ interface UseInViewOptions {
 export function useInView({ once, threshold = 0 }: UseInViewOptions = {}) {
   const [inView, setInView] = useState(false);
 
-  const ref = useCallback(
-    (node: Element | null) => {
-      if (!node) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (!entry) return;
-          if (entry.isIntersecting) {
-            setInView(true);
-            if (once) observer.disconnect();
-          } else if (!once) {
-            setInView(false);
-          }
-        },
-        { threshold },
-      );
-      observer.observe(node);
-      return () => {
-        observer.disconnect();
-        if (!once) setInView(false);
-      };
-    },
-    [once, threshold],
-  );
+  const ref = (node: Element | null) => {
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          setInView(true);
+          if (once) observer.disconnect();
+        } else if (!once) {
+          setInView(false);
+        }
+      },
+      { threshold },
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      if (!once) setInView(false);
+    };
+  };
 
   return { ref, inView };
 }
