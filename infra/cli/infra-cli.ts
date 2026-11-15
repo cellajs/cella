@@ -195,23 +195,21 @@ function startRow(state: MenuState): MenuRowId | typeof UP_NEXT {
 }
 
 /**
- * The menu: the daily rows under group headings, each with a letter that enters it, then More with the rest. A row with one action runs
- * it; a row with several opens a pick, where Esc or Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run
- * now stays listed with the reason. A pick opens on its first entry: a stray Enter after an action never starts one that deletes data.
+ * The menu: the daily rows by use, then More with the rest. A row with one action runs it; a row with several opens a pick, where Esc or
+ * Back returns to the list. Esc on the list leaves the CLI. A row that cannot run now stays listed with the reason. A pick opens on its
+ * first entry: a stray Enter after an action never starts one that deletes data.
  */
 async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof QUIT> {
   while (true) {
-    const picked = await menuSelect({
-      message: 'What do you want to do?',
-      items: mainMenuItems(state),
-      default: startRow(state),
-    });
+    const picked = await menuSelect({ message: '', items: mainMenuItems(state), default: startRow(state) });
     if (picked === ESCAPED || picked === QUIT) return QUIT;
     lastRow = picked;
     if (picked === UP_NEXT) {
-      const reason = state.upNext ? disabledReason(state.upNext.action, state) : 'nothing is recommended';
-      if (state.upNext && !reason) return state.upNext.action;
-      console.error(`${crossMark} "${state.upNext ? actionLabel(state.upNext.action) : 'Up next'}" cannot run now: ${reason}.`);
+      const next = state.upNext;
+      if (!next) continue;
+      const reason = disabledReason(next.action, state);
+      if (!reason) return next.action;
+      console.error(`${crossMark} "${actionLabel(next.action)}" cannot run now: ${reason}.`);
       continue;
     }
     const row = menuRow(picked);

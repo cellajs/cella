@@ -20,7 +20,6 @@ function render(items: Array<MenuItem<string>>): string[] {
 describe('mainMenuItems', () => {
   it('lists the daily rows on a healthy stack, then More and Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
-      '',
       '  Full status',
       '  Review & apply changes',
       '  Env vars & secrets',
@@ -35,8 +34,8 @@ describe('mainMenuItems', () => {
 
   it('leads with the recommended step when the home screen has one', () => {
     const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'deploy', description: 'Deploy 0.35.0 again' } });
-    expect(render(items).slice(0, 4)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', '', '  Full status']);
-    expect(items[1]).toMatchObject({ value: UP_NEXT });
+    expect(render(items).slice(0, 3)).toEqual(['  ▶  Deploy 0.35.0 again', '', '  Full status']);
+    expect(items[0]).toMatchObject({ value: UP_NEXT });
   });
 
   it('keeps every row on a stack whose setup is unfinished and says why a row cannot run', () => {

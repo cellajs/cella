@@ -100,18 +100,17 @@ function entryName(id: MenuRowId): string {
   return rowLabel(id).replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
-/** The main menu: the recommended step first when there is one, then every row after a blank line, then the way out. */
+/** The main menu: the recommended step and a blank line first when there is one, then every row, then the way out. */
 export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> {
   const items: Array<MenuItem<MainMenuValue>> = [];
   if (state.upNext) {
-    items.push({ group: '' });
     items.push({
-      name: `${pc.cyan('▶')}  Up next: ${state.upNext.description}`,
+      name: `${pc.cyan('▶')}  ${state.upNext.description}`,
       value: UP_NEXT,
       description: OPERATOR_ACTIONS[state.upNext.action].description,
     });
+    items.push({ group: '' });
   }
-  items.push({ group: '' });
   for (const id of visibleRows(state)) {
     const row = menuRow(id);
     const reason = rowDisabledReason(id, state);
