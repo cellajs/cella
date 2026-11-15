@@ -64,10 +64,9 @@ function collect(root: string, out: string[]): void {
 
 /** The new path for an import, or null when no rule names it. */
 function renamed(path: string): string | null {
-  const rule = RULES.find(([from]) => `${path}'`.startsWith(from) || path.startsWith(from));
-  if (!rule) return null;
-  const [from, to] = rule;
-  return `${path}'`.startsWith(from) ? `${path}'`.replace(from, to).slice(0, -1) : path.replace(from, to);
+  // Matched with the closing quote on, so a rule that names a whole file (`…/totp'`) never catches `…/totp-setup`.
+  const rule = RULES.find(([from]) => `${path}'`.startsWith(from));
+  return rule ? `${path}'`.replace(rule[0], rule[1]).slice(0, -1) : null;
 }
 
 /** One file's text with its imports rewritten, each recorded as `old -> new`. */

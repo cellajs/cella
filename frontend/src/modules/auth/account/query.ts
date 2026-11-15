@@ -7,7 +7,8 @@ import type {
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
-  RemoveUserPasskeysResponse,
+  RemoveUserFactorData,
+  RemoveUserFactorResponse,
   RevokeMySessionsResponse,
   RevokeUserSessionsResponse,
   ToggleMfaData,
@@ -20,8 +21,7 @@ import {
   deleteTotp,
   generateTotpKey,
   getMyAuth,
-  removeUserPasskeys,
-  removeUserTotp,
+  removeUserFactor,
   revokeMySessions,
   revokeUserSessions,
   toggleMfa,
@@ -166,7 +166,7 @@ export const useRevokeSessionsMutation = () =>
   });
 
 /** The factor an administrator removes from another account: every passkey, or the authenticator app. */
-export type RecoverableFactor = 'passkey' | 'totp';
+export type RecoverableFactor = RemoveUserFactorData['path']['factor'];
 
 /** A system administrator ends every session of another user, with a step-up; the person is mailed. */
 export const useRevokeUserSessionsMutation = (userId: string) =>
@@ -178,9 +178,9 @@ export const useRevokeUserSessionsMutation = (userId: string) =>
 
 /** A system administrator removes a lost factor from another account, with a step-up; MFA turns off when a required method is gone. */
 export const useRemoveUserFactorMutation = (userId: string, factor: RecoverableFactor) =>
-  useMutation<RemoveUserPasskeysResponse, ApiError, void>({
+  useMutation<RemoveUserFactorResponse, ApiError, void>({
     mutationKey: [...accountKeys.recovery, userId, factor],
-    mutationFn: () => withStepUp(() => (factor === 'passkey' ? removeUserPasskeys({ path: { userId } }) : removeUserTotp({ path: { userId } }))),
+    mutationFn: () => withStepUp(() => removeUserFactor({ path: { userId, factor } })),
     onSuccess: ({ mfaDisabled }) => {
       const resource = t(factor === 'passkey' ? 'c:passkeys' : 'c:totp');
       toaster.success(t(mfaDisabled ? 'c:success.factor_removed_mfa_off' : 'c:success.delete_resource', { resource }));

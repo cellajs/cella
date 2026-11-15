@@ -25,14 +25,13 @@ const factorMethods = ['passkey', 'totp'] as const;
  */
 export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
   const { session, stepUpCookie } = ctx.var;
-  const refused: StepUpState = { steppedUp: false, methods: [], factor: null, provenAt: null };
   const row = await getStepUpFacts(dbCtx, {
     sessionId: session.id,
     userId: session.userId,
     since: isoDateAgo(stepUpWindow),
     presentedSecret: stepUpCookie ? hashToken(stepUpCookie) : undefined,
   });
-  if (!row) return refused;
+  if (!row) return { steppedUp: false, methods: [], factor: null, provenAt: null };
 
   const canEnroll = factorMethods.some((method) => isStrategyEnabled(method));
   const effectiveTier = tier === 'factor' && !canEnroll ? 'account' : tier;

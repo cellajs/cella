@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
-import { type AccessScope, type AccessScopedEntityType, accessScopes, amrOf, appConfig, stepUpProofs } from 'shared';
+import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
-import { authStrategiesEnum, cookieSecrets } from '#/modules/auth/core';
+import { amrOf, authStrategiesEnum, cookieSecrets, stepUpProofs } from '#/modules/auth/core';
 import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
@@ -207,7 +207,6 @@ export async function createProvider(): Promise<Provider> {
       if ('accountId' in token && token.accountId) {
         // The method and connection of the session that consented: a tenant's sign-in policy reads them.
         const signIn = await findGrantSignIn({ var: { db: baseDb } }, { grantId: token.grantId });
-        const authTime = signIn.authTime ? Math.floor(Date.parse(signIn.authTime) / 1000) : null;
         return {
           actor_kind: 'user',
           tenant_id: resource.tenantId,
@@ -215,7 +214,7 @@ export async function createProvider(): Promise<Provider> {
           auth_strategy: signIn.authStrategy,
           connection_id: signIn.connectionId,
           amr: amrOfStamp(signIn.authStrategy, signIn.factor),
-          ...(authTime !== null && { auth_time: authTime }),
+          ...(signIn.authTime && { auth_time: Math.floor(Date.parse(signIn.authTime) / 1000) }),
         } satisfies IssuedTokenClaims;
       }
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.

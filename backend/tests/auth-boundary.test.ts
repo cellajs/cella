@@ -23,9 +23,7 @@ const collect = (dir: string): string[] =>
 const authImportsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '(#\/modules\/auth\/[^']+)'/g)].map((match) => match[1]);
 
 /** The one read of the app's own factors the step-up tiers make: `getStepUpFacts` asks which factors the user holds. */
-const heldFactorsRead: Record<string, string[]> = {
-  'src/modules/auth/core/sessions/sessions-queries.ts': ['#/modules/auth/flows/mfa/mfa-queries'],
-};
+const heldFactorsRead = 'src/modules/auth/core/sessions/sessions-queries.ts: #/modules/auth/flows/mfa/mfa-queries';
 
 describe('auth module boundary', () => {
   const files = [...collect(join(backendRoot, 'src')), ...collect(join(backendRoot, 'emails'))];
@@ -47,11 +45,9 @@ describe('auth module boundary', () => {
       .flatMap((file) => {
         const name = relative(backendRoot, file);
         return authImportsOf(file)
-          .filter(
-            (path) =>
-              (path.startsWith('#/modules/auth/flows/') || path.startsWith('#/modules/auth/account/')) && !heldFactorsRead[name]?.includes(path),
-          )
-          .map((path) => `${name}: ${path}`);
+          .filter((path) => path.startsWith('#/modules/auth/flows/') || path.startsWith('#/modules/auth/account/'))
+          .map((path) => `${name}: ${path}`)
+          .filter((offender) => offender !== heldFactorsRead);
       });
     expect(offenders).toEqual([]);
   });

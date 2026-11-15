@@ -4,6 +4,7 @@ import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limit
 import {
   factorRemovedSchema,
   meAuthDataSchema,
+  recoverableFactorParamSchema,
   sessionBaseSchema,
   sessionsRevokedSchema,
   toggleMfaBodySchema,
@@ -54,26 +55,15 @@ export const authAccountRoutes = createXRoutes(['auth', 'cella'], {
     request: { params: userIdParamSchema },
     responses: { 200: json('Sessions ended', sessionsRevokedSchema), ...errors(404) },
   }),
-  removeUserPasskeys: xRoute({
+  removeUserFactor: xRoute({
     method: 'delete',
-    path: '/users/{userId}/passkeys',
+    path: '/users/{userId}/factors/{factor}',
     xGuard: [userGuard, sysAdminGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: "Remove a user's passkeys",
+    summary: "Remove a user's lost factor",
     description:
-      'Removes every passkey of the user, for a person who lost them. When MFA is on and no passkey is left, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
-    request: { params: userIdParamSchema },
-    responses: { 200: json('Passkeys removed', factorRemovedSchema), ...errors(404) },
-  }),
-  removeUserTotp: xRoute({
-    method: 'delete',
-    path: '/users/{userId}/totp',
-    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
-    xRateLimiter: [singlePointsLimiter],
-    summary: "Remove a user's authenticator app",
-    description:
-      'Removes the authenticator app of the user, for a person who lost it. When MFA is on, it turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
-    request: { params: userIdParamSchema },
-    responses: { 200: json('Authenticator app removed', factorRemovedSchema), ...errors(404) },
+      'Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
+    request: { params: recoverableFactorParamSchema },
+    responses: { 200: json('Factor removed', factorRemovedSchema), ...errors(404) },
   }),
 });

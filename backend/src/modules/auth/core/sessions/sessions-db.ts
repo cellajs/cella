@@ -1,12 +1,11 @@
 import { getColumns, sql } from 'drizzle-orm';
 import { check, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { stepUpProofs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
-import { authStrategiesEnum } from '#/modules/auth/core/strategies';
+import { authStrategiesEnum, stepUpProofs } from '#/modules/auth/core/strategies';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 

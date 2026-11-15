@@ -12,18 +12,17 @@ import { exportAccounts } from '#/modules/auth/account/operations/export-account
  */
 const { values } = parseArgs({ options: { out: { type: 'string' } } });
 
-const { accounts, passkeysWithoutPortability } = await exportAccounts({ var: { db } });
+const accounts = await exportAccounts({ var: { db } });
 const json = JSON.stringify(accounts, null, 2);
 
 if (values.out) writeFileSync(values.out, json);
 else console.log(json);
 
-const passkeys = accounts.reduce((sum, account) => sum + (account.webauthn_credentials?.length ?? 0), 0);
+const credentials = accounts.flatMap((account) => account.webauthn_credentials ?? []);
 const totps = accounts.filter((account) => account.otp_secret).length;
-console.error(`${accounts.length} accounts, ${passkeys} passkeys, ${totps} authenticator secrets${values.out ? ` written to ${values.out}` : ''}.`);
-if (passkeysWithoutPortability > 0) {
-  console.error(
-    `${passkeysWithoutPortability} passkeys predate the portability columns: exported with the unknown AAGUID, no backup flags and no handle.`,
-  );
-}
+console.error(
+  `${accounts.length} accounts, ${credentials.length} passkeys, ${totps} authenticator secrets${values.out ? ` written to ${values.out}` : ''}.`,
+);
+const legacy = credentials.filter((credential) => credential.user_handle === '').length;
+if (legacy > 0) console.error(`${legacy} passkeys predate the portability columns: exported with the unknown AAGUID, no backup flags and no handle.`);
 process.exit(0);

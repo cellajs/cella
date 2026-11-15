@@ -1,9 +1,9 @@
 import type { Context } from 'hono';
-import type { AuthStrategy } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { setUserSession } from '#/modules/auth/core/sessions/operations/create-session';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import type { TokenRecord } from '#/modules/auth/core/tokens/tokens-queries';
 import { verifyPasskeyAssertion } from '#/modules/auth/flows/passkeys/operations/passkey-challenges';

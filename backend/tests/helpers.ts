@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq, like } from 'drizzle-orm';
 import { invokeToken, redeemLinkToken } from 'sdk';
-import { type AuthStrategy, appConfig, type EntityRole, type StepUpProof, type TokenKind } from 'shared';
+import { appConfig, type EntityRole, type TokenKind } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { expect, onTestFinished, vi } from 'vitest';
@@ -12,6 +12,7 @@ import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { type SessionKind, sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import type { AuthStrategy, StepUpProof } from '#/modules/auth/core/strategies';
 import type { HeldLinkKind } from '#/modules/auth/core/tokens/token-policies';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/flows/totps/helpers/totp-core';

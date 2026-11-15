@@ -1,4 +1,5 @@
-import { type AuthStrategy, appConfig } from 'shared';
+import { appConfig } from 'shared';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 
 const builtInLabels = {
   passkey: 'Passkey',

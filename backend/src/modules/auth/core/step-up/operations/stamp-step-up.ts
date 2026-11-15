@@ -1,9 +1,9 @@
 import type { Context } from 'hono';
-import type { StepUpProof } from 'shared';
 import type { Env } from '#/core/context';
 import { setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { updateSessionSteppedUp } from '#/modules/auth/core/sessions/sessions-queries';
 import { stepUpWindow } from '#/modules/auth/core/step-up/helpers/step-up';
+import type { StepUpProof } from '#/modules/auth/core/strategies';
 import { newHashedToken } from '#/utils/hash-token';
 
 /**

@@ -24,10 +24,9 @@ app.openapi(authAccountRoutes.revokeMySessions, async (ctx) => {
 
 app.openapi(authAccountRoutes.revokeUserSessions, async (ctx) => ctx.json(await revokeUserSessionsOp(ctx, ctx.req.valid('param').userId), 200));
 
-app.openapi(authAccountRoutes.removeUserPasskeys, async (ctx) =>
-  ctx.json(await removeUserFactorOp(ctx, ctx.req.valid('param').userId, 'passkey'), 200),
-);
-
-app.openapi(authAccountRoutes.removeUserTotp, async (ctx) => ctx.json(await removeUserFactorOp(ctx, ctx.req.valid('param').userId, 'totp'), 200));
+app.openapi(authAccountRoutes.removeUserFactor, async (ctx) => {
+  const { userId, factor } = ctx.req.valid('param');
+  return ctx.json(await removeUserFactorOp(ctx, userId, factor), 200);
+});
 
 export const authAccountHandlers = app;

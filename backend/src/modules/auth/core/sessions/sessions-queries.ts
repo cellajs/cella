@@ -1,5 +1,4 @@
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
-import type { StepUpProof } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -11,6 +10,7 @@ import {
   sessionSafeColumns,
   sessionsTable,
 } from '#/modules/auth/core/sessions/sessions-db';
+import type { StepUpProof } from '#/modules/auth/core/strategies';
 import { heldFactorsSql } from '#/modules/auth/flows/mfa/mfa-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';

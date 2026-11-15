@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { getMyAuth, type MeAuthData, signInWithTotp } from 'sdk';
-import type { AuthStrategy } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -11,6 +10,7 @@ import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-devi
 import { notifyNewSignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
 import type { SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/core/sessions/operations/create-session';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails, setCookiePair } from '../helpers';

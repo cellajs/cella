@@ -1,9 +1,9 @@
 import type { HttpBindings } from '@hono/node-server';
-import type { AccessScope, AuthStrategy, OrganizationFlags } from 'shared';
+import type { AccessScope, OrganizationFlags } from 'shared';
 import type { WritePreconditions } from '#/core/preconditions';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
-import type { SessionFacts } from '#/modules/auth/core';
+import type { AuthStrategy, SessionFacts } from '#/modules/auth/core';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';

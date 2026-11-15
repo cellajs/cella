@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { type AuthStrategy, appConfig, type StepUpProof } from 'shared';
+import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -14,6 +14,7 @@ import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-s
 import type { SessionKind } from '#/modules/auth/core/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/core/sessions/sessions-queries';
 import { stepUpWindow } from '#/modules/auth/core/step-up/helpers/step-up';
+import type { AuthStrategy, StepUpProof } from '#/modules/auth/core/strategies';
 import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';

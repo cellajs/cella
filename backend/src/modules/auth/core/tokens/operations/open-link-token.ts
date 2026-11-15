@@ -38,17 +38,11 @@ export const registerLinkHandler = (kind: LinkTokenKind, handler: LinkHandler): 
  */
 export const registerHeldLink = (kind: HeldLinkKind, target: RedeemedLinkTarget): void => {
   redeemedLinkTargets.set(kind, target);
-  registerLinkHandler(kind, (ctx, rawToken) => holdLink(ctx, kind, rawToken));
+  registerLinkHandler(kind, (ctx, rawToken) => holdLink(ctx, kind, rawToken, target));
 };
 
 /** The link kinds with a handler, for the test that holds them to every link kind. */
 export const registeredLinkKinds = (): LinkTokenKind[] => [...linkHandlers.keys()];
-
-const redeemedTarget = (kind: HeldLinkKind): RedeemedLinkTarget => {
-  const target = redeemedLinkTargets.get(kind);
-  if (!target) throw unregistered(kind);
-  return target;
-};
 
 /** An accepted invitation takes its link with it: a member who opens the mail again goes to the app. */
 const appOnceAccepted = async (ctx: Context<Env>, err: unknown): Promise<string> => {
@@ -59,9 +53,9 @@ const appOnceAccepted = async (ctx: Context<Env>, err: unknown): Promise<string>
 };
 
 /** Holds an invitation or verification link for its confirm page, or goes on with one this browser redeemed before. */
-const holdLink = async (ctx: Context<Env>, kind: HeldLinkKind, rawToken: string) => {
+const holdLink = async (ctx: Context<Env>, kind: HeldLinkKind, rawToken: string, redeemedTarget: RedeemedLinkTarget) => {
   const target = await holdLinkToken(ctx, kind, rawToken)
-    .then((redeemed) => (redeemed ? redeemedTarget(kind)(redeemed) : `${appConfig.frontendUrl}/auth/confirm-link/${kind}`))
+    .then((redeemed) => (redeemed ? redeemedTarget(redeemed) : `${appConfig.frontendUrl}/auth/confirm-link/${kind}`))
     .catch((err) => appOnceAccepted(ctx, err));
   return ctx.redirect(target, 302);
 };
@@ -85,8 +79,10 @@ export const openLinkToken = (ctx: Context<Env>, kind: LinkTokenKind, rawToken: 
  *   the provider, which a form post's redirect could not reach under the page's `form-action 'self'`.
  */
 export const confirmHeldLink = async (ctx: Context<Env>, kind: HeldLinkKind): Promise<string> => {
+  const target = redeemedLinkTargets.get(kind);
+  if (!target) throw unregistered(kind);
   try {
-    return await redeemedTarget(kind)(await redeemHeldLink(ctx, kind));
+    return await target(await redeemHeldLink(ctx, kind));
   } catch (err) {
     return appOnceAccepted(ctx, err);
   }

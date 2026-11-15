@@ -1215,26 +1215,15 @@ export const zRevokeUserSessionsResponse = z.object({
   revoked: z.number(),
 });
 
-export const zRemoveUserPasskeysPath = z.object({
+export const zRemoveUserFactorPath = z.object({
   userId: z.string().max(50),
+  factor: z.enum(['passkey', 'totp']),
 });
 
 /**
- * Passkeys removed
+ * Factor removed
  */
-export const zRemoveUserPasskeysResponse = z.object({
-  removed: z.number(),
-  mfaDisabled: z.boolean(),
-});
-
-export const zRemoveUserTotpPath = z.object({
-  userId: z.string().max(50),
-});
-
-/**
- * Authenticator app removed
- */
-export const zRemoveUserTotpResponse = z.object({
+export const zRemoveUserFactorResponse = z.object({
   removed: z.number(),
   mfaDisabled: z.boolean(),
 });

@@ -2126,16 +2126,17 @@ export type RevokeUserSessionsResponses = {
 
 export type RevokeUserSessionsResponse = RevokeUserSessionsResponses[keyof RevokeUserSessionsResponses];
 
-export type RemoveUserPasskeysData = {
+export type RemoveUserFactorData = {
   body?: never;
   path: {
     userId: string;
+    factor: 'passkey' | 'totp';
   };
   query?: never;
-  url: '/auth/users/{userId}/passkeys';
+  url: '/auth/users/{userId}/factors/{factor}';
 };
 
-export type RemoveUserPasskeysErrors = {
+export type RemoveUserFactorErrors = {
   /**
    * Bad request
    */
@@ -2158,11 +2159,11 @@ export type RemoveUserPasskeysErrors = {
   429: TooManyRequestsError;
 };
 
-export type RemoveUserPasskeysError = RemoveUserPasskeysErrors[keyof RemoveUserPasskeysErrors];
+export type RemoveUserFactorError = RemoveUserFactorErrors[keyof RemoveUserFactorErrors];
 
-export type RemoveUserPasskeysResponses = {
+export type RemoveUserFactorResponses = {
   /**
-   * Passkeys removed
+   * Factor removed
    */
   200: {
     /**
@@ -2176,59 +2177,7 @@ export type RemoveUserPasskeysResponses = {
   };
 };
 
-export type RemoveUserPasskeysResponse = RemoveUserPasskeysResponses[keyof RemoveUserPasskeysResponses];
-
-export type RemoveUserTotpData = {
-  body?: never;
-  path: {
-    userId: string;
-  };
-  query?: never;
-  url: '/auth/users/{userId}/totp';
-};
-
-export type RemoveUserTotpErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type RemoveUserTotpError = RemoveUserTotpErrors[keyof RemoveUserTotpErrors];
-
-export type RemoveUserTotpResponses = {
-  /**
-   * Authenticator app removed
-   */
-  200: {
-    /**
-     * Passkeys removed, or 1 for the authenticator app
-     */
-    removed: number;
-    /**
-     * Whether MFA turned off because a required method is gone
-     */
-    mfaDisabled: boolean;
-  };
-};
-
-export type RemoveUserTotpResponse = RemoveUserTotpResponses[keyof RemoveUserTotpResponses];
+export type RemoveUserFactorResponse = RemoveUserFactorResponses[keyof RemoveUserFactorResponses];
 
 export type SendMagicLinkData = {
   body: {

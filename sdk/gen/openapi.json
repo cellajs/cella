@@ -6349,17 +6349,17 @@
         }
       }
     },
-    "/auth/users/{userId}/passkeys": {
+    "/auth/users/{userId}/factors/{factor}": {
       "delete": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "removeUserPasskeys",
+        "operationId": "removeUserFactor",
         "tags": ["auth", "cella"],
-        "summary": "Remove a user's passkeys",
-        "description": "Removes every passkey of the user, for a person who lost them. When MFA is on and no passkey is left, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
+        "summary": "Remove a user's lost factor",
+        "description": "Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
         "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -6371,75 +6371,20 @@
             "required": true,
             "name": "userId",
             "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Passkeys removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "removed": {
-                      "type": "number",
-                      "description": "Passkeys removed, or 1 for the authenticator app"
-                    },
-                    "mfaDisabled": {
-                      "type": "boolean",
-                      "description": "Whether MFA turned off because a required method is gone"
-                    }
-                  },
-                  "required": ["removed", "mfaDisabled"]
-                }
-              }
-            }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/auth/users/{userId}/totp": {
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "removeUserTotp",
-        "tags": ["auth", "cella"],
-        "summary": "Remove a user's authenticator app",
-        "description": "Removes the authenticator app of the user, for a person who lost it. When MFA is on, it turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
-        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "parameters": [
           {
             "schema": {
               "type": "string",
-              "maxLength": 50
+              "enum": ["passkey", "totp"]
             },
             "required": true,
-            "name": "userId",
+            "name": "factor",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Authenticator app removed",
+            "description": "Factor removed",
             "content": {
               "application/json": {
                 "schema": {

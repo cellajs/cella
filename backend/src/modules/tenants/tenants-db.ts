@@ -1,10 +1,11 @@
 import { sql } from 'drizzle-orm';
 import { check, index, jsonb, snakeCase, varchar } from 'drizzle-orm/pg-core';
-import { type AuthStrategy, tenantKindValues } from 'shared';
+import { tenantKindValues } from 'shared';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
+import type { AuthStrategy } from '#/modules/auth/core';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
 

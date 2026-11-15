@@ -1,10 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { registerHeldLink } from '#/modules/auth/core/tokens/operations/open-link-token';
 import { issueCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { authOAuthRoutes } from '#/modules/auth/flows/oauth/oauth-routes';
+import { oauthVerificationUrl } from '#/modules/auth/flows/oauth/operations/handle-oauth-verification';
 import { finishOAuth, startOAuth } from '#/modules/auth/flows/oauth/operations/provider-round-trip';
 import { defaultHook } from '#/utils/default-hook';
-import '#/modules/auth/flows/oauth/oauth-link-opener';
+
+// A verification link is held for its confirm page; once redeemed, the browser goes on to the provider.
+registerHeldLink('oauth-verification', oauthVerificationUrl);
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

@@ -1,8 +1,9 @@
 import type { Context } from 'hono';
-import { type AuthStrategy, appConfig, isSecondFactor } from 'shared';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { navigationRedirect, resolvePostAuthRedirectPath } from '#/modules/auth/core/general/helpers/redirect-path';
 import { type SessionExtras, setUserSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { type AuthStrategy, isSecondFactor } from '#/modules/auth/core/strategies';
 import { initiateMfa } from '#/modules/auth/flows/mfa/operations/mfa-challenge';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 

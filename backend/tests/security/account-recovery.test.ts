@@ -1,7 +1,5 @@
-import { removeUserPasskeys, removeUserTotp, revokeUserSessions } from 'sdk';
+import { removeUserFactor, revokeUserSessions } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import { passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
 import { defaultHeaders } from '../fixtures';
 import {
   createSystemAdminUser,
@@ -18,10 +16,9 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase } from '../test-utils';
+import { insertPasskey } from './helpers';
 
 afterEach(async () => await clearDatabase());
-
-const passkeyRow = (userId: string) => ({ userId, credentialId: `cred-${userId}`, publicKey: 'pQECAyYgASFYIA', counter: 0, nameOnDevice: 'Laptop' });
 
 describe('account recovery by a system administrator', async () => {
   const call = await createAppClient();
@@ -49,16 +46,16 @@ describe('account recovery by a system administrator', async () => {
 
   it('removing the last required factor turns MFA off, and both are mailed', async () => {
     const user = await createTotpUser('lost-phone@security-test.com');
-    await db.insert(passkeysTable).values(passkeyRow(user.id));
+    await insertPasskey(user);
     await enableMFAForUser(user.id);
 
-    const passkeys = await call(removeUserPasskeys, { path: { userId: user.id }, headers: await adminHeaders() });
+    const passkeys = await call(removeUserFactor, { path: { userId: user.id, factor: 'passkey' }, headers: await adminHeaders() });
     expect(passkeys.data).toEqual({ removed: 1, mfaDisabled: true });
     expect((await getUserByEmail(user.email))[0].mfaRequired).toBe(false);
     await waitForMail(() => expect(mailTypesTo(user.email)).toEqual(expect.arrayContaining(['admin-passkeys-removed', 'mfa-disabled'])));
 
     // With MFA off already, removing the authenticator is only that.
-    const totp = await call(removeUserTotp, { path: { userId: user.id }, headers: await adminHeaders() });
+    const totp = await call(removeUserFactor, { path: { userId: user.id, factor: 'totp' }, headers: await adminHeaders() });
     expect(totp.data).toEqual({ removed: 1, mfaDisabled: false });
     await waitForMail(() => expect(mailTypesTo(user.email)).toContain('admin-totp-removed'));
   });
@@ -75,7 +72,7 @@ describe('account recovery by a system administrator', async () => {
     expect(asMember.response.status).toBe(403);
 
     const coldAdmin = { ...defaultHeaders, Cookie: await createTestSession(admin, { ageMs: 60 * 60 * 1000 }) };
-    await expectRefusal(await call(removeUserPasskeys, { path: { userId: user.id }, headers: coldAdmin }), 403, 'step_up_required');
+    await expectRefusal(await call(removeUserFactor, { path: { userId: user.id, factor: 'passkey' }, headers: coldAdmin }), 403, 'step_up_required');
     expect((await sessionsOf(user.id)).length).toBe(0);
   });
 });

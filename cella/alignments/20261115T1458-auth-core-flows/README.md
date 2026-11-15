@@ -15,7 +15,7 @@ that were in `me`. `identities` moved to `modules/user`, the rate-limit store to
 parsing to `lib/device-info`, the legal texts to `frontend/src/modules/marketing/legal/`. `AuthStrategy`,
 `StepUpProof` and `amrOf` come from `shared`. The routes `/me/auth`, `/me/sessions/~revoke` and `/me/~toggle-mfa` are
 `/auth/me`, `/auth/sessions/~revoke` and `/auth/~toggle-mfa` under the same SDK functions. System administrators get
-account recovery (`DELETE /auth/users/{userId}/sessions`, `/passkeys`, `/totp`) under the user's edit sheet. The codemod
+account recovery (`DELETE /auth/users/{userId}/sessions` and `/factors/{factor}`) under the user's edit sheet. The codemod
 rewrites the import paths.
 
 ## What & why

@@ -14,10 +14,10 @@ import {
   toggleMfa,
   updateServiceAccount,
 } from 'sdk';
-import type { AuthStrategy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';

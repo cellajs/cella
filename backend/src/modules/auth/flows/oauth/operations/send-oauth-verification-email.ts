@@ -1,8 +1,9 @@
-import { type AuthStrategy, appConfig } from 'shared';
+import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { strategyLabels } from '#/modules/auth/core/general/helpers/strategy-labels';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 import { issueToken, type NewToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/core/tokens/token-policies';
 import type { PendingSignUp } from '#/modules/auth/core/tokens/tokens-queries';

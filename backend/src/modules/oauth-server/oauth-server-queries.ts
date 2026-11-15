@@ -1,8 +1,8 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { StepUpProof } from 'shared';
 import { isUuid } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { actorsTable } from '#/modules/actors/actors-db';
+import type { StepUpProof } from '#/modules/auth/core';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';

@@ -17,7 +17,7 @@ export type { SessionFacts, SessionModel, SessionRevocationReason } from '#/modu
 export { findSessionStates } from '#/modules/auth/core/sessions/sessions-queries';
 export { type StepUpTier, stepUpWindow } from '#/modules/auth/core/step-up/helpers/step-up';
 export { requireStepUp } from '#/modules/auth/core/step-up/operations/read-step-up';
-export { authStrategiesEnum } from '#/modules/auth/core/strategies';
+export { type AuthStrategy, amrOf, authStrategiesEnum, type StepUpProof, stepUpProofs } from '#/modules/auth/core/strategies';
 export { issueTokens } from '#/modules/auth/core/tokens/token-lifecycle';
 export { type LinkTokenKind, tokenLinkUrl, tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
 export { countLiveSystemInvitations, deleteInvitationTokens, findSystemInvitationTokens } from '#/modules/auth/core/tokens/tokens-queries';

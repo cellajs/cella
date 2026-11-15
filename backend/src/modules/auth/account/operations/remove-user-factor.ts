@@ -1,6 +1,8 @@
+import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import type { recoverableFactorParamSchema } from '#/modules/auth/account/account-schema';
 import { sendAccountSecurityEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
 import { findHeldFactors } from '#/modules/auth/flows/mfa/mfa-queries';
 import { mfaFactorRules } from '#/modules/auth/flows/mfa/operations/factor-rules';
@@ -8,8 +10,7 @@ import { deletePasskeysByUser } from '#/modules/auth/flows/passkeys/passkeys-que
 import { deleteTotp } from '#/modules/auth/flows/totps/totps-queries';
 import { findUserById, updateUserMfa } from '#/modules/user/user-queries';
 
-/** The factor an administrator removes: every passkey, or the authenticator app. */
-export type RecoverableFactor = 'passkey' | 'totp';
+type RecoverableFactor = z.infer<typeof recoverableFactorParamSchema>['factor'];
 
 /**
  * Removes a lost factor from another user's account, for a system administrator helping someone locked out: every

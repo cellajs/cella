@@ -6,6 +6,7 @@ import { federationRefSchema } from '#/modules/auth/core/federations/federations
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { passkeySchema } from '#/modules/auth/flows/passkeys/passkeys-schema';
 import { enabledOAuthProvidersSchema } from '#/modules/user/user-schema';
+import { userIdParamSchema } from '#/schemas';
 
 /** A session row as stored, secret and revoker omitted: what a revoke returns. */
 export const sessionBaseSchema = createSelectSchema(sessionsTable).omit({ revokedBy: true });
@@ -51,6 +52,9 @@ export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
 /** What an administrator's sign-out of a user did. */
 export const sessionsRevokedSchema = z.object({ revoked: z.number().describe('Sessions ended') });
+
+/** The factor an administrator removes from another account: every passkey, or the authenticator app. */
+export const recoverableFactorParamSchema = userIdParamSchema.extend({ factor: z.enum(['passkey', 'totp']) });
 
 /** What an administrator's removal of a lost factor did. */
 export const factorRemovedSchema = z.object({

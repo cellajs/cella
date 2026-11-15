@@ -42,11 +42,10 @@ describe('exportAccounts', () => {
     await insertAnonymousUser({ var: { db } }, { id: crypto.randomUUID(), name: 'Guest', slug: 'guest' });
     await db.insert(passkeysTable).values([passkeyOf(user.id, true), passkeyOf(other.id, false)]);
 
-    const { accounts, passkeysWithoutPortability } = await exportAccounts({ var: { db } });
+    const accounts = await exportAccounts({ var: { db } });
 
     expect(importList.parse(accounts)).toEqual(accounts);
     expect(accounts.map((account) => account.user_id).sort()).toEqual([user.id, other.id].sort());
-    expect(passkeysWithoutPortability).toBe(1);
 
     const exported = accounts.find((account) => account.user_id === user.id);
     expect(exported?.emails).toEqual([{ address: 'export@example.com', is_primary: true, is_verified: true }]);

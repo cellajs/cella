@@ -1,9 +1,10 @@
-import { type AuthStrategy, appConfig } from 'shared';
+import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { countMailedDevices, stampDeviceMailed } from '#/modules/auth/core/devices/devices-queries';
 import { sendAccountSecurityEmail, sendSecurityInboxEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
 import { strategyLabels } from '#/modules/auth/core/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
+import type { AuthStrategy } from '#/modules/auth/core/strategies';
 import type { UserModel } from '#/modules/user/user-db';
 import { isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
