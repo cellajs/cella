@@ -258,7 +258,7 @@ export const zMeAuthData = z.object({
       createdAt: z.string(),
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
       current: z.boolean(),
@@ -1195,13 +1195,48 @@ export const zRevokeMySessionsResponse = z.object({
       createdAt: z.string(),
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
     }),
   ),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+export const zRevokeUserSessionsPath = z.object({
+  userId: z.string().max(50),
+});
+
+/**
+ * Sessions ended
+ */
+export const zRevokeUserSessionsResponse = z.object({
+  revoked: z.number(),
+});
+
+export const zRemoveUserPasskeysPath = z.object({
+  userId: z.string().max(50),
+});
+
+/**
+ * Passkeys removed
+ */
+export const zRemoveUserPasskeysResponse = z.object({
+  removed: z.number(),
+  mfaDisabled: z.boolean(),
+});
+
+export const zRemoveUserTotpPath = z.object({
+  userId: z.string().max(50),
+});
+
+/**
+ * Authenticator app removed
+ */
+export const zRemoveUserTotpResponse = z.object({
+  removed: z.number(),
+  mfaDisabled: z.boolean(),
 });
 
 export const zSendMagicLinkBody = z.object({

@@ -2,7 +2,9 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { authAccountRoutes } from '#/modules/auth/account/account-routes';
 import { getMyAuthOp } from '#/modules/auth/account/operations/get-my-auth';
+import { removeUserFactorOp } from '#/modules/auth/account/operations/remove-user-factor';
 import { revokeMySessionsOp } from '#/modules/auth/account/operations/revoke-my-sessions';
+import { revokeUserSessionsOp } from '#/modules/auth/account/operations/revoke-user-sessions';
 import { toggleMfaOp } from '#/modules/auth/account/operations/toggle-mfa';
 import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { defaultHook } from '#/utils/default-hook';
@@ -19,5 +21,13 @@ app.openapi(authAccountRoutes.revokeMySessions, async (ctx) => {
   if (signedOut) deleteAuthCookie(ctx, 'session');
   return ctx.json({ results, rejectedIds }, 200);
 });
+
+app.openapi(authAccountRoutes.revokeUserSessions, async (ctx) => ctx.json(await revokeUserSessionsOp(ctx, ctx.req.valid('param').userId), 200));
+
+app.openapi(authAccountRoutes.removeUserPasskeys, async (ctx) =>
+  ctx.json(await removeUserFactorOp(ctx, ctx.req.valid('param').userId, 'passkey'), 200),
+);
+
+app.openapi(authAccountRoutes.removeUserTotp, async (ctx) => ctx.json(await removeUserFactorOp(ctx, ctx.req.valid('param').userId, 'totp'), 200));
 
 export const authAccountHandlers = app;

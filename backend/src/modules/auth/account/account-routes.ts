@@ -1,11 +1,17 @@
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { stepUpGuard, userGuard } from '#/middlewares/guard';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
+import { stepUpGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { meAuthDataSchema, sessionBaseSchema, toggleMfaBodySchema } from '#/modules/auth/account/account-schema';
+import {
+  factorRemovedSchema,
+  meAuthDataSchema,
+  sessionBaseSchema,
+  sessionsRevokedSchema,
+  toggleMfaBodySchema,
+} from '#/modules/auth/account/account-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, idsBodySchema } from '#/schemas';
+import { batchResponseSchema, idsBodySchema, userIdParamSchema } from '#/schemas';
 
-/** The account-security surface: how the signed-in user signs in, their sessions, and the MFA switch. */
+/** The account-security surface: how the signed-in user signs in, their sessions, the MFA switch, and an administrator's recovery of another account. */
 export const authAccountRoutes = createXRoutes(['auth', 'cella'], {
   getMyAuth: xRoute({
     method: 'get',
@@ -36,5 +42,38 @@ export const authAccountRoutes = createXRoutes(['auth', 'cella'], {
     description: 'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
     request: { body: jsonBody(toggleMfaBodySchema) },
     responses: { 200: json('User', userSchema) },
+  }),
+  revokeUserSessions: xRoute({
+    method: 'delete',
+    path: '/users/{userId}/sessions',
+    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Sign a user out everywhere',
+    description:
+      'Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.',
+    request: { params: userIdParamSchema },
+    responses: { 200: json('Sessions ended', sessionsRevokedSchema), ...errors(404) },
+  }),
+  removeUserPasskeys: xRoute({
+    method: 'delete',
+    path: '/users/{userId}/passkeys',
+    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: "Remove a user's passkeys",
+    description:
+      'Removes every passkey of the user, for a person who lost them. When MFA is on and no passkey is left, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
+    request: { params: userIdParamSchema },
+    responses: { 200: json('Passkeys removed', factorRemovedSchema), ...errors(404) },
+  }),
+  removeUserTotp: xRoute({
+    method: 'delete',
+    path: '/users/{userId}/totp',
+    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: "Remove a user's authenticator app",
+    description:
+      'Removes the authenticator app of the user, for a person who lost it. When MFA is on, it turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
+    request: { params: userIdParamSchema },
+    responses: { 200: json('Authenticator app removed', factorRemovedSchema), ...errors(404) },
   }),
 });

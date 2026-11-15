@@ -29,6 +29,7 @@ const streamEndings: Record<EndingReason, StreamErrorPayload> = {
   sign_out: revoked,
   other_session: revoked,
   mfa_enabled: revoked,
+  admin_revoke: revoked,
   session_cap: revoked,
   user_deleted: revoked,
   session_revoked: revoked,

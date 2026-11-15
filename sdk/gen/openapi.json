@@ -1769,7 +1769,7 @@
                 },
                 "revocationReason": {
                   "type": ["string", "null"],
-                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "admin_revoke", "session_cap", "replaced", null]
                 },
                 "steppedUpAt": {
                   "type": ["string", "null"]
@@ -6214,7 +6214,7 @@
                           },
                           "revocationReason": {
                             "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "admin_revoke", "session_cap", "replaced", null]
                           },
                           "steppedUpAt": {
                             "type": ["string", "null"]
@@ -6282,6 +6282,194 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/sessions": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeUserSessions",
+        "tags": ["auth", "cella"],
+        "summary": "Sign a user out everywhere",
+        "description": "Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessions ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": {
+                      "type": "number",
+                      "description": "Sessions ended"
+                    }
+                  },
+                  "required": ["revoked"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/passkeys": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "removeUserPasskeys",
+        "tags": ["auth", "cella"],
+        "summary": "Remove a user's passkeys",
+        "description": "Removes every passkey of the user, for a person who lost them. When MFA is on and no passkey is left, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Passkeys removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "number",
+                      "description": "Passkeys removed, or 1 for the authenticator app"
+                    },
+                    "mfaDisabled": {
+                      "type": "boolean",
+                      "description": "Whether MFA turned off because a required method is gone"
+                    }
+                  },
+                  "required": ["removed", "mfaDisabled"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/totp": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "removeUserTotp",
+        "tags": ["auth", "cella"],
+        "summary": "Remove a user's authenticator app",
+        "description": "Removes the authenticator app of the user, for a person who lost it. When MFA is on, it turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authenticator app removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "number",
+                      "description": "Passkeys removed, or 1 for the authenticator app"
+                    },
+                    "mfaDisabled": {
+                      "type": "boolean",
+                      "description": "Whether MFA turned off because a required method is gone"
+                    }
+                  },
+                  "required": ["removed", "mfaDisabled"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

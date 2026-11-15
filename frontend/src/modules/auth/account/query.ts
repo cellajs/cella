@@ -7,11 +7,25 @@ import type {
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
+  RemoveUserPasskeysResponse,
   RevokeMySessionsResponse,
+  RevokeUserSessionsResponse,
   ToggleMfaData,
   User,
 } from 'sdk';
-import { createPasskey, createTotp, deletePasskey, deleteTotp, generateTotpKey, getMyAuth, revokeMySessions, toggleMfa } from 'sdk';
+import {
+  createPasskey,
+  createTotp,
+  deletePasskey,
+  deleteTotp,
+  generateTotpKey,
+  getMyAuth,
+  removeUserPasskeys,
+  removeUserTotp,
+  revokeMySessions,
+  revokeUserSessions,
+  toggleMfa,
+} from 'sdk';
 import { ApiError } from '~/lib/api';
 import type { Passkey } from '~/modules/auth/account/types';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
@@ -27,6 +41,7 @@ const accountKeys = {
   totpKey: ['auth', 'account', 'totp-key'] as const,
   mfa: ['auth', 'account', 'mfa'] as const,
   register: { passkey: ['auth', 'account', 'register', 'passkey'] as const, totp: ['auth', 'account', 'register', 'totp'] as const },
+  recovery: ['auth', 'account', 'recovery'] as const,
   delete: {
     passkey: ['auth', 'account', 'delete', 'passkey'] as const,
     totp: ['auth', 'account', 'delete', 'totp'] as const,
@@ -147,5 +162,27 @@ export const useRevokeSessionsMutation = () =>
         return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
       });
       toaster.success(t('c:success.sessions_signed_out', { count: revoked.length }));
+    },
+  });
+
+/** The factor an administrator removes from another account: every passkey, or the authenticator app. */
+export type RecoverableFactor = 'passkey' | 'totp';
+
+/** A system administrator ends every session of another user, with a step-up; the person is mailed. */
+export const useRevokeUserSessionsMutation = (userId: string) =>
+  useMutation<RevokeUserSessionsResponse, ApiError, void>({
+    mutationKey: [...accountKeys.recovery, userId, 'sessions'],
+    mutationFn: () => withStepUp(() => revokeUserSessions({ path: { userId } })),
+    onSuccess: ({ revoked }) => toaster.success(t('c:success.sessions_signed_out', { count: revoked })),
+  });
+
+/** A system administrator removes a lost factor from another account, with a step-up; MFA turns off when a required method is gone. */
+export const useRemoveUserFactorMutation = (userId: string, factor: RecoverableFactor) =>
+  useMutation<RemoveUserPasskeysResponse, ApiError, void>({
+    mutationKey: [...accountKeys.recovery, userId, factor],
+    mutationFn: () => withStepUp(() => (factor === 'passkey' ? removeUserPasskeys({ path: { userId } }) : removeUserTotp({ path: { userId } }))),
+    onSuccess: ({ mfaDisabled }) => {
+      const resource = t(factor === 'passkey' ? 'c:passkeys' : 'c:totp');
+      toaster.success(t(mfaDisabled ? 'c:success.factor_removed_mfa_off' : 'c:success.delete_resource', { resource }));
     },
   });

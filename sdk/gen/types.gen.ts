@@ -305,7 +305,7 @@ export type MeAuthData = {
     createdAt: string;
     expiresAt: string;
     revokedAt: string | null;
-    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'admin_revoke' | 'session_cap' | 'replaced' | null;
     steppedUpAt: string | null;
     steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     current: boolean;
@@ -2059,7 +2059,7 @@ export type RevokeMySessionsResponses = {
       createdAt: string;
       expiresAt: string;
       revokedAt: string | null;
-      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'admin_revoke' | 'session_cap' | 'replaced' | null;
       steppedUpAt: string | null;
       steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     }>;
@@ -2077,6 +2077,158 @@ export type RevokeMySessionsResponses = {
 };
 
 export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
+
+export type RevokeUserSessionsData = {
+  body?: never;
+  path: {
+    userId: string;
+  };
+  query?: never;
+  url: '/auth/users/{userId}/sessions';
+};
+
+export type RevokeUserSessionsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
+
+export type RevokeUserSessionsResponses = {
+  /**
+   * Sessions ended
+   */
+  200: {
+    /**
+     * Sessions ended
+     */
+    revoked: number;
+  };
+};
+
+export type RevokeUserSessionsResponse = RevokeUserSessionsResponses[keyof RevokeUserSessionsResponses];
+
+export type RemoveUserPasskeysData = {
+  body?: never;
+  path: {
+    userId: string;
+  };
+  query?: never;
+  url: '/auth/users/{userId}/passkeys';
+};
+
+export type RemoveUserPasskeysErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RemoveUserPasskeysError = RemoveUserPasskeysErrors[keyof RemoveUserPasskeysErrors];
+
+export type RemoveUserPasskeysResponses = {
+  /**
+   * Passkeys removed
+   */
+  200: {
+    /**
+     * Passkeys removed, or 1 for the authenticator app
+     */
+    removed: number;
+    /**
+     * Whether MFA turned off because a required method is gone
+     */
+    mfaDisabled: boolean;
+  };
+};
+
+export type RemoveUserPasskeysResponse = RemoveUserPasskeysResponses[keyof RemoveUserPasskeysResponses];
+
+export type RemoveUserTotpData = {
+  body?: never;
+  path: {
+    userId: string;
+  };
+  query?: never;
+  url: '/auth/users/{userId}/totp';
+};
+
+export type RemoveUserTotpErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RemoveUserTotpError = RemoveUserTotpErrors[keyof RemoveUserTotpErrors];
+
+export type RemoveUserTotpResponses = {
+  /**
+   * Authenticator app removed
+   */
+  200: {
+    /**
+     * Passkeys removed, or 1 for the authenticator app
+     */
+    removed: number;
+    /**
+     * Whether MFA turned off because a required method is gone
+     */
+    mfaDisabled: boolean;
+  };
+};
+
+export type RemoveUserTotpResponse = RemoveUserTotpResponses[keyof RemoveUserTotpResponses];
 
 export type SendMagicLinkData = {
   body: {

@@ -19,11 +19,12 @@ export type SessionKind = (typeof sessionKinds)[number];
 
 /**
  * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`
- * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. The server's
- * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
- * browser: a sign-in, or the mfa session that enabling MFA mints.
+ * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. A system
+ * administrator's act: `admin_revoke`, for a person locked out or compromised. The server's housekeeping during a
+ * sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same browser: a sign-in, or
+ * the mfa session that enabling MFA mints.
  */
-const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced'] as const;
+const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 
 /**

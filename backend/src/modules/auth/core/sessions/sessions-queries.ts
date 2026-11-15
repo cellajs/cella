@@ -141,7 +141,9 @@ export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since,
   const [row] = await ctx.var.db
     .select({
       stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} and ${stampHeld} then ${sessionsTable.steppedUpVia} end`,
+      steppedUpAt: sessionsTable.steppedUpAt,
       signedInRecently: sql<boolean>`${sessionsTable.createdAt} > ${since}`,
+      createdAt: sessionsTable.createdAt,
       hasPasskey: held.passkey,
       hasTotp: held.totp,
       mfaRequired: sql<boolean>`exists (select 1 from ${usersTable} where ${usersTable.id} = ${userId} and ${usersTable.mfaRequired})`,

@@ -25,7 +25,7 @@ const factorMethods = ['passkey', 'totp'] as const;
  */
 export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
   const { session, stepUpCookie } = ctx.var;
-  const refused: StepUpState = { steppedUp: false, methods: [], factor: null };
+  const refused: StepUpState = { steppedUp: false, methods: [], factor: null, provenAt: null };
   const row = await getStepUpFacts(dbCtx, {
     sessionId: session.id,
     userId: session.userId,
@@ -41,8 +41,12 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   const factors = factorMethods.filter((method) => held[method] && isStrategyEnabled(method));
 
   if (factors.length === 0) {
-    if (effectiveTier === 'factor') return { steppedUp: row.stampedVia === 'sso', methods: row.hasProvenEmail ? ['enroll'] : [], factor: null };
-    return { steppedUp: !!row.stampedVia || row.signedInRecently, methods: row.hasProvenEmail ? ['email'] : [], factor: null };
+    if (effectiveTier === 'factor') {
+      const steppedUp = row.stampedVia === 'sso';
+      return { steppedUp, methods: row.hasProvenEmail ? ['enroll'] : [], factor: null, provenAt: steppedUp ? row.steppedUpAt : null };
+    }
+    const provenAt = row.stampedVia ? row.steppedUpAt : row.signedInRecently ? row.createdAt : null;
+    return { steppedUp: provenAt !== null, methods: row.hasProvenEmail ? ['email'] : [], factor: null, provenAt };
   }
 
   // Only a factor the user holds counts: an emailed code stands in for one only while setting up a new factor.
@@ -54,7 +58,9 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   const recovery: StepUpMethod[] = row.mfaRequired || !canEnroll || !row.hasProvenEmail ? [] : [effectiveTier === 'enroll' ? 'email' : 'enroll'];
   const recovered = recovery.includes('email') && row.stampedVia === 'email';
 
-  return { steppedUp: !!factor || row.stampedVia === 'sso' || recovered, methods: [...factors, ...recovery], factor };
+  const byStamp = !!stampedWith || row.stampedVia === 'sso' || recovered;
+  const provenAt = byStamp ? row.steppedUpAt : signedInWith ? row.createdAt : null;
+  return { steppedUp: provenAt !== null, methods: [...factors, ...recovery], factor, provenAt };
 };
 
 /**

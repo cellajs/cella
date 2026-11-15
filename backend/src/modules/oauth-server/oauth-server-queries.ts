@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import type { StepUpProof } from 'shared';
 import { isUuid } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -114,15 +115,21 @@ interface StampGrantSignInOpts {
   /** How the person signed in to the session that consented, and through which SSO connection. */
   authStrategy: string;
   connectionId: string | null;
+  /** The second factor that proved the session at consent, and when that proof was made (an ISO timestamp). */
+  factor: StepUpProof | null;
+  authTime: string | null;
 }
 
 /**
- * Records on the grant how its consenting session was signed in, so the tokens issued under it carry the method
- * and a tenant's sign-in policy reaches delegated tokens. Written next to the provider's own payload; a later consent
- * stamps it again.
+ * Records on the grant how its consenting session was signed in and proven. The tokens issued under it carry the method
+ * (`auth_strategy`, which a tenant's sign-in policy reads) and the standard `amr` and `auth_time`. Written next to the
+ * provider's own payload; a later consent stamps it again.
  */
-export async function stampGrantSignIn(ctx: DbContext, { grantId, authStrategy, connectionId }: StampGrantSignInOpts): Promise<void> {
-  const stamp = { authStrategy, connectionId };
+export async function stampGrantSignIn(
+  ctx: DbContext,
+  { grantId, authStrategy, connectionId, factor, authTime }: StampGrantSignInOpts,
+): Promise<void> {
+  const stamp = { authStrategy, connectionId, factor, authTime };
   await ctx.var.db
     .update(oidcPayloadsTable)
     .set({ payload: sql`${oidcPayloadsTable.payload} || ${JSON.stringify(stamp)}::jsonb` })
@@ -135,9 +142,11 @@ export async function findGrantSignIn(ctx: DbContext, { grantId }: { grantId: st
     .select({
       authStrategy: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authStrategy'`,
       connectionId: sql<string | null>`${oidcPayloadsTable.payload} ->> 'connectionId'`,
+      factor: sql<string | null>`${oidcPayloadsTable.payload} ->> 'factor'`,
+      authTime: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authTime'`,
     })
     .from(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
     .limit(1);
-  return row ?? { authStrategy: null, connectionId: null };
+  return row ?? { authStrategy: null, connectionId: null, factor: null, authTime: null };
 }

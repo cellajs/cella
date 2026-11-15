@@ -30,4 +30,6 @@ export interface StepUpState {
   methods: StepUpMethod[];
   /** The second factor that proves the session now, by a step-up or by its sign-in; null without one. */
   factor: Factor | null;
+  /** When the proof that stands was made (the step-up stamp, or the sign-in), an ISO timestamp; null while not stepped up. */
+  provenAt: string | null;
 }

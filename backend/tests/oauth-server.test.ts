@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { decodeJwt } from 'jose';
 import { nanoid } from 'nanoid';
 import { deleteConnectedApp, listAttachments, listConnectedApps, updateOrganization } from 'sdk';
 import { appConfig } from 'shared';
@@ -174,6 +175,10 @@ describe('OAuth authorization server', async () => {
       expect(result.status).toBe(200);
       const token = await verifyAccessToken(String(result.body.access_token), { tenantId: org.tenantId, organizationId: org.id });
       expect(token).toMatchObject({ kind: 'user', actorId: user.id, clientId, scopes: ['attachment:read'] });
+      // The standard claims beside the app's own: how the consenting session was proven, and when.
+      const claims = decodeJwt(String(result.body.access_token));
+      expect(claims.amr).toEqual(expect.arrayContaining(['mfa']));
+      expect(claims.auth_time).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
     } finally {
       restore();
     }

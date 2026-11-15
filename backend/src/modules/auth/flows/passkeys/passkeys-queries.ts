@@ -74,6 +74,12 @@ export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: { id
   return stored;
 };
 
+/** Deletes every passkey of the user, for an administrator's recovery; the number removed. */
+export const deletePasskeysByUser = async (ctx: DbContext, { userId }: { userId: string }) => {
+  const deleted = await ctx.var.db.delete(passkeysTable).where(eq(passkeysTable.userId, userId)).returning({ id: passkeysTable.id });
+  return deleted.length;
+};
+
 /** Deletes the user's passkey with this id; undefined when the user holds none by that id. */
 export const deletePasskey = async (ctx: DbContext, { userId, id }: { userId: string; id: string }) => {
   const [deleted] = await ctx.var.db

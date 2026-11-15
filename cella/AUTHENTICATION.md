@@ -111,6 +111,8 @@ On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required
 
 Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
+A system administrator recovers another account from the users table, with a step-up of their own: sign the person out everywhere, or remove every passkey or the authenticator app they lost. MFA turns off when a required method is gone. The person is mailed about each act.
+
 ## Module boundary
 
 The auth module is three folders. `core/` is the session substrate: sessions, step-up, devices, tokens, invitations, anonymous accounts, federations, cookies and mails. `flows/` holds the app's own sign-in methods: magic links, passkeys, TOTP, OAuth, the MFA challenge and the SSO round trip. `account/` is the account page's surface: sign-in methods, sessions and the MFA switch.

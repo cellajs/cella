@@ -11,11 +11,11 @@ import { log } from '#/utils/logger';
 type SessionSelection = { sessionIds: string[] } | { all: true; kind?: SessionKind };
 
 /**
- * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on). No browser may keep
- * answering OAuth clients for them: the authorization server's sessions of the user are deleted too. Sign-in
- * housekeeping leaves them.
+ * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on) or is signed out by an
+ * administrator. No browser may keep answering OAuth clients for them: the authorization server's sessions of the user
+ * are deleted too. Sign-in housekeeping leaves them.
  */
-const leavingReasons = new Set<SessionRevocationReason>(['sign_out', 'other_session', 'mfa_enabled']);
+const leavingReasons = new Set<SessionRevocationReason>(['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke']);
 
 type RevokeSessionsOpts = SessionSelection & {
   userId: string;

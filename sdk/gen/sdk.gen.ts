@@ -265,6 +265,12 @@ import type {
   RemovePushSubscriptionData,
   RemovePushSubscriptionErrors,
   RemovePushSubscriptionResponses,
+  RemoveUserPasskeysData,
+  RemoveUserPasskeysErrors,
+  RemoveUserPasskeysResponses,
+  RemoveUserTotpData,
+  RemoveUserTotpErrors,
+  RemoveUserTotpResponses,
   ResendInvitationData,
   ResendInvitationErrors,
   ResendInvitationResponses,
@@ -280,6 +286,9 @@ import type {
   RevokeMySessionsData,
   RevokeMySessionsErrors,
   RevokeMySessionsResponses,
+  RevokeUserSessionsData,
+  RevokeUserSessionsErrors,
+  RevokeUserSessionsResponses,
   SendMagicLinkData,
   SendMagicLinkErrors,
   SendMagicLinkResponses,
@@ -438,11 +447,14 @@ import {
   zPushYjsUpdateResponse,
   zRedeemLinkTokenResponse,
   zRemovePushSubscriptionResponse,
+  zRemoveUserPasskeysResponse,
+  zRemoveUserTotpResponse,
   zResendInvitationResponse,
   zResendInvitationWithTokenResponse,
   zResubscribeNotificationsResponse,
   zRevokeApiKeyResponse,
   zRevokeMySessionsResponse,
+  zRevokeUserSessionsResponse,
   zSendMagicLinkResponse,
   zSendNewsletterResponse,
   zSendSsoRecoveryLinkResponse,
@@ -985,6 +997,69 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Sign a user out everywhere
+ *
+ * Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.
+ *
+ * **DELETE /auth/users/{userId}/sessions** ·· [revokeUserSessions](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/users/{userId}/sessions) ·· _auth · cella_
+ *
+ * @param {revokeUserSessionsData} options
+ * @param {string} options.path.userId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const revokeUserSessions = <ThrowOnError extends boolean = true>(
+  options: Options<RevokeUserSessionsData, ThrowOnError>,
+): RequestResult<RevokeUserSessionsResponses, RevokeUserSessionsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<RevokeUserSessionsResponses, RevokeUserSessionsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRevokeUserSessionsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/users/{userId}/sessions',
+    ...options,
+  });
+
+/**
+ * Remove a user's passkeys
+ *
+ * Removes every passkey of the user, for a person who lost them. When MFA is on and no passkey is left, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.
+ *
+ * **DELETE /auth/users/{userId}/passkeys** ·· [removeUserPasskeys](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/users/{userId}/passkeys) ·· _auth · cella_
+ *
+ * @param {removeUserPasskeysData} options
+ * @param {string} options.path.userId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const removeUserPasskeys = <ThrowOnError extends boolean = true>(
+  options: Options<RemoveUserPasskeysData, ThrowOnError>,
+): RequestResult<RemoveUserPasskeysResponses, RemoveUserPasskeysErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<RemoveUserPasskeysResponses, RemoveUserPasskeysErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRemoveUserPasskeysResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/users/{userId}/passkeys',
+    ...options,
+  });
+
+/**
+ * Remove a user's authenticator app
+ *
+ * Removes the authenticator app of the user, for a person who lost it. When MFA is on, it turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.
+ *
+ * **DELETE /auth/users/{userId}/totp** ·· [removeUserTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/users/{userId}/totp) ·· _auth · cella_
+ *
+ * @param {removeUserTotpData} options
+ * @param {string} options.path.userId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const removeUserTotp = <ThrowOnError extends boolean = true>(
+  options: Options<RemoveUserTotpData, ThrowOnError>,
+): RequestResult<RemoveUserTotpResponses, RemoveUserTotpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<RemoveUserTotpResponses, RemoveUserTotpErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRemoveUserTotpResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/users/{userId}/totp',
+    ...options,
   });
 
 /**

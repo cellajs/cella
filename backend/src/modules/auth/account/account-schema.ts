@@ -48,3 +48,12 @@ export const meAuthDataSchema = z
   });
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
+
+/** What an administrator's sign-out of a user did. */
+export const sessionsRevokedSchema = z.object({ revoked: z.number().describe('Sessions ended') });
+
+/** What an administrator's removal of a lost factor did. */
+export const factorRemovedSchema = z.object({
+  removed: z.number().describe('Passkeys removed, or 1 for the authenticator app'),
+  mfaDisabled: z.boolean().describe('Whether MFA turned off because a required method is gone'),
+});
