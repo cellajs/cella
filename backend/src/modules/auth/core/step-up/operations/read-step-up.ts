@@ -31,7 +31,7 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
     since: isoDateAgo(stepUpWindow),
     presentedSecret: stepUpCookie ? hashToken(stepUpCookie) : undefined,
   });
-  if (!row) return { steppedUp: false, methods: [], factor: null, provenAt: null };
+  if (!row) return { steppedUp: false, methods: [], factor: null, proof: null, provenAt: null };
 
   const canEnroll = factorMethods.some((method) => isStrategyEnabled(method));
   const effectiveTier = tier === 'factor' && !canEnroll ? 'account' : tier;
@@ -42,10 +42,16 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   if (factors.length === 0) {
     if (effectiveTier === 'factor') {
       const steppedUp = row.stampedVia === 'sso';
-      return { steppedUp, methods: row.hasProvenEmail ? ['enroll'] : [], factor: null, provenAt: steppedUp ? row.steppedUpAt : null };
+      return {
+        steppedUp,
+        methods: row.hasProvenEmail ? ['enroll'] : [],
+        factor: null,
+        proof: steppedUp ? 'sso' : null,
+        provenAt: steppedUp ? row.steppedUpAt : null,
+      };
     }
     const provenAt = row.stampedVia ? row.steppedUpAt : row.signedInRecently ? row.createdAt : null;
-    return { steppedUp: provenAt !== null, methods: row.hasProvenEmail ? ['email'] : [], factor: null, provenAt };
+    return { steppedUp: provenAt !== null, methods: row.hasProvenEmail ? ['email'] : [], factor: null, proof: row.stampedVia, provenAt };
   }
 
   // Only a factor the user holds counts: an emailed code stands in for one only while setting up a new factor.
@@ -59,7 +65,7 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
 
   const byStamp = !!stampedWith || row.stampedVia === 'sso' || recovered;
   const provenAt = byStamp ? row.steppedUpAt : signedInWith ? row.createdAt : null;
-  return { steppedUp: provenAt !== null, methods: [...factors, ...recovery], factor, provenAt };
+  return { steppedUp: provenAt !== null, methods: [...factors, ...recovery], factor, proof: byStamp ? row.stampedVia : null, provenAt };
 };
 
 /**

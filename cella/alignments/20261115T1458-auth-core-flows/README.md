@@ -16,7 +16,7 @@ parsing to `lib/device-info`, the legal texts to `frontend/src/modules/marketing
 `StepUpProof` and `amrOf` come from `shared`. The routes `/me/auth`, `/me/sessions/~revoke` and `/me/~toggle-mfa` are
 `/auth/me`, `/auth/sessions/~revoke` and `/auth/~toggle-mfa` under the same SDK functions. System administrators get
 account recovery (`DELETE /auth/users/{userId}/sessions` and `/factors/{factor}`) under the user's edit sheet. The codemod
-rewrites the import paths.
+rewrites the paths wherever a file quotes them: imports, `import()`, `vi.mock`.
 
 ## What & why
 

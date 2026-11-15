@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import '#/modules/auth/auth-module';
 import { registeredLinkKinds } from '#/modules/auth/core/tokens/operations/open-link-token';
@@ -20,7 +20,12 @@ const collect = (dir: string): string[] =>
     return /\.tsx?$/.test(entry.name) && !entry.name.endsWith('.test.ts') ? [path] : [];
   });
 
-const authImportsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '(#\/modules\/auth\/[^']+)'/g)].map((match) => match[1]);
+/** Every module path a file names: imports, side-effect imports, `import()` and `vi.mock`; a relative one is resolved to its alias form. */
+const specifiers = /(?:from\s+|import\s*\(?\s*|vi\.mock\(\s*)['"]([^'"]+)['"]/g;
+const authImportsOf = (file: string) =>
+  [...readFileSync(file, 'utf8').matchAll(specifiers)]
+    .map(([, specifier]) => (specifier.startsWith('.') ? `#/${relative(join(backendRoot, 'src'), resolve(dirname(file), specifier))}` : specifier))
+    .filter((path) => path.startsWith('#/modules/auth/'));
 
 /** The one read of the app's own factors the step-up tiers make: `getStepUpFacts` asks which factors the user holds. */
 const heldFactorsRead = 'src/modules/auth/core/sessions/sessions-queries.ts: #/modules/auth/flows/mfa/mfa-queries';
@@ -29,11 +34,13 @@ describe('auth module boundary', () => {
   const files = [...collect(join(backendRoot, 'src')), ...collect(join(backendRoot, 'emails'))];
 
   it('the rest of the app imports the module through its index only', () => {
+    // The module registry loads every module's definition file; everything else goes through the index.
+    const allowed = ['#/modules/auth/core', '#/modules/auth/auth-module'];
     const offenders = files
       .filter((file) => !file.includes('/src/modules/auth/'))
       .flatMap((file) =>
         authImportsOf(file)
-          .filter((path) => path !== '#/modules/auth/core')
+          .filter((path) => !allowed.includes(path))
           .map((path) => `${relative(backendRoot, file)}: ${path}`),
       );
     expect(offenders).toEqual([]);

@@ -6299,8 +6299,8 @@
         "operationId": "revokeUserSessions",
         "tags": ["auth", "cella"],
         "summary": "Sign a user out everywhere",
-        "description": "Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.",
-        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
+        "description": "Ends every session of the user and every app they consented to, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
           {
@@ -6359,8 +6359,8 @@
         "operationId": "removeUserFactor",
         "tags": ["auth", "cella"],
         "summary": "Remove a user's lost factor",
-        "description": "Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.",
-        "x-guard": ["userGuard", "sysAdminGuard", "stepUpGuard"],
+        "description": "Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.",
+        "x-guard": ["userGuard", "sysAdminGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
           {
@@ -6858,7 +6858,7 @@
                   },
                   "userHandle": {
                     "type": "string",
-                    "maxLength": 2048
+                    "pattern": "^[A-Za-z0-9_-]{1,86}$"
                   }
                 },
                 "required": ["attestation", "nameOnDevice"]
@@ -7136,7 +7136,7 @@
                           },
                           "userHandle": {
                             "type": "string",
-                            "maxLength": 2048
+                            "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]
@@ -8240,7 +8240,7 @@
                           },
                           "userHandle": {
                             "type": "string",
-                            "maxLength": 2048
+                            "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]

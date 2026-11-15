@@ -1,5 +1,5 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { stepUpGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import { stepUpFactorGuard, stepUpGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   factorRemovedSchema,
@@ -47,22 +47,22 @@ export const authAccountRoutes = createXRoutes(['auth', 'cella'], {
   revokeUserSessions: xRoute({
     method: 'delete',
     path: '/users/{userId}/sessions',
-    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
+    xGuard: [userGuard, sysAdminGuard, stepUpFactorGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Sign a user out everywhere',
     description:
-      'Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.',
+      'Ends every session of the user and every app they consented to, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.',
     request: { params: userIdParamSchema },
     responses: { 200: json('Sessions ended', sessionsRevokedSchema), ...errors(404) },
   }),
   removeUserFactor: xRoute({
     method: 'delete',
     path: '/users/{userId}/factors/{factor}',
-    xGuard: [userGuard, sysAdminGuard, stepUpGuard],
+    xGuard: [userGuard, sysAdminGuard, stepUpFactorGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: "Remove a user's lost factor",
     description:
-      'Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.',
+      'Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.',
     request: { params: recoverableFactorParamSchema },
     responses: { 200: json('Factor removed', factorRemovedSchema), ...errors(404) },
   }),

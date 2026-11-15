@@ -6,6 +6,8 @@ import { maxLength } from '#/schemas';
 /** Authenticator data and credential ids are a few hundred bytes; an attestation object carries a certificate chain. */
 const webAuthnBlobLength = 16_384;
 const base64urlString = z.string().max(maxLength.url);
+/** A WebAuthn user handle: up to 64 bytes, as base64url without padding. */
+const userHandleString = z.string().regex(/^[A-Za-z0-9_-]{1,86}$/);
 
 const passkeyKindSchema = z.enum(['authentication', 'mfa']);
 const challengeKindSchema = z.enum([...passkeyKindSchema.options, 'registration']);
@@ -50,7 +52,7 @@ export const webAuthnAssertionSchema = z.object({
     clientDataJSON: base64urlString,
     authenticatorData: base64urlString,
     signature: base64urlString,
-    userHandle: base64urlString.optional(),
+    userHandle: userHandleString.optional(),
   }),
   authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
   clientExtensionResults: z.unknown().optional(),
@@ -62,7 +64,7 @@ export const passkeyCreateBodySchema = z.object({
   attestation: webAuthnAttestationSchema,
   nameOnDevice: z.string().max(maxLength.field),
   /** The user id the browser registered the credential under, kept for an export; a client from before it is sent sends none. */
-  userHandle: base64urlString.optional(),
+  userHandle: userHandleString.optional(),
 });
 
 export const passkeyChallengeBodySchema = z.object({ kind: challengeKindSchema });

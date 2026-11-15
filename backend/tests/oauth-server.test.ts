@@ -9,7 +9,7 @@ import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { adminRole, defaultHeaders } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { createTestOrganization, insertTestSession } from './helpers';
 import {
   authorizationCodeToken,
   bearerHeaders,
@@ -179,6 +179,18 @@ describe('OAuth authorization server', async () => {
       const claims = decodeJwt(String(result.body.access_token));
       expect(claims.amr).toEqual(expect.arrayContaining(['mfa']));
       expect(claims.auth_time).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
+
+      // A session an institution's asserted MFA stepped up meets the factor tier too, and its tokens say so.
+      const { cookie } = await insertTestSession(user, { authStrategy: 'surfconext', steppedUpVia: 'sso' });
+      const federated = await authorizationCodeToken(oauth.issuer, {
+        clientId,
+        redirectUri,
+        scope: 'attachment:read',
+        resource,
+        sessionCookie: cookie,
+      });
+      expect(federated.status).toBe(200);
+      expect(decodeJwt(String(federated.body.access_token)).amr).toEqual(expect.arrayContaining(['ext:surfconext', 'mfa']));
     } finally {
       restore();
     }

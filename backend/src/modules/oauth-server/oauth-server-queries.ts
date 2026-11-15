@@ -115,8 +115,8 @@ interface StampGrantSignInOpts {
   /** How the person signed in to the session that consented, and through which SSO connection. */
   authStrategy: string;
   connectionId: string | null;
-  /** The second factor that proved the session at consent, and when that proof was made (an ISO timestamp). */
-  factor: StepUpProof | null;
+  /** The stamp the session's step-up rested on at consent (a factor, or an institution's asserted MFA), and when it was made (an ISO timestamp). */
+  proof: StepUpProof | null;
   authTime: string | null;
 }
 
@@ -127,9 +127,9 @@ interface StampGrantSignInOpts {
  */
 export async function stampGrantSignIn(
   ctx: DbContext,
-  { grantId, authStrategy, connectionId, factor, authTime }: StampGrantSignInOpts,
+  { grantId, authStrategy, connectionId, proof, authTime }: StampGrantSignInOpts,
 ): Promise<void> {
-  const stamp = { authStrategy, connectionId, factor, authTime };
+  const stamp = { authStrategy, connectionId, proof, authTime };
   await ctx.var.db
     .update(oidcPayloadsTable)
     .set({ payload: sql`${oidcPayloadsTable.payload} || ${JSON.stringify(stamp)}::jsonb` })
@@ -142,11 +142,11 @@ export async function findGrantSignIn(ctx: DbContext, { grantId }: { grantId: st
     .select({
       authStrategy: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authStrategy'`,
       connectionId: sql<string | null>`${oidcPayloadsTable.payload} ->> 'connectionId'`,
-      factor: sql<string | null>`${oidcPayloadsTable.payload} ->> 'factor'`,
+      proof: sql<string | null>`${oidcPayloadsTable.payload} ->> 'proof'`,
       authTime: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authTime'`,
     })
     .from(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
     .limit(1);
-  return row ?? { authStrategy: null, connectionId: null, factor: null, authTime: null };
+  return row ?? { authStrategy: null, connectionId: null, proof: null, authTime: null };
 }

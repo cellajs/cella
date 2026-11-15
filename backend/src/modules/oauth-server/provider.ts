@@ -66,11 +66,11 @@ export type IssuedTokenClaims =
     }
   | { actor_kind: 'service'; tenant_id: string; key_id: string };
 
-/** The `amr` values of a grant's stamped sign-in; empty for a method or factor this app no longer knows. */
-const amrOfStamp = (authStrategy: string | null, factor: string | null) => {
+/** The `amr` values of a grant's stamped sign-in; empty for a method or proof this app no longer knows. */
+const amrOfStamp = (authStrategy: string | null, proof: string | null) => {
   const strategy = authStrategiesEnum.find((known) => known === authStrategy);
-  const proof = stepUpProofs.find((known) => known === factor) ?? null;
-  return strategy ? amrOf(strategy, proof) : [];
+  const stamp = stepUpProofs.find((known) => known === proof) ?? null;
+  return strategy ? amrOf(strategy, stamp) : [];
 };
 
 /** The code or refresh token a grant is used through at the token endpoint, as `findAccount` receives it. */
@@ -213,7 +213,7 @@ export async function createProvider(): Promise<Provider> {
           gid: token.grantId,
           auth_strategy: signIn.authStrategy,
           connection_id: signIn.connectionId,
-          amr: amrOfStamp(signIn.authStrategy, signIn.factor),
+          amr: amrOfStamp(signIn.authStrategy, signIn.proof),
           ...(signIn.authTime && { auth_time: Math.floor(Date.parse(signIn.authTime) / 1000) }),
         } satisfies IssuedTokenClaims;
       }

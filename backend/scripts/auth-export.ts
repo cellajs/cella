@@ -15,7 +15,7 @@ const { values } = parseArgs({ options: { out: { type: 'string' } } });
 const accounts = await exportAccounts({ var: { db } });
 const json = JSON.stringify(accounts, null, 2);
 
-if (values.out) writeFileSync(values.out, json);
+if (values.out) writeFileSync(values.out, json, { mode: 0o600 });
 else console.log(json);
 
 const credentials = accounts.flatMap((account) => account.webauthn_credentials ?? []);

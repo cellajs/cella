@@ -27,8 +27,9 @@ const redeemedLinkTargets = new Map<HeldLinkKind, RedeemedLinkTarget>();
 
 const unregistered = (kind: string) => new AppError(500, 'server_error', 'error', { meta: { kind } });
 
-/** Registers what opening a link of `kind` does. */
+/** Registers what opening a link of `kind` does; a kind registers once. */
 export const registerLinkHandler = (kind: LinkTokenKind, handler: LinkHandler): void => {
+  if (linkHandlers.has(kind)) throw new Error(`[auth] the link kind ${kind} has an opener already`);
   linkHandlers.set(kind, handler);
 };
 

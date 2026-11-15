@@ -183,7 +183,11 @@ export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, pur
   });
   if (!verified) throw verificationFailed();
 
-  const stored = await updatePasskeyCounter(dbCtx, { id: passkey.id, counter: authenticationInfo.newCounter });
+  const stored = await updatePasskeyCounter(dbCtx, {
+    id: passkey.id,
+    counter: authenticationInfo.newCounter,
+    userHandle: assertion.response.userHandle,
+  });
   if (!stored) throw verificationFailed();
 
   return passkey.userId;

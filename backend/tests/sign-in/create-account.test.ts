@@ -11,7 +11,7 @@ afterEach(async () => await clearDatabase());
 describe('createAccount', () => {
   it('takes the id another party named the person by, and the actor row carries the same id', async () => {
     const id = generateId();
-    const user = await createAccount({ var: { db } }, { newUser: { id, email: 'named@example.com', slug: 'named', name: 'Named' }, via: 'magic' });
+    const user = await createAccount({ var: { db } }, { newUser: { email: 'named@example.com', slug: 'named', name: 'Named' }, via: 'magic', id });
 
     expect(user.id).toBe(id);
     const [actor] = await db.select().from(actorsTable).where(eq(actorsTable.id, id));

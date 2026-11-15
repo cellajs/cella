@@ -75,7 +75,7 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
     }
 
     // A grant hands a client lasting access: it needs a second factor proven on this session.
-    const { factor, provenAt } = await requireStepUp({ var: { session, stepUpCookie: getAuthCookie(c, 'session-step-up') } }, 'factor');
+    const { proof, provenAt } = await requireStepUp({ var: { session, stepUpCookie: getAuthCookie(c, 'session-step-up') } }, 'factor');
 
     // The authorization server's session in this browser may name someone who consented here before: it ends, and
     // the resume signs this user in to a fresh one.
@@ -97,7 +97,7 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
     // The tokens issued under this grant carry how this session signed in and was proven.
     await stampGrantSignIn(
       { var: { db: baseDb } },
-      { grantId, authStrategy: session.authStrategy, connectionId: session.connectionId, factor, authTime: provenAt },
+      { grantId, authStrategy: session.authStrategy, connectionId: session.connectionId, proof, authTime: provenAt },
     );
 
     const redirectUrl = await provider.interactionResult(

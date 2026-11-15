@@ -1,7 +1,8 @@
 /**
  * Codemod: the auth module's new layout, in import paths.
  *
- * `rewrite` maps every `#/modules/auth/<old>` import of a .ts or .tsx file onto its new home (`core/`, `flows/`,
+ * `rewrite` maps every quoted `#/modules/auth/<old>` path of a .ts or .tsx file (imports, side-effect imports, `import()`,
+ * `vi.mock`) onto its new home (`core/`, `flows/`,
  * `account/`, or the module the file left for), and `~/modules/auth/legal/` and the account-page files of `~/modules/me/`
  * onto theirs. `inventory` lists those rewrites without writing. Neither mode changes an import that already points at
  * `#/modules/auth/core`; whether a file outside the module may import a deeper path is the typecheck's and the boundary
@@ -46,7 +47,8 @@ const RULES: readonly [from: string, to: string][] = [
   ...['magic', 'passkeys', 'totps', 'oauth', 'mfa', 'sso'].map((dir): [string, string] => [`#/modules/auth/${dir}/`, `#/modules/auth/flows/${dir}/`]),
 ];
 
-const IMPORT = /from '([^']+)'/g;
+/** Every single-quoted string: a rule matches only a module path it names, so other strings pass unchanged. */
+const QUOTED = /'([^']+)'/g;
 
 /** Recursively collect .ts and .tsx files under a root, skipping generated and vendored folders. */
 function collect(root: string, out: string[]): void {
@@ -69,13 +71,13 @@ function renamed(path: string): string | null {
   return rule ? `${path}'`.replace(rule[0], rule[1]).slice(0, -1) : null;
 }
 
-/** One file's text with its imports rewritten, each recorded as `old -> new`. */
+/** One file's text with its module paths rewritten, each recorded as `old -> new`. */
 function rewrite(source: string, changes: string[]): string {
-  return source.replace(IMPORT, (match, path: string) => {
+  return source.replace(QUOTED, (match, path: string) => {
     const next = renamed(path);
     if (!next || next === path) return match;
     changes.push(`${path} -> ${next}`);
-    return `from '${next}'`;
+    return `'${next}'`;
   });
 }
 

@@ -5,15 +5,19 @@ import { PgTable } from 'drizzle-orm/pg-core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { secretColumnPattern, secretColumns, secretLookingColumns } from '#/db/secret-columns';
 
-/** Every table in the schema, from the same files drizzle-kit reads (`backend/src/modules/** /*-db.ts`). */
-const modulesDir = path.resolve(import.meta.dirname, '../../../backend/src/modules');
-const dbFiles = readdirSync(modulesDir, { recursive: true, encoding: 'utf8' }).filter((file) => file.endsWith('-db.ts'));
+/** Every table in the schema, from the same folders drizzle-kit reads (`backend/src/{modules,middlewares}/** /*-db.ts`). */
+const srcDir = path.resolve(import.meta.dirname, '../../../backend/src');
+const dbFiles = ['modules', 'middlewares'].flatMap((dir) =>
+  readdirSync(path.join(srcDir, dir), { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('-db.ts'))
+    .map((file) => path.join(dir, file)),
+);
 
 const allTables = new Map<string, PgTable>();
 
 beforeAll(async () => {
   for (const file of dbFiles) {
-    const mod = (await import(path.join(modulesDir, file))) as Record<string, unknown>;
+    const mod = (await import(path.join(srcDir, file))) as Record<string, unknown>;
     for (const value of Object.values(mod)) {
       if (is(value, PgTable)) allTables.set(getTableName(value), value);
     }

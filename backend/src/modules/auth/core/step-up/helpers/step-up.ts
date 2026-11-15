@@ -1,3 +1,4 @@
+import type { StepUpProof } from '#/modules/auth/core/strategies';
 import { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -30,6 +31,8 @@ export interface StepUpState {
   methods: StepUpMethod[];
   /** The second factor that proves the session now, by a step-up or by its sign-in; null without one. */
   factor: Factor | null;
+  /** The stamp the stand rests on (a factor, an emailed code, an institution's asserted MFA); null when the sign-in itself stands, or nothing does. */
+  proof: StepUpProof | null;
   /** When the proof that stands was made (the step-up stamp, or the sign-in), an ISO timestamp; null while not stepped up. */
   provenAt: string | null;
 }

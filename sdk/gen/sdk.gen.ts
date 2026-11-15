@@ -998,7 +998,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
 /**
  * Sign a user out everywhere
  *
- * Ends every session of the user, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators, with a recent proof of presence on this session.
+ * Ends every session of the user and every app they consented to, for a person locked out or whose account is compromised. The rows stay revoked for their sessions list, every stream bound to them closes, and the person is mailed. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.
  *
  * **DELETE /auth/users/{userId}/sessions** ·· [revokeUserSessions](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/users/{userId}/sessions) ·· _auth · cella_
  *
@@ -1019,7 +1019,7 @@ export const revokeUserSessions = <ThrowOnError extends boolean = true>(
 /**
  * Remove a user's lost factor
  *
- * Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators, with a recent proof of presence on this session.
+ * Removes every passkey, or the authenticator app, of the user, for a person who lost them. When MFA is on and a required method is now gone, MFA turns off. The person is mailed about the removal, and about MFA when it turned off. For system administrators with a second factor proven on this session; not for their own account, nor for another system administrator.
  *
  * **DELETE /auth/users/{userId}/factors/{factor}** ·· [removeUserFactor](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/users/{userId}/factors/{factor}) ·· _auth · cella_
  *

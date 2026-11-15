@@ -1298,7 +1298,10 @@ export const zCreatePasskeyBody = z.object({
     type: z.enum(['public-key']),
   }),
   nameOnDevice: z.string().max(255),
-  userHandle: z.string().max(2048).optional(),
+  userHandle: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,86}$/)
+    .optional(),
 });
 
 /**
@@ -1350,7 +1353,10 @@ export const zSignInWithPasskeyBody = z.object({
       clientDataJSON: z.string().max(2048),
       authenticatorData: z.string().max(2048),
       signature: z.string().max(2048),
-      userHandle: z.string().max(2048).optional(),
+      userHandle: z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{1,86}$/)
+        .optional(),
     }),
     authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
     clientExtensionResults: z.unknown().optional(),
@@ -1496,7 +1502,10 @@ export const zStepUpBody = z.object({
         clientDataJSON: z.string().max(2048),
         authenticatorData: z.string().max(2048),
         signature: z.string().max(2048),
-        userHandle: z.string().max(2048).optional(),
+        userHandle: z
+          .string()
+          .regex(/^[A-Za-z0-9_-]{1,86}$/)
+          .optional(),
       }),
       authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
       clientExtensionResults: z.unknown().optional(),

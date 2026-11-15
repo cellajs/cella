@@ -1,4 +1,4 @@
-import { and, eq, getColumns, lt } from 'drizzle-orm';
+import { and, eq, getColumns, lt, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
 import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/flows/passkeys/passkeys-db';
@@ -59,16 +59,23 @@ export const insertPasskey = async (ctx: DbContext, { values }: { values: Insert
   return newPasskey;
 };
 
+interface UpdatePasskeyCounterOpts {
+  id: string;
+  counter: number;
+  /** The handle the authenticator holds for the credential, as its assertion reports it; fills a passkey registered before handles were stored. */
+  userHandle?: string;
+}
+
 /**
  * Stores the new signature counter, and the moment of this use, only while the stored counter is still lower (or both
  * are 0, for an authenticator without a counter); undefined otherwise, so of two copies of one authenticator answering
- * at once, one fails.
+ * at once, one fails. A handle the assertion reports is kept when none was stored.
  */
-export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: { id: string; counter: number }) => {
+export const updatePasskeyCounter = async (ctx: DbContext, { id, counter, userHandle }: UpdatePasskeyCounterOpts) => {
   const counterAdvances = counter > 0 ? lt(passkeysTable.counter, counter) : eq(passkeysTable.counter, 0);
   const [stored] = await ctx.var.db
     .update(passkeysTable)
-    .set({ counter, lastUsedAt: getIsoDate() })
+    .set({ counter, lastUsedAt: getIsoDate(), ...(userHandle && { userHandle: sql`coalesce(${passkeysTable.userHandle}, ${userHandle})` }) })
     .where(and(eq(passkeysTable.id, id), counterAdvances))
     .returning({ id: passkeysTable.id });
   return stored;
