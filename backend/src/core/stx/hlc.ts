@@ -1,4 +1,4 @@
-import { hashSourceId } from 'shared/utils/hash-source-id';
+import { formatHlc } from 'shared/utils/hlc';
 
 /**
  * `millis:counter:sourceHash`: millis of up to 16 digits, a counter of 4 to 10 and a 5-character hash. `BigInt` parses
@@ -64,7 +64,7 @@ function createHLC(now: number, sourceId: string): string {
   } else {
     lastCounter++;
   }
-  return `${lastTimestamp}:${String(lastCounter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
+  return formatHlc(lastTimestamp, lastCounter, sourceId);
 }
 
 /** Compares by millis, counter, then source hash. Throws when either timestamp is malformed. */

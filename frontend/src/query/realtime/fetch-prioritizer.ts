@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
+import { hashSpread } from 'shared/utils/spread-hash';
 import { isRateLimited } from '~/lib/api';
 import { msUntilBudget } from '~/lib/reported-budgets';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
@@ -67,16 +68,6 @@ const groupOf = ({ entityType, organizationId }: Omit<Scope, 'channelId'>) => `$
 function cursorOf({ entityType, organizationId, channelId }: Scope): number {
   const store = syncStore.getState();
   return channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
-}
-
-/** FNV-1a 32-bit gives the same client and scope a stable spread slot. */
-function hashSpread(key: string): number {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < key.length; i++) {
-    hash ^= key.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return hash >>> 0;
 }
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
