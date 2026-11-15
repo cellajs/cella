@@ -12,6 +12,7 @@ import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { connectSystemRoom } from '#/lib/system-room';
 import { otel } from '#/lib/tracing';
+import { closeChangeBundles } from '#/modules/entities/stream/change-bundles';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
 
@@ -20,7 +21,10 @@ otel.verifyConnection();
 
 let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-/** Stops what this process starts besides its own two listeners: the GeoIP refresh, and under `singleVM` the services it runs. */
+/**
+ * Stops what this process starts besides its own two listeners: the GeoIP refresh, the held change frames, and under
+ * `singleVM` the services it runs.
+ */
 const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -49,7 +53,7 @@ const main = async () => {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as SERVICE=migrate)`);
   }
 
-  stops.push(startGeoipRefresh());
+  stops.push(startGeoipRefresh(), closeChangeBundles);
   // Detached: the log says whether the system room takes messages, and a slow homeserver never holds the boot.
   void connectSystemRoom();
 

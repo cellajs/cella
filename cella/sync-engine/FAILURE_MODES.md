@@ -23,6 +23,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A readable row changes | A `change` frame names it and a range fetch patches the caches (`fetchRangeAndPatch`). The writing tab fetches nothing for its own write (`isOwnEcho`) | | |
 | A change commits while catchup reads | The stream opens before catchup and buffers its frames until catchup ends. A full buffer runs catchup once more (`runCatchupCycle`) | | |
 | Frames are missed: the stream was down, or the API restarted, lost a frame or closed a client that stopped reading | | Catchup fetches each view's sequence gap (`processStreamCatchup`) | |
+| The API stops or dies while it holds an audience's changes for an interval | A stop sends them before the process exits (`closeChangeBundles`) | A process that dies loses them with its streams, and catchup fetches each view's gap (`processStreamCatchup`) | |
 | A range fetch fails | Retried with a growing delay (`flushGroup`) | The cursor moves past the range and its lists get a refetch mark (`invalidateUndelivered`) | |
 | A range returns fewer rows than announced: a row changed again, became unreadable or left with its channel | | Refetch mark (`invalidateUndelivered`) | |
 | Unseen counts miss rows: a range that may hold creates was not delivered whole, or the stream reconnected | | An exact recount, asked for by the undelivered range (`invalidateUndelivered`) and at the end of a catchup (`processStreamCatchup`) | |
