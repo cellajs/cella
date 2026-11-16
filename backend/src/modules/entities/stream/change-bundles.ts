@@ -1,4 +1,5 @@
 import { type ActivityAction, actionToVerb, activityActions, hierarchy } from 'shared';
+import { readBudget, userReadShare } from 'shared/sync-pace';
 import { asRecord } from 'shared/utils/as-record';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -6,15 +7,15 @@ import { maxStreamChangeRows } from '#/modules/entities/stream/helpers';
 import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import { log } from '#/utils/logger';
 
-/**
- * The shortest time between two sends of one audience under sustained change. A viewed scope reads at each frame, and
- * `readLimiter` allows 1,000 reads per 300 s: one busy audience spends 70% of a lone viewer's budget at 430 ms, and all
- * of it at 300 ms.
- */
-export const changeBundleMs = 430;
-
 /** Sends an audience may start at once after a quiet spell: a person's few quick edits reach their readers without a wait. */
 export const changeBurst = 3;
+
+/**
+ * The shortest time between two sends of one audience under sustained change. A viewed scope reads at each frame and
+ * stays live until `userReadShare` of the read budget is left: one busy audience, its burst included, spends at most
+ * the rest of a lone viewer's budget.
+ */
+export const changeBundleMs = Math.ceil((readBudget.duration * 1000) / (readBudget.points * (1 - userReadShare) - changeBurst));
 
 /** Rows held across every audience past which everything held is sent: about 5 MB at about 1 KB a row. */
 const maxHeldRows = 5000;

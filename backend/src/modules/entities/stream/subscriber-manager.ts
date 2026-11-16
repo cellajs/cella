@@ -1,3 +1,4 @@
+import { backgroundTierMs } from 'shared/sync-pace';
 import { dbPoolPressure } from '#/db/db';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 
@@ -66,8 +67,8 @@ export const streamSubscriberManager = new StreamSubscriberManager();
 
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
 const spreadMsPerSubscriber = 20;
-/** The client's background tier waits at most this long, so a wider window would pile the slots past it at its end. */
-const maxSpreadWindowMs = 30_000;
+/** A wider window would pile every slot past the client's background tier onto the tier's last moment. */
+const maxSpreadWindowMs = backgroundTierMs.max;
 
 /**
  * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for every

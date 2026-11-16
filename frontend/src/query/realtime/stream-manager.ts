@@ -3,6 +3,7 @@ import { catchUpMyStream, type StreamChange, type StreamError } from 'sdk';
 import { zStreamChange, zStreamError, zStreamSignal } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
+import { streamPingMs } from 'shared/sync-pace';
 import type { z } from 'zod';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -45,8 +46,8 @@ const healthUrl = `${appConfig.backendUrl}/auth/health`;
 const changeBufferCap = 500;
 /** A catchup, request and processing together, that takes longer fails: three in a row open the circuit for its cooldown. */
 const catchupTimeoutMs = 60_000;
-/** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
-const streamSilenceMs = 75_000;
+/** No event for this long, pings included: the open stream is dead. */
+const streamSilenceMs = 2.5 * streamPingMs;
 /** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
 const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
 

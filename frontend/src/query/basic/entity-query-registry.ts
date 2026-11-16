@@ -1,4 +1,5 @@
 import { type EntityType, isProduct, type ProductEntityType, type SeqRange } from 'shared';
+import { pageSizeCap } from 'shared/sync-pace';
 import { asRecord } from 'shared/utils/as-record';
 import type { ItemData } from '~/query/basic/types';
 
@@ -12,8 +13,8 @@ export interface EntityQueryKeys {
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
-/** The backend's largest page, the size of a range fetch: a response of exactly this size may truncate the range. */
-export const syncChunkSize = 1000;
+/** The rows a range fetch asks for: an answer of exactly this many may truncate the range. */
+export const syncChunkSize = pageSizeCap;
 
 export type { SeqRange };
 
