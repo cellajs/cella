@@ -1,6 +1,7 @@
 import type { MouseEvent, RefObject } from 'react';
-import type { FieldValues } from 'react-hook-form';
+import { type FieldValues, get } from 'react-hook-form';
 import { BlockNote, type BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
+import { blocknoteHasContent } from '~/modules/common/blocknote/helpers/blocknote-has-content';
 import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -34,32 +35,38 @@ export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field: { onChange, value }, fieldState: { invalid } }) => (
-        <FormItem name={name} disabled={disabled} className={containerClassName}>
-          {label && (
-            <FormLabel required={required} onClick={focusEditor}>
-              {label}
-            </FormLabel>
-          )}
-          <BlockNote
-            commitOnEveryChange
-            autoFocus={autoFocus}
-            editable={!disabled}
-            defaultValue={value}
-            updateData={onChange}
-            ariaLabel={label}
-            contentApiRef={contentApiRef}
-            {...baseBlockNoteProps}
-            // The input frame, ringed while focus is inside; a form sets the side-menu gutter with `--bn-field-inset`
-            className={cn(
-              'bn-field focus-within-effect border-input bg-background rounded-md border text-sm',
-              invalid && 'border-destructive',
-              baseBlockNoteProps.className,
+      render={({ field: { onChange, value }, fieldState: { invalid }, formState: { defaultValues } }) => {
+        // An emptied document gives back the field's blank default and reads clean. A default with content empties to ''.
+        const blank = get(defaultValues, name);
+        const emptyValue = typeof blank === 'string' && blocknoteHasContent(blank) ? '' : blank;
+
+        return (
+          <FormItem name={name} disabled={disabled} className={containerClassName}>
+            {label && (
+              <FormLabel required={required} onClick={focusEditor}>
+                {label}
+              </FormLabel>
             )}
-          />
-          <FormMessage />
-        </FormItem>
-      )}
+            <BlockNote
+              commitOnEveryChange
+              autoFocus={autoFocus}
+              editable={!disabled}
+              defaultValue={value}
+              updateData={(strBlocks) => onChange(blocknoteHasContent(strBlocks) ? strBlocks : emptyValue)}
+              ariaLabel={label}
+              contentApiRef={contentApiRef}
+              {...baseBlockNoteProps}
+              // The input frame, ringed while focus is inside; a form sets the side-menu gutter with `--bn-field-inset`
+              className={cn(
+                'bn-field focus-within-effect border-input bg-background rounded-md border text-sm',
+                invalid && 'border-destructive',
+                baseBlockNoteProps.className,
+              )}
+            />
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }

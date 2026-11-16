@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-use admin newsletter send.
 import { type SendNewsletterData, type SendNewsletterResponse, sendNewsletter } from 'sdk';
@@ -65,17 +65,8 @@ export function CreateNewsletterForm({ organizationIds }: { organizationIds: str
     send({ body, query: { toSelf: testOnly } });
   };
 
-  const canSend = () => {
-    if (!form.isDirty) return false;
-    const { content, roles } = form.getValues();
-    return blocknoteHasContent(content) && roles.length > 0;
-  };
-
-  const hasInput = () => {
-    if (!form.isDirty) return false;
-    const { content, roles, subject } = form.getValues();
-    return roles.length > 0 || subject.length > 0 || blocknoteHasContent(content);
-  };
+  const [content, roles] = useWatch({ control: form.control, name: ['content', 'roles'] });
+  const canSend = blocknoteHasContent(content) && roles.length > 0;
 
   if (form.loading) return null;
 
@@ -125,10 +116,10 @@ export function CreateNewsletterForm({ organizationIds }: { organizationIds: str
         )}
 
         <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
-          <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
+          <SubmitButton disabled={!canSend} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
-          <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={setTestOnly} className="ml-4 size-4" />
             <Label htmlFor="testOnly">{t('c:test_email')}</Label>

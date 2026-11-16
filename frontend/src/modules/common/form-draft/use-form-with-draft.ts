@@ -28,16 +28,22 @@ const changedKeys = (values: FieldValues, defaults: FieldValues = {}) =>
   Object.keys(values).filter((key) => JSON.stringify(values[key]) !== JSON.stringify(defaults[key]));
 
 /**
- * Form state that keeps a draft: restores it on mount, saves edits debounced and at once when the form turns dirty, and
- * flushes on unmount and tab-hide. `formContainerId` (default: `formId`) names the element that gets `.unsaved-changes`.
- * A create form submits through `handleSubmit`; an update form through `handleChanges`, which hands it the changed fields.
+ * Form state that keeps a draft: restores it on mount and when one is written from outside while the form is clean, saves
+ * edits debounced and at once when the form turns dirty, and flushes on unmount and tab-hide. A create form submits
+ * through `handleSubmit`; an update form through `handleChanges`, which hands it the changed fields.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
   formId: string,
-  options?: { formOptions?: UseFormProps<TFieldValues, TContext>; formContainerId?: string },
+  options?: {
+    formOptions?: UseFormProps<TFieldValues, TContext>;
+    /** The element that gets `.unsaved-changes`; default `formId`. */
+    formContainerId?: string;
+    /** Runs once a draft written from outside has loaded: an editor that reads its value only at creation remounts here. */
+    onDraftLoad?: () => void;
+  },
 ): UseFormReturn<TFieldValues, TContext, TFieldValues> & { isDirty: boolean; loading: boolean; handleChanges: HandleChanges<TFieldValues> } {
-  const { formOptions, formContainerId } = options || {};
+  const { formOptions, formContainerId, onDraftLoad } = options || {};
 
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
@@ -114,17 +120,33 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     if (isDirty) saveDraft();
   }, [isDirty]);
 
+  const loadDraft = (draftData: Record<string, unknown>) => {
+    // The store keeps drafts untyped; their values were taken from this form's fields.
+    for (const [key, value] of Object.entries(draftData))
+      form.setValue(key as FieldPath<TFieldValues>, value as FieldPathValue<TFieldValues, FieldPath<TFieldValues>>, { shouldDirty: true });
+  };
+
   useEffect(() => {
     const draftData = getDraftForm(formId);
-
-    if (draftData) {
-      // The store keeps drafts untyped; these values are the ones saveDraft took from this form.
-      for (const [key, value] of Object.entries(draftData))
-        form.setValue(key as FieldPath<TFieldValues>, value as FieldPathValue<TFieldValues, FieldPath<TFieldValues>>, { shouldDirty: true });
-    }
-
+    if (draftData) loadDraft(draftData);
     setLoading(false);
   }, []);
+
+  // A draft that arrives while the form is clean came from outside: this hook writes one only while dirty.
+  const loadLateDraft = useEffectEvent((draftData: Record<string, unknown>) => {
+    if (isDirty) return;
+    loadDraft(draftData);
+    onDraftLoad?.();
+  });
+
+  useEffect(
+    () =>
+      useDraftStore.subscribe((state, prev) => {
+        const draftData = state.forms[formId];
+        if (draftData && draftData !== prev.forms[formId]) loadLateDraft(draftData);
+      }),
+    [formId],
+  );
 
   return {
     ...form,
