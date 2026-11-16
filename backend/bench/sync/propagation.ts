@@ -57,13 +57,13 @@ async function backgroundLoad(vu: PropagationVu, product: BenchProduct, perSecon
 /**
  * One writer edits one row at a time and one reader views its channel (reads what it hears at once). Each sample counts
  * from the writer's call to three independent observations: the writer's answer, the reader's change frame naming the
- * edit, and the reader's read returning the new value. The next edit waits until the reader holds the last one. With
- * `loadPerSecond`, background writers edit other rows meanwhile.
+ * edit, and the reader's read returning the new value. The next edit waits until the reader holds the last one, and
+ * `gapMs` longer. With `loadPerSecond`, background writers edit other rows meanwhile.
  */
 export async function runPropagation(
   vu: PropagationVu,
   product: BenchProduct,
-  { edits, warmups, loadPerSecond }: { edits: number; warmups: number; loadPerSecond: number },
+  { edits, warmups, loadPerSecond, gapMs }: { edits: number; warmups: number; loadPerSecond: number; gapMs: number },
 ): Promise<void> {
   const measured = vu.short ? 3 : edits;
   const skipped = vu.short ? 1 : warmups;
@@ -106,6 +106,8 @@ export async function runPropagation(
         vu.counter('sync.lost');
         continue;
       }
+      // At rest each probe is the first change after a quiet interval: the API sends that one at once.
+      if (gapMs > 0) await vu.think(vu.short ? Math.min(gapMs, 100) : gapMs);
       if (i < skipped) continue;
       vu.histogram('sync.accepted_ms', acceptedAt - current.sentAt);
       if (current.heardAt !== undefined) vu.histogram('sync.heard_ms', current.heardAt - current.sentAt);

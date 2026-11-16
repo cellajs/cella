@@ -32,6 +32,8 @@ const envSchema = z.object({
   RANGE_KEY: z.enum(['on', 'off']).default('on'),
   PROPAGATION_EDITS: z.coerce.number().int().positive().default(200),
   PROPAGATION_WARMUPS: z.coerce.number().int().min(0).default(5),
+  // Pause between the probes of `edit-propagation`: longer than the interval the API bundles an audience's changes in.
+  PROPAGATION_GAP_MS: z.coerce.number().int().min(0).default(500),
   // Background edits per second of `edit-propagation-busy`, across its writers.
   PROPAGATION_LOAD: z.coerce.number().positive().default(50),
   CATCHUP_CLIENTS: z.coerce.number().int().positive().default(100),
@@ -91,8 +93,13 @@ export const SYNC_RANGE_KEY = env.RANGE_KEY === 'on';
 /** Shape of `sse-fanout`: how long a subscriber stays connected, and whether it fetches in its spread slot or at once. */
 export const SSE_FANOUT = { holdMs: env.SSE_HOLD_MS, syncMode: env.SSE_SYNC_MODE };
 
-/** Shape of `edit-propagation` and its busy variant: measured edits after warmups, and the busy variant's background rate. */
-export const PROPAGATION = { edits: env.PROPAGATION_EDITS, warmups: env.PROPAGATION_WARMUPS, loadPerSecond: env.PROPAGATION_LOAD };
+/** Shape of `edit-propagation` and its busy variant: measured edits after warmups, the pause between probes at rest, and the busy variant's background rate. */
+export const PROPAGATION = {
+  edits: env.PROPAGATION_EDITS,
+  warmups: env.PROPAGATION_WARMUPS,
+  loadPerSecond: env.PROPAGATION_LOAD,
+  gapMs: env.PROPAGATION_GAP_MS,
+};
 
 /** Shape of `reconnect-catchup`: clients that drop their streams together, edits made while they are away, how they read the gap. */
 export const CATCHUP = { clients: env.CATCHUP_CLIENTS, edits: env.CATCHUP_EDITS, mode: env.CATCHUP_MODE };

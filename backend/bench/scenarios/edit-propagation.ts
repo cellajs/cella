@@ -3,7 +3,7 @@ import { attachmentProduct } from '../attachment-requests';
 import { PROPAGATION } from '../config';
 import { PROPAGATION_COUNTERS, PROPAGATION_HISTOGRAMS, runPropagation } from '../sync/propagation';
 
-/** `sync/propagation.ts` drives it; `PROPAGATION_EDITS` and `PROPAGATION_WARMUPS` in `config.ts` shape it. */
+/** `sync/propagation.ts` drives it; `PROPAGATION_EDITS`, `PROPAGATION_WARMUPS` and `PROPAGATION_GAP_MS` in `config.ts` shape it. */
 export default defineScenario({
   description: 'Edit propagation: how long until a reader viewing the channel holds an edit, with the stack at rest.',
   counters: PROPAGATION_COUNTERS,
