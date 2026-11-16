@@ -11,7 +11,7 @@ export type TriggerRef = RefObject<HTMLElement | null>;
 type Closable = { onClose?: (isCleanup?: boolean) => void };
 
 /** What Base UI passes to a store overlay's `onOpenChange`: store overlays have no Base UI trigger, so it only reports closes. */
-export type OverlayCloseDetails = { reason: string; event?: Event };
+export type OverlayCloseDetails = { reason: string; event?: Event; cancel: () => void; allowPropagation: () => void };
 
 /** Spreads `data` over `defaults`, skipping undefined values: an option passed as undefined keeps its default. */
 export function withDefaults<D extends object, T extends object>(defaults: D, data: T): D & T {
