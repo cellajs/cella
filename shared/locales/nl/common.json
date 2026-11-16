@@ -121,6 +121,7 @@
   "notifications.mention_email": "E-mail wanneer ik genoemd word",
   "notifications.push": "Pushmeldingen op dit apparaat",
   "notifications.text": "Kies welke e-mails je ontvangt. Je inbox vult zich altijd.",
+  "offline_edits_replaced.text": "Wijzigingen die je offline maakte, zijn vervangen door nieuwere wijzigingen van elders.",
   "offline_files": "Offline bestanden",
   "offline_files.all": "Alle bestanden",
   "offline_files.all.text": "Bewaart elk bestand met zijn voorbeeld, nieuwste eerst, tot de {{budget}} die een apparaat mag gebruiken vol is.",

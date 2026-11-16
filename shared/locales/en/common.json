@@ -603,6 +603,7 @@
   "oauth.text": "Sign in with an identity provider that you already use.",
   "offline": "Offline",
   "offline_cache_miss.text": "Resource unavailable while offline.",
+  "offline_edits_replaced.text": "Edits you made offline were replaced by newer edits made elsewhere.",
   "offline_files": "Offline files",
   "offline_files.all": "All files",
   "offline_files.all.text": "Keeps every file with its preview, newest first, until the {{budget}} a device may use is full.",

@@ -193,7 +193,7 @@ The attachment module sends a tab's writes one at a time and in order. An online
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field. The merge is deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
 - **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
-- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time.
+- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time. The client tells the person when a replay lost.
 - **No conflict response:** losing fields are skipped. A write that loses every field writes nothing, and the server returns the stored row.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 

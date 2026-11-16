@@ -2,6 +2,7 @@ import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack
 import { isRecord } from 'shared/utils/as-record';
 import type { ApiError } from '~/lib/api';
 import { productTypeOf } from '~/query/cache-migration';
+import { reportLostReplay } from '~/query/offline/lost-replays';
 import { mutationRetry, replayRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -48,6 +49,7 @@ export const queryClient: QueryClient =
   new QueryClient({
     mutationCache: new MutationCache({
       onError: (error, _variables, _onMutateResult, mutation) => handleError(error, mutation.meta),
+      onSuccess: (data, _variables, _onMutateResult, mutation) => reportLostReplay(mutation, data),
     }),
     queryCache: new QueryCache({
       onError: (error, query) => handleError(error, query.meta),
