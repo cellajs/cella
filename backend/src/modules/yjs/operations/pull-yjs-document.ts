@@ -55,11 +55,11 @@ export async function pullYjsDocumentOp(ctx: OrgContext, { entityType, entityId,
     const found = await findYjsDocument(txCtx, { doc });
     if (found) return found;
     // BlockNote loads on the first seed only.
-    const { descriptionToSeed } = await import('#/modules/yjs/helpers/description-update');
+    const { buildYjsSeed } = await import('shared/utils/yjs-seed');
     // An empty document in its place would replace the description at the next write: the document does not open.
     const toSeed = (description: string | null) => {
       try {
-        return descriptionToSeed(description);
+        return buildYjsSeed(doc, description);
       } catch (err) {
         log.warn('The description does not convert: its document does not open', { entityType, entityId: doc.entityId, err });
         throw new AppError(400, 'invalid_request', 'warn', { entityType, meta: { reason: 'The description does not convert' } });

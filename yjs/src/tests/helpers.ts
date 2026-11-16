@@ -6,6 +6,7 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { YjsDocKey, YjsDocScope } from 'shared';
 import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
+import type { YjsSeed } from 'shared/utils/yjs-seed';
 import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
@@ -239,12 +240,12 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       await wait('findDocument');
       return read(key(doc));
     }),
-    seedDocument: vi.fn(async (scope: YjsDocScope, toSeed: (description: string | null) => Uint8Array) => {
+    seedDocument: vi.fn(async (scope: YjsDocScope, toSeed: (description: string | null) => YjsSeed) => {
       await wait('seedDocument');
       const k = key(scope);
       if (gone.has(k)) return null;
       if (!bases.has(k)) {
-        bases.set(k, toSeed(descriptions.get(k) ?? null));
+        bases.set(k, toSeed(descriptions.get(k) ?? null).state);
         generations.set(k, `gen-${++seeds}`);
       }
       return read(k);

@@ -95,6 +95,14 @@ const tokenQuery = vi.fn();
 const tokens = new Map<string, string>();
 /** Held open, a load waits for it: a slow disk. */
 let loadGate: Promise<void> | null = null;
+/** The token watches the connections hold on the query cache. */
+const cacheWatches = new Set<(event: { type: string; query: { queryHash: string; state: unknown } }) => void>();
+/** A token query's new state, as the query cache reports it to each connection's watch. */
+const settleTokenQuery = (entityId: string, state: { data?: string; error: unknown }) => {
+  for (const watch of cacheWatches) watch({ type: 'updated', query: { queryHash: JSON.stringify(['attachment', entityId]), state } });
+};
+/** The mutation queue as the connection layer reads it: a create still waiting holds its rows. */
+let queuedMutations: { state: { status: string; variables: unknown } }[] = [];
 
 vi.mock('y-websocket', () => ({ WebsocketProvider: MockProvider }));
 vi.mock('y-protocols/awareness', () => ({ Awareness: MockAwareness }));
@@ -115,12 +123,25 @@ vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
     query: async (options: { params: { entityId: string } }) => {
-      const token = await tokenQuery(options);
-      tokens.set(options.params.entityId, token);
-      return token;
+      try {
+        const token = await tokenQuery(options);
+        tokens.set(options.params.entityId, token);
+        settleTokenQuery(options.params.entityId, { data: token, error: null });
+        return token;
+      } catch (error) {
+        settleTokenQuery(options.params.entityId, { error });
+        throw error;
+      }
     },
-    getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }), subscribe: () => () => {} }),
+    getQueryCache: () => ({
+      find: () => ({ getObserversCount: () => 1 }),
+      subscribe: (watch: Parameters<typeof cacheWatches.add>[0]) => {
+        cacheWatches.add(watch);
+        return () => cacheWatches.delete(watch);
+      },
+    }),
     getQueryState: ([, entityId]: string[]) => ({ data: tokens.get(entityId), error: null }),
+    getMutationCache: () => ({ getAll: () => queuedMutations }),
   },
 }));
 vi.mock('~/modules/common/blocknote/query', () => ({
@@ -129,6 +150,12 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
+/** Each description a connection wrote into the caches, by entity id. */
+const patchedDescriptions: [string, string][] = [];
+vi.mock('~/modules/common/blocknote/description-updater', () => ({
+  patchCollaborativeDescription: (_entityType: string, entity: { id: string }, description: string) =>
+    patchedDescriptions.push([entity.id, description]),
+}));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/modules/common/blocknote/yjs-store')>();
@@ -146,6 +173,8 @@ const { userStore } = await import('~/modules/user/user-store');
 const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
 const { createYDocWriter, flushYjsStore } = await import('~/modules/common/blocknote/yjs-store');
 const { findConnection, resumeConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
+const { buildYjsSeed } = await import('shared/utils/yjs-seed');
+const { yjsFragmentName } = await import('shared/utils/yjs-protocol');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -163,6 +192,7 @@ beforeEach(() => {
   db = bindLocalUserDb(owner);
   online = true;
   loadGate = null;
+  queuedMutations = [];
   tokenQuery.mockReset();
 });
 
@@ -483,5 +513,268 @@ describe('yjs connection with the store: boot resume', () => {
     const check = new Y.Doc();
     Y.applyUpdate(check, parked.state);
     expect(check.getText('t').toString()).toBe('never to be saved');
+  });
+});
+
+describe('yjs connection with the store: offline seed', () => {
+  const paragraph = (text: string) =>
+    JSON.stringify([{ id: 'p1', type: 'paragraph', props: {}, content: [{ type: 'text', text, styles: {} }], children: [] }]);
+  const seedOf = (entityId: string, description: string | null) => buildYjsSeed({ entityType: 'attachment', entityId }, description);
+  const fragmentText = (doc: Y.Doc) => doc.getXmlFragment(yjsFragmentName).toString();
+
+  /** Mounts an editor's connection as the host does offline: no token, and the cached description to seed from. */
+  async function mountOffline(entityId: string, description: string | null, opts: { token?: string } = {}) {
+    if (opts.token) tokens.set(entityId, opts.token);
+    let latest: Hook = null;
+    const Harness = () => {
+      latest = useYjsConnection({ entityType: 'attachment', entityId, ...scope, enabled: true, offlineSeed: { description } });
+      return null;
+    };
+    root = createRoot(document.createElement('div'));
+    await act(async () => root?.render(createElement(Harness)));
+    const provider = providers.at(-1)!;
+    return { entityId, provider, state: () => latest, conn: () => findConnection(`attachment:${entityId}`)! };
+  }
+  const goOnline = (value: boolean) =>
+    act(async () => {
+      online = value;
+      onlineListener?.(value);
+    });
+
+  it('opens a document never stored here from the cached description, as the server seeds it, and stores it only once edited', async () => {
+    online = false;
+    const description = paragraph('Written before going offline');
+    const { entityId, provider, state, conn } = await mountOffline('seed-1', description);
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+
+    const seed = seedOf(entityId, description);
+    expect(conn().generation).toBe(seed.generation);
+    expect(Buffer.from(Y.encodeStateVector(provider.doc)).equals(Buffer.from(Y.encodeStateVectorFromUpdate(seed.state)))).toBe(true);
+    expect(fragmentText(provider.doc)).toContain('Written before going offline');
+    expect(provider.connect).not.toHaveBeenCalled();
+    // The seed is no edit: nothing to save, nothing stored for a warm editor.
+    expect(state()?.unsynced).toBe(false);
+    await settled();
+    expect(await db.yDocs.get(keyPath(entityId))).toBeUndefined();
+
+    await editLocally(provider, 'typed offline');
+    await settled();
+    expect(state()?.unsynced).toBe(true);
+    expect(await db.yDocs.get(keyPath(entityId))).toMatchObject({ generation: seed.generation, unsynced: 1 });
+    expect((await rows(entityId)).map((row) => row.local)).toEqual([1]);
+  });
+
+  it('must not seed over a stored copy: the stored document and its generation open, offline too', async () => {
+    await seedStored('seed-2', 'stored text', { generation: 'gen-stored' });
+    online = false;
+    const { provider, state, conn } = await mountOffline('seed-2', paragraph('cached'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    expect(conn().generation).toBe('gen-stored');
+    expect(provider.doc.getText('t').toString()).toBe('stored text');
+    expect(fragmentText(provider.doc)).toBe('');
+  });
+
+  it('must not seed while the entity’s create waits in the queue: its token would answer 404, read as a deletion', async () => {
+    online = false;
+    queuedMutations = [{ state: { status: 'pending', variables: { data: [{ id: 'seed-3' }] } } }];
+    const { state, conn } = await mountOffline('seed-3', paragraph('created offline'));
+    await vi.waitFor(() => expect(conn().loaded).toBe(true));
+    await settled();
+    expect(state()?.ready).toBe(false);
+    expect(conn().generation).toBeNull();
+
+    // A create already sent does not hold it back.
+    queuedMutations = [{ state: { status: 'success', variables: { data: [{ id: 'seed-4' }] } } }];
+    const sent = await mountOffline('seed-4', paragraph('created online'));
+    await vi.waitFor(() => expect(sent.state()?.ready).toBe(true));
+  });
+
+  it('must not seed online, nor a description the server could not seed either', async () => {
+    const atHand = await mountOffline('seed-5', paragraph('online'), { token: 'token-v1' });
+    await vi.waitFor(() => expect(atHand.conn().loaded).toBe(true));
+    await settled();
+    expect(atHand.state()?.ready).toBe(false);
+    expect(atHand.conn().generation).toBeNull();
+    await act(async () => root?.unmount());
+
+    online = false;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const unconvertible = JSON.stringify([{ id: 'x', type: 'no-such-block', props: {}, content: [], children: [] }]);
+    const refused = await mountOffline('seed-6', unconvertible);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledOnce());
+    expect(refused.state()?.ready).toBe(false);
+    expect(refused.conn().offlineSeed).toBeUndefined();
+    warn.mockRestore();
+  });
+
+  it('seeds a connection opened online once the network goes before its first sync', async () => {
+    const description = paragraph('opened online');
+    const { entityId, state, conn } = await mountOffline('seed-7', description, { token: 'token-v1' });
+    await vi.waitFor(() => expect(conn().loaded).toBe(true));
+    await settled();
+    expect(state()?.ready).toBe(false);
+    await goOnline(false);
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    expect(conn().generation).toBe(seedOf(entityId, description).generation);
+  });
+
+  it('merges with the server’s seed of the same description: no rebuild, and the offline edits are saved by the handshake', async () => {
+    online = false;
+    const description = paragraph('shared start');
+    const { entityId, provider, state } = await mountOffline('seed-8', description);
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await editLocally(provider, 'offline edit');
+    await settled();
+    expect(state()?.unsynced).toBe(true);
+
+    await goOnline(true);
+    await handshake(provider, seedOf(entityId, description).generation);
+    await relaySaved(provider);
+    expect(state()?.rebuilds).toBe(0);
+    expect(state()?.unsynced).toBe(false);
+    expect(provider.doc.getText('t').toString()).toBe('offline edit');
+    expect(await db.unsaveableYDocs.count()).toBe(0);
+    await settled();
+    expect((await rows(entityId)).filter((row) => row.local === 1)).toEqual([]);
+  });
+
+  it('parks the offline edits when the server holds another generation, and never seeds that document offline again', async () => {
+    online = false;
+    const { entityId, provider, state, conn } = await mountOffline('seed-9', paragraph('stale cache'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await editLocally(provider, 'offline edit');
+    await settled();
+
+    await goOnline(true);
+    await announce(provider, 'gen-server');
+    await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(1));
+    expect((await db.unsaveableYDocs.toArray())[0]).toMatchObject({ entityId, reason: 'replaced' });
+    expect(state()?.rebuilds).toBe(1);
+    expect(conn().offlineSeed).toBeUndefined();
+
+    await goOnline(false);
+    expect(state()?.ready).toBe(false);
+    expect(conn().generation).toBeNull();
+  });
+
+  it('must not seed ahead of a slow stored copy: the seed waits for the load, which then opens the stored edits', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await seedStored('seed-10', 'stored edit', { unsynced: true });
+    let open = () => {};
+    loadGate = new Promise((resolve) => {
+      open = resolve;
+    });
+    online = false;
+    const { provider, state, conn } = await mountOffline('seed-10', paragraph('cached'));
+    await act(async () => vi.advanceTimersByTimeAsync(5_000));
+    expect(state()?.ready).toBe(false);
+
+    await act(async () => open());
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    expect(conn().generation).toBe('gen-1');
+    expect(provider.doc.getText('t').toString()).toBe('stored edit');
+    expect(await db.unsaveableYDocs.count()).toBe(0);
+  });
+
+  it('greets other tabs under the seed’s generation, so two tabs that seeded the same description exchange their edits', async () => {
+    const channel = new BroadcastChannel(`test:${owner}:ydoc-tabs`);
+    const received: { kind: string; generation: string }[] = [];
+    channel.onmessage = (event) => received.push(event.data);
+    online = false;
+    const description = paragraph('two tabs');
+    const { entityId, provider, state } = await mountOffline('seed-11', description);
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    const { generation } = seedOf(entityId, description);
+    await vi.waitFor(() => expect(received).toContainEqual(expect.objectContaining({ kind: 'hello', generation })));
+
+    // The other tab seeded the same bytes: its edit applies on top of this tab's seed.
+    const peer = new Y.Doc();
+    Y.applyUpdate(peer, seedOf(entityId, description).state);
+    const before = Y.encodeStateVector(peer);
+    peer.getText('t').insert(0, 'from the other tab');
+    channel.postMessage({ kind: 'update', key: `attachment:${entityId}`, generation, update: Y.encodeStateAsUpdate(peer, before), rowId: null });
+    await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('from the other tab'));
+    expect(provider.doc.getXmlFragment(yjsFragmentName).length).toBe(1);
+    channel.close();
+  });
+
+  it('fetches its own token once online when its editor is gone, and connects with it', async () => {
+    online = false;
+    const { entityId, provider, state } = await mountOffline('seed-12', paragraph('closed editor'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await editLocally(provider, 'offline edit');
+    await settled();
+    // The editor closed: no token query observes the document, and its unsaved edits keep the connection.
+    await act(async () => root?.unmount());
+    root = undefined;
+    tokenQuery.mockResolvedValue('token-v1');
+
+    await goOnline(true);
+    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalledOnce());
+    expect(tokenQuery).toHaveBeenCalledWith({ params: expect.objectContaining({ entityId }) });
+    expect(provider.params.token).toBe('token-v1');
+  });
+
+  it('ends a connection that never held a token once the token route refuses it: its offline edits are parked', async () => {
+    online = false;
+    const { entityId, provider, state } = await mountOffline('seed-13', paragraph('deleted meanwhile'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await editLocally(provider, 'offline edit');
+    await settled();
+    tokenQuery.mockRejectedValue({ status: 404 });
+
+    await goOnline(true);
+    await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(1));
+    expect((await db.unsaveableYDocs.toArray())[0]).toMatchObject({ entityId, reason: 'deleted' });
+    expect(state()?.stopped).toBe(true);
+    expect(state()?.deleted).toBe(true);
+    expect(provider.connect).not.toHaveBeenCalled();
+  });
+
+  it('must not ask for a token while the entity’s create waits: it is not seeded, so it waits for its editor', async () => {
+    online = false;
+    queuedMutations = [{ state: { status: 'pending', variables: { data: [{ id: 'seed-14' }] } } }];
+    const { conn } = await mountOffline('seed-14', paragraph('created offline'));
+    await vi.waitFor(() => expect(conn().loaded).toBe(true));
+    await goOnline(true);
+    await settled();
+    expect(tokenQuery).not.toHaveBeenCalled();
+  });
+
+  it('puts the server’s description back in the caches once it parked the edits they showed, its editor gone too', async () => {
+    online = false;
+    patchedDescriptions.length = 0;
+    const { entityId, provider, state } = await mountOffline('seed-15', paragraph('stale cache'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await editLocally(provider, 'offline edit');
+    await settled();
+    await act(async () => root?.unmount());
+    root = undefined;
+
+    await goOnline(true);
+    await announce(provider, 'gen-server');
+    await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(1));
+    const rebuilt = providers.at(-1)!;
+    expect(rebuilt).not.toBe(provider);
+    expect(patchedDescriptions).toEqual([]);
+
+    // The server's document arrives with the rebuilt connection's handshake.
+    Y.applyUpdate(rebuilt.doc, seedOf(entityId, paragraph('server text')).state, rebuilt);
+    await handshake(rebuilt, 'gen-server');
+    expect(patchedDescriptions).toHaveLength(1);
+    expect(patchedDescriptions[0][0]).toBe(entityId);
+    expect(patchedDescriptions[0][1]).toContain('server text');
+  });
+
+  it('must not touch the caches when a rebuild parked nothing: they never showed an edit', async () => {
+    online = false;
+    patchedDescriptions.length = 0;
+    const { provider, state } = await mountOffline('seed-16', paragraph('clean'));
+    await vi.waitFor(() => expect(state()?.ready).toBe(true));
+    await goOnline(true);
+    await announce(provider, 'gen-server');
+    await handshake(providers.at(-1)!, 'gen-server');
+    expect(await db.unsaveableYDocs.count()).toBe(0);
+    expect(patchedDescriptions).toEqual([]);
   });
 });

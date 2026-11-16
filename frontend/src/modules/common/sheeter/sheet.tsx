@@ -56,7 +56,13 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
   };
 
   const handleOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
-    if (eventDetails.reason === 'escape-key' && (!closeSheetOnEsc || isHoverContentOpen())) return;
+    if (eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
+    if (eventDetails.reason === 'escape-key' && !closeSheetOnEsc) {
+      // The page's own Escape handler closes this sheet: Base UI would otherwise prevent and stop the key before it gets there
+      eventDetails.cancel();
+      eventDetails.allowPropagation();
+      return;
+    }
 
     if (eventDetails.reason === 'outside-press') {
       // An outside press on a dropdown or dialog must not close the sheet, the uploader's dialog included: it isn't in the dialoger

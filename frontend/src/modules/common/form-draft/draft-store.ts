@@ -8,6 +8,8 @@ interface DraftStoreState {
   forms: Record<string, Record<string, unknown>>;
 
   setForm(key: string, values: Record<string, unknown>): void;
+  /** Stores values written back from outside the form, such as a refused create's, unless a draft was written since. */
+  restoreForm(key: string, values: Record<string, unknown>): void;
   /** Removes the form's draft. */
   resetForm(key: string): void;
   getForm(key: string): Record<string, unknown> | undefined;
@@ -26,6 +28,10 @@ export const useDraftStore = create<DraftStoreState>()(
         setForm: (key, values) =>
           set((state) => {
             state.forms[key] = values;
+          }),
+        restoreForm: (key, values) =>
+          set((state) => {
+            state.forms[key] ??= values;
           }),
         resetForm: (key: string) =>
           set((state) => {

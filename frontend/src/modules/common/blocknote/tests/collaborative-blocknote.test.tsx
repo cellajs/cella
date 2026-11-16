@@ -36,6 +36,7 @@ const connectionDefaults = {
 const connection = { awareness: {}, fragment: {}, ...connectionDefaults };
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => (editSessionId ? { ...connection } : null),
+  useCreatePending: () => false,
 }));
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: 'token', refused: false, deleted: false }) }));
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => true }));

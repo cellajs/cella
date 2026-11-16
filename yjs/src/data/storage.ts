@@ -1,5 +1,6 @@
 import { and, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
 import type { YjsDocKey, YjsDocScope } from 'shared';
+import type { YjsSeed } from 'shared/utils/yjs-seed';
 import type { Tx } from '#/db/create-connection';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
@@ -31,11 +32,11 @@ export async function findDocument(doc: YjsDocKey): Promise<YjsDocumentRead | nu
 
 /**
  * Seeds the document from its entity in one transaction, as the backend's `seedYjsDocument` does for the API's pull:
- * the description read FOR SHARE, converted by `toSeed`, the document row inserted under a new generation unless one
- * exists, and the document read back. Concurrent seeds, on this relay, another or the API, converge on the first. Null,
+ * the description read FOR SHARE, converted by `toSeed`, the document row inserted under the seed's generation unless
+ * one exists, and the document read back. Concurrent seeds, on this relay, another or the API, converge on the first. Null,
  * with nothing inserted, when the entity has no live row: it was deleted, and its document must not come back.
  */
-export async function seedDocument(scope: YjsDocScope, toSeed: (description: string | null) => Uint8Array): Promise<YjsDocumentRead | null> {
+export async function seedDocument(scope: YjsDocScope, toSeed: (description: string | null) => YjsSeed): Promise<YjsDocumentRead | null> {
   return asSystem(scope.tenantId, (tx) => seedYjsDocument({ var: { db: tx } }, { doc: scope, toSeed }));
 }
 

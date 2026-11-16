@@ -1,15 +1,18 @@
 import { hashKey, onlineManager, type QueryState } from '@tanstack/react-query';
 import i18n from 'i18next';
 import * as decoding from 'lib0/decoding';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { appConfig, type YjsDocScope } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
 import { yjsCloseCodes, yjsFragmentName, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
+import { buildYjsSeed, descriptionOf, type YjsSeed } from 'shared/utils/yjs-seed';
 import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import type { TKey } from '~/lib/i18n-locales';
+import { patchCollaborativeDescription } from '~/modules/common/blocknote/description-updater';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
@@ -27,6 +30,7 @@ import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore } from '~/modules/user/user-store';
 import { getLocalUserDb, type UnsaveableReason, type YDocKey, type YDocRecord } from '~/query/local-user-db';
+import { createRowsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 
 const gracePeriodMs = 30_000;
@@ -122,8 +126,12 @@ export interface YjsConnection {
   refCount: number;
   /** True once the connection ended for good: it never reconnects, and outlives its last editor only while it holds unsaved edits. */
   stopped: boolean;
-  /** The document's generation: its stored record's, or the first the relay or the HTTP routes announced; another one later is a reseed. */
+  /** The document's generation: its stored record's, its offline seed's, or the first the relay or the HTTP routes announced; another one later is a reseed. */
   generation: string | null;
+  /** The cached description the document is seeded from while offline with no stored copy; undefined never seeds. */
+  offlineSeed?: { description: string | null };
+  /** Set by a rebuild that parked edits the caches show: once the fresh document synced, its description replaces them. */
+  restoreDescription?: boolean;
   /** True from a local edit until the server saved every edit; the connection outlives its grace period, and an end parks the edits. */
   unsynced: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
@@ -212,6 +220,10 @@ function setReady(conn: YjsConnection) {
   if (conn.ready) return;
   conn.ready = true;
   patchSession(conn, { ready: true });
+  if (!conn.restoreDescription) return;
+  conn.restoreDescription = false;
+  restoreDescription(conn);
+  reapConnection(conn);
 }
 
 function setTransport(conn: YjsConnection, transport: YjsTransport) {
@@ -387,7 +399,10 @@ function startConnection(conn: YjsConnection) {
  * than storeLoadTimeoutMs connects without it, and is applied when it arrives (applyStored).
  */
 function loadConnection(conn: YjsConnection) {
-  if (!getLocalUserDb()) return startConnection(conn);
+  if (!getLocalUserDb()) {
+    startConnection(conn);
+    return seedOffline(conn);
+  }
   const { provider, scope } = conn;
   const current = () => connections.get(scope.entityId) === conn && conn.provider === provider;
   const timer = setTimeout(() => {
@@ -404,7 +419,51 @@ function loadConnection(conn: YjsConnection) {
       const late = conn.loaded;
       if (stored) applyStored(conn, stored);
       if (!late) startConnection(conn);
+      // Only once the load answered: a seed ahead of a slow stored copy would park that copy's edits as another generation.
+      if (!stored) seedOffline(conn);
     });
+}
+
+/** The origin of an offline seed: no edit of this tab, kept by the first snapshot once the document is stored. */
+const seedOrigin = Symbol('yjs-offline-seed');
+
+/** True while a create of the entity waits in the mutation queue: until it lands, the token route answers 404, read as a deletion. */
+export const createPending = (entityId: string) =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .some(({ state }) => state.status === 'pending' && createRowsOf(state.variables).some((row) => row.id === entityId));
+
+/** {@link createPending}, live: an editor asks for no token until the create landed. */
+export function useCreatePending(entityId: string) {
+  return useSyncExternalStore(
+    (onChange) => queryClient.getMutationCache().subscribe(onChange),
+    () => createPending(entityId),
+  );
+}
+
+/**
+ * Opens the document offline from the cached description when no stored copy exists. The server seeds the same
+ * description into the same bytes and generation (`buildYjsSeed`), and the next handshake merges both as one history.
+ * A server document of another generation rebuilds, and the edits made here are parked. Never for an entity whose
+ * create waits in the queue, nor for a description the server cannot seed either.
+ */
+function seedOffline(conn: YjsConnection) {
+  const { offlineSeed } = conn;
+  if (!offlineSeed || !conn.loaded || conn.ready || conn.generation !== null || conn.stopped) return;
+  if (onlineManager.isOnline() || createPending(conn.scope.entityId)) return;
+  let seed: YjsSeed;
+  try {
+    seed = buildYjsSeed(conn.scope, offlineSeed.description);
+  } catch (error) {
+    conn.offlineSeed = undefined;
+    return console.warn(`[yjs] No offline seed for ${conn.scope.entityId}: the description does not convert`, error);
+  }
+  Y.applyUpdate(conn.yDoc, seed.state, seedOrigin);
+  conn.generation = seed.generation;
+  setReady(conn);
+  startStoring(conn, conn.unsynced);
+  postTabMessage({ kind: 'hello', key: yDocKeyString(conn.scope), generation: seed.generation, vector: Y.encodeStateVector(conn.yDoc) });
 }
 
 /** Parks or drops a stored document by its record alone, with no writer started; the empty document is the notice's fallback only. */
@@ -528,8 +587,12 @@ function bindProvider(conn: YjsConnection) {
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(conn);
+      seedOffline(conn);
     } else if (conn.loaded && !conn.stopped && token) {
       provider.connect();
+    } else if (conn.ready && !conn.stopped && !createPending(scope.entityId)) {
+      // Opened offline, from a seed or storage, it never held a token, and its editor may be gone: it fetches its own, which the token watch takes.
+      queryClient.query(yjsTokenQueryOptions(scope)).catch(() => {});
     }
   });
 
@@ -548,9 +611,9 @@ function bindProvider(conn: YjsConnection) {
       return;
     }
     // Withdrawn, also while offline: the token route refused it, 404 for a deleted entity as the relay's 4410 says, 403
-    // for lost edit rights. The token cannot come back.
+    // for lost edit rights. The token cannot come back, and a connection that never held one, opened offline, ends too.
     const refusal = yjsTokenRefusal(state.error);
-    if (!refusal || !token) return;
+    if (!refusal || conn.stopped) return;
     token = null;
     endUnsaveable(conn, refusal);
   });
@@ -636,7 +699,7 @@ function bindProvider(conn: YjsConnection) {
   // An update with the provider as origin (the relay, an HTTP pull, another tab) is no edit of this tab. A local edit
   // stays unsynced until the server saved it, and settles a microtask later, once y-websocket's own listener sent it.
   yDoc.on('update', (update: Uint8Array, origin: unknown) => {
-    if (origin === storageOrigin) return;
+    if (origin === storageOrigin || origin === seedOrigin) return;
     if (origin === provider) {
       conn.writer?.append(update, false, remoteSource.kind === 'tab' ? { rowId: remoteSource.rowId } : undefined);
       return;
@@ -693,25 +756,42 @@ function unbindProvider(conn: YjsConnection) {
 
 /**
  * Replaces the connection's document with a fresh one that syncs the reseeded server state; the editor remounts on its
- * fragment once it synced (`ready` is false meanwhile). Edits the relay never saved cannot reach it and are parked, and
- * a connection that only waited for them to be saved goes.
+ * fragment once it synced (`ready` is false meanwhile). Edits the relay never saved cannot reach it and are parked. The
+ * caches showed them, and no row of the server will correct them: the fresh document's description replaces them once
+ * synced, also with no editor left, and a connection no editor holds then goes.
  */
 function rebuildConnection(conn: YjsConnection) {
-  const { stored } = conn;
+  const { stored, unsynced } = conn;
   parkUnsaveable(conn, conn.scope, 'replaced');
   setUnsynced(conn, false);
-  if (conn.refCount === 0 && !conn.graceTimer) destroyConnection(conn);
-  else {
-    unbindProvider(conn);
-    // A stored document stays stored: the fresh one is written whole once it synced, over the dropped generation's.
-    Object.assign(conn, openDoc(conn.scope), { generation: null, wsDeadline: undefined, stored });
-    patchSession(conn, { ready: false, transport: 'none', rebuilds: sessionOf(conn).rebuilds + 1 });
-    bindProvider(conn);
-    startConnection(conn);
+  if (conn.refCount === 0 && !conn.graceTimer && !unsynced) return destroyConnection(conn);
+  unbindProvider(conn);
+  // A stored document stays stored: the fresh one is written whole once it synced, over the dropped generation's.
+  // The server holds another generation: a seed of the same description would only be rebuilt again.
+  Object.assign(conn, openDoc(conn.scope), { generation: null, wsDeadline: undefined, stored, offlineSeed: undefined, restoreDescription: unsynced });
+  patchSession(conn, { ready: false, transport: 'none', rebuilds: sessionOf(conn).rebuilds + 1 });
+  bindProvider(conn);
+  startConnection(conn);
+  // Held only to put the description back: it goes after a grace period, synced or not.
+  if (conn.refCount === 0 && !conn.graceTimer) {
+    conn.graceTimer = setTimeout(() => {
+      conn.graceTimer = undefined;
+      reapConnection(conn);
+    }, gracePeriodMs);
   }
 }
 
-function acquireConnection(scope: YjsDocScope): YjsConnection {
+/** Puts the synced document's description in the caches, over parked edits they showed. */
+function restoreDescription(conn: YjsConnection) {
+  const { entityType, entityId, organizationId } = conn.scope;
+  try {
+    patchCollaborativeDescription(entityType, { id: entityId, organizationId, description: null }, descriptionOf(conn.yDoc));
+  } catch (error) {
+    console.warn(`[yjs] The description of ${entityId} was not put back after its edits were parked`, error);
+  }
+}
+
+function acquireConnection(scope: YjsDocScope, offlineSeed?: YjsConnection['offlineSeed']): YjsConnection {
   const existing = connections.get(scope.entityId);
 
   if (existing) {
@@ -720,10 +800,15 @@ function acquireConnection(scope: YjsDocScope): YjsConnection {
       existing.graceTimer = undefined;
     }
     existing.refCount++;
+    // A background connection, opened to upload, holds no description: an editor that brings one may seed it offline.
+    if (!existing.offlineSeed && offlineSeed && !existing.ready && existing.generation === null) {
+      existing.offlineSeed = offlineSeed;
+      seedOffline(existing);
+    }
     return existing;
   }
 
-  const conn: YjsConnection = { scope, ...openDoc(scope), refCount: 1, stopped: false, generation: null, unsynced: false };
+  const conn: YjsConnection = { scope, ...openDoc(scope), refCount: 1, stopped: false, generation: null, unsynced: false, offlineSeed };
   bindProvider(conn);
   connections.set(scope.entityId, conn);
   loadConnection(conn);
@@ -829,20 +914,29 @@ function releaseConnection(entityId: string) {
  * The entity's ref-counted connection, kept for a grace period after the last consumer unmounts (a remount reuses it)
  * and while it holds unsaved edits; null while `enabled` is false. It reports the {@link SessionSync}.
  */
-export function useYjsConnection({ enabled, entityType, entityId, tenantId, organizationId }: YjsDocScope & { enabled: boolean }) {
+export function useYjsConnection({
+  enabled,
+  offlineSeed,
+  entityType,
+  entityId,
+  tenantId,
+  organizationId,
+}: YjsDocScope & { enabled: boolean; offlineSeed?: YjsConnection['offlineSeed'] }) {
   const [conn, setConn] = useState<YjsConnection | null>(() => (enabled ? (connections.get(entityId) ?? null) : null));
+  // Read as the connection opens: a later description is one the document wrote itself.
+  const offlineSeedRef = useLatestRef(offlineSeed);
 
   useEffect(() => {
     if (!enabled) {
       setConn(null);
       return;
     }
-    setConn(acquireConnection({ entityType, entityId, tenantId, organizationId }));
+    setConn(acquireConnection({ entityType, entityId, tenantId, organizationId }, offlineSeedRef.current));
     return () => {
       releaseConnection(entityId);
       setConn(null);
     };
-  }, [enabled, entityType, entityId, tenantId, organizationId]);
+  }, [enabled, entityType, entityId, tenantId, organizationId, offlineSeedRef]);
 
   const session = useYjsSyncStore((state) => state.sessions[entityId]) ?? initialSession;
 

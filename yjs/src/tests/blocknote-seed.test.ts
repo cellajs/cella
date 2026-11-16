@@ -1,9 +1,14 @@
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import { describe, expect, it } from 'vitest';
-import { descriptionToSeed, stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
+import { stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
+
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 /** Blocks → the seed the relay stores → blocks, as materialization reads them. */
 const roundTrip = (blocks: unknown[]) =>
-  JSON.parse(stateToBlocksJson(descriptionToSeed(JSON.stringify(blocks)))) as {
+  JSON.parse(stateToBlocksJson(seedState(JSON.stringify(blocks)))) as {
     type: string;
     props: Record<string, unknown>;
     content: unknown;
@@ -88,10 +93,10 @@ describe('seed and materialize round-trip', () => {
 
   it('seeds one empty paragraph for no description, and throws on one that is not a blocks array', () => {
     for (const description of [null, '', '[]']) {
-      expect(JSON.parse(stateToBlocksJson(descriptionToSeed(description))).map((b: { type: string }) => b.type)).toEqual(['paragraph']);
+      expect(JSON.parse(stateToBlocksJson(seedState(description))).map((b: { type: string }) => b.type)).toEqual(['paragraph']);
     }
     // The relay logs these and seeds the empty document.
-    expect(() => descriptionToSeed('not json')).toThrow();
-    expect(() => descriptionToSeed('{"not":"an array"}')).toThrow();
+    expect(() => seedState('not json')).toThrow();
+    expect(() => seedState('{"not":"an array"}')).toThrow();
   });
 });

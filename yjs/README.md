@@ -70,7 +70,9 @@ Nobody moves or removes someone else's cursors, since a socket announces only it
 
 ### Seed
 
-The first time a description is opened for editing, over the socket or over HTTP, the server seeds its document from the stored description under a new seed generation. Concurrent first connections end up with the same seed. Opening an untouched description never updates the entity, since seeding writes nothing to the log.
+The first time a description is opened for editing, over the socket or over HTTP, the server seeds its document from the stored description. Concurrent first connections end up with the same seed. Opening an untouched description never updates the entity, since seeding writes nothing to the log.
+
+A seed and its generation follow from the entity and its description alone. An offline client that never stored the document builds the same seed from its cached description and lets the user edit. The next handshake merges both as one history. When the server's document started from another description, the generations differ: the offline edits are kept apart and offered to copy.
 
 A description the server cannot convert, such as one with a block type it does not know, is not opened: an empty document in its place would replace the description at the next save.
 
@@ -119,7 +121,7 @@ A sweep, at boot and periodically, saves the logs no collab session holds: those
 | What happens | Outcome |
 | --- | --- |
 | A client loses its connection | It keeps editing and reconnects with backoff. A document with unconfirmed edits is never thrown away, and the tab asks before it unloads while no per-user database keeps them. |
-| The client is offline | A document the user opened for editing is stored per user and stays editable, its unconfirmed edits included. One never opened is read-only. |
+| The client is offline | A document the user opened for editing is stored per user and stays editable, its unconfirmed edits included. One never stored here opens from the cached description, unless the entity's create is still queued. |
 | The relay is out of reach, the API is not | The editor continues [over HTTP](#over-http) and switches back once the socket works again. |
 | The relay ends a session for good | The client stops reconnecting and the editor turns read-only with a notice. Edits that can no longer be saved are offered to copy before they are discarded. |
 | The backend is unavailable, or refuses the write | The log stays, and materialization is retried at the next window, when the collab session ends and then by every sweep. |

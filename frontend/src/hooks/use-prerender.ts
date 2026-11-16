@@ -1,4 +1,4 @@
-import { type CSSProperties, useRef } from 'react';
+import { type CSSProperties, useEffect, useRef } from 'react';
 import { create } from 'zustand';
 
 interface PrerenderState {
@@ -31,18 +31,13 @@ export function usePrerenderSection(scope: string, sectionId: string, isOpen: bo
 /** Debounces the mount by 150ms so quick scrolling does not churn the DOM. */
 export function usePrerenderTrigger(scope: string) {
   const setTarget = usePrerenderStore((state) => state.setTarget);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const prerender = (sectionId: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setTarget(scope, sectionId), 150);
   };
 
-  const clear = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = null;
-    setTarget(scope, undefined);
-  };
-
-  return { prerender, clear };
+  return { prerender };
 }

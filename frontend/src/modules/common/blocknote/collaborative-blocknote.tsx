@@ -7,7 +7,7 @@ import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import { UploadHostProvider } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { useYjsToken } from '~/modules/common/blocknote/hooks/use-yjs-token';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
-import { useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
+import { useCreatePending, useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import { isYjsEnabled, useStoredYDoc } from '~/modules/common/blocknote/yjs-store';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { getRandomColor } from '~/utils/random-color';
@@ -26,7 +26,8 @@ type CollaborativeBlockNoteProps = PassthroughProps &
     waitingFallback?: ReactNode;
   };
 
-type CollaborativeHostProps = PassthroughProps & Pick<CollaborativeBlockNoteProps, 'updateData'> & { scope: YjsDocScope; staticView: ReactNode };
+type CollaborativeHostProps = PassthroughProps &
+  Pick<CollaborativeBlockNoteProps, 'updateData' | 'description'> & { scope: YjsDocScope; staticView: ReactNode };
 
 /** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
 const connectingNoticeMs = 1_000;
@@ -74,6 +75,7 @@ export function CollaborativeBlockNote({
     <CollaborativeHost
       {...blockNoteProps}
       scope={{ entityType, entityId, tenantId, organizationId }}
+      description={description}
       updateData={updateData}
       staticView={staticView}
     />
@@ -97,7 +99,7 @@ export function CollaborativeBlockNote({
 }
 
 /** The live editor once the connection is ready, the static with a status until then and once the document cannot be edited. */
-function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }: CollaborativeHostProps) {
+function CollaborativeHost({ scope, description, updateData, staticView, ...blockNoteProps }: CollaborativeHostProps) {
   const { entityId } = scope;
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -105,13 +107,20 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   // Stable random color for cursor labels
   const [userColor] = useState(getRandomColor);
 
-  const { token, denied: tokenDenied, deleted: tokenDeleted } = useYjsToken({ ...scope, enabled: isOnline });
+  // A token asked for before the entity's create landed would answer 404, read as a deletion.
+  const createWaiting = useCreatePending(entityId);
+  const { token, denied: tokenDenied, deleted: tokenDeleted } = useYjsToken({ ...scope, enabled: isOnline && !createWaiting });
 
   // A stored document opens without a token, offline too: its editor mounts from storage.
   const stored = useStoredYDoc(scope)?.stored ?? false;
   // Once ready, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
   const [joinedId, setJoinedId] = useState<string | null>(null);
-  const connection = useYjsConnection({ ...scope, enabled: !!token || stored || joinedId === entityId });
+  // Offline, a document never stored here opens from the description, which the server seeds alike.
+  const connection = useYjsConnection({
+    ...scope,
+    enabled: !!token || stored || joinedId === entityId || !isOnline,
+    offlineSeed: { description },
+  });
   if (connection?.ready && joinedId !== entityId) setJoinedId(entityId);
 
   const stopped = connection?.stopped ?? false;
