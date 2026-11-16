@@ -68,7 +68,7 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
-      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId } = ctx;
+      const { pulumi, scaleway, naming, region, backupDays, sizing, privateNetworkId } = ctx;
 
       const infraConfig = new pulumi.Config('infra');
 
@@ -102,7 +102,11 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
           volumeType: 'sbs_5k',
           volumeSizeInGb: dbVolumeSize,
           isHaCluster: false,
-          disableBackup: !isProduction,
+          // Every environment keeps the same daily backups, stored in another region so a region loss spares them.
+          disableBackup: false,
+          backupScheduleFrequency: 24,
+          backupScheduleRetention: backupDays,
+          backupSameRegion: false,
           privateNetwork: { pnId: privateNetworkId, enableIpam: true },
           settings: replicationSettings,
           // `loadBalancer` is also an always-present output, so leaving it out keeps an existing endpoint: closing deletes it over the RDB API

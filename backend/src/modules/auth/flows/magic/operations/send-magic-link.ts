@@ -1,9 +1,11 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { maxLength } from '#/db/utils/constraints';
 import { mailer } from '#/lib/mailer';
 import { isRecognizedBrowser } from '#/modules/auth/core/devices/operations/recognized-browser';
 import { findFollowedInvitation } from '#/modules/auth/core/invitations/operations/accept-followed-invitation';
@@ -12,7 +14,6 @@ import { issueToken, rememberMagicLinkRequest } from '#/modules/auth/core/tokens
 import { tokenLinkUrl } from '#/modules/auth/core/tokens/token-policies';
 import { findAddressGovernance } from '#/modules/connections/connections-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
-import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { magicLinkEmail, ssoRequiredEmail } from '../../../../../../emails';
 
@@ -33,7 +34,7 @@ interface SendMagicLinkOpts {
 interface MagicLinkRequest extends Pick<SendMagicLinkOpts, 'assertedThrough'> {
   /** Normalized. */
   email: string;
-  redirectPath: string | null;
+  redirectPath?: string;
   /** A browser that signed in to the account, or the recovery route: it may learn that the account exists. */
   knowsAccount: boolean;
   /** The link's token id, drawn before the token is stored: this browser's marker names it. */
@@ -57,7 +58,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirectPath, 
   const request: MagicLinkRequest = {
     email: normalizedEmail,
     // Validated here and re-validated at invoke; invalid input degrades to the default path.
-    redirectPath: frontendRedirectPath(redirectPath),
+    redirectPath: safeRedirectPath(redirectPath, maxLength.field),
     assertedThrough,
     knowsAccount: !!assertedThrough || (await isRecognizedBrowser(ctx, normalizedEmail)),
     tokenId: generateId(),

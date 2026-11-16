@@ -60,8 +60,8 @@ export class ResetIrrecoverableError extends Error {
  *
  * Everything before the delete is a guard; everything after is recovery-critical. Nothing mutates
  * before `confirm` returns true, and the delete never runs until its only undo, a backup, reports
- * `ready`. Staging has `disableBackup: true`, so no automatic backup exists to fall back
- * on. Failures after the delete rethrow as {@link ResetIrrecoverableError} carrying the backup id.
+ * `ready`. The latest automatic backup can be a day old, so the reset takes its own. Failures
+ * after the delete rethrow as {@link ResetIrrecoverableError} carrying the backup id.
  */
 export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<ResetDatabaseResult> {
   const instance = await plan.findInstance(plan.instanceName);

@@ -1,9 +1,9 @@
 import { signOut } from 'sdk';
 import { appConfig } from 'shared';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import { ApiError } from '~/lib/api';
 import { boundaryOf } from '~/lib/boundary';
 import { settleOrReport } from '~/lib/tracing';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import type { MeUser } from '~/modules/me/types';
 import { disablePushSubscription } from '~/modules/notification/use-push-subscription';

@@ -27,6 +27,7 @@ function engineFields(config: EngineConfig): EngineConfig {
     },
     services: Object.fromEntries(Object.entries(config.services).map(([slug, { enabled, publicUrl }]) => [slug, { enabled, publicUrl }])),
     mapStyleUrls: config.mapStyleUrls,
+    retention: { backupDays: config.retention.backupDays },
   };
 }
 

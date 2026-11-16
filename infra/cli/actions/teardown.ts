@@ -130,6 +130,7 @@ async function finalDump(context: InfraContext, owner: OwnerKey): Promise<string
     instanceName: naming.resource('postgres'),
     databaseName: naming.dbName,
     environment: context.environment,
+    backupDays: context.appConfig.retention.backupDays,
     bucket: naming.bootDiagBucket,
     s3: await makeS3Client(region, state.accessKey, state.secretKey, { streamed: true }),
     log: (message) => console.info(`  ${message}`),

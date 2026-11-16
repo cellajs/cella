@@ -4,10 +4,10 @@ import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GetAuthHealthResponse } from 'sdk';
 import { appConfig, type FederationKey, isStrategyEnabled } from 'shared';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import type { AuthAlternative } from '~/modules/auth/auth-alternatives';
 import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { IconComponent } from '~/modules/common/icons/types';
 
 /** The backend route that starts an SSO round trip: pinned to an institution's connection, or at a federation at large. */

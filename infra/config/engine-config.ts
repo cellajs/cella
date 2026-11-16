@@ -33,6 +33,7 @@ export interface EngineConfig {
   services: Record<string, EngineServiceEndpoint>;
   /** Contact-map style URLs per color mode; the frontend CSP allows their origins. */
   mapStyleUrls?: Record<string, string>;
+  retention: { backupDays: number };
 }
 
 /**

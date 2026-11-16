@@ -111,7 +111,7 @@ What a delete or an archive does depends on the entity:
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. The jobs worker's nightly `retention` job calls `apply_retention()` over the admin connection, which removes rows past their period. Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. The jobs worker's nightly `retention` job calls `apply_retention()` over the admin connection, which removes rows past their period. Database backups, taken daily, and earlier versions of stored files go after the backup period. They serve disasters only.
 
 ## Contracts
 

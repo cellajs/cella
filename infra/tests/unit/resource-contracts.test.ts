@@ -33,5 +33,4 @@ describe('resource options', () => {
   // Known gaps, listed here so a reviewer sees them in `pnpm test` output.
   it.todo('publishes a DMARC TXT record (p=quarantine or p=reject)');
   it.todo('production instance runs as HA cluster (isHaCluster: true)');
-  it.todo('production instance has automated backups (disableBackup: false)');
 });

@@ -51,7 +51,7 @@ export function routedHostIssue(appConfig: Cfg): string | undefined {
   );
 }
 
-/** Pure, Pulumi-free derivations from appConfig: account-global resource names plus zone, tags, `hasDomain` and `isProduction`. Per-service endpoints live in `lib/services.ts`. */
+/** Pure, Pulumi-free derivations from appConfig: account-global resource names plus zone, tags and `hasDomain`. Per-service endpoints live in `lib/services.ts`. */
 export function deriveInfra(appConfig: Cfg) {
   const prefix = appConfig.slug;
   const region = appConfig.s3.region;
@@ -83,7 +83,6 @@ export function deriveInfra(appConfig: Cfg) {
     tags: [`env=${appConfig.mode}`, `app=${appConfig.slug}`, 'managed-by=pulumi'],
     // The same tags as a key-value map, for resources whose API takes a record.
     tagsAsMap: { env: appConfig.mode, app: appConfig.slug, 'managed-by': 'pulumi' } as Record<string, string>,
-    isProduction: appConfig.mode === 'production',
     hasDomain: hasDomain(appConfig),
   };
 }

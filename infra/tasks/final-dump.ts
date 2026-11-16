@@ -7,9 +7,6 @@ import { type RdbClient, waitForBackupReady } from '../lib/scaleway/scaleway-rdb
 /** The prefix of the boot-diag bucket that holds the final dumps, one folder per environment. */
 export const DUMPS_PREFIX = 'dumps/';
 
-/** Days Scaleway keeps the backup a dump is exported from, as a second copy. */
-const BACKUP_RETENTION_DAYS = 7;
-
 /** A backup and an export of a large database take longer than a reset's backup. */
 const DUMP_TIMEOUT_MS = 30 * 60_000;
 
@@ -18,6 +15,8 @@ export interface FinalDumpOptions {
   instanceName: string;
   databaseName: string;
   environment: string;
+  /** Days Scaleway keeps the backup the dump is exported from, as a second copy: `appConfig.retention.backupDays`. */
+  backupDays: number;
   /** The boot-diag bucket, which every environment has and a teardown keeps, written with a client whose key its policy admits. */
   bucket: string;
   s3: S3Client;
@@ -43,7 +42,7 @@ export async function writeFinalDump(opts: FinalDumpOptions): Promise<string | u
     instanceId: instance.id,
     databaseName: opts.databaseName,
     name: `${opts.databaseName}-final-${stamp.replaceAll(':', '-')}`,
-    expiresAt: new Date(now.getTime() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString(),
+    expiresAt: new Date(now.getTime() + opts.backupDays * 86_400_000).toISOString(),
   });
   await waitForBackupReady(opts.rdb, created.id, { timeoutMs: DUMP_TIMEOUT_MS });
   opts.log('Exporting the backup...');

@@ -19,7 +19,7 @@ beforeAll(async () => {
     naming: { resource: (name) => `app-${name}`, dbName: 'app' },
     region: 'nl-ams',
     zone: 'nl-ams-1',
-    isProduction: true,
+    backupDays: 7,
     sizing: { dbNodeType: 'DB-DEV-S', dbVolumeSize: 10 },
     privateNetworkId: 'pn-id',
   };

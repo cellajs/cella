@@ -41,7 +41,8 @@ export interface ProvisionContext {
   naming: { resource: (name: string) => string; dbName: string };
   region: string;
   zone: string;
-  isProduction: boolean;
+  /** Days a managed store keeps its automatic backups: `appConfig.retention.backupDays`. */
+  backupDays: number;
   /** The database size from `config/general.config.ts`, resolved for the environment, which managed stores consume. */
   sizing: { dbNodeType: string; dbVolumeSize: number };
   /** The deployment's private network, where managed stores expose endpoints. */

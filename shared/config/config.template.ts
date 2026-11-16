@@ -122,7 +122,7 @@ export const config = {
   /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
   demo: { perDay: 500 },
 
-  /** How long data lives, in days: the nightly `retention` job and the tenant sweep apply it, the privacy page states it. */
+  /** How long data lives, in days: the nightly `retention` job and the tenant sweep apply it, infra applies `backupDays`, the privacy page states it. */
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
@@ -139,6 +139,7 @@ export const config = {
     declinedInvitationHoldDays: 30,
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
+    backupDays: 7,
   },
 
   // System roles
