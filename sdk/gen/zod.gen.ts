@@ -1310,6 +1310,7 @@ export const zCreatePasskeyBody = z.object({
   nameOnDevice: z.string().max(255),
   userHandle: z
     .string()
+    .max(86)
     .regex(/^[A-Za-z0-9_-]{1,86}$/)
     .optional(),
 });
@@ -1365,6 +1366,7 @@ export const zSignInWithPasskeyBody = z.object({
       signature: z.string().max(2048),
       userHandle: z
         .string()
+        .max(86)
         .regex(/^[A-Za-z0-9_-]{1,86}$/)
         .optional(),
     }),
@@ -1514,6 +1516,7 @@ export const zStepUpBody = z.object({
         signature: z.string().max(2048),
         userHandle: z
           .string()
+          .max(86)
           .regex(/^[A-Za-z0-9_-]{1,86}$/)
           .optional(),
       }),

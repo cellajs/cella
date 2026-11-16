@@ -7,7 +7,10 @@ import { maxLength } from '#/schemas';
 const webAuthnBlobLength = 16_384;
 const base64urlString = z.string().max(maxLength.url);
 /** A WebAuthn user handle: up to 64 bytes, as base64url without padding. */
-const userHandleString = z.string().regex(/^[A-Za-z0-9_-]{1,86}$/);
+const userHandleString = z
+  .string()
+  .max(86)
+  .regex(/^[A-Za-z0-9_-]{1,86}$/);
 
 const passkeyKindSchema = z.enum(['authentication', 'mfa']);
 const challengeKindSchema = z.enum([...passkeyKindSchema.options, 'registration']);
