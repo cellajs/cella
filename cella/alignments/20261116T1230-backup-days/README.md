@@ -30,7 +30,7 @@ No script: manual.
 ## Manual steps
 
 1. Add `backupDays: 7` to `retention` in `shared/config/config.default.ts`: longer keeps a disaster copy longer, and also every removed row and file.
-2. An app store plugin that read `ctx.isProduction` reads `ctx.backupDays`, or derives the mode from its own config.
+2. An app store plugin that read `ctx.isProduction` reads `ctx.backupDays`, or `appConfig.mode === 'production'`: `pulumi-context` no longer exports `isProduction`.
 3. An app that set its own `noncurrentDays` or backup schedule in `infra/` reads `appConfig.retention.backupDays` there.
 4. Run **Review & apply changes** for each environment.
 

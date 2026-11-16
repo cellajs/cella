@@ -67,14 +67,6 @@ describe('deriveInfra', () => {
     expect(d.hasDomain).toBe(false);
   });
 
-  it('mode flags reflect appConfig.mode', () => {
-    const dev = deriveInfra(fakeConfig({ mode: 'development' }));
-    expect(dev.isProduction).toBe(false);
-
-    const prod = deriveInfra(fakeConfig({ mode: 'production' }));
-    expect(prod.isProduction).toBe(true);
-  });
-
   it('tags always include env/app/managed-by', () => {
     const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }));
     expect(d.tags).toEqual(['env=staging', 'app=cella', 'managed-by=pulumi']);
