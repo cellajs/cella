@@ -179,7 +179,7 @@ export async function dispatchChange(event: StreamProductEvent): Promise<void> {
       const change = buildStreamChange(event, rows);
       return [...Map.groupBy(readers, (reader) => readClassOfSubscriber(reader, event)).entries()].map(([readClass, group]) => {
         const data = readClass === null ? change : { ...change, rangeKey: issueRangeKey({ ...scopeOf(event), readClass }, group.length) };
-        return sendToSubscribers(group, { event: 'change', data }, 'Failed to dispatch stream change');
+        return sendToSubscribers(group, { event: 'change', data });
       });
     }),
   );
@@ -212,7 +212,7 @@ export async function dispatchMoveOuts(event: StreamProductEvent): Promise<void>
     [...Map.groupBy(losers, ({ rows }) => rows.join()).values()].map((readers) => {
       const rows = readers[0].rows.map((at) => moved[at]);
       const recipients = readers.map(({ subscriber }) => subscriber);
-      return sendToSubscribers(recipients, { event: 'change', data: buildMoveOut(event, rows) }, 'Failed to dispatch move-out');
+      return sendToSubscribers(recipients, { event: 'change', data: buildMoveOut(event, rows) });
     }),
   );
 }

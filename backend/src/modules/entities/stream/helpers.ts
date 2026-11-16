@@ -42,10 +42,9 @@ async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi,
 
 /**
  * Writes one frame to each subscriber, serialized once and side by side: a client that stopped reading holds up no
- * other and is closed at `maxPendingStreamBytes`, and a write that fails is logged for its subscriber alone.
- * @param failure - The log message of a failed write.
+ * other and is closed at `maxPendingStreamBytes`. The stream swallows a write that fails, and is closed then.
  */
-export async function sendToSubscribers(subscribers: readonly StreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
+export async function sendToSubscribers(subscribers: readonly StreamSubscriber[], frame: StreamFrame): Promise<void> {
   const data = JSON.stringify(frame.data);
   const bytes = Buffer.byteLength(data);
   await Promise.all(
@@ -56,8 +55,6 @@ export async function sendToSubscribers(subscribers: readonly StreamSubscriber[]
       try {
         await stream.writeSSE({ event: frame.event, data });
         log.debug('SSE frame sent', { subscriberId, event: frame.event });
-      } catch (error) {
-        log.error(failure, { subscriberId, event: frame.event, error });
       } finally {
         pendingStreamBytes.set(stream, (pendingStreamBytes.get(stream) ?? 0) - bytes);
       }
