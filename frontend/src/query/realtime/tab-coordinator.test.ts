@@ -171,7 +171,7 @@ describe('what the leader tells the other tabs', () => {
     for (const message of posted) receive(message);
     expect(received).toEqual([]);
 
-    // Another tab leads now: this one follows, runs no catchup and has no stream, and hears what was posted.
+    // Another tab leads now: this one follows, has no stream, and hears what was posted.
     releaseTabLeadership();
     await tick();
     fakeLocks.request(leaderLockName, () => new Promise<void>(() => {}));

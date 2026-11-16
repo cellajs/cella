@@ -106,7 +106,7 @@ async function fetchAndProcessCatchup(signal: AbortSignal): Promise<void> {
   const response = await catchUpMyStream({ body: { views: views.length > 0 ? views : undefined }, signal });
   signal.throwIfAborted();
   // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing
-  // fails. A tab that gave leadership up while the request was in flight (a public page) posts nothing.
+  // fails. A follower's own catchup, or a tab that gave leadership up while the request was in flight (a public page), posts nothing.
   if (isLeader()) postToFollowers({ type: 'catchup', response });
   await processStreamCatchup(response);
 }
@@ -193,8 +193,9 @@ class StreamManager {
     if (!isLeader()) {
       console.debug(`[${streamName}] Not leader, listening to broadcasts only`);
       this.store.getState().setState('live');
-      // A follower runs no catchup of its own: writes that wait for the first one are released now.
+      // Writes that wait for a catchup go ahead at once. The follower's own catchup reads what it missed before it listened.
       resolveInitialCatchupGate();
+      void this.boundedCatchup().catch((error) => console.warn(`[${streamName}] A follower's catchup failed:`, error));
       return;
     }
 

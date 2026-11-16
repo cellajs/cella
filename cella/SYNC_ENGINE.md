@@ -245,7 +245,7 @@ Each failure's answer per level, with the function that gives it, is in [Failure
 
 ### Multiple tabs
 
-One leader tab holds the stream, runs catchup and forwards what it receives to the other tabs. Each tab applies it against its own cursors and cache. Another tab takes over when the leader closes.
+One leader tab holds the stream, runs catchup and forwards what it receives to the other tabs. Each tab applies it against its own cursors and cache. A tab that joins as a follower runs one catchup of its own. Another tab takes over when the leader closes.
 
 ### Yjs
 
