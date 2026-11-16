@@ -1,10 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { appConfig, seenBatchMax } from 'shared';
 import { validIdSchema } from '#/schemas';
 
-/** Batch of accumulated seen product IDs, posted by the client's seen store on a timer and on page unload. */
+/** Batch of accumulated seen product IDs, posted by the client's seen store on a timer and when the tab hides. */
 export const seenBatchBodySchema = z.object({
-  productIds: validIdSchema.array().min(1).max(500).describe('Product IDs the user has viewed since last batch'),
+  productIds: validIdSchema.array().min(1).max(seenBatchMax).describe('Product IDs the user has viewed since last batch'),
   productType: z.enum(appConfig.seenTrackedProductTypes).describe('Product type for all IDs in this batch'),
 });
 

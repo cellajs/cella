@@ -163,7 +163,7 @@ A list the engine cannot patch whole, such as an overflowed or a filtered list, 
 
 ### Unseen tracking
 
-Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. The client counts only types every channel member may read. The config refuses to track the others.
+Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. A tab sends the rows it saw at intervals and when it hides. A tab killed while in view loses the marks since its last send, and the next recount counts those rows as unseen again. The client counts only types every channel member may read. The config refuses to track the others.
 
 ## Embeddings
 

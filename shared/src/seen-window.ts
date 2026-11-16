@@ -6,3 +6,6 @@ import { appConfig } from './config-builder/app-config.ts';
  * divergent window miscounts badges with no error anywhere.
  */
 export const seenWindowMs = appConfig.retention.activityDays * 24 * 60 * 60 * 1000;
+
+/** The most product ids one seen request carries: the route refuses more, and the client sends a longer batch in parts. */
+export const seenBatchMax = 500;
