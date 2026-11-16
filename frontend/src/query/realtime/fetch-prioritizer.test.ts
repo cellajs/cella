@@ -93,6 +93,16 @@ describe('fetch-prioritizer', () => {
     expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
   });
 
+  it('reads a channel without a cursor of its own from the organization cursor catchup moved', async () => {
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
+
+    enqueueRange({ ...base, channelId: 'project-9', afterSeq: 2, untilSeq: 7 });
+    await flushAllNow();
+
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 5, untilSeq: 7 });
+    expect(syncStore.getState().getChannelSeq('org-1', 'project-9', 'attachment')).toBe(7);
+  });
+
   it.each(['overflow', 'error'] as const)(
     'ends a range whose fetch reports %s in one list invalidation, one unseen recount and a cursor moved on, and publishes no rows',
     async (status) => {

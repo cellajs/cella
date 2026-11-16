@@ -59,6 +59,10 @@ interface SyncStoreState {
   noteHeardSignal: (organizationId: string, type: string, version: number) => void;
   setChannelSeq: (organizationId: string, channelId: string, entityType: ProductEntityType, seq: number) => void;
   getChannelSeq: (organizationId: string, channelId: string, entityType: ProductEntityType) => number;
+  /** How far a scope has read: the further of the organization's cursor, which catchup moves, and its channel's, which the stream's ranges move. */
+  getScopeSeq: (organizationId: string, channelId: string | null | undefined, entityType: ProductEntityType) => number;
+  /** Moves the cursor of a scope's channel, or the organization's for a scope without one. */
+  setScopeSeq: (organizationId: string, channelId: string | null | undefined, entityType: ProductEntityType, seq: number) => void;
   /** Build the view-driven catchup body: one org view per (org, entityType). */
   getCatchupViews: (entityTypes: readonly ProductEntityType[]) => CatchupView[];
   reset: () => void;
@@ -170,6 +174,10 @@ export const syncStore = createStore<SyncStoreState>()(
           channelId === organizationId
             ? (get().orgs[organizationId]?.seqs[entityType] ?? 0)
             : (get().orgs[organizationId]?.channels[channelId]?.[entityType] ?? 0),
+        getScopeSeq: (organizationId, channelId, entityType) =>
+          Math.max(get().getOrgSeq(organizationId, entityType), get().getChannelSeq(organizationId, channelId ?? organizationId, entityType)),
+        setScopeSeq: (organizationId, channelId, entityType, seq) =>
+          get().setChannelSeq(organizationId, channelId ?? organizationId, entityType, seq),
 
         getCatchupViews: (entityTypes) => {
           const views: CatchupView[] = [];

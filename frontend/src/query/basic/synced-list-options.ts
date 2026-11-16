@@ -72,13 +72,6 @@ const union = (a: PendingRows, b: PendingRows): PendingRows => ({
   deleted: new Set([...a.deleted, ...b.deleted]),
 });
 
-/** The organization's cursor or the home channel's, whichever is further: catchup moves the first, the stream's ranges of the channel the second. */
-function scopeCursor(entityType: ProductEntityType, { organizationId, channelId }: SyncedListScope): number {
-  const store = syncStore.getState();
-  const orgSeq = store.getOrgSeq(organizationId, entityType);
-  return channelId ? Math.max(orgSeq, store.getChannelSeq(organizationId, channelId, entityType)) : orgSeq;
-}
-
 /** A live range row belongs to a home list when it is homed there, and to a list that spans homes always. */
 function fitsList(entityType: ProductEntityType, queryKey: QueryKey, row: ItemData): boolean {
   const { deletedAt } = asRecord(row);
@@ -117,7 +110,7 @@ async function readOverlapped(
   const { organizationId, tenantId, channelId } = scope;
   const ranged = new Map<string, ItemData>();
   let fromSeq = afterSeq;
-  let untilSeq = scopeCursor(entityType, scope);
+  let untilSeq = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
 
   while (rangeFetch && fromSeq < untilSeq && isCurrent()) {
     const query = { afterSeq: fromSeq, untilSeq, maxPageSize: syncChunkSize };
@@ -133,7 +126,7 @@ async function readOverlapped(
     if (full && newest === fromSeq) throw new OverlappedChangesError('A full range chunk carried no positions');
     fromSeq = full ? newest : untilSeq;
     // Changes may have arrived while the range was read.
-    if (fromSeq >= untilSeq) untilSeq = scopeCursor(entityType, scope);
+    if (fromSeq >= untilSeq) untilSeq = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
   }
   return [...ranged.values()];
 }
@@ -168,9 +161,9 @@ async function readAgainstDeltas(
   const isCurrent = () => newestReads.get(queryHash) === token && client.getQueryCache().get(queryHash)?.state.fetchStatus === 'fetching';
 
   try {
-    const startCursor = scopeCursor(entityType, scope);
+    const startCursor = syncStore.getState().getScopeSeq(scope.organizationId, scope.channelId, entityType);
     const data = await read();
-    if (scopeCursor(entityType, scope) <= startCursor) return data;
+    if (syncStore.getState().getScopeSeq(scope.organizationId, scope.channelId, entityType) <= startCursor) return data;
     // The chase holds the scope's range reads: of those, only one already in flight moves the cursor on, and a second pass reads to it.
     const chase = () => readOverlapped(entityType, scope, startCursor, isCurrent);
     const rows = await excludingRangeReads(entityType, scope.organizationId, chase).catch((error) => {
