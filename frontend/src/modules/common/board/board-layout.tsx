@@ -146,7 +146,6 @@ export function BoardLayout({
     });
   }, [reorderable, onPanelReorder]);
 
-  // `idbKvStorage` debounces writes, so per-frame onLayoutChanged calls need no throttling here
   const panelGroup = (
     <ResizablePanelGroup
       id={`panels-${boardId}`}

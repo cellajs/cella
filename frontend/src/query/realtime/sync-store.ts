@@ -199,7 +199,8 @@ export const syncStore = createStore<SyncStoreState>()(
         version: 1,
         migrate: () => ({}),
         skipHydration: true,
-        storage: createJSONStorage(() => idbKvStorage('sync')),
+        // The cursors and signal versions describe the cached rows: on disk they may lag those rows, never lead them.
+        storage: createJSONStorage(() => idbKvStorage('sync', { cacheBound: true })),
         partialize: ({ generation, caughtUpAt, refetchDueAt, orgs }) => ({ generation, caughtUpAt, refetchDueAt, orgs }),
       },
     ),

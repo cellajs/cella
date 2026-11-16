@@ -5,6 +5,7 @@ import { currentSchemaVersion } from 'shared/schema-evolution';
 import { isRecord } from 'shared/utils/as-record';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
+import { setCacheWritten } from '~/query/idb-kv-storage';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedMetaRecord, type PersistedQueryRecord } from '~/query/local-user-db';
 import { isPending } from '~/query/offline/mutation-queue';
 import { hasStx, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
@@ -130,6 +131,8 @@ let queueWriteArmed = false;
 /** The write under way, which runs once more when `flushAgain` is set during it. */
 let flight: Promise<void> | null = null;
 let flushAgain = false;
+/** Settled once the write that takes `pendingClient` has ended. */
+let pendingWritten: { promise: Promise<void>; resolve: () => void } | null = null;
 /** The state of each queued mutation the last save carried. */
 let lastQueuedStates: DehydratedMutation['state'][] = [];
 /** Bumped by `resetPersister`: memory from then on holds none of the stored cache until a restore reads it. */
@@ -322,13 +325,33 @@ function requestFlush(): Promise<void> {
     try {
       do {
         flushAgain = false;
-        await flush();
+        // `flush` takes `pendingClient` before its first await: a waiter added after this belongs to the next run.
+        const written = pendingWritten;
+        pendingWritten = null;
+        try {
+          await flush();
+        } finally {
+          written?.resolve();
+        }
       } while (flushAgain);
     } finally {
       flight = null;
     }
   })();
   return flight;
+}
+
+/** Settles once the write that takes the cache as it stands has ended. */
+function whenWritten(): Promise<void> {
+  if (!pendingClient) return flight ?? Promise.resolve();
+  if (!pendingWritten) {
+    let resolve = () => {};
+    const promise = new Promise<void>((settle) => {
+      resolve = settle;
+    });
+    pendingWritten = { promise, resolve };
+  }
+  return pendingWritten.promise;
 }
 
 /**
@@ -462,6 +485,8 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 
 // The write throttle holds back up to a second of query changes: a hidden page stores them now, best effort as idb-kv-storage does.
 onPageHide(() => void persister.flush());
+
+setCacheWritten(whenWritten);
 
 /** Forgets what the persister wrote and stops its writes until the next restore: on a rebind, and before a teardown clears the cache. */
 export function resetPersister(): void {

@@ -125,7 +125,7 @@ A frame past a size bound names its rows by id alone, and past a larger bound na
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live. A gap is fetched into the lists on disk, since catchup runs only after the persisted cache is restored. The client posts a view per product type of each of the user's organizations. The answer holds:
+Catchup runs on every connection before the stream goes live. A gap is fetched into the lists on disk, since catchup runs only after the persisted cache is restored. A tab stores its cursors and signal versions only after the cached rows they cover. A tab killed between the two writes fetches that range again at its next catchup. The client posts a view per product type of each of the user's organizations. The answer holds:
 
 - each view's status
 - an `ok` view's frontier

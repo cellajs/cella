@@ -52,6 +52,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | Web Locks are missing or the election throws | The tab takes the leader role (`initTabCoordinator`) | | |
 | A tab comes back from a public page while another tab leads | | | None, an open finding: as a follower it runs no catchup of its own (`connect`). What it missed arrives only when a later frame of the same scope fetches from its cursor |
 | Two tabs of one user write the persisted sync store | | | None, an open finding: the last write of the one record per user wins (`syncStore`). One tab's cursors or cleared refetch can overwrite those of a tab that closed before its refetch ran |
+| A tab is killed after a range fetch, before its cache write | The cursors and signal versions wait for the cache write that holds their rows (`whenWritten`) | Catchup fetches the range again from the stored cursor (`processStreamCatchup`) | |
 | The books get a new generation | | | The API ends every stream with `resync`. Each client resets its cursors and signal versions, runs each versioned signal's handler once and refetches once at its share of a spread (`adoptGeneration`) |
 | A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
 | A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |

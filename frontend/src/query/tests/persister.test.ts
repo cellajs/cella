@@ -43,6 +43,7 @@ const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOpti
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
 const { totpKeyQueryOptions } = await import('~/modules/auth/account/query');
 const { organizationsListQueryOptions } = await import('~/modules/organization/query');
+const { syncStore } = await import('~/query/realtime/sync-store');
 
 /** What a browser runs on pagehide: every listener the modules registered for it, taken now since the harness clears a mock's calls before each test. */
 const pageHideListeners: (() => void)[] = addWindowListener.mock.calls.filter(([type]) => type === 'pagehide').map(([, listener]) => listener);
@@ -310,6 +311,22 @@ describe('the cache as the provider saves it and the bind restores it', () => {
     vi.useRealTimers();
 
     await vi.waitFor(async () => expect((await tabRecords()).length).toBe(1), { timeout: 500 });
+    expect(await getLocalUserDb()!.queries.count()).toBe(1);
+  });
+
+  // The cursor reached disk 250 ms after the patch and the rows up to 1 s after: a tab killed between skipped that range at its next catchup.
+  it('stores a sync cursor only after the cache write that holds its rows', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'from the stream' }]);
+    await persistQueryClientSave({ queryClient: client, ...persistOptions });
+    syncStore.getState().setOrgSeq('org-1', productType, 7);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(await getLocalUserDb()!.kv.get('sync')).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(1);
+    vi.useRealTimers();
+    await vi.waitFor(async () => expect(await getLocalUserDb()!.kv.get('sync')).toBeDefined());
     expect(await getLocalUserDb()!.queries.count()).toBe(1);
   });
 });
