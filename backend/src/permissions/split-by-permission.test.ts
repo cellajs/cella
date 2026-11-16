@@ -41,6 +41,9 @@ describe('splitByPermission', () => {
       get: (id: string) => ({ allowed: !denied[action]?.includes(id) }),
     })) as never);
 
+  // `allowed` must name the same rows as `allowedIds`. A batch update writes those rows.
+  const outcome = (split: Awaited<ReturnType<typeof splitByPermission>>) => ({ ...split, allowed: split.allowed.map((entity) => entity.id) });
+
   beforeEach(() => {
     vi.mocked(resolveEntities).mockReset();
     vi.mocked(checkAccessBatch).mockReset();
@@ -53,7 +56,7 @@ describe('splitByPermission', () => {
 
     const split = await splitByPermission(caller, 'delete', 'attachment', ['denied', 'missing', 'own', 'foreign']);
 
-    expect(split).toEqual({ allowedIds: ['own'], rejectedIds: ['denied', 'missing', 'foreign'] });
+    expect(outcome(split)).toEqual({ allowedIds: ['own'], rejectedIds: ['denied', 'missing', 'foreign'], allowed: ['own'] });
   });
 
   it('acts on a row named in another letter case, as the single read does, under the id the row has', async () => {
@@ -62,7 +65,7 @@ describe('splitByPermission', () => {
 
     const split = await splitByPermission(caller, 'delete', 'attachment', [stored.toUpperCase(), stored, 'missing']);
 
-    expect(split).toEqual({ allowedIds: [stored], rejectedIds: ['missing'] });
+    expect(outcome(split)).toEqual({ allowedIds: [stored], rejectedIds: ['missing'], allowed: [stored] });
   });
 
   it("must not act on another author's draft via a grant on its home, as the single read answers it as missing", async () => {
@@ -71,7 +74,7 @@ describe('splitByPermission', () => {
 
     const split = await splitByPermission(caller, 'delete', 'attachment', ['their-draft', 'own-draft']);
 
-    expect(split).toEqual({ allowedIds: ['own-draft'], rejectedIds: ['their-draft'] });
+    expect(outcome(split)).toEqual({ allowedIds: ['own-draft'], rejectedIds: ['their-draft'], allowed: ['own-draft'] });
   });
 
   it('must not act on a row the caller may not read, as the single read answers it as missing', async () => {
@@ -80,7 +83,7 @@ describe('splitByPermission', () => {
 
     const split = await splitByPermission(caller, 'delete', 'attachment', ['unreadable', 'readable']);
 
-    expect(split).toEqual({ allowedIds: ['readable'], rejectedIds: ['unreadable'] });
+    expect(outcome(split)).toEqual({ allowedIds: ['readable'], rejectedIds: ['unreadable'], allowed: ['readable'] });
   });
 
   it('must not act on a draft channel the lists hide from the caller', async () => {
@@ -91,7 +94,7 @@ describe('splitByPermission', () => {
 
     const split = await splitByPermission(caller, 'delete', 'organization', [org, 'org-c']);
 
-    expect(split).toEqual({ allowedIds: ['org-c'], rejectedIds: [org] });
+    expect(outcome(split)).toEqual({ allowedIds: ['org-c'], rejectedIds: [org], allowed: ['org-c'] });
   });
 
   it('refuses a batch that may act on none of its ids, whatever each id names', async () => {
