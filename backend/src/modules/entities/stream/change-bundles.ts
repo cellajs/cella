@@ -48,17 +48,25 @@ async function dispatch(event: StreamProductEvent): Promise<void> {
 }
 
 /**
- * Starts the dispatch of every row a bundle holds, one event per action, and empties it. The dispatches start in turn,
- * each writing before it awaits, which keeps the order of every stream.
+ * Starts the dispatch of every row a bundle holds and empties it: per action, in commit order, at most
+ * `maxStreamChangeRows` rows an event. Every frame then names its rows, and a writer knows its own change. The
+ * dispatches start in turn, each writing before it awaits, which keeps the order of every stream.
  */
 function sendHeld(bundle: Bundle): Promise<void>[] {
   const held = [...bundle.rows.values()];
   bundle.rows = new Map();
   heldRows -= held.length;
   return activityActions.flatMap((action) => {
-    const rows = held.filter((entry) => entry.action === action).map(({ row }) => row);
-    if (rows.length === 0) return [];
-    return [dispatch({ ...bundle.event, type: `${bundle.event.entityType}.${actionToVerb(action)}`, action, rows })];
+    const rows = held
+      .filter((entry) => entry.action === action)
+      .map(({ row }) => row)
+      .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+    const type = `${bundle.event.entityType}.${actionToVerb(action)}` as const;
+    const events: Promise<void>[] = [];
+    for (let from = 0; from < rows.length; from += maxStreamChangeRows) {
+      events.push(dispatch({ ...bundle.event, type, action, rows: rows.slice(from, from + maxStreamChangeRows) }));
+    }
+    return events;
   });
 }
 
@@ -71,6 +79,7 @@ function hold(bundle: Bundle, event: StreamProductEvent): void {
   }
 }
 
+/** Whether an action's held rows fill a frame: sent then, a flood reaches its readers a frame at a time, never past `maxPendingStreamBytes` in one tick. */
 const reachesRowBound = (bundle: Bundle) =>
   activityActions.some((action) => [...bundle.rows.values()].filter((entry) => entry.action === action).length >= maxStreamChangeRows);
 
@@ -90,10 +99,10 @@ function endInterval(key: string, bundle: Bundle): void {
 
 /**
  * Sends a product event's change frames, paced per audience. The first change after a quiet interval goes at once and
- * opens an interval of `changeBundleMs`. Later changes wait for its end and go as one frame per action, each row with
- * its latest change. They go at once when a frame reaches `maxStreamChangeRows` rows or every audience together holds
- * `maxHeldRows`. A move, a message over `maxStreamChangeRows` rows and anything during shutdown go at once, after
- * what their audiences hold. Readers are decided when a frame is sent: a member removed meanwhile gets nothing.
+ * opens an interval of `changeBundleMs`. Later changes wait for its end and go together, each row with its latest
+ * change. They go sooner when an action's held rows fill a frame or every audience together holds `maxHeldRows`. A
+ * move, a message over `maxStreamChangeRows` rows and anything during shutdown go at once, after what their audiences
+ * hold. Readers are decided when a frame is sent: a member removed meanwhile gets nothing.
  */
 export async function bundleChange(event: StreamProductEvent): Promise<void> {
   if (closing || event.rows.length > maxStreamChangeRows || event.rows.some(({ movedFrom }) => movedFrom)) {

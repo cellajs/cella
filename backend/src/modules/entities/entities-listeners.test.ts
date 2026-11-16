@@ -282,17 +282,22 @@ describe('entities listeners: an audience under sustained change', () => {
     ]);
   });
 
-  it('sends at once when a frame reaches the row bound, naming each row', async () => {
+  it('sends held rows once they fill a frame, in frames that each name their rows in commit order', async () => {
     const reader = adminReader('reader-user');
 
     await change(updateEvent([{ seq: 0, rowData: row('att-0') }]));
-    for (let seq = 1; seq <= 21; seq++) await change(updateEvent([{ seq, rowData: row(`att-${seq}`) }]));
+    // Three rows a message, as the worker sends them under load: 18 held rows become 21, past what one frame names.
+    for (let seq = 1; seq <= 21; seq += 3) {
+      await change(updateEvent([2, 1, 0].map((i) => ({ seq: seq + i, rowData: row(`att-${seq + i}`) }))));
+    }
 
     const frames = reader.sent.filter(({ event }) => event === 'change').map(({ data }) => JSON.parse(data));
-    expect(frames).toHaveLength(2);
-    expect(frames[1]).toMatchObject({ overflow: null });
-    expect(frames[1].rows).toHaveLength(20);
-    expect(frames[1].rows[19]).toMatchObject({ subjectId: 'att-20', seq: 20 });
+    expect(frames.slice(1).map(({ rows, overflow }) => [rows.length, overflow])).toEqual([
+      [20, null],
+      [1, null],
+    ]);
+    expect(frames[1].rows[0]).toMatchObject({ subjectId: 'att-1', seq: 1 });
+    expect(frames[2].rows[0]).toMatchObject({ subjectId: 'att-21', seq: 21 });
   });
 
   // Last in the file: the bundles stay closed for the rest of the process.
