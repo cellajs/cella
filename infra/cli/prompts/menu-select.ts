@@ -1,4 +1,5 @@
 import { emitKeypressEvents } from 'node:readline';
+import { stripVTControlCharacters } from 'node:util';
 import { Separator, select } from '@inquirer/prompts';
 import { pc } from '../../lib/utils/cli-output';
 import type { MenuItem } from '../menu';
@@ -15,7 +16,18 @@ export interface MenuSelectOptions<T extends string> {
 }
 
 /**
- * One menu of the CLI: a select with group headings, no wrap-around, every entry on screen and no help line. Esc leaves it and resolves to
+ * The page fills the terminal less the question and the tallest description under it. A prompt taller than the terminal leaves a copy of
+ * its top on every redraw.
+ */
+function pageSize({ message, items }: MenuSelectOptions<string>): number {
+  const { rows = 24, columns = 80 } = process.stdout;
+  const lines = (text: string) => Math.max(1, Math.ceil(stripVTControlCharacters(text).length / columns));
+  const description = Math.max(0, ...items.map((item) => ('description' in item && item.description ? lines(item.description) : 0)));
+  return Math.max(3, rows - lines(message) - description - 1);
+}
+
+/**
+ * One menu of the CLI: a select with group headings, no wrap-around, as many entries as the terminal holds and no help line. Esc leaves it and resolves to
  * {@link ESCAPED}. The menu clears itself when it is left: the screen never stacks old menus. Inquirer's select has no Esc of its own, and
  * a keypress listener aborts it through an AbortController.
  */
@@ -33,7 +45,7 @@ export async function menuSelect<T extends string>(options: MenuSelectOptions<T>
         message: options.message,
         default: options.default,
         loop: false,
-        pageSize: 24,
+        pageSize: pageSize(options),
         choices: options.items.map((item) => ('group' in item ? new Separator(item.group ? pc.dim(` ${item.group}`) : ' ') : item)),
         theme: { ...(options.message ? {} : { prefix: '' }), style: { keysHelpTip: () => '' } },
       },

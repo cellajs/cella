@@ -41,7 +41,7 @@ export interface MenuChoice<T extends string> {
 export type MenuItem<T extends string> = MenuChoice<T> | { group: string } | Separator;
 
 /** The rule above the way out of a menu. */
-const RULE = new Separator(pc.dim('─'.repeat(40)));
+export const RULE = new Separator(pc.dim('─'.repeat(40)));
 
 export const BACK = 'back';
 export const QUIT = 'quit';
@@ -100,30 +100,27 @@ function entryName(id: MenuRowId): string {
   return rowLabel(id).replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
-/** The main menu: the recommended step and a blank line first when there is one, then every row, then the way out. */
+/**
+ * The main menu: the recommended step and a blank line first when there is one, then every row with its description dim beside it, then
+ * the way out. A disabled row shows its reason in place of the description.
+ */
 export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> {
   const items: Array<MenuItem<MainMenuValue>> = [];
-  if (state.upNext) {
-    items.push({
-      name: `${pc.cyan('▶')}  ${state.upNext.description}`,
-      value: UP_NEXT,
-      description: OPERATOR_ACTIONS[state.upNext.action].description,
-    });
-    items.push({ group: '' });
-  }
-  for (const id of visibleRows(state)) {
-    const row = menuRow(id);
+  if (state.upNext) items.push({ name: `${pc.cyan('▶')}  ${state.upNext.description}`, value: UP_NEXT }, { group: '' });
+  const rows = visibleRows(state);
+  const width = Math.max(...rows.map((id) => rowLabel(id).length));
+  for (const id of rows) {
     const reason = rowDisabledReason(id, state);
     const live = state.liveEndpoints ?? [];
     const stray = id === 'db-close' && !state.dbExposed && live.length > 0;
     items.push({
-      name: reason ? rowLabel(id) : entryName(id),
+      name: reason ? rowLabel(id) : `${entryName(id)}${' '.repeat(width - rowLabel(id).length)}  ${pc.dim(menuRow(id).description)}`,
       value: id,
-      description: stray ? `Public endpoint ${live.join(', ')} is open, though no exposure is configured: close it.` : row.description,
+      ...(stray ? { description: `Public endpoint ${live.join(', ')} is open, though no exposure is configured: close it.` } : {}),
       ...(reason ? { disabled: `(${reason})` } : {}),
     });
   }
-  items.push(RULE, { name: 'Quit', value: QUIT, description: 'Leave the CLI.' });
+  items.push(RULE, { name: 'Quit', value: QUIT });
   return items;
 }
 

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ESCAPED } from '../prompts/menu-select';
+import { importEnvFile } from './env-import';
 import { secretsMenu } from './secrets';
 
 const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn(), input: vi.fn() };
@@ -15,6 +16,7 @@ const putSecretValue = vi.fn();
 const deleteSecret = vi.fn();
 const provisionManagedKey = vi.fn();
 const writeKey = vi.fn();
+const rotate = vi.fn();
 const log = vi.fn();
 
 vi.mock('../../lib/scaleway/scaleway-secret-manager', () => ({
@@ -33,8 +35,8 @@ vi.mock('../../tasks/provision-managed-key', () => ({ provisionManagedKey: (...a
 const listed = [
   { id: 'c-admin', name: 'admin-email', path: '/runtime', version_count: 0 },
   { id: 'c-brevo', name: 'brevo-api-key', path: '/runtime', version_count: 1 },
+  { id: 'c-gh-id', name: 'github-client-id', path: '/runtime', version_count: 0 },
   { id: 'c-gh', name: 'github-client-secret', path: '/runtime', version_count: 0 },
-  { id: 'c-yjs', name: 'yjs-token-private-key', path: '/runtime', version_count: 1 },
 ];
 
 const baseOptions = {
@@ -46,6 +48,7 @@ const baseOptions = {
   slug: 'demo',
   mode: 'production',
   pick: true,
+  rotate,
   prompts,
   log,
 };
@@ -67,14 +70,15 @@ function envFile(text: string): string {
 describe('secretsMenu', () => {
   it('reads the table before any key is asked, and asks for the operator key once, at the first write', async () => {
     prompts.select
-      .mockResolvedValueOnce('brevoApiKey')
+      .mockResolvedValueOnce('Brevo email')
       .mockResolvedValueOnce('set')
+      .mockResolvedValueOnce('GitHub sign-in')
       .mockResolvedValueOnce('githubClientSecret')
       .mockResolvedValueOnce('set')
       .mockResolvedValueOnce(ESCAPED);
     prompts.password.mockResolvedValueOnce('  new-api-key ').mockResolvedValueOnce('gh-secret');
 
-    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: true });
+    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: true, rotated: false });
 
     expect(listSecretsUnder).toHaveBeenCalledWith('/runtime/');
     expect(listSecretsUnder.mock.invocationCallOrder[0]).toBeLessThan(writeKey.mock.invocationCallOrder[0] ?? 0);
@@ -86,9 +90,9 @@ describe('secretsMenu', () => {
 
   it('refuses to create a missing container, asks for no key and tells the operator to apply first', async () => {
     listSecretsUnder.mockResolvedValue([]);
-    prompts.select.mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('set').mockResolvedValueOnce(ESCAPED);
+    prompts.select.mockResolvedValueOnce('Brevo email').mockResolvedValueOnce('set').mockResolvedValueOnce(ESCAPED);
 
-    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: false });
+    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: false, rotated: false });
 
     // Creating the container out-of-band would make the next `pulumi up` 409.
     expect(ensureSecret).not.toHaveBeenCalled();
@@ -101,16 +105,31 @@ describe('secretsMenu', () => {
   it('prints the table without a pick under --defaults or without a TTY, below the notice', async () => {
     const notice = 'A deploy of aaaaaaaaaa waits for ADMIN_EMAIL: setting them starts it again.';
 
-    await expect(secretsMenu({ ...baseOptions, pick: false, notice: Promise.resolve(notice) })).resolves.toEqual({ changed: false });
+    await expect(secretsMenu({ ...baseOptions, pick: false, notice: Promise.resolve(notice) })).resolves.toEqual({ changed: false, rotated: false });
 
+    const logged = log.mock.calls.map(([line]) => stripVTControlCharacters(String(line)));
     expect(prompts.select).not.toHaveBeenCalled();
     expect(writeKey).not.toHaveBeenCalled();
-    expect(log.mock.calls[0]?.[0]).toBe(notice);
-    expect(log).toHaveBeenCalledWith(expect.stringMatching(/ADMIN_EMAIL.*missing · required/));
+    const table = logged.findIndex((line) => /Admin email.*missing · required/.test(line));
+    expect(logged.findIndex((line) => line.startsWith(notice))).toBeLessThan(table);
+    expect(logged.at(-1)).toMatch(/^◇ Made by infra \(\d+\)$/);
+  });
+
+  it('asks each value of a group in turn, and leaves a value whose answer is empty as it is', async () => {
+    prompts.select.mockResolvedValueOnce('GitHub sign-in').mockResolvedValueOnce('set-all').mockResolvedValueOnce(ESCAPED);
+    prompts.password.mockResolvedValueOnce('  ').mockResolvedValueOnce('gh-secret');
+
+    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: true, rotated: false });
+
+    expect(putSecretValue.mock.calls.map(([input]) => [input.secretId, input.value])).toEqual([['c-gh', 'gh-secret']]);
   });
 
   it('deletes an entire secret object only after confirmation', async () => {
-    prompts.select.mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('delete').mockResolvedValueOnce(ESCAPED);
+    prompts.select
+      .mockResolvedValueOnce('GitHub sign-in')
+      .mockResolvedValueOnce('githubClientSecret')
+      .mockResolvedValueOnce('delete')
+      .mockResolvedValueOnce(ESCAPED);
     prompts.confirm.mockResolvedValueOnce(true);
 
     await secretsMenu(baseOptions);
@@ -119,7 +138,12 @@ describe('secretsMenu', () => {
   });
 
   it('cancels deletion when confirmation is declined', async () => {
-    prompts.select.mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('delete').mockResolvedValueOnce(ESCAPED);
+    prompts.select
+      .mockResolvedValueOnce('GitHub sign-in')
+      .mockResolvedValueOnce('githubClientSecret')
+      .mockResolvedValueOnce('delete')
+      .mockResolvedValueOnce(ESCAPED)
+      .mockResolvedValueOnce(ESCAPED);
     prompts.confirm.mockResolvedValueOnce(false);
 
     await secretsMenu(baseOptions);
@@ -128,18 +152,17 @@ describe('secretsMenu', () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining('Deletion cancelled'));
   });
 
-  it('rotates the Yjs token key together with the public key derived from it', async () => {
-    prompts.select.mockResolvedValueOnce('yjsTokenPrivateKey').mockResolvedValueOnce('rotate').mockResolvedValueOnce(ESCAPED);
-    prompts.confirm.mockResolvedValueOnce(true);
-    getSecretByName.mockImplementation(async (name: string) => ({ id: name, name, path: '/runtime', version_count: 1 }));
+  it('opens Rotate secrets from the row of the values infra makes: a declined one returns to the table, a rotation ends it', async () => {
+    prompts.select.mockResolvedValueOnce('made-by-infra').mockResolvedValueOnce('made-by-infra');
+    rotate.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 
-    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: true });
+    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: false, rotated: true });
 
-    expect(putSecretValue.mock.calls.map(([input]) => input.secretId)).toEqual(['yjs-token-private-key', 'yjs-token-public-key']);
+    expect(rotate).toHaveBeenCalledTimes(2);
   });
 
   it('mints a managed key after confirmation, passing the caller identity through', async () => {
-    prompts.select.mockResolvedValueOnce('scwAiApiKey').mockResolvedValueOnce('mint').mockResolvedValueOnce(ESCAPED);
+    prompts.select.mockResolvedValueOnce('Scaleway AI').mockResolvedValueOnce('mint').mockResolvedValueOnce(ESCAPED);
     prompts.confirm.mockResolvedValueOnce(true);
     provisionManagedKey.mockResolvedValueOnce({ applicationId: 'app-ai', seeded: { 'scw-ai-api-key': 1 } });
 
@@ -152,7 +175,7 @@ describe('secretsMenu', () => {
   });
 
   it('does not mint when the confirmation is declined', async () => {
-    prompts.select.mockResolvedValueOnce('scwAiApiKey').mockResolvedValueOnce('mint').mockResolvedValueOnce(ESCAPED);
+    prompts.select.mockResolvedValueOnce('Scaleway AI').mockResolvedValueOnce('mint').mockResolvedValueOnce(ESCAPED);
     prompts.confirm.mockResolvedValueOnce(false);
 
     await secretsMenu(baseOptions);
@@ -160,28 +183,32 @@ describe('secretsMenu', () => {
     expect(provisionManagedKey).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith(expect.stringContaining('Mint cancelled'));
   });
+});
 
-  it('imports a .env file after one confirmation: each matched value on the operator key, one with no container left to the apply', async () => {
+describe('importEnvFile', () => {
+  const importOptions = { readKey: 'observer-secret', writeKey, projectId: 'proj-1', region: 'nl-ams', mode: 'production', prompts, log };
+
+  it('sets each matched value after one confirmation, on the operator key, and leaves one with no container to the apply', async () => {
     const path = envFile(
       '# app values\nexport BREVO_API_KEY="xkeysib-abc"\nGITHUB_CLIENT_SECRET=gh-secret\nSCW_AI_API_KEY=scw-key\nCOOKIE_SECRET=dev\nFOO=bar\n',
     );
-    prompts.select.mockResolvedValueOnce('import-env-file').mockResolvedValueOnce(ESCAPED);
     prompts.input.mockResolvedValueOnce(path);
     prompts.confirm.mockResolvedValueOnce(true);
 
-    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: true });
+    await expect(importEnvFile(importOptions)).resolves.toEqual({ changed: true });
 
     const logged = log.mock.calls.map(([line]) => stripVTControlCharacters(String(line)));
     expect(logged).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/BREVO_API_KEY +set \(11 chars\)/),
+        expect.stringMatching(/BREVO_API_KEY +set \(11 chars\) · replaces the value set$/),
+        expect.stringMatching(/GITHUB_CLIENT_SECRET +set \(9 chars\)$/),
         expect.stringMatching(/COOKIE_SECRET +made by infra/),
         expect.stringMatching(/FOO +no such env var/),
         expect.stringContaining('SCW_AI_API_KEY has no secret in Secret Manager yet'),
         expect.stringContaining('Set 2 of 3 values'),
       ]),
     );
-    expect(prompts.confirm.mock.calls).toEqual([[expect.objectContaining({ default: false })]]);
+    expect(prompts.confirm.mock.calls).toEqual([[expect.objectContaining({ message: 'Set 3 values in production?', default: false })]]);
     expect(writeKey).toHaveBeenCalledTimes(1);
     expect(putSecretValue.mock.calls.map(([input]) => [input.secretId, input.value])).toEqual([
       ['c-brevo', 'xkeysib-abc'],
@@ -190,11 +217,10 @@ describe('secretsMenu', () => {
   });
 
   it('writes nothing and asks for no key when the import is declined', async () => {
-    prompts.select.mockResolvedValueOnce('import-env-file').mockResolvedValueOnce(ESCAPED);
     prompts.input.mockResolvedValueOnce(envFile('BREVO_API_KEY=xkeysib-abc\n'));
     prompts.confirm.mockResolvedValueOnce(false);
 
-    await expect(secretsMenu(baseOptions)).resolves.toEqual({ changed: false });
+    await expect(importEnvFile(importOptions)).resolves.toEqual({ changed: false });
 
     expect(writeKey).not.toHaveBeenCalled();
     expect(putSecretValue).not.toHaveBeenCalled();

@@ -15,7 +15,7 @@ import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '.
 import { type ActionOutcome, runAction } from './actions';
 import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
-import { checkoutVersion, formatHeader } from './header';
+import { checkoutVersion, formatHeader, formatLogo } from './header';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
 import { BACK, disabledReason, type MenuState, mainMenuItems, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
@@ -247,6 +247,7 @@ let context = await loadContext(environment, (message) => console.info(pc.dim(me
   }
 }
 
+if (!args.action) console.info(`${formatLogo(context.appConfig.slug).join('\n')}\n`);
 printStackNotices(context);
 if (droppedFromEnv.length > 0) {
   console.warn(

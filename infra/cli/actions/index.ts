@@ -8,6 +8,7 @@ import { forgetAnswers, inMenuSession, rememberedOperatorKey } from '../session'
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
+import { runEnvImport } from './env-import';
 import { runIdentity } from './identity';
 import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
@@ -24,7 +25,7 @@ import { runStatePrune } from './state-prune';
 import { runTeardown } from './teardown';
 import { runUnlock } from './unlock';
 
-type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise<void>>;
+type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise<unknown>>;
 
 /** The function behind every operator action: the menu and `pnpm infra <action>` both run an action through this table. */
 export const ACTION_RUNNERS: ActionRunners = {
@@ -41,6 +42,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   releases: runReleases,
   'repository-key': runRepositoryKey,
   env: runSecrets,
+  'env-import': runEnvImport,
   'db-open': runExposeDatabase,
   'db-seed': runSeedDatabase,
   'db-close': runUnexposeDatabase,

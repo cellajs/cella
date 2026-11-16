@@ -1,71 +1,86 @@
-import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
+import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import type { createSecretManagerClient, SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { crossMark, pc } from '../lib/utils/cli-output';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { isMain } from '../lib/utils/is-main';
-import { ensureSecrets } from './ensure-secrets';
 
 export type SecretManagerClient = ReturnType<typeof createSecretManagerClient>;
 
 /** A secret of the runtime folder, with the date its newest version was written. */
 export type RuntimeContainer = SecretManagerSecret & { setAt?: string };
 
-/** A row of the table: the name the app reads, the services that read it, and what Secret Manager holds for it. */
+/** What the table reads of a container. */
+type ContainerState = Pick<RuntimeContainer, 'version_count' | 'setAt'>;
+
+/** A row of the table: the operator values of one group, the services that read them, and what Secret Manager holds for them. */
 export interface SecretRow {
-  envVar: string;
+  /** The group, or the env var of a value without one. */
+  label: string;
+  definitions: RuntimeSecretDefinition[];
   usedBy: string;
   state: string;
-  kind: 'missing' | 'empty' | 'set' | 'infra';
-  definition: RuntimeSecretDefinition;
+  kind: 'missing' | 'set' | 'partial' | 'empty';
 }
 
-const kindOrder: SecretRow['kind'][] = ['missing', 'set', 'empty', 'infra'];
-const kindMarks: Record<SecretRow['kind'], string> = { missing: crossMark, empty: pc.dim('○'), set: pc.green('●'), infra: pc.dim('◇') };
+const kindOrder: SecretRow['kind'][] = ['missing', 'set', 'partial', 'empty'];
+const kindMarks: Record<SecretRow['kind'], string> = { missing: crossMark, set: pc.green('●'), partial: '◐', empty: pc.dim('○') };
 
-/** `Nov 8` in the local time zone, or nothing when Secret Manager gave no date. */
-function shortDate(iso: string | undefined): string {
+/** `Nov 8` in the local time zone, or nothing without a date. */
+export function shortDate(iso: string | undefined): string {
   const date = iso ? new Date(iso) : undefined;
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 }
 
+const holdsValue = (container: ContainerState | undefined): boolean => (container?.version_count ?? 0) > 0;
+
 /**
- * One row per runtime secret: required values without a version first, then optional ones without, then the ones set, then the ones infra
- * makes, in registry order within each. `containers` are the runtime folder's secrets by name.
+ * The row of `definitions` under `label`: set once every value is, with the newest date; missing while a required value is not; else empty or
+ * the count of the values set.
  */
-export function secretsTable(
-  definitions: readonly RuntimeSecretDefinition[],
-  containers: ReadonlyMap<string, { version_count?: number; setAt?: string }>,
-): SecretRow[] {
-  const rows = definitions.map((definition): SecretRow => {
-    const row = { envVar: definition.envVar, usedBy: definition.services.join(', '), definition };
-    if (definition.valueSource !== 'operator') {
-      return { ...row, kind: 'infra', state: protectsStoredData(definition) ? 'made by infra · kept' : 'made by infra' };
-    }
-    const container = containers.get(definition.secretName);
-    if (container && (container.version_count ?? 0) > 0) return { ...row, kind: 'set', state: `set ${shortDate(container.setAt)}`.trimEnd() };
-    return definition.required ? { ...row, kind: 'missing', state: 'missing · required' } : { ...row, kind: 'empty', state: 'empty · optional' };
-  });
+export function secretRow(label: string, definitions: RuntimeSecretDefinition[], containers: ReadonlyMap<string, ContainerState>): SecretRow {
+  const held = definitions.map((definition) => containers.get(definition.secretName)).filter(holdsValue);
+  const row = { label, definitions, usedBy: [...new Set(definitions.flatMap((definition) => definition.services))].join(', ') };
+  if (held.length === definitions.length) {
+    const newest = held
+      .map((container) => container?.setAt ?? '')
+      .sort()
+      .at(-1);
+    return { ...row, kind: 'set', state: `set ${shortDate(newest)}`.trimEnd() };
+  }
+  if (definitions.some((definition) => definition.required && !holdsValue(containers.get(definition.secretName)))) {
+    return { ...row, kind: 'missing', state: 'missing · required' };
+  }
+  if (held.length === 0) return { ...row, kind: 'empty', state: 'empty' };
+  return { ...row, kind: 'partial', state: `${held.length} of ${definitions.length} set` };
+}
+
+/**
+ * One row per group of operator values, a value without a group its own: rows that miss a required value first, then the set, the partly
+ * set and the empty ones, in registry order within each. The values infra makes have no row. `containers` are the runtime folder's secrets
+ * by name.
+ */
+export function secretsTable(definitions: readonly RuntimeSecretDefinition[], containers: ReadonlyMap<string, ContainerState>): SecretRow[] {
+  const groups = new Map<string, RuntimeSecretDefinition[]>();
+  for (const definition of definitions) {
+    if (definition.valueSource !== 'operator') continue;
+    const label = definition.group ?? definition.envVar;
+    groups.set(label, [...(groups.get(label) ?? []), definition]);
+  }
+  const rows = [...groups].map(([label, members]) => secretRow(label, members, containers));
   return rows.sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind));
 }
 
-/** The column header and a line formatter whose columns align across `rows`. */
-export function tableColumns(rows: readonly SecretRow[]): { header: string; line: (row: SecretRow) => string } {
-  const header = { envVar: 'NAME', usedBy: 'USED BY', state: 'STATE' };
-  const nameWidth = Math.max(...[header, ...rows].map((row) => row.envVar.length));
-  const usedByWidth = Math.max(...[header, ...rows].map((row) => row.usedBy.length));
-  const text = (row: Pick<SecretRow, 'envVar' | 'usedBy' | 'state'>) =>
-    `${row.envVar.padEnd(nameWidth)}  ${row.usedBy.padEnd(usedByWidth)}  ${row.state}`;
-  return {
-    header: pc.dim(`  ${text(header)}`),
-    line: (row) => `${kindMarks[row.kind]} ${row.kind === 'infra' ? pc.dim(text(row)) : text(row)}`,
-  };
-}
-
-/** The header, then one line per row: a mark per state, and the rows infra makes dimmed. */
-export function formatSecretsTable(rows: readonly SecretRow[]): string[] {
-  const { header, line } = tableColumns(rows);
-  return [header, ...rows.map(line)];
+/**
+ * One line per row, a mark per state and the services dimmed, in columns aligned across the rows and `infra`: the last line, which lists the
+ * values infra makes with `note` dimmed beside them.
+ */
+export function formatSecretsTable(rows: readonly SecretRow[], infra?: { label: string; note?: string }): string[] {
+  const labelWidth = Math.max(0, ...[...rows, ...(infra ? [infra] : [])].map((row) => row.label.length));
+  const usedByWidth = Math.max(0, ...rows.map((row) => row.usedBy.length));
+  const lines = rows.map((row) => `${kindMarks[row.kind]} ${row.label.padEnd(labelWidth)}  ${pc.dim(row.usedBy.padEnd(usedByWidth))}  ${row.state}`);
+  if (!infra) return lines;
+  return [...lines, `${pc.dim('◇')} ${infra.note ? `${infra.label.padEnd(labelWidth)}  ${pc.dim(infra.note)}` : infra.label}`];
 }
 
 /** The runtime folder's secrets by name. */
@@ -96,16 +111,6 @@ export function setValue(client: SecretManagerClient, container: SecretManagerSe
   });
 }
 
-/**
- * A fresh random value for `secret` and for every value derived from it: the Yjs relay's public key refuses every token a new private key
- * signs. Returns the env vars written, none when no container exists yet.
- */
-export async function rotateSecret(client: SecretManagerClient, secret: RuntimeSecretDefinition): Promise<string[]> {
-  const rotated = [secret, ...runtimeSecrets.filter((candidate) => candidate.derivedFrom?.secretId === secret.id)];
-  const written = new Set(await ensureSecrets({ client, secrets: rotated, rotate: true, log: () => {} }));
-  return rotated.filter((definition) => written.has(definition.secretName)).map((definition) => definition.envVar);
-}
-
 /** A key of an imported `.env` file: the value it sets, or why it is skipped. */
 export interface EnvImportLine {
   key: string;
@@ -115,11 +120,13 @@ export interface EnvImportLine {
 
 /**
  * Each key of an imported `.env` file once, in file order with its last value, matched to the runtime secret whose env var it names. A key
- * no secret reads, one infra makes, and a value a set refuses are skipped. A value is trimmed, as a set trims it.
+ * no secret reads, one infra makes, and a value a set refuses are skipped. A value is trimmed, as a set trims it. A value that replaces
+ * one of `containers` says so, with the date the replaced one was set.
  */
 export function planEnvImport(
   entries: ReadonlyArray<{ key: string; value: string }>,
   definitions: readonly RuntimeSecretDefinition[],
+  containers: ReadonlyMap<string, ContainerState> = new Map(),
 ): EnvImportLine[] {
   const byEnvVar = new Map(definitions.map((definition) => [definition.envVar, definition]));
   return [...new Map(entries.map(({ key, value }) => [key, value.trim()]))].map(([key, value]): EnvImportLine => {
@@ -128,7 +135,9 @@ export function planEnvImport(
     if (definition.valueSource !== 'operator') return { key, note: 'made by infra' };
     const verdict = isEnvFileDeliverable(value);
     if (!verdict.ok) return { key, note: verdict.reason === 'empty' ? 'empty' : 'not one line' };
-    return { key, note: `set (${value.length} chars)`, write: { definition, value } };
+    const held = containers.get(definition.secretName);
+    const replaces = holdsValue(held) ? ` · replaces the value set ${shortDate(held?.setAt)}`.trimEnd() : '';
+    return { key, note: `set (${value.length} chars)${replaces}`, write: { definition, value } };
   });
 }
 

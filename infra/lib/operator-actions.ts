@@ -74,6 +74,11 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: 'The values the services read at boot. A changed value reaches the machines at the next deploy.',
   },
+  'env-import': {
+    label: 'Import a .env file',
+    key: 'operator',
+    description: 'Set the values a .env file holds, such as one from another host, after one confirmation.',
+  },
   'db-open': {
     label: 'Open DB access',
     key: 'operator',
@@ -123,7 +128,7 @@ export interface MenuRow {
   label: string;
   /** The actions behind the row; more than one opens a short pick. */
   actions: readonly OperatorActionId[];
-  /** Shown under the menu while the row is highlighted. */
+  /** Shown dim beside the row: a lowercase phrase that fits one 80-column line with the label. */
   description: string;
 }
 
@@ -133,12 +138,12 @@ export const MORE_SECTIONS = {
   'Keys & access': ['rotate-keys', 'rotate-secrets', 'operators', 'identities', 'repository-key'],
   Repair: ['unlock', 'resume', 'state-remove'],
   Database: ['db-seed', 'db-reset'],
-  Environment: ['teardown'],
+  Environment: ['env-import', 'teardown'],
 } as const satisfies Record<string, readonly OperatorActionId[]>;
 
-/** A row of the menu for one action, under its label and description. */
-function actionRow(id: OperatorActionId): MenuRow {
-  return { label: actionLabel(id), actions: [id], description: OPERATOR_ACTIONS[id].description };
+/** A row of the menu for one action, under its label. */
+function actionRow(id: OperatorActionId, description: string): MenuRow {
+  return { label: actionLabel(id), actions: [id], description };
 }
 
 /**
@@ -146,17 +151,17 @@ function actionRow(id: OperatorActionId): MenuRow {
  * `db-open` and `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
-  status: actionRow('status'),
-  apply: actionRow('apply'),
-  env: actionRow('env'),
-  releases: actionRow('releases'),
-  logs: actionRow('logs'),
-  'db-open': actionRow('db-open'),
-  'db-close': actionRow('db-close'),
+  status: actionRow('status', 'every check and finding, and what fixes it'),
+  apply: actionRow('apply', 'what differs from what runs, applied on your yes'),
+  env: actionRow('env', 'the values the services read at boot'),
+  releases: actionRow('releases', 'the last releases; deploy an earlier one again'),
+  logs: actionRow('logs', 'the last deploys and how each ended'),
+  'db-open': actionRow('db-open', 'a public endpoint to your IP, until you close it'),
+  'db-close': actionRow('db-close', 'close the temporary public endpoint'),
   more: {
     label: 'More',
     actions: Object.values(MORE_SECTIONS).flat(),
-    description: 'Deploying now, keys and access, repairs, seeding or resetting the database, and tearing down.',
+    description: 'deploy now, keys, repairs, the database, teardown',
   },
 } as const satisfies Record<string, MenuRow>;
 

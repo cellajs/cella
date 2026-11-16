@@ -112,6 +112,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     // Read by the admin seed, which the backend's release companion runs.
     services: ['backend'],
+    group: 'Admin email',
   },
   brevoApiKey: {
     secretName: 'brevo-api-key',
@@ -121,6 +122,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'mcp', 'jobs'],
+    group: 'Brevo email',
   },
   scwAiApiKey: {
     secretName: 'scw-ai-api-key',
@@ -130,6 +132,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'mcp'],
+    group: 'Scaleway AI',
   },
   mapleSecretIngestKey: {
     secretName: 'maple-secret-ingest-key',
@@ -139,6 +142,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'cdc', 'yjs', 'jobs'],
+    group: 'Maple monitoring',
   },
   githubClientId: {
     secretName: 'github-client-id',
@@ -148,6 +152,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'mcp'],
+    group: 'GitHub sign-in',
   },
   githubClientSecret: {
     secretName: 'github-client-secret',
@@ -157,6 +162,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'mcp'],
+    group: 'GitHub sign-in',
   },
   googleClientId: {
     secretName: 'google-client-id',
@@ -166,6 +172,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Google sign-in',
   },
   googleClientSecret: {
     secretName: 'google-client-secret',
@@ -175,6 +182,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Google sign-in',
   },
   microsoftTenantId: {
     secretName: 'microsoft-tenant-id',
@@ -185,6 +193,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Microsoft sign-in',
   },
   microsoftClientId: {
     secretName: 'microsoft-client-id',
@@ -194,6 +203,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Microsoft sign-in',
   },
   microsoftClientSecret: {
     secretName: 'microsoft-client-secret',
@@ -203,6 +213,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Microsoft sign-in',
   },
   // One pair per key of `appConfig.federations`, named as backend/src/env.ts derives them; the runtime-secrets test pins the two together.
   ssoSurfconextClientId: {
@@ -213,6 +224,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'SURFconext sign-in',
   },
   ssoSurfconextClientSecret: {
     secretName: 'sso-surfconext-client-secret',
@@ -222,6 +234,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'SURFconext sign-in',
   },
   vapidPublicKey: {
     secretName: 'vapid-public-key',
@@ -231,6 +244,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Web push',
   },
   vapidPrivateKey: {
     secretName: 'vapid-private-key',
@@ -240,6 +254,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Web push',
   },
   vapidSubject: {
     secretName: 'vapid-subject',
@@ -249,6 +264,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Web push',
   },
   matrixAccessToken: {
     secretName: 'matrix-access-token',
@@ -259,6 +275,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     // The tenant removal job posts from the jobs worker.
     services: ['backend', 'jobs'],
+    group: 'Matrix chat',
   },
   transloaditKey: {
     secretName: 'transloadit-key',
@@ -269,6 +286,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     // Only the API process's upload token route signs assemblies; without both values uploads stay in the browser.
     services: ['backend'],
+    group: 'Transloadit uploads',
   },
   transloaditSecret: {
     secretName: 'transloadit-secret',
@@ -278,6 +296,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend'],
+    group: 'Transloadit uploads',
   },
   systemAdminIpAllowlist: {
     secretName: 'system-admin-ip-allowlist',
@@ -287,5 +306,6 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'mcp'],
+    group: 'Admin IP allowlist',
   },
 });

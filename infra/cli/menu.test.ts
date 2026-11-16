@@ -18,15 +18,15 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists the daily rows on a healthy stack, then More and Quit', () => {
+  it('lists the daily rows on a healthy stack with their descriptions in one column, then More and Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
-      '  Full status',
-      '  Review & apply changes',
-      '  Env vars & secrets',
-      '  Releases & roll back',
-      '  Deploy logs',
-      '  Open DB access',
-      '  More ›',
+      '  Full status             every check and finding, and what fixes it',
+      '  Review & apply changes  what differs from what runs, applied on your yes',
+      '  Env vars & secrets      the values the services read at boot',
+      '  Releases & roll back    the last releases; deploy an earlier one again',
+      '  Deploy logs             the last deploys and how each ended',
+      '  Open DB access          a public endpoint to your IP, until you close it',
+      '  More ›                  deploy now, keys, repairs, the database, teardown',
       ` ${'─'.repeat(40)}`,
       '  Quit',
     ]);
@@ -34,7 +34,7 @@ describe('mainMenuItems', () => {
 
   it('leads with the recommended step when the home screen has one', () => {
     const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'deploy', description: 'Deploy 0.35.0 again' } });
-    expect(render(items).slice(0, 3)).toEqual(['  ▶  Deploy 0.35.0 again', '', '  Full status']);
+    expect(render(items).slice(0, 2)).toEqual(['  ▶  Deploy 0.35.0 again', '']);
     expect(items[0]).toMatchObject({ value: UP_NEXT });
   });
 
@@ -48,7 +48,7 @@ describe('mainMenuItems', () => {
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  Close DB access (OPEN)');
+    expect(lines.some((line) => line.startsWith('  Close DB access (OPEN)  '))).toBe(true);
     expect(lines.some((line) => line.includes('Open DB access'))).toBe(false);
   });
 
@@ -116,6 +116,7 @@ describe('pickItems', () => {
       '  Reset database           operator key',
       '',
       'Environment',
+      '  Import a .env file       operator key',
       '  Tear down                Owner key',
       ` ${'─'.repeat(40)}`,
       '  ← Back',

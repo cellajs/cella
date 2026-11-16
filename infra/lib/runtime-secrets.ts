@@ -23,6 +23,7 @@ export interface RuntimeSecretDefinition {
   generation: RuntimeSecretGeneration;
   /** Consuming services; store contributions are runtime-validated against the registry. */
   services: readonly string[];
+  group?: string;
   derivedFrom?: RuntimeSecretDerivation;
   rotatable?: boolean;
   /** A database connection string the operator task ensure-database assembles for this role. */
