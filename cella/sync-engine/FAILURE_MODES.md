@@ -14,9 +14,11 @@ Each failure has one answer per level:
 - **Mid:** recovers when the core cannot. The client runs catchup, the worker reads again.
 - **Lost case:** starts over. A client refetches once, the worker rebuilds its books.
 
-A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the table below, in the [CDC worker's table](../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../backend/src/modules/notification/README.md#failure-modes).
+A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the tables below, in the [CDC worker's table](../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../backend/src/modules/notification/README.md#failure-modes).
 
 ## What fails
+
+### Changes and reads
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
@@ -38,12 +40,22 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A frame handler throws, in the leader or a follower | Logged and skipped (`applyChange`, the follower's message handler) | | |
 | An embedded row changes while hosts hold copies | The frame's `propagation` hint patches the copies (`propagateEmbeddings`) | Missed while away: the catchup's hints (`buildPropagationHints`). Past a hint's or a frame's cap the host lists refetch (`invalidateEmbeddingHosts`) | |
 | A list read overlaps live patches | The canonical read merges the ranges the cursor moved past while it ran (`readAgainstDeltas`) | | |
+
+### Access
+
+| What fails | Core | Mid | Lost case |
+| --- | --- | --- | --- |
 | A membership changes while the stream connects | The memberships are read again once the stream registers, and a change closes it with `access_changed` (`membershipsChangedSince`) | | |
 | A membership changes while the stream is live | The subscriber's memberships update and `membership.changed` tells the user | Missed while away: catchup's signal versions and its read of the memberships, after which it drops the list caches of each organization where a channel membership was lost | |
 | A membership is added in an organization the stream never registered on | The user's `membership.changed` reconnects the stream when the sync store lacks the organization, and the new stream registers there (`streamManager.reconnect`) | | |
 | A session is revoked | `session.revoked` closes its streams | | |
 | A session expires or a system role changes | A recheck each minute closes the stream (`ensureStreamSessionRecheck`) | | |
 | The tenant is deleted or restored | Its streams close with `access_changed` (`closeOrganizationStreams`) | | |
+
+### Stream and tabs
+
+| What fails | Core | Mid | Lost case |
+| --- | --- | --- | --- |
 | The stream errors, ends or falls silent | The silence watchdog and a reconnect with backoff, at once when the app is back online or a tab takes over (`handleStreamFailure`) | Repeated failures open the circuit, which a passing health check closes. A session or tenant the server refuses opens it until the next sign-in (`openCircuit`) | |
 | A request gets no response: the link drops packets, or the tab reloads while it waits | The connectivity probe runs. Once it finds the API unreachable, the app goes offline and a waiting write pauses in the queue (`apiFetch`). A sync write is stored while it runs. A reload sends it again as a replay (`shouldDehydrateMutation`) | | |
 | A catchup hangs or fails | Bounded, then the stream's failure path (`handleCatchupFailure`). The writes waiting for it go ahead (`waitForActiveCatchup`) | The same circuit | |
@@ -54,10 +66,20 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A tab comes back from a public page while another tab leads | | It runs one catchup of its own when it connects (`connect`) | None, an open finding: a change the leader forwards while that catchup runs, above its frontier and on a background scope, is dropped with the pending ranges (`resetFetchPrioritizer`) and arrives with the scope's next frame |
 | Two tabs of one user write the persisted sync store | | | None, an open finding: the last write of the one record per user wins (`syncStore`). One tab's cursors or cleared refetch can overwrite those of a tab that closed before its refetch ran |
 | A tab is killed after a range fetch, before its cache write | The cursors and signal versions wait for the cache write that holds their rows (`whenWritten`) | Catchup fetches the range again from the stored cursor (`processStreamCatchup`) | |
+
+### Books and versions
+
+| What fails | Core | Mid | Lost case |
+| --- | --- | --- | --- |
 | The books get a new generation | | | The API ends every stream with `resync`. Each client resets its cursors and signal versions, runs each versioned signal's handler once and refetches once at its share of a spread (`adoptGeneration`) |
 | A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
 | A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |
 | A frame or signal of a type the bundle does not know | Skipped (`readFrame`, `handleStreamSignal`) | | |
+
+### Shared answers
+
+| What fails | Core | Mid | Lost case |
+| --- | --- | --- | --- |
 | A kept range answer predates a write | A write that commits moves its tenant's count, and an answer read under an earlier count is served to no one, a request that waited for that read included (`tenantWriteCount`, `sharedRangeAnswers`) | | |
 | A range key outlives its reader's access | The key answers until it ends, as long as a session that ended in another process still passes (`rangeKeyLifetimeMs`) | | |
 | One client replays a range key | A kept answer serves a bounded number of requests, and the next one runs the route and its limiter (`sharedRangeAnswers`) | | |

@@ -80,7 +80,7 @@ Only product rows sync. Channels are containers, and products are the synced con
 
 ### Ordering
 
-Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path. Under sustained change the API sends an audience one frame per action and interval, each row once with its latest change; the first change after a quiet interval goes at once.
+Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path. Under sustained change the API sends an audience one frame per action and interval, each row once with its latest change; the first few changes after a quiet spell go at once.
 
 ### Drafts
 
