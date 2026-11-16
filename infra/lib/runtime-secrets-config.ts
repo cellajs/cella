@@ -19,6 +19,8 @@ export interface RuntimeSecretConfig {
   generation: RuntimeSecretGeneration;
   /** Services that receive the secret in their machine's `.env.runtime`, which the deploy composes from the runtime folder. */
   services: readonly ServiceName[];
+  /** The row of "Env vars & secrets" an operator value is listed in, with every value that names the same one. Unset, the value is its own row. */
+  group?: string;
   /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
   derivedFrom?: RuntimeSecretDerivation;
   /**

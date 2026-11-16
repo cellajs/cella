@@ -41,7 +41,7 @@ export interface MenuChoice<T extends string> {
 export type MenuItem<T extends string> = MenuChoice<T> | { group: string } | Separator;
 
 /** The rule above the way out of a menu. */
-const RULE = new Separator(pc.dim('─'.repeat(40)));
+export const RULE = new Separator(pc.dim('─'.repeat(40)));
 
 export const BACK = 'back';
 export const QUIT = 'quit';

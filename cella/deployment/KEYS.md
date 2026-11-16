@@ -146,6 +146,8 @@ A rotation ends by deploying the live release again on new machines: until one s
 
 **Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
 
+**Env vars & secrets** lists the values infra makes as one row, with the date of the last rotation. That row opens **Rotate secrets**.
+
 `data-encryption-key` and `pii-hash-secret` encrypt or hash stored data. Neither rotates here or in the app, which holds one value of each.
 
 A new encryption key leaves every stored TOTP secret and OAuth signing key unreadable. A new hashing secret leaves every stored IP, device and rate-limit hash unmatched. Each browser then signs in as a new device.

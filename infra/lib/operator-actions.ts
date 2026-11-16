@@ -74,6 +74,11 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: 'The values the services read at boot. A changed value reaches the machines at the next deploy.',
   },
+  'env-import': {
+    label: 'Import a .env file',
+    key: 'operator',
+    description: 'Set the values a .env file holds, such as one from another host, after one confirmation.',
+  },
   'db-open': {
     label: 'Open DB access',
     key: 'operator',
@@ -133,7 +138,7 @@ export const MORE_SECTIONS = {
   'Keys & access': ['rotate-keys', 'rotate-secrets', 'operators', 'identities', 'repository-key'],
   Repair: ['unlock', 'resume', 'state-remove'],
   Database: ['db-seed', 'db-reset'],
-  Environment: ['teardown'],
+  Environment: ['env-import', 'teardown'],
 } as const satisfies Record<string, readonly OperatorActionId[]>;
 
 /** A row of the menu for one action, under its label and description. */
@@ -156,7 +161,7 @@ export const MENU_ROWS = {
   more: {
     label: 'More',
     actions: Object.values(MORE_SECTIONS).flat(),
-    description: 'Deploying now, keys and access, repairs, seeding or resetting the database, and tearing down.',
+    description: 'Deploying now, keys and access, repairs, the database, importing a .env file and tearing down.',
   },
 } as const satisfies Record<string, MenuRow>;
 

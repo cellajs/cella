@@ -61,7 +61,7 @@ The menu lists the daily rows, most used first. Each row's command is a word of 
 | Keys & access | Rotate keys, Rotate secrets, Set up operators, Update identities, Set repository read key |
 | Repair | Unlock, Resume setup, Remove from state |
 | Database | Seed database, Reset database |
-| Environment | Tear down |
+| Environment | Import a .env file, Tear down |
 
 Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
 

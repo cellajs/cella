@@ -18,41 +18,53 @@ const definition = (overrides: Partial<RuntimeSecretDefinition>): RuntimeSecretD
 describe('secretsTable', () => {
   it.each([
     { state: 'missing · required', mark: '✗', secret: { required: true }, container: undefined },
-    { state: 'empty · optional', mark: '○', secret: {}, container: { version_count: 0 } },
+    { state: 'empty', mark: '○', secret: {}, container: { version_count: 0 } },
     { state: 'set Nov 8', mark: '●', secret: {}, container: { version_count: 2, setAt: '2026-11-08T12:00:00Z' } },
-    { state: 'made by infra', mark: '◇', secret: { valueSource: 'engine', generation: 'random', rotatable: true }, container: undefined },
-    { state: 'made by infra · kept', mark: '◇', secret: { valueSource: 'engine', generation: 'random' }, container: undefined },
   ] as const)('reads $state', ({ state, mark, secret, container }) => {
     const rows = secretsTable([definition(secret)], new Map(container ? [['x', container]] : []));
 
     expect(rows.map((row) => row.state)).toEqual([state]);
-    expect(stripVTControlCharacters(formatSecretsTable(rows)[1] ?? '')).toMatch(new RegExp(`^${mark} X +backend +${state}$`));
+    expect(stripVTControlCharacters(formatSecretsTable(rows)[0] ?? '')).toMatch(new RegExp(`^${mark} X +backend +${state}$`));
   });
 
-  it('puts required values without a version first, then set ones, then optional ones, then the ones infra makes, in registry order', () => {
+  it('lists the values of one group as one row: the services of all, set once every value is, the count of set ones before', () => {
+    const pair = [
+      definition({ envVar: 'A_ID', secretName: 'a-id', group: 'A sign-in' }),
+      definition({ envVar: 'A_SECRET', secretName: 'a-secret', group: 'A sign-in', services: ['mcp'] }),
+    ];
+    const first = { version_count: 1, setAt: '2026-11-02T12:00:00Z' };
+
+    expect(secretsTable(pair, new Map([['a-id', first]]))).toMatchObject([
+      { label: 'A sign-in', usedBy: 'backend, mcp', kind: 'partial', state: '1 of 2 set' },
+    ]);
+    expect(
+      secretsTable(
+        pair,
+        new Map([
+          ['a-id', first],
+          ['a-secret', { version_count: 1, setAt: '2026-11-08T12:00:00Z' }],
+        ]),
+      ),
+    ).toMatchObject([{ kind: 'set', state: 'set Nov 8' }]);
+  });
+
+  it('puts rows that miss a required value first, then set, partly set and empty ones, in registry order, and none for values infra makes', () => {
     const rows = secretsTable(
       [
         definition({ envVar: 'ENGINE', secretName: 'engine', valueSource: 'engine' }),
         definition({ envVar: 'SET', secretName: 'set' }),
         definition({ envVar: 'OPTIONAL', secretName: 'optional' }),
-        definition({ envVar: 'REQUIRED_A', secretName: 'required-a', required: true }),
-        definition({ envVar: 'REQUIRED_B', secretName: 'required-b', required: true }),
+        definition({ envVar: 'REQUIRED', secretName: 'required', required: true }),
+        definition({ envVar: 'PART_A', secretName: 'part-a', group: 'Part' }),
+        definition({ envVar: 'PART_B', secretName: 'part-b', group: 'Part' }),
       ],
-      new Map([['set', { version_count: 1 }]]),
+      new Map([
+        ['set', { version_count: 1 }],
+        ['part-a', { version_count: 1 }],
+      ]),
     );
 
-    expect(rows.map((row) => row.envVar)).toEqual(['REQUIRED_A', 'REQUIRED_B', 'SET', 'OPTIONAL', 'ENGINE']);
-  });
-
-  it('aligns the state column under its header', () => {
-    const rows = secretsTable(
-      [definition({ envVar: 'A_LONGER_NAME', services: ['backend', 'mcp'] }), definition({ envVar: 'B', required: true })],
-      new Map(),
-    );
-    const lines = formatSecretsTable(rows).map((line) => stripVTControlCharacters(line));
-    const header = lines[0] ?? '';
-
-    expect(lines.slice(1).map((line, index) => line.indexOf(rows[index]?.state ?? ''))).toEqual([header.indexOf('STATE'), header.indexOf('STATE')]);
+    expect(rows.map((row) => row.label)).toEqual(['REQUIRED', 'SET', 'Part', 'OPTIONAL']);
   });
 });
 

@@ -116,6 +116,7 @@ describe('pickItems', () => {
       '  Reset database           operator key',
       '',
       'Environment',
+      '  Import a .env file       operator key',
       '  Tear down                Owner key',
       ` ${'─'.repeat(40)}`,
       '  ← Back',
