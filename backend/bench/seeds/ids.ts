@@ -1,4 +1,4 @@
-import type { AncestorChannelType, EntityIdColumns, EntityType, NullableAncestorType } from 'shared';
+import { type AncestorChannelType, type EntityIdColumns, type EntityType, hierarchy, type NullableAncestorType } from 'shared';
 import { benchTenantId, benchUuidPrefix } from 'shared/utils/bench-identity';
 
 /**
@@ -35,11 +35,19 @@ export type BenchAttachmentHome = EntityIdColumns<Exclude<AttachmentHomeChannel,
 
 export const TENANT_ID = benchTenantId;
 export const ORG_ID = benchUuid(CORE_ID_VARIANTS.org, 0);
+/** The tenant of the large list: a tenant holds one organization. */
+export const LARGE_LIST_TENANT_ID = 'xblist';
+/** The second bench organization, which holds the large list of `full-list-read`. */
+export const LARGE_LIST_ORG_ID = benchUuid(CORE_ID_VARIANTS.org, 1);
+/** Whether an attachment may live in an organization with no channel below it: the large-list organization has none. */
+export const largeListSeeded = hierarchy.possibleHomeChannels('attachment').includes('organization');
 
 export const userId = (i: number) => benchUuid(CORE_ID_VARIANTS.user, i);
 export const userEmail = (i: number) => `xbench-user-${String(i).padStart(4, '0')}@xbench.local`;
 export const emailId = (i: number) => benchUuid(CORE_ID_VARIANTS.email, i);
 export const attachmentId = (i: number) => benchUuid(CORE_ID_VARIANTS.attachment, i);
+/** Large-list attachments: past the seeded ones and below the churn band (`attachment-requests.ts`), in the attachment variant. */
+export const largeListAttachmentId = (i: number) => attachmentId(0x100000 + i);
 /** @public */
 export const membershipId = (i: number) => benchUuid(CORE_ID_VARIANTS.membership, i);
 export const sessionId = (i: number) => benchUuid(CORE_ID_VARIANTS.session, i);

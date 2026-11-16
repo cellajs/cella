@@ -23,6 +23,7 @@ A testbed is a copy of the app on a database and ports of its own, as `pnpm test
 | `pnpm cella bench --all` | Run every scenario in turn, with a table at the end |
 | `pnpm cella bench --all --short` | Smoke run of every scenario: one VU per role, no thresholds, no baselines |
 | `pnpm cella bench <name> --isolated` | Run on a testbed, beside `pnpm dev` |
+| `pnpm cella bench <name> --rtt 50` | Add a 50 ms network round trip to every request and stream |
 | `pnpm cella bench --help` | The other flags |
 | `pnpm --filter backend bench:seed` | Seed the bench data, cleaning first |
 | `pnpm --filter backend bench:teardown` | Remove all bench data but the baselines |
@@ -40,8 +41,14 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 | `detail-read` | What a few hundred signed-in readers of one row at once cost the detail route | Responses |
 | `attachment-edit` | How many edits per second the write path takes | Responses, one activity per edit |
 | `attachment-churn` | Whether creating and deleting rows in batches keeps the books right | Responses, one activity per row, the attachment count |
-| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it | Responses, one activity per edit, notifications heard, no stream errors |
+| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it, and how long until all have heard | Responses, one activity per edit, notifications heard, no stream errors |
 | `yjs-typing` | How the Yjs relay holds under people typing together | Documents converged, saved and written to their rows |
+| `edit-propagation` | How long until a reader viewing the channel holds an edit, with the stack at rest | Every edit seen, the reader's row equals the database's |
+| `edit-propagation-busy` | The same while other writers edit at a steady rate | As `edit-propagation` |
+| `reconnect-catchup` | What a deploy costs: every stream ends at once and every client catches up together | The clients missed the edits while away, all caught up, rows equal the database's |
+| `offline-replay` | How a queue of offline edits merges, and what draining it one write at a time costs | Last writer wins on every row, rows equal the database's |
+| `access-revocation` | Whether a removed member stops hearing and reading the organization while others write | No frame or read after the removal, none with a range key past its lifetime, the removal heard, the bystander still hears |
+| `full-list-read` | What a fresh client pays to read a whole large list | Every row read, rows equal the database's |
 
 ## Writing a scenario
 
@@ -76,15 +83,23 @@ export default defineScenario({
 - **Ramps.** `rampTo` ramps a phase's arrival rate.
 - **What a VU does** is `vu`, `roles` for a mix of VUs, or `run` for a scenario that drives its own clients once.
 - **The VU** carries HTTP, event-stream and WebSocket clients and counters. A VU that throws counts as failed.
+- **More people in one VU.** `vu.client()` gives a `run` scenario one more person on a connection of its own.
 - **Users.** `benchUser(vu.index)` hands each VU a seeded user.
 - **Names are declared.** `counters` and `histograms` list every name the scenario records.
 - **Names are typed.** Any other name in `vu.counter`, `expect` or `forbid` fails `pnpm check`.
 - **Request names.** Give a request with ids in its path a `name`. The endpoint table then has one row for it.
 
+## Sync scenarios
+
+The sync scenarios drive `sync/client.ts`, one person's sync engine at the protocol level: the stream, a catchup on every connect, range reads from a cursor, and the rows it holds. It reads what it hears at once, as a viewed channel does, or in the slot the frontend's scheduler would take. Each scenario ends by comparing what its clients hold with the database.
+
+They edit and read the product the scenario file passes: the template's is the attachment (`attachmentProduct` in `attachment-requests.ts`). An app runs them on its own product with a scenario file of its own that passes its `BenchProduct` entry.
+
 ## Files
 
 - `run.ts` is the entry `pnpm cella bench` runs: the app's steps around the scenarios.
 - `scenarios/` holds one module per scenario, `seeds/` the bench data ([seed registry](./seeds/README.md)).
+- `sync/` holds the sync client, the product a sync scenario edits and the driver of each sync scenario.
 - `config.ts` reads ports and URLs from `appConfig.services`, and the `YJS_*` run shape from the environment.
 
 ## Checks
@@ -99,6 +114,7 @@ A failed run is neither compared nor saved. A run fails when one of these fails:
 - **Activities.** `bench.rows_written` must match the activities the CDC worker recorded in the bench organization.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change in `channel_counters`.
 - **Books.** A full run ends with `pnpm sync:verify`, which must find every counter matching its table in time.
+- **Convergence.** A sync scenario forbids `bench.rows_diverged`: a row a client holds that differs from the database.
 
 A scenario of your own gets the response check for free. It gets the CDC checks by counting those rows. `--all` pauses between scenarios, so a saturating one does not slow the next.
 
@@ -121,7 +137,7 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 ## Baselines and logs
 
-A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
+A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency. A run with `--rtt` compares only with runs of the same round trip. `logs/` keeps the recent logs per scenario.
 
 Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
 

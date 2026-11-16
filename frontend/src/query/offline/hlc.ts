@@ -1,4 +1,4 @@
-import { hashSourceId } from 'shared/utils/hash-source-id';
+import { formatHlc } from 'shared/utils/hlc';
 import { uuidv7 } from 'uuidv7';
 
 /** Unique per browser tab, generated once per page load: carried as `stx.sourceId` and compared for echo checks on stream changes. */
@@ -6,9 +6,6 @@ export const sourceId = uuidv7();
 
 let lastTimestamp = 0;
 let lastCounter = 0;
-
-/** 5-char hash of sourceId, for compact HLC strings. */
-const sourceHash = hashSourceId(sourceId);
 
 /** Format `millis:counter:source`; lexicographic comparison gives causal ordering. */
 function createHLC(): string {
@@ -19,7 +16,7 @@ function createHLC(): string {
   } else {
     lastCounter++;
   }
-  return `${lastTimestamp}:${String(lastCounter).padStart(4, '0')}:${sourceHash}`;
+  return formatHlc(lastTimestamp, lastCounter, sourceId);
 }
 
 /** Every field of one mutation shares a single HLC, making the update atomic. */

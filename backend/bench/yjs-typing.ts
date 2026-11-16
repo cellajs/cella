@@ -1,21 +1,23 @@
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
 import process from 'node:process';
-import type { Distribution } from '@cellajs/cli/bench';
+import { type Distribution, distributionOf, type Vu } from '@cellajs/cli/bench';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import pc from 'picocolors';
 import { benchUuidPrefix } from 'shared/utils/bench-identity';
+import { sleep } from 'shared/utils/sleep';
 import WebSocket from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { z } from 'zod';
 import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
-import type { StreamChange } from '#/schemas/stream-schemas';
+import { attachmentProduct } from './attachment-requests';
 import { benchCookie, ORG_PATH } from './bench-user';
-import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
+import { BACKEND_PORT, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
 import { attachmentId, TENANT_ID } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
+import { createSyncClient, type SyncClient, waitFor } from './sync/client';
 
 /** Message types on the relay socket: y-websocket's sync, and the relay's own `Generation` and `Saved` (yjs/src/constants.ts). */
 const MESSAGE = { sync: 0, generation: 4, saved: 5 } as const;
@@ -68,15 +70,11 @@ export type YjsHistogram = (typeof YJS_HISTOGRAMS)[number];
 export interface YjsTypingSink {
   histogram(name: YjsHistogram, ms: number): void;
   keystroke(): void;
+  /** A connection of its own for one more person: the VU's `client()`. */
+  client(): Pick<Vu, 'http' | 'sse'>;
 }
 
 type Percentiles = Pick<Distribution, 'count' | 'p50' | 'p95' | 'p99' | 'max'>;
-
-function percentiles(values: number[]): Percentiles {
-  const sorted = [...values].sort((a, b) => a - b);
-  const at = (q: number) => (sorted.length === 0 ? 0 : sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))]);
-  return { count: sorted.length, p50: at(0.5), p95: at(0.95), p99: at(0.99), max: sorted.at(-1) ?? 0 };
-}
 
 type Phase = 'setup' | 'typing' | 'settle';
 
@@ -108,11 +106,13 @@ interface Client {
   generation: string | null;
 }
 
-async function mintToken(docIndex: number, userIndex: number): Promise<string> {
-  const url = `${BASE_URL}${ORG_PATH}/yjs/token?entityType=attachment&entityId=${attachmentId(docIndex)}`;
-  const res = await fetch(url, { headers: { cookie: benchCookie(userIndex) } });
-  if (!res.ok) throw new Error(`token for attachment ${docIndex} answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return ((await res.json()) as z.output<typeof yjsTokenResponseSchema>).token;
+async function mintToken(http: Vu['http'], docIndex: number, userIndex: number): Promise<string> {
+  const res = await http.get(`${ORG_PATH}/yjs/token?entityType=attachment&entityId=${attachmentId(docIndex)}`, {
+    headers: { cookie: benchCookie(userIndex) },
+    name: 'GET /yjs/token',
+  });
+  if (!res.ok) throw new Error(`token for attachment ${docIndex} answered ${res.status}: ${res.text().slice(0, 200)}`);
+  return (res.json() as z.output<typeof yjsTokenResponseSchema>).token;
 }
 
 /** Runs `fn` over `items`, `limit` at a time. */
@@ -128,18 +128,6 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
     }),
   );
   return results;
-}
-
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-/** Polls `done` every 50 ms; resolves to the wait in ms, or null at the timeout. */
-async function waitFor(done: () => boolean | Promise<boolean>, timeoutMs: number): Promise<number | null> {
-  const started = performance.now();
-  while (!(await done())) {
-    if (performance.now() - started > timeoutMs) return null;
-    await sleep(50);
-  }
-  return performance.now() - started;
 }
 
 /** The sync subtype of a frame y-websocket sends; null for any other message. */
@@ -312,38 +300,20 @@ function typeOnce(run: RunState, typer: Typer): void {
  * One user on the app's SSE stream, counting attachment change frames per phase, as a non-editing viewer sees them. Under
  * load CDC batches changes of one scope into one frame (its `rows`), so frames are fewer than writes.
  */
-async function watchStream(run: RunState, userIndex: number, signal: AbortSignal): Promise<void> {
-  try {
-    const res = await fetch(`${BASE_URL}/me/stream`, { headers: { cookie: benchCookie(userIndex), accept: 'text/event-stream' }, signal });
-    if (!res.ok || !res.body) return bump(run, `sse.error.${res.status}`);
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const frames = buffer.split('\n\n');
-      buffer = frames.pop() ?? '';
-      for (const frame of frames) {
-        if (!frame.includes('event: change') && !frame.includes('event:change')) continue;
-        const data = frame
-          .split('\n')
-          .filter((line) => line.startsWith('data:'))
-          .map((line) => line.slice(5).trim())
-          .join('');
-        try {
-          const n = JSON.parse(data) as StreamChange;
-          if (n.productType !== 'attachment') continue;
-          bump(run, `sse.changes.${run.phase}`);
-        } catch {
-          bump(run, 'sse.error.parse');
-        }
-      }
-    }
-  } catch (error) {
-    if ((error as Error).name !== 'AbortError') bump(run, 'sse.error.stream');
-  }
+function watchStream(run: RunState, userIndex: number): SyncClient {
+  return createSyncClient({
+    client: run.sink.client(),
+    cookie: benchCookie(userIndex),
+    product: attachmentProduct,
+    mode: 'off',
+    metrics: {
+      counter(name) {
+        if (name === 'sse.errors') bump(run, 'sse.error.stream');
+      },
+      histogram() {},
+    },
+    onChange: () => bump(run, `sse.changes.${run.phase}`),
+  });
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -462,7 +432,8 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   const plan = docIndexes.flatMap((docIndex) =>
     Array.from({ length: typers + 1 }, (_, k) => ({ docIndex, role: (k < typers ? 'typer' : 'viewer') as Client['role'], userIndex: nextUser++ })),
   );
-  const tokens = await mapLimit(plan, 8, (p) => mintToken(p.docIndex, p.userIndex));
+  const { http } = sink.client();
+  const tokens = await mapLimit(plan, 8, (p) => mintToken(http, p.docIndex, p.userIndex));
 
   const sampler = await startStackSampler(
     [
@@ -492,8 +463,8 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
     bump(run, `notify.${run.phase}`);
   });
 
-  const sseAbort = new AbortController();
-  const streams = Array.from({ length: sseViewers }, () => watchStream(run, nextUser++, sseAbort.signal));
+  const viewers = Array.from({ length: sseViewers }, () => watchStream(run, nextUser++));
+  await Promise.all(viewers.map((viewer) => viewer.connect()));
 
   // Materializations: each one writes the attachment row, so a changed updated_at between polls is one.
   const ids = docIndexes.map((d) => attachmentId(d));
@@ -652,8 +623,7 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   pollingWrites = false;
   for (const c of clients) c.provider.destroy();
   for (const c of clients) c.doc.destroy();
-  sseAbort.abort();
-  await Promise.all([...streams, healthPoller, cdcPoller, writePoller]);
+  await Promise.all([...viewers.map((viewer) => viewer.disconnect()), healthPoller, cdcPoller, writePoller]);
   loopLag.disable();
   await listener.end();
   await prober.end();
@@ -677,12 +647,12 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
     savedFrames,
     keystrokes,
     keystrokesPerSec: perSec(keystrokes, typingMs),
-    peerLatencyMs: percentiles(run.peerMs),
-    savedLatencyMs: percentiles(run.savedMs),
+    peerLatencyMs: distributionOf(run.peerMs),
+    savedLatencyMs: distributionOf(run.savedMs),
     notify: {
       perSec: perSec(run.counters['notify.typing'] ?? 0, typingMs),
       total: run.counters['notify.typing'] ?? 0,
-      probeDelayMs: percentiles(run.notifyDelayMs),
+      probeDelayMs: distributionOf(run.notifyDelayMs),
     },
     materialize: {
       perMin: perSec(materializeTyping, typingMs) * 60,

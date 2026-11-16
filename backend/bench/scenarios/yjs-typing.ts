@@ -37,6 +37,7 @@ export default defineScenario({
     const report = await runYjsTyping(yjsTypingOptions(ctx.short), {
       histogram: (name, ms) => ctx.histogram(name, ms),
       keystroke: () => ctx.counter('yjs.keystrokes'),
+      client: () => ctx.client(),
     });
     ctx.counter('yjs.notifications', report.notify.total);
     ctx.counter('yjs.materializations', report.materialize.total);

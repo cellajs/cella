@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
-import { hashSourceId } from 'shared/utils/hash-source-id';
+import { formatHlc } from 'shared/utils/hlc';
 import {
   generateMockEntityChannelIdColumns,
   mockBatchResponse,
@@ -70,7 +70,7 @@ export const mockCreateAttachmentsBody = () =>
 export const mockUpdateAttachmentBody = () =>
   withFakerSeed('attachment:update-body', () => {
     const stx = mockStx();
-    const fieldTimestamps = { name: `1735732800000:0001:${hashSourceId(stx.sourceId)}` };
+    const fieldTimestamps = { name: formatHlc(1735732800000, 1, stx.sourceId) };
     return { ops: { name: `${mockAttachment().name} (final)` }, stx: { ...stx, fieldTimestamps } };
   });
 

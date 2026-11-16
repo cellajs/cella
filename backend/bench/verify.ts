@@ -1,9 +1,12 @@
+import { getTableName } from 'drizzle-orm';
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { createPgConnection } from '#/db/create-connection';
+import { productTables } from '#/db/product-tables';
 import { awaitBooksAnswer, requestBooks } from '#/modules/entities/sync-requests';
 import { DB_URL } from './config';
 import { ORG_ID } from './seeds/ids';
+import type { BenchProduct } from './sync/product';
 
 /** What the CDC worker has made of the bench organization's writes: its product activities and its counters. */
 export interface PipelineSnapshot {
@@ -108,5 +111,42 @@ export async function booksFindings(waitSeconds = 60): Promise<string[]> {
     ];
   } finally {
     await db.$client.end();
+  }
+}
+
+/**
+ * Where what clients hold differs from the database: each client's value of the product's field for every row id the
+ * check names, against the row's stored value. A deleted row counts as `null`.
+ * @returns One finding per differing row and client, at most `limit`; the total is in the count.
+ */
+export async function rowDivergence(
+  product: BenchProduct,
+  ids: readonly string[],
+  clients: readonly ReadonlyMap<string, string>[],
+  limit = 5,
+): Promise<{ count: number; findings: string[] }> {
+  const table = getTableName(productTables[product.type]());
+  const column = product.field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+  const pool = new pg.Pool({ connectionString: DB_URL, max: 1 });
+  try {
+    const { rows } = await pool.query<{ id: string; value: string | null }>(
+      `SELECT id, "${column}" AS value FROM "${table}" WHERE id = ANY($1::uuid[]) AND deleted_at IS NULL`,
+      [ids],
+    );
+    const stored = new Map(rows.map(({ id, value }) => [id, value]));
+    let count = 0;
+    const findings: string[] = [];
+    clients.forEach((held, client) => {
+      for (const id of ids) {
+        const expected = stored.get(id) ?? null;
+        const actual = held.get(id) ?? null;
+        if (expected === actual) continue;
+        if (count++ < limit)
+          findings.push(`client ${client} holds ${JSON.stringify(actual)} for ${product.type} ${id}, the database ${JSON.stringify(expected)}`);
+      }
+    });
+    return { count, findings };
+  } finally {
+    await pool.end();
   }
 }
