@@ -47,7 +47,7 @@ export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): Insert
 
 export const mockUserResponse = (key = 'user:default'): ServedUser =>
   withFakerSeed(key, () => {
-    const user = generateUser();
+    const { updatedBy: _updatedBy, ...user } = generateUser();
     return { ...user, isAnonymous: false, lastSignInAt: user.createdAt, lastSeenAt: user.createdAt };
   });
 

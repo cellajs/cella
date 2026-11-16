@@ -12,8 +12,8 @@ import { pick } from '#/utils/pick';
 /** User with the activity times its `actors` row holds and its userFlags merged with the defaults. */
 export type UserWithActivity = UserModel & { userFlags: UserFlags; lastSeenAt: string | null; lastSignInAt: string | null };
 
-/** User as the API serves it: {@link UserWithActivity} with the proven address or null, and whether the account is anonymous. */
-export type ServedUser = Omit<UserWithActivity, 'email'> & { email: string | null; isAnonymous: boolean };
+/** User as the API serves it: {@link UserWithActivity} with the proven address or null, whether the account is anonymous, and no `updatedBy`. */
+export type ServedUser = Omit<UserWithActivity, 'email' | 'updatedBy'> & { email: string | null; isAnonymous: boolean };
 
 /**
  * Joins a user's `actors` row, which holds the activity times. Every query that selects {@link userSelect} or
@@ -43,8 +43,10 @@ export const userSelect = {
   lastSignInAt: actorsTable.lastSignInAt,
 };
 
-/** {@link userSelect} as the API serves a full user: the proven address or null, and `isAnonymous`. */
-export const servedUserSelect = { ...userSelect, email: provenEmail, isAnonymous };
+const { updatedBy: _updatedBy, ...servedUserColumns } = userSelect;
+
+/** {@link userSelect} as the API serves a full user: the proven address or null, `isAnonymous`, and no `updatedBy`, which stays in the database. */
+export const servedUserSelect = { ...servedUserColumns, email: provenEmail, isAnonymous };
 
 /** Sort key for "last seen": never-seen users sort as oldest, since a plain DESC puts nulls first in Postgres. */
 export const lastSeenOrder = sql`COALESCE(${actorsTable.lastSeenAt}, '-infinity')`;

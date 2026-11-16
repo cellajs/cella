@@ -104,12 +104,60 @@ export const undocumentedErrorStatus = (operationId: string | undefined, status:
   return `${operationId} answered ${status}, which its route does not document: spread errors(${status}) into its responses, or let the guard, limiter or lock that refuses with it declare it in errors.`;
 };
 
-/** The boot check of the generated document: every `x-tags` entry must name a registered tag. Throws on the first violation. */
+/** The parts of a component schema the boot check reads. */
+type SchemaNode = {
+  $ref?: string;
+  allOf?: SchemaNode[];
+  properties?: Record<string, unknown>;
+  additionalProperties?: unknown;
+  example?: unknown;
+  'x-tags'?: unknown;
+};
+
+/**
+ * The fields a schema node declares, through its `allOf` parts and `$ref`s.
+ * @returns Undefined for a node that takes members beyond the declared ones (`additionalProperties`), which no example exceeds.
+ */
+const declaredFields = (node: SchemaNode | undefined, schemas: Record<string, SchemaNode>): Set<string> | undefined => {
+  if (!node) return new Set();
+  if (node.$ref) return declaredFields(schemas[node.$ref.split('/').pop() ?? ''], schemas);
+  if (node.additionalProperties) return undefined;
+  const fields = new Set(Object.keys(node.properties ?? {}));
+  for (const part of node.allOf ?? []) {
+    const partFields = declaredFields(part, schemas);
+    if (!partFields) return undefined;
+    for (const field of partFields) fields.add(field);
+  }
+  return fields;
+};
+
+/**
+ * A response mock is built from the row. A field in it that the schema leaves out is a column the answer most likely
+ * sends too, while the document and the SDK say it does not exist. A union declares no fields of its own and is skipped.
+ */
+const undeclaredExampleFields = (schema: SchemaNode, schemas: Record<string, SchemaNode>): string[] => {
+  const { example } = schema;
+  if (example === null || typeof example !== 'object' || Array.isArray(example)) return [];
+  const declared = declaredFields(schema, schemas);
+  return declared?.size ? Object.keys(example).filter((field) => !declared.has(field)) : [];
+};
+
+/**
+ * The boot check of the generated document: every `x-tags` entry must name a registered tag, and where authoring rules
+ * are checked the example of a named schema holds only fields the schema declares. Throws on the first violation.
+ */
 export const validateOpenApiDocument = (doc: OpenApiDocument) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));
-  const schemas = (doc.components?.schemas ?? {}) as Record<string, Record<string, unknown>>;
+  const schemas = (doc.components?.schemas ?? {}) as Record<string, SchemaNode>;
 
   for (const [name, schema] of Object.entries(schemas)) {
+    const undeclared = checksAuthoringRules ? undeclaredExampleFields(schema, schemas) : [];
+    if (undeclared.length) {
+      throw new Error(
+        `Schema "${name}" has an example with ${undeclared.join(', ')}, which the schema does not declare. Keep the field off the answer and the mock, or declare it; a writer id is declared as a reference (auditShape), never as a raw id.`,
+      );
+    }
+
     const tags = schema['x-tags'];
     if (tags === undefined) continue;
     if (!Array.isArray(tags)) throw new Error(`Schema "${name}" has non-array x-tags`);
