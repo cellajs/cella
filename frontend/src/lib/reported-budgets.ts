@@ -1,3 +1,5 @@
+export { userReadShare } from 'shared/sync-pace';
+
 /** What the API last reported of a budget: its quota, what is left of it and when its window ends. */
 interface ReportedBudget {
   quota: number;
@@ -18,9 +20,6 @@ const parseMembers = (field: string | null) => {
   }
   return members;
 };
-
-/** The share of the read budget the warm-up and the viewed scopes leave to what the user opens. */
-export const userReadShare = 0.3;
 
 /**
  * Keeps the budgets a response reports, in the `RateLimit` and `RateLimit-Policy` fields of the IETF httpapi draft. A

@@ -33,6 +33,9 @@ import type {
   BatchDeleteUsersData,
   BatchDeleteUsersErrors,
   BatchDeleteUsersResponses,
+  BatchUpdateAttachmentsData,
+  BatchUpdateAttachmentsErrors,
+  BatchUpdateAttachmentsResponses,
   CatchUpMyStreamData,
   CatchUpMyStreamErrors,
   CatchUpMyStreamResponses,
@@ -379,6 +382,7 @@ import {
   zBatchDeleteOrganizationsResponse,
   zBatchDeleteRequestsResponse,
   zBatchDeleteUsersResponse,
+  zBatchUpdateAttachmentsResponse,
   zCatchUpMyStreamResponse,
   zCheckEmailResponse,
   zCheckMemberInviteResponse,
@@ -626,6 +630,32 @@ export const batchCreateAttachments = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zBatchCreateAttachmentsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-create',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update attachments
+ *
+ * Updates up to 50 attachments in one transaction. A row the caller may not update is listed in `rejectedIds`, and a row whose ops change nothing is answered as stored. Takes no `If-Match`: send a conditional update to the single route.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/attachments:batch-update** ·· [batchUpdateAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-update) ·· _attachments · cella · product_
+ *
+ * @param {batchUpdateAttachmentsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const batchUpdateAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<BatchUpdateAttachmentsData, ThrowOnError>,
+): RequestResult<BatchUpdateAttachmentsResponses, BatchUpdateAttachmentsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchUpdateAttachmentsResponses, BatchUpdateAttachmentsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchUpdateAttachmentsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-update',
     ...options,
     headers: {
       'Content-Type': 'application/json',

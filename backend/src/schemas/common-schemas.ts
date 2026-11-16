@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
+import { pageSizeCap } from 'shared/sync-pace';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import type { TemplateErrorKey } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
@@ -78,9 +79,6 @@ export const userIdParamSchema = z.object({ userId: validIdSchema });
 
 /** A channel entity by type and id. */
 export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
-
-/** The largest page a list returns; a larger `maxPageSize` coerces down to it. */
-const pageSizeCap = 1000;
 
 /**
  * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,

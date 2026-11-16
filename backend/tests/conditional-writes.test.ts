@@ -136,8 +136,13 @@ describe('Conditional writes', async () => {
     expect(row.name).toBe('theirs');
   });
 
-  it('keeps the tag for an attachment update that changes nothing', async () => {
-    const { rename, readTag } = await seedRenamable();
+  const renamables = {
+    attachment: seedRenamable,
+    organization: async () => ({ rename: renameOrganization, readTag: readOrganizationTag }),
+  };
+
+  it.each(Object.entries(renamables))('keeps the tag for an %s update that changes nothing', async (_, seed) => {
+    const { rename, readTag } = await seed();
     expect((await rename('same')).response.status).toBe(200);
     const tag = await readTag();
 

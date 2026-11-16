@@ -53,8 +53,6 @@ interface DirtyEntry {
   rangeKey?: string;
 }
 
-type Scope = Pick<DirtyEntry, 'entityType' | 'organizationId' | 'channelId'>;
-
 const dirty = new Map<string, DirtyEntry>();
 /** Reads running per product type and organization, by `groupOf`: no range read of a group starts while it has one. */
 const busyGroups = new Map<string, number>();
@@ -63,12 +61,7 @@ let holdTimer: ReturnType<typeof setTimeout> | null = null;
 let listenersInstalled = false;
 
 const entryKey = (entityType: ProductEntityType, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
-const groupOf = ({ entityType, organizationId }: Omit<Scope, 'channelId'>) => `${entityType}:${organizationId}`;
-
-function cursorOf({ entityType, organizationId, channelId }: Scope): number {
-  const store = syncStore.getState();
-  return channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
-}
+const groupOf = ({ entityType, organizationId }: Pick<DirtyEntry, 'entityType' | 'organizationId'>) => `${entityType}:${organizationId}`;
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
 function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: number): number {
@@ -91,7 +84,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
   if (!hasEntityQueryKeys(entityType)) return;
 
-  const caughtUp = cursorOf(input);
+  const caughtUp = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
   if (untilSeq <= caughtUp) return;
 
   // Anchoring after the caught-up position heals missed-change gaps and trims already-ingested overlap; with no baseline, trust the change's own range.
@@ -265,7 +258,7 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
   // A read that waited behind another starts where that one ended, and an entry whose range the cursor passed reads nothing.
   const entries: DirtyEntry[] = [];
   for (const entry of due) {
-    const caughtUp = cursorOf(entry);
+    const caughtUp = syncStore.getState().getScopeSeq(organizationId, entry.channelId, entityType);
     if (entry.untilSeq > caughtUp) entries.push({ ...entry, afterSeq: caughtUp > 0 ? caughtUp : entry.afterSeq });
     else for (const propagation of entry.propagations) propagateEmbeddings(propagation);
   }
@@ -291,7 +284,7 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
   }
 
   // Each due channel advances to the shared upper bound, also past a range not delivered whole: its refetch mark recovers it, and no later catchup fetches it again.
-  for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+  for (const entry of entries) syncStore.getState().setScopeSeq(organizationId, entry.channelId, entityType, untilSeq);
 
   // The org id is the fallback home for rows without ancestor ids.
   if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items });
@@ -331,7 +324,7 @@ export function invalidateUndelivered(
 }
 
 /** Once the read budget has reads left, the product queries on screen whose read it refused read again. */
-function refetchRefusedAfterHold(): void {
+export function refetchRefusedAfterHold(): void {
   if (holdTimer) clearTimeout(holdTimer);
   holdTimer = setTimeout(
     () => {
@@ -345,12 +338,6 @@ function refetchRefusedAfterHold(): void {
     },
     msUntilBudget('read', 0),
   );
-}
-
-function advanceCaughtUp({ organizationId, channelId, entityType, untilSeq }: DirtyEntry): void {
-  const store = syncStore.getState();
-  if (channelId) store.setChannelSeq(organizationId, channelId, entityType, untilSeq);
-  else store.setOrgSeq(organizationId, entityType, untilSeq);
 }
 
 function requeue(entry: DirtyEntry, delayMs: number): void {

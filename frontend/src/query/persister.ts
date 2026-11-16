@@ -5,6 +5,7 @@ import { currentSchemaVersion } from 'shared/schema-evolution';
 import { isRecord } from 'shared/utils/as-record';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
+import { noteCacheChange, trackCacheWrite } from '~/query/cache-written';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedMetaRecord, type PersistedQueryRecord } from '~/query/local-user-db';
 import { isPending } from '~/query/offline/mutation-queue';
 import { hasStx, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
@@ -63,8 +64,9 @@ function storedMeta(meta: DehydratedQuery['meta']): DehydratedQuery['meta'] {
   return stored;
 }
 
-/** What a stored query is diffed by: its data timestamp and its refetch mark. */
-const versionOf = ({ dataUpdatedAt, isInvalidated }: DehydratedQuery['state']) => `${dataUpdatedAt}:${isInvalidated}`;
+/** What a stored query is diffed by: its data timestamp, its update count for two updates in one millisecond, and its refetch mark. */
+const versionOf = ({ dataUpdatedAt, dataUpdateCount, isInvalidated }: DehydratedQuery['state']) =>
+  `${dataUpdatedAt}:${dataUpdateCount}:${isInvalidated}`;
 
 function getTabSessionId(): string {
   let id = sessionStorage.getItem(sessionIdStorageKey);
@@ -106,7 +108,7 @@ async function liveTabSessionIds(): Promise<Set<string> | null> {
 /** What the bundled queries are diffed by: each query's hash and version. */
 const snapshotOf = (queries: DehydratedQuery[]) => JSON.stringify(queries.map(({ queryHash, state }) => [queryHash, versionOf(state)]));
 
-/** One IndexedDB write per interval: the latest snapshot wins. */
+/** Query churn is written at most once per interval, the latest snapshot winning; a change to the queue skips the wait. */
 const persistThrottleMs = 1000;
 
 /** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
@@ -124,6 +126,13 @@ let lastBundledSnapshot = '';
 let lastMutationsSnapshot = '';
 let pendingClient: PersistedClient | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
+/** Whether `timer` is a queue change's, which a later change leaves armed: a stream of edits never postpones it. */
+let queueWriteArmed = false;
+/** The write under way, which runs once more when `flushAgain` is set during it. */
+let flight: Promise<void> | null = null;
+let flushAgain = false;
+/** The state of each queued mutation the last save carried. */
+let lastQueuedStates: DehydratedMutation['state'][] = [];
 /** Bumped by `resetPersister`: memory from then on holds none of the stored cache until a restore reads it. */
 let epoch = 0;
 /** The epoch whose restore completed; flushes write only in it. */
@@ -133,6 +142,15 @@ function resetTracker() {
   lastPersistedVersion.clear();
   lastBundledSnapshot = '';
   lastMutationsSnapshot = '';
+  lastQueuedStates = [];
+}
+
+/** Whether a save's queue differs from the last save's. */
+function queueChanged(mutations: DehydratedMutation[]): boolean {
+  // A dehydrated mutation holds the mutation's own state object, which every dispatch replaces: a reference check needs no serializing and no mutation cache subscription.
+  const changed = mutations.length !== lastQueuedStates.length || mutations.some(({ state }, i) => state !== lastQueuedStates[i]);
+  if (changed) lastQueuedStates = mutations.map(({ state }) => state);
+  return changed;
 }
 
 /** The stored cache version: a missing one is this bundle's, and a string, from before the versions were numbered, is older than any. */
@@ -203,7 +221,10 @@ async function withMigrationLock(migrate: () => Promise<void>) {
 async function flush() {
   const client = pendingClient;
   pendingClient = null;
+  // This write takes the newest cache: a throttled one is due no more.
+  if (timer) clearTimeout(timer);
   timer = null;
+  queueWriteArmed = false;
   if (!client) return;
 
   if (isBundleStale()) return;
@@ -292,6 +313,25 @@ async function flush() {
   }
 }
 
+/** Starts a write, or has the one in flight run once more with the newest cache; the promise settles once none is under way. */
+function requestFlush(): Promise<void> {
+  if (flight) {
+    flushAgain = true;
+    return flight;
+  }
+  flight = (async () => {
+    try {
+      do {
+        flushAgain = false;
+        await trackCacheWrite(flush);
+      } while (flushAgain);
+    } finally {
+      flight = null;
+    }
+  })();
+  return flight;
+}
+
 /**
  * The cache of every tab, backed by the live `localUserDb`: product entity queries get one record each for incremental
  * diffing, every other query is bundled into the meta record. It survives browser restart until sign-out deletes the
@@ -301,17 +341,17 @@ export const persister = {
   persistClient: async (client: PersistedClient) => {
     if (!getLocalUserDb()) return;
     pendingClient = client;
-    if (!timer) timer = setTimeout(flush, persistThrottleMs);
+    noteCacheChange();
+    // A queue change is written on the next task: the optimistic rows its mutation sets in this one join the same transaction.
+    if (queueChanged(client.clientState.mutations) && !queueWriteArmed) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(requestFlush, 0);
+      queueWriteArmed = true;
+    } else if (!timer) timer = setTimeout(requestFlush, persistThrottleMs);
   },
 
-  /** Force-flush any pending throttled write immediately. */
-  flush: async () => {
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    await flush();
-  },
+  /** Writes any pending change now, or after the write in flight. */
+  flush: requestFlush,
 
   restoreClient: async (): Promise<PersistedClient | undefined> => {
     const db = getLocalUserDb();
@@ -415,14 +455,14 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: Number.POSITIVE_INFINITY,
   dehydrateOptions: {
-    // Paused mutations persist, and a sync write until it settles, so a tab closed, reloaded or signed out before its
+    // Paused mutations persist, and a sync write until it settles: a tab closed, killed, reloaded or signed out before its
     // response replays it (its optimistic rows are stored already); another active one may hold non-cloneable streaming data.
     shouldDehydrateMutation: (mutation) => mutation.state.isPaused || (isPending(mutation) && hasStx(mutation.state.variables)),
     shouldDehydrateQuery: shouldPersistQuery,
   },
 };
 
-// The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
+// The write throttle holds back up to a second of query changes: a hidden page stores them now, best effort as idb-kv-storage does.
 onPageHide(() => void persister.flush());
 
 /** Forgets what the persister wrote and stops its writes until the next restore: on a rebind, and before a teardown clears the cache. */

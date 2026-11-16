@@ -19,13 +19,24 @@ const rowsIn = (value: unknown): Row[] => (Array.isArray(value) ? value.filter(i
 /** The rows of a queued create as the live objects of its variables, which an edit folds into. */
 export const createRowsOf = (variables: unknown): Row[] => (isRecord(variables) ? rowsIn(variables.data) : []);
 
+type QueuedUpdate = Partial<QueryOrgContext> & { id: string; ops: Row; stx: Row; fieldTimestamps: Record<string, string> };
+
+const stringOrUndefined = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
+
 /** What a queued update holds, or null for variables that are no update of one row. */
-export function queuedUpdateOf(variables: unknown): { id: string; ops: Row; fieldTimestamps: Record<string, string> } | null {
+export function queuedUpdateOf(variables: unknown): QueuedUpdate | null {
   if (!isRecord(variables) || typeof variables.id !== 'string') return null;
   const stx = isRecord(variables.stx) ? variables.stx : {};
   // Cast: the stamps are the strings the stx helpers wrote; a queue restored from disk is this app's own.
   const fieldTimestamps = (isRecord(stx.fieldTimestamps) ? stx.fieldTimestamps : {}) as Record<string, string>;
-  return { id: variables.id, ops: isRecord(variables.ops) ? variables.ops : {}, fieldTimestamps };
+  return {
+    tenantId: stringOrUndefined(variables.tenantId),
+    organizationId: stringOrUndefined(variables.organizationId),
+    id: variables.id,
+    ops: isRecord(variables.ops) ? variables.ops : {},
+    stx,
+    fieldTimestamps,
+  };
 }
 
 const idsIn = (rows: Row[]): string[] => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));

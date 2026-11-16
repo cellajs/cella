@@ -1,5 +1,6 @@
 import type { ListMyMembershipsResponse } from 'sdk';
 import { hierarchy } from 'shared';
+import { backgroundTierMs } from 'shared/sync-pace';
 import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
 import { meKeys } from '~/modules/me/query';
 import { findInCache } from '~/query/basic/find-in-list-cache';
@@ -48,7 +49,7 @@ export interface SyncTier {
 }
 
 const tierViewing: SyncTier = { min: 0, max: 0 };
-export const tierBackground: SyncTier = { min: 2_000, max: 30_000 };
+export const tierBackground: SyncTier = backgroundTierMs;
 const tierOnOpen: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 /** Same org, and for sub-org channel views a mounted view observes a query carrying the channel id, which covers slug routes and boards whose routes do not name every rendered channel. */

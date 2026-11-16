@@ -263,7 +263,7 @@ describe('the gate that paused writes wait on', () => {
   /** Whether the gate of the page opened by now. */
   const releasedBy = (waitForActiveCatchup: () => Promise<void>) => Promise.race([waitForActiveCatchup().then(() => true), tick().then(() => false)]);
 
-  it('must not stay closed in a follower tab, which runs no catchup of its own', async () => {
+  it('must not wait in a follower tab for its own catchup', async () => {
     tabs.setLeader(false);
     const { manager, waitForActiveCatchup } = await createHarness();
 
@@ -414,16 +414,21 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     expect(h.manager.store.getState().state).toBe('live');
   });
 
-  it('is processed by a follower, which sends no request of its own', async () => {
+  // A tab back from a public page while another led read what it missed only at a later frame of the same scope.
+  it('is processed by a follower, which runs one catchup of its own when it connects', async () => {
     tabs.setLeader(false);
-    const h = await createHarness();
+    const h = await createHarness(answered);
     await h.manager.connect();
+    await tick();
+
+    expect(sink.catchUpMyStream).toHaveBeenCalledOnce();
+    expect(sink.processStreamCatchup).toHaveBeenCalledExactlyOnceWith(answer);
 
     tabs.receive({ type: 'catchup', response: answer });
     await tick();
 
-    expect(sink.processStreamCatchup).toHaveBeenCalledExactlyOnceWith(answer);
-    expect(sink.catchUpMyStream).not.toHaveBeenCalled();
+    expect(sink.processStreamCatchup).toHaveBeenCalledTimes(2);
+    expect(sink.catchUpMyStream).toHaveBeenCalledOnce();
     expect(FakeEventSource.instances).toHaveLength(0);
     // A follower passes nothing on: the leader told every tab.
     expect(posted('catchup')).toEqual([]);

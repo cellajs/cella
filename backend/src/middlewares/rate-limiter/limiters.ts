@@ -1,5 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
+import { readBudget } from 'shared/sync-pace';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
@@ -205,7 +206,7 @@ export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'],
  * scopes read on the background tier, which leaves the rest to what the user opens.
  */
 export const readLimiter = rateLimiter('limit', 'read', [['actorId', 'ip']], {
-  limits: { points: 1000, duration: 60 * 5 },
+  limits: readBudget,
   countsInProcess: true,
   reportsBudget: true,
   name: 'Reads',

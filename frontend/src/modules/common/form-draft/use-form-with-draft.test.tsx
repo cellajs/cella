@@ -107,4 +107,15 @@ describe('useFormWithDraft handleChanges', () => {
     await edit('languageCodes', ['en', 'nl']);
     expect(await submitChanges()).toEqual({ languageCodes: ['en', 'nl'] });
   });
+
+  // Each edit restarted the save: typing without a 300 ms pause saved nothing past the first edit, and a killed tab lost it.
+  it('saves a steady stream of edits within 300 ms', async () => {
+    vi.useFakeTimers();
+    for (const name of ['A', 'Ab', 'Abc', 'Abcd', 'Abcde', 'Abcdef']) {
+      await edit('name', name);
+      await act(() => vi.advanceTimersByTimeAsync(200));
+    }
+    vi.useRealTimers();
+    expect(useDraftStore.getState().getForm(formId)).toEqual({ name: 'Abcdef' });
+  });
 });

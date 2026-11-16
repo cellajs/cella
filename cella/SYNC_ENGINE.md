@@ -80,7 +80,7 @@ Only product rows sync. Channels are containers, and products are the synced con
 
 ### Ordering
 
-Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path. Under sustained change the API sends an audience one frame per action and interval, each row once with its latest change; the first change after a quiet interval goes at once.
+Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path. Under sustained change the API sends an audience one frame per action and interval, each row once with its latest change; the first few changes after a quiet spell go at once.
 
 ### Drafts
 
@@ -125,7 +125,7 @@ A frame past a size bound names its rows by id alone, and past a larger bound na
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live. A gap is fetched into the lists on disk, since catchup runs only after the persisted cache is restored. The client posts a view per product type of each of the user's organizations. The answer holds:
+Catchup runs on every connection before the stream goes live. A gap is fetched into the lists on disk, since catchup runs only after the persisted cache is restored. A tab stores its cursors and signal versions only after the cached rows they cover. A tab killed between the two writes fetches that range again at its next catchup. The client posts a view per product type of each of the user's organizations. The answer holds:
 
 - each view's status
 - an `ok` view's frontier
@@ -163,7 +163,7 @@ A list the engine cannot patch whole, such as an overflowed or a filtered list, 
 
 ### Unseen tracking
 
-Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. The client counts only types every channel member may read. The config refuses to track the others.
+Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. A tab sends the rows it saw at intervals and when it hides. A tab killed while in view loses the marks since its last send, and the next recount counts those rows as unseen again. The client counts only types every channel member may read. The config refuses to track the others.
 
 ## Embeddings
 
@@ -186,20 +186,20 @@ A product mutation patches the cache optimistically and reconciles with the stor
 
 An HTTP error settles at once. A replay that meets a gateway error stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
 
-The attachment module sends a tab's writes one at a time and in order. An online write waits behind a queued one.
+The attachment module sends a tab's writes in order. Updates queued one behind another go as one batch, and an online write waits behind a queued one.
 
 ### Merge metadata
 
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field. The merge is deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
 - **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
-- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time.
+- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time. The client tells the person when a replay lost.
 - **No conflict response:** losing fields are skipped. A write that loses every field writes nothing, and the server returns the stored row.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 
 ### Paused writes
 
-Paused mutations persist to IndexedDB and survive a reload. Their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue. A tab that starts takes over the queue of a closed one. The attachment module is the reference.
+Paused mutations persist to IndexedDB as they queue and survive a reload or a crash. Their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue. A tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
 The queue can reason about pending work, since a product's create, update and delete each carry one fixed shape:
 
@@ -231,7 +231,7 @@ The client's own catchup repairs missed frames. Every client refetches everythin
 | --- | --- | --- | --- |
 | A client's stream is down | The app works as a REST app. Lists refetch when opened | Reconnect and catchup | Nothing |
 | The worker is down or reading again | Other users' changes arrive late and in order. In a longer outage lists refetch when opened | The worker reads on from the slot | Nothing |
-| The API restarts, loses a frame or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
+| The API restarts or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot. Then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile. With a restore, everything after the backup |
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
@@ -245,7 +245,7 @@ Each failure's answer per level, with the function that gives it, is in [Failure
 
 ### Multiple tabs
 
-One leader tab holds the stream, runs catchup and forwards what it receives to the other tabs. Each tab applies it against its own cursors and cache. Another tab takes over when the leader closes.
+One leader tab holds the stream, runs catchup and forwards what it receives to the other tabs. Each tab applies it against its own cursors and cache. A tab that joins as a follower runs one catchup of its own. Another tab takes over when the leader closes.
 
 ### Yjs
 

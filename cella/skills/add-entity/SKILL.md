@@ -96,7 +96,9 @@ and the renderers.
     `preconditionWhere(ctx, <name>sTable)` to its WHERE and the operation answers a row it did not write with
     `assertNoWriteBetween`, as attachment's do. When `resolveUpdateOps` accepts no field, the operation calls
     `assertPreconditionsChecked` and returns the locked row as it is, with no update, no stamps and no
-    `dispatchMutation`.
+    `dispatchMutation`. Everything after the read is a row writer (`writeAttachmentUpdate`), which returns
+    null for that case; the batch update passes it to `updateProductsOp`, which locks and checks every row
+    first.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`,
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
@@ -115,8 +117,8 @@ and the renderers.
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })` with attachment's paths
-  and methods (`/`, `/~batch-create`, `/~batch-delete`, `/{<name>Id}` with a `patch` update), the
-  path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
+  and methods (`/`, `/~batch-create`, `/~batch-update`, `/~batch-delete`, `/{<name>Id}` with a `patch`
+  update), the path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
   `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, and `...errors(…)` in
   `responses` for the statuses its handler throws beyond its guards and limiters, as attachment's
   routes list them. A route agents may call takes `xTool`, which implies its scope; any other route
@@ -162,7 +164,9 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
     update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
     stamps when another one is written goes in its `derivedKeys` (a description's columns come from
-    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`.
+    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`. The update's `mutationFn`
+    calls `sendQueuedUpdates` with the single and the batch request: updates queued behind it go as one
+    batch, and ops with a block field go alone.
   - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
     ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
@@ -204,7 +208,9 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
   `/tenants/:tenantId/organizations/:organizationId/<name>s`; the user's list across organizations at `/`
   with `[userGuard, relatableGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`.
-  The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`, as `updateOrganization` does.
+  The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`. When no sent value differs
+  from the locked row (`filterNoOpFields`), the operation calls `assertPreconditionsChecked` and returns that row,
+  as `updateOrganization` does.
 - **Create** (`create-organizations.ts`): normalize with `<name>Contract.normalizeBody`; check the
   slugs with `checkSlugsAvailable` and reject a taken one as `slug_exists` (where the server picks the
   slug, `generateUniqueSlugs(ctx, names, '<name>')`); apply the quota; for a parent below the

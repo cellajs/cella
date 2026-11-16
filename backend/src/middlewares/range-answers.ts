@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { Context } from 'hono';
 import type { Access, ProductEntityType } from 'shared';
+import { backgroundTierMs } from 'shared/sync-pace';
 import type { ActorBinding, Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { tenantWriteCount } from '#/db/tenant-context';
@@ -26,8 +27,11 @@ const rangeKeyLifetimeMs = 10_000;
 /** How long the frames of one read class carry the same key: a key answers for at least the lifetime less this. */
 const rangeKeyReuseMs = 5_000;
 
-/** How long a range answer is kept: the readers of one change frame fetch within it, wherever they are. */
-const rangeAnswerLifetimeMs = 2_000;
+/**
+ * How long a range answer is kept: the readers of one change frame fetch within it, wherever they are. Open race: a
+ * background reader waits as long as the answer lives, and timer drift decides whether it takes it or reads again.
+ */
+const rangeAnswerLifetimeMs = backgroundTierMs.min;
 
 /** The longest answer kept, in characters: a longer one costs its memory for a burst that is rare. */
 const maxRangeAnswerLength = 256 * 1024;

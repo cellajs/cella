@@ -43,6 +43,7 @@ const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOpti
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
 const { totpKeyQueryOptions } = await import('~/modules/auth/account/query');
 const { organizationsListQueryOptions } = await import('~/modules/organization/query');
+const { syncStore } = await import('~/query/realtime/sync-store');
 
 /** What a browser runs on pagehide: every listener the modules registered for it, taken now since the harness clears a mock's calls before each test. */
 const pageHideListeners: (() => void)[] = addWindowListener.mock.calls.filter(([type]) => type === 'pagehide').map(([, listener]) => listener);
@@ -286,16 +287,47 @@ describe('the cache as the provider saves it and the bind restores it', () => {
     expect((await tabRecords()).map(({ mutations }) => mutations?.length)).toEqual([1, 1]);
   });
 
-  it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
+  it('stores a change made just before the tab closes, without waiting out the write throttle', async () => {
     const client = new QueryClient();
-    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'last edit' } });
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'last edit' }]);
     await persistQueryClientSave({ queryClient: client, ...persistOptions });
 
     expect(pageHideListeners).not.toHaveLength(0);
     for (const listener of pageHideListeners) listener();
 
     // Under the one-second throttle: only the hide listener can have written it.
+    await vi.waitFor(async () => expect(await getLocalUserDb()!.queries.count()).toBe(1), { timeout: 500 });
+  });
+
+  // A queued write and its optimistic rows waited out the write throttle: a tab killed without a pagehide lost both.
+  it('stores a write paused offline with its optimistic rows before the write throttle ends', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'offline edit' }]);
+    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'offline edit' } });
+    await persistQueryClientSave({ queryClient: client, ...persistOptions });
+    // The clock stops short of the throttle, and real timers drop the throttled write: only one that skips it can store the queue.
+    await vi.advanceTimersByTimeAsync(999);
+    vi.useRealTimers();
+
     await vi.waitFor(async () => expect((await tabRecords()).length).toBe(1), { timeout: 500 });
+    expect(await getLocalUserDb()!.queries.count()).toBe(1);
+  });
+
+  // The cursor reached disk 250 ms after the patch and the rows up to 1 s after: a tab killed between skipped that range at its next catchup.
+  it('stores a sync cursor only after the cache write that holds its rows', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1', name: 'from the stream' }]);
+    await persistQueryClientSave({ queryClient: client, ...persistOptions });
+    syncStore.getState().setOrgSeq('org-1', productType, 7);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(await getLocalUserDb()!.kv.get('sync')).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(1);
+    vi.useRealTimers();
+    await vi.waitFor(async () => expect(await getLocalUserDb()!.kv.get('sync')).toBeDefined());
+    expect(await getLocalUserDb()!.queries.count()).toBe(1);
   });
 });
 

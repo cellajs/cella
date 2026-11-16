@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
+import { batchUpdateBodySchema } from '#/core/schema-evolution/update-schema';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
@@ -96,13 +97,15 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
+export const attachmentBatchUpdateBodySchema = batchUpdateBodySchema(attachmentContract.updateItemSchema);
+
 /** The storage keys a deferred upload produced, for a row created while its file was still local. */
 export const attachmentLinkKeysBodySchema = z.object({
   keys: attachmentKeysSchema,
   convertedContentType: z.string().max(maxLength.field).nullable().optional(),
 });
 
-export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
+export const attachmentBatchResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 

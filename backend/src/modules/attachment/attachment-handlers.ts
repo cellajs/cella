@@ -7,7 +7,7 @@ import { getAttachmentOp } from '#/modules/attachment/operations/get-attachment'
 import { getAttachmentsOp } from '#/modules/attachment/operations/get-attachments';
 import { getPresignedUrlsOp } from '#/modules/attachment/operations/get-presigned-urls';
 import { linkAttachmentKeysOp } from '#/modules/attachment/operations/link-attachment-keys';
-import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
+import { batchUpdateAttachmentsOp, updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
@@ -26,6 +26,8 @@ app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
   const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
   return ctx.json(result, created ? 201 : 200);
 });
+
+app.openapi(attachmentRoutes.batchUpdateAttachments, async (ctx) => ctx.json(await batchUpdateAttachmentsOp(ctx, ctx.req.valid('json')), 200));
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
   return ctx.json(await updateAttachmentOp(ctx, ctx.req.valid('param').attachmentId, ctx.req.valid('json')), 200);

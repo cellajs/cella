@@ -2,7 +2,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { getLocalUserDb, type LocalUserDatabase } from '~/query/local-user-db';
 import { onPageHide } from '~/utils/on-page-hide';
 
-/** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one transaction. */
+/** Trailing-debounce window: batches a burst of writes into one transaction. */
 const writeDebounceMs = 250;
 
 /** Flush callbacks for every live store, invoked on tab hide for best-effort durability. */
@@ -19,27 +19,59 @@ export const flushKvWrites = () => {
 
 onPageHide(flushKvWrites);
 
-/** Per-user Zustand storage over the live app database: writes are trailing-debounced per store, signed-out operations no-op, and every operation re-resolves the bound database. */
-export function idbKvStorage(key: string): StateStorage {
-  let pending: { value: string; db: LocalUserDatabase } | null = null;
+type PendingWrite = { value: string; db: LocalUserDatabase };
+
+interface KvStorageOptions {
+  /**
+   * Called when a value is set: the value is stored once the wait settles, and no debounce applies. A store whose
+   * record describes cached rows passes `whenCacheWritten`.
+   */
+  writeAfter?: () => Promise<void>;
+}
+
+/**
+ * Per-user Zustand storage over the live app database: writes are trailing-debounced per store, or made after the
+ * store's own `writeAfter`, signed-out operations no-op, and every operation re-resolves the bound database.
+ */
+export function idbKvStorage(key: string, { writeAfter }: KvStorageOptions = {}): StateStorage {
+  let pending: PendingWrite | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  /** The value whose wait is under way; a newer one in `pending` starts a wait of its own after it. */
+  let riding: PendingWrite | null = null;
+
+  const put = ({ value, db }: PendingWrite) => {
+    // Skip if signed out or rebound to another user since scheduling (cross-user isolation).
+    if (getLocalUserDb() === db) void db.kv.put({ key, value });
+  };
 
   const flush = () => {
     if (timer) clearTimeout(timer);
     timer = null;
     if (!pending) return;
-    const { value, db } = pending;
+    put(pending);
     pending = null;
-    // Skip if signed out or rebound to another user since scheduling (cross-user isolation).
-    if (getLocalUserDb() === db) void db.kv.put({ key, value });
   };
-  flushers.add(flush);
+  // An early put from `flushKvWrites` would reach disk ahead of what the store waits for.
+  if (!writeAfter) flushers.add(flush);
+
+  const putAfter = (wait: () => Promise<void>) => {
+    const ride = pending;
+    riding = ride;
+    void wait().then(() => {
+      if (!ride || riding !== ride) return;
+      put(ride);
+      if (pending === ride) {
+        pending = null;
+        riding = null;
+      } else putAfter(wait);
+    });
+  };
 
   return {
     getItem: async () => {
-      // A write still in the debounce window is newer than the disk.
-      if (pending) return pending.value;
       const db = getLocalUserDb();
+      // A write still waiting is newer than the disk, for the database it was made in.
+      if (pending?.db === db) return pending.value;
       const row = await db?.kv.get(key);
       // Unbound or rebound while the read ran: the row is not this binding's.
       return getLocalUserDb() === db ? (row?.value ?? null) : null;
@@ -48,6 +80,10 @@ export function idbKvStorage(key: string): StateStorage {
       const db = getLocalUserDb();
       if (!db) return;
       pending = { value, db };
+      if (writeAfter) {
+        if (!riding) putAfter(writeAfter);
+        return;
+      }
       if (timer) clearTimeout(timer);
       timer = setTimeout(flush, writeDebounceMs);
     },
@@ -55,6 +91,7 @@ export function idbKvStorage(key: string): StateStorage {
       if (timer) clearTimeout(timer);
       timer = null;
       pending = null;
+      riding = null;
       await getLocalUserDb()?.kv.delete(key);
     },
   };

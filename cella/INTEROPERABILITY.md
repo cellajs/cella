@@ -57,7 +57,7 @@ The REST API is the API the app's own frontend uses, described in one OpenAPI do
 
 Four behaviors hold across the API, and a client codes against them:
 
-- **Concurrency.** A single channel or product answers with a strong `ETag`. A write that sends it back in `If-Match` applies only while nothing changed the resource since, else answers 412 `precondition_failed`. A write that changes nothing keeps the tag. A `GET` with `If-None-Match` answers 304 while the tag holds.
+- **Concurrency.** A single channel or product answers with a strong `ETag`. A write that sends it back in `If-Match` applies only while nothing changed the resource since, else answers 412 `precondition_failed`. A write that changes nothing keeps the tag. A `GET` with `If-None-Match` answers 304 while the tag holds. A batch takes no `If-Match`.
 - **Paging.** A list answers a page with a `nextPageToken` while more follow, passed back as `pageToken`. A token is opaque and bound to its list; an altered one is refused as `invalid_page_token`.
 - **Mirroring.** Range reads with `afterSeq` and `untilSeq` return products in sync order, a chunk at a time, deletions as tombstones. After an absence longer than the activity window, a mirror reads everything again.
 - **Updates.** A `PATCH` is a merge patch: a field left out keeps its value and `null` clears it. A client sends the fields it changed, and a product update sends them as field operations.

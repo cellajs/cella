@@ -39,15 +39,19 @@ export const splitByPermission = async (
   return split;
 };
 
-/** {@link splitByPermission} without the refusal: `allowedIds` may be empty. */
-export const partitionByPermission = async (
+/**
+ * {@link splitByPermission} without the refusal: `allowedIds` may be empty, and `allowed` holds their rows. With
+ * `forUpdate`, called inside the write it guards, every row read stays locked until that write ends.
+ */
+export const partitionByPermission = async <K extends ChannelEntityType | ProductEntityType>(
   ctx: ActorContext,
   action: EntityActionType,
-  entityType: ChannelEntityType | ProductEntityType,
+  entityType: K,
   ids: string[],
+  { forUpdate = false }: { forUpdate?: boolean } = {},
 ) => {
   // Resolve entities (createdBy included for the owner relation).
-  const resolved = await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }));
+  const resolved = await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids, forUpdate }));
   const entities = resolved.filter((entity) => inRequestScope(ctx, entity) && draftShowsTo(ctx, entityType, entity));
 
   // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.
@@ -70,5 +74,5 @@ export const partitionByPermission = async (
     else if (!allowedIds.includes(stored)) allowedIds.push(stored);
   }
 
-  return { allowedIds, rejectedIds };
+  return { allowedIds, rejectedIds, allowed: entities.filter((entity) => allowed.has(entity.id)) };
 };

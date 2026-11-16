@@ -1,6 +1,7 @@
 import type { QueryClient, QueryKey, QueryMeta, SkipToken } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import { isRateLimited } from '~/lib/api';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { getEntityRangeFetch, rowOutsideRange, seqOf, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
@@ -8,7 +9,7 @@ import type { ItemData } from '~/query/basic/types';
 import { productTypeOf } from '~/query/cache-migration';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
 import { deletedIdsOf } from '~/query/offline/mutation-variables';
-import { excludingRangeReads } from '~/query/realtime/fetch-prioritizer';
+import { excludingRangeReads, refetchRefusedAfterHold } from '~/query/realtime/fetch-prioritizer';
 import { syncStore } from '~/query/realtime/sync-store';
 import type { PageParam, QueryData } from '~/query/types';
 
@@ -71,13 +72,6 @@ const union = (a: PendingRows, b: PendingRows): PendingRows => ({
   deleted: new Set([...a.deleted, ...b.deleted]),
 });
 
-/** The organization's cursor or the home channel's, whichever is further: catchup moves the first, the stream's ranges of the channel the second. */
-function scopeCursor(entityType: ProductEntityType, { organizationId, channelId }: SyncedListScope): number {
-  const store = syncStore.getState();
-  const orgSeq = store.getOrgSeq(organizationId, entityType);
-  return channelId ? Math.max(orgSeq, store.getChannelSeq(organizationId, channelId, entityType)) : orgSeq;
-}
-
 /** A live range row belongs to a home list when it is homed there, and to a list that spans homes always. */
 function fitsList(entityType: ProductEntityType, queryKey: QueryKey, row: ItemData): boolean {
   const { deletedAt } = asRecord(row);
@@ -116,7 +110,7 @@ async function readOverlapped(
   const { organizationId, tenantId, channelId } = scope;
   const ranged = new Map<string, ItemData>();
   let fromSeq = afterSeq;
-  let untilSeq = scopeCursor(entityType, scope);
+  let untilSeq = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
 
   while (rangeFetch && fromSeq < untilSeq && isCurrent()) {
     const query = { afterSeq: fromSeq, untilSeq, maxPageSize: syncChunkSize };
@@ -132,7 +126,7 @@ async function readOverlapped(
     if (full && newest === fromSeq) throw new OverlappedChangesError('A full range chunk carried no positions');
     fromSeq = full ? newest : untilSeq;
     // Changes may have arrived while the range was read.
-    if (fromSeq >= untilSeq) untilSeq = scopeCursor(entityType, scope);
+    if (fromSeq >= untilSeq) untilSeq = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
   }
   return [...ranged.values()];
 }
@@ -167,9 +161,9 @@ async function readAgainstDeltas(
   const isCurrent = () => newestReads.get(queryHash) === token && client.getQueryCache().get(queryHash)?.state.fetchStatus === 'fetching';
 
   try {
-    const startCursor = scopeCursor(entityType, scope);
+    const startCursor = syncStore.getState().getScopeSeq(scope.organizationId, scope.channelId, entityType);
     const data = await read();
-    if (scopeCursor(entityType, scope) <= startCursor) return data;
+    if (syncStore.getState().getScopeSeq(scope.organizationId, scope.channelId, entityType) <= startCursor) return data;
     // The chase holds the scope's range reads: of those, only one already in flight moves the cursor on, and a second pass reads to it.
     const chase = () => readOverlapped(entityType, scope, startCursor, isCurrent);
     const rows = await excludingRangeReads(entityType, scope.organizationId, chase).catch((error) => {
@@ -209,6 +203,16 @@ function keepPendingRows(client: QueryClient, queryKey: QueryKey, read: List, at
   return { ...read, results: [...takenBack, ...results], totalSize: read.totalSize + takenBack.length - hidden.size };
 }
 
+/** Settles as `read` does. A list on screen the read budget refused reads again once the budget has reads left, as after a refused range read. */
+async function rereadWhenRefused(read: () => List | Promise<List>): Promise<List> {
+  try {
+    return await read();
+  } catch (error) {
+    if (isRateLimited(error)) refetchRefusedAfterHold();
+    throw error;
+  }
+}
+
 /** A reader that mounts refetches a marked list whatever the global `refetchOnMount`: the mark says the list is incomplete, and `syncStaleTime` keeps a fresh one as it is. */
 const refetchOnMount = true;
 
@@ -230,7 +234,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
         refetchOnMount,
         queryFn: async ({ client, meta, pageParam, direction }: Omit<PageReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
           const pendingAtStart = pendingRows(client, entityType);
-          const page = await readPage({ client, queryKey, meta, pageParam, direction, signal: neverAborted });
+          const page = await rereadWhenRefused(() => readPage({ client, queryKey, meta, pageParam, direction, signal: neverAborted }));
           return keepPendingRows(client, queryKey, page, pendingAtStart, pendingRows(client, entityType), false);
         },
       },
@@ -246,7 +250,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
       queryFn: async ({ client, meta }: Omit<ListReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
         const pendingAtStart = pendingRows(client, entityType);
         const read = async () => readList({ client, queryKey, meta, signal: neverAborted });
-        const list = scope ? await readAgainstDeltas(client, read, entityType, queryKey, scope) : await read();
+        const list = await rereadWhenRefused(() => (scope ? readAgainstDeltas(client, read, entityType, queryKey, scope) : read()));
         return keepPendingRows(client, queryKey, list, pendingAtStart, pendingRows(client, entityType), true);
       },
     },

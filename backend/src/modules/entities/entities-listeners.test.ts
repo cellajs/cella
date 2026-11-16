@@ -6,7 +6,7 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { defineBackendModule } from '#/lib/module';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../tests/fixtures';
-import { changeBundleMs, closeChangeBundles, sendHeldChanges } from './stream/change-bundles';
+import { changeBundleMs, changeBurst, closeChangeBundles, sendHeldChanges } from './stream/change-bundles';
 import { streamSubscriberManager } from './stream/subscriber-manager';
 import { streamSubscriber } from './stream/tests/stream-subscriber';
 import './entities-listeners';
@@ -210,47 +210,48 @@ describe('entities listeners: an audience under sustained change', () => {
     await vi.advanceTimersByTimeAsync(0);
   };
 
+  /** Spends the audience's burst on rows of its own, whose frames come first: the next change is held. */
+  const spendBurst = async () => {
+    for (let i = 1; i <= changeBurst; i++) await change(updateEvent([{ seq: 0, rowData: row(`burst-${i}`) }]));
+  };
+
   it('must not send a held change to a member removed before the interval ends', async () => {
     const staying = adminReader('staying-user');
     const removed = adminReader('removed-user');
 
+    await spendBurst();
     await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
-    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
     activityBus.emit(membershipEvent('delete', 'removed-user'));
     await vi.advanceTimersByTimeAsync(changeBundleMs);
 
-    expect(framesOf(staying.sent)).toEqual([
-      ['update', ['att-1@1']],
-      ['update', ['att-2@2']],
-    ]);
-    expect(framesOf(removed.sent)).toEqual([['update', ['att-1@1']]]);
+    expect(framesOf(staying.sent).slice(changeBurst)).toEqual([['update', ['att-1@1']]]);
+    expect(framesOf(removed.sent)).toHaveLength(changeBurst);
   });
 
-  it('sends the first change after a quiet interval at once, and the next when the interval ends', async () => {
+  it('sends the first changes after a quiet spell at once, holds the next until the interval ends, and returns one send per interval that held nothing', async () => {
     const reader = adminReader('reader-user');
 
+    await spendBurst();
     await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
-    expect(framesOf(reader.sent)).toHaveLength(1);
-    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
     await vi.advanceTimersByTimeAsync(changeBundleMs - 1);
-    expect(framesOf(reader.sent)).toHaveLength(1);
+    expect(framesOf(reader.sent)).toHaveLength(changeBurst);
     await vi.advanceTimersByTimeAsync(1);
-    expect(framesOf(reader.sent)).toHaveLength(2);
+    expect(framesOf(reader.sent)).toHaveLength(changeBurst + 1);
 
-    // An interval that held nothing closes: the audience is quiet again.
+    // The next interval holds nothing: one send goes at once again, and the change after it waits.
     await vi.advanceTimersByTimeAsync(changeBundleMs);
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
     await change(updateEvent([{ seq: 3, rowData: row('att-3') }]));
-    expect(framesOf(reader.sent)).toEqual([
+    expect(framesOf(reader.sent).slice(changeBurst)).toEqual([
       ['update', ['att-1@1']],
       ['update', ['att-2@2']],
-      ['update', ['att-3@3']],
     ]);
   });
 
   it('holds each row once with its latest change: a create stays a create, a delete replaces a create or update, a restore a delete', async () => {
     const reader = adminReader('reader-user');
 
-    await change(updateEvent([{ seq: 1, rowData: row('att-0') }]));
+    await spendBurst();
     await change(productEvent('create', [{ seq: 2, rowData: row('att-1') }]));
     await change(updateEvent([{ seq: 3, rowData: row('att-1') }]));
     await change(productEvent('create', [{ seq: 4, rowData: row('att-2') }]));
@@ -260,8 +261,7 @@ describe('entities listeners: an audience under sustained change', () => {
     await change(productEvent('create', [{ seq: 7, rowData: row('att-4') }]));
     await vi.advanceTimersByTimeAsync(changeBundleMs);
 
-    expect(framesOf(reader.sent)).toEqual([
-      ['update', ['att-0@1']],
+    expect(framesOf(reader.sent).slice(changeBurst)).toEqual([
       ['create', ['att-1@3', 'att-4@7']],
       ['delete', ['att-2@null', 'att-3@null']],
     ]);
@@ -270,13 +270,12 @@ describe('entities listeners: an audience under sustained change', () => {
   it('keeps the order of a stream when a change that goes at once follows a held one', async () => {
     const reader = adminReader('reader-user');
 
-    await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
+    await spendBurst();
     await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
     // A move goes at once, after what its audience holds.
     await change(updateEvent([{ seq: 3, rowData: row('att-3'), movedFrom: row('att-3') }]));
 
-    expect(framesOf(reader.sent)).toEqual([
-      ['update', ['att-1@1']],
+    expect(framesOf(reader.sent).slice(changeBurst)).toEqual([
       ['update', ['att-2@2']],
       ['update', ['att-3@3']],
     ]);
@@ -285,36 +284,33 @@ describe('entities listeners: an audience under sustained change', () => {
   it('sends held rows once they fill a frame, in frames that each name their rows in commit order', async () => {
     const reader = adminReader('reader-user');
 
-    await change(updateEvent([{ seq: 0, rowData: row('att-0') }]));
+    await spendBurst();
     // Three rows a message, as the worker sends them under load: 18 held rows become 21, past what one frame names.
     for (let seq = 1; seq <= 21; seq += 3) {
       await change(updateEvent([2, 1, 0].map((i) => ({ seq: seq + i, rowData: row(`att-${seq + i}`) }))));
     }
 
     const frames = reader.sent.filter(({ event }) => event === 'change').map(({ data }) => JSON.parse(data));
-    expect(frames.slice(1).map(({ rows, overflow }) => [rows.length, overflow])).toEqual([
+    expect(frames.slice(changeBurst).map(({ rows, overflow }) => [rows.length, overflow])).toEqual([
       [20, null],
       [1, null],
     ]);
-    expect(frames[1].rows[0]).toMatchObject({ subjectId: 'att-1', seq: 1 });
-    expect(frames[2].rows[0]).toMatchObject({ subjectId: 'att-21', seq: 21 });
+    expect(frames[changeBurst].rows[0]).toMatchObject({ subjectId: 'att-1', seq: 1 });
+    expect(frames[changeBurst + 1].rows[0]).toMatchObject({ subjectId: 'att-21', seq: 21 });
   });
 
   // Last in the file: the bundles stay closed for the rest of the process.
   it('sends what is held at shutdown, and every later change at once', async () => {
     const reader = adminReader('reader-user');
 
+    await spendBurst();
     await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
-    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
     await closeChangeBundles();
-    await change(updateEvent([{ seq: 3, rowData: row('att-3') }]));
-    await change(updateEvent([{ seq: 4, rowData: row('att-4') }]));
+    expect(framesOf(reader.sent).slice(changeBurst)).toEqual([['update', ['att-1@1']]]);
 
-    expect(framesOf(reader.sent)).toEqual([
-      ['update', ['att-1@1']],
-      ['update', ['att-2@2']],
-      ['update', ['att-3@3']],
-      ['update', ['att-4@4']],
-    ]);
+    // A burst's worth and one more, with no interval ended.
+    await spendBurst();
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
+    expect(framesOf(reader.sent).slice(-1)).toEqual([['update', ['att-2@2']]]);
   });
 });

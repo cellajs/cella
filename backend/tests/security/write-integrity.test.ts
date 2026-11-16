@@ -1,5 +1,5 @@
 import { eq, inArray } from 'drizzle-orm';
-import { batchCreateAttachments, batchDeleteAttachments, updateAttachment } from 'sdk';
+import { batchCreateAttachments, batchDeleteAttachments, batchUpdateAttachments, updateAttachment } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -135,6 +135,38 @@ describe('Write integrity', async () => {
     expect(response.status).toBe(200);
     expect(data).toMatchObject({ name: 'Rival' });
     expect(await storedRow(id)).toMatchObject({ name: 'Rival', updatedAt, updatedBy, stx });
+  });
+
+  it('must not let a batch sent again rewrite its rows', async () => {
+    const [victimPlan] = plans;
+    const live = await createIn(victim, victimPlan);
+    const replayed = await createIn(victim, victimPlan);
+    const body = [
+      { id: live.id, ops: { name: 'Batched online' }, stx: mockStxFor('name') },
+      { id: replayed.id, ops: { name: 'Batched offline' }, stx: replayedStx() },
+    ];
+    const send = () =>
+      call(batchUpdateAttachments, {
+        path: { tenantId: victim.tenantId, organizationId: victim.organization.id },
+        body,
+        headers: headers(victim.sessionCookie),
+      });
+    const storedRows = async () => [await storedRow(live.id), await storedRow(replayed.id)];
+
+    expect((await send()).response.status).toBe(200);
+    const stored = await storedRows();
+
+    // The answer to the first attempt was lost and the client sends the same batch again.
+    const { response, data } = await send();
+    expect(response.status).toBe(200);
+    expect(data).toMatchObject({
+      results: [
+        { id: live.id, name: 'Batched online' },
+        { id: replayed.id, name: 'Batched offline' },
+      ],
+      rejectedIds: [],
+    });
+    expect(await storedRows()).toEqual(stored);
   });
 
   it('must record a delete with its own stx', async () => {

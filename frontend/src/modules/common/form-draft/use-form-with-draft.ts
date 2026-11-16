@@ -68,7 +68,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     } else {
       resetDraftForm(formId);
     }
-    // Past the storage debounce: this hook debounces edits already, and a write still waiting there is lost to a reload
+    // Past the storage debounce: this hook holds edits for 300 ms already, and a write still waiting there is lost to a reload
     flushKvWrites();
   });
 
@@ -79,7 +79,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       callback: () => {
         if (isResettingRef.current) return;
 
-        clearTimeout(draftTimeoutRef.current);
+        // A stream of edits never postpones the save: it runs 300 ms after the first unsaved one.
+        if (draftTimeoutRef.current !== undefined) return;
         draftTimeoutRef.current = setTimeout(() => {
           draftTimeoutRef.current = undefined;
           saveDraft();
@@ -95,8 +96,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       saveDraft();
     };
 
-    // A hidden tab still commits the pending edits. A write issued while the page unloads never commits, so a reload
-    // loses the edits made since the last 300 ms pause.
+    // A hidden tab still commits the pending edits. A write issued while the page unloads never commits: a reload loses
+    // at most the last 300 ms of edits.
     const stopHideFlush = onPageHide(flushPendingDraft);
 
     return () => {

@@ -1,4 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
+import { streamPingMs } from 'shared/sync-pace';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { StreamChange, StreamErrorPayload, StreamSignal } from '#/schemas';
@@ -42,10 +43,9 @@ async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi,
 
 /**
  * Writes one frame to each subscriber, serialized once and side by side: a client that stopped reading holds up no
- * other and is closed at `maxPendingStreamBytes`, and a write that fails is logged for its subscriber alone.
- * @param failure - The log message of a failed write.
+ * other and is closed at `maxPendingStreamBytes`. The stream swallows a write that fails, and is closed then.
  */
-export async function sendToSubscribers(subscribers: readonly StreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
+export async function sendToSubscribers(subscribers: readonly StreamSubscriber[], frame: StreamFrame): Promise<void> {
   const data = JSON.stringify(frame.data);
   const bytes = Buffer.byteLength(data);
   await Promise.all(
@@ -56,8 +56,6 @@ export async function sendToSubscribers(subscribers: readonly StreamSubscriber[]
       try {
         await stream.writeSSE({ event: frame.event, data });
         log.debug('SSE frame sent', { subscriberId, event: frame.event });
-      } catch (error) {
-        log.error(failure, { subscriberId, event: frame.event, error });
       } finally {
         pendingStreamBytes.set(stream, (pendingStreamBytes.get(stream) ?? 0) - bytes);
       }
@@ -85,11 +83,11 @@ async function writePing(stream: SSEStreamingApi, data: string): Promise<void> {
 }
 
 /**
- * Sends a ping at once and then every 30 seconds, until the client aborts or the server closes the stream; `write`
+ * Sends a ping at once and then every `intervalMs`, until the client aborts or the server closes the stream; `write`
  * swallows errors, so the flags are the only exit.
  * @param pingData - Read for every ping; empty by default.
  */
-export async function keepAlive(stream: SSEStreamingApi, pingData: () => string = () => '', intervalMs = 30000): Promise<void> {
+export async function keepAlive(stream: SSEStreamingApi, pingData: () => string = () => '', intervalMs = streamPingMs): Promise<void> {
   while (!stream.closed && !stream.aborted) {
     await writePing(stream, pingData());
     await stream.sleep(intervalMs);

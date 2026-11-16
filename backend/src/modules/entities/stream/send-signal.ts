@@ -39,5 +39,5 @@ export async function sendSignal(
 
   const signal: StreamSignal = { type, organizationId: about.organizationId ?? null, subjectId: about.subjectId ?? null };
   if (about.version !== undefined) signal.version = about.version;
-  await sendToSubscribers(subscribers, { event: 'signal', data: signal }, 'Failed to send stream signal');
+  await sendToSubscribers(subscribers, { event: 'signal', data: signal });
 }

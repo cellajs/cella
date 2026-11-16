@@ -1,11 +1,11 @@
 import { defineScenario } from '@cellajs/cli/bench';
 import type { z } from 'zod';
-import type { attachmentCreateResponseSchema } from '#/modules/attachment/attachment-schema';
+import type { attachmentBatchResponseSchema } from '#/modules/attachment/attachment-schema';
 import { CHURN_BATCH_SIZE, churnBatch } from '../attachment-requests';
 import { benchUser, ORG_PATH } from '../bench-user';
 
 /** What a create answers; a delete answers the same shape without rows. */
-type BatchResponse = z.output<typeof attachmentCreateResponseSchema>;
+type BatchResponse = z.output<typeof attachmentBatchResponseSchema>;
 
 const parseBatch = (text: string): Partial<BatchResponse> => {
   try {

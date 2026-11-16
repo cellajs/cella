@@ -1,6 +1,6 @@
 // biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action, batched seen-flush not eligible for a React Query hook.
-import { type MarkSeenData, markSeen } from 'sdk';
-import { appConfig, isSeenTracked, type ProductEntityType, type SeenTrackedProductType } from 'shared';
+import { markSeen } from 'sdk';
+import { appConfig, isSeenTracked, type ProductEntityType, type SeenTrackedProductType, seenBatchMax } from 'shared';
 import { isRecord } from 'shared/utils/as-record';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -74,38 +74,48 @@ export const seenStore = createStore<SeenStoreState>()(
 
         flush: async () => {
           if (pending.size === 0) return;
-          // Snapshot and clear optimistically; failed batches merge back for the next attempt.
+          // Snapshot and clear optimistically; failed parts merge back for the next attempt.
           const batches = [...pending.values()];
           pending.clear();
-          for (const batch of batches) for (const id of batch.productIds) inFlight.add(id);
+          const parts: SeenBatch[] = [];
+          for (const batch of batches) {
+            const ids = [...batch.productIds];
+            for (const id of ids) inFlight.add(id);
+            for (let i = 0; i < ids.length; i += seenBatchMax) parts.push({ ...batch, productIds: new Set(ids.slice(i, i + seenBatchMax)) });
+          }
           if (isDebugMode)
             console.debug(
               '[SeenStore] flushing',
-              batches.map((batch) => `${batch.productType}(${batch.productIds.size})`),
+              parts.map((part) => `${part.productType}(${part.productIds.size})`),
             );
 
-          for (const batch of batches) {
-            const { tenantId, organizationId, productType } = batch;
-            try {
-              const productIds = [...batch.productIds];
-              await markSeen({ path: { tenantId, organizationId }, body: { productIds, productType } });
+          // `keepalive` carries a request past an unload, and a browser refuses it past 64 KiB of bodies in flight.
+          const keepalive = document.visibilityState === 'hidden';
+          // Every request starts in this task: a hidden tab may run no other.
+          await Promise.all(
+            parts.map(async (part) => {
+              const { tenantId, organizationId, productType } = part;
+              try {
+                const productIds = [...part.productIds];
+                await markSeen({ path: { tenantId, organizationId }, body: { productIds, productType }, keepalive });
 
-              const flushedIds = new Set(get().flushedIds);
-              for (const id of productIds) flushedIds.add(id);
-              for (const id of flushedIds) {
-                if (flushedIds.size <= flushedIdsMax) break;
-                flushedIds.delete(id);
+                const flushedIds = new Set(get().flushedIds);
+                for (const id of productIds) flushedIds.add(id);
+                for (const id of flushedIds) {
+                  if (flushedIds.size <= flushedIdsMax) break;
+                  flushedIds.delete(id);
+                }
+                set({ flushedIds });
+              } catch (error) {
+                reportCriticalError('seen.flush_failed', error, { product_type: productType });
+                const requeued = pending.get(batchKey(organizationId, productType));
+                if (requeued) for (const id of part.productIds) requeued.productIds.add(id);
+                else pending.set(batchKey(organizationId, productType), part);
+              } finally {
+                for (const id of part.productIds) inFlight.delete(id);
               }
-              set({ flushedIds });
-            } catch (error) {
-              reportCriticalError('seen.flush_failed', error, { product_type: productType });
-              const requeued = pending.get(batchKey(organizationId, productType));
-              if (requeued) for (const id of batch.productIds) requeued.productIds.add(id);
-              else pending.set(batchKey(organizationId, productType), batch);
-            } finally {
-              for (const id of batch.productIds) inFlight.delete(id);
-            }
-          }
+            }),
+          );
           // No refetch needed: markProductSeen already patched unseen counts, and SSE covers external changes.
         },
 
@@ -142,19 +152,4 @@ export function isSeenLocally(entityId: string): boolean {
   if (seenStore.getState().flushedIds.has(entityId) || inFlight.has(entityId)) return true;
   for (const batch of pending.values()) if (batch.productIds.has(entityId)) return true;
   return false;
-}
-
-/** Flush pending seen data via sendBeacon on page unload. Call once at app init. */
-export function setupSeenBeaconFlush() {
-  const handler = () => {
-    for (const batch of pending.values()) {
-      const body = JSON.stringify({ productIds: [...batch.productIds], productType: batch.productType } satisfies MarkSeenData['body']);
-      navigator.sendBeacon(
-        `/api/tenants/${batch.tenantId}/organizations/${batch.organizationId}:mark-seen`,
-        new Blob([body], { type: 'application/json' }),
-      );
-    }
-  };
-  window.addEventListener('beforeunload', handler);
-  return () => window.removeEventListener('beforeunload', handler);
 }

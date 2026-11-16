@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
 import { notificationsQueryOptions } from '~/modules/notification/query';
-import { seenStore, setupSeenBeaconFlush } from '~/modules/seen/seen-store';
+import { seenStore } from '~/modules/seen/seen-store';
+import { onPageHide } from '~/utils/on-page-hide';
 
 declare global {
   interface Window {
@@ -10,12 +11,12 @@ declare global {
   }
 }
 
-/** Invisible component that boots seen-tracking (flush interval, unload beacon, PWA badge sync). Mount once in the app layout. */
+/** Invisible component that boots seen-tracking (flush interval, flush on hide, PWA badge sync). Mount once in the app layout. */
 export function SeenTracker() {
   useEffect(() => {
     const { startFlushInterval, stopFlushInterval, flush } = seenStore.getState();
     startFlushInterval();
-    const cleanupBeacon = setupSeenBeaconFlush();
+    const stopHideFlush = onPageHide(() => void flush());
 
     const isDev = appConfig.mode === 'development';
 
@@ -26,7 +27,7 @@ export function SeenTracker() {
 
     return () => {
       stopFlushInterval();
-      cleanupBeacon();
+      stopHideFlush();
       if (isDev) delete window.__flushSeen;
     };
   }, []);

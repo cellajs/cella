@@ -3,6 +3,7 @@ import { catchUpMyStream, type StreamChange, type StreamError } from 'sdk';
 import { zStreamChange, zStreamError, zStreamSignal } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
+import { streamPingMs } from 'shared/sync-pace';
 import type { z } from 'zod';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -45,8 +46,8 @@ const healthUrl = `${appConfig.backendUrl}/auth/health`;
 const changeBufferCap = 500;
 /** A catchup, request and processing together, that takes longer fails: three in a row open the circuit for its cooldown. */
 const catchupTimeoutMs = 60_000;
-/** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
-const streamSilenceMs = 75_000;
+/** No event for this long, pings included: the open stream is dead. */
+const streamSilenceMs = 2.5 * streamPingMs;
 /** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
 const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
 
@@ -106,7 +107,7 @@ async function fetchAndProcessCatchup(signal: AbortSignal): Promise<void> {
   const response = await catchUpMyStream({ body: { views: views.length > 0 ? views : undefined }, signal });
   signal.throwIfAborted();
   // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing
-  // fails. A tab that gave leadership up while the request was in flight (a public page) posts nothing.
+  // fails. A follower's own catchup, or a tab that gave leadership up while the request was in flight (a public page), posts nothing.
   if (isLeader()) postToFollowers({ type: 'catchup', response });
   await processStreamCatchup(response);
 }
@@ -193,8 +194,9 @@ class StreamManager {
     if (!isLeader()) {
       console.debug(`[${streamName}] Not leader, listening to broadcasts only`);
       this.store.getState().setState('live');
-      // A follower runs no catchup of its own: writes that wait for the first one are released now.
+      // Writes that wait for a catchup go ahead at once. The follower's own catchup reads what it missed before it listened.
       resolveInitialCatchupGate();
+      void this.boundedCatchup().catch((error) => console.warn(`[${streamName}] A follower's catchup failed:`, error));
       return;
     }
 

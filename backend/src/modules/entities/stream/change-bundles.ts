@@ -1,4 +1,5 @@
 import { type ActivityAction, actionToVerb, activityActions, hierarchy } from 'shared';
+import { readBudget, userReadShare } from 'shared/sync-pace';
 import { asRecord } from 'shared/utils/as-record';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -6,12 +7,15 @@ import { maxStreamChangeRows } from '#/modules/entities/stream/helpers';
 import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import { log } from '#/utils/logger';
 
+/** Sends an audience may start at once after a quiet spell: a person's few quick edits reach their readers without a wait. */
+export const changeBurst = 3;
+
 /**
- * The shortest time between two sends of one audience under sustained change. A viewed scope reads at each frame, and
- * `readLimiter` allows 1,000 reads per 300 s: one busy audience spends 70% of a lone viewer's budget at 430 ms, and all
- * of it at 300 ms.
+ * The shortest time between two sends of one audience under sustained change. A viewed scope reads at each frame and
+ * stays live until `userReadShare` of the read budget is left: one busy audience, its burst included, spends at most
+ * the rest of a lone viewer's budget.
  */
-export const changeBundleMs = 430;
+export const changeBundleMs = Math.ceil((readBudget.duration * 1000) / (readBudget.points * (1 - userReadShare) - changeBurst));
 
 /** Rows held across every audience past which everything held is sent: about 5 MB at about 1 KB a row. */
 const maxHeldRows = 5000;
@@ -21,6 +25,8 @@ interface Bundle {
   event: StreamProductEvent;
   rows: Map<string, { action: ActivityAction; row: ActivityRow }>;
   timer: ReturnType<typeof setTimeout>;
+  /** Sends the audience may still start at once, at most `changeBurst`. */
+  sendsLeft: number;
 }
 
 /** Open intervals by audience: one stays open while its audience keeps changing. */
@@ -83,13 +89,14 @@ function hold(bundle: Bundle, event: StreamProductEvent): void {
 const reachesRowBound = (bundle: Bundle) =>
   activityActions.some((action) => [...bundle.rows.values()].filter((entry) => entry.action === action).length >= maxStreamChangeRows);
 
-/** Sends what the interval held and starts the next one; an audience that held nothing is quiet again. */
+/** Sends what the interval held and starts the next one, or returns one send: an audience with its whole burst back is quiet again. */
 function endInterval(key: string, bundle: Bundle): void {
-  if (bundle.rows.size === 0) {
+  if (bundle.rows.size === 0 && ++bundle.sendsLeft === changeBurst) {
     bundles.delete(key);
     return;
   }
   bundle.timer = setTimeout(() => endInterval(key, bundle), changeBundleMs);
+  if (bundle.rows.size === 0) return;
   try {
     void Promise.all(sendHeld(bundle));
   } catch (error) {
@@ -98,11 +105,12 @@ function endInterval(key: string, bundle: Bundle): void {
 }
 
 /**
- * Sends a product event's change frames, paced per audience. The first change after a quiet interval goes at once and
- * opens an interval of `changeBundleMs`. Later changes wait for its end and go together, each row with its latest
- * change. They go sooner when an action's held rows fill a frame or every audience together holds `maxHeldRows`. A
- * move, a message over `maxStreamChangeRows` rows and anything during shutdown go at once, after what their audiences
- * hold. Readers are decided when a frame is sent: a member removed meanwhile gets nothing.
+ * Sends a product event's change frames, paced per audience. The first change after a quiet spell opens an interval of
+ * `changeBundleMs`. Up to `changeBurst` changes go at once while nothing is held, and an interval that held nothing
+ * returns one. Later changes wait for the interval's end and go together, each row with its latest change. They go
+ * sooner when an action's held rows fill a frame or every audience together holds `maxHeldRows`. A move, a message over
+ * `maxStreamChangeRows` rows and anything during shutdown go at once, after what their audiences hold. Readers are
+ * decided when a frame is sent: a member removed meanwhile gets nothing.
  */
 export async function bundleChange(event: StreamProductEvent): Promise<void> {
   if (closing || event.rows.length > maxStreamChangeRows || event.rows.some(({ movedFrom }) => movedFrom)) {
@@ -113,8 +121,13 @@ export async function bundleChange(event: StreamProductEvent): Promise<void> {
   const key = audienceOf(event);
   const bundle = bundles.get(key);
   if (!bundle) {
-    const opened: Bundle = { event, rows: new Map(), timer: setTimeout(() => endInterval(key, opened), changeBundleMs) };
+    const opened: Bundle = { event, rows: new Map(), sendsLeft: changeBurst - 1, timer: setTimeout(() => endInterval(key, opened), changeBundleMs) };
     bundles.set(key, opened);
+    await dispatch(event);
+    return;
+  }
+  if (bundle.sendsLeft > 0 && bundle.rows.size === 0) {
+    bundle.sendsLeft--;
     await dispatch(event);
     return;
   }

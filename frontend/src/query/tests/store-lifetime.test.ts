@@ -19,7 +19,7 @@ const isPersisted = (value: unknown): value is PersistedStore =>
 // What a session end and the dev reset clear is known only through these two rules: a store that breaks one outlives
 // the user it belongs to.
 it("must give every persisted store a lifetime: a localStorage one carries the app's prefix, a per-user one is listed", async () => {
-  const kvKeys = Object.values(sources).flatMap((source) => [...source.matchAll(/idbKvStorage\('([\w-]+)'\)/g)].map(([, key]) => key));
+  const kvKeys = Object.values(sources).flatMap((source) => [...source.matchAll(/idbKvStorage\('([\w-]+)'/g)].map(([, key]) => key));
   const { localUserStores } = await import('~/query/local-user-storage');
   const listed = (localUserStores as unknown as PersistedStore[]).map((store) => store.persist.getOptions().name);
   expect(new Set(kvKeys)).toEqual(new Set(listed));
