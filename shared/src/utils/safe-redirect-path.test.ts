@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { toSafeRedirectPath } from './safe-redirect-path.ts';
+import { safeRedirectPath as safe } from './safe-redirect-path.ts';
 
-const origin = 'https://app.example.test';
-const safe = (input: unknown, opts: { maxLength?: number; denyPrefixes?: string[] } = {}) => toSafeRedirectPath(input, { origin, ...opts });
-
-describe('toSafeRedirectPath', () => {
+describe('safeRedirectPath', () => {
   describe('legitimate paths (positive controls)', () => {
     it('keeps a plain path, its query and its hash', () => {
       expect(safe('/home')).toBe('/home');
@@ -25,7 +22,7 @@ describe('toSafeRedirectPath', () => {
     it('returns a value that validates to itself', () => {
       for (const input of ['/home', '/a b', '/é?x=ü#ä', '/a/../b?q=a%26b', '/x?y=1&y=2']) {
         const once = safe(input);
-        expect(once).not.toBeNull();
+        expect(once).not.toBeUndefined();
         expect(safe(once)).toBe(once);
       }
     });
@@ -33,79 +30,76 @@ describe('toSafeRedirectPath', () => {
 
   describe('attacker input', () => {
     it('must not leave the origin via dot segments that collapse to a scheme-relative URL', () => {
-      expect(safe('/..//evil.example')).toBeNull();
-      expect(safe('/../..//evil.example/path')).toBeNull();
-      expect(safe('/.//evil.example')).toBeNull();
-      expect(safe('/%2e%2e//evil.example')).toBeNull();
-      expect(safe('/%2E%2E//evil.example')).toBeNull();
-      expect(safe('/.%2e//evil.example')).toBeNull();
-      expect(safe('/a/..//evil.example')).toBeNull();
+      expect(safe('/..//evil.example')).toBeUndefined();
+      expect(safe('/../..//evil.example/path')).toBeUndefined();
+      expect(safe('/.//evil.example')).toBeUndefined();
+      expect(safe('/%2e%2e//evil.example')).toBeUndefined();
+      expect(safe('/%2E%2E//evil.example')).toBeUndefined();
+      expect(safe('/.%2e//evil.example')).toBeUndefined();
+      expect(safe('/a/..//evil.example')).toBeUndefined();
     });
 
     it('must not leave the origin via a scheme-relative or absolute URL', () => {
-      expect(safe('//evil.example')).toBeNull();
-      expect(safe('///evil.example')).toBeNull();
-      expect(safe('https://evil.example')).toBeNull();
-      expect(safe('http://evil.example/path')).toBeNull();
-      expect(safe('javascript:alert(1)')).toBeNull();
-      expect(safe('evil.example/path')).toBeNull();
+      expect(safe('//evil.example')).toBeUndefined();
+      expect(safe('///evil.example')).toBeUndefined();
+      expect(safe('https://evil.example')).toBeUndefined();
+      expect(safe('http://evil.example/path')).toBeUndefined();
+      expect(safe('javascript:alert(1)')).toBeUndefined();
+      expect(safe('evil.example/path')).toBeUndefined();
     });
 
     it('must not leave the origin via a backslash, raw or encoded', () => {
-      expect(safe('/\\evil.example')).toBeNull();
-      expect(safe('\\\\evil.example')).toBeNull();
-      expect(safe('/./\\evil.example')).toBeNull();
-      expect(safe('/..%5c%5cevil.example')).toBeNull();
-      expect(safe('/%5Cevil.example')).toBeNull();
-      expect(safe('/home?next=\\evil')).toBeNull();
+      expect(safe('/\\evil.example')).toBeUndefined();
+      expect(safe('\\\\evil.example')).toBeUndefined();
+      expect(safe('/./\\evil.example')).toBeUndefined();
+      expect(safe('/..%5c%5cevil.example')).toBeUndefined();
+      expect(safe('/%5Cevil.example')).toBeUndefined();
+      expect(safe('/home?next=\\evil')).toBeUndefined();
     });
 
     it('must not leave the origin via an encoded slash', () => {
-      expect(safe('/%2Fevil.example')).toBeNull();
-      expect(safe('/%2f%2fevil.example')).toBeNull();
-      expect(safe('/..%2f%2fevil.example')).toBeNull();
+      expect(safe('/%2Fevil.example')).toBeUndefined();
+      expect(safe('/%2f%2fevil.example')).toBeUndefined();
+      expect(safe('/..%2f%2fevil.example')).toBeUndefined();
     });
 
     it('must not split a header or a path via control characters', () => {
-      expect(safe('/home\nSet-Cookie: x=1')).toBeNull();
-      expect(safe('/\t/evil.example')).toBeNull();
-      expect(safe('/home\u0000')).toBeNull();
-      expect(safe('/home\u007f')).toBeNull();
+      expect(safe('/home\nSet-Cookie: x=1')).toBeUndefined();
+      expect(safe('/\t/evil.example')).toBeUndefined();
+      expect(safe('/home\u0000')).toBeUndefined();
+      expect(safe('/home\u007f')).toBeUndefined();
     });
 
     it('must not carry userinfo', () => {
       expect(safe('/@evil.example')).toBe('/@evil.example');
-      expect(toSafeRedirectPath('/home', { origin: 'https://user:pass@app.example.test' })).toBeNull();
     });
 
     it('must not redirect into backend routes', () => {
-      expect(safe('/api/secret')).toBeNull();
-      expect(safe('/API/secret')).toBeNull();
-      expect(safe('/api')).toBeNull();
-      expect(safe('/api?x=1')).toBeNull();
-      expect(safe('/x/../api/secret')).toBeNull();
-      expect(safe('/%2e%2e/api/secret')).toBeNull();
-      expect(safe('/%61pi/secret')).toBeNull();
+      expect(safe('/api/secret')).toBeUndefined();
+      expect(safe('/API/secret')).toBeUndefined();
+      expect(safe('/api')).toBeUndefined();
+      expect(safe('/api?x=1')).toBeUndefined();
+      expect(safe('/x/../api/secret')).toBeUndefined();
+      expect(safe('/%2e%2e/api/secret')).toBeUndefined();
+      expect(safe('/%61pi/secret')).toBeUndefined();
       expect(safe('/apiary')).toBe('/apiary');
-      expect(safe('/docs', { denyPrefixes: ['/docs/'] })).toBeNull();
-      expect(safe('/api/x', { denyPrefixes: [] })).toBe('/api/x');
     });
 
     it('refuses malformed percent-encoding, non-strings and empty input', () => {
-      expect(safe('/%')).toBeNull();
-      expect(safe('/%zz')).toBeNull();
-      expect(safe('')).toBeNull();
-      expect(safe(undefined)).toBeNull();
-      expect(safe(null)).toBeNull();
-      expect(safe(42)).toBeNull();
-      expect(safe(['/home'])).toBeNull();
+      expect(safe('/%')).toBeUndefined();
+      expect(safe('/%zz')).toBeUndefined();
+      expect(safe('')).toBeUndefined();
+      expect(safe(undefined)).toBeUndefined();
+      expect(safe(null)).toBeUndefined();
+      expect(safe(42)).toBeUndefined();
+      expect(safe(['/home'])).toBeUndefined();
     });
 
     it('enforces the length cap on input and result', () => {
-      expect(safe(`/${'a'.repeat(20)}`, { maxLength: 21 })).toBe(`/${'a'.repeat(20)}`);
-      expect(safe(`/${'a'.repeat(21)}`, { maxLength: 21 })).toBeNull();
+      expect(safe(`/${'a'.repeat(20)}`, 21)).toBe(`/${'a'.repeat(20)}`);
+      expect(safe(`/${'a'.repeat(21)}`, 21)).toBeUndefined();
       // Percent-encoding lengthens the result past the cap.
-      expect(safe(`/${'é'.repeat(5)}`, { maxLength: 21 })).toBeNull();
+      expect(safe(`/${'é'.repeat(5)}`, 21)).toBeUndefined();
     });
   });
 });

@@ -1,5 +1,5 @@
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import { z } from 'zod';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { booleanSearchParam, errorSearchSchema } from '~/modules/common/search-params-schemas';
 
 /** An unsafe redirect reads as absent. */

@@ -1,13 +1,14 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
+import { maxLength } from '#/db/utils/constraints';
 
 /**
  * Resolves the final post-auth path: MFA challenge (carrying the redirect along), then validated explicit redirect, then the default.
  * Untrusted input is re-validated here, so callers can pass stored token values or cookie payloads directly.
  */
 export const resolvePostAuthRedirectPath = ({ redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null }) => {
-  const explicitRedirect = frontendRedirectPath(redirectPath);
+  const explicitRedirect = safeRedirectPath(redirectPath, maxLength.field);
 
   // MFA interrupts the flow; hand the redirect to the MFA page so it survives the challenge.
   if (mfaPath) {

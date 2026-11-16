@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'shared';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import { authStore } from '~/modules/auth/auth-store';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 
 /** Where an invitation flow resumes after signing in: the authenticate page, now on its confirm step. */
 export const invitationResumePath = (tokenId: string) => `/auth/authenticate?tokenId=${encodeURIComponent(tokenId)}`;

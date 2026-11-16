@@ -1,9 +1,10 @@
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import { AppError } from '#/core/error';
+import { maxLength } from '#/db/utils/constraints';
 import { setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { resolveSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { readBoundToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import type { OAuthCookiePayload, OAuthStartContext } from '#/modules/auth/flows/oauth/oauth-schema';
-import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -24,7 +25,7 @@ type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVeri
 export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
   const { kind, redirectPath: requestedPath } = ctx.req.valid('query');
   // Normalized now, as the last hop would: a raw path can percent-encode past the 4096 octets a browser keeps of a cookie.
-  const redirectPath = frontendRedirectPath(requestedPath) ?? undefined;
+  const redirectPath = safeRedirectPath(requestedPath, maxLength.field);
   const cookieContent: OAuthCookiePayload = { state, provider, codeVerifier, nonce, kind, redirectPath, connectionId };
 
   if (kind === 'connect') {

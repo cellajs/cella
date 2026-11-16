@@ -1,9 +1,11 @@
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { buildNotificationPath } from 'shared/utils/notification-link';
+import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { maxLength } from '#/db/utils/constraints';
 import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/core/general/helpers/send-account-security-email';
 import { strategyLabels } from '#/modules/auth/core/general/helpers/strategy-labels';
@@ -26,7 +28,6 @@ import { findIdentityBySubject, insertIdentity, updateIdentity } from '#/modules
 import { createAccount } from '#/modules/user/operations/create-account';
 import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
-import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { getIsoDate } from '#/utils/iso-date';
 
 const dbCtx = { var: { db: baseDb } };
@@ -345,7 +346,7 @@ const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>
   if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectPath ?? (info.joined && buildNotificationPath(info.joined)));
 
   // Stored on the verification token; null means "use the default path" at the final hop.
-  const tokenRedirectPath = frontendRedirectPath(redirectPath);
+  const tokenRedirectPath = safeRedirectPath(redirectPath, maxLength.field);
 
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   if (info.type === 'pending') {
