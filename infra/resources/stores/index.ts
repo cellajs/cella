@@ -1,10 +1,11 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
+import { engineConfig } from '../../config/engine-config';
 import { generalConfig } from '../../config/general.config';
 import { appStores } from '../../config/stores.config';
 import { resolvePerMode } from '../../lib/general-config';
 import type { ProvisionContext, StoreOutputs } from '../../lib/stores';
-import { deployMode, isProduction, naming, region, zone } from '../../pulumi-context';
+import { deployMode, naming, region, zone } from '../../pulumi-context';
 import { privateNetworkId } from '../network';
 
 // The engine facilities handed to every store's provision(). Store modules are pure at import time; this module is the only place that binds them to the live Pulumi program.
@@ -14,7 +15,7 @@ const provisionContext: ProvisionContext = {
   naming,
   region,
   zone,
-  isProduction,
+  backupDays: engineConfig.retention.backupDays,
   sizing: {
     dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
     dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),

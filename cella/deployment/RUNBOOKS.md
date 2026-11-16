@@ -198,7 +198,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 
-Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there.
+Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes, and both go after the backup period of `appConfig.retention`: restore it before then. Neither the uploads key nor the observer reads there.
 
 When the dump fails, the machines are gone already and the teardown destroys nothing else. Stop traffic first: a write the app takes after the dump is lost.
 

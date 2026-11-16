@@ -194,6 +194,11 @@ export interface RetentionConfig {
   declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;
+  /**
+   * Every copy outside the live data, from when it is made: the daily database backups, the backup and dump before a
+   * reset or a teardown, and an uploaded file's earlier versions. Infra applies it; backups serve disasters only.
+   */
+  backupDays: number;
 }
 
 export interface ThemeNavigationConfig {

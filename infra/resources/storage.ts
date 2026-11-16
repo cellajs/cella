@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
+import { engineConfig as appConfig } from '../config/engine-config';
 import { generalConfig } from '../config/general.config';
 import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
@@ -8,6 +9,7 @@ import { resolvePerMode } from '../lib/general-config';
 import { appStorageNeeds, services } from '../lib/services';
 import { CONTROL_PREFIX, lockKey } from '../lib/stack/control-store';
 import { deployMode, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
+import { DUMPS_PREFIX } from '../tasks/final-dump';
 import {
   ciDeployApplicationId,
   observerApplicationId,
@@ -119,6 +121,8 @@ const kept = { retainOnDelete: true };
 // Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
 const assetRetentionDays = resolvePerMode(generalConfig.assets.retentionDays, deployMode);
 
+const { backupDays } = appConfig.retention;
+
 // Frontend static files bucket, only when a default-route service exists to serve it.
 
 const frontendBucket = needs.spaBucket
@@ -179,13 +183,13 @@ const publicUploadsBucket = needs.uploadBuckets
         name: naming.publicBucket,
         region,
         tags: tagsAsMap,
-        // User uploads are irreplaceable: versioning plus a noncurrent-expiry window keeps overwrites and deletes recoverable for 30 days, and the CI statement below cannot delete versions.
+        // User uploads are irreplaceable: versioning keeps overwrites and deletes recoverable as long as the database backups, and the CI statement below cannot delete versions.
         versioning: { enabled: true },
         lifecycleRules: [
           {
             id: 'cleanup-old-versions',
             enabled: true,
-            noncurrentVersionExpiration: { noncurrentDays: 30 },
+            noncurrentVersionExpiration: { noncurrentDays: backupDays },
             expiration: { expiredObjectDeleteMarker: true },
           },
         ],
@@ -243,7 +247,7 @@ const privateUploadsBucket = needs.uploadBuckets
           {
             id: 'cleanup-old-versions',
             enabled: true,
-            noncurrentVersionExpiration: { noncurrentDays: 30 },
+            noncurrentVersionExpiration: { noncurrentDays: backupDays },
             expiration: { expiredObjectDeleteMarker: true },
           },
         ],
@@ -287,7 +291,8 @@ const bootDiagBucket = new scaleway.object.Bucket(
     // Versioned, so the deploy key, which may delete objects, cannot erase a run record or a boot account: a deleted one stays for 60 days.
     versioning: { enabled: true },
     // Records, boot accounts and release archives keep as long as Scaleway keeps the job runs they describe. An env file holds a
-    // machine's secret values: it and its versions go within a day, and the deploy deletes it once the machine booted.
+    // machine's secret values: it and its versions go within a day, and the deploy deletes it once the machine booted. A final dump
+    // holds a whole database: it goes after the backup period, its versions within a day.
     lifecycleRules: [
       {
         id: 'cleanup-old-versions',
@@ -299,6 +304,13 @@ const bootDiagBucket = new scaleway.object.Bucket(
       { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: RUNS_PREFIX },
       { id: 'expire-releases', enabled: true, expiration: { days: 60 }, prefix: RELEASES_PREFIX },
       { id: 'expire-env', enabled: true, expiration: { days: 1 }, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: ENV_PREFIX },
+      {
+        id: 'expire-dumps',
+        enabled: true,
+        expiration: { days: backupDays },
+        noncurrentVersionExpiration: { noncurrentDays: 1 },
+        prefix: DUMPS_PREFIX,
+      },
       // Every deploy and operator action writes the lease, and Scaleway refuses a write to an object of too many versions.
       { id: 'expire-lease-versions', enabled: true, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: lockKey(deployMode) },
     ],

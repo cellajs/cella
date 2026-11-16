@@ -151,7 +151,7 @@ export const sharedDataTypes: SharedDataType[] = [
       `History of your changes: ${retention.activityDays} days longer`,
       'What you created: stays with your organization, credited to a deleted user',
       `What you delete: ${retention.deletedItemsDays} days, then removed for good`,
-      `Invitations and refused join requests: ${retention.invitationDays} days after the last mail or the refusal`,
+      `Invitations: ${retention.invitationDays} days after the last mail, ${retention.declinedInvitationHoldDays} days after one is declined`,
       'Email delivery logs: 30 days',
     ],
   },

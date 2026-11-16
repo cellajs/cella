@@ -193,7 +193,7 @@ export type RdbClient = ReturnType<typeof createRdbClient>;
 
 /**
  * Poll a backup until it reports `ready`, and with `downloadable` until its export set `download_url` too. The reset must not proceed if the
- * backup never becomes ready. It is the only undo, and staging has `disableBackup: true` so no automatic backup exists to fall back on.
+ * backup never becomes ready. It is the undo, as the latest automatic backup can be a day old.
  */
 export async function waitForBackupReady(
   client: Pick<RdbClient, 'getBackup'>,

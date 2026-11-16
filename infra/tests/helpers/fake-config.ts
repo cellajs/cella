@@ -26,6 +26,7 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
       publicCDNUrl: 'https://cella-public.s3.nl-ams.scw.cloud',
       privateCDNUrl: 'https://cella-private.s3.nl-ams.scw.cloud',
     },
+    retention: { backupDays: 7 },
     ...overrides,
   };
 }

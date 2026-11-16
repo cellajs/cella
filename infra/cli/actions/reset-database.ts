@@ -11,9 +11,6 @@ import { acquireOperatorKey } from './operator-unlock';
 /** Roles the operator task ensure-database makes on the instance (`tasks/ensure-database.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
 
-/** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */
-const BACKUP_RETENTION_DAYS = 7;
-
 /** Render live instance data so an incorrectly targeted RDB instance is visible before approval. */
 function describeTarget(target: ResetTarget, region: string): string {
   const others = target.databases.filter((database) => database.name !== target.databaseName).map((database) => database.name);
@@ -40,13 +37,14 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   }
 
   const { appConfig, environment } = context;
+  const { backupDays } = appConfig.retention;
   const { naming, region } = deriveInfra(appConfig);
   const instanceName = naming.resource('postgres');
   const databaseName = naming.dbName;
 
   printLossWarning('db-reset', environment, [
     `Everything in the ${environmentName(environment)} database is deleted, and the database is made again, empty.`,
-    `A backup is taken first and kept for ${BACKUP_RETENTION_DAYS} days. If the backup does not finish, nothing is deleted.`,
+    `A backup is taken first and kept for ${backupDays} days. If the backup does not finish, nothing is deleted.`,
     'Nothing else stops it: the database goes even while the app is using it.',
     'Then you reboot the backend machine, which rebuilds the tables and the admin account.',
   ]);
@@ -54,7 +52,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.
   const operator = await acquireOperatorKey(context);
   const client = createRdbClient({ secretKey: operator.secretKey, region });
-  const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
+  const expiresAt = new Date(Date.now() + backupDays * 86_400_000).toISOString();
 
   try {
     const result = await sequenceDatabaseReset({
@@ -84,7 +82,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     if (result.aborted) return;
 
     console.info(`\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`);
-    console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
+    console.info(`  ${pc.dim(`Backup retained ${backupDays} days: ${result.backupId}`)}\n`);
     console.info(rebuildSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
   } catch (error) {
