@@ -62,7 +62,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 
 Decision rule: **no console change line and the API's `cdc` component is not healthy** (its `reason` says why) → the worker (read its log), not the client; **no console change line otherwise** → SSE/leader/broadcast layer; **change but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
 
-`Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed ([Client](../../CLIENT.md#cold-start-to-live)). `viewing=true` marks a tab on the org route, which fetches at once. Chromium throttles a hidden tab's timers to about 1s, so use generous assert windows.
+`Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed ([Client](../../CLIENT.md#cold-start-to-live)). `viewing=true` marks a tab on the org route, which fetches at once while it is visible. A hidden tab reads it on the background tier, 2 to 30 s later, and Chromium throttles its timers to about 1 s: use generous assert windows.
 
 Creates not propagating: check the `applyServerRows` applicator in `cache-ops.ts` first.
 

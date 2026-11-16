@@ -56,7 +56,10 @@ const emitAttachmentDeleted = (org: { id: string; tenantId: string }, authorId: 
   } as never);
 };
 
-const changesOf = (stream: { events: { event: string }[] }) => stream.events.filter((e) => e.event === 'change');
+const changesOf = (stream: { events: { event: string; data: string }[] }) => stream.events.filter((e) => e.event === 'change');
+
+/** The rows of every change frame a stream received. */
+const changedRowsOf = (stream: { events: { event: string; data: string }[] }) => changesOf(stream).flatMap((e) => JSON.parse(e.data).rows);
 
 /**
  * A stream holds what its client may read while the client reads it. A client that stops reading, or a connect that
@@ -75,15 +78,15 @@ describe('The stream lets go of what its client cannot hold', async () => {
     const stalledStream = await openUnreadStream(stalled.id, await insertSession(stalled));
     const readerStream = await openStream(reader.id, await insertSession(reader));
 
-    // Twice the ceiling in frames of at least 200 bytes, a few to a tick, as CDC messages arrive.
-    const changes = Math.ceil((2 * maxPendingStreamBytes) / 200);
+    // Twice the ceiling in rows of at least 70 bytes, a few to a tick, as CDC messages arrive. Held, they go 20 to a frame.
+    const changes = Math.ceil((2 * maxPendingStreamBytes) / 70);
     for (let i = 1; i <= changes; i++) {
       emitAttachmentDeleted(org, reader.id, plan.channelIdColumns);
       if (i % 10 === 0) await new Promise(setImmediate);
     }
 
     await expectReleased(stalled.id, stalledStream);
-    await vi.waitFor(() => expect(changesOf(readerStream).length).toBe(changes));
+    await vi.waitFor(() => expect(changedRowsOf(readerStream)).toHaveLength(changes));
   });
 
   it("must not keep a removed member's stream that connected across the removal", async () => {

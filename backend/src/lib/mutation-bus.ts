@@ -8,8 +8,8 @@ type SubjectOf<E extends TrackedEventType> = E extends `${infer T extends Tracke
 
 /**
  * The batched rows an event is about: `before`/`after` index-aligned for updates, `before` alone for deletes. An
- * update also carries `changedFields`, the field names each row's write accepted, aligned with `after`; a write that
- * accepted none, as a server-driven write or one that changed nothing, carries no list.
+ * update also carries `changedFields`, the field names each row's write accepted, aligned with `after`. A
+ * server-driven write carries no list, and an update that accepts no field dispatches nothing.
  */
 export interface MutationPayload<E extends TrackedEventType = TrackedEventType> {
   before?: TrackedModel<SubjectOf<E>>[];

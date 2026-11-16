@@ -229,7 +229,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** `accessDecisions` per change and per signal, a change sent too wide, a signal's ids as an existence leak, a membership change mid-stream, a session end closing the stream, the stream session recheck, CR or LF in `frame.event` and `id` passed to `writeSSE`, the subscriber cap (`streamConnectLimiter`), catchup frontiers (`opaque`, `forbidden`), propagation hints, the `pg_notify` payload.
 - **Advisories:** 1 (hono SSE control-field injection through CR or LF).
 - **Files:**
-  - `backend/src/modules/entities/stream/`: audiences, build-change, helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
+  - `backend/src/modules/entities/stream/`: audiences, build-change, change-bundles (product changes held per audience and decided when sent), helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
   - `backend/src/modules/entities/entities-handlers.ts` (stream handler, catchup), `backend/src/schemas/stream-schemas.ts`.
   - `sync-events.ts` is the frontend prioritizer file; the backend equivalents are `modules/entities/entities-listeners.ts` and `stream/send-signal.ts`.
   - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { msUntilBudget, recordReportedBudgets } from '~/lib/reported-budgets';
 
-const report = (left: string, policy: string) => recordReportedBudgets(new Headers({ RateLimit: left, 'RateLimit-Policy': policy }));
+const report = (left: string, policy: string) =>
+  recordReportedBudgets('GET', new Response(null, { headers: { RateLimit: left, 'RateLimit-Policy': policy } }));
 
 describe('reported budgets', () => {
   afterEach(() => {

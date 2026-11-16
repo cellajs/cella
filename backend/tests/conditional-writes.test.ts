@@ -114,22 +114,40 @@ describe('Conditional writes', async () => {
     expect(await storedOrganizationName()).toBe('between');
   });
 
-  it('refuses an attachment update whose tag a write since has replaced', async () => {
+  const seedRenamable = async () => {
     const attachment = await seedAttachment(tenant, { description: paragraph('before') });
     removals.push(attachment.remove);
     const path = { ...orgPath(), attachmentId: attachment.id };
     const rename = (name: string, ifMatch?: string) =>
       call(updateAttachment, { path, body: { ops: { name }, stx: mockStxFor('name') }, headers: headers(ifMatch) });
+    const readTag = async () => (await call(getAttachment, { path, headers: headers() })).response.headers.get('etag') ?? '';
+    return { id: attachment.id, rename, readTag };
+  };
 
-    const read = await call(getAttachment, { path, headers: headers() });
-    const tag = read.response.headers.get('etag') ?? '';
+  it('refuses an attachment update whose tag a write since has replaced', async () => {
+    const { id, rename, readTag } = await seedRenamable();
+    const tag = await readTag();
     expect((await rename('theirs')).response.status).toBe(200);
 
     const { response, error } = await rename('mine', tag);
     expect(response.status).toBe(412);
     expect(error).toMatchObject({ type: 'precondition_failed' });
-    const [row] = await adminDb.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachment.id));
+    const [row] = await adminDb.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, id));
     expect(row.name).toBe('theirs');
+  });
+
+  it('keeps the tag for an attachment update that changes nothing', async () => {
+    const { rename, readTag } = await seedRenamable();
+    expect((await rename('same')).response.status).toBe(200);
+    const tag = await readTag();
+
+    const unchanged = await rename('same', tag);
+    expect(unchanged.response.status).toBe(200);
+    expect(unchanged.response.headers.get('etag')).toBe(tag);
+    expect((await rename('changed', tag)).response.status).toBe(200);
+
+    // The content write replaced the tag, which a same-value write then still has to match.
+    expect((await rename('changed', tag)).response.status).toBe(412);
   });
 });
 

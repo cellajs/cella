@@ -36,5 +36,9 @@ export class ApiError extends Error {
   }
 }
 
+/** A refusal by a rate limit, also as the `cause` of an error that wraps one. */
+export const isRateLimited = (error: unknown): boolean =>
+  error instanceof ApiError ? error.status === 429 : error instanceof Error && isRateLimited(error.cause);
+
 /** What a load balancer or proxy answers while the API behind it is down or too slow, as during a deploy. */
 export const gatewayStatuses: ReadonlySet<number> = new Set([502, 503, 504]);

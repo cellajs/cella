@@ -48,4 +48,14 @@ describe('resolveUpdateOps write ordering', () => {
     if (!resolved.changed) throw new Error('expected the newer replay to be accepted');
     expect(resolved.stx.fieldTimestamps.name).toBe(newerHLC);
   });
+
+  it('an array delta that adds a present id and removes an absent one changes nothing', () => {
+    const resolved = resolveUpdateOps(
+      'attachment',
+      { ...entity, labels: ['present'] },
+      { labels: { add: ['present'], remove: ['absent'] } },
+      { mutationId: 'm1', sourceId: 'tab-1', fieldTimestamps: {} },
+    );
+    expect(resolved.changed).toBe(false);
+  });
 });

@@ -94,7 +94,9 @@ and the renderers.
     transaction, so the merge starts from a locked row; `assertBlockFields` on the ops. The `/{<name>Id}` routes
     take an `ETag` and `If-Match` from `createXRoute` and the read checks it, so the update query adds
     `preconditionWhere(ctx, <name>sTable)` to its WHERE and the operation answers a row it did not write with
-    `assertNoWriteBetween`, as attachment's do.
+    `assertNoWriteBetween`, as attachment's do. When `resolveUpdateOps` accepts no field, the operation calls
+    `assertPreconditionsChecked` and returns the locked row as it is, with no update, no stamps and no
+    `dispatchMutation`.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`,
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's

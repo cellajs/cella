@@ -80,7 +80,7 @@ Only product rows sync. Channels are containers, and products are the synced con
 
 ### Ordering
 
-Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path.
+Commit order is sequence order, across product types. A change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path. Under sustained change the API sends an audience one frame per action and interval, each row once with its latest change; the first change after a quiet interval goes at once.
 
 ### Drafts
 
@@ -104,7 +104,7 @@ When an update moves rows where a subscriber can no longer read them, that subsc
 
 ### Shared answers
 
-The readers of one change fetch the same range at the same moment. A change frame carries a **range key** for the receivers who read the same rows, and each sends it with its range fetch. The first fetch runs as any request does. Its answer is kept for a moment, and the fetches behind it take it without passing the guards or reading the database.
+The readers of one change fetch the same range at the same moment, and under sustained change one frame per interval keeps their ranges in step. A change frame carries a **range key** for the receivers who read the same rows, and each sends it with its range fetch. The first fetch runs as any request does. Its answer is kept for a moment, and the fetches behind it take it without passing the guards or reading the database.
 
 A key stands for a read scope, never for a user. Receivers whose scopes differ get different keys, and a receiver bound to its own rows gets none. A key answers only for the URL its answer was read under, and only for seconds: about as long as a session that ended elsewhere still passes.
 
@@ -145,9 +145,11 @@ No frame carries an event id. A reconnecting client resumes through catchup from
 
 An announced range is queued, not fetched at once. Its channel's tier decides when:
 
-- **Viewed:** at once.
+- **Viewed:** at once, and on the background tier while the tab is hidden or the read budget is under the user's share.
 - **Muted or hidden:** when it is opened.
 - **Any other:** in the background, spread over a window that grows with the online audience.
+
+One range read per product type and organization runs at a time, and changes announced meanwhile join the next one.
 
 A new generation refetches through the same tiers: every synced list is marked, the viewed organization's lists read in the client's slot of that window once the tab is visible, and the rest when opened or by the background fill.
 
@@ -192,7 +194,7 @@ Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp 
 
 - **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
 - **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time.
-- **No conflict response:** losing fields are skipped, and the server returns the stored row.
+- **No conflict response:** losing fields are skipped. A write that loses every field writes nothing, and the server returns the stored row.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 
 ### Paused writes
@@ -235,6 +237,7 @@ The client's own catchup repairs missed frames. Every client refetches everythin
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
 | A bulk transaction: a migration's writes, or one transaction past the worker's size limit | Every client refetches once, the lists on screen first | The worker discards it and rebuilds the books at its commit | Its activities and notifications |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
+| A user's read budget is spent: a busy board, a large import or replay, several tabs | Live updates pause until the budget's wait ends. A page the user opens meanwhile answers with a warning and the wait | The held ranges read once the wait ends, and the refused lists on screen refetch | Nothing |
 
 A rebuild starts a new sync generation. The API then ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
 

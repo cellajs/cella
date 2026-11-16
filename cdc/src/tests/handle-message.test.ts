@@ -94,6 +94,10 @@ describe('handleDataMessage: what a flush acknowledges', () => {
   it('acknowledges the end of the commit of the last source transaction of a flush', async () => {
     const { acknowledge } = serviceWith();
 
+    // Flushed at once: the two that follow wait for the rest of its window.
+    await begin('0/80');
+    await handleDataMessage('0/05', mockDmlMessage('insert', 'usr-0'));
+    await commit('0/88');
     await begin('0/90');
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
     await commit('0/98');
@@ -103,8 +107,8 @@ describe('handleDataMessage: what a flush acknowledges', () => {
     await vi.runAllTimersAsync();
 
     // One flush of two source transactions. 0/20, its last change, lies before the second commit.
-    expect(processFlush).toHaveBeenCalledOnce();
-    expect(acknowledge.mock.calls).toEqual([['0/A8']]);
+    expect(processFlush).toHaveBeenCalledTimes(2);
+    expect(acknowledge.mock.calls).toEqual([['0/88'], ['0/A8']]);
     expect(replicationState.lastAckedLsn).toBe('0/A8');
   });
 
@@ -205,14 +209,17 @@ describe('handleDataMessage: the marker of a recount', () => {
       passed = streamPassed;
     });
 
-    // A committed transaction waits in the flush buffer for the window to end.
+    // A committed transaction waits in the flush buffer for the window of the one before it to end.
+    await begin('0/90');
+    await handleDataMessage('0/80', mockDmlMessage('update', 'usr-0'));
+    await commit('0/98');
     await begin('0/B0');
     await handleDataMessage('0/A0', mockDmlMessage('update', 'usr-1'));
     await commit('0/B8');
     await marker('marker-1');
     await Promise.resolve();
 
-    expect(processFlush).toHaveBeenCalledOnce();
+    expect(processFlush).toHaveBeenCalledTimes(2);
     expect(passed).toBe(true);
   });
 
@@ -332,7 +339,10 @@ describe('handleDataMessage: a bulk transaction', () => {
   it('records none of its changes: the pending flush goes first, then one rebuild, then its commit is acknowledged', async () => {
     const { acknowledge } = serviceWith();
 
-    // A committed transaction waits in the flush buffer for the window to end.
+    // A committed transaction waits in the flush buffer for the window of the one before it to end.
+    await begin('0/90');
+    await handleDataMessage('0/80', mockDmlMessage('update', 'usr-0'));
+    await commit('0/98');
     await begin('0/B0');
     await handleDataMessage('0/A0', mockDmlMessage('update', 'usr-1'));
     await commit('0/B8');
@@ -344,10 +354,10 @@ describe('handleDataMessage: a bulk transaction', () => {
     await commit('0/D8');
 
     expect(mocked).not.toHaveBeenCalled();
-    expect(processFlush).toHaveBeenCalledOnce();
+    expect(processFlush).toHaveBeenCalledTimes(2);
     expect(rebuildBooks).toHaveBeenCalledExactlyOnceWith('bulk_write', { error: 'migrate:20261109_backfill' });
-    expect(vi.mocked(processFlush).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(rebuildBooks).mock.invocationCallOrder[0]);
-    expect(acknowledge.mock.calls).toEqual([['0/B8'], ['0/D8']]);
+    expect(vi.mocked(processFlush).mock.invocationCallOrder[1]).toBeLessThan(vi.mocked(rebuildBooks).mock.invocationCallOrder[0]);
+    expect(acknowledge.mock.calls).toEqual([['0/98'], ['0/B8'], ['0/D8']]);
     expect(replicationState.lastAckedLsn).toBe('0/D8');
   });
 

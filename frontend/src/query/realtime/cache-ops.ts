@@ -1,5 +1,6 @@
 import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import { isRateLimited } from '~/lib/api';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, removeDetailQueriesOnceUnobserved, writeKeepingMark } from '~/query/basic/cache-mutations';
@@ -137,9 +138,12 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
   return live.filter((row) => !seen.has(row.id));
 }
 
-/** `overflow` and `unsupported` deliver no row and `error` may retry; the caller marks the lists of a range that came back short or not at all. */
+/**
+ * `overflow` and `unsupported` deliver no row and `error` may retry; the caller marks the lists of a range that came back
+ * short or not at all. A range the read budget refused (`limited`) keeps its place until the budget has reads left.
+ */
 interface RangeFetchResult {
-  status: 'ok' | 'overflow' | 'unsupported' | 'error';
+  status: 'ok' | 'overflow' | 'unsupported' | 'error' | 'limited';
   items: ItemData[];
   /** Highest seq actually returned; 0 when empty. Lets callers detect a short delivery. */
   reachedSeq: number;
@@ -191,6 +195,7 @@ export async function fetchRangeAndPatch(
     const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item) ?? 0), 0);
     return { status: 'ok', items, reachedSeq };
   } catch (error) {
+    if (isRateLimited(error)) return failedRange('limited');
     console.warn(`[CacheOps] Range fetch failed for ${label}, falling back to invalidation`, error);
     return failedRange('error');
   }

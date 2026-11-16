@@ -7,6 +7,9 @@ import type { PendingEvent } from '../types';
  * so one database transaction records many independent single-row commits. A flush takes every whole source
  * transaction that is pending, and its position is acknowledged only after `processFlush` resolved.
  *
+ * Below the batch size flushes start at least a window apart. A change that arrives a window or more after the last
+ * start is flushed at once, and under sustained change each flush takes what arrived during the window before it.
+ *
  * A flush that rejects acknowledges nothing: the buffer drops what it holds, refuses new changes and calls `onFailed`,
  * so the worker reads again from the last acknowledged position. That is the one way a failure is handled: nothing is
  * retried in place and nothing is left out.
@@ -16,6 +19,10 @@ export class FlushBuffer {
   private pending: PendingEvent[][] = [];
   private pendingCount = 0;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  /** By `performance.now()`. */
+  private lastFlushStart = Number.NEGATIVE_INFINITY;
+  /** True while `processFlush` runs: its end schedules what arrived meanwhile. */
+  private recording = false;
   /**
    * Settles when the last flush or run that was asked for has ended. Each takes its turn after the one asked for
    * before it, so a run between two flushes gets the next gap, also while changes keep arriving.
@@ -39,7 +46,7 @@ export class FlushBuffer {
   /**
    * @param processFlush - Records the changes of whole source transactions and hands them to the API.
    * @param acknowledge - Called after every flush that was recorded, with the commit position of its last source transaction.
-   * @param windowMs - How long the first pending change waits for more before it is flushed.
+   * @param windowMs - The shortest time between the starts of two flushes.
    * @param batchSize - Pending changes from which a flush starts at once and the caller is held.
    */
   constructor(
@@ -69,18 +76,26 @@ export class FlushBuffer {
       return;
     }
 
-    // In quiet times the window ends the wait.
-    if (!this.flushTimer) {
-      this.flushTimer = setTimeout(() => {
-        this.flushTimer = null;
-        void this.flush();
-      }, this.windowMs);
+    if (!this.recording) this.scheduleFlush();
+  }
+
+  /** Flushes at once at the batch size or a window after the last flush started; otherwise when that window ends. */
+  private scheduleFlush(): void {
+    if (this.flushTimer) return;
+    const wait = this.lastFlushStart + this.windowMs - performance.now();
+    if (wait <= 0 || this.pendingCount >= this.batchSize) {
+      void this.flush();
+      return;
     }
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      void this.flush();
+    }, wait);
   }
 
   /**
-   * Flushes what is pending: resolves once every change that was pending at the call is recorded. What arrives
-   * meanwhile goes into a flush of its own, which starts right after whatever waits for the gap between the two.
+   * Flushes what is pending, whatever the window: resolves once every change that was pending at the call is recorded.
+   * What arrives meanwhile goes into a later flush, after whatever waits for the gap between the two.
    */
   async flush(): Promise<void> {
     this.clearTimer();
@@ -94,12 +109,16 @@ export class FlushBuffer {
     const events = this.pendingCount;
     this.pending = [];
     this.pendingCount = 0;
+    this.lastFlushStart = performance.now();
+    this.recording = true;
 
     try {
       await this.processFlush(transactions);
     } catch (error) {
       this.fail(error, transactions[0][0].lsn, events);
       return;
+    } finally {
+      this.recording = false;
     }
 
     // The end of the commit of the last source transaction: everything up to it is recorded. A change's own position
@@ -107,7 +126,7 @@ export class FlushBuffer {
     const lastTransaction = transactions[transactions.length - 1];
     await this.acknowledge(lastTransaction[lastTransaction.length - 1].commitEndLsn);
 
-    if (this.pendingCount > 0) void this.flush();
+    if (this.pendingCount > 0) this.scheduleFlush();
     else this.onDrained?.();
   }
 
@@ -153,13 +172,15 @@ export class FlushBuffer {
   /**
    * Before a new subscription: drops what is pending, waits for the flush in flight to end, whatever its outcome, and
    * opens the buffer again. The stream starts over from the acknowledged position, so what is dropped is delivered
-   * again, and nothing of the subscription that ended is still being recorded when this resolves.
+   * again, and nothing of the subscription that ended is still being recorded when this resolves. The first change of
+   * the new subscription is flushed at once.
    */
   async reset(): Promise<void> {
     this.dropPending();
     while (this.turns > 0) await this.turn;
     this.dropPending();
     this.closedByFailure = false;
+    this.lastFlushStart = Number.NEGATIVE_INFINITY;
   }
 
   /** True from a failure until `reset`: nothing is taken, flushed or to be acknowledged meanwhile. */

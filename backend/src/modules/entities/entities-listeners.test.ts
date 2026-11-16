@@ -1,11 +1,12 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ActivityEvent, type ActivityRow, activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { defineBackendModule } from '#/lib/module';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../tests/fixtures';
+import { changeBundleMs, closeChangeBundles, sendHeldChanges } from './stream/change-bundles';
 import { streamSubscriberManager } from './stream/subscriber-manager';
 import { streamSubscriber } from './stream/tests/stream-subscriber';
 import './entities-listeners';
@@ -68,7 +69,8 @@ const workerReports = (generation: number) =>
     JSON.stringify({ _control: 'health', payload: { status: 'healthy', reasons: [], details: { replication: 'active' }, generation } }),
   );
 
-afterEach(() => {
+afterEach(async () => {
+  await sendHeldChanges();
   for (const subscriber of streamSubscriberManager.all()) streamSubscriberManager.unregister(subscriber.id);
 });
 
@@ -103,34 +105,51 @@ describe('entities listeners: a membership change on open streams', () => {
   });
 });
 
-describe('entities listeners: a product change on open streams', () => {
-  // A row names every ancestor its product can have, null where it has none: an app may home the product below the organization.
-  const noDeeperAncestors = Object.fromEntries(
-    appConfig.channelEntityTypes.filter((type) => type !== 'organization').map((type) => [appConfig.entityIdColumnKeys[type], null]),
-  );
-  const row = (id: string, extra: Record<string, unknown> = {}) => ({
-    id,
+// A row names every ancestor its product can have, null where it has none: an app may home the product below the organization.
+const noDeeperAncestors = Object.fromEntries(
+  appConfig.channelEntityTypes.filter((type) => type !== 'organization').map((type) => [appConfig.entityIdColumnKeys[type], null]),
+);
+const row = (id: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  organizationId: org,
+  ...noDeeperAncestors,
+  createdBy: 'author-user',
+  ...extra,
+});
+
+/** A product change as the socket hands it to the bus: its rows, each with the activity of its write. */
+const productEvent = (action: 'create' | 'update' | 'delete', rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): ActivityEvent =>
+  ({
+    type: `attachment.${action}d`,
+    action,
+    entityType: 'attachment',
+    resourceType: null,
+    tableName: 'attachments',
+    tenantId: 'tenant-1',
     organizationId: org,
-    ...noDeeperAncestors,
-    createdBy: 'author-user',
-    ...extra,
-  });
+    rowData: null,
+    rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}-${row.seq}`, actorId: null, changedFields: null, stx: null, ...row })),
+    trace: null,
+  }) as unknown as ActivityEvent;
+const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]) => productEvent('update', rows);
 
-  /** A product update as the socket hands it to the bus: its rows, each with the activity of its write. */
-  const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): ActivityEvent =>
-    ({
-      type: 'attachment.updated',
-      action: 'update',
-      entityType: 'attachment',
-      resourceType: null,
-      tableName: 'attachments',
-      tenantId: 'tenant-1',
-      organizationId: org,
-      rowData: null,
-      rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, actorId: null, changedFields: null, stx: null, ...row })),
-      trace: null,
-    }) as unknown as ActivityEvent;
+/** A reader of every attachment of the organization, by its role alone. */
+const adminReader = (userId: string) => {
+  const reader = fakeSubscriber(userId);
+  reader.subscriber.memberships = [membership('admin', userId)];
+  return reader;
+};
 
+/** Each change frame a stream was sent: its action and, per row, its id and seq. */
+const framesOf = (sent: { event?: string; data: string }[]) =>
+  sent
+    .filter(({ event }) => event === 'change')
+    .map(({ data }) => {
+      const { action, rows } = JSON.parse(data) as { action: string; rows: { subjectId: string; seq: number | null }[] };
+      return [action, rows.map(({ subjectId, seq }) => `${subjectId}@${seq}`)];
+    });
+
+describe('entities listeners: a product change on open streams', () => {
   it('tells a reader the update, and the loss of each row a move took out of its reach', async () => {
     const reader = fakeSubscriber('reader-user');
     // Read by the role alone, whatever the app grants a member: the difference below comes from the draft veto.
@@ -172,5 +191,130 @@ describe('entities listeners: the worker rebuilt its books', () => {
       expect(isClosed()).toBe(true);
     }
     expect(streamSubscriberManager.all()).toEqual([]);
+  });
+});
+
+describe('entities listeners: an audience under sustained change', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(async () => {
+    await sendHeldChanges();
+    vi.useRealTimers();
+  });
+
+  /** Emits a change and lets its listener run. */
+  const change = async (event: ActivityEvent) => {
+    activityBus.emit(event);
+    await vi.advanceTimersByTimeAsync(0);
+  };
+
+  it('must not send a held change to a member removed before the interval ends', async () => {
+    const staying = adminReader('staying-user');
+    const removed = adminReader('removed-user');
+
+    await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
+    activityBus.emit(membershipEvent('delete', 'removed-user'));
+    await vi.advanceTimersByTimeAsync(changeBundleMs);
+
+    expect(framesOf(staying.sent)).toEqual([
+      ['update', ['att-1@1']],
+      ['update', ['att-2@2']],
+    ]);
+    expect(framesOf(removed.sent)).toEqual([['update', ['att-1@1']]]);
+  });
+
+  it('sends the first change after a quiet interval at once, and the next when the interval ends', async () => {
+    const reader = adminReader('reader-user');
+
+    await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
+    expect(framesOf(reader.sent)).toHaveLength(1);
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
+    await vi.advanceTimersByTimeAsync(changeBundleMs - 1);
+    expect(framesOf(reader.sent)).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(framesOf(reader.sent)).toHaveLength(2);
+
+    // An interval that held nothing closes: the audience is quiet again.
+    await vi.advanceTimersByTimeAsync(changeBundleMs);
+    await change(updateEvent([{ seq: 3, rowData: row('att-3') }]));
+    expect(framesOf(reader.sent)).toEqual([
+      ['update', ['att-1@1']],
+      ['update', ['att-2@2']],
+      ['update', ['att-3@3']],
+    ]);
+  });
+
+  it('holds each row once with its latest change: a create stays a create, a delete replaces a create or update, a restore a delete', async () => {
+    const reader = adminReader('reader-user');
+
+    await change(updateEvent([{ seq: 1, rowData: row('att-0') }]));
+    await change(productEvent('create', [{ seq: 2, rowData: row('att-1') }]));
+    await change(updateEvent([{ seq: 3, rowData: row('att-1') }]));
+    await change(productEvent('create', [{ seq: 4, rowData: row('att-2') }]));
+    await change(updateEvent([{ seq: 5, rowData: row('att-3') }]));
+    await change(productEvent('delete', [{ rowData: row('att-2') }, { rowData: row('att-3') }]));
+    await change(productEvent('delete', [{ seq: 6, rowData: row('att-4') }]));
+    await change(productEvent('create', [{ seq: 7, rowData: row('att-4') }]));
+    await vi.advanceTimersByTimeAsync(changeBundleMs);
+
+    expect(framesOf(reader.sent)).toEqual([
+      ['update', ['att-0@1']],
+      ['create', ['att-1@3', 'att-4@7']],
+      ['delete', ['att-2@null', 'att-3@null']],
+    ]);
+  });
+
+  it('keeps the order of a stream when a change that goes at once follows a held one', async () => {
+    const reader = adminReader('reader-user');
+
+    await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
+    // A move goes at once, after what its audience holds.
+    await change(updateEvent([{ seq: 3, rowData: row('att-3'), movedFrom: row('att-3') }]));
+
+    expect(framesOf(reader.sent)).toEqual([
+      ['update', ['att-1@1']],
+      ['update', ['att-2@2']],
+      ['update', ['att-3@3']],
+    ]);
+  });
+
+  it('sends held rows once they fill a frame, in frames that each name their rows in commit order', async () => {
+    const reader = adminReader('reader-user');
+
+    await change(updateEvent([{ seq: 0, rowData: row('att-0') }]));
+    // Three rows a message, as the worker sends them under load: 18 held rows become 21, past what one frame names.
+    for (let seq = 1; seq <= 21; seq += 3) {
+      await change(updateEvent([2, 1, 0].map((i) => ({ seq: seq + i, rowData: row(`att-${seq + i}`) }))));
+    }
+
+    const frames = reader.sent.filter(({ event }) => event === 'change').map(({ data }) => JSON.parse(data));
+    expect(frames.slice(1).map(({ rows, overflow }) => [rows.length, overflow])).toEqual([
+      [20, null],
+      [1, null],
+    ]);
+    expect(frames[1].rows[0]).toMatchObject({ subjectId: 'att-1', seq: 1 });
+    expect(frames[2].rows[0]).toMatchObject({ subjectId: 'att-21', seq: 21 });
+  });
+
+  // Last in the file: the bundles stay closed for the rest of the process.
+  it('sends what is held at shutdown, and every later change at once', async () => {
+    const reader = adminReader('reader-user');
+
+    await change(updateEvent([{ seq: 1, rowData: row('att-1') }]));
+    await change(updateEvent([{ seq: 2, rowData: row('att-2') }]));
+    await closeChangeBundles();
+    await change(updateEvent([{ seq: 3, rowData: row('att-3') }]));
+    await change(updateEvent([{ seq: 4, rowData: row('att-4') }]));
+
+    expect(framesOf(reader.sent)).toEqual([
+      ['update', ['att-1@1']],
+      ['update', ['att-2@2']],
+      ['update', ['att-3@3']],
+      ['update', ['att-4@4']],
+    ]);
   });
 });

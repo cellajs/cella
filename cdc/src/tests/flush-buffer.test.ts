@@ -29,6 +29,12 @@ const heldFlushes = (flushes: PendingEvent[][][]) => {
   return { processFlush, releases, failures };
 };
 
+/** Flushes one change at `0/0`: what follows waits for the rest of that flush's window. */
+const flushFirst = async (buffer: FlushBuffer) => {
+  await buffer.enqueue(transaction(0));
+  await vi.advanceTimersByTimeAsync(0);
+};
+
 describe('FlushBuffer', () => {
   let flushes: PendingEvent[][][];
   let acknowledged: string[];
@@ -70,9 +76,12 @@ describe('FlushBuffer', () => {
       expect(acknowledge).not.toHaveBeenCalled();
     });
 
-    it('holds the caller once a batch is pending, until it is flushed', async () => {
+    it('flushes a batch without waiting for the window, and holds the caller until it is flushed', async () => {
       const held = heldFlushes(flushes);
       const buffer = new FlushBuffer(held.processFlush, acknowledge, 10, 3);
+      await buffer.enqueue(transaction(0));
+      held.releases[0]();
+      await vi.advanceTimersByTimeAsync(1);
 
       await buffer.enqueue(transaction(1, 2));
       let resolved = false;
@@ -81,46 +90,107 @@ describe('FlushBuffer', () => {
       });
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(flushes).toHaveLength(1);
+      // The window of the first flush runs until 10.
+      expect(flushes).toHaveLength(2);
       expect(resolved).toBe(false);
 
-      held.releases[0]();
+      held.releases[1]();
       await caller;
       expect(resolved).toBe(true);
-      expect(acknowledged).toEqual(['0/3']);
+      expect(acknowledged).toEqual(['0/0', '0/3']);
     });
   });
 
-  describe('within the window', () => {
-    it('collects source transactions for the window and flushes them together, in commit order', async () => {
+  describe('the window', () => {
+    it('flushes a change at once when the last flush started a window ago or more', async () => {
       const buffer = new FlushBuffer(processFlush, acknowledge, 10);
 
       await buffer.enqueue(transaction(1));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(lsnsOf(flushes[0])).toEqual([['0/1']]);
+      expect(acknowledged).toEqual(['0/1']);
+
+      await vi.advanceTimersByTimeAsync(10);
+      await buffer.enqueue(transaction(2));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(lsnsOf(flushes[1])).toEqual([['0/2']]);
+      expect(acknowledged).toEqual(['0/1', '0/2']);
+    });
+
+    it('flushes what arrives inside a window when it ends: flushes start a window apart, never back to back', async () => {
+      const starts: number[] = [];
+      const start = performance.now();
+      processFlush = vi.fn(async (transactions: PendingEvent[][]) => {
+        starts.push(performance.now() - start);
+        flushes.push(transactions);
+      });
+      const buffer = new FlushBuffer(processFlush, acknowledge, 10);
+
+      await buffer.enqueue(transaction(1));
+      await vi.advanceTimersByTimeAsync(3);
+      await buffer.enqueue(transaction(2));
+      await vi.advanceTimersByTimeAsync(4);
+      await buffer.enqueue(transaction(3));
+      await vi.advanceTimersByTimeAsync(20);
+
+      expect(starts).toEqual([0, 10]);
+      expect(lsnsOf(flushes[1])).toEqual([['0/2'], ['0/3']]);
+      expect(acknowledged).toEqual(['0/1', '0/3']);
+    });
+
+    it('flushes what arrived during a flush when its window ends, or as it ends once it outlasted the window', async () => {
+      const held = heldFlushes(flushes);
+      const buffer = new FlushBuffer(held.processFlush, acknowledge, 10);
+
+      await buffer.enqueue(transaction(1));
+      await vi.advanceTimersByTimeAsync(2);
+      await buffer.enqueue(transaction(2));
+      held.releases[0]();
+      await vi.advanceTimersByTimeAsync(5);
+      expect(flushes).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(3);
+      expect(lsnsOf(flushes[1])).toEqual([['0/2']]);
+
+      await buffer.enqueue(transaction(3));
+      await vi.advanceTimersByTimeAsync(15);
+      held.releases[1]();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(lsnsOf(flushes[2])).toEqual([['0/3']]);
+    });
+
+    it('collects source transactions for the window and flushes them together, in commit order', async () => {
+      const buffer = new FlushBuffer(processFlush, acknowledge, 10);
+      await flushFirst(buffer);
+
+      await buffer.enqueue(transaction(1));
       await buffer.enqueue(transaction(2, 2));
-      expect(processFlush).not.toHaveBeenCalled();
+      expect(flushes).toHaveLength(1);
       expect(buffer.isIdle).toBe(false);
 
       await vi.advanceTimersByTimeAsync(10);
 
-      expect(flushes).toHaveLength(1);
-      expect(lsnsOf(flushes[0])).toEqual([['0/1'], ['0/2', '0/3']]);
-      expect(acknowledged).toEqual(['0/3']);
+      expect(flushes).toHaveLength(2);
+      expect(lsnsOf(flushes[1])).toEqual([['0/1'], ['0/2', '0/3']]);
+      expect(acknowledged).toEqual(['0/0', '0/3']);
       expect(buffer.isIdle).toBe(true);
     });
 
     it('takes everything that is pending in one flush, whole source transactions only', async () => {
       const buffer = new FlushBuffer(processFlush, acknowledge, 10, 1000);
+      await flushFirst(buffer);
 
       await buffer.enqueue(transaction(1, 2));
       await buffer.enqueue(transaction(3, 600));
       await buffer.enqueue(transaction(700, 1));
       await vi.advanceTimersByTimeAsync(10);
 
-      expect(flushes.map((transactions) => transactions.map((events) => events.length))).toEqual([[2, 600, 1]]);
+      expect(flushes.slice(1).map((transactions) => transactions.map((events) => events.length))).toEqual([[2, 600, 1]]);
     });
 
     it('acknowledges the end of the commit of its last source transaction, not the position of its last change', async () => {
       const buffer = new FlushBuffer(processFlush, acknowledge, 10);
+      await flushFirst(buffer);
 
       // Two source transactions in one flush. The commit record of each lies after its last change.
       await buffer.enqueue(transaction(1, 2, '0/50'));
@@ -129,7 +199,7 @@ describe('FlushBuffer', () => {
 
       // 0/4, the last change, lies before the commit at 0/90: acknowledging it would leave the second
       // transaction to be delivered again.
-      expect(acknowledged).toEqual(['0/90']);
+      expect(acknowledged).toEqual(['0/0', '0/90']);
     });
 
     it('runs one flush at a time: what arrives meanwhile goes into the next, in order', async () => {
@@ -225,6 +295,7 @@ describe('FlushBuffer', () => {
       const buffer = new FlushBuffer(processFlush, acknowledge, 10);
       const onFailed = vi.fn();
       buffer.onFailed = onFailed;
+      await flushFirst(buffer);
       await buffer.enqueue(transaction(1));
 
       const failure = new Error('unreadable message');
@@ -233,8 +304,8 @@ describe('FlushBuffer', () => {
       await vi.advanceTimersByTimeAsync(10);
 
       expect(onFailed).toHaveBeenCalledExactlyOnceWith(failure, '0/7');
-      expect(processFlush).not.toHaveBeenCalled();
-      expect(acknowledge).not.toHaveBeenCalled();
+      expect(processFlush).toHaveBeenCalledOnce();
+      expect(acknowledged).toEqual(['0/0']);
     });
 
     it('takes no changes until it is reset: they are read again from the acknowledged position', async () => {

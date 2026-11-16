@@ -42,12 +42,15 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
 ): UpdateResult<T> {
   const acceptedFields = resolveFieldConflicts(prepared.scalarOps, stx.fieldTimestamps, entity.stx.fieldTimestamps);
 
+  // A delta whose result equals the stored array changes nothing.
   const resolvedArrays: Record<string, string[]> = {};
   for (const [key, delta] of Object.entries(prepared.deltaOps)) {
-    resolvedArrays[key] = applyArrayDelta(Array.isArray(entity[key]) ? entity[key] : [], delta);
+    const current = Array.isArray(entity[key]) ? entity[key] : [];
+    const next = applyArrayDelta(current, delta);
+    if (next.length !== current.length || next.some((id, i) => id !== current[i])) resolvedArrays[key] = next;
   }
 
-  const acceptedFieldNames = [...Object.keys(acceptedFields), ...Object.keys(prepared.deltaOps)];
+  const acceptedFieldNames = [...Object.keys(acceptedFields), ...Object.keys(resolvedArrays)];
   if (acceptedFieldNames.length === 0) return { changed: false };
 
   return {

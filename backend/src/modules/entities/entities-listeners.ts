@@ -10,12 +10,11 @@ import {
 } from 'shared';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { authEvents } from '#/modules/auth/core';
-import { dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeStreams } from '#/modules/entities/helpers/session-streams';
 import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';
+import { bundleChange } from '#/modules/entities/stream/change-bundles';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
-import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
@@ -23,15 +22,7 @@ import { log } from '#/utils/logger';
 // Activity bus listeners: product events reach authenticated SSE subscribers as changes, membership events as signals.
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated', 'deleted'] as const) {
-    activityBus.on(`${entityType}.${action}`, async (event) => {
-      try {
-        const productEvent: StreamProductEvent = event;
-        // Reparented rows also tell old-path readers who lost visibility, side by side so a stalled reader delays neither.
-        await Promise.all([dispatchChange(productEvent), action === 'updated' && dispatchMoveOuts(productEvent)]);
-      } catch (error) {
-        log.error('Failed to dispatch entity change event', { error, activityIds: event.rows.map((row) => row.activityId) });
-      }
-    });
+    activityBus.on(`${entityType}.${action}`, (event) => bundleChange(event));
   }
 }
 

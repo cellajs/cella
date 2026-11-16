@@ -1,7 +1,7 @@
 import type { FetchInfiniteQueryOptions, FetchQueryOptions, QueryKey } from '@tanstack/react-query';
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
-import { ApiError } from '~/lib/api';
-import { msUntilBudget } from '~/lib/reported-budgets';
+import { type ApiError, isRateLimited } from '~/lib/api';
+import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
 import type { UserMenuItem } from '~/modules/me/types';
 import { productTypeOf } from '~/query/cache-migration';
 import { queryClient } from '~/query/query-client';
@@ -14,11 +14,6 @@ type SyncInfiniteCall = FetchInfiniteQueryOptions<unknown, ApiError, unknown, Qu
 type SyncSingleCall = FetchQueryOptions<unknown, ApiError, unknown, QueryKey>;
 
 const isInfiniteCall = (options: SyncInfiniteCall | SyncSingleCall): options is SyncInfiniteCall => 'getNextPageParam' in options;
-
-/** The share of the read budget the warm-up leaves to what the user opens: below it, the warm-up waits for the next window. */
-const userReadShare = 0.3;
-
-const isRateLimited = (error: unknown): error is ApiError => error instanceof ApiError && error.status === 429;
 
 /** Seeds offline caches once the stream is live: the current organization first, then the rest. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(signal: AbortSignal): Promise<void> {
@@ -60,17 +55,16 @@ export async function runSyncService(signal: AbortSignal): Promise<void> {
 
 /**
  * Syncs one item while the read budget leaves the user their share, else once its window ends. A read refused all the
- * same, as other tabs and devices spend the budget too, waits out its `retryAfter` and the item is tried once more.
+ * same, as other tabs and devices spend the budget too, books the budget as spent until its `Retry-After`, and the item
+ * is tried once more after that.
  */
 async function syncWithinBudget(item: UserMenuItem, signal: AbortSignal): Promise<void> {
-  let refusedFor = 0;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const wait = Math.max(msUntilBudget('read', userReadShare), refusedFor * 1000);
+    const wait = msUntilBudget('read', userReadShare);
     if (wait) console.debug(`[SyncService] Waiting ${Math.ceil(wait / 1000)}s for the read budget`);
     await waitFor(wait);
     if (signal.aborted) return;
-    refusedFor = await syncMenuItem(item);
-    if (!refusedFor) return;
+    if (!(await syncMenuItem(item))) return;
   }
 }
 
@@ -79,10 +73,10 @@ async function syncWithinBudget(item: UserMenuItem, signal: AbortSignal): Promis
  * marked for a refetch, and a fresh one is left to catchup. Any other query, and a product list of an `opaque` scope,
  * reads with `staleTime: 'static'`, which fetches only a cold entry: a list that goes stale by time, such as the members
  * list, or one every catchup marks would otherwise fetch again on every stream-live event.
- * @returns The seconds a rate limit asked to wait, when it refused a read; else 0.
+ * @returns Whether a rate limit refused a read.
  */
-async function syncMenuItem(item: UserMenuItem): Promise<number> {
-  if (item.membership.hidden) return 0;
+async function syncMenuItem(item: UserMenuItem): Promise<boolean> {
+  if (item.membership.hidden) return false;
 
   const { organizationId } = item.membership;
   const queries = buildEntitySyncQueries({
@@ -102,8 +96,7 @@ async function syncMenuItem(item: UserMenuItem): Promise<number> {
     }),
   );
 
-  for (const result of results) if (result.status === 'rejected' && isRateLimited(result.reason)) return Number(result.reason.retryAfter) || 1;
-  return 0;
+  return results.some((result) => result.status === 'rejected' && isRateLimited(result.reason));
 }
 
 /** Parent items come before their submenu items. */

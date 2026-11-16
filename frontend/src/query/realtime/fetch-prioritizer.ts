@@ -1,8 +1,11 @@
 import { onlineManager } from '@tanstack/react-query';
 import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
+import { isRateLimited } from '~/lib/api';
+import { msUntilBudget } from '~/lib/reported-budgets';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { productTypeOf } from '~/query/cache-migration';
 import { sourceId } from '~/query/offline/hlc';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from '~/query/realtime/cache-ops';
@@ -49,11 +52,22 @@ interface DirtyEntry {
   rangeKey?: string;
 }
 
+type Scope = Pick<DirtyEntry, 'entityType' | 'organizationId' | 'channelId'>;
+
 const dirty = new Map<string, DirtyEntry>();
+/** Reads running per product type and organization, by `groupOf`: no range read of a group starts while it has one. */
+const busyGroups = new Map<string, number>();
 let timer: ReturnType<typeof setTimeout> | null = null;
+let holdTimer: ReturnType<typeof setTimeout> | null = null;
 let listenersInstalled = false;
 
 const entryKey = (entityType: ProductEntityType, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
+const groupOf = ({ entityType, organizationId }: Omit<Scope, 'channelId'>) => `${entityType}:${organizationId}`;
+
+function cursorOf({ entityType, organizationId, channelId }: Scope): number {
+  const store = syncStore.getState();
+  return channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
+}
 
 /** FNV-1a 32-bit gives the same client and scope a stable spread slot. */
 function hashSpread(key: string): number {
@@ -86,8 +100,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
   if (!hasEntityQueryKeys(entityType)) return;
 
-  const store = syncStore.getState();
-  const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
+  const caughtUp = cursorOf(input);
   if (untilSeq <= caughtUp) return;
 
   // Anchoring after the caught-up position heals missed-change gaps and trims already-ingested overlap; with no baseline, trust the change's own range.
@@ -142,7 +155,10 @@ export function flushAllNow(): Promise<void> {
   return flushDue();
 }
 
-/** Flush one foreground catchup view before mutation replay; a single failed attempt invalidates and advances. */
+/**
+ * Flush one foreground catchup view before mutation replay; a single failed attempt invalidates and advances. It reads
+ * beside a running read of its group, and leaves the view queued while the read budget is spent.
+ */
 export async function flushChannelViewNow(
   entityType: ProductEntityType,
   organizationId: string,
@@ -151,8 +167,23 @@ export async function flushChannelViewNow(
   const key = entryKey(entityType, organizationId, channelId);
   const entry = dirty.get(key);
   if (!entry) return 'none';
+  if (msUntilBudget('read', 0)) return 'requeued';
   dirty.delete(key);
-  return flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]);
+  return excludingRangeReads(entityType, organizationId, () => flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]));
+}
+
+/** Runs `read` while no range read of its product type and organization starts: one read at a time keeps their patches in order. */
+export async function excludingRangeReads<T>(entityType: ProductEntityType, organizationId: string, read: () => Promise<T>): Promise<T> {
+  const group = groupOf({ entityType, organizationId });
+  busyGroups.set(group, (busyGroups.get(group) ?? 0) + 1);
+  try {
+    return await read();
+  } finally {
+    const left = (busyGroups.get(group) ?? 1) - 1;
+    if (left) busyGroups.set(group, left);
+    else busyGroups.delete(group);
+    armTimer();
+  }
 }
 
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view gaps itself. */
@@ -164,13 +195,22 @@ export function resetFetchPrioritizer(): void {
   }
 }
 
+/** When an entry may read: its tier's due time, not before the read budget has reads left, and never while its group reads. */
+function readableAt(entry: DirtyEntry, now: number): number {
+  if (busyGroups.has(groupOf(entry))) return Number.POSITIVE_INFINITY;
+  // The budget is one per user: a refused read holds every group.
+  const heldMs = msUntilBudget('read', 0);
+  return heldMs ? Math.max(entry.dueAt, now + heldMs) : entry.dueAt;
+}
+
 function armTimer(): void {
+  const now = Date.now();
   let earliest = Number.POSITIVE_INFINITY;
-  for (const entry of dirty.values()) earliest = Math.min(earliest, entry.dueAt);
-  // Nothing is due before an open: a timeout past 2^31-1 ms would fire at once.
+  for (const entry of dirty.values()) earliest = Math.min(earliest, readableAt(entry, now));
+  // Nothing is due before an open or before its group's read ends: a timeout past 2^31-1 ms would fire at once.
   if (earliest === Number.POSITIVE_INFINITY) return;
 
-  const delay = Math.max(0, earliest - Date.now());
+  const delay = Math.max(0, earliest - now);
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = null;
@@ -180,22 +220,19 @@ function armTimer(): void {
 
 async function flushDue(): Promise<void> {
   const now = Date.now();
-  const due: DirtyEntry[] = [];
-  for (const [key, entry] of dirty) {
-    if (entry.dueAt > now) continue;
-    // In-flight ranges leave the map; overlapping changes that arrive later re-enqueue.
-    dirty.delete(key);
-    due.push(entry);
-  }
   // Covering fetch: all due channels of one (entityType, org) share one bounded fetch, and rows route to their home lists during patching.
   const groups = new Map<string, DirtyEntry[]>();
-  for (const entry of due) {
-    const groupKey = `${entry.entityType}:${entry.organizationId}`;
-    const group = groups.get(groupKey);
+  for (const [key, entry] of dirty) {
+    if (readableAt(entry, now) > now) continue;
+    // In-flight ranges leave the map; changes that arrive meanwhile wait there for the next read.
+    dirty.delete(key);
+    const group = groups.get(groupOf(entry));
     if (group) group.push(entry);
-    else groups.set(groupKey, [entry]);
+    else groups.set(groupOf(entry), [entry]);
   }
-  await Promise.all([...groups.values()].map(flushGroup));
+  await Promise.all(
+    [...groups.values()].map((entries) => excludingRangeReads(entries[0].entityType, entries[0].organizationId, () => flushGroup(entries))),
+  );
   armTimer();
 }
 
@@ -225,14 +262,23 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
 }
 
 /** Flush one covering group: fetch the merged range once, then settle every entry from it. */
-async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'requeued'> {
-  const { entityType, organizationId } = entries[0];
-  const tenantId = entries.find((entry) => entry.tenantId)?.tenantId ?? null;
+async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'requeued'> {
+  const { entityType, organizationId } = due[0];
+  const tenantId = due.find((entry) => entry.tenantId)?.tenantId ?? null;
 
   if (!onlineManager.isOnline()) {
-    for (const entry of entries) requeue(entry, offlineRecheckMs);
+    for (const entry of due) requeue(entry, offlineRecheckMs);
     return 'requeued';
   }
+
+  // A read that waited behind another starts where that one ended, and an entry whose range the cursor passed reads nothing.
+  const entries: DirtyEntry[] = [];
+  for (const entry of due) {
+    const caughtUp = cursorOf(entry);
+    if (entry.untilSeq > caughtUp) entries.push({ ...entry, afterSeq: caughtUp > 0 ? caughtUp : entry.afterSeq });
+    else for (const propagation of entry.propagations) propagateEmbeddings(propagation);
+  }
+  if (!entries.length) return 'ok';
 
   const afterSeq = Math.min(...entries.map((entry) => entry.afterSeq));
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
@@ -240,6 +286,13 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const channelId = coveringChannelId(entries);
   const rangeKey = entries.find((entry) => entry.rangeKey)?.rangeKey;
   const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId, rangeKey);
+
+  // A refusal counts no attempt and marks no list: the range keeps its cursor and reads once the budget has reads left.
+  if (result.status === 'limited') {
+    for (const entry of entries) requeue(entry, 0);
+    refetchRefusedAfterHold();
+    return 'requeued';
+  }
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < maxFlushAttempts)) {
     for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, retryBaseMs * 2 ** entry.attempts);
@@ -286,6 +339,23 @@ export function invalidateUndelivered(
   if (recountUnseen) invalidateUnseenCounts(entityType);
 }
 
+/** Once the read budget has reads left, the product queries on screen whose read it refused read again. */
+function refetchRefusedAfterHold(): void {
+  if (holdTimer) clearTimeout(holdTimer);
+  holdTimer = setTimeout(
+    () => {
+      holdTimer = null;
+      if (msUntilBudget('read', 0)) refetchRefusedAfterHold();
+      else
+        void queryClient.refetchQueries({
+          type: 'active',
+          predicate: ({ queryKey, state }) => productTypeOf(queryKey) !== undefined && isRateLimited(state.error),
+        });
+    },
+    msUntilBudget('read', 0),
+  );
+}
+
 function advanceCaughtUp({ organizationId, channelId, entityType, untilSeq }: DirtyEntry): void {
   const store = syncStore.getState();
   if (channelId) store.setChannelSeq(organizationId, channelId, entityType, untilSeq);
@@ -309,12 +379,17 @@ function mergeRange(into: DirtyEntry, from: Pick<DirtyEntry, 'afterSeq' | 'until
   into.propagations.push(...from.propagations);
 }
 
-/** Flush pending ranges whose scope moved onto the live tier for catch-up on open. */
+/**
+ * Flush pending ranges whose scope moved onto the live tier for catch-up on open. A scope that waited to be opened and is
+ * opened on the background tier, in a hidden tab or on a low read budget, reads on that tier.
+ */
 function promoteLiveChannels(): void {
+  const now = Date.now();
   let changed = false;
   for (const entry of dirty.values()) {
-    if (entry.dueAt > Date.now() && getSyncTier(entry.organizationId, entry.channelId).min === 0) {
-      entry.dueAt = 0;
+    const { min } = getSyncTier(entry.organizationId, entry.channelId);
+    if (now + min < entry.dueAt && (min === 0 || entry.dueAt === Number.POSITIVE_INFINITY)) {
+      entry.dueAt = now + min;
       changed = true;
     }
   }
@@ -325,9 +400,10 @@ function installListeners(): void {
   if (listenersInstalled || typeof document === 'undefined') return;
   listenersInstalled = true;
 
-  // Top up every scope before a hidden tab may go offline.
+  // Top up every scope before a hidden tab may go offline; a tab shown again reads its viewed scopes at once.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) void flushAllNow();
+    else promoteLiveChannels();
   });
 
   // Back online: retry what accumulated while offline.
