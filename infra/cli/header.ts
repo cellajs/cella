@@ -27,6 +27,12 @@ export function checkoutVersion(): string | undefined {
   }
 }
 
+/** The mark with the app's name and what the CLI does beside it: a menu session opens with these lines above the header. */
+export function formatLogo(slug: string): string[] {
+  const beside = ['', pc.bold(`${slug} infra`), pc.dim('Set up and deploy the app on Scaleway'), ''];
+  return ['▒▓█████▓▒', '▒▓█   █▓▒', '▒▓█   █▓▒', '▒▓█████▓▒'].map((mark, index) => `${pc.cyan(mark)}${beside[index] ? `   ${beside[index]}` : ''}`);
+}
+
 /**
  * The two lines every run opens with: the tool and the checkout's version on the left, the environment and the app's host on the right,
  * then the divider. Production is bold red, so a run against it never looks like a staging run.
