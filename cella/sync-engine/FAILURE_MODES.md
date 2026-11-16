@@ -65,7 +65,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | Web Locks are missing or the election throws | The tab takes the leader role (`initTabCoordinator`) | | |
 | A tab comes back from a public page while another tab leads | | It runs one catchup of its own when it connects (`connect`) | None, an open finding: a change the leader forwards while that catchup runs, above its frontier and on a background scope, is dropped with the pending ranges (`resetFetchPrioritizer`) and arrives with the scope's next frame |
 | Two tabs of one user write the persisted sync store | | | None, an open finding: the last write of the one record per user wins (`syncStore`). One tab's cursors or cleared refetch can overwrite those of a tab that closed before its refetch ran |
-| A tab is killed after a range fetch, before its cache write | The cursors and signal versions wait for the cache write that holds their rows (`whenWritten`) | Catchup fetches the range again from the stored cursor (`processStreamCatchup`) | |
+| A tab is killed after a range fetch, before its cache write | The cursors and signal versions wait for the cache write that holds their rows (`whenCacheWritten`) | Catchup fetches the range again from the stored cursor (`processStreamCatchup`) | |
 
 ### Books and versions
 

@@ -8,13 +8,6 @@ const writeDebounceMs = 250;
 /** Flush callbacks for every live store, invoked on tab hide for best-effort durability. */
 const flushers = new Set<() => void>();
 
-/** What a cache-bound store's write waits for: the persister's write of the cache as it stands, once the persister loads. */
-let cacheWritten = () => Promise.resolve();
-
-export const setCacheWritten = (wait: () => Promise<void>) => {
-  cacheWritten = wait;
-};
-
 /**
  * Issue every store's pending write now. A put issued while the page unloads (a reload's pagehide) does not commit,
  * so a write that has to survive a reload calls this when it is made. A hide listener registered after this module's
@@ -28,15 +21,22 @@ onPageHide(flushKvWrites);
 
 type PendingWrite = { value: string; db: LocalUserDatabase };
 
+interface KvStorageOptions {
+  /**
+   * Called when a value is set: the value is stored once the wait settles, and no debounce applies. A store whose
+   * record describes cached rows passes `whenCacheWritten`.
+   */
+  writeAfter?: () => Promise<void>;
+}
+
 /**
- * Per-user Zustand storage over the live app database: writes are trailing-debounced per store, signed-out operations
- * no-op, and every operation re-resolves the bound database. A `cacheBound` store, whose record describes cached rows,
- * stores a value only once the persister has written the cache as it stood when the value was set.
+ * Per-user Zustand storage over the live app database: writes are trailing-debounced per store, or made after the
+ * store's own `writeAfter`, signed-out operations no-op, and every operation re-resolves the bound database.
  */
-export function idbKvStorage(key: string, { cacheBound = false } = {}): StateStorage {
+export function idbKvStorage(key: string, { writeAfter }: KvStorageOptions = {}): StateStorage {
   let pending: PendingWrite | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
-  /** The value a cache-bound store waits to write; a newer one in `pending` waits for a later cache write. */
+  /** The value whose wait is under way; a newer one in `pending` starts a wait of its own after it. */
   let riding: PendingWrite | null = null;
 
   const put = ({ value, db }: PendingWrite) => {
@@ -51,20 +51,19 @@ export function idbKvStorage(key: string, { cacheBound = false } = {}): StateSto
     put(pending);
     pending = null;
   };
-  // An early put from `flushKvWrites` would reach disk ahead of the rows: the persister's hide flush settles the wait.
-  if (!cacheBound) flushers.add(flush);
+  // An early put from `flushKvWrites` would reach disk ahead of what the store waits for.
+  if (!writeAfter) flushers.add(flush);
 
-  // The rows a value covers were patched before it was set: the cache write requested now holds them.
-  const writeAfterCache = () => {
+  const putAfter = (wait: () => Promise<void>) => {
     const ride = pending;
     riding = ride;
-    void cacheWritten().then(() => {
+    void wait().then(() => {
       if (!ride || riding !== ride) return;
       put(ride);
       if (pending === ride) {
         pending = null;
         riding = null;
-      } else writeAfterCache();
+      } else putAfter(wait);
     });
   };
 
@@ -81,8 +80,8 @@ export function idbKvStorage(key: string, { cacheBound = false } = {}): StateSto
       const db = getLocalUserDb();
       if (!db) return;
       pending = { value, db };
-      if (cacheBound) {
-        if (!riding) writeAfterCache();
+      if (writeAfter) {
+        if (!riding) putAfter(writeAfter);
         return;
       }
       if (timer) clearTimeout(timer);

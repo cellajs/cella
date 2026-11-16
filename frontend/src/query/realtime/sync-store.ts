@@ -4,6 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
+import { whenCacheWritten } from '~/query/cache-written';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface OrgSyncState {
@@ -208,7 +209,7 @@ export const syncStore = createStore<SyncStoreState>()(
         migrate: () => ({}),
         skipHydration: true,
         // The cursors and signal versions describe the cached rows: on disk they may lag those rows, never lead them.
-        storage: createJSONStorage(() => idbKvStorage('sync', { cacheBound: true })),
+        storage: createJSONStorage(() => idbKvStorage('sync', { writeAfter: whenCacheWritten })),
         partialize: ({ generation, caughtUpAt, refetchDueAt, orgs }) => ({ generation, caughtUpAt, refetchDueAt, orgs }),
       },
     ),
