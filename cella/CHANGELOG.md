@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.48.0](https://github.com/cellajs/cella/compare/0.47.1...0.48.0) (2026-11-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* one backup period sets every copy outside the live data, and backend and frontend share one safeRedirectPath ([#1859](https://github.com/cellajs/cella/issues/1859))
+* a description opens offline from its cached copy, a schema's example holds only declared fields, and four form and sheet fixes ([#1857](https://github.com/cellajs/cella/issues/1857))
+* share links /{code} and /{code}/{letter}{number}, a hotkey fix, one-language typing and fresh raak shots ([#1848](https://github.com/cellajs/cella/issues/1848))
+* **auth:** core, flows and account behind one index, a lossless account export, amr claims and admin recovery ([#1847](https://github.com/cellajs/cella/issues/1847))
+* one function ends a session, with one row per reason, and a dev reset clears local storage ([#1845](https://github.com/cellajs/cella/issues/1845))
+* the template follows CLI 0.8, with an alignment and a codemod for apps ([#1841](https://github.com/cellajs/cella/issues/1841))
+* **infra:** production deploys a release only from the default branch ([#1843](https://github.com/cellajs/cella/issues/1843))
+* **infra:** the engine serves the current model only, and every stack takes the empty Pulumi passphrase ([#1838](https://github.com/cellajs/cella/issues/1838))
+
+### 🎉 New features
+
+* a description opens offline from its cached copy, a schema's example holds only declared fields, and four form and sheet fixes ([#1857](https://github.com/cellajs/cella/issues/1857)) ([401fd6b](https://github.com/cellajs/cella/commit/401fd6b8993e6be13ad70e7c436c850a61bda59d))
+* a manifest names the template paths create-cella changes in a new app ([#1839](https://github.com/cellajs/cella/issues/1839)) ([9e0c840](https://github.com/cellajs/cella/commit/9e0c840faca82b379a96135fb45457173f46eb87))
+* **bench:** six sync scenarios on one sync client, and sse-fanout and yjs-typing move onto it ([#1855](https://github.com/cellajs/cella/issues/1855)) ([841293d](https://github.com/cellajs/cella/commit/841293dc77735630c82bf5ecf82be0ed55f493e2))
+* **infra:** Env vars & secrets lists a row per feature, the values infra makes rotate from one row, and a .env import is its own action ([#1858](https://github.com/cellajs/cella/issues/1858)) ([d8354f7](https://github.com/cellajs/cella/commit/d8354f78ae6c35e86da85b9e9429467e444a8f7d))
+* **infra:** every action that ends by itself waits under one back row ([#1846](https://github.com/cellajs/cella/issues/1846)) ([3757e3b](https://github.com/cellajs/cella/commit/3757e3b5f7a5557b91968ac7810925becc668a64))
+* **infra:** production deploys a release only from the default branch ([#1843](https://github.com/cellajs/cella/issues/1843)) ([eb7c67c](https://github.com/cellajs/cella/commit/eb7c67ce78aff6a1c2d6950329569f6182067560))
+* **infra:** the TUI follows the sibling CLIs, keeps the menu daily, and offers back, retry or the fix everywhere ([#1844](https://github.com/cellajs/cella/issues/1844)) ([028dfce](https://github.com/cellajs/cella/commit/028dfce0c1513c337fb9aecaae25310361d55419))
+* **infra:** Transloadit stores with a write-only key of its own, and the operators hold one policy ([#1849](https://github.com/cellajs/cella/issues/1849)) ([56db180](https://github.com/cellajs/cella/commit/56db18001f8d108a2e02aece4fedbd2b12ede876))
+* one backup period sets every copy outside the live data, and backend and frontend share one safeRedirectPath ([#1859](https://github.com/cellajs/cella/issues/1859)) ([d4c5c1f](https://github.com/cellajs/cella/commit/d4c5c1f58a02ae609947dd39ea261c8d6def5036))
+* one function ends a session, with one row per reason, and a dev reset clears local storage ([#1845](https://github.com/cellajs/cella/issues/1845)) ([dc465f1](https://github.com/cellajs/cella/commit/dc465f1d7851dd7e1674aa6fef67e1d5d2746045))
+* share links /{code} and /{code}/{letter}{number}, a hotkey fix, one-language typing and fresh raak shots ([#1848](https://github.com/cellajs/cella/issues/1848)) ([f9cfa9e](https://github.com/cellajs/cella/commit/f9cfa9e2dc144c6878d131d5b32a21fdcd750fd1))
+* **sync:** an audience starts up to three sends before its changes are paced ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** one request updates many attachments ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** queued updates of a scope go out as one batch ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** the person is told when an offline edit was replaced by a newer one ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** the readers of one change share the answer to its range fetch ([#1851](https://github.com/cellajs/cella/issues/1851)) ([c27dee2](https://github.com/cellajs/cella/commit/c27dee24a7699df8adeb6f32ad7edf6b24d02ce8))
+* **sync:** under sustained change the API sends one change frame per audience per interval ([cf6a8a2](https://github.com/cellajs/cella/commit/cf6a8a2698cb3e2ee29a4e49bda51b5656348b4f))
+* the template follows CLI 0.8, with an alignment and a codemod for apps ([#1841](https://github.com/cellajs/cella/issues/1841)) ([096b59a](https://github.com/cellajs/cella/commit/096b59a7311715535b0d03eaf77476f3228c26d4))
+
+
+### 🐞 Bug fixes
+
+* **auth:** the passkey user handle takes a length cap, and the system-admin guard test reads past a step-up refusal ([#1854](https://github.com/cellajs/cella/issues/1854)) ([9a5b0ab](https://github.com/cellajs/cella/commit/9a5b0ab9ecb229de9d041d2a9aafe9220b39e9e6))
+* **form:** a draft is saved while the person keeps typing ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **organization:** an update that changes nothing writes nothing ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **query:** a queued write and its optimistic rows are stored on the next task, not after the write throttle ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **seen:** pending marks go out when the page hides, in batches the route accepts ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** a follower tab runs a catchup of its own when it connects ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** a list read the budget refused reads again when the wait ends ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** a refused range read waits for its budget and recovers by itself, one read at a time ([cf6a8a2](https://github.com/cellajs/cella/commit/cf6a8a2698cb3e2ee29a4e49bda51b5656348b4f))
+* **sync:** a sync cursor is stored after the rows it covers ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** an equal array or object value counts as no change ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** an update that accepts no field writes nothing and answers the stored row ([cf6a8a2](https://github.com/cellajs/cella/commit/cf6a8a2698cb3e2ee29a4e49bda51b5656348b4f))
+* the smoke driver follows the email step, which sends the sign-in link at once ([#1840](https://github.com/cellajs/cella/issues/1840)) ([e18496f](https://github.com/cellajs/cella/commit/e18496fd854fe921965e24009081af32ef8359a0))
+* two alignments follow CLI 0.8 and an app's tags, and two template checks pass with one language ([#1850](https://github.com/cellajs/cella/issues/1850)) ([d904075](https://github.com/cellajs/cella/commit/d904075529c37b26d794b5f185095b0c3f56f188))
+
+
+### 🔧 Small improvements
+
+* **auth:** core, flows and account behind one index, a lossless account export, amr claims and admin recovery ([#1847](https://github.com/cellajs/cella/issues/1847)) ([ab7ffed](https://github.com/cellajs/cella/commit/ab7ffed5d106c68fbbaf6388f63314fa7823c11f))
+* **cdc:** a change after a quiet window is flushed at once, and at most one flush starts per window ([cf6a8a2](https://github.com/cellajs/cella/commit/cf6a8a2698cb3e2ee29a4e49bda51b5656348b4f))
+* **frontend:** an effect hooks sweep that fixes nine effect bugs and drops redundant effects and memos ([#1852](https://github.com/cellajs/cella/issues/1852)) ([b01de7f](https://github.com/cellajs/cella/commit/b01de7f27281629fc741f0bf42ab02f07413960e))
+* **infra:** the engine serves the current model only, and every stack takes the empty Pulumi passphrase ([#1838](https://github.com/cellajs/cella/issues/1838)) ([ae2a24e](https://github.com/cellajs/cella/commit/ae2a24e05fd273fa90ef4bab8dc0e65f944698a3))
+* **sync:** the numbers server and client both hold live in one shared file ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+* **sync:** the sync store answers what a scope has read ([d1b3639](https://github.com/cellajs/cella/commit/d1b36398ef139fcf0bd02dd3646052ebab90ce8c))
+
 ## [0.47.1](https://github.com/cellajs/cella/compare/0.47.0...0.47.1) (2026-11-14)
 
 
