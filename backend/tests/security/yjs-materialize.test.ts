@@ -2,11 +2,11 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { serviceSecret } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders } from '../fixtures';
@@ -15,6 +15,10 @@ import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { holdAttachmentRow, lockWaiters, paragraph, seedAttachment } from './yjs-helpers';
+
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -85,7 +89,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
       entityType: 'attachment',
       entityId: live.id,
       ...ownScope(),
-      state: Buffer.from(descriptionToSeed(original)),
+      state: Buffer.from(seedState(original)),
     });
     return live;
   };

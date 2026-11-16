@@ -1,7 +1,12 @@
 import { yjsFragmentName } from 'shared/utils/yjs-protocol';
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson } from './description-update';
+import { descriptionToUpdate, stateToBlocksJson } from './description-update';
+
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 const paragraph = (id: string, text: string) => ({
   id,
@@ -26,10 +31,10 @@ const blockGroups = (state: Uint8Array) => {
 
 const merge = (...updates: (Uint8Array | null)[]) => Y.mergeUpdates(updates.filter((update) => update !== null));
 
-describe('descriptionToSeed', () => {
+describe('buildYjsSeed', () => {
   it('seeds one empty paragraph in one block group for no description', () => {
     for (const none of [null, '', '[]']) {
-      const seed = descriptionToSeed(none);
+      const seed = seedState(none);
       expect(blockGroups(seed)).toBe(1);
       expect(JSON.parse(stateToBlocksJson(seed))).toMatchObject([{ type: 'paragraph', content: [] }]);
     }
@@ -41,7 +46,7 @@ describe('descriptionToSeed', () => {
       { id: 'p2', type: 'paragraph', props: {}, content: [{ type: 'mention', props: { id: 'user-1', name: 'Ada' } }], children: [] },
       { id: 'c1', type: 'checklistItem', props: { checked: true }, content: [{ type: 'text', text: 'Done', styles: {} }], children: [] },
     ];
-    const restored = JSON.parse(stateToBlocksJson(descriptionToSeed(JSON.stringify(blocks))));
+    const restored = JSON.parse(stateToBlocksJson(seedState(JSON.stringify(blocks))));
     expect(restored.map((block: { id: string; type: string }) => [block.id, block.type])).toEqual([
       ['p1', 'paragraph'],
       ['p2', 'paragraph'],
@@ -52,13 +57,13 @@ describe('descriptionToSeed', () => {
   });
 
   it('must not seed a description the server schema cannot hold: it throws', () => {
-    expect(() => descriptionToSeed(description({ id: 'x', type: 'no-such-block', props: {}, content: [], children: [] }))).toThrow();
-    expect(() => descriptionToSeed('{"not":"an array"}')).toThrow();
-    expect(() => descriptionToSeed('not json')).toThrow();
+    expect(() => seedState(description({ id: 'x', type: 'no-such-block', props: {}, content: [], children: [] }))).toThrow();
+    expect(() => seedState('{"not":"an array"}')).toThrow();
+    expect(() => seedState('not json')).toThrow();
   });
 
   it('must not let two first writers on an empty seed create two block groups (D4)', () => {
-    const seed = descriptionToSeed(null);
+    const seed = seedState(null);
     const outside = descriptionToUpdate(seed, description(paragraph('a', 'from the outside write')));
     const client = descriptionToUpdate(seed, description(paragraph('b', 'typed by a client')));
     expect(blockGroups(merge(seed, outside, client))).toBe(1);
@@ -67,7 +72,7 @@ describe('descriptionToSeed', () => {
 
 describe('descriptionToUpdate', () => {
   const blocks = Array.from({ length: 20 }, (_, i) => paragraph(`b${i}`, `Paragraph ${i} `.repeat(8)));
-  const base = descriptionToSeed(description(...blocks));
+  const base = seedState(description(...blocks));
 
   it('diffs a changed block into a small update, and the merge reads back as the written description', () => {
     const written = blocks.map((block, i) => (i === 10 ? paragraph(block.id, 'Rewritten by the outside write') : block));
@@ -79,13 +84,13 @@ describe('descriptionToUpdate', () => {
 
   it('must not log an update for the description the document already holds', () => {
     expect(descriptionToUpdate(base, description(...blocks))).toBeNull();
-    expect(descriptionToUpdate(descriptionToSeed(null), null)).toBeNull();
-    expect(descriptionToUpdate(descriptionToSeed(null), '[]')).toBeNull();
+    expect(descriptionToUpdate(seedState(null), null)).toBeNull();
+    expect(descriptionToUpdate(seedState(null), '[]')).toBeNull();
   });
 
   it('must not drop an edit made concurrently in a block the write leaves as it is', () => {
     const two = [paragraph('one', 'Status: draft'), paragraph('two', 'Could you have a look?')];
-    const seed = descriptionToSeed(description(...two));
+    const seed = seedState(description(...two));
     // A client types into the second block; the outside write, diffed against the same state, rewrites the first.
     const typed = descriptionToUpdate(seed, description(two[0], paragraph('two', 'Could you have a look? Again')));
     const written = descriptionToUpdate(seed, description(paragraph('one', 'Status: done'), two[1]));

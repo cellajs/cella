@@ -1,15 +1,19 @@
 import { appConfig } from 'shared';
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import { postMaterialize, stateToBlocksJsonOrNull } from '../sync/materialize';
 import { mockScope } from './helpers';
+
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 const ctx = mockScope();
 
 const description = JSON.stringify([
   { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },
 ]);
-const state = descriptionToSeed(description);
+const state = seedState(description);
 
 const fetchMock = vi.fn();
 

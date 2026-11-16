@@ -48,17 +48,19 @@ interface InsertYjsDocumentOpts {
   doc: YjsDocScope;
   /** The seed: the base state of a new generation. */
   state: Uint8Array;
+  /** The seed's generation, which a client that seeded the same state offline holds too. */
+  generation: string;
 }
 
 /**
  * Inserts the document row under a new generation, stamped live, unless a row exists: concurrent seeds, on any relay
  * or the API, converge on the first, and a later one waits for an uncommitted first and then inserts nothing.
  */
-export const insertYjsDocument = async (ctx: DbContext, { doc, state }: InsertYjsDocumentOpts) => {
+export const insertYjsDocument = async (ctx: DbContext, { doc, state, generation }: InsertYjsDocumentOpts) => {
   const { entityType, entityId, tenantId, organizationId } = doc;
   await ctx.var.db
     .insert(yjsDocumentsTable)
-    .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(state), updatedAt: getIsoDate() })
+    .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(state), generation, updatedAt: getIsoDate() })
     .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
 };
 

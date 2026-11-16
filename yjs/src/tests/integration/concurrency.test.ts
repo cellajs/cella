@@ -52,7 +52,11 @@ const { runCompaction } = await import('../../sync/relay');
 const { startPeriodicSweep } = await import('../../sync/sweep');
 const { getCollab } = await import('../../sync/session-manager');
 const { findDocument } = await import('../../data/storage');
-const { descriptionToSeed, stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
+const { stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
+const { buildYjsSeed } = await import('shared/utils/yjs-seed');
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 /** The document's base state, and the log rows not folded into it. */
 const baseOf = async (doc: YjsDocScope) => (await findDocument(doc))!.base;
@@ -163,7 +167,7 @@ async function startNextGeneration() {
 
 /** A session a crashed relay left behind: its base seeded from the description, one unwritten edit, both a day old. */
 async function seedOrphan(entityId: string, edit: string) {
-  const base = descriptionToSeed(seedDescription);
+  const base = seedState(seedDescription);
   const doc = new Y.Doc();
   Y.applyUpdate(doc, base);
   const before = Y.encodeStateVector(doc);
@@ -185,7 +189,7 @@ async function seedAtRest(entityId: string): Promise<string> {
   const { rows } = await admin.query<{ generation: string }>(
     `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state, updated_at)
      VALUES ($1, $2, $3, $4, $5, now() - interval '1 day') RETURNING generation`,
-    [entityType, entityId, tenantId, organizationId, Buffer.from(descriptionToSeed(seedDescription))],
+    [entityType, entityId, tenantId, organizationId, Buffer.from(seedState(seedDescription))],
   );
   return rows[0].generation;
 }

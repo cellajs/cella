@@ -94,7 +94,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
 
   it('seeds nothing for an entity with no live row: a deleted entity gets no document back', async () => {
     const c = ctx(ids.noEntity);
-    expect(await seedDocument(c, () => mapUpdate('seed', true))).toBeNull();
+    expect(await seedDocument(c, () => ({ state: mapUpdate('seed', true), generation: crypto.randomUUID() }))).toBeNull();
     expect(await findDocument(c)).toBeNull();
   });
 

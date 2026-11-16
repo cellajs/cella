@@ -987,7 +987,7 @@
   "unsaveable_denied.text": "You may no longer edit {{name}}, so your edits to it cannot be saved.",
   "unsaveable_edits.text": "Copy the text to keep your edits.",
   "unsaveable_refused.text": "The server refused your edits to {{name}}, so they cannot be saved.",
-  "unsaveable_replaced.text": "{{name}} was replaced elsewhere, so your edits to it cannot be saved.",
+  "unsaveable_replaced.text": "{{name}} changed elsewhere before your edits reached it, so they cannot be saved.",
   "unsaved_changes": "Unsaved changes",
   "unsubscribe": "Unsubscribe",
   "unsubscribe_comment": "Stop emails about new comments?",

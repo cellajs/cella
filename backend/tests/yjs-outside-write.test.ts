@@ -6,6 +6,7 @@ import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { generateId } from 'shared/utils/entity-id';
 import { yjsFragmentName } from 'shared/utils/yjs-protocol';
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { ActorContext } from '#/core/context';
@@ -14,7 +15,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
+import { descriptionToUpdate, stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { decodeLogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
@@ -28,6 +29,10 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './secu
 import { holdAttachmentRow, lockWaiters, seedAttachment } from './security/yjs-helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
+
+/** A seed's state, for tests that need a document's first state and not its generation. */
+const seedState = (description: string | null) =>
+  buildYjsSeed({ entityType: 'attachment', entityId: '00000000-0000-7000-8000-000000005eed' }, description).state;
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -95,7 +100,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     };
     if (!seeded) return { attachment, scope, generation: '', seed: new Uint8Array() };
     // Each seed is a history of its own: an update that extends the document is diffed against this one.
-    const seed = descriptionToSeed(initial);
+    const seed = seedState(initial);
     const [row] = await adminDb
       .insert(yjsDocumentsTable)
       .values({ ...scope, state: Buffer.from(seed) })
@@ -194,7 +199,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     const after = await stored(attachment.id);
     expect(after.generation).toBe(generation);
     expect(after.rows.map((row) => row.userId)).toEqual([null]);
-    expect(after.state && stateToBlocksJson(after.state)).toBe(stateToBlocksJson(descriptionToSeed(written)));
+    expect(after.state && stateToBlocksJson(after.state)).toBe(stateToBlocksJson(seedState(written)));
     expect((await attachment.read())?.description).toBe(written);
 
     await barrier();

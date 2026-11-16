@@ -25,7 +25,8 @@ export const yjsDocumentsTable = snakeCase.table(
     organizationId: uuid().notNull(),
     state: bytea().notNull(),
     /**
-     * Names one seed of the document. The relay announces it at every handshake; a client whose document is of another
+     * Names one seed of the document, derived from the seed's bytes (`buildYjsSeed`): a client that seeded the same
+     * description offline holds it too. The relay announces it at every handshake; a client whose document is of another
      * generation rebuilds from the server state.
      */
     generation: uuid().defaultRandom().notNull(),

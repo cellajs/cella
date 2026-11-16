@@ -16,7 +16,10 @@ vi.mock('~/query/query-client', async () => {
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => true }));
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: 'token', refused: false }) }));
 let liveConnection: unknown = null;
-vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ useYjsConnection: (id: string | undefined) => (id ? liveConnection : null) }));
+vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
+  useYjsConnection: (id: string | undefined) => (id ? liveConnection : null),
+  useCreatePending: () => false,
+}));
 vi.mock('~/modules/user/user-store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/modules/user/user-store')>()),
   useCurrentUser: () => ({ name: 'Editor' }),

@@ -38,11 +38,13 @@
     "@opentelemetry/semantic-conventions": "^1.45.0",
     "dobajs": "0.1.0",
     "hono": "^4.13.18",
+    "lib0": "^0.2.120",
     "nanoid": "^6.0.2",
     "picocolors": "^1.1.1",
     "pino": "^10.4.0",
     "pino-abstract-transport": "^3.0.0",
     "uuidv7": "^1.2.1",
+    "yjs": "^13.6.33",
     "zod": "^4.6.7"
   },
   "devDependencies": {

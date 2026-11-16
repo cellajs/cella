@@ -2,11 +2,11 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { YjsDocKey, YjsDocScope } from 'shared';
 import { yjsCloseCodes, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
+import { buildYjsSeed } from 'shared/utils/yjs-seed';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { z } from 'zod';
 import { maxLength } from '#/db/utils/constraints';
-import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice, LogRow } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import {
@@ -306,7 +306,7 @@ async function seedFromDescription(scope: YjsDocScope): Promise<Awaited<ReturnTy
   try {
     return await seedDocument(scope, (description) => {
       try {
-        return descriptionToSeed(description);
+        return buildYjsSeed(scope, description);
       } catch (err) {
         unconvertible = true;
         log.warn(`The description of ${docKey(scope)} does not convert: its document does not open`, { err });
@@ -337,7 +337,7 @@ function relayRows(collab: CollabSession, rows: readonly LogRow[], exclude?: Web
 }
 
 /**
- * The document as the session knows it: the document row (seeded on first sight, under a new generation) plus every
+ * The document as the session knows it: the document row (seeded on first sight, under the seed's generation) plus every
  * logged update that merges; compaction discards the rest. The read is the handshake's catch-up too: rows the
  * session's other sockets lack reach them, and `ws`, whose answer carries the whole document, is skipped. Null once
  * the document was retired under the session (its row gone, or reseeded by another relay) or its entity is gone: the
@@ -350,7 +350,7 @@ async function loadDocumentState(collab: CollabSession, ws?: WebSocket): Promise
     endCollab(collab, document ? 'reseeded' : 'retired');
     return null;
   }
-  // Fresh document: the server seeds it from the stored description, so clients never seed it.
+  // Fresh document: seeded from the stored description. A client that seeded it offline from the same description holds the same seed and generation.
   if (!document) {
     const seeded = await seedFromDescription(scope);
     if (seeded === 'unconvertible') {
