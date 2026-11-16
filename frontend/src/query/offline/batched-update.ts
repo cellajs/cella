@@ -1,4 +1,5 @@
 import { hashKey, type MutationFunctionContext } from '@tanstack/react-query';
+import { batchUpdateMax } from 'shared/sync-pace';
 import { isRecord } from 'shared/utils/as-record';
 import { ApiError, gatewayStatuses } from '~/lib/api';
 import { queuedUpdateOf, type UpdateVariables } from '~/query/offline/mutation-variables';
@@ -9,9 +10,6 @@ type Row = Record<string, unknown>;
 
 /** One update of a batch as its request carries it, read from the queued variables. */
 export type QueuedUpdateItem = { id: string; ops: Row; stx: Row };
-
-/** The most updates one batch carries, as the batch routes take. */
-const maxRun = 50;
 
 /** The answer a batch gave for an update that has not run yet, keyed on that update's variables. */
 const handed = new WeakMap<object, { row: unknown } | { error: unknown }>();
@@ -45,7 +43,7 @@ function collectRun<TOps>(variables: UpdateVariables<TOps>, { client, mutationKe
     const queued = mutation.state.variables;
     const update = queuedUpdateOf(queued);
     const sameKey = mutation.options.mutationKey !== undefined && hashKey(mutation.options.mutationKey) === key;
-    if (!sameKey || !isRecord(queued) || !update || sendAlone.has(queued) || ids.has(update.id) || run.length === maxRun) break;
+    if (!sameKey || !isRecord(queued) || !update || sendAlone.has(queued) || ids.has(update.id) || run.length === batchUpdateMax) break;
     if (update.tenantId !== variables.tenantId || update.organizationId !== variables.organizationId || !batchable(update.ops)) break;
     ids.add(update.id);
     run.push({ variables: queued, item: { id: update.id, ops: update.ops, stx: update.stx } });

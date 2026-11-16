@@ -12,3 +12,6 @@ export const streamPingMs = 30_000;
 
 /** The largest page a list returns and the size of a range fetch: a larger `maxPageSize` coerces down to it. */
 export const pageSizeCap = 1000;
+
+/** The most updates one batch update carries: the route refuses more, and the client sends a longer run of queued updates in parts. */
+export const batchUpdateMax = 50;

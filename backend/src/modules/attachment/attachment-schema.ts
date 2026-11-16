@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
+import { batchUpdateBodySchema } from '#/core/schema-evolution/update-schema';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
@@ -13,7 +14,6 @@ import {
   productListQuerySchema,
   stxBaseSchema,
   tenantOrgParamSchema,
-  translatedError,
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
@@ -97,14 +97,7 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
-export const attachmentBatchUpdateBodySchema = attachmentContract.updateItemSchema
-  .array()
-  .min(1)
-  .max(50)
-  .refine(
-    (items) => new Set(items.map(({ id }) => id.toLowerCase())).size === items.length,
-    translatedError('error:invalid_duplicate_items', { name: 'ID' }),
-  );
+export const attachmentBatchUpdateBodySchema = batchUpdateBodySchema(attachmentContract.updateItemSchema);
 
 /** The storage keys a deferred upload produced, for a row created while its file was still local. */
 export const attachmentLinkKeysBodySchema = z.object({

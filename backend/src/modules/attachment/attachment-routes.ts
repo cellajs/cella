@@ -1,3 +1,4 @@
+import { batchUpdateMax } from 'shared/sync-pace';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { rangeKeyParameter, sharedRangeAnswers } from '#/middlewares/range-answers';
@@ -74,8 +75,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
       entity: 'attachment',
     },
     summary: 'Update attachments',
-    description:
-      'Updates up to 50 attachments in one transaction. A row the caller may not update is listed in `rejectedIds`, and a row whose ops change nothing is answered as stored. Takes no `If-Match`: send a conditional update to the single route.',
+    description: `Updates up to ${batchUpdateMax} attachments in one transaction. A row the caller may not update is listed in \`rejectedIds\`, and a row whose ops change nothing is answered as stored. Takes no \`If-Match\`: send a conditional update to the single route.`,
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentBatchUpdateBodySchema, mockBatchUpdateAttachmentsBody()) },
     responses: { 200: json('Attachments', attachmentBatchResponseSchema, mockBatchAttachmentsResponse()) },
   }),
