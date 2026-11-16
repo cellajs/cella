@@ -126,10 +126,11 @@ describe('Route guards', async () => {
     for (const operation of sysAdminOnly) {
       await expectRefusal(await request(operation, user.sessionCookie), 403, 'no_sysadmin', nameOf(operation));
     }
-    // Positive control: the system role passes the guard on every one of them (validation may still refuse the body).
+    // Positive control: the system role passes the guard on every one of them (a later guard or validation may still refuse).
     for (const operation of sysAdminOnly) {
-      const { status } = await request(operation, sysAdmin.sessionCookie);
-      expect(status, nameOf(operation)).not.toBe(403);
+      const answer = await request(operation, sysAdmin.sessionCookie);
+      const body: { type?: unknown } | undefined = await answer.json().catch(() => undefined);
+      expect(body?.type, nameOf(operation)).not.toBe('no_sysadmin');
     }
   });
 

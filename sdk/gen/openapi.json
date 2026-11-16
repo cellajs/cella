@@ -6925,6 +6925,7 @@
                   },
                   "userHandle": {
                     "type": "string",
+                    "maxLength": 86,
                     "pattern": "^[A-Za-z0-9_-]{1,86}$"
                   }
                 },
@@ -7203,6 +7204,7 @@
                           },
                           "userHandle": {
                             "type": "string",
+                            "maxLength": 86,
                             "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
@@ -8307,6 +8309,7 @@
                           },
                           "userHandle": {
                             "type": "string",
+                            "maxLength": 86,
                             "pattern": "^[A-Za-z0-9_-]{1,86}$"
                           }
                         },
