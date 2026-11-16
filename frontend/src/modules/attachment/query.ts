@@ -15,6 +15,7 @@ import type {
 } from '~/modules/attachment/query-mutations';
 import {
   attachmentCreateKeys,
+  batchUpdateAttachmentsMutationFn,
   createAttachmentsMutationFn,
   deleteAttachmentsMutationFn,
   updateAttachmentMutationFn,
@@ -35,6 +36,7 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
 import type { OrgRoutableItemData } from '~/query/basic/types';
+import { sendQueuedUpdates } from '~/query/offline/batched-update';
 import { registerVariablesVersion } from '~/query/offline/mutation-variables';
 import { prepareProductDelete } from '~/query/offline/prepare-delete';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
@@ -191,7 +193,12 @@ const attachmentUpdateOptions = (
 ): UseMutationOptions<UpdateData, Error, UpdateAttachmentFullVars, { previousAttachment: Attachment | undefined }> => ({
   mutationKey: keys.update,
   scope: { id: 'attachment' },
-  mutationFn: updateAttachmentMutationFn,
+  mutationFn: (variables, context) =>
+    sendQueuedUpdates(variables, context, {
+      single: updateAttachmentMutationFn,
+      many: batchUpdateAttachmentsMutationFn,
+      batchable: (ops) => !('description' in ops),
+    }),
   meta: { suppressGlobalErrorToast: true },
   onMutate: async ({ organizationId, id, ops }) => {
     await cancelKeepingMark(queryClient, keys.list.org(organizationId));

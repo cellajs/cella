@@ -164,7 +164,9 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
     update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
     stamps when another one is written goes in its `derivedKeys` (a description's columns come from
-    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`.
+    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`. The update's `mutationFn`
+    calls `sendQueuedUpdates` with the single and the batch request: updates queued behind it go as one
+    batch, and ops with a block field go alone.
   - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
     ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new

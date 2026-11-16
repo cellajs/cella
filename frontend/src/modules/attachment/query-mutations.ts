@@ -1,8 +1,10 @@
 import type { Attachment, BatchCreateAttachmentsData, UpdateAttachmentData } from 'sdk';
-import { batchCreateAttachments, batchDeleteAttachments, updateAttachment } from 'sdk';
-import { zBatchCreateAttachmentsBody } from 'sdk/zod.gen';
+import { batchCreateAttachments, batchDeleteAttachments, batchUpdateAttachments, updateAttachment } from 'sdk';
+import { zBatchCreateAttachmentsBody, zBatchUpdateAttachmentsBody } from 'sdk/zod.gen';
 import { appConfig, type EntityIdColumnKey, type HomeChannelType, hierarchy } from 'shared';
+import type { QueuedUpdateItem } from '~/query/offline/batched-update';
 import type { CreateVariables, DeleteVariables, UpdateVariables } from '~/query/offline/mutation-variables';
+import type { QueryOrgContext } from '~/query/types';
 
 type CreateAttachmentItem = BatchCreateAttachmentsData['body'][number];
 /** Id keys of the sub-organization ancestors an app homes attachments under (none in cella); null means org-homed. */
@@ -35,6 +37,10 @@ export async function createAttachmentsMutationFn({ tenantId, organizationId, da
 
 export const updateAttachmentMutationFn = async ({ tenantId, organizationId, id, ops, stx }: UpdateAttachmentFullVars) =>
   updateAttachment({ path: { tenantId, organizationId, attachmentId: id }, body: { ops, stx } });
+
+/** Parses the body before sending it: the items are read untyped from queued variables. */
+export const batchUpdateAttachmentsMutationFn = async ({ tenantId, organizationId, items }: QueryOrgContext & { items: QueuedUpdateItem[] }) =>
+  batchUpdateAttachments({ path: { tenantId, organizationId }, body: zBatchUpdateAttachmentsBody.parse(items) });
 
 export const deleteAttachmentsMutationFn = async ({ tenantId, organizationId, rows, stx }: DeleteAttachmentVars) =>
   batchDeleteAttachments({ path: { tenantId, organizationId }, body: { ids: rows.map((row) => row.id), stx } });
