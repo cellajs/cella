@@ -1,7 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { assertNoWriteBetween } from '#/core/preconditions';
+import { assertNoWriteBetween, assertPreconditionsChecked } from '#/core/preconditions';
+import { filterNoOpFields } from '#/core/stx/field-versions';
 import { tenantContext } from '#/db/tenant-context';
 import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
@@ -28,7 +29,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   const { organizationFlags, setupConfig, toolsConfig, ...input } = organizationContract.normalizeBody(rawInput);
   const actorId = ctx.var.actor.id;
 
-  const { organization, membership, updatedRecord } = await tenantContext(
+  const { organization, membership, updatedRecord, written } = await tenantContext(
     ctx,
     async (txCtx) => {
       // Locked: no other write may commit between the read and the update, since the patches below merge into this row.
@@ -51,29 +52,34 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
       // Media in the welcome text may reference only this organization's uploads.
       if (input.welcomeText) assertBlockMediaUrls(input.welcomeText, organization.id, 'organization', 'welcomeText');
 
-      const values = {
+      const values = filterNoOpFields(organization, {
         ...input,
         ...(organizationFlags && { organizationFlags: applyMergePatch(organization.organizationFlags, organizationFlags) }),
         ...(setupConfig && { setupConfig: applyMergePatch(organization.setupConfig, setupConfig) }),
         ...(toolsConfig && { toolsConfig: applyMergePatch(organization.toolsConfig, toolsConfig) }),
-        ...updateStamps(actorId),
-      };
-      const updatedRecord = await updateOrganization(txCtx, { id: organization.id, values });
+      });
+      // A patch that changes no field leaves the row as stored: no stamps, no activity, the same entity tag.
+      if (Object.keys(values).length === 0) {
+        assertPreconditionsChecked(txCtx, 'organization');
+        return { organization, membership, updatedRecord: organization, written: false };
+      }
+
+      const updatedRecord = await updateOrganization(txCtx, { id: organization.id, values: { ...values, ...updateStamps(actorId) } });
       if (!updatedRecord) assertNoWriteBetween(txCtx, 'organization', organization.id);
       await dispatchMutation(txCtx, 'organization.updated', {
         before: [withOrganizationDefaults(organization)],
         after: [withOrganizationDefaults(updatedRecord)],
       });
-      return { organization, membership, updatedRecord };
+      return { organization, membership, updatedRecord, written: true };
     },
     { includeDeleted: true },
   );
-  const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
-  invalidateCache.org(organization.tenantId, organization.id);
-  await releaseReplacedImages({ holder: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
-
-  log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
+  if (written) {
+    invalidateCache.org(organization.tenantId, organization.id);
+    await releaseReplacedImages({ holder: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
+    log.info('Organization updated', { organizationId: organization.id });
+  }
 
   return toOrganizationResponse(ctx, updatedRecord, membership, { counts: true, membership: true });
 }

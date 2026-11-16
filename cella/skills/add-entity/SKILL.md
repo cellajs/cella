@@ -204,7 +204,9 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
   `/tenants/:tenantId/organizations/:organizationId/<name>s`; the user's list across organizations at `/`
   with `[userGuard, relatableGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`.
-  The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`, as `updateOrganization` does.
+  The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`. When no sent value differs
+  from the locked row (`filterNoOpFields`), the operation calls `assertPreconditionsChecked` and returns that row,
+  as `updateOrganization` does.
 - **Create** (`create-organizations.ts`): normalize with `<name>Contract.normalizeBody`; check the
   slugs with `checkSlugsAvailable` and reject a taken one as `slug_exists` (where the server picks the
   slug, `generateUniqueSlugs(ctx, names, '<name>')`); apply the quota; for a parent below the
