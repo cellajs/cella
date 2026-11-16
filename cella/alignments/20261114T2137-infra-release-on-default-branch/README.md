@@ -31,6 +31,9 @@ No script: manual.
 
 ```sh
 git fetch origin --tags
-git tag --no-merged origin/main --list '[0-9]*.[0-9]*.[0-9]*'
+# origin's tags only: refs/tags can also hold the template's, written by a fetch of cella-upstream
+git ls-remote --tags --refs origin '[0-9]*.[0-9]*.[0-9]*' | while read -r sha ref; do
+  git merge-base --is-ancestor "$sha" origin/main 2>/dev/null || echo "${ref#refs/tags/}"
+done
 pnpm check
 ```

@@ -67,13 +67,16 @@ export const ShouldOpenAndToggleLanguage: Story = {
   },
   play: async ({ canvasElement, step }) => {
     const body = within(canvasElement.ownerDocument.body);
+    const trigger = await body.findByRole('button', { name: /select.languages/i });
+    // With one language there is nothing to choose
+    if (appConfig.languageCodes.length < 2) return expect(trigger).toBeDisabled();
 
     await step('open the language picker', async () => {
-      await userEvent.click(await body.findByRole('button', { name: /select.languages/i }));
+      await userEvent.click(trigger);
       expect(await body.findByRole('listbox')).toBeInTheDocument();
     });
 
-    // Starts empty: an app with one language has no second to toggle
+    // Starts empty, so the toggle selects the last language
     await step('toggle the last language', async () => {
       const options = await body.findAllByRole('option');
       const last = options[options.length - 1];

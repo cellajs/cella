@@ -13,7 +13,7 @@
  *   pnpm exec tsx cella/alignments/<id>/auth-core-flows.ts rewrite   backend/src frontend/src
  */
 
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage', '.git', '.turbo', 'gen']);
@@ -52,6 +52,8 @@ const QUOTED = /'([^']+)'/g;
 
 /** Recursively collect .ts and .tsx files under a root, skipping generated and vendored folders. */
 function collect(root: string, out: string[]): void {
+  // A default root an app deleted.
+  if (!existsSync(root)) return;
   if (!statSync(root).isDirectory()) {
     out.push(root);
     return;

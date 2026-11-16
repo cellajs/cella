@@ -3,7 +3,7 @@ breaking: true
 clientCacheBump: true
 caughtBy: compiler
 grep: modules/auth/sessions, modules/auth/general, modules/auth/tokens, modules/auth/oauth, modules/auth/sso, modules/auth/passkeys, modules/auth/totps, modules/auth/magic, modules/auth/step-up, modules/auth/devices, modules/auth/invitations, modules/auth/anonymous, modules/auth/rate-limits-db, modules/auth/legal, me/operations/get-my-auth, me/operations/toggle-mfa, me/operations/revoke-my-sessions, auth_strategy
-roots: backend/src, frontend/src
+roots: backend/src, backend/tests, backend/scripts, backend/emails, frontend/src
 ---
 
 # The auth module is core, flows and account, with one index for the rest of the app
@@ -35,8 +35,8 @@ Passkeys gain four nullable columns (a migration). Tokens gain two claims; `auth
 ## Run
 
 ```sh
-pnpm cella align --run 20261115T1458-auth-core-flows                                          # report only
-pnpm cella align --run 20261115T1458-auth-core-flows -- rewrite backend/src frontend/src       # apply
+pnpm cella align run 20261115T1458-auth-core-flows   # report only
+pnpm cella align run 20261115T1458-auth-core-flows -- rewrite backend/src backend/tests backend/scripts backend/emails frontend/src   # apply
 ```
 
 ## Manual steps
@@ -46,12 +46,12 @@ pnpm cella align --run 20261115T1458-auth-core-flows -- rewrite backend/src fron
 3. Import `AuthStrategy`, `StepUpProof` and `stepUpProofs` from `shared`, `authStrategiesEnum` from `#/modules/auth/core`.
 4. An app that added a link token kind registers its opener with `registerLinkHandler` or `registerHeldLink` where its handlers load.
 5. Frontend: the account hooks (`meAuthQueryOptions`, `totpKeyQueryOptions`, `useToggleMfaMutation`, the passkey, TOTP and session mutations) are in `~/modules/auth/account/query`, the `Session` and `Passkey` types in `~/modules/auth/account/types`, and the sessions and authentication cards are tools of the `auth` module (`auth-module.tsx`); an app that re-registers or re-orders those `account.settings` tools does so there.
-5. An app that reads `auth_strategy` off an access token may read `amr` (RFC 8176) and `auth_time` as well.
-6. `pnpm generate` is not needed: the passkey migration ships with the template.
+6. An app that reads `auth_strategy` off an access token may read `amr` (RFC 8176) and `auth_time` as well.
+7. `pnpm generate` is not needed: the passkey migration ships with the template.
 
 ## Verify
 
 ```sh
-pnpm cella align --run 20261115T1458-auth-core-flows   # prints 0 imports to rewrite
+pnpm cella align run 20261115T1458-auth-core-flows   # prints 0 imports to rewrite
 pnpm check
 ```
