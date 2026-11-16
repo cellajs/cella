@@ -1,22 +1,29 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, ProductEntityType } from 'shared';
 import { normalizeBody, normalizeCreateItem, widenBodySchema } from '#/core/schema-evolution/lens-seam';
-import { createUpdateSchema } from '#/core/schema-evolution/update-schema';
+import { createUpdateItemSchema, createUpdateSchema } from '#/core/schema-evolution/update-schema';
 import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 import { type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { assertBlockMediaUrls } from '#/utils/validate-block-media';
 
 type AnyRecord = Record<string, unknown>;
 
+/** A copy of `shape` without `keys`. */
+const omitKeys = <S extends object, K extends PropertyKey>(shape: S, keys: readonly K[]): Omit<S, K> => {
+  const kept = { ...shape };
+  for (const key of keys) Reflect.deleteProperty(kept, key);
+  return kept;
+};
+
 /** One registration point per entity type for version-tolerant create and update body schemas. */
 export const evolutionContract = {
-  product<CS extends z.ZodRawShape, U extends z.ZodRawShape>(
+  product<CS extends z.ZodRawShape, U extends z.ZodRawShape, B extends (keyof CS & string) | (keyof U & string) = never>(
     entityType: ProductEntityType,
     options: {
       createItem: z.ZodObject<CS>;
       updateOps: U;
       /** Block-document fields (BlockNote JSON) whose media references are checked on create and update. */
-      blockFields?: readonly ((keyof CS & string) | (keyof U & string))[];
+      blockFields?: readonly B[];
     },
   ) {
     const blockFields = options.blockFields ?? [];
@@ -25,6 +32,8 @@ export const evolutionContract = {
       /** One create item with its `stx`; the module bounds the request array with `.array().min().max()`. */
       createItemSchema: widenBodySchema(entityType, options.createItem.extend({ stx: stxBaseSchema })),
       updateBodySchema: createUpdateSchema(entityType, options.updateOps),
+      /** One row of a batch update, which takes no block field: one block document may fill a whole request body. */
+      updateItemSchema: createUpdateItemSchema(entityType, omitKeys(options.updateOps, blockFields)),
       normalizeCreateItem: <T extends { stx: StxBase }>(item: T): T => normalizeCreateItem(entityType, item),
       resolveUpdateOps: <T extends AnyRecord>(entity: AnyRecord & { stx: StxBase }, rawOps: T, rawStx: StxBase) =>
         resolveUpdateOps(entityType, entity, rawOps, rawStx),

@@ -1331,6 +1331,72 @@ export type BatchCreateAttachmentsResponses = {
 
 export type BatchCreateAttachmentsResponse = BatchCreateAttachmentsResponses[keyof BatchCreateAttachmentsResponses];
 
+export type BatchUpdateAttachmentsData = {
+  body: Array<{
+    id: string;
+    ops: {
+      name?: string;
+    };
+    stx: StxBase;
+  }>;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-update';
+};
+
+export type BatchUpdateAttachmentsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchUpdateAttachmentsError = BatchUpdateAttachmentsErrors[keyof BatchUpdateAttachmentsErrors];
+
+export type BatchUpdateAttachmentsResponses = {
+  /**
+   * Attachments
+   */
+  200: {
+    results: Array<Attachment>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchUpdateAttachmentsResponse = BatchUpdateAttachmentsResponses[keyof BatchUpdateAttachmentsResponses];
+
 export type LinkAttachmentKeysData = {
   body: {
     keys: {

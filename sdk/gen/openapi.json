@@ -5114,6 +5114,250 @@
         }
       }
     },
+    "/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-update": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "apiKey": ["attachment:write"]
+          },
+          {
+            "oauth2": ["attachment:write"]
+          }
+        ],
+        "operationId": "batchUpdateAttachments",
+        "tags": ["attachments", "cella", "product"],
+        "summary": "Update attachments",
+        "description": "Updates up to 50 attachments in one transaction. A row the caller may not update is listed in `rejectedIds`, and a row whose ops change nothing is answered as stored. Takes no `If-Match`: send a conditional update to the single route.",
+        "x-tool": {
+          "description": "Rename several attachments in one call, each with its own ops.",
+          "approvalRequired": true,
+          "entity": "attachment"
+        },
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": [
+                {
+                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+                  "ops": {
+                    "name": "ick_thoroughly_coincide.text (final)"
+                  },
+                  "stx": {
+                    "mutationId": "2d5489ea-b24d-4bc1-9c6c-fe971f3cbca0",
+                    "sourceId": "ac22409c-2fdd-4048-852a-a3e79f546d91",
+                    "fieldTimestamps": {
+                      "name": "1735732800000:0001:yyln1"
+                    }
+                  }
+                }
+              ],
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ops": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    },
+                    "stx": {
+                      "$ref": "#/components/schemas/StxBase"
+                    }
+                  },
+                  "required": ["id", "ops", "stx"]
+                },
+                "minItems": 1,
+                "maxItems": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachments",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "createdAt": "2024-09-10T16:55:24.272Z",
+                      "id": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
+                      "entityType": "attachment",
+                      "tenantId": "93qcb6",
+                      "name": "inasmuch.xhtml",
+                      "updatedAt": "2024-09-10T16:55:24.272Z",
+                      "stx": {
+                        "mutationId": "b4862bef-a0a6-4172-9297-810621a44be4",
+                        "sourceId": "424ddc25-f82c-4138-aca8-87751adbdbf0",
+                        "fieldTimestamps": {}
+                      },
+                      "description": null,
+                      "keywords": "surculus quas sollers",
+                      "createdBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "kind": "user",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "kind": "user",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
+                        "thumbnailUrl": null
+                      },
+                      "deletedAt": null,
+                      "deletedBy": null,
+                      "public": false,
+                      "seq": 482,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "groupId": null,
+                      "filename": "inasmuch.xhtml",
+                      "contentType": "application/vnd.oasis.opendocument.spreadsheet",
+                      "convertedContentType": null,
+                      "size": 9057832,
+                      "keys": {
+                        "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
+                      },
+                      "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
+                    },
+                    {
+                      "createdAt": "2024-04-01T00:36:54.729Z",
+                      "id": "e5ea44c3-c32a-4472-930f-592f25efbf32",
+                      "entityType": "attachment",
+                      "tenantId": "03ldr2",
+                      "name": "victoriously.mp4",
+                      "updatedAt": "2024-04-01T00:36:54.729Z",
+                      "stx": {
+                        "mutationId": "74227841-ffc3-4e08-8db5-4efdd45f10b0",
+                        "sourceId": "ab3092c5-fd1f-4b31-9ba5-2c2db09b47a2",
+                        "fieldTimestamps": {}
+                      },
+                      "description": null,
+                      "keywords": "volup quae chirographum",
+                      "createdBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "kind": "user",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "kind": "user",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
+                        "thumbnailUrl": null
+                      },
+                      "deletedAt": null,
+                      "deletedBy": null,
+                      "public": false,
+                      "seq": 39,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "groupId": null,
+                      "filename": "victoriously.mp4",
+                      "contentType": "image/jpeg",
+                      "convertedContentType": null,
+                      "size": 4961674,
+                      "keys": {
+                        "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
+                      },
+                      "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
+                    }
+                  ],
+                  "rejectedIds": []
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["results", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}:link-keys": {
       "post": {
         "security": [

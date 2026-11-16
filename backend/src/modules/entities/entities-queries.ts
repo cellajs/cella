@@ -186,18 +186,28 @@ export const resolveEntity = async <T extends EntityType>(
 /** @internal See {@link resolveEntity} for usage guidelines. */
 export const resolveEntities = async <T extends EntityType>(
   ctx: DbContext,
-  { entityType, ids }: { entityType: T; ids: string[] },
+  {
+    entityType,
+    ids,
+    forUpdate = false,
+  }: {
+    entityType: T;
+    ids: string[];
+    /** Locks the rows as {@link resolveEntity} locks one, in id order: two writes over shared rows wait in turn and never deadlock. */
+    forUpdate?: boolean;
+  },
 ): Promise<Array<EntityModel<T>>> => {
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
   const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
-  const entities = await ctx.var.db
+  const query = ctx.var.db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
     .where(condition);
+  const entities = forUpdate ? await query.orderBy(table.id).for(isProduct(entityType) ? 'no key update' : 'update') : await query;
   return entities as Array<EntityModel<T>>;
 };
 

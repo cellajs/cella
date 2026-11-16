@@ -74,6 +74,8 @@ export const mockUpdateAttachmentBody = () =>
     return { ops: { name: `${mockAttachment().name} (final)` }, stx: { ...stx, fieldTimestamps } };
   });
 
+export const mockBatchUpdateAttachmentsBody = () => [{ id: mockAttachment().id, ...mockUpdateAttachmentBody() }];
+
 export const mockDeleteAttachmentsBody = () =>
   withFakerSeed('attachment:delete-body', () => {
     const { mutationId, sourceId } = mockStx();

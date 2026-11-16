@@ -13,6 +13,7 @@ import {
   productListQuerySchema,
   stxBaseSchema,
   tenantOrgParamSchema,
+  translatedError,
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
@@ -96,13 +97,22 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
+export const attachmentBatchUpdateBodySchema = attachmentContract.updateItemSchema
+  .array()
+  .min(1)
+  .max(50)
+  .refine(
+    (items) => new Set(items.map(({ id }) => id.toLowerCase())).size === items.length,
+    translatedError('error:invalid_duplicate_items', { name: 'ID' }),
+  );
+
 /** The storage keys a deferred upload produced, for a row created while its file was still local. */
 export const attachmentLinkKeysBodySchema = z.object({
   keys: attachmentKeysSchema,
   convertedContentType: z.string().max(maxLength.field).nullable().optional(),
 });
 
-export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
+export const attachmentBatchResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 

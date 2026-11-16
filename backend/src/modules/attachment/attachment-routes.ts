@@ -4,6 +4,7 @@ import { rangeKeyParameter, sharedRangeAnswers } from '#/middlewares/range-answe
 import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   mockBatchAttachmentsResponse,
+  mockBatchUpdateAttachmentsBody,
   mockCreateAttachmentsBody,
   mockDeleteAttachmentsBody,
   mockLinkAttachmentKeysBody,
@@ -13,8 +14,9 @@ import {
   mockUpdateAttachmentBody,
 } from '#/modules/attachment/attachment-mocks';
 import {
+  attachmentBatchResponseSchema,
+  attachmentBatchUpdateBodySchema,
   attachmentCreateManyStxBodySchema,
-  attachmentCreateResponseSchema,
   attachmentLinkKeysBodySchema,
   attachmentListQuerySchema,
   attachmentParamSchema,
@@ -55,11 +57,27 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
     responses: {
       200: json(
         'Nothing created\n\nThis request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.',
-        attachmentCreateResponseSchema,
+        attachmentBatchResponseSchema,
         mockBatchAttachmentsResponse(),
       ),
-      201: json('Attachments created', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
+      201: json('Attachments created', attachmentBatchResponseSchema, mockBatchAttachmentsResponse()),
     },
+  }),
+  batchUpdateAttachments: xRoute({
+    method: 'post',
+    path: '/~batch-update',
+    xGuard: [actorGuard, tenantGuard, orgGuard],
+    xRateLimiter: [bulkPointsLimiter],
+    xTool: {
+      description: 'Rename several attachments in one call, each with its own ops.',
+      approvalRequired: true,
+      entity: 'attachment',
+    },
+    summary: 'Update attachments',
+    description:
+      'Updates up to 50 attachments in one transaction. A row the caller may not update is listed in `rejectedIds`, and a row whose ops change nothing is answered as stored. Takes no `If-Match`: send a conditional update to the single route.',
+    request: { params: tenantOrgParamSchema, body: jsonBody(attachmentBatchUpdateBodySchema, mockBatchUpdateAttachmentsBody()) },
+    responses: { 200: json('Attachments', attachmentBatchResponseSchema, mockBatchAttachmentsResponse()) },
   }),
   getAttachment: xRoute({
     method: 'get',

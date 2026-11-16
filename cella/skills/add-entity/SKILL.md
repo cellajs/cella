@@ -96,7 +96,9 @@ and the renderers.
     `preconditionWhere(ctx, <name>sTable)` to its WHERE and the operation answers a row it did not write with
     `assertNoWriteBetween`, as attachment's do. When `resolveUpdateOps` accepts no field, the operation calls
     `assertPreconditionsChecked` and returns the locked row as it is, with no update, no stamps and no
-    `dispatchMutation`.
+    `dispatchMutation`. Everything after the read is a row writer (`writeAttachmentUpdate`), which returns
+    null for that case; the batch update passes it to `updateProductsOp`, which locks and checks every row
+    first.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`,
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
@@ -115,8 +117,8 @@ and the renderers.
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })` with attachment's paths
-  and methods (`/`, `/~batch-create`, `/~batch-delete`, `/{<name>Id}` with a `patch` update), the
-  path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
+  and methods (`/`, `/~batch-create`, `/~batch-update`, `/~batch-delete`, `/{<name>Id}` with a `patch`
+  update), the path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
   `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, and `...errors(…)` in
   `responses` for the statuses its handler throws beyond its guards and limiters, as attachment's
   routes list them. A route agents may call takes `xTool`, which implies its scope; any other route

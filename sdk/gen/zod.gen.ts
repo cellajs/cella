@@ -972,6 +972,33 @@ export const zBatchCreateAttachmentsResponse = z.union([
   }),
 ]);
 
+export const zBatchUpdateAttachmentsBody = z
+  .array(
+    z.object({
+      id: z.uuid(),
+      ops: z.object({
+        name: z.string().max(255).optional(),
+      }),
+      stx: zStxBase,
+    }),
+  )
+  .min(1)
+  .max(50);
+
+export const zBatchUpdateAttachmentsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Attachments
+ */
+export const zBatchUpdateAttachmentsResponse = z.object({
+  results: z.array(zAttachment),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
 export const zLinkAttachmentKeysBody = z.object({
   keys: z.object({
     original: z.string().max(2048),

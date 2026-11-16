@@ -4,6 +4,7 @@ import {
   batchDeleteAttachments,
   batchDeleteMembers,
   batchDeleteOrganizations,
+  batchUpdateAttachments,
   getAttachment,
   getOrganization,
   getUser,
@@ -263,6 +264,36 @@ describe('Cross-organization API isolation', async () => {
       expect((await attachmentRow(own)).deletedAt).not.toBeNull();
       expect((await attachmentRow(attachmentB.id)).deletedAt).toBeNull();
     }
+  });
+
+  it("must not update org B's attachment, or one the caller may not update, via a batch that also names the caller's own", async () => {
+    // The admin's own row: the member reads it but may update only its own.
+    const adminOwned = generateId();
+    const path = { tenantId: tenant.tenantId, organizationId: tenant.organization.id };
+    expect((await call(batchCreateAttachments, { path, body: [attachmentBody(adminOwned, plan)], headers: headers(tenant) })).response.status).toBe(
+      201,
+    );
+    const adminOwnedName = (await attachmentRow(adminOwned)).name;
+
+    for (const [attacker, refused] of [
+      [tenant, [attachmentB.id]],
+      [insider, [adminOwned, attachmentB.id]],
+    ] as const) {
+      const own = generateId();
+      const created = await call(batchCreateAttachments, { path, body: [attachmentBody(own, plan)], headers: headers(attacker) });
+      expect(created.response.status).toBe(201);
+
+      const { data, response } = await call(batchUpdateAttachments, {
+        path,
+        body: [own, ...refused].map((id) => ({ id, ops: { name: 'Renamed by a batch' }, stx: renameStx() })),
+        headers: headers(attacker),
+      });
+      expect(response.status).toBe(200);
+      expect((data as { rejectedIds: string[] }).rejectedIds).toEqual(refused);
+      expect((await attachmentRow(own)).name).toBe('Renamed by a batch');
+    }
+    expect((await attachmentRow(adminOwned)).name).toBe(adminOwnedName);
+    expect((await attachmentRow(attachmentB.id)).name).toBe(attachmentB.name);
   });
 
   it('must not reach a user outside a shared organization via getUser or listUsers', async () => {
