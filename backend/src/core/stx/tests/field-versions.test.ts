@@ -70,13 +70,12 @@ describe('filterNoOpFields', () => {
     expect(result).toEqual({ status: 'done' });
   });
 
-  it('keeps non-primitive fields even if structurally equal', () => {
-    const entity = { labels: ['a', 'b'], name: 'Hello' };
-    const incoming = { labels: ['a', 'b'], name: 'Hello' };
+  it('drops an array and an object equal to the stored ones, the object in another key order', () => {
+    const entity = { labels: ['a', 'b'], flags: { pinned: true, color: 'red' }, order: ['a', 'b'] };
+    const incoming = { labels: ['a', 'b'], flags: { color: 'red', pinned: true }, order: ['b', 'a'] };
     const result = filterNoOpFields(entity, incoming);
 
-    // labels kept (array, not primitive), name removed (same primitive)
-    expect(result).toEqual({ labels: ['a', 'b'] });
+    expect(result).toEqual({ order: ['b', 'a'] });
   });
 
   it('keeps null if entity value is different', () => {

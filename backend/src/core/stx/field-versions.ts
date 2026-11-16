@@ -1,13 +1,13 @@
+import { isDeepStrictEqual } from 'node:util';
 import { compareHLC, isBeyondClockSkew, isValidHLC } from '#/core/stx/hlc';
 
-function isPrimitive(value: unknown): value is string | number | boolean | null {
-  return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
-}
-
-/** Drops primitive fields equal to the stored value; arrays and objects pass through without deep comparison. */
-export function filterNoOpFields(entityData: Record<string, unknown>, incomingFields: Record<string, unknown>): Record<string, unknown> {
-  const isNoOp = ([key, value]: [string, unknown]) => isPrimitive(value) && entityData[key] === value;
-  return Object.fromEntries(Object.entries(incomingFields).filter((entry) => !isNoOp(entry)));
+/** The fields whose value differs from the stored one: an equal array or object, in any key order, is no change. */
+export function filterNoOpFields<T extends Record<string, unknown>>(stored: Record<string, unknown>, incoming: T): Partial<T> {
+  const changed: Partial<T> = {};
+  for (const key in incoming) {
+    if (!isDeepStrictEqual(stored[key], incoming[key])) changed[key] = incoming[key];
+  }
+  return changed;
 }
 
 /**
