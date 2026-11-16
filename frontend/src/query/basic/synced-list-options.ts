@@ -1,6 +1,7 @@
 import type { QueryClient, QueryKey, QueryMeta, SkipToken } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import { isRateLimited } from '~/lib/api';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { getEntityRangeFetch, rowOutsideRange, seqOf, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
@@ -8,7 +9,7 @@ import type { ItemData } from '~/query/basic/types';
 import { productTypeOf } from '~/query/cache-migration';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
 import { deletedIdsOf } from '~/query/offline/mutation-variables';
-import { excludingRangeReads } from '~/query/realtime/fetch-prioritizer';
+import { excludingRangeReads, refetchRefusedAfterHold } from '~/query/realtime/fetch-prioritizer';
 import { syncStore } from '~/query/realtime/sync-store';
 import type { PageParam, QueryData } from '~/query/types';
 
@@ -209,6 +210,16 @@ function keepPendingRows(client: QueryClient, queryKey: QueryKey, read: List, at
   return { ...read, results: [...takenBack, ...results], totalSize: read.totalSize + takenBack.length - hidden.size };
 }
 
+/** Settles as `read` does. A list on screen the read budget refused reads again once the budget has reads left, as after a refused range read. */
+async function rereadWhenRefused(read: () => List | Promise<List>): Promise<List> {
+  try {
+    return await read();
+  } catch (error) {
+    if (isRateLimited(error)) refetchRefusedAfterHold();
+    throw error;
+  }
+}
+
 /** A reader that mounts refetches a marked list whatever the global `refetchOnMount`: the mark says the list is incomplete, and `syncStaleTime` keeps a fresh one as it is. */
 const refetchOnMount = true;
 
@@ -230,7 +241,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
         refetchOnMount,
         queryFn: async ({ client, meta, pageParam, direction }: Omit<PageReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
           const pendingAtStart = pendingRows(client, entityType);
-          const page = await readPage({ client, queryKey, meta, pageParam, direction, signal: neverAborted });
+          const page = await rereadWhenRefused(() => readPage({ client, queryKey, meta, pageParam, direction, signal: neverAborted }));
           return keepPendingRows(client, queryKey, page, pendingAtStart, pendingRows(client, entityType), false);
         },
       },
@@ -246,7 +257,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
       queryFn: async ({ client, meta }: Omit<ListReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
         const pendingAtStart = pendingRows(client, entityType);
         const read = async () => readList({ client, queryKey, meta, signal: neverAborted });
-        const list = scope ? await readAgainstDeltas(client, read, entityType, queryKey, scope) : await read();
+        const list = await rereadWhenRefused(() => (scope ? readAgainstDeltas(client, read, entityType, queryKey, scope) : read()));
         return keepPendingRows(client, queryKey, list, pendingAtStart, pendingRows(client, entityType), true);
       },
     },

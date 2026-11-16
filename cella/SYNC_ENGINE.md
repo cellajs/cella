@@ -231,7 +231,7 @@ The client's own catchup repairs missed frames. Every client refetches everythin
 | --- | --- | --- | --- |
 | A client's stream is down | The app works as a REST app. Lists refetch when opened | Reconnect and catchup | Nothing |
 | The worker is down or reading again | Other users' changes arrive late and in order. In a longer outage lists refetch when opened | The worker reads on from the slot | Nothing |
-| The API restarts, loses a frame or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
+| The API restarts or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot. Then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile. With a restore, everything after the backup |
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |

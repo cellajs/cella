@@ -1,5 +1,5 @@
 import '~/query/tests/query-client-env';
-import { QueryObserver } from '@tanstack/react-query';
+import { QueryObserver, queryOptions } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '~/lib/api';
 import { recordReportedBudgets } from '~/lib/reported-budgets';
@@ -34,6 +34,7 @@ vi.stubGlobal('document', { addEventListener: (type: string, listener: () => voi
 const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
 const { onSyncedRows } = await import('~/query/realtime/sync-events');
+const { syncedListOptions } = await import('~/query/basic/synced-list-options');
 
 const background = { min: 2_000, max: 30_000 };
 const viewing = { min: 0, max: 0 };
@@ -143,6 +144,28 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch.mock.calls[3][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
     expect(cursor()).toBe(7);
     expect(invalidateEntityListForOrg).not.toHaveBeenCalled();
+    expect(listRead).toHaveBeenCalledTimes(2);
+
+    unsubscribe();
+    queryClient.clear();
+  });
+
+  // A list read the budget refused while no range read waited stayed failed until it was opened again.
+  it('reads a list on screen again once the read budget has reads left, when the budget refused only that read', async () => {
+    const listRead = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        refuseReads(20);
+        throw new ApiError({ status: 429 });
+      })
+      .mockResolvedValue({ results: [], totalSize: 0 });
+    const list = syncedListOptions(queryOptions({ queryKey: ['attachment', 'list', 'org-1'], queryFn: listRead }));
+    const unsubscribe = new QueryObserver(queryClient, { ...list, retry: false }).subscribe(() => {});
+
+    await vi.advanceTimersByTimeAsync(19_999);
+    expect(listRead).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(1);
     expect(listRead).toHaveBeenCalledTimes(2);
 
     unsubscribe();

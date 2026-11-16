@@ -340,7 +340,7 @@ export function invalidateUndelivered(
 }
 
 /** Once the read budget has reads left, the product queries on screen whose read it refused read again. */
-function refetchRefusedAfterHold(): void {
+export function refetchRefusedAfterHold(): void {
   if (holdTimer) clearTimeout(holdTimer);
   holdTimer = setTimeout(
     () => {
