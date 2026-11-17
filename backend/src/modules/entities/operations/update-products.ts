@@ -25,6 +25,7 @@ export type RowOutcome<M> =
 /**
  * Reads the rows of `ids` the caller may update, locked in id order until the caller's transaction ends.
  * @returns The rows by stored id; an id the caller may not update, or that names no live row, is absent.
+ * @public
  */
 export const lockUpdatableRows = async <K extends ProductEntityType>(txCtx: ActorContext, entityType: K, ids: string[]) => {
   const { allowed } = await partitionByPermission(txCtx, 'update', entityType, ids, { forUpdate: true });
@@ -35,6 +36,7 @@ export const lockUpdatableRows = async <K extends ProductEntityType>(txCtx: Acto
  * Runs `writeRow` on each item's locked row in request order, each in a savepoint of its own. A 403 the writer throws
  * rejects its row and rolls back that row's writes alone. Any other error fails the batch.
  * @returns One outcome per item, in request order; an item without a locked row is rejected.
+ * @public
  */
 export const writeEachRow = async <K extends ProductEntityType, I extends { id: string }>(
   txCtx: ActorContext,
@@ -65,7 +67,10 @@ export const writeEachRow = async <K extends ProductEntityType, I extends { id: 
   return outcomes;
 };
 
-/** Dispatches `<entityType>.updated` for the written rows, `before`/`after` index-aligned as the mutation bus requires; nothing when none was written. */
+/**
+ * Dispatches `<entityType>.updated` for the written rows, `before`/`after` index-aligned as the mutation bus requires; nothing when none was written.
+ * @public
+ */
 export const dispatchUpdated = async <K extends ProductEntityType>(txCtx: ActorContext, entityType: K, outcomes: RowOutcome<EntityModel<K>>[]) => {
   const written = outcomes.filter((outcome) => outcome.outcome === 'written');
   if (!written.length) return;
@@ -81,6 +86,7 @@ export const dispatchUpdated = async <K extends ProductEntityType>(txCtx: ActorC
 /**
  * The answer to a batch update: the rows written or unchanged, as stored, and the ids rejected, both in request order.
  * @throws AppError 403 when every row was rejected.
+ * @public
  */
 export const batchUpdateAnswer = <M>(entityType: ProductEntityType, outcomes: RowOutcome<M>[]): { results: M[]; rejectedIds: string[] } => {
   const results: M[] = [];
