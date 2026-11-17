@@ -13,7 +13,17 @@ const tooltipClass = tw(
 const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {
   const rect = reference.getBoundingClientRect();
   const tooltipRect = tooltip.getBoundingClientRect();
-  Object.assign(tooltip.style, { left: `${rect.right + gap}px`, top: `${rect.top + (rect.height - tooltipRect.height) / 2}px` });
+
+  if (reference.getAttribute('role') !== 'columnheader') {
+    Object.assign(tooltip.style, { left: `${rect.right + gap}px`, top: `${rect.top + (rect.height - tooltipRect.height) / 2}px` });
+    return;
+  }
+
+  // A header's tooltip reads as its label above it; useStickyHeader pins a header fixed to the top, where only below has room.
+  const top = reference.style.position === 'fixed' ? rect.bottom + gap : rect.top - tooltipRect.height - gap;
+  const centered = rect.left + (rect.width - tooltipRect.width) / 2;
+  const left = Math.min(Math.max(gap, centered), window.innerWidth - tooltipRect.width - gap);
+  Object.assign(tooltip.style, { left: `${left}px`, top: `${top}px` });
 };
 
 /** Data grid tooltip driven by DOM listeners outside React, so hovering never re-renders the grid. */
@@ -60,11 +70,13 @@ export function useTableTooltip(gridElement: HTMLDivElement | null) {
       observer.observe(gridElement, { childList: true, subtree: true });
     };
 
-    // `data-tooltip="true"` always qualifies; `data-tooltip="compact"` only inside a compacted grid.
+    // `data-tooltip="true"` always qualifies; `data-tooltip="compact"` only inside a compacted grid; `data-tooltip="slim"`
+    // only while a header shows its icon in place of its name.
     const resolveTooltipCell = (target: EventTarget | null): HTMLElement | null => {
       const cell = target instanceof Element ? target.closest<HTMLElement>('[data-tooltip]') : null;
       if (!cell) return null;
       if (cell.dataset.tooltip === 'compact' && !cell.closest('[data-is-compact="true"]')) return null;
+      if (cell.dataset.tooltip === 'slim' && !cell.querySelector('[data-slim-icon]')?.getClientRects().length) return null;
       return cell;
     };
 

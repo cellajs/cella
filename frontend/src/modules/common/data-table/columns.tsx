@@ -71,26 +71,21 @@ interface CountColumnOptions<T> {
   get: (row: T) => number | null | undefined;
 }
 
-/** A compact count behind an icon, hidden below md; hover and exports give the exact number. */
-export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidden, get }: CountColumnOptions<T>): ColumnOrColumnGroup<T> => ({
+/** A compact count under a header that turns to its icon when slim, hidden below md; hover and exports give the exact number. */
+export const countColumn = <T,>(key: string, { name, icon = BoxIcon, hidden, get }: CountColumnOptions<T>): ColumnOrColumnGroup<T> => ({
   key,
   name,
+  icon,
   hidden,
   minBreakpoint: 'md',
   minWidth: 60,
   maxWidth: 120,
-  cellClass: 'gap-2',
   renderCell: ({ row }) => {
     const count = get(row);
     const text = typeof count === 'number' ? formatCount(count) : '-';
     const isAbbreviated = typeof count === 'number' && text !== String(count);
 
-    return (
-      <>
-        <Icon className="opacity-50" />
-        <span {...(isAbbreviated && { 'data-tooltip': 'true', 'data-tooltip-content': count })}>{text}</span>
-      </>
-    );
+    return <span {...(isAbbreviated && { 'data-tooltip': 'true', 'data-tooltip-content': count })}>{text}</span>;
   },
   exportValue: get,
 });

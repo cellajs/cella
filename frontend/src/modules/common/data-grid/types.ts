@@ -1,4 +1,5 @@
 import type { Key, ReactElement, ReactNode } from 'react';
+import type { IconComponent } from '~/modules/common/icons/types';
 
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
@@ -57,6 +58,8 @@ interface EstimateLinesContext {
 export interface Column<TRow, TSummaryRow = unknown> {
   /** The name of the column. Displayed in the header cell by default */
   readonly name: string | ReactElement;
+  /** Takes the name's place in a header narrower than 6rem; a string name then shows as its tooltip. */
+  readonly icon?: Maybe<IconComponent>;
   /** A unique key to distinguish each column */
   readonly key: string;
   /** Reactively exclude this column independently of breakpoint visibility. */

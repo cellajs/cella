@@ -190,6 +190,8 @@ export function HeaderCell<R, SR>({
         aria-rowspan={rowSpan}
         aria-selected={isCellSelected}
         aria-sort={ariaSort}
+        // On the cell itself: a keyboard focus lands here, and the tooltip looks up from its target
+        {...(column.icon && typeof column.name === 'string' && { 'data-tooltip': 'slim', 'data-tooltip-content': column.name })}
         {...{ tabIndex, className, style, onMouseDown, onClick, onKeyDown }}
         onFocus={handleFocus}
       >
