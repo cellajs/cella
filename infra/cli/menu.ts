@@ -1,14 +1,5 @@
 import { Separator } from '@inquirer/prompts';
-import {
-  actionHint,
-  actionLabel,
-  MENU_ROWS,
-  type MenuRowId,
-  MORE_SECTIONS,
-  menuRow,
-  OPERATOR_ACTIONS,
-  type OperatorActionId,
-} from '../lib/operator-actions';
+import { actionLabel, MENU_ROWS, type MenuRowId, MORE_SECTIONS, menuRow, OPERATOR_ACTIONS, type OperatorActionId } from '../lib/operator-actions';
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
 import { pc } from '../lib/utils/cli-output';
 
@@ -40,7 +31,7 @@ export interface MenuChoice<T extends string> {
 /** A menu entry, the heading of a group of entries (an empty one is a blank line), or a rule. */
 export type MenuItem<T extends string> = MenuChoice<T> | { group: string } | Separator;
 
-/** The rule above the way out of a menu. */
+/** The rule above the way out of a menu, and between the sections of the More pick. */
 export const RULE = new Separator(pc.dim('─'.repeat(40)));
 
 export const BACK = 'back';
@@ -124,31 +115,26 @@ export function mainMenuItems(state: MenuState): Array<MenuItem<MainMenuValue>> 
   return items;
 }
 
-/** An action's name in a pick: the label padded to the hint column, then the key it runs with. A disabled entry shows the label alone, so the reason after it fits the row. */
+/** An action's name in a pick: the label padded to the summary column, then its summary dim. A disabled entry shows the label alone, so the reason after it fits the row. */
 function pickName(action: OperatorActionId, width: number, disabled: boolean): string {
-  return disabled ? actionLabel(action) : `${actionLabel(action).padEnd(width)}  ${pc.dim(actionHint(action))}`;
+  return disabled ? actionLabel(action) : `${actionLabel(action).padEnd(width)}  ${pc.dim(OPERATOR_ACTIONS[action].summary)}`;
 }
 
-/** The headings a row's pick lists its actions under: the More pick's sections, one section without a heading for any other row. */
-function pickSections(id: MenuRowId): Array<[heading: string, actions: readonly OperatorActionId[]]> {
-  return id === 'more' ? Object.entries(MORE_SECTIONS) : [['', menuRow(id).actions]];
+/** The sections a row's pick lists its actions in: the More pick's, one for any other row. */
+function pickSections(id: MenuRowId): Array<readonly OperatorActionId[]> {
+  return id === 'more' ? Object.values(MORE_SECTIONS) : [menuRow(id).actions];
 }
 
-/** The pick a row with several actions opens: its actions, under a heading after a blank line where the row has sections, then the way back. */
+/** The pick a row with several actions opens: its actions with their summaries, a rule between sections, then the way back. */
 export function pickItems(id: MenuRowId, state: MenuState): Array<MenuItem<OperatorActionId | typeof BACK>> {
   const width = Math.max(...menuRow(id).actions.map((action) => actionLabel(action).length));
   const items: Array<MenuItem<OperatorActionId | typeof BACK>> = [];
-  for (const [heading, actions] of pickSections(id)) {
-    if (heading) items.push({ group: '' }, { group: heading });
+  for (const actions of pickSections(id)) {
+    if (items.length) items.push(RULE);
     for (const action of actions) {
       const reason = disabledReason(action, state);
-      items.push({
-        name: pickName(action, width, Boolean(reason)),
-        value: action,
-        description: OPERATOR_ACTIONS[action].description,
-        ...(reason ? { disabled: `(${reason})` } : {}),
-      });
+      items.push({ name: pickName(action, width, Boolean(reason)), value: action, ...(reason ? { disabled: `(${reason})` } : {}) });
     }
   }
-  return [...items, RULE, { name: '← Back', value: BACK, description: 'Return to the menu.' }];
+  return [...items, RULE, { name: '← Back to menu', value: BACK }];
 }

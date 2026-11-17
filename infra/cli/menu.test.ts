@@ -92,34 +92,29 @@ describe('mainMenuItems', () => {
 });
 
 describe('pickItems', () => {
-  it('lists the rare actions under headings with the key each runs with, then Back', () => {
+  it('lists the rare actions with their summaries and a rule between sections, then Back', () => {
+    const rule = ` ${'─'.repeat(40)}`;
     expect(render(pickItems('more', { ...bootstrapped, environment: 'production' }))).toEqual([
-      '',
-      'Deploys & changes',
-      '  Deploy now               operator key',
-      '  Preview changes          operator key',
-      '',
-      'Keys & access',
-      '  Rotate keys              Owner key',
-      '  Rotate secrets           operator key',
-      '  Set up operators         Owner key',
-      '  Update identities        Owner key',
-      '  Set repository read key  operator key',
-      '',
-      'Repair',
-      '  Unlock                   operator key',
-      '  Resume setup             operator key',
-      '  Remove from state        operator key',
-      '',
-      'Database',
+      '  Deploy now               without waiting for the scheduled run',
+      '  Preview changes          what Review & apply would change; read-only',
+      rule,
+      '  Rotate keys              new deploy and uploads keys, then a redeploy',
+      '  Rotate secrets           new passwords and generated values, redeployed',
+      '  Set up operators         make or repair the operator app and group',
+      '  Update identities        write what differs from the declared identities',
+      '  Set repository read key  the GitHub key a private repository needs',
+      rule,
+      '  Unlock                   clear the lease a stopped run left',
+      '  Resume setup             continue an interrupted setup',
+      '  Remove from state        drop a gone resource from the Pulumi state',
+      rule,
       '- Seed database (seed data never goes to production)',
-      '  Reset database           operator key',
-      '',
-      'Environment',
-      '  Import a .env file       operator key',
-      '  Tear down                Owner key',
-      ` ${'─'.repeat(40)}`,
-      '  ← Back',
+      '  Reset database           wipe and rebuild it empty, after a backup',
+      rule,
+      '  Import a .env file       set the values a .env file holds',
+      '  Tear down                delete all that runs or costs, after a final dump',
+      rule,
+      '  ← Back to menu',
     ]);
     expect(pickItems('more', bootstrapped).at(-1)).toMatchObject({ value: BACK });
   });

@@ -1,11 +1,9 @@
-/** The Scaleway key an operator action runs with. */
-export type KeyTier = 'none' | 'observer' | 'operator' | 'owner';
-
 export interface OperatorAction {
   /** The one name of the action: its menu entry, every prompt and hint that points at it, and the docs. */
   label: string;
-  key: KeyTier;
-  /** What the action does, shown under the menu while its entry is highlighted: one line of at most 96 characters that names no key. */
+  /** Shown dim beside the action's row or pick entry: a lowercase phrase that fits one 80-column line with the label. */
+  summary: string;
+  /** What the action does, shown under a failure's way to it while that is highlighted: one line of at most 96 characters that names no key. */
   description: string;
 }
 
@@ -16,107 +14,107 @@ export interface OperatorAction {
 export const OPERATOR_ACTIONS = {
   status: {
     label: 'Full status',
-    key: 'observer',
+    summary: 'every check and finding, and what fixes it',
     description: 'Every check and finding, what it means and what fixes it. Read-only.',
   },
   logs: {
     label: 'Deploy logs',
-    key: 'observer',
+    summary: 'the last deploys and how each ended',
     description: 'The last deploys and how each ended, then one in full with the end of its log. Read-only.',
   },
   preview: {
     label: 'Preview changes',
-    key: 'operator',
+    summary: 'what Review & apply would change; read-only',
     description: 'The changes "Review & apply changes" would make, read fresh against what runs. Read-only.',
   },
   apply: {
     label: 'Review & apply changes',
-    key: 'operator',
+    summary: 'what differs from what runs, applied on your yes',
     description: 'See what differs between the code and what runs, and apply it on your yes.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
-    key: 'owner',
+    summary: 'new deploy and uploads keys, then a redeploy',
     description: 'Replace the deploy and uploads keys, then redeploy so no machine keeps an old one.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
-    key: 'operator',
+    summary: 'new passwords and generated values, redeployed',
     description: 'New database passwords and generated values, then a redeploy of what serves.',
   },
   operators: {
     label: 'Set up operators',
-    key: 'owner',
+    summary: 'make or repair the operator app and group',
     description: "Make or repair the app's operator application and operators group.",
   },
   identities: {
     label: 'Update identities',
-    key: 'owner',
+    summary: 'write what differs from the declared identities',
     description: 'Write what differs from the declared identities. Asks for a key only when something must change.',
   },
   deploy: {
     label: 'Deploy now',
-    key: 'operator',
+    summary: 'without waiting for the scheduled run',
     description: 'Deploy the target now, without waiting for the scheduled run, and follow it step by step.',
   },
   releases: {
     label: 'Releases & roll back',
-    key: 'operator',
+    summary: 'the last releases; deploy an earlier one again',
     description: 'The last releases and how each deploy ended; pick an earlier one to deploy it again.',
   },
   'repository-key': {
     label: 'Set repository read key',
-    key: 'operator',
+    summary: 'the GitHub key a private repository needs',
     description: 'Store, replace or remove the read-only GitHub key a private repository needs.',
   },
   env: {
     label: 'Env vars & secrets',
-    key: 'operator',
+    summary: 'the values the services read at boot',
     description: 'The values the services read at boot. A changed value reaches the machines at the next deploy.',
   },
   'env-import': {
     label: 'Import a .env file',
-    key: 'operator',
+    summary: 'set the values a .env file holds',
     description: 'Set the values a .env file holds, such as one from another host, after one confirmation.',
   },
   'db-open': {
     label: 'Open DB access',
-    key: 'operator',
+    summary: 'a public endpoint to your IP, until you close it',
     description: 'Open a public endpoint to your IP and print the admin connection string. Close it when done.',
   },
   'db-seed': {
     label: 'Seed database',
-    key: 'operator',
+    summary: 'the backend seeds, over a short-lived endpoint',
     description: 'Open the endpoint to your IP, run the backend seeds, and close it again. Never on production.',
   },
   'db-close': {
     label: 'Close DB access',
-    key: 'operator',
+    summary: 'close the temporary public endpoint',
     description: 'Close the temporary public endpoint.',
   },
   'db-reset': {
     label: 'Reset database',
-    key: 'operator',
+    summary: 'wipe and rebuild it empty, after a backup',
     description: 'Wipe the database and rebuild it empty, after a backup.',
   },
   unlock: {
     label: 'Unlock',
-    key: 'operator',
+    summary: 'clear the lease a stopped run left',
     description: 'Clear the lease a stopped run left, and review what it left unfinished in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
-    key: 'operator',
+    summary: 'continue an interrupted setup',
     description: 'Continue an interrupted setup: re-sync config and self-heal missing keys.',
   },
   'state-remove': {
     label: 'Remove from state',
-    key: 'operator',
+    summary: 'drop a gone resource from the Pulumi state',
     description: 'Take out of the Pulumi state a resource the code no longer declares and that is gone already.',
   },
   teardown: {
     label: 'Tear down',
-    key: 'owner',
+    summary: 'delete all that runs or costs, after a final dump',
     description: 'Delete everything that runs or costs, after a final dump that is kept.',
   },
 } as const satisfies Record<string, OperatorAction>;
@@ -132,7 +130,7 @@ export interface MenuRow {
   description: string;
 }
 
-/** The actions a person runs rarely, under the headings of the More pick, in pick order. */
+/** The actions a person runs rarely, in the sections of the More pick, in pick order. A rule divides the sections; their names are for the reader. */
 export const MORE_SECTIONS = {
   'Deploys & changes': ['deploy', 'preview'],
   'Keys & access': ['rotate-keys', 'rotate-secrets', 'operators', 'identities', 'repository-key'],
@@ -141,9 +139,9 @@ export const MORE_SECTIONS = {
   Environment: ['env-import', 'teardown'],
 } as const satisfies Record<string, readonly OperatorActionId[]>;
 
-/** A row of the menu for one action, under its label. */
-function actionRow(id: OperatorActionId, description: string): MenuRow {
-  return { label: actionLabel(id), actions: [id], description };
+/** A row of the menu for one action, under its label and summary. */
+function actionRow(id: OperatorActionId): MenuRow {
+  return { label: actionLabel(id), actions: [id], description: OPERATOR_ACTIONS[id].summary };
 }
 
 /**
@@ -151,13 +149,13 @@ function actionRow(id: OperatorActionId, description: string): MenuRow {
  * `db-open` and `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
-  status: actionRow('status', 'every check and finding, and what fixes it'),
-  apply: actionRow('apply', 'what differs from what runs, applied on your yes'),
-  env: actionRow('env', 'the values the services read at boot'),
-  releases: actionRow('releases', 'the last releases; deploy an earlier one again'),
-  logs: actionRow('logs', 'the last deploys and how each ended'),
-  'db-open': actionRow('db-open', 'a public endpoint to your IP, until you close it'),
-  'db-close': actionRow('db-close', 'close the temporary public endpoint'),
+  status: actionRow('status'),
+  apply: actionRow('apply'),
+  env: actionRow('env'),
+  releases: actionRow('releases'),
+  logs: actionRow('logs'),
+  'db-open': actionRow('db-open'),
+  'db-close': actionRow('db-close'),
   more: {
     label: 'More',
     actions: Object.values(MORE_SECTIONS).flat(),
@@ -181,11 +179,6 @@ export const PULUMI_ACTIONS: readonly OperatorActionId[] = [
   'state-remove',
   'teardown',
 ];
-
-/** One action of the table under the shared shape. */
-function operatorAction(id: OperatorActionId): OperatorAction {
-  return OPERATOR_ACTIONS[id];
-}
 
 /** One menu row under the shared shape. */
 export function menuRow(id: MenuRowId): MenuRow {
@@ -216,14 +209,4 @@ export function menuPath(id: OperatorActionId): string {
   const row = (Object.values(MENU_ROWS) as MenuRow[]).find((entry) => entry.actions.includes(id));
   if (!row) return actionCommand(id);
   return row.actions.length === 1 || row.label === label ? label : `${row.label} → ${label}`;
-}
-
-const KEY_HINTS = { none: 'no key', observer: 'observer key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<
-  KeyTier,
-  string
->;
-
-/** The note on the right of an action in a pick: the key it runs with. */
-export function actionHint(id: OperatorActionId): string {
-  return KEY_HINTS[operatorAction(id).key];
 }
