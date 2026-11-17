@@ -26,9 +26,9 @@ Until the first lens ships, a breaking schema change resets client caches:
 2. **Title the PR `feat!`**, as for any breaking change.
 3. **Clients wipe, mutations stay.** A cache an older bundle wrote loses its queries at boot, and queued mutations replay on the fresh cache.
 4. **Newer cache, stale bundle.** A cache a newer bundle wrote is left alone, as a lens pointer ahead of the bundle is.
-5. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
+5. **CI gate.** The breaking-change gate of the lint job in [ci.yml](../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
 
-**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job.
+**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the breaking-change gate in ci.yml.
 
 ## Transformation points
 
@@ -110,4 +110,4 @@ The meta record's `schemaVersion` pointer is the global lens ordinal.
    - a lens on the frozen envelope or another reserved field
    - a contract lens with no earlier expand lens on the same field
    - a configured entity type without an evolution contract
-2. **`schema-bust-gate`**: the [cache-bust](#cache-bust-interim) gate.
+2. **Breaking-change gate**, in the same job: the [cache-bust](#cache-bust-interim) gate.
