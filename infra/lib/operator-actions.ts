@@ -40,7 +40,7 @@ export const OPERATOR_ACTIONS = {
   'rotate-secrets': {
     label: 'Rotate secrets',
     summary: 'new passwords and generated values, redeployed',
-    description: 'New database passwords and generated values, then a redeploy of what serves.',
+    description: 'New database passwords and generated values, then deploys what serves again.',
   },
   operators: {
     label: 'Set up operators',

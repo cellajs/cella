@@ -180,7 +180,7 @@ async function handleMint(ctx: MenuContext, key: ManagedKeyDefinition): Promise<
   }
 }
 
-type ValueAction = 'set' | 'delete' | 'mint' | 'back';
+type ValueAction = 'set' | 'delete' | 'mint' | typeof BACK;
 
 /** The pick one value opens: set it, delete it, or mint the managed key written into it. */
 async function handleValue(ctx: MenuContext, secret: RuntimeSecretDefinition, container: SecretManagerSecret | undefined): Promise<void> {
@@ -200,7 +200,7 @@ async function handleValue(ctx: MenuContext, secret: RuntimeSecretDefinition, co
   ];
   const action = await ctx.prompts.select<ValueAction>({
     message: secret.envVar,
-    items: [...actions, { name: '← Back', value: 'back', description: 'Return to the list.' }],
+    items: [...actions, RULE, { name: '← Back', value: BACK, description: 'Return to the list.' }],
   });
   if (action === 'set') return handleSet(ctx, secret, container);
   if (action === 'delete') return handleDelete(ctx, secret, container);

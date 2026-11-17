@@ -75,6 +75,8 @@ export interface RunActionOptions {
   choose?: typeof whatNow;
   /** Asks where a first setup goes once it ended by itself; a test answers in its place. */
   close?: typeof afterFirstSetup;
+  /** Runs once the action ended by itself, before the wait for the way back. */
+  onEnded?: () => void;
 }
 
 /** The ways out of a failed action: retry it, each action that fixes it by its menu name (in a menu session), then leave. */
@@ -134,12 +136,14 @@ export async function runAction(id: OperatorActionId, context: InfraContext, opt
     firstSetup = false,
     choose = whatNow,
     close = afterFirstSetup,
+    onEnded,
   } = opts;
   try {
     for (;;) {
       const ended = await tryAction(id, context, runners, log);
       if (ended === 'done' || (ended instanceof ActionEnded && ended.exitCode === 0 && !ended.left)) {
         if (!inMenuSession() && !(firstSetup && process.stdin.isTTY)) return { code: 0 };
+        onEnded?.();
         const way = firstSetup ? await close() : await backToMenu();
         return way === QUIT ? { code: 0, quit: true } : { code: 0 };
       }

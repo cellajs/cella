@@ -19,6 +19,7 @@ import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/
 import { accessDenied } from '../../lib/status/providers/runs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
+import { BACK, RULE } from '../menu';
 import { PromptBack } from '../prompts/back';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, pointTo, stackNameFor } from '../shared';
@@ -177,10 +178,14 @@ export async function runReleases(context: InfraContext): Promise<void> {
   console.info('');
   const tag = await menuSelect({
     message: 'Deploy which release again?',
-    items: earlier.map((row) => ({ name: row.tag, value: row.tag, description: deployText(row) })),
+    items: [
+      ...earlier.map((row) => ({ name: row.tag, value: row.tag, description: deployText(row) })),
+      RULE,
+      { name: '← Back', value: BACK, description: 'Return to the menu.' },
+    ],
   });
-  // Esc at the pick leaves the action: the table was read, and the menu comes back at once.
-  if (tag === ESCAPED) throw new PromptBack();
+  // Esc or Back at the pick leaves the action: the table was read, and the menu comes back at once.
+  if (tag === ESCAPED || tag === BACK) throw new PromptBack();
   const picked = earlier.find((row) => row.tag === tag);
   if (!picked) return;
 
