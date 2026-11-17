@@ -8,7 +8,7 @@ import type { MenuItem } from '../menu';
 export const ESCAPED: unique symbol = Symbol('menu-escaped');
 
 export interface MenuSelectOptions<T extends string> {
-  /** The question above the entries; an empty one leaves the list alone, without the `?` line. */
+  /** The line above the entries: a question ends in `?` and keeps Inquirer's mark, a title shows bold alone, and an empty one shows no line. */
   message: string;
   items: ReadonlyArray<MenuItem<T>>;
   /** The entry the cursor starts on. */
@@ -47,7 +47,11 @@ export async function menuSelect<T extends string>(options: MenuSelectOptions<T>
         loop: false,
         pageSize: pageSize(options),
         choices: options.items.map((item) => ('group' in item ? new Separator(item.group ? pc.dim(` ${item.group}`) : ' ') : item)),
-        theme: { ...(options.message ? {} : { prefix: '' }), style: { keysHelpTip: () => '' } },
+        // Inquirer bolds an empty message into a line of escape codes alone, which prints as a blank line.
+        theme: {
+          ...(options.message.endsWith('?') ? {} : { prefix: '' }),
+          style: { keysHelpTip: () => '', message: (text: string) => (text ? pc.bold(text) : '') },
+        },
       },
       { signal: controller.signal, clearPromptOnDone: true },
     );
