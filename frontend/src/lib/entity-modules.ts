@@ -88,10 +88,15 @@ export function getChannelListQueries(): ChannelListQueryMap {
 /** The page products homed in this channel open on, undefined when its module names none. */
 export const getChannelProductRoute = (entityType: ChannelEntityType) => channels.get(entityType)?.productRoute;
 
+/** The product an owned embedding keeps this one in, a task holding a file: its host on screen unless its module names one. */
+const ownedHost = (entityType: ProductEntityType) =>
+  appConfig.productEmbeddings.find(({ embeddedProductType, lifecycle }) => embeddedProductType === entityType && lifecycle === 'owned')
+    ?.hostProductType;
+
 /** Search params that open this product: its own and its on-screen host's. A deep link may send both: a route that declares neither strips both. */
 export function getProductDeepLink(entityType: ProductEntityType): { param?: string; hostParam?: string } {
   const product = products.get(entityType);
-  const host = product?.deepLinkHost;
+  const host = product?.deepLinkHost ?? ownedHost(entityType);
   return { param: product?.deepLinkParam, hostParam: host ? products.get(host)?.deepLinkParam : undefined };
 }
 

@@ -1,19 +1,23 @@
 import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, getTableName, inArray, isNull, type SQL, sql } from 'drizzle-orm';
-import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
-import { appConfig, entityIdColumnName } from 'shared';
+import type { PgColumn, PgTable, PgUpdateSetSource } from 'drizzle-orm/pg-core';
+import { appConfig, entityIdColumnName, hierarchy } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
 import { channelTables } from '#/db/channel-tables';
 import { imageColumns } from '#/db/storage-columns';
+import { homeChannelOf } from '#/db/utils/home-channel';
 import { exactTotal, type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { homeChannelId } from '#/db/utils/number-column';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
+import { publiclyServedTenant } from '#/modules/tenants/tenants-queries';
 import { usersTable } from '#/modules/user/user-db';
+import { getEntityTable } from '#/tables';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
@@ -168,4 +172,46 @@ export const findNamedImageKeys = async (ctx: DbContext, { keys, holder }: FindN
     FROM (${sql.join(urls, sql` UNION ALL `)}) AS image
     WHERE starts_with(image.url, ${base}) AND ${keyOfUrl} IN ${keys}`);
   return new Set(rows.map((row) => row.key));
+};
+
+/** The live attachment a share link names, by its number in its home channel or by id, with no request scope. */
+export const findLinkedAttachment = async (ctx: DbContext, ref: { channelId: string; number: number } | { id: string }) => {
+  const named =
+    'id' in ref
+      ? eq(attachmentsTable.id, ref.id)
+      : and(sql`${homeChannelId(attachmentsTable, 'attachment')} = ${ref.channelId}`, eq(attachmentsTable.number, ref.number));
+  const [attachment] = await ctx.var.db
+    .select()
+    .from(attachmentsTable)
+    .where(and(named, isNull(attachmentsTable.deletedAt), publiclyServedTenant(attachmentsTable.tenantId)))
+    .limit(1);
+  return attachment;
+};
+
+const ownedBy = appConfig.productEmbeddings.find(
+  ({ embeddedProductType, lifecycle }) => embeddedProductType === 'attachment' && lifecycle === 'owned',
+);
+
+/**
+ * The live row that keeps the attachment, a task whose description holds it, when an owned embedding declares one, with
+ * its home channel; with no request scope. The file stays homed where it was uploaded when its host moves on.
+ */
+export const findAttachmentHost = async (ctx: DbContext, { id, organizationId }: { id: string; organizationId: string }) => {
+  if (!ownedBy) return undefined;
+  const host = getEntityTable(ownedBy.hostProductType) as unknown as PgTable &
+    Record<'id' | 'organizationId' | 'deletedAt', PgColumn> &
+    Record<string, PgColumn>;
+  const idKeys = [
+    'id',
+    'organizationId',
+    ...hierarchy.getOrderedAncestors(ownedBy.hostProductType).map((type) => appConfig.entityIdColumnKeys[type]),
+  ];
+  const [row] = await ctx.var.db
+    .select(Object.fromEntries(idKeys.map((key) => [key, host[key]])))
+    .from(host)
+    .where(and(eq(host.organizationId, organizationId), isNull(host.deletedAt), sql`${id} = any(${host[ownedBy.hostColumn]})`))
+    .limit(1);
+  if (!row) return undefined;
+  const ids = row as Record<string, string> & { id: string; organizationId: string };
+  return { id: ids.id, home: homeChannelOf(ownedBy.hostProductType, ids) };
 };

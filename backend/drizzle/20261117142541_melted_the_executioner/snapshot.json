@@ -1,0 +1,584 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "1e03a25f-8b47-4ba6-87eb-6c53bc20bd0e",
+  "prevIds": [
+    "aae4a745-326c-4380-8142-44a80fb1d76b"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_number_moves"
+      ],
+      "writes": [
+        "s|tbl|public.product_number_moves",
+        "n|tbl|public.product_number_moves",
+        "e|tbl|public.product_number_moves",
+        "n|rel|public.product_number_moves",
+        "n|type|public.product_number_moves",
+        "n|rel|public.product_number_moves_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_numbering"
+      ],
+      "writes": [
+        "s|tbl|public.product_numbering",
+        "n|tbl|public.product_numbering",
+        "e|tbl|public.product_numbering",
+        "n|rel|public.product_numbering",
+        "n|type|public.product_numbering",
+        "n|rel|public.product_numbering_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "number"
+      ],
+      "writes": [
+        "s|col|public.attachments.number",
+        "n|col|public.attachments.number",
+        "e|col|public.attachments.number"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "attachments",
+        "attachments_home_number_unique"
+      ],
+      "writes": [
+        "s|idx|public.attachments_home_number_unique",
+        "n|idx|public.attachments_home_number_unique",
+        "e|idx|public.attachments_home_number_unique",
+        "n|rel|public.attachments_home_number_unique"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.organization_id",
+        "n|col|public.attachments.number"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "product_number_moves",
+        "product_number_moves_entity_id_index"
+      ],
+      "writes": [
+        "s|idx|public.product_number_moves_entity_id_index",
+        "n|idx|public.product_number_moves_entity_id_index",
+        "e|idx|public.product_number_moves_entity_id_index",
+        "n|rel|public.product_number_moves_entity_id_index"
+      ],
+      "reads": [
+        "n|tbl|public.product_number_moves",
+        "n|sch|public",
+        "n|col|public.product_number_moves.entity_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_number_moves"
+      ],
+      "writes": [
+        "s|fk|public.product_number_moves.product_number_moves_tenant_id_tenants_id_fkey",
+        "n|fk|public.product_number_moves.product_number_moves_tenant_id_tenants_id_fkey",
+        "e|fk|public.product_number_moves.product_number_moves_tenant_id_tenants_id_fkey",
+        "n|con|public.product_number_moves.product_number_moves_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.product_number_moves",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.product_number_moves.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_number_moves"
+      ],
+      "writes": [
+        "s|fk|public.product_number_moves.product_number_moves_SX7QzacU33Tr_fkey",
+        "n|fk|public.product_number_moves.product_number_moves_SX7QzacU33Tr_fkey",
+        "e|fk|public.product_number_moves.product_number_moves_SX7QzacU33Tr_fkey",
+        "n|con|public.product_number_moves.product_number_moves_SX7QzacU33Tr_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.product_number_moves",
+        "n|sch|public",
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.product_number_moves.tenant_id",
+        "n|col|public.product_number_moves.organization_id",
+        "n|col|public.organizations.tenant_id",
+        "n|col|public.organizations.id",
+        "e|uniqueness|public.organizations.id.tenant_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_numbering"
+      ],
+      "writes": [
+        "s|fk|public.product_numbering.product_numbering_tenant_id_tenants_id_fkey",
+        "n|fk|public.product_numbering.product_numbering_tenant_id_tenants_id_fkey",
+        "e|fk|public.product_numbering.product_numbering_tenant_id_tenants_id_fkey",
+        "n|con|public.product_numbering.product_numbering_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.product_numbering",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.product_numbering.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "product_numbering"
+      ],
+      "writes": [
+        "s|fk|public.product_numbering.product_numbering_itamjET4RDM6_fkey",
+        "n|fk|public.product_numbering.product_numbering_itamjET4RDM6_fkey",
+        "e|fk|public.product_numbering.product_numbering_itamjET4RDM6_fkey",
+        "n|con|public.product_numbering.product_numbering_itamjET4RDM6_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.product_numbering",
+        "n|sch|public",
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.product_numbering.tenant_id",
+        "n|col|public.product_numbering.organization_id",
+        "n|col|public.organizations.tenant_id",
+        "n|col|public.organizations.id",
+        "e|uniqueness|public.organizations.id.tenant_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "product_number_moves",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "product_numbering",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "number",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "organization_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "product_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "number",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "entity_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "organization_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "product_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "last_number",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "attachments_home_number_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "number",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"number\" > 0",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "product_number_moves_entity_id_index",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "entity_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "product_number_moves_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "product_number_moves_SX7QzacU33Tr_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organizations",
+        "columnsTo": [
+          "tenant_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "product_numbering_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "product_numbering_itamjET4RDM6_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organizations",
+        "columnsTo": [
+          "tenant_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_number_moves",
+        "name": "product_number_moves_pkey",
+        "columns": [
+          "channel_id",
+          "product_type",
+          "number"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "product_numbering",
+        "name": "product_numbering_pkey",
+        "columns": [
+          "channel_id",
+          "product_type"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

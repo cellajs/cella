@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import type { FileKindName } from 'shared/utils/file-kind';
+import { fileKindView } from '~/modules/attachment/file-placeholder';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 /**
@@ -18,6 +20,24 @@ export function ThumbnailPage() {
       <div className="bg-background absolute top-63 left-30 h-135 w-240 overflow-hidden rounded-t-2xl border-4 border-b-0 border-zinc-400 shadow-[0_30px_80px_rgb(0_0_0/0.45)] dark:border-zinc-700">
         <img src={`/static/marketing/screenshots/readme-screenshot${mode === 'dark' ? '-dark' : ''}.webp`} alt="" className="block w-full" />
       </div>
+    </main>
+  );
+}
+
+/**
+ * The link preview image of a file's share link, at the same size: the icon and word of its kind, never the file
+ * itself. `pnpm cella shoot` writes one per kind to `static/link-previews/<kind>.jpg`.
+ */
+export function FileKindThumbnail({ kind }: { kind: FileKindName }) {
+  const { t } = useTranslation();
+  const { icon: Icon, label } = fileKindView(kind);
+
+  return (
+    <main className="rich-gradient bg-background relative isolate flex h-[630px] w-[1200px] flex-col items-center justify-center gap-12 overflow-hidden">
+      <div className="bg-card flex size-60 items-center justify-center rounded-[3rem] border-4 border-zinc-400 shadow-[0_30px_80px_rgb(0_0_0/0.45)] dark:border-zinc-700">
+        <Icon className="text-foreground size-32" />
+      </div>
+      <p className="font-heading text-foreground text-[66px] leading-19 font-extrabold tracking-[-0.025em]">{t(label)}</p>
     </main>
   );
 }

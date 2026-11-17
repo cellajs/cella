@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { productLinkLetter } from 'shared/numbered-products';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getAdminDb } from '#/db/db';
@@ -10,9 +11,12 @@ import { linkRoutes } from '#/modules/links/links-routes';
 const channelPreviews = new Map<string, ChannelShareLink['preview']>();
 const productPreviews = new Map<string, ProductShareLink['preview']>();
 
-onBackendModuleRegister(({ channelShareLink, productShareLink }) => {
+onBackendModuleRegister(({ name, productEntity, channelShareLink, productShareLink }) => {
   if (channelShareLink) channelPreviews.set(channelShareLink.channelType, channelShareLink.preview);
-  if (productShareLink) productPreviews.set(productShareLink.letter, productShareLink.preview);
+  if (!productShareLink) return;
+  const letter = productEntity && productLinkLetter(productEntity);
+  if (!letter) throw new Error(`Module '${name}' previews share links of a product that numberedProducts does not number`);
+  productPreviews.set(letter, productShareLink.preview);
 });
 
 // Share links resolve for anonymous visitors, with no tenant context to scope RLS by: previews read as admin.

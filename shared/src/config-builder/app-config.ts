@@ -178,6 +178,12 @@ if (merged.productEmbeddings.some((embedding) => embedding.lifecycle === 'owned'
   throw new Error('[Config] productEmbeddings: an owned embedding cannot embed a product type in itself.');
 }
 
+// A share link names its product by letter, `/{code}/a7`, and the edge matches one lowercase letter.
+const linkLetters = Object.values(merged.numberedProducts);
+if (linkLetters.some((letter) => !/^[a-z]$/.test(letter)) || new Set(linkLetters).size !== linkLetters.length) {
+  throw new Error('[Config] numberedProducts: each letter must be one distinct lowercase letter.');
+}
+
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage
 // across applications.
 const s3 = merged.s3 as S3Config;

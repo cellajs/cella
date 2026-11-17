@@ -45,6 +45,9 @@ export const config = {
    */
   memberStatProductTypes: ['attachment'] as const,
 
+  /** Product types numbered per home channel, with the letter their share links carry: a file is `/{code}/a7`. */
+  numberedProducts: { attachment: 'a' },
+
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 
@@ -243,7 +246,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 48,
+  clientCacheVersion: 49,
 
   // Authentication
 

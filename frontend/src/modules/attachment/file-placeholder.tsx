@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   PresentationIcon,
 } from 'lucide-react';
+import { type FileKindName, fileKindOf } from 'shared/utils/file-kind';
 import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 
@@ -18,25 +19,25 @@ interface FileKind {
   label: TKey;
 }
 
-/** The first match wins, so every family comes before the document catch-all (`vnd`, `text`). */
-const fileKinds: (FileKind & { match: string[] })[] = [
-  { match: ['spreadsheet', 'excel', 'csv'], icon: FileSpreadsheetIcon, label: 'c:file_kind_spreadsheet' },
-  { match: ['presentation', 'powerpoint'], icon: PresentationIcon, label: 'c:file_kind_presentation' },
-  { match: ['zip', 'rar'], icon: FileArchiveIcon, label: 'c:file_kind_archive' },
-  { match: ['image'], icon: FileImageIcon, label: 'c:image' },
-  { match: ['video'], icon: FilePlayIcon, label: 'c:video' },
-  { match: ['audio'], icon: FileHeadphoneIcon, label: 'c:audio' },
-  { match: ['json'], icon: FileBracesIcon, label: 'c:file_kind_json' },
-  { match: ['pdf'], icon: FileTextIcon, label: 'c:file_kind_pdf' },
-  { match: ['msword', 'vnd'], icon: FileTextIcon, label: 'c:file_kind_document' },
-  { match: ['text'], icon: FileTextIcon, label: 'c:file_kind_text' },
-];
-
-const unknownKind: FileKind = { icon: FileIcon, label: 'c:file' };
+const fileKinds: Record<FileKindName, FileKind> = {
+  spreadsheet: { icon: FileSpreadsheetIcon, label: 'c:file_kind_spreadsheet' },
+  presentation: { icon: PresentationIcon, label: 'c:file_kind_presentation' },
+  archive: { icon: FileArchiveIcon, label: 'c:file_kind_archive' },
+  image: { icon: FileImageIcon, label: 'c:image' },
+  video: { icon: FilePlayIcon, label: 'c:video' },
+  audio: { icon: FileHeadphoneIcon, label: 'c:audio' },
+  json: { icon: FileBracesIcon, label: 'c:file_kind_json' },
+  pdf: { icon: FileTextIcon, label: 'c:file_kind_pdf' },
+  document: { icon: FileTextIcon, label: 'c:file_kind_document' },
+  text: { icon: FileTextIcon, label: 'c:file_kind_text' },
+  file: { icon: FileIcon, label: 'c:file' },
+};
 
 /** The icon and word of a file's kind, from its content type; a plain file for an unknown or absent one. */
-export const getFileKind = (contentType?: string): FileKind =>
-  (contentType && fileKinds.find(({ match }) => match.some((type) => contentType.includes(type)))) || unknownKind;
+export const getFileKind = (contentType?: string): FileKind => fileKinds[fileKindOf(contentType)];
+
+/** The icon and word of a kind of file. */
+export const fileKindView = (kind: FileKindName): FileKind => fileKinds[kind];
 
 export const getFileIcon = (contentType?: string) => getFileKind(contentType).icon;
 

@@ -2,6 +2,7 @@ import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import { TriangleAlertIcon } from 'lucide-react';
 import { type PointerEvent, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatBytes } from 'shared/utils/format-bytes';
 import {
   defaultOfflineFilesTier,
   type OfflineFilesTier,
@@ -14,7 +15,6 @@ import { NamedText } from '~/modules/common/named-text';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { dateRelative } from '~/utils/date-mini';
-import { formatBytes } from '~/utils/format-bytes';
 
 export const offlineFilesTierText = {
   off: { label: 'c:offline_files.off', text: 'c:offline_files.off.text', store: 'c:offline_files.store_none' },

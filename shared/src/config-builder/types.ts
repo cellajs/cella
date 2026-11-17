@@ -365,6 +365,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   surfaces: Partial<Record<SlotOf<T['channelEntityTypes'][number] & string>, SurfaceArrangement>>;
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
+  /** Product types numbered per home channel, each with the lowercase letter its share links carry: `/{code}/a7`. */
+  numberedProducts: { readonly [K in T['productEntityTypes'][number] & string]?: string };
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;

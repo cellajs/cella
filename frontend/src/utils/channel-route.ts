@@ -114,7 +114,9 @@ function getSubjectSearch({ productType, subjectId, contextId }: ProductLocation
   if (!productType || !subjectId) return {};
 
   const { param, hostParam } = getProductDeepLink(productType);
-  return { ...(param ? { [param]: subjectId } : {}), ...(hostParam && contextId ? { [hostParam]: contextId } : {}) };
+  // A notification's context defaults to its subject, which names no host
+  const hostId = contextId && contextId !== subjectId ? contextId : undefined;
+  return { ...(param ? { [param]: subjectId } : {}), ...(hostParam && hostId ? { [hostParam]: hostId } : {}) };
 }
 
 /**

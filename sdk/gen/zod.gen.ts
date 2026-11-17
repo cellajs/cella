@@ -180,6 +180,7 @@ export const zAttachment = z.object({
     .nullable(),
   public: z.boolean(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
+  number: z.int().gte(-2147483648).lte(2147483647),
   publicBucket: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.uuid().nullable(),

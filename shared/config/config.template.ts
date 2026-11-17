@@ -45,6 +45,9 @@ export const config = {
    */
   memberStatProductTypes: ['attachment'] as const,
 
+  /** Product types numbered per home channel, with the letter their share links carry: a file is `/{code}/a7`. */
+  numberedProducts: { attachment: 'a' },
+
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 
