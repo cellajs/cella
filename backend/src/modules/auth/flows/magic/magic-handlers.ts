@@ -10,7 +10,6 @@ import { handleMagicLink } from '#/modules/auth/flows/magic/operations/handle-ma
 import { findOpenableMagicLink, holdMagicLinkOutsideItsBrowser, readHeldMagicLink } from '#/modules/auth/flows/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/flows/magic/operations/magic-sign-up';
 import { sendMagicLinkOp } from '#/modules/auth/flows/magic/operations/send-magic-link';
-import { defaultHook } from '#/utils/default-hook';
 
 // What opening a magic link does. Only a magic link belongs to a sign-in method: the method's switch is checked here,
 // per token kind.
@@ -26,7 +25,7 @@ registerLinkHandler('magic', async (ctx, rawToken) => {
   return handleMagicLink(ctx, token, followed);
 });
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const { email, redirectPath } = ctx.req.valid('json');

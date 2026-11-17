@@ -8,10 +8,9 @@ import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/fl
 import { sendStepUpCodeOp } from '#/modules/auth/flows/step-up/operations/send-step-up-code';
 import { authStepUpRoutes } from '#/modules/auth/flows/step-up/step-up-routes';
 import { verifyTotp } from '#/modules/auth/flows/totps/operations/verify-totp';
-import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authStepUpRoutes.getStepUp, async (ctx) => {
   const { tier } = ctx.req.valid('query');

@@ -48,8 +48,8 @@ export interface BackendQueue extends Omit<Queue, 'name' | 'notify'> {
   work?: Omit<WorkOptions, 'includeMetadata' | 'transactional' | 'perJobResults'>;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: a mounted app carries its own route schema; the entrypoint only needs the Env.
-export type BackendRouteApp = Hono<Env, any, any>;
+/** A handler app a module mounts. */
+export type BackendRouteApp = Hono<Env>;
 
 /**
  * One handler app and where the API entrypoint mounts it. Mounts apply in registration order, and of two routes that

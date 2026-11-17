@@ -4,9 +4,8 @@ import { getYjsTokenOp } from '#/modules/yjs/operations/get-yjs-token';
 import { pullYjsDocumentOp } from '#/modules/yjs/operations/pull-yjs-document';
 import { pushYjsUpdateOp } from '#/modules/yjs/operations/push-yjs-update';
 import { yjsRoutes } from '#/modules/yjs/yjs-routes';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 /** A Yjs binary from its JSON form: the schema checked the base64url alphabet. */
 const fromBase64url = (value: string) => new Uint8Array(Buffer.from(value, 'base64url'));

@@ -429,10 +429,10 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C7 Request parsing, routing and cross-site differentials
 - **Gain:** guard bypass, reaching internal routes.
-- **Merges:** `app.mount` in `server.ts` with encoded paths (`lib/listeners.ts` already notes `/api/%2e%2e/internal/cdc`), repeated and encoded slashes, header de-duplication, a cross-site form post per Content-Type, the absence of CORS as the design, the load balancer's prefix handling, the Host header, `Referrer-Policy` on invoke-token paths, `isbot` as a bypass.
+- **Merges:** `routedPath` in `server.ts` with encoded paths (`lib/listeners.ts` already notes `/api/%2e%2e/internal/cdc`), repeated and encoded slashes, header de-duplication, a cross-site form post per Content-Type, the absence of CORS as the design, the load balancer's prefix handling, the Host header, `Referrer-Policy` on invoke-token paths, `isbot` as a bypass.
 - **Advisories:** 8, plus 1 pattern lesson (hono mount prefix with encoded paths, query after the fragment, CSRF middleware bypass by Content-Type x2, Vary injection, path confusion; node-server encoded slashes, repeated slashes, double dots).
 - **Files:**
-  - `backend/src/server.ts`: `mountPrefix` for `/api` and `/mcp`, custom `replaceRequest`. The oauth process mounts itself in `backend/src/modules/oauth-server/server.ts` with `startsWith` on the raw `req.url`; the load balancer prefix `/oauth` precedes it (`infra/config/services.config.ts`).
+  - `backend/src/server.ts`: `routedPath`, the `getPath` option that strips `/api` and `/mcp` once and routes a custom method's `:verb`. The oauth process mounts itself in `backend/src/modules/oauth-server/server.ts` with `startsWith` on the raw `req.url`; the load balancer prefix `/oauth` precedes it (`infra/config/services.config.ts`).
   - `backend/src/lib/listeners.ts`: `serveApi`, `internalApp` (source refusal, then body limit), `isCdcUpgradePath` (raw-target match), `serveInternal` upgrade handler. Internal routes: `/internal/yjs`, `/internal/cdc` (WebSocket upgrade only), the shared health path.
   - `backend/src/middlewares/app.ts`: chain order is request-log context, invoke-token `Referrer-Policy`, `secureHeaders`, otel, request id, logger, CSRF (with skips), client version, body limit, compress (GET only).
   - `backend/src/middlewares/is-no-bot.ts` (used on `metrics-routes.ts`, `magic-routes.ts` and the auth routes in `general-routes.ts`).

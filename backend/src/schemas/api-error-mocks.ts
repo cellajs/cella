@@ -11,6 +11,7 @@ const errorTexts = {
     detail: 'Someone saved a change since this was read. Read it again, then retry.',
   },
   413: { type: 'body_too_large', title: 'Too large to save', detail: 'Shorten it or split it up.' },
+  415: { type: 'invalid_request', title: "Something's missing or wrong", detail: 'Unsupported Media Type' },
   429: { type: 'too_many_requests', title: 'Too many attempts', detail: 'Wait a moment, then try again.', retryAfter: 30 },
 };
 

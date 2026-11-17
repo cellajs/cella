@@ -8,10 +8,9 @@ import { getAttachmentsOp } from '#/modules/attachment/operations/get-attachment
 import { getPresignedUrlsOp } from '#/modules/attachment/operations/get-presigned-urls';
 import { linkAttachmentKeysOp } from '#/modules/attachment/operations/link-attachment-keys';
 import { batchUpdateAttachmentsOp, updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(attachmentRoutes.listAttachments, async (ctx) => {
   const query = ctx.req.valid('query');

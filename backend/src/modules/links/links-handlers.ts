@@ -6,7 +6,6 @@ import { type ChannelShareLink, onBackendModuleRegister, type ProductShareLink }
 import { linkPreviewPage } from '#/modules/links/link-preview-page';
 import { findChannelByCode } from '#/modules/links/links-queries';
 import { linkRoutes } from '#/modules/links/links-routes';
-import { defaultHook } from '#/utils/default-hook';
 
 const channelPreviews = new Map<string, ChannelShareLink['preview']>();
 const productPreviews = new Map<string, ProductShareLink['preview']>();
@@ -22,7 +21,7 @@ const adminCtx = (): DbContext => ({ var: { db: getAdminDb('share link preview')
 
 const notFound = () => new AppError(404, 'not_found', 'warn', { willRedirect: true });
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(linkRoutes.previewChannelLink, async (ctx) => {
   const channel = await findChannelByCode(adminCtx(), ctx.req.valid('param').code);

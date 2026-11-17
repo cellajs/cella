@@ -25,22 +25,21 @@ defineBackendModule({
 const membership = (role: EntityRole, userId: string): MembershipBaseModel =>
   ({ id: `mem-${org}-${userId}`, userId, channelType: 'organization', channelId: org, organizationId: org, role }) as unknown as MembershipBaseModel;
 
-/** A subscriber whose stream records what it was sent and whether it was closed. */
+/** A subscriber whose stream records what it was sent and whether it was ended. */
 const fakeSubscriber = (userId: string) => {
   const sent: { event?: string; data: string }[] = [];
-  let closed = false;
+  let ended = false;
   const stream = {
     writeSSE: async (message: { event?: string; data: string }) => {
       sent.push(message);
     },
-    abort: () => {},
-    close: async () => {
-      closed = true;
+    abort: () => {
+      ended = true;
     },
   } as unknown as SSEStreamingApi;
   const subscriber = streamSubscriber(userId, stream, [membership(memberRole, userId)], org);
   streamSubscriberManager.register(subscriber, [`user:${userId}`]);
-  return { subscriber, sent, isClosed: () => closed };
+  return { subscriber, sent, isEnded: () => ended };
 };
 
 /** A membership event as the CDC worker sends it: one row, with the organization its row holds. */
@@ -181,14 +180,14 @@ describe('entities listeners: the worker rebuilt its books', () => {
     // The same generation again: nothing happened.
     workerReports(4);
     await settle();
-    expect(first.isClosed()).toBe(false);
+    expect(first.isEnded()).toBe(false);
 
     workerReports(5);
     await settle();
 
-    for (const { sent, isClosed } of [first, second]) {
+    for (const { sent, isEnded } of [first, second]) {
       expect(sent.map((message) => [message.event, JSON.parse(message.data).code])).toEqual([['error', 'resync']]);
-      expect(isClosed()).toBe(true);
+      expect(isEnded()).toBe(true);
     }
     expect(streamSubscriberManager.all()).toEqual([]);
   });

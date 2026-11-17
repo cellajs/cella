@@ -1,6 +1,6 @@
 import type { SessionRevocationReason } from '#/modules/auth/core';
 import type { StreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { endStream, writeError } from '#/modules/entities/stream/helpers';
+import { writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { StreamErrorPayload } from '#/schemas';
 import { log } from '#/utils/logger';
@@ -54,7 +54,7 @@ const errorWriteTimeoutMs = 1000;
 async function closeStream(subscriber: StreamSubscriber, reason: EndingReason): Promise<void> {
   streamSubscriberManager.unregister(subscriber.id);
   await withinTimeout(writeError(subscriber.stream, streamEndings[reason]), errorWriteTimeoutMs);
-  await endStream(subscriber.stream);
+  subscriber.stream.abort();
 }
 
 /** Closes streams side by side, so a client that stopped reading holds up none of the others. */

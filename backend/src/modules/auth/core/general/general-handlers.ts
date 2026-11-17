@@ -15,9 +15,8 @@ import { signOutOp } from '#/modules/auth/core/sessions/operations/sign-out';
 import '#/modules/auth/core/sessions/session-listeners';
 import { confirmHeldLink, openLinkToken } from '#/modules/auth/core/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authGeneralRoutes.health, async (ctx) => {
   // Check emailEnum rate limit status without consuming points

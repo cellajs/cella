@@ -1,7 +1,6 @@
 import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { compress } from 'hono/compress';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
@@ -9,6 +8,7 @@ import type { Env } from '#/core/context';
 import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
+import { compressResponse } from '#/middlewares/compress';
 import { loggerMiddleware } from '#/middlewares/logger';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
@@ -67,5 +67,4 @@ app.use('*', clientVersionMiddleware);
 
 app.use('*', dynamicBodyLimit);
 
-const compressMiddleware = compress();
-app.use('*', (ctx, next) => (ctx.req.method === 'GET' ? compressMiddleware(ctx, next) : next()));
+app.use('*', compressResponse);

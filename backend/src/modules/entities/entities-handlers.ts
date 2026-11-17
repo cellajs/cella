@@ -16,11 +16,10 @@ import { ensureStreamSessionRecheck } from '#/modules/entities/operations/stream
 import { keepAlive, writeOffset } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(entityRoutes.checkSlug, async (ctx) => {
   const { slug, entityType } = ctx.req.valid('json');
@@ -101,14 +100,13 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
 
   return streamSSE(ctx, async (stream) => {
-    // The registration below follows in the same tick, so the stream is counted throughout.
-    try {
-      await writeOffset(stream);
-    } catch (error) {
+    // Admission ends in the tick that registers, so the stream is counted throughout. onAbort skips a listener added
+    // after the abort: a client that left during the write never registers.
+    await writeOffset(stream);
+    releaseAdmission(user.id);
+    if (stream.aborted) {
       if (isAnonymous) anonymousStreams -= 1;
-      throw error;
-    } finally {
-      releaseAdmission(user.id);
+      return;
     }
 
     const subscriber: StreamSubscriber = {
@@ -139,8 +137,7 @@ app.openapi(entityRoutes.getMyStream, async (ctx) => {
 
     // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
     await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? workerAwayPing : ''));
-    // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
-  }) as any;
+  });
 });
 
 app.openapi(entityRoutes.catchUpMyStream, async (ctx) => ctx.json(await streamCatchupOp(ctx, ctx.req.valid('json')), 200));

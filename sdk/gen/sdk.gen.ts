@@ -543,7 +543,7 @@ export const listAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {object[]} options.body.items - `object[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const presignAttachmentUrls = <ThrowOnError extends boolean = true>(
   options: Options<PresignAttachmentUrlsData, ThrowOnError>,
@@ -595,7 +595,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.attachmentId - `string`
  * @param {object} options.body.ops - `object`
  * @param {StxBase} options.body.stx - `StxBase`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 413, 415, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(
   options: Options<UpdateAttachmentData, ThrowOnError>,
@@ -621,7 +621,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  * @param {batchCreateAttachmentsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 413, 415, 429
  */
 export const batchCreateAttachments = <ThrowOnError extends boolean = true>(
   options: Options<BatchCreateAttachmentsData, ThrowOnError>,
@@ -647,7 +647,7 @@ export const batchCreateAttachments = <ThrowOnError extends boolean = true>(
  * @param {batchUpdateAttachmentsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const batchUpdateAttachments = <ThrowOnError extends boolean = true>(
   options: Options<BatchUpdateAttachmentsData, ThrowOnError>,
@@ -676,7 +676,7 @@ export const batchUpdateAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.attachmentId - `string`
  * @param {object} options.body.keys - `object`
  * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 415, 429
  */
 export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
   options: Options<LinkAttachmentKeysData, ThrowOnError>,
@@ -704,7 +704,7 @@ export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string[]} options.body.ids - `string[]`
  * @param {object=} options.body.stx - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const batchDeleteAttachments = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteAttachmentsData, ThrowOnError>,
@@ -731,7 +731,7 @@ export const batchDeleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {object[]} options.body.items - `object[]`
- * @returns Possible status codes: 200, 400, 413, 429
+ * @returns Possible status codes: 200, 400, 413, 415, 429
  */
 export const presignPublicAttachmentUrls = <ThrowOnError extends boolean = true>(
   options: Options<PresignPublicAttachmentUrlsData, ThrowOnError>,
@@ -776,7 +776,7 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
  *
  * @param {checkEmailData} options
  * @param {string} options.body.email - `string`
- * @returns Possible status codes: 200, 400, 413, 429
+ * @returns Possible status codes: 200, 400, 413, 415, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(
   options: Options<CheckEmailData, ThrowOnError>,
@@ -925,7 +925,7 @@ export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
  *
  * @param {resendInvitationWithTokenData} options
  * @param {string} options.body.tokenId - `string`
- * @returns Possible status codes: 204, 400, 413, 429
+ * @returns Possible status codes: 204, 400, 413, 415, 429
  */
 export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
   options: Options<ResendInvitationWithTokenData, ThrowOnError>,
@@ -990,7 +990,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  *
  * @param {toggleMfaData} options
  * @param {boolean} options.body.mfaRequired - `boolean`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const toggleMfa = <ThrowOnError extends boolean = true>(
   options: Options<ToggleMfaData, ThrowOnError>,
@@ -1015,7 +1015,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
  *
  * @param {revokeMySessionsData} options
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const revokeMySessions = <ThrowOnError extends boolean = true>(
   options: Options<RevokeMySessionsData, ThrowOnError>,
@@ -1084,7 +1084,7 @@ export const removeUserFactor = <ThrowOnError extends boolean = true>(
  * @param {sendMagicLinkData} options
  * @param {string} options.body.email - `string`
  * @param {string=} options.body.redirectPath - `string` (optional)
- * @returns Possible status codes: 204, 400, 403, 413, 429
+ * @returns Possible status codes: 204, 400, 403, 413, 415, 429
  */
 export const sendMagicLink = <ThrowOnError extends boolean = true>(
   options: Options<SendMagicLinkData, ThrowOnError>,
@@ -1188,7 +1188,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
  *
  * @param {createTotpData} options
  * @param {string} options.body.code - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 415, 429
  */
 export const createTotp = <ThrowOnError extends boolean = true>(
   options: Options<CreateTotpData, ThrowOnError>,
@@ -1212,7 +1212,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
  *
  * @param {signInWithTotpData} options
  * @param {string} options.body.code - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 415, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(
   options: Options<SignInWithTotpData, ThrowOnError>,
@@ -1239,7 +1239,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  * @param {object} options.body.attestation - `object`
  * @param {string} options.body.nameOnDevice - `string`
  * @param {string=} options.body.userHandle - `string` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 415, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(
   options: Options<CreatePasskeyData, ThrowOnError>,
@@ -1285,7 +1285,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum} options.body.kind - `enum`
- * @returns Possible status codes: 200, 400, 401, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 404, 413, 415, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
   options: Options<GeneratePasskeyChallengeData, ThrowOnError>,
@@ -1311,7 +1311,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
  * @param {enum} options.body.kind - `enum`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 415, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(
   options: Options<SignInWithPasskeyData, ThrowOnError>,
@@ -1627,7 +1627,7 @@ export const getStepUp = <ThrowOnError extends boolean = true>(
  * @param {object=} options.body.passkeyData - `object` (optional)
  * @param {string=} options.body.totpCode - `string` (optional)
  * @param {string=} options.body.emailCode - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 415, 429
  */
 export const stepUp = <ThrowOnError extends boolean = true>(
   options: Options<StepUpData, ThrowOnError>,
@@ -1694,7 +1694,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.body.slug - `string`
  * @param {enum} options.body.entityType - `enum`
- * @returns Possible status codes: 204, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 409, 413, 415, 429
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(
   options: Options<CheckSlugData, ThrowOnError>,
@@ -1723,7 +1723,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
  * @param {enum} options.body.channelType - `enum`
  * @param {string} options.body.channelId - `string`
  * @param {boolean=} options.body.includeDescendants - `boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const archiveChannel = <ThrowOnError extends boolean = true>(
   options: Options<ArchiveChannelData, ThrowOnError>,
@@ -1752,7 +1752,7 @@ export const archiveChannel = <ThrowOnError extends boolean = true>(
  * @param {enum} options.body.channelType - `enum`
  * @param {string} options.body.channelId - `string`
  * @param {boolean=} options.body.includeDescendants - `boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const unarchiveChannel = <ThrowOnError extends boolean = true>(
   options: Options<UnarchiveChannelData, ThrowOnError>,
@@ -1797,7 +1797,7 @@ export const getMyStream = <ThrowOnError extends boolean = true>(
  *
  * @param {catchUpMyStreamData} options
  * @param {object[]=} options.body.views - `object[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 413, 415, 429
  */
 export const catchUpMyStream = <ThrowOnError extends boolean = true>(
   options: Options<CatchUpMyStreamData, ThrowOnError>,
@@ -1886,7 +1886,7 @@ export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = t
  * @param {handleMcpData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 202, 400, 401, 403, 404, 413, 415, 429
  */
 export const handleMcp = <ThrowOnError extends boolean = true>(
   options: Options<HandleMcpData, ThrowOnError>,
@@ -1959,7 +1959,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
  * @param {object=} options.body.userFlags - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 409, 413, 415, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(
   options: Options<UpdateMeData, ThrowOnError>,
@@ -2050,7 +2050,7 @@ export const declineInvitation = <ThrowOnError extends boolean = true>(
  * @param {leaveMembershipData} options
  * @param {string} options.body.entityId - `string`
  * @param {enum} options.body.entityType - `enum`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const leaveMembership = <ThrowOnError extends boolean = true>(
   options: Options<LeaveMembershipData, ThrowOnError>,
@@ -2190,7 +2190,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
  * @param {enum} options.query.entityType - `enum`
  * @param {string[]} options.body.emails - `string[]`
  * @param {enum} options.body.role - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const inviteMembers = <ThrowOnError extends boolean = true>(
   options: Options<InviteMembersData, ThrowOnError>,
@@ -2219,7 +2219,7 @@ export const inviteMembers = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
  * @param {string[]} options.body.emails - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const checkMemberInvite = <ThrowOnError extends boolean = true>(
   options: Options<CheckMemberInviteData, ThrowOnError>,
@@ -2248,7 +2248,7 @@ export const checkMemberInvite = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const batchDeleteMembers = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteMembersData, ThrowOnError>,
@@ -2279,7 +2279,7 @@ export const batchDeleteMembers = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.hidden - `boolean` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateMembership = <ThrowOnError extends boolean = true>(
   options: Options<UpdateMembershipData, ThrowOnError>,
@@ -2455,7 +2455,7 @@ export const listNotifications = <ThrowOnError extends boolean = true>(
  * @param {markNotificationsReadData} options
  * @param {string[]=} options.body.ids - `string[]` (optional)
  * @param {string=} options.body.contextId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 413
+ * @returns Possible status codes: 200, 400, 401, 413, 415
  */
 export const markNotificationsRead = <ThrowOnError extends boolean = true>(
   options: Options<MarkNotificationsReadData, ThrowOnError>,
@@ -2502,7 +2502,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.mentionEmails - `boolean` (optional)
  * @param {boolean=} options.body.commentEmails - `boolean` (optional)
  * @param {enum=} options.body.digest - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 413
+ * @returns Possible status codes: 200, 400, 401, 413, 415
  */
 export const updateNotificationPreferences = <ThrowOnError extends boolean = true>(
   options: Options<UpdateNotificationPreferencesData, ThrowOnError>,
@@ -2625,7 +2625,7 @@ export const listOrganizations = <ThrowOnError extends boolean = true>(
  *
  * @param {batchCreateOrganizationsData} options
  * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 415, 429
  */
 export const batchCreateOrganizations = <ThrowOnError extends boolean = true>(
   options: Options<BatchCreateOrganizationsData, ThrowOnError>,
@@ -2692,7 +2692,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {object=} options.body.organizationFlags - `object` (optional)
  * @param {object=} options.body.setupConfig - `object` (optional)
  * @param {object=} options.body.toolsConfig - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 415, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(
   options: Options<UpdateOrganizationData, ThrowOnError>,
@@ -2740,7 +2740,7 @@ export const publishOrganization = <ThrowOnError extends boolean = true>(
  * @param {batchDeleteOrganizationsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const batchDeleteOrganizations = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteOrganizationsData, ThrowOnError>,
@@ -2786,7 +2786,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  * @param {createPushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 201, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 413, 415, 429
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,
@@ -2811,7 +2811,7 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
  *
  * @param {removePushSubscriptionData} options
  * @param {string} options.body.endpoint - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 413
+ * @returns Possible status codes: 204, 400, 401, 403, 413, 415
  */
 export const removePushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<RemovePushSubscriptionData, ThrowOnError>,
@@ -2863,7 +2863,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.email - `string`
  * @param {enum} options.body.kind - `enum`
  * @param {string | null} options.body.message - `string | null`
- * @returns Possible status codes: 204, 400, 413, 429
+ * @returns Possible status codes: 204, 400, 413, 415, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(
   options: Options<CreateRequestData, ThrowOnError>,
@@ -2888,7 +2888,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
  *
  * @param {batchDeleteRequestsData} options
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const batchDeleteRequests = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteRequestsData, ThrowOnError>,
@@ -2936,7 +2936,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string[]} options.body.productIds - `string[]`
  * @param {enum} options.body.productType - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const markSeen = <ThrowOnError extends boolean = true>(
   options: Options<MarkSeenData, ThrowOnError>,
@@ -2991,7 +2991,7 @@ export const listServiceAccounts = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.name - `string`
  * @param {enum} options.body.role - `enum`
  * @param {object=} options.body.key - `object` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 415, 429
  */
 export const createServiceAccount = <ThrowOnError extends boolean = true>(
   options: Options<CreateServiceAccountData, ThrowOnError>,
@@ -3020,7 +3020,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.serviceAccountId - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const updateServiceAccount = <ThrowOnError extends boolean = true>(
   options: Options<UpdateServiceAccountData, ThrowOnError>,
@@ -3078,7 +3078,7 @@ export const listApiKeys = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.expiresAt - `string` (optional)
  * @param {string=} options.body.rollFrom - `string` (optional)
  * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 415, 429
  */
 export const createApiKey = <ThrowOnError extends boolean = true>(
   options: Options<CreateApiKeyData, ThrowOnError>,
@@ -3127,7 +3127,7 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
  *
  * @param {inviteUsersData} options
  * @param {string[]} options.body.emails - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const inviteUsers = <ThrowOnError extends boolean = true>(
   options: Options<InviteUsersData, ThrowOnError>,
@@ -3172,7 +3172,7 @@ export const countSystemInvitations = <ThrowOnError extends boolean = true>(
  *
  * @param {batchDeleteUsersData} options
  * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 415, 429
  */
 export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
   options: Options<BatchDeleteUsersData, ThrowOnError>,
@@ -3228,7 +3228,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.newsletter - `boolean` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateUser = <ThrowOnError extends boolean = true>(
   options: Options<UpdateUserData, ThrowOnError>,
@@ -3257,7 +3257,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  * @param {enum[]} options.body.roles - `enum[]`
  * @param {string} options.body.subject - `string`
  * @param {string} options.body.content - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 413, 415, 429
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(
   options: Options<SendNewsletterData, ThrowOnError>,
@@ -3309,7 +3309,7 @@ export const listTenants = <ThrowOnError extends boolean = true>(
  *
  * @param {createTenantData} options
  * @param {string} options.body.name - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 413, 415, 429
  */
 export const createTenant = <ThrowOnError extends boolean = true>(
   options: Options<CreateTenantData, ThrowOnError>,
@@ -3339,7 +3339,7 @@ export const createTenant = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {enum[]=} options.body.authStrategies - `enum[]` (optional)
  * @param {object=} options.body.restrictions - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(
   options: Options<UpdateTenantData, ThrowOnError>,
@@ -3415,7 +3415,7 @@ export const listConnections = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
  * @param {string=} options.body.logoUrl - `string` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 415, 429
  */
 export const createConnection = <ThrowOnError extends boolean = true>(
   options: Options<CreateConnectionData, ThrowOnError>,
@@ -3469,7 +3469,7 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
  * @param {string=} options.body.logoUrl - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateConnection = <ThrowOnError extends boolean = true>(
   options: Options<UpdateConnectionData, ThrowOnError>,
@@ -3549,7 +3549,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  * @param {enum} options.body.entityType - `enum`
  * @param {string} options.body.entityId - `string`
  * @param {string} options.body.stateVector - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
 export const pullYjsDocument = <ThrowOnError extends boolean = true>(
   options: Options<PullYjsDocumentData, ThrowOnError>,
@@ -3579,7 +3579,7 @@ export const pullYjsDocument = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.entityId - `string`
  * @param {string} options.body.generation - `string`
  * @param {string} options.body.update - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const pushYjsUpdate = <ThrowOnError extends boolean = true>(
   options: Options<PushYjsUpdateData, ThrowOnError>,

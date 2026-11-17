@@ -5,10 +5,9 @@ import { getTenantsOp } from '#/modules/tenants/operations/get-tenants';
 import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-tenant';
 import { updateTenantOp } from '#/modules/tenants/operations/update-tenant';
 import { demoRoutes, tenantRoutes } from '#/modules/tenants/tenants-routes';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(tenantRoutes.listTenants, async (ctx) => {
   const query = ctx.req.valid('query');
@@ -23,7 +22,7 @@ app.openapi(tenantRoutes.updateTenant, async (ctx) => {
 
 export const tenantHandlers = app;
 
-const demoApp = new OpenAPIHono<Env>({ defaultHook });
+const demoApp = new OpenAPIHono<Env>();
 
 demoApp.openapi(demoRoutes.createDemo, async (ctx) => {
   const { tenant, created } = await createDemoOp(ctx);

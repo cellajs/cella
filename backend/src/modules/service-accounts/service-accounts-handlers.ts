@@ -7,10 +7,9 @@ import { getServiceAccountsOp } from '#/modules/service-accounts/operations/get-
 import { revokeApiKeyOp } from '#/modules/service-accounts/operations/revoke-api-key';
 import { updateServiceAccountOp } from '#/modules/service-accounts/operations/update-service-account';
 import { serviceAccountRoutes } from '#/modules/service-accounts/service-accounts-routes';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(serviceAccountRoutes.createServiceAccount, async (ctx) => ctx.json(await createServiceAccountOp(ctx, ctx.req.valid('json')), 201));
 

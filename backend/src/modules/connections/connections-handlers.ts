@@ -5,10 +5,9 @@ import { createConnectionOp } from '#/modules/connections/operations/create-conn
 import { deleteConnectionOp } from '#/modules/connections/operations/delete-connection';
 import { getConnectionsOp } from '#/modules/connections/operations/get-connections';
 import { updateConnectionOp } from '#/modules/connections/operations/update-connection';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage, windowOf } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(connectionRoutes.listConnections, async (ctx) => {
   const connections = await getConnectionsOp(ctx);

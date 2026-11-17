@@ -108,6 +108,14 @@ export type PayloadTooLargeError = ApiError & {
 };
 
 /**
+ * The request body came without a `Content-Type`, or with one the operation does not declare. Send the body as one of the operation's media types, such as `application/json`.
+ */
+export type UnsupportedMediaTypeError = ApiError & {
+  status?: 415;
+  [key: string]: number | string | Array<string> | boolean | null | 415 | undefined;
+};
+
+/**
  * A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.
  */
 export type TooManyRequestsError = ApiError & {
@@ -1073,6 +1081,10 @@ export type PresignAttachmentUrlsErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1213,6 +1225,10 @@ export type UpdateAttachmentErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1284,6 +1300,10 @@ export type BatchCreateAttachmentsErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -1369,6 +1389,10 @@ export type BatchUpdateAttachmentsErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1452,6 +1476,10 @@ export type LinkAttachmentKeysErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1512,6 +1540,10 @@ export type BatchDeleteAttachmentsErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1564,6 +1596,10 @@ export type PresignPublicAttachmentUrlsErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -1661,6 +1697,10 @@ export type CheckEmailErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -1967,6 +2007,10 @@ export type ResendInvitationWithTokenErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -2070,6 +2114,10 @@ export type ToggleMfaErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -2112,6 +2160,10 @@ export type RevokeMySessionsErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -2286,6 +2338,10 @@ export type SendMagicLinkErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -2490,6 +2546,10 @@ export type CreateTotpErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -2534,6 +2594,10 @@ export type SignInWithTotpErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -2597,6 +2661,10 @@ export type CreatePasskeyErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -2690,6 +2758,10 @@ export type GeneratePasskeyChallengeErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -2755,6 +2827,10 @@ export type SignInWithPasskeyErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -3323,6 +3399,10 @@ export type StepUpErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -3457,6 +3537,10 @@ export type CheckSlugErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -3511,6 +3595,10 @@ export type ArchiveChannelErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -3580,6 +3668,10 @@ export type UnarchiveChannelErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -3678,6 +3770,10 @@ export type CatchUpMyStreamErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -3896,6 +3992,10 @@ export type HandleMcpErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -3908,6 +4008,12 @@ export type HandleMcpResponses = {
    * JSON-RPC response
    */
   200: unknown;
+  /**
+   * Notification accepted
+   *
+   * Every message was a notification or a response, which takes no answer.
+   */
+  202: unknown;
 };
 
 export type DeleteMeData = {
@@ -4021,6 +4127,10 @@ export type UpdateMeErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -4265,6 +4375,10 @@ export type LeaveMembershipErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -4568,6 +4682,10 @@ export type InviteMembersErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -4636,6 +4754,10 @@ export type CheckMemberInviteErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -4696,6 +4818,10 @@ export type BatchDeleteMembersErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -4766,6 +4892,10 @@ export type UpdateMembershipErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -5280,6 +5410,10 @@ export type MarkNotificationsReadErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
 };
 
 export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkNotificationsReadErrors];
@@ -5358,6 +5492,10 @@ export type UpdateNotificationPreferencesErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
 };
 
 export type UpdateNotificationPreferencesError = UpdateNotificationPreferencesErrors[keyof UpdateNotificationPreferencesErrors];
@@ -5611,6 +5749,10 @@ export type BatchCreateOrganizationsErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -5816,6 +5958,10 @@ export type UpdateOrganizationErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -5921,6 +6067,10 @@ export type BatchDeleteOrganizationsErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -6019,6 +6169,10 @@ export type CreatePushSubscriptionErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -6064,6 +6218,10 @@ export type RemovePushSubscriptionErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
 };
 
 export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof RemovePushSubscriptionErrors];
@@ -6178,6 +6336,10 @@ export type CreateRequestErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -6220,6 +6382,10 @@ export type BatchDeleteRequestsErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -6328,6 +6494,10 @@ export type MarkSeenErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -6461,6 +6631,10 @@ export type CreateServiceAccountErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -6523,6 +6697,10 @@ export type UpdateServiceAccountErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -6647,6 +6825,10 @@ export type CreateApiKeyErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -6740,6 +6922,10 @@ export type InviteUsersErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -6839,6 +7025,10 @@ export type BatchDeleteUsersErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -6964,6 +7154,10 @@ export type UpdateUserErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -7011,6 +7205,10 @@ export type SendNewsletterErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -7131,6 +7329,10 @@ export type CreateTenantErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -7214,6 +7416,10 @@ export type UpdateTenantErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -7385,6 +7591,10 @@ export type CreateConnectionErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -7496,6 +7706,10 @@ export type UpdateConnectionErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */
@@ -7700,6 +7914,10 @@ export type PullYjsDocumentErrors = {
    */
   413: PayloadTooLargeError;
   /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -7775,6 +7993,10 @@ export type PushYjsUpdateErrors = {
    * Payload too large
    */
   413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
   /**
    * Too many requests
    */

@@ -5,9 +5,8 @@ import { maxLength } from '#/db/utils/constraints';
 import { deletePushSubscription, upsertPushSubscription } from '#/modules/push/push-queries';
 import { pushRoutes } from '#/modules/push/push-routes';
 import { getVapidPublicKey } from '#/modules/push/push-sender';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(pushRoutes.getPushVapid, async (ctx) => ctx.json({ publicKey: getVapidPublicKey() }, 200));
 

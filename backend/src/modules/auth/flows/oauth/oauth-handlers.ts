@@ -5,12 +5,11 @@ import { issueCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { authOAuthRoutes } from '#/modules/auth/flows/oauth/oauth-routes';
 import { oauthVerificationUrl } from '#/modules/auth/flows/oauth/operations/handle-oauth-verification';
 import { finishOAuth, startOAuth } from '#/modules/auth/flows/oauth/operations/provider-round-trip';
-import { defaultHook } from '#/utils/default-hook';
 
 // A verification link is held for its confirm page; once redeemed, the browser goes on to the provider.
 registerHeldLink('oauth-verification', oauthVerificationUrl);
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
   const { user, session } = ctx.var;

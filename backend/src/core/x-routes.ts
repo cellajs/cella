@@ -186,7 +186,10 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
     if (!owners.has(code)) owners.set(code, owner);
   };
   if (config.request) claim(400, 'request validation');
-  if (config.request?.body) claim(413, 'the body limit');
+  if (config.request?.body) {
+    claim(413, 'the body limit');
+    claim(415, 'request validation');
+  }
   if (config.xEnabledBy) claim('service' in config.xEnabledBy || 'feature' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
   if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);

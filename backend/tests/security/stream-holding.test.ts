@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { maxPendingStreamBytes } from '#/modules/entities/stream/helpers';
+import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
@@ -146,5 +147,25 @@ describe('The stream lets go of what its client cannot hold', async () => {
     emitAttachmentDeleted(org, admin.id, plan.channelIdColumns);
     await vi.waitFor(() => expect(changesOf(adminStream).length).toBe(1));
     expect(changesOf(removedStream)).toEqual([]);
+  });
+
+  it('must not keep the stream of a client that left before it opened', async () => {
+    const org = await createTestOrganization();
+    const leaver = await createOrgUser(call, org.tenantId, org.id, 'leaver');
+    const session = await insertSession(leaver);
+
+    // The connect holds before its first write while its client leaves: node-server cancels the body of a closed socket.
+    let release = () => {};
+    gate.held = new Promise((resolve) => {
+      release = resolve;
+    });
+    const { baseApp } = await import('#/routes');
+    const response = await baseApp.request('http://localhost/me/stream', { headers: session.headers });
+    await response.body?.cancel();
+    gate.held = null;
+    release();
+
+    await new Promise(setImmediate);
+    expect(streamSubscriberManager.getByTopic(userTopic(leaver.id)).length).toBe(0);
   });
 });

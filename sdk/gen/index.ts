@@ -715,6 +715,7 @@ export type {
   UnsubscribeNotificationsErrors,
   UnsubscribeNotificationsResponse,
   UnsubscribeNotificationsResponses,
+  UnsupportedMediaTypeError,
   UpdateAttachmentData,
   UpdateAttachmentError,
   UpdateAttachmentErrors,

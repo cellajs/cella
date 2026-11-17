@@ -8,9 +8,8 @@ import { mcpRoutes } from '#/modules/mcp/mcp-routes';
 import { handleMcpMessage, InsufficientScopeError, isProtocolVersion, type JsonRpcResponse, protocolVersions } from '#/modules/mcp/mcp-server';
 import { getMcpTools } from '#/modules/mcp/mcp-tools';
 import { bearerChallenge, protectedResourceMetadata } from '#/modules/oauth-server/resources';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 /**
  * The JSON-RPC code of a call outside the token's scopes: an application's own, outside the range JSON-RPC reserves
@@ -61,8 +60,7 @@ app.on(['GET', 'DELETE'], '/', (ctx) => {
   return ctx.body(null, 405, { Allow: 'POST' });
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: JSON-RPC bodies are dynamic and notifications return 202 with no body
-app.openapi(mcpRoutes.handleMcp, async (ctx): Promise<any> => {
+app.openapi(mcpRoutes.handleMcp, async (ctx) => {
   assertTransport(ctx);
   const body: unknown = ctx.req.valid('json');
   const tools = await getMcpTools();

@@ -5,9 +5,8 @@ import { handleSsoCallback } from '#/modules/auth/flows/sso/operations/sso-callb
 import { sendSsoRecoveryLinkOp } from '#/modules/auth/flows/sso/operations/sso-recovery';
 import { startSso } from '#/modules/auth/flows/sso/operations/start-sso';
 import { authSsoRoutes } from '#/modules/auth/flows/sso/sso-routes';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authSsoRoutes.getSsoEntry, async (ctx) => ctx.json(await getSsoEntryOp(ctx.req.valid('param').connectionId), 200));
 
