@@ -186,7 +186,7 @@ A product mutation patches the cache optimistically and reconciles with the stor
 
 An HTTP error settles at once. A replay that meets a gateway error stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
 
-The attachment module sends a tab's writes in order. Updates queued one behind another go as one batch, and an online write waits behind a queued one.
+The attachment module sends a tab's writes in order. Updates queued one behind another go as one batch, and an online write waits behind a queued one. A row the server refuses fails its own update alone.
 
 ### Merge metadata
 

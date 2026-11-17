@@ -96,9 +96,12 @@ and the renderers.
     `preconditionWhere(ctx, <name>sTable)` to its WHERE and the operation answers a row it did not write with
     `assertNoWriteBetween`, as attachment's do. When `resolveUpdateOps` accepts no field, the operation calls
     `assertPreconditionsChecked` and returns the locked row as it is, with no update, no stamps and no
-    `dispatchMutation`. Everything after the read is a row writer (`writeAttachmentUpdate`), which returns
-    null for that case; the batch update passes it to `updateProductsOp`, which locks and checks every row
-    first.
+    `dispatchMutation`. Everything after the read is a row writer (`writeAttachmentUpdate`, a `RowWriter`),
+    which returns null for that case and refuses a row it may not write with the 403 that `canCreateEntity` or
+    `getValidChannel` throws. The batch update passes it to `updateProductsOp`, which locks and checks every row
+    first, runs the writer per row in a savepoint, and answers a refused row in `rejectedIds`. A batch that
+    needs another policy composes `lockUpdatableRows`, `writeEachRow`, `batchUpdateAnswer` and `dispatchUpdated`
+    in its own operation.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`,
     with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
     operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
@@ -112,7 +115,9 @@ and the renderers.
     `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and
     the route declares the page with `productListResponseSchema('<name>', <name>Schema)`.
   - **Delete** (`delete-attachments.ts`): one call of `deleteProductsOp` with the product's table
-    and the body's `stx`; an `onDelete` callback holds the product's own logic in the transaction.
+    and the body's `stx`; an `onDelete` callback holds the product's own logic in the transaction, and
+    what it returns comes back as `onDeleteResult`. A delete that narrows the ids in the transaction
+    calls `splitDeleteByPermission`, then `tombstoneProducts` with the ids it keeps.
   - **Single read** (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
