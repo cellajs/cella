@@ -143,15 +143,19 @@ function printStackNotices(context: InfraContext): void {
 }
 
 /**
- * The home screen: one round of reads under a spinner, then the lines, or the lines of `read` after an action that changed nothing.
- * Resolves to what it read, for the menu. A stack not set up yet gets the launch checklist.
+ * The home screen: one round of reads under a spinner, then the lines. `read` is either the reads an action started at its end, waited for
+ * under the spinner, or the lines of the last round after an action that changed nothing. Resolves to what it read, for the menu. A stack
+ * not set up yet gets the launch checklist.
  */
-async function printHome(context: InfraContext, read?: HomeFacts): Promise<HomeFacts | undefined> {
+async function printHome(context: InfraContext, read?: HomeFacts | Promise<HomeFacts | undefined>): Promise<HomeFacts | undefined> {
   if (context.state !== 'bootstrapped') {
     await printLaunchChecklist(context);
     return undefined;
   }
-  const home = read ?? (await withSpinner(`Checking ${context.environment}`, () => collectHome(context)));
+  const home =
+    read && !(read instanceof Promise)
+      ? read
+      : await withSpinner(`Checking ${context.environment}`, async () => (await read) ?? collectHome(context));
   for (const line of formatHome(home)) console.info(line);
   console.info('');
   return home;
@@ -280,6 +284,18 @@ if (context.state === 'fresh') {
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
 const READ_ONLY: readonly OperatorActionId[] = ['status', 'logs', 'preview'];
 
+/** How long reads started at an action's end serve the menu: an operator who comes back later sees the stack as it is then. */
+const AHEAD_FRESH_MS = 30_000;
+
+/** The next round's reads, started while an action's output waits for the way back: the stack, then the home once the stack is set up. */
+function readAhead(): { startedAt: number; context: Promise<InfraContext>; home: Promise<HomeFacts | undefined> } {
+  const read = loadContext(environment);
+  const home = read.then((next) => (next.state === 'bootstrapped' ? collectHome(next) : undefined));
+  // A failed read throws where the menu awaits it, not at the prompt the operator is on.
+  home.catch(() => {});
+  return { startedAt: Date.now(), context: read, home };
+}
+
 // From here an action that fails or is stopped returns to the menu, unless the run leaves after one.
 if (!args.once) startMenuSession();
 let home = await printHome(context);
@@ -294,16 +310,21 @@ while (true) {
     console.error(`${crossMark} "${actionLabel(action)}" cannot run now: ${reason}.`);
     continue;
   }
-  const outcome: ActionOutcome = pulumiReady(action) ? await runAction(action, context) : { code: 1 };
+  let ahead: ReturnType<typeof readAhead> | undefined;
+  const onEnded = () => {
+    if (!READ_ONLY.includes(action)) ahead = readAhead();
+  };
+  const outcome: ActionOutcome = pulumiReady(action) ? await runAction(action, context, { onEnded }) : { code: 1 };
   if (args.once) process.exit(outcome.code);
   next = outcome.next;
   console.info('');
+  if (ahead && Date.now() - ahead.startedAt > AHEAD_FRESH_MS) ahead = undefined;
   // An action may have changed the stack file, the env file or the live stack: all three are read again for the next round.
   const changed = !READ_ONLY.includes(action) && !outcome.back;
-  if (changed) context = await loadContext(environment);
+  if (changed) context = await (ahead?.context ?? loadContext(environment));
   if (next) continue;
   // The menu comes back under its header and home: a short terminal shows the action is over.
   printStackNotices(context);
-  home = await printHome(context, changed ? undefined : home);
+  home = await printHome(context, ahead?.home ?? (changed ? undefined : home));
 }
 process.exit(0);

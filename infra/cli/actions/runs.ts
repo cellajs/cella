@@ -31,6 +31,7 @@ import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { BACK, RULE } from '../menu';
 import { PromptBack } from '../prompts/back';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, endAction, type InfraContext, pointTo } from '../shared';
@@ -187,12 +188,16 @@ export async function showRuns(
   if (pick) {
     const picked = await menuSelect({
       message: 'Show which run?',
-      items: rows.map((row, index) =>
-        row.reading ? { name: row.line, value: row.reading.newest.run } : { name: row.line, value: `unrecorded-${index}`, disabled: ' ' },
-      ),
+      items: [
+        ...rows.map((row, index) =>
+          row.reading ? { name: row.line, value: row.reading.newest.run } : { name: row.line, value: `unrecorded-${index}`, disabled: ' ' },
+        ),
+        RULE,
+        { name: '← Back', value: BACK, description: 'Return to the menu.' },
+      ],
       default: newest.newest.run,
     });
-    if (picked === ESCAPED) throw new PromptBack();
+    if (picked === ESCAPED || picked === BACK) throw new PromptBack();
     chosen = readings.find((reading) => reading.newest.run === picked) ?? newest;
   }
   print('');

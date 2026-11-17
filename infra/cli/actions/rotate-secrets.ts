@@ -93,9 +93,9 @@ export async function runRotateSecrets(context: InfraContext): Promise<boolean> 
   if (last !== undefined) console.info(pc.dim(last === null ? 'Never rotated.' : `Last rotation ${last}.`));
   console.info();
   for (const line of rotationPlan()) console.info(line);
-  console.info(`  ${pc.dim('Then'.padEnd(10))}  a redeploy replaces every machine\n`);
+  console.info(`  ${pc.dim('Then'.padEnd(10))}  this action deploys the live release again, which replaces every machine\n`);
   console.warn(
-    `${warningMark} The running machines keep the old values until that deploy replaces them, and the database refuses the new connections they open with the old passwords.`,
+    `${warningMark} Until that deploy ends, the running machines hold the old values, and the database refuses the new connections they open with the old passwords.`,
   );
   if (!(await confirmOrDefault({ message: `Rotate the secrets of ${context.environment}?`, default: false }))) return false;
 
