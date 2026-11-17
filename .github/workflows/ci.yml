@@ -4,17 +4,21 @@ name: CI
 permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
-#   • Every PR: lint, frontend-build, build-services, schema-bust-gate, privileged-changes, and docker-images when the
-#     image inputs changed. Cheap, for fast feedback.
-#   • Release PR and an app's upgrade PR only: the heavy suites (every test suite, every docker-images target). Every
-#     merge to main refreshes the release-please PR, and merging it cuts the release + deploy, so gating its merge gates
-#     production. On feature PRs these jobs are skipped.
-#   • Release PR only: release-applied, red while an environment that follows the releases owes an apply.
+#   • Every PR: lint (with the schema cache-bust gate and what merging owes an operator), frontend-build,
+#     build-services, and docker-images when the image inputs changed. Cheap, for fast feedback.
+#   • Release PR and an app's upgrade PR, once ready for review: the heavy suites (every test suite, every docker-images
+#     target). Merging the release PR cuts the release + deploy, so gating its merge gates production. On feature PRs
+#     these jobs are skipped.
+#   • Release PR only, once ready for review: release-applied, red while an environment that follows the releases owes an apply.
+# release-please opens the release PR as a draft and refreshes it on every merge to main. On a draft release PR every
+# job but `ci-passed` skips: main passed the cheap checks PR by PR, and marking the PR ready for review runs them all.
+# A check of a few seconds is a step of a job that runs anyway. GitHub bills each job by the started minute.
 # The required status check is `ci-passed`, the last job, which waits for all the others. The PR title has its
 # own workflow and check (pr-title.yml). Every job installs the workspace through .github/actions/install-workspace.
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Cancel older runs of the same PR when a new push arrives.
 concurrency:
@@ -23,6 +27,7 @@ concurrency:
 
 jobs:
   lint:
+    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -66,12 +71,90 @@ jobs:
       - name: Check the committed SDK matches the routes
         run: pnpm sdk && git diff --exit-code -- sdk/gen
 
+      # The steps below judge the change against its base. They run whatever the checks above found, and one push
+      # reports every failure.
+
+      # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
+      # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
+      # so offline clients wipe stale persisted query data. It compares the committed
+      # spec (sdk/gen/openapi.json, which the step above checks is fresh) of base and head.
+      - name: Breaking-change gate
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          # The checkout is the PR's merge commit, whose first parent is the base the PR merges into.
+          BASE=HEAD^1
+          SPEC=sdk/gen/openapi.json
+          CFG=shared/config/config.default.ts
+          SPECS=$(mktemp -d)
+
+          # No base spec (first introduction) → nothing to compare.
+          if ! git show "$BASE:$SPEC" > "$SPECS/base.json" 2>/dev/null; then
+            echo "No base OpenAPI spec; skipping gate."
+            exit 0
+          fi
+          # The head from git too: the steps above rewrite the working tree.
+          git show "HEAD:$SPEC" > "$SPECS/head.json"
+
+          # Classify breaking changes (oasdiff exits non-zero on breaking errors).
+          # Pinned by digest (v1.20.0) so a repushed tag cannot swap the image that
+          # runs in CI with access to the mounted specs. Bump both tag comment and digest together.
+          BREAKING=0
+          docker run --rm -v "$SPECS:/specs" tufin/oasdiff@sha256:d0a6de7b3389adc358dd34981f6091a907dbd788ce21b3d51f315a00928e3e01 \
+            breaking /specs/base.json /specs/head.json --fail-on ERR || BREAKING=$?
+          if [ "$BREAKING" -eq 0 ]; then
+            echo "✅ No breaking OpenAPI changes."
+            exit 0
+          fi
+          # 1 is oasdiff's verdict on the spec. Any other code means it never gave one: Docker answers 125 when the
+          # image pull fails (a registry rate limit), oasdiff 100 and up when it cannot read a spec.
+          if [ "$BREAKING" -ne 1 ]; then
+            echo "::error::oasdiff did not run (exit $BREAKING), so the gate has no verdict on the spec. Rerun the job."
+            exit 1
+          fi
+
+          # Breaking change present → require a higher clientCacheVersion in the same PR. A base without a number
+          # (a string version, before they were numbered) counts as 0.
+          BASE_VERSION=$(git show "$BASE:$CFG" | grep -oE "clientCacheVersion: [0-9]+" | grep -oE "[0-9]+" || true)
+          HEAD_VERSION=$(git show "HEAD:$CFG" | grep -oE "clientCacheVersion: [0-9]+" | grep -oE "[0-9]+" || true)
+          echo "clientCacheVersion base=[$BASE_VERSION] head=[$HEAD_VERSION]"
+          if [ -n "$HEAD_VERSION" ] && [ "$HEAD_VERSION" -gt "${BASE_VERSION:-0}" ]; then
+            echo "✅ Breaking change accompanied by a clientCacheVersion bump."
+            exit 0
+          fi
+
+          echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
+          echo "Raise appConfig.clientCacheVersion by one (e.g. 46 → 47) in $CFG and use a 'feat!' PR title so clients wipe stale cache."
+          exit 1
+
+      # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
+      # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
+      # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it. Last in the
+      # job: the base checkout lands inside the workspace the checks above scan.
+      - name: Checkout the base
+        if: ${{ !cancelled() }}
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .base
+          persist-credentials: false
+
+      - name: Install the base
+        if: ${{ !cancelled() }}
+        working-directory: .base
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Say what the change owes
+        if: ${{ !cancelled() }}
+        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
+
   # The frontend as the builder machine builds it at a deploy: the builder's own script (infra/lib/builder/builder-machine.ts), in the
   # deployed mode, which generates the environment's OpenAPI spec from the example env first and then builds. Runs on every PR (~2 min),
   # so a break only a deploy would meet (an env value a deployed mode requires that the example env lost, a repo-doc import the MDX
   # include regex refuses, a broken relative import in a docs wrapper) fails here and not at the release deploy, which builds from the tag.
   # Apps keep their release-please CHANGELOG.md at the repo root, a path cella itself never builds.
   frontend-build:
+    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -96,6 +179,7 @@ jobs:
   # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built and started by the
   # release deploy, where a package missing from the keep-on-disk list fails (0.12.1). ~2 min, every PR.
   build-services:
+    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -130,13 +214,13 @@ jobs:
 
   # The test suites against PostgreSQL, one job per suite, so the release PR waits for the longest one. Heavy: runs on
   # the release PR, and in an app on the upgrade PR (`cella/upgrade/<stamp>`, the branch `pnpm cella upgrade` opens), where
-  # upstream changes first meet the app's code. Each job starts the `db_test` compose container and
-  # applies migrations in the Vitest global setup, so it needs no service container.
+  # upstream changes first meet the app's code, once the PR is ready for review. Each job starts the `db_test` compose
+  # container and applies migrations in the Vitest global setup, so it needs no service container.
   test:
     # Same-repo branch only: release-please and the upgrade push their branches into this
     # repo, so a PR from another repository (whose branch name its author fully controls)
     # cannot spoof a prefix to trigger the heavy suites. The docker-images job repeats this condition.
-    if: github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -183,6 +267,7 @@ jobs:
   # the release PR and an app's upgrade PR build every target, without pushing. The targets start from the same stages,
   # so one job builds them on one layer cache.
   docker-images:
+    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -199,7 +284,7 @@ jobs:
       - name: Decide what to build
         id: scope
         env:
-          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/')) }}
+          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/')) }}
         run: |
           set -euo pipefail
           if [ "$ALL_TARGETS" = true ]; then
@@ -223,45 +308,12 @@ jobs:
         if: steps.scope.outputs.targets != ''
         run: docker run --rm manifests-check pnpm --version
 
-  # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
-  # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
-  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it.
-  privileged-changes:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout the head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          persist-credentials: false
-
-      - name: Checkout the base
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: .base
-          persist-credentials: false
-
-      - name: Install the head
-        uses: ./.github/actions/install-workspace
-        with:
-          filter: --filter infra... --filter shared...
-
-      - name: Install the base
-        working-directory: .base
-        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
-
-      - name: Say what the change owes
-        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
-
   # Whether merging the release deploys (infra/tasks/release-applied-check.ts), on the release PR alone: the head's description of the app,
   # per environment that follows the releases, against the hash that environment's last apply published as a repository variable. It holds
   # no secret. Equal, merging deploys. Otherwise the deploy would end at apply needed: the job fails, and `ci-passed` with it, until the
   # apply from main publishes the hash and runs this job again once the run has ended.
   release-applied:
-    if: startsWith(github.head_ref, 'release-please--branches--main')
+    if: startsWith(github.head_ref, 'release-please--branches--main') && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -282,72 +334,12 @@ jobs:
           REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
         run: pnpm --silent --filter infra exec tsx tasks/release-applied-check.ts
 
-  # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
-  # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
-  # so offline clients wipe stale persisted query data. It compares the committed
-  # spec (sdk/gen/openapi.json, which build-services checks is fresh) of base and head.
-  schema-bust-gate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          # The checkout is the PR's merge commit, so its first parent is the base the PR merges into.
-          fetch-depth: 2
-          persist-credentials: false
-
-      - name: Breaking-change gate
-        run: |
-          set -euo pipefail
-          BASE=HEAD^1
-          SPEC=sdk/gen/openapi.json
-          CFG=shared/config/config.default.ts
-          SPECS=$(mktemp -d)
-
-          # No base spec (first introduction) → nothing to compare.
-          if ! git show "$BASE:$SPEC" > "$SPECS/base.json" 2>/dev/null; then
-            echo "No base OpenAPI spec; skipping gate."
-            exit 0
-          fi
-          cp "$SPEC" "$SPECS/head.json"
-
-          # Classify breaking changes (oasdiff exits non-zero on breaking errors).
-          # Pinned by digest (v1.20.0) so a repushed tag cannot swap the image that
-          # runs in CI with access to the mounted specs. Bump both tag comment and digest together.
-          BREAKING=0
-          docker run --rm -v "$SPECS:/specs" tufin/oasdiff@sha256:d0a6de7b3389adc358dd34981f6091a907dbd788ce21b3d51f315a00928e3e01 \
-            breaking /specs/base.json /specs/head.json --fail-on ERR || BREAKING=$?
-          if [ "$BREAKING" -eq 0 ]; then
-            echo "✅ No breaking OpenAPI changes."
-            exit 0
-          fi
-          # 1 is oasdiff's verdict on the spec. Any other code means it never gave one: Docker answers 125 when the
-          # image pull fails (a registry rate limit), oasdiff 100 and up when it cannot read a spec.
-          if [ "$BREAKING" -ne 1 ]; then
-            echo "::error::oasdiff did not run (exit $BREAKING), so the gate has no verdict on the spec. Rerun the job."
-            exit 1
-          fi
-
-          # Breaking change present → require a higher clientCacheVersion in the same PR. A base without a number
-          # (a string version, before they were numbered) counts as 0.
-          BASE_VERSION=$(git show "$BASE:$CFG" | grep -oE "clientCacheVersion: [0-9]+" | grep -oE "[0-9]+" || true)
-          HEAD_VERSION=$(grep -oE "clientCacheVersion: [0-9]+" "$CFG" | grep -oE "[0-9]+" || true)
-          echo "clientCacheVersion base=[$BASE_VERSION] head=[$HEAD_VERSION]"
-          if [ -n "$HEAD_VERSION" ] && [ "$HEAD_VERSION" -gt "${BASE_VERSION:-0}" ]; then
-            echo "✅ Breaking change accompanied by a clientCacheVersion bump."
-            exit 0
-          fi
-
-          echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
-          echo "Raise appConfig.clientCacheVersion by one (e.g. 46 → 47) in $CFG and use a 'feat!' PR title so clients wipe stale cache."
-          exit 1
-
   # The `main` ruleset requires this job and `pr-title`, so a job of this workflow joins the merge gate by joining
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
+  # A draft's run reports under another name. GitHub creates this check only once the jobs it needs end, so a green
+  # `ci-passed` from a draft would let the PR merge while the run started by marking it ready is still testing.
   ci-passed:
+    name: ${{ github.event.pull_request.draft && 'ci-passed (draft)' || 'ci-passed' }}
     if: always()
     # One job per line: an app's extra job then merges beside an upstream change to the list
     needs:
@@ -356,9 +348,7 @@ jobs:
       - build-services
       - test
       - docker-images
-      - privileged-changes
       - release-applied
-      - schema-bust-gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

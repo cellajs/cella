@@ -10,12 +10,12 @@ both. Merging it tags the release for production to deploy. Never set versions o
 ## How it works
 
 1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch. A breaking change such as `feat!:` bumps the minor. An upgrading app can tell a breaking release apart.
-2. On every merge, release-please updates the open **release PR** with the next version and the [Changelog](./CHANGELOG.md).
-3. Merging the release PR tags the version and publishes the GitHub Release. The next scheduled run of the main job deploys it ([Deploys](./DEPLOYMENT.md#deploys)).
+2. On every merge, release-please updates the open **release PR** with the next version and the [Changelog](./CHANGELOG.md). It opens that PR as a draft.
+3. Mark the release PR ready for review, which runs the release checks. Merging it tags the version and publishes the GitHub Release. The next scheduled run of the main job deploys it ([Deploys](./DEPLOYMENT.md#deploys)).
 
 ## Gating
 
-Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes. A broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
+Feature PRs run the quick checks. A draft release PR runs no check. Marking it ready for review runs the quick checks and the slow suites in [ci.yml](../.github/workflows/ci.yml), and so does every merge while it is ready. A broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
 
 ## Setup
 

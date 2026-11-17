@@ -50,11 +50,11 @@ The database access actions and the seed run an `up` that keeps the main job's i
 
 ## Pull request check
 
-Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes. An application or a policy that is new, gone or changed owes **Update identities**. A resource of the program or a change of the applied description owes an apply.
+The `lint` check of every pull request ends with a keyless step whose summary names what merging owes. An application or a policy that is new, gone or changed owes **Update identities**. A resource of the program or a change of the applied description owes an apply.
 
 A head that cannot render fails the check and blocks the merge. Drift made outside Pulumi shows in an apply's plan and not here, since the check reads code only.
 
-The release PR gets a second check, `release-applied`. It fails while the release describes the app otherwise than the last apply of an environment that follows the releases, and names the two hashes. That release merges only after its apply, since merging it first would end **apply needed**.
+The release PR, once ready for review, gets a second check, `release-applied`. It fails while the release describes the app otherwise than the last apply of an environment that follows the releases, and names the two hashes. That release merges only after its apply, since merging it first would end **apply needed**.
 
 Each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`, since GitHub holds no key to read `applied.json`. At its end, the apply runs a failed `release-applied` check of the open release PR again, once that PR's CI run has ended. An apply without `gh` prints the command that sets the variable.
 

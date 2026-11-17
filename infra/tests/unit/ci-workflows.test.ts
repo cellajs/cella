@@ -75,7 +75,7 @@ describe('CI workflows', () => {
   });
 
   it('must not skip the schema-bust gate via a base spec git never tracks', () => {
-    const gate = workflows.find(({ file }) => file === 'ci.yml')?.jobs.get('schema-bust-gate') ?? '';
+    const gate = workflows.find(({ file }) => file === 'ci.yml')?.jobs.get('lint') ?? '';
     const spec = /^\s+SPEC=(\S+)$/m.exec(gate)?.[1] ?? '';
 
     expect(spec).not.toBe('');
