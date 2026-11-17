@@ -77,9 +77,7 @@ upstream changed since the last upgrade, as a range: `git diff <last upgrade com
 (`MERGE_HEAD` or `$upstream`, as above; the run prints this command for some paths). The form
 `git diff HEAD <upstream>` shows the app's whole copy against the template's, which hides the change.
 Do the same for every pinned path and every app-owned module folder (`owner: 'app'`) that started as
-an upstream module. A changed export there shows up as type errors in template files. The reference
-modules (`backend/src/modules/attachment`, `organization` and their `frontend/src/modules` twins)
-get the same range diff: app modules copied their patterns, and an alignment names only what breaks.
+an upstream module. A changed export there shows up as type errors in template files.
 
 ## 4. Regenerate and gate
 
@@ -95,7 +93,8 @@ get the same range diff: app modules copied their patterns, and an alignment nam
 ## 5. Alignment bookkeeping
 
 Run the [align skill](../align/SKILL.md). An alignment whose change originated in this app or arrived
-by an earlier upgrade is verified and marked, not re-applied.
+by an earlier upgrade is verified and marked, not re-applied. Its step 5 reads what the upgrade
+changed in the reference modules, which no alignment reports when the change is an addition.
 
 ## 6. Commit, then drift triage
 
@@ -129,5 +128,5 @@ opens the PR). Never ship with plain `git push` + `gh pr create`: that skips the
 net. The same rerun repairs an existing bloated upgrade PR: it rewrites the branch to a single
 commit with identical content and force-pushes with lease.
 
-PR description: upstream range, conflicts and resolution shape, the align skill's outcome table,
-drift delta (before/after analyze counts).
+PR description: upstream range, conflicts and resolution shape, the align skill's outcome table and
+findings, drift delta (before/after analyze counts).

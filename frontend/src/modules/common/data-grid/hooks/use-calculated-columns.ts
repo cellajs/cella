@@ -33,6 +33,8 @@ interface ColumnMetric {
 
 const defaultColumnWidth = 'auto';
 const defaultColumnMinWidth = 50;
+/** A slim sortable header's icon and sort chevrons side by side (size-4, gap-2) inside the cell's px-2. */
+const sortableIconMinWidth = 56;
 const defaultActiveModes: ActiveModes = { compact: false, mobile: false };
 
 interface CalculatedColumnsArgs<R, SR> {
@@ -127,6 +129,8 @@ export function useCalculatedColumns<R, SR>({
         const frozen = mergeRule == null && (rawColumn.frozen ?? false);
 
         const overrides = resolveModeOverrides(rawColumn, activeModes);
+        const sortable = rawColumn.sortable ?? defaultSortable;
+        const minWidth = overrides.minWidth ?? rawColumn.minWidth ?? defaultMinWidth;
 
         const column: MutableCalculatedColumn<R, SR> = {
           ...rawColumn,
@@ -136,9 +140,9 @@ export function useCalculatedColumns<R, SR>({
           frozen,
           focusable: rawColumn.focusable ?? true,
           width: overrides.width ?? rawColumn.width ?? defaultWidth,
-          minWidth: overrides.minWidth ?? rawColumn.minWidth ?? defaultMinWidth,
+          minWidth: rawColumn.icon && sortable ? Math.max(minWidth, sortableIconMinWidth) : minWidth,
           maxWidth: overrides.maxWidth ?? rawColumn.maxWidth ?? defaultMaxWidth,
-          sortable: rawColumn.sortable ?? defaultSortable,
+          sortable,
           resizable: isMobile ? false : (rawColumn.resizable ?? defaultResizable),
           draggable: rawColumn.draggable ?? defaultDraggable,
           renderCell: rawColumn.renderCell ?? defaultRenderCell,

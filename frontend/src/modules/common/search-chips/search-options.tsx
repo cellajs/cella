@@ -49,7 +49,7 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
             key={option.value}
             value={{ kind: 'option', group, option } satisfies SearchSelection}
             aria-selected={option.isSelected}
-            title={group.isIconOnly ? option.label : undefined}
+            title={group.isIconOnly || group.isTruncated ? option.label : undefined}
             className={cn(
               // The input's chips put gap-1 between icon and label; the count keeps its distance with ml-1
               'border-input w-auto shrink-0 gap-1 rounded-full border px-2.5 py-0',
@@ -57,7 +57,7 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
                 ? 'h-7.5 gap-1.5 pl-0 *:first:size-7 pointer-coarse:h-8.5 pointer-coarse:pl-0.75'
                 : group.isCompact
                   ? 'h-6.5 pointer-coarse:h-8.5'
-                  : 'h-7.5 max-sm:h-6.5 max-sm:px-2 pointer-coarse:h-8.5 max-sm:pointer-coarse:h-8.5',
+                  : 'h-7.5 has-[>[data-slot=avatar]]:pl-1 max-sm:h-6.5 max-sm:px-2 pointer-coarse:h-8.5 max-sm:pointer-coarse:h-8.5',
               (group.isCompact || group.isIconOnly) &&
                 !option.isSelected &&
                 'hover:border-input active:border-input data-highlighted:border-input border-transparent',
@@ -67,7 +67,13 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
             )}
           >
             {option.icon}
-            {group.isIconOnly ? <span className="sr-only">{option.label}</span> : option.label}
+            {group.isIconOnly ? (
+              <span className="sr-only">{option.label}</span>
+            ) : group.isTruncated ? (
+              <span className="max-w-32 truncate">{option.label}</span>
+            ) : (
+              option.label
+            )}
             {option.count !== undefined && (
               <span className={cn('text-muted-foreground text-xs tabular-nums', !group.isIconOnly && 'ml-1')}>{option.count}</span>
             )}
