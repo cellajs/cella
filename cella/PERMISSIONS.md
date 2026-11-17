@@ -194,7 +194,7 @@ A route gate, `requireEntityAction`, asks the same question before the page load
 | Guard chain | [Guards](#guards) | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 4xx before the handler ([Refusals](#refusals)) |
 | Single row | `getValidProduct`, `getValidChannel` | Loads the row, checks it is in the request's tenant and organization, runs the engine | 404 for a row the caller may not read, 403 for a denied action on one it reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
-| Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed. 403 only when nothing is allowed |
+| Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed, a row a batch update's write refuses with 403 among them. 403 only when nothing is allowed |
 | Collection read | `buildCollectionReadWhere` | Compiles readable scope, row conditions, and public read into one SQL predicate. Never loads rows to reject them. | An empty list |
 | SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
 | Catchup views | `resolveViewReadStatus` | May the caller see an organization's frontier of a type | `opaque` or `forbidden` |

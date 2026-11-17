@@ -9,7 +9,7 @@ import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { type attachmentBatchUpdateBodySchema, attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { updateProductsOp } from '#/modules/entities/operations/update-products';
+import { type RowWrite, updateProductsOp } from '#/modules/entities/operations/update-products';
 import { getValidProduct } from '#/permissions/get-valid-product';
 import { log } from '#/utils/logger';
 
@@ -18,7 +18,6 @@ type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 /**
  * Writes one attachment's update in the caller's transaction, to a row read locked and checked: the row writer of the
  * single update and the batch.
- * @returns The row as stored after the write and the fields it accepted; null when it accepts none and writes nothing.
  * @throws AppError 400 for a description with media outside the organization; 412 when a write landed after the
  * precondition check.
  */
@@ -26,7 +25,7 @@ async function writeAttachmentUpdate(
   txCtx: ActorContext,
   entity: AttachmentModel,
   { ops: rawOps, stx }: UpdateAttachmentInput,
-): Promise<{ updated: AttachmentModel; changedFields: string[] } | null> {
+): Promise<RowWrite<AttachmentModel>> {
   attachmentContract.assertBlockFields(rawOps, entity.organizationId);
 
   const resolved = attachmentContract.resolveUpdateOps(entity, rawOps, stx);
