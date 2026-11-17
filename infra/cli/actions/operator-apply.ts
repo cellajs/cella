@@ -227,25 +227,25 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
       );
     }
+
+    if (completed) {
+      const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
+      // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any
+      // new secret's containers, and under the lease, as a rotation of secrets that ran between would see its passwords overwritten.
+      await ensureDatabaseForStack({
+        env,
+        stack,
+        region: appConfig.s3.region,
+        projectId,
+        secretKey: operator.secretKey,
+        log: (message) => console.info(pc.dim(message)),
+      }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
+      await ensureSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
+        console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
+      );
+    }
   } finally {
     await releaseLock();
-  }
-
-  if (completed) {
-    const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-    // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any
-    // new secret's containers.
-    await ensureDatabaseForStack({
-      env,
-      stack,
-      region: appConfig.s3.region,
-      projectId,
-      secretKey: operator.secretKey,
-      log: (message) => console.info(pc.dim(message)),
-    }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
-    await ensureSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
-      console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
-    );
   }
 
   if (completed && opts.verifyAfter) {

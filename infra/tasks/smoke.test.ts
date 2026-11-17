@@ -152,14 +152,21 @@ describe('runSmoke', () => {
     if (url.includes('/health?depth=full')) return Promise.resolve(res({ body: HEALTHY_COMPONENTS }));
     if (url.endsWith('/health')) return Promise.resolve(res({ status: 204, ok: true, headers: new Headers({ 'x-app-version': SHA }) }));
     if (url.includes('/__smoke_')) return Promise.resolve(res({ body: '<html><body>app</body></html>' }));
+    if (url.includes('/assets/')) return Promise.resolve(res({ body: 'export {};' }));
     // frontend root (used by both check 1 and check 5)
     return Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders() }));
   }
 
   it('passes every check against a healthy deployment', async () => {
     const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get: healthyGet });
-    expect(results).toHaveLength(6);
+    expect(results).toHaveLength(7);
     expect(results.every((r) => r.status === 'ok')).toBe(true);
+  });
+
+  it('fails when the entry script index.html names is gone from the bucket, as the SPA fallback answers it', async () => {
+    const lost = (url: string) => (url.includes('/assets/') ? Promise.resolve(res({ body: '<html>fallback</html>' })) : healthyGet(url));
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get: lost });
+    expect(results.find((r) => r.name === 'entry script loads')?.status).toBe('fail');
   });
 
   it('asserts the served bundle references the freshly built hash when expectedAsset is set', async () => {
@@ -210,7 +217,7 @@ describe('runSmoke', () => {
     expect(sha?.status).toBe('fail');
     expect(sha?.detail).toContain('old9999');
     // The other five still ran and passed.
-    expect(results.filter((r) => r.status === 'ok')).toHaveLength(5);
+    expect(results.filter((r) => r.status === 'ok')).toHaveLength(6);
   });
 
   it('reports missing security headers', async () => {
@@ -240,13 +247,13 @@ describe('runSmoke', () => {
       expectedSha: SHA,
     };
     const pass = await runSmoke({ ...apexOptions, get: apexGet });
-    expect(pass).toHaveLength(8);
+    expect(pass).toHaveLength(9);
     expect(pass.every((r) => r.status === 'ok')).toBe(true);
 
     // A build that ships no worker asks nothing of the apex's script answer.
     const noWorker = await runSmoke({ ...apexOptions, workerScriptPath: undefined, get: apexGet });
     expect(noWorker.map((r) => r.name)).not.toContain('apex answers the worker script');
-    expect(noWorker).toHaveLength(7);
+    expect(noWorker).toHaveLength(8);
 
     // An apex that redirects the worker script as well fails the second check: a browser refuses a redirected worker script.
     const redirectingAll = (url: string) => (url.startsWith('https://apex/') ? Promise.resolve(redirectTo(url)) : healthyGet(url));

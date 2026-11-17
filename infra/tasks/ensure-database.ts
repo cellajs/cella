@@ -68,7 +68,8 @@ export type PasswordSource = 'stored' | 'generated';
  * Make the database roles, their passwords and privileges, and the connection strings, through the database API and Secret Manager, so no
  * password passes through the Pulumi state.
  * - A role's password is the one kept in the engine folder; failing that, a fresh one, which is kept there.
- * - A missing role is created with its password and its privileges. A role that exists gets a fresh password only when none could be found.
+ * - A missing role is created with its password. A role that exists gets a fresh password only when none could be found. Every role's
+ *   privileges are set.
  * - A connection string is written when it is missing or names another endpoint or password.
  */
 export async function ensureDatabase(opts: {
@@ -107,14 +108,15 @@ export async function ensureDatabase(opts: {
     const name = POSTGRES_ROLE_NAMES[role];
     if (!live.has(name)) {
       await opts.rdb.createUser(instanceId, { name, password: passwords[role], isAdmin: role === 'admin' });
-      for (const privilege of expectedDbPrivileges(databaseName).filter((entry) => entry.user === name)) {
-        await opts.rdb.setPrivilege(instanceId, privilege.database, name, 'all');
-      }
       created.push(name);
-      log(`[ensure-database] ${name} created with its privileges`);
+      log(`[ensure-database] ${name} created`);
     } else if (sources[role] === 'generated') {
       await opts.rdb.setUserPassword(instanceId, name, passwords[role]);
       log(`[ensure-database] ${name} given the fresh password`);
+    }
+    // Set on every run: a database made again (a reset, a refresh after a delete) holds no privilege of a role that outlived it.
+    for (const privilege of expectedDbPrivileges(databaseName).filter((entry) => entry.user === name)) {
+      await opts.rdb.setPrivilege(instanceId, privilege.database, name, 'all');
     }
   }
 

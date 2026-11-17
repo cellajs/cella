@@ -19,7 +19,7 @@ function describeTarget(target: ResetTarget, region: string): string {
     '',
     pc.bold('Reset target'),
     `  instance   ${pc.bold(target.instanceName)} ${pc.dim(`(${target.instanceId}, ${region})`)}`,
-    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim('deleted and made again, empty')}`,
+    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim(target.resumed ? 'missing: made again, empty' : 'deleted and made again, empty')}`,
     `  survives   ${others.length ? others.join(', ') : pc.dim('(none)')}`,
     '',
   ].join('\n');
@@ -82,7 +82,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     if (result.aborted) return;
 
     console.info(`\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`);
-    console.info(`  ${pc.dim(`Backup retained ${backupDays} days: ${result.backupId}`)}\n`);
+    if (result.backupId) console.info(`  ${pc.dim(`Backup retained ${backupDays} days: ${result.backupId}`)}\n`);
     console.info(rebuildSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
   } catch (error) {

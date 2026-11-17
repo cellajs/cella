@@ -1,7 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { exposureOverlayPath } from '../../lib/db-public-endpoint';
 import { deleteAppliedEngine } from '../../lib/deploy/applied-engine';
 import { deleteLiveRecord } from '../../lib/deploy/live-record';
 import { machineRoles } from '../../lib/machine-roles';
@@ -18,6 +19,7 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { destroyableState, engineFolders, type KeptResource, keptResources, sweptSecrets } from '../../lib/stack/kept-resources';
+import { holdSignalExit } from '../../lib/stack/stack-lease';
 import { exitCodeOf } from '../../lib/utils/child-exit';
 import { checkMark, crossMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { writeEnvValues } from '../../lib/utils/env-files';
@@ -65,7 +67,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   printLossWarning('teardown', context.environment, [
     `Deletes what ${environment} runs on and pays for: the machines, load balancer, network,`,
     'database, DNS records, main job, image registry, secrets, and its applications and keys.',
-    'The database is dumped first. If the dump fails, nothing is deleted.',
+    'The machines stop first, then the database is dumped. If the dump fails, nothing else is deleted.',
     `Keeps ${kept.some(({ name }) => name === 'public-uploads-bucket') ? 'the uploaded files, ' : ''}the final dump and the secrets that protect stored data.`,
     `A new setup of ${environment} picks them up again.`,
   ]);
@@ -121,6 +123,14 @@ function prepareState(stack: string, env: NodeJS.ProcessEnv, kept: readonly Kept
   if (unprotected.status !== 0) throw new Error(`pulumi state unprotect failed: ${unprotected.stderr.trim()}`);
 }
 
+/** Whether the state backend holds the stack. A failed listing throws: a teardown that guessed wrong would sweep a live stack's secrets. */
+function stackExists(stack: string, env: NodeJS.ProcessEnv): boolean {
+  const listed = spawnSync('pulumi', ['stack', 'ls', '--json'], { cwd: infraDir, env, encoding: 'utf8' });
+  if (listed.status !== 0) throw new Error(`pulumi stack ls failed: ${listed.stderr.trim()}`);
+  const stacks: Array<{ name: string }> = JSON.parse(listed.stdout);
+  return stacks.some(({ name }) => name === stack || name.endsWith(`/${stack}`));
+}
+
 /** The final dump into the boot-diag bucket, on the Owner key; undefined when the environment has no managed database. */
 async function finalDump(context: InfraContext, owner: OwnerKey): Promise<string | undefined> {
   const { naming, region } = deriveInfra(context.appConfig);
@@ -147,53 +157,61 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
   const { accessKey, secretKey, organizationId } = owner;
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, organizationId, projectId, stateBackendUrl: pulumiLoginUrl(appConfig) });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
-  const lock = await acquireStackLockOrExit({ appConfig, ...stateKeyOf(owner, projectId), stack, operation: 'teardown' });
-
   let dump: string | undefined;
-  let status: number;
-  const done: string[] = [];
-  try {
-    try {
-      // No machine is a resource of the program: the deploys made each role's, on a reserved address the destroy releases only once its
-      // machine is gone, and a builder's server holds one of the stack's security groups.
-      const builders = await removeBuilderMachines({ secretKey: owner.secretKey, projectId, zones, prefix: builderPrefix(naming.resource) });
-      if (builders.length > 0) done.push(`deleted the builder machine(s) ${builders.join(', ')}`);
-      const machines: string[] = [];
-      for (const { role } of machineRoles(appConfig)) {
-        machines.push(...(await removeMachines({ secretKey: owner.secretKey, projectId, zone, prefix: naming.resource(`${role}-`) })));
-      }
-      if (machines.length > 0) done.push(`deleted the machine(s) ${machines.join(', ')}`);
-      // The kept boot-diag bucket keeps the rotations; the live record names machines that are gone, so the next setup's first deploy
-      // boots every role anew, and the applied engine an image the registry loses with its namespace.
-      const state = stateKeyOf(owner, projectId);
-      const control = await makeControlClient(region, state.accessKey, state.secretKey);
-      await deleteLiveRecord(control, naming.bootDiagBucket, stack);
-      await deleteAppliedEngine(control, naming.bootDiagBucket, stack);
-      dump = await finalDump(context, owner);
-      if (dump) done.push(`wrote the final dump ${naming.bootDiagBucket}/${dump}`);
-      prepareState(stack, env, kept, done);
-    } catch (error) {
-      const before = done.length > 0 ? ` Before it, the teardown ${done.join('; ')}.` : '';
-      console.error(`${crossMark} ${errorMessage(error)}.${before} Nothing of the stack was destroyed: run the teardown again.`);
-      return endAction(1);
-    }
-    console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)...'));
-    status = await exitCodeOf(spawn('pulumi', ['destroy', '--refresh', '--yes', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' }));
-  } finally {
-    await lock.release();
-  }
-  if (status !== 0) {
-    console.error(
-      `\n${warningMark} pulumi destroy exited ${status}: what it reached is gone, the rest stays in the state. Running the teardown again finishes it, and writes a dump first while the database lives.`,
-    );
-    return false;
-  }
-  console.info(`${checkMark} Stack resources destroyed.`);
+  // A stack an earlier teardown removed leaves its secrets and identities: those go again.
+  if (!stackExists(stack, env)) {
+    console.info(`${tildeMark} Pulumi stack '${stack}' is removed already: deleting what an earlier teardown left.`);
+  } else {
+    const lock = await acquireStackLockOrExit({ appConfig, ...stateKeyOf(owner, projectId), stack, operation: 'teardown' });
 
-  // State history remains in the versioned state bucket; removing the stack deletes its file, so the project id goes to the env file.
-  const removed = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
-  if (removed.status === 0) console.info(`${checkMark} Pulumi stack '${stack}' removed from the backend.`);
+    let status: number;
+    const done: string[] = [];
+    try {
+      try {
+        // No machine is a resource of the program: the deploys made each role's, on a reserved address the destroy releases only once its
+        // machine is gone, and a builder's server holds one of the stack's security groups.
+        const builders = await removeBuilderMachines({ secretKey: owner.secretKey, projectId, zones, prefix: builderPrefix(naming.resource) });
+        if (builders.length > 0) done.push(`deleted the builder machine(s) ${builders.join(', ')}`);
+        const machines: string[] = [];
+        for (const { role } of machineRoles(appConfig)) {
+          machines.push(...(await removeMachines({ secretKey: owner.secretKey, projectId, zone, prefix: naming.resource(`${role}-`) })));
+        }
+        if (machines.length > 0) done.push(`deleted the machine(s) ${machines.join(', ')}`);
+        // The kept boot-diag bucket keeps the rotations. The live record goes, as it names machines that are gone: the next setup's first
+        // deploy boots every role anew. The applied engine goes too, naming an image the registry loses with its namespace.
+        const state = stateKeyOf(owner, projectId);
+        const control = await makeControlClient(region, state.accessKey, state.secretKey);
+        await deleteLiveRecord(control, naming.bootDiagBucket, stack);
+        await deleteAppliedEngine(control, naming.bootDiagBucket, stack);
+        dump = await finalDump(context, owner);
+        if (dump) done.push(`wrote the final dump ${naming.bootDiagBucket}/${dump}`);
+        prepareState(stack, env, kept, done);
+      } catch (error) {
+        const before = done.length > 0 ? ` Before it, the teardown ${done.join('; ')}.` : '';
+        console.error(`${crossMark} ${errorMessage(error)}.${before} Nothing of the stack was destroyed: run the teardown again.`);
+        return endAction(1);
+      }
+      console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)...'));
+      status = await holdSignalExit(
+        exitCodeOf(spawn('pulumi', ['destroy', '--refresh', '--yes', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' })),
+      );
+    } finally {
+      await lock.release();
+    }
+    if (status !== 0) {
+      console.error(
+        `\n${warningMark} pulumi destroy exited ${status}: what it reached is gone, the rest stays in the state. Running the teardown again finishes it, and writes a dump first while the database lives.`,
+      );
+      return false;
+    }
+    console.info(`${checkMark} Stack resources destroyed.`);
+
+    // State history remains in the versioned state bucket; removing the stack deletes its file, so the project id goes to the env file.
+    const removed = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+    if (removed.status === 0) console.info(`${checkMark} Pulumi stack '${stack}' removed from the backend.`);
+  }
   writeEnvValues(resolve(infraDir, `.env.${context.environment}`), { SCW_DEFAULT_PROJECT_ID: projectId });
+  rmSync(exposureOverlayPath(context.environment), { force: true });
 
   try {
     const secrets = createSecretManagerClient({ secretKey: owner.secretKey, region, projectId });

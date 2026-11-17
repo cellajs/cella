@@ -96,7 +96,7 @@ describe('ensureDatabase', () => {
     const { secrets } = fakeSecrets({ [adminKept]: 'adm-pw' });
     const { rdb, calls } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
     await run(rdb, secrets);
-    expect(calls).toEqual([`password ${POSTGRES_ROLE_NAMES.runtime}`]);
+    expect(calls.filter((call) => call.startsWith('password'))).toEqual([`password ${POSTGRES_ROLE_NAMES.runtime}`]);
   });
 
   it('rotates: a fresh password on every live role, kept and written into every connection string', async () => {
@@ -116,7 +116,10 @@ describe('ensureDatabase', () => {
       rotate: true,
       log: () => {},
     });
-    expect(calls).toEqual([`password ${POSTGRES_ROLE_NAMES.admin}`, `password ${POSTGRES_ROLE_NAMES.runtime}`]);
+    expect(calls.filter((call) => call.startsWith('password'))).toEqual([
+      `password ${POSTGRES_ROLE_NAMES.admin}`,
+      `password ${POSTGRES_ROLE_NAMES.runtime}`,
+    ]);
     expect(writes[adminKept]).toBe('rotated');
     expect(writes['/runtime/database-url-runtime']).toBe(dsn('runtime', 'rotated'));
     expect(writes['/runtime/database-url-cdc']).toBe(dsn('admin', 'rotated'));

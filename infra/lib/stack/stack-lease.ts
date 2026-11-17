@@ -97,6 +97,22 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
   return { acquired: true, lease };
 }
 
+/** The children a signal's release waits for: each got the same Ctrl-C and still writes its state while it cancels. */
+const heldExits = new Set<Promise<unknown>>();
+
+/**
+ * Hold a signal's lease release and exit until `running` settles: a `pulumi up` or `destroy` that got the same Ctrl-C finishes its
+ * cancel, with its output read and the lease still held, where a release at once would leave its in-flight creates pending.
+ */
+export async function holdSignalExit<T>(running: Promise<T>): Promise<T> {
+  heldExits.add(running);
+  try {
+    return await running;
+  } finally {
+    heldExits.delete(running);
+  }
+}
+
 /**
  * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the environment leased for a full lifetime.
  * Returns the uninstaller; call it after a normal release.
@@ -106,8 +122,11 @@ export function installSignalRelease(lease: StackLease, opts: { exit?: (code: nu
   const handlers = new Map<NodeJS.Signals, () => void>();
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     const handler = () => {
-      opts.log?.(`received ${signal}: releasing the lease`);
-      void lease.release().finally(() => exit(signal === 'SIGINT' ? 130 : 143));
+      const wait = heldExits.size > 0 ? 'waiting for the running Pulumi command to end its cancel, then ' : '';
+      opts.log?.(`received ${signal}: ${wait}releasing the lease`);
+      void Promise.allSettled([...heldExits])
+        .then(() => lease.release())
+        .finally(() => exit(signal === 'SIGINT' ? 130 : 143));
     };
     handlers.set(signal, handler);
     process.once(signal, handler);

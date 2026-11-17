@@ -26,6 +26,7 @@ const ciKey = { accessKey: 'SCWNEWDEPLOY', secretKey: 'new-deploy-secret', proje
 beforeEach(() => {
   vi.clearAllMocks();
   acquireOperatorKey.mockResolvedValue(operator);
+  copyDeployKeyForMainJob.mockResolvedValue(true);
   runOwnerMoment.mockResolvedValue({ projectId: 'project-staging', ciKey });
 });
 
@@ -44,11 +45,17 @@ describe('runSetup', () => {
     expect(recordKeyRotation).not.toHaveBeenCalled();
   });
 
-  it('stops when the Owner moment was declined: no key was made, so nothing is copied or recorded', async () => {
+  it('asks a rotation for the operator key before its Owner moment deletes a key, and stops when the moment was declined', async () => {
     runOwnerMoment.mockResolvedValue(undefined);
     await runSetup(context, 'rotate-keys');
-    expect(acquireOperatorKey).not.toHaveBeenCalled();
+    expect(acquireOperatorKey.mock.invocationCallOrder[0]).toBeLessThan(runOwnerMoment.mock.invocationCallOrder[0] ?? 0);
     expect(copyDeployKeyForMainJob).not.toHaveBeenCalled();
+    expect(recordKeyRotation).not.toHaveBeenCalled();
+  });
+
+  it('records no rotation and starts no deploy when the copy failed: those deploys would run on the key the rotation deleted', async () => {
+    copyDeployKeyForMainJob.mockResolvedValue(false);
+    await expect(runSetup(context, 'rotate-keys')).rejects.toThrow(/exit code 1/);
     expect(recordKeyRotation).not.toHaveBeenCalled();
   });
 });

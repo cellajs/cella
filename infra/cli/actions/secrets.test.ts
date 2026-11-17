@@ -23,6 +23,7 @@ vi.mock('../../lib/scaleway/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
     listSecretsUnder,
     listSecretVersions: async () => [],
+    accessLatestValue: async () => 'the value set before',
     getSecretByName,
     ensureSecret,
     putSecretValue,

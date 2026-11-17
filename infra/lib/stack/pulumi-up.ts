@@ -4,6 +4,7 @@ import { actionCommand } from '../operator-actions';
 import { exitCodeOf } from '../utils/child-exit';
 import { pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
+import { holdSignalExit } from './stack-lease';
 
 /**
  * Set one stack config key. `secret` encrypts the value; `configFile` targets an alternate stack config file.
@@ -135,7 +136,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     else process.stderr.write(chunk);
   });
 
-  const exitCode = await exitCodeOf(child);
+  const exitCode = await holdSignalExit(exitCodeOf(child));
   await new Promise<void>((resolve) => (debugStream ? debugStream.end(resolve) : resolve()));
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);

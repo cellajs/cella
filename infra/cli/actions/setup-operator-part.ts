@@ -302,7 +302,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const ciKey = moment?.ciKey;
   await copyDeployKeyForMainJob(context, operatorKey, projectId, ciKey);
-  if (context.hasCiKey || ciKey?.accessKey) {
+  // Set once: a new value on each resume would change the committed stack file and offer a commit every time.
+  if (!context.hasCiKey && ciKey?.accessKey) {
     await must(
       'Mark bootstrap complete',
       'pulumi',
@@ -334,20 +335,25 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
  * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it. Both a setup
  * and a rotation of keys make one, and a rotation deletes the key the copy held before, so a rotation that skipped this would leave the
  * main job's runs a dead key. The secret key is shown only when the key is made, so a failed copy takes another rotation of keys.
+ * @returns false when the copy failed, which it reports
  */
 export async function copyDeployKeyForMainJob(
   context: InfraContext,
   operatorKey: OperatorKey,
   projectId: string,
   ciKey: { accessKey: string; secretKey: string } | undefined,
-): Promise<void> {
-  if (!ciKey?.accessKey || !ciKey.secretKey) return;
+): Promise<boolean> {
+  if (!ciKey?.accessKey || !ciKey.secretKey) return true;
   const { appConfig } = context;
-  await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), ciKey).catch(
-    (error) =>
+  const secrets = createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId });
+  return storeDeployKeyCopy(secrets, ciKey).then(
+    () => true,
+    (error) => {
       console.warn(
         `${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); ${pointTo('rotate-keys')} makes a new key and copies it.`,
-      ),
+      );
+      return false;
+    },
   );
 }
 

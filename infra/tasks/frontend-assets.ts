@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import type { S3Client } from '@aws-sdk/client-s3';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 
 // The deploy command owns asset semantics (the SST StaticSite pattern): the
@@ -88,78 +89,87 @@ export interface UploadAssetsOptions {
   log?: (message: string) => void;
 }
 
-/**
- * Upload a release's frontend files with the deploy key: the bundle first, then the entry files under the release's prefix, which the
- * publish copies to the root after version verification. Hashed paths get a 1-year immutable cache and skip upload when the key already
- * exists (content-addressed names make that check exact). Stable-named keys (static/, favicon, robots.txt) change content under the same
- * name, so they get a short cache and skip only when the remote ETag matches the local MD5; unchanged deploys stay nearly free either way.
- */
-export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
-  const log = opts.log ?? ((message: string) => console.info(message));
-  const { ListObjectsV2Command, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const { accessKey, secretKey } = deployS3Key();
-  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
+/** The release's hashed files as a JSON array, beside its entry files: the prune keeps every file a kept release lists. */
+const ASSET_LIST_NAME = 'assets.json';
 
-  // One paginated listing replaces a HeadObject round trip per key: existence
-  // answers the hashed paths, the listed ETag answers the stable-named ones
-  // (ETag is the content MD5 for single-part uploads, which is all this
-  // uploader ever performs).
-  const remoteEtags = new Map<string, string>();
+/** The frontend's publishes, newest first: what the prune reads to know which releases an open tab may still run. */
+const PUBLISHES_KEY = 'releases/published.json';
+
+const frontendClient = async (region: string) => {
+  const { accessKey, secretKey } = deployS3Key();
+  return makeS3Client(region, accessKey, secretKey);
+};
+
+/** Every key of the bucket under `prefix` with its ETag, in one paginated listing. */
+async function listKeys(s3: S3Client, bucket: string, prefix?: string): Promise<Map<string, string>> {
+  const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
+  const keys = new Map<string, string>();
   let continuationToken: string | undefined;
   do {
-    const page = await s3.send(new ListObjectsV2Command({ Bucket: opts.bucket, ContinuationToken: continuationToken }));
+    const page = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: continuationToken }));
     for (const object of page.Contents ?? []) {
-      if (object.Key) remoteEtags.set(object.Key, object.ETag?.replaceAll('"', '') ?? '');
+      if (object.Key) keys.set(object.Key, object.ETag?.replaceAll('"', '') ?? '');
     }
     continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
   } while (continuationToken);
+  return keys;
+}
+
+/** Run `work` over every item, 32 at a time: each is one small object's round trip, so wide parallelism keeps the transfer S3-bound. */
+async function eachConcurrently<T>(items: readonly T[], work: (item: T) => Promise<void>): Promise<void> {
+  const queue = [...items];
+  await Promise.all(
+    Array.from({ length: 32 }, async () => {
+      for (let item = queue.shift(); item !== undefined; item = queue.shift()) await work(item);
+    }),
+  );
+}
+
+/**
+ * Upload a release's frontend files with the deploy key: the bundle first, then the file list and the entry files under the release's
+ * prefix, which the publish copies to the root after version verification. Hashed paths get a 1-year immutable cache and skip upload when
+ * the key already exists (content-addressed names make that check exact). Stable-named keys (static/, favicon, robots.txt) change content
+ * under the same name: they get a short cache and skip only when the remote ETag matches the local MD5.
+ */
+export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
+  const log = opts.log ?? ((message: string) => console.info(message));
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const s3 = await frontendClient(opts.region);
+
+  // Existence answers the hashed paths, the listed ETag the stable-named ones: the ETag is the content MD5 of a single-part upload, the only
+  // kind this uploader performs.
+  const remoteEtags = await listKeys(s3, opts.bucket);
 
   const keys = listDistKeys(opts.distDir).filter((key) => !isEntryFile(key));
   let uploaded = 0;
   let skipped = 0;
-  const queue = [...keys];
-  // Uploads are the only per-key round trip; wide parallelism over these
-  // small objects keeps the transfer S3-bound.
-  const workers = Array.from({ length: 32 }, async () => {
-    for (let key = queue.shift(); key !== undefined; key = queue.shift()) {
-      if (isHashedPath(key)) {
-        if (remoteEtags.has(key)) {
-          skipped++;
-          continue;
-        }
-        const body = readFileSync(join(opts.distDir, key));
-        await s3.send(
-          new PutObjectCommand({
-            Bucket: opts.bucket,
-            Key: key,
-            Body: body,
-            ...contentHeaders(key),
-            CacheControl: 'public, max-age=31536000, immutable',
-          }),
-        );
-        uploaded++;
-        continue;
-      }
-      // Stable-named key: an ETag match means the object is already current.
-      const body = readFileSync(join(opts.distDir, key));
-      const md5 = createHash('md5').update(body).digest('hex');
-      if (remoteEtags.get(key) === md5) {
-        skipped++;
-        continue;
-      }
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: opts.bucket,
-          Key: key,
-          Body: body,
-          ...contentHeaders(key),
-          CacheControl: 'public, max-age=3600',
-        }),
-      );
-      uploaded++;
+  await eachConcurrently(keys, async (key) => {
+    const hashed = isHashedPath(key);
+    const body = hashed && remoteEtags.has(key) ? undefined : readFileSync(join(opts.distDir, key));
+    // A hashed key's existence proves its content; a stable-named key is current when its ETag matches.
+    if (!body || (!hashed && remoteEtags.get(key) === createHash('md5').update(body).digest('hex'))) {
+      skipped++;
+      return;
     }
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: opts.bucket,
+        Key: key,
+        Body: body,
+        ...contentHeaders(key),
+        CacheControl: hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
+      }),
+    );
+    uploaded++;
   });
-  await Promise.all(workers);
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: opts.bucket,
+      Key: `${releaseEntryPrefix(opts.sha)}${ASSET_LIST_NAME}`,
+      Body: JSON.stringify(keys.filter(isHashedPath).sort()),
+      ContentType: 'application/json',
+    }),
+  );
   // Last, so a release whose index.html waits under its prefix has every file it references.
   for (const name of ENTRY_FILE_NAMES) {
     if (!existsSync(join(opts.distDir, name))) continue;
@@ -176,4 +186,67 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
   }
   log(`[deploy] frontend assets: ${uploaded} uploaded, ${skipped} unchanged (skipped)`);
   return { uploaded, skipped };
+}
+
+/** One publish of a release's entry files. An empty commit stands for whatever served before the first recorded publish. */
+export interface FrontendPublish {
+  commit: string;
+  at: string;
+}
+
+/** The publishes whose files stay: the newest, and each one replaced within the retention, as an open tab of it may still load a chunk. */
+export function keptPublishes(publishes: readonly FrontendPublish[], now: Date, retentionDays: number): FrontendPublish[] {
+  const cutoff = now.getTime() - retentionDays * 86_400_000;
+  return publishes.filter((_, index) => index === 0 || Date.parse(publishes[index - 1]?.at ?? '') >= cutoff);
+}
+
+/**
+ * Record the publish of a release, then delete every hashed file no kept publish lists. A history this call starts holds an entry for what
+ * served before, whose files are unknown, and a kept release without its file list stops the prune: nothing is deleted then.
+ * @returns the number of files deleted
+ */
+export async function pruneFrontendAssets(opts: {
+  bucket: string;
+  region: string;
+  sha: string;
+  retentionDays: number;
+  now?: Date;
+  log?: (message: string) => void;
+}): Promise<number> {
+  const log = opts.log ?? ((message: string) => console.info(message));
+  const { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const s3 = await frontendClient(opts.region);
+  const readJson = async (key: string): Promise<unknown> => {
+    try {
+      const object = await s3.send(new GetObjectCommand({ Bucket: opts.bucket, Key: key }));
+      return JSON.parse((await object.Body?.transformToString()) ?? 'null');
+    } catch (error) {
+      if (error instanceof Error && error.name === 'NoSuchKey') return undefined;
+      throw error;
+    }
+  };
+
+  const now = opts.now ?? new Date();
+  const recorded = await readJson(PUBLISHES_KEY);
+  const history: FrontendPublish[] = Array.isArray(recorded) ? recorded : [{ commit: '', at: new Date(0).toISOString() }];
+  const kept = keptPublishes([{ commit: opts.sha, at: now.toISOString() }, ...history], now, opts.retentionDays);
+  await s3.send(new PutObjectCommand({ Bucket: opts.bucket, Key: PUBLISHES_KEY, Body: JSON.stringify(kept), ContentType: 'application/json' }));
+
+  const keep = new Set<string>();
+  for (const commit of new Set(kept.map((publish) => publish.commit))) {
+    const listed = commit ? await readJson(`${releaseEntryPrefix(commit)}${ASSET_LIST_NAME}`) : undefined;
+    if (!Array.isArray(listed)) {
+      log(
+        `[deploy] frontend assets: ${commit ? commit.slice(0, 10) : 'the release before the first recorded publish'} lists no files, so none is deleted`,
+      );
+      return 0;
+    }
+    for (const key of listed) keep.add(String(key));
+  }
+  const stale = [...(await listKeys(s3, opts.bucket, 'assets/')).keys()].filter((key) => !keep.has(key));
+  await eachConcurrently(stale, async (key) => {
+    await s3.send(new DeleteObjectCommand({ Bucket: opts.bucket, Key: key }));
+  });
+  log(`[deploy] frontend assets: ${stale.length} deleted, which no release served within ${opts.retentionDays} days lists`);
+  return stale.length;
 }

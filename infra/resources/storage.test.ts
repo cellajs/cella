@@ -187,16 +187,10 @@ describe('storage module', () => {
     expect(h.resources.filter((r) => /bucketWebsiteConfiguration/i.test(r.type))).toHaveLength(0);
   });
 
-  it('frontend bucket expires stale assets/ chunks but never root entry files', () => {
+  it('frontend bucket expires no current file by age: the live release keeps its chunks however long it serves', () => {
     const bucket = h.resources.find((r) => r.name === 'frontend-bucket');
-    expect(bucket).toBeDefined();
     const rules = (bucket?.inputs.lifecycleRules as any[]) ?? [];
-    const assetRule = rules.find((r) => r.id === 'expire-stale-assets');
-    expect(assetRule, 'expire-stale-assets lifecycle rule must exist').toBeDefined();
-    expect(assetRule.enabled).toBe(true);
-    // Prefix-scoped to assets/ so root entry files (index.html, sw.js, ...) are untouched.
-    expect(assetRule.prefix).toBe('assets/');
-    expect(assetRule.expiration?.days).toBeGreaterThan(0);
+    expect(rules.filter((r) => r.expiration?.days !== undefined)).toEqual([]);
   });
 
   it('frontend bucket purges noncurrent versions and orphaned delete markers', () => {

@@ -68,6 +68,7 @@ export async function importEnvFile(options: EnvImportOptions): Promise<{ change
   }
   let writer: SecretManagerClient | undefined;
   let written = 0;
+  let same = 0;
   for (const { definition, value } of writes) {
     const container = containers.get(definition.secretName);
     if (!container) {
@@ -75,10 +76,15 @@ export async function importEnvFile(options: EnvImportOptions): Promise<{ change
       continue;
     }
     writer ??= createSecretManagerClient({ secretKey: await options.writeKey(), ...scope });
+    // Importing the same file again changes nothing: a value Secret Manager holds already gets no new version.
+    if ((container.version_count ?? 0) > 0 && (await writer.accessLatestValue(container.id)) === value) {
+      same += 1;
+      continue;
+    }
     await setValue(writer, container, value);
     written += 1;
   }
-  log(`${written > 0 ? checkMark : tildeMark} Set ${written} of ${values} from ${path}`);
+  log(`${written > 0 ? checkMark : tildeMark} Set ${written} of ${values} from ${path}${same > 0 ? `; ${same} held that value already` : ''}`);
   return { changed: written > 0 };
 }
 

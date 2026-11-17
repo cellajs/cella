@@ -106,10 +106,7 @@ export async function switchRole(plan: { role: MachineRole; live?: LiveRole; tar
   const { role, live, target } = plan;
   const name = role.role;
   const slot = live ? otherSlot(live.slot) : 'a';
-  for (const stray of (await fx.machinesOf(name)).filter((machine) => machine.id !== live?.machine)) {
-    fx.log(`[switch ${name}] slot ${stray.slot} holds ${stray.id}, which the live record does not name: drained and deleted`);
-    await retire(role, stray, fx);
-  }
+  await retireStrays(role, live, fx);
   const stopFirst = role.strategy === 'stop-first' && live !== undefined;
   if (stopFirst) {
     fx.log(`[switch ${name}] stop-first: draining and deleting slot ${live.slot} before slot ${slot} boots`);
@@ -137,11 +134,20 @@ export async function switchRole(plan: { role: MachineRole; live?: LiveRole; tar
   return { role: name, slot, machine };
 }
 
+/** Drain and delete each machine of the role that the live record does not name, which a run that died or failed to retire one left. */
+async function retireStrays(role: MachineRole, live: LiveRole | undefined, fx: SwitchEffects): Promise<void> {
+  for (const stray of (await fx.machinesOf(role.role)).filter((machine) => machine.id !== live?.machine)) {
+    fx.log(`[switch ${role.role}] slot ${stray.slot} holds ${stray.id}, which the live record does not name: drained and deleted`);
+    await retire(role, stray, fx);
+  }
+}
+
 /**
  * Switch every role that does not serve the target: the primary first and alone, as its release companion migrates before any other role
  * starts the new release, then every other one concurrently. A role whose switch failed keeps what it served, and the others finish.
- * Machines of a role the registry no longer declares are drained and deleted once every role switched. Each switched role goes to
- * `switched` as it switches and each kept one to `kept`, so a failed run still names the new machines.
+ * Once every role switched, a stray machine of a role that served the target already is drained and deleted, as are the machines of a role
+ * the registry no longer declares. Each switched role goes to `switched` as it switches and each kept one to `kept`: a failed run still
+ * names the new machines.
  * @throws listing every role that failed
  */
 export async function switchMachines(
@@ -181,6 +187,7 @@ export async function switchMachines(
   const outcomes = await Promise.allSettled(rest.map(one));
   const failures = outcomes.flatMap((outcome) => (outcome.status === 'rejected' ? [errorMessage(outcome.reason)] : []));
   if (failures.length > 0) throw new Error(`${failures.length} role(s) did not switch: ${failures.join('; ')}`);
+  for (const role of opts.roles.filter((role) => !pending.includes(role))) await retireStrays(role, opts.record.roles[role.role], fx);
   for (const [name, entry] of Object.entries(opts.record.roles)) {
     if (opts.roles.some((role) => role.role === name)) continue;
     fx.log(`[switch ${name}] the registry declares no such role any more: its machine is drained and deleted`);
@@ -218,6 +225,18 @@ export interface LiveSwitchContext {
   log(message: string): void;
 }
 
+/** The role's machines through the Instance API, each by the slot its name holds. */
+export async function listRoleMachines(
+  auth: { secretKey: string },
+  opts: { zone: string; projectId: string; naming: InfraDerivations['naming']; role: string },
+): Promise<RoleMachine[]> {
+  const machines = await listMachines(auth, { zone: opts.zone, projectId: opts.projectId, prefix: opts.naming.resource(`${opts.role}-`) });
+  return machines.flatMap((machine) => {
+    const slot = slotOfMachine(opts.naming.resource, opts.role, machine.name);
+    return slot ? [{ id: machine.id, slot }] : [];
+  });
+}
+
 /** The switch's effects on Scaleway, with the deploy key: machines through the Instance API, the pools read through their stats. */
 export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
   const auth = { secretKey: ctx.secretKey };
@@ -241,13 +260,7 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
   const poolsOf = (role: MachineRole) => role.pools.map((pool) => ctx.foundation.backends[pool.key] ?? '');
   const addressOf = (role: MachineRole, slot: Slot) => ctx.foundation.slots[role.role]?.[slot];
   return {
-    async machinesOf(role) {
-      const machines = await listMachines(auth, { zone: ctx.zone, projectId: ctx.projectId, prefix: ctx.naming.resource(`${role}-`) });
-      return machines.flatMap((machine) => {
-        const slot = slotOfMachine(ctx.naming.resource, role, machine.name);
-        return slot ? [{ id: machine.id, slot }] : [];
-      });
-    },
+    machinesOf: (role) => listRoleMachines(auth, { zone: ctx.zone, projectId: ctx.projectId, naming: ctx.naming, role }),
     async boot(role, slot) {
       const own = role.services.find((service) => service.slug === role.role);
       if (!own) throw new Error(`switch: ${role.role} carries no service of its own name`);

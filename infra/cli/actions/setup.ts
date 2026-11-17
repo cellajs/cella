@@ -1,7 +1,7 @@
 import { warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { printInventory } from '../../tasks/status';
-import { endsAction, type InfraContext, pointTo } from '../shared';
+import { endAction, endsAction, type InfraContext, pointTo } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 import { printLaunchChecklist } from './setup-checklist';
 import { copyDeployKeyForMainJob, recordKeyRotation, runOperatorPart } from './setup-operator-part';
@@ -16,15 +16,18 @@ import { redeployAfterRotation } from './start-deploy';
  */
 export async function runSetup(context: InfraContext, mode: SetupMode): Promise<void> {
   if (mode === 'resume') await printLaunchChecklist(context);
+  // The operator key that stores the new deploy key's copy is asked before the Owner moment, which deletes the keys it replaces: no
+  // prompt then stands between the delete and the copy.
+  if (mode === 'rotate-keys') await acquireOperatorKey(context);
   const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
   const moment = writesIdentities ? await runOwnerMoment(context, mode) : undefined;
   if (writesIdentities && !moment) return;
   const operatorKey = await acquireOperatorKey(context);
-  // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the deploys it starts (the
-  // live release again, then the target) replace every machine, so none keeps the uploads key the rotation deleted. The main job's copy of
-  // the deploy key is replaced first, so those deploys run on the new one.
+  // An Owner key never writes the state: the rotation is recorded with the operator key. Its counter makes the deploys it starts (the live
+  // release again, then the target) replace every machine, and none keeps the uploads key the rotation deleted. Those deploys run on the
+  // main job's copy of the deploy key, which is replaced first: a failed copy ends the rotation before they start on the deleted key.
   if (mode === 'rotate-keys') {
-    await copyDeployKeyForMainJob(context, operatorKey, moment?.projectId ?? context.projectId, moment?.ciKey);
+    if (!(await copyDeployKeyForMainJob(context, operatorKey, moment?.projectId ?? context.projectId, moment?.ciKey))) endAction(1);
     await recordKeyRotation(context, operatorKey);
     await redeployAfterRotation(context, operatorKey).catch((error) => {
       if (endsAction(error)) throw error;

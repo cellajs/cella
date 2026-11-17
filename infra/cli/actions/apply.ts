@@ -71,6 +71,8 @@ export async function runApply(context: InfraContext): Promise<void> {
     engine,
   });
   if (declined) await discard();
+  // A failed `up` keeps its engine image: the definition may name it already, and the next apply's prune ages it out.
+  else if (!completed) endAction(1);
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>
       console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): ${pointTo('deploy')} does.`),
