@@ -41,6 +41,8 @@ app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
+  // The URL carries a single-use secret in its path, which `no-referrer` keeps out of a Referer.
+  ctx.header('Referrer-Policy', 'no-referrer');
   const { token, kind } = ctx.req.valid('param');
   return openLinkToken(ctx, kind, token);
 });

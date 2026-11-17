@@ -19,19 +19,14 @@ export const app = new OpenAPIHono<Env>();
 // Ambient log context in AsyncLocalStorage, first in the chain so every downstream log carries request ids
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
 
-// The invoke-token URL carries a single-use secret in its path, so `no-referrer` keeps it out of the Referer.
-// Registered before secureHeaders so it runs after it on unwind and overrides the global referrer policy.
-app.use('*', async (ctx, next) => {
-  await next();
-  if (ctx.req.path.includes('/invoke-token/')) ctx.res.headers.set('Referrer-Policy', 'no-referrer');
-});
-
 app.use(
   '*',
   secureHeaders({
     referrerPolicy: 'strict-origin-when-cross-origin',
     strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
     permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+    // A route that sets one of these headers keeps its own value.
+    overwrite: false,
   }),
 );
 

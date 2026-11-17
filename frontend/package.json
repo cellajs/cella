@@ -118,7 +118,7 @@
     "cross-env": "^10.1.0",
     "fake-indexeddb": "^6.2.8",
     "github-slugger": "^2.0.0",
-    "hono": "^4.13.18",
+    "hono": "^4.13.19",
     "jsdom": "^31.0.0",
     "oxc-transform-react": "0.156.0",
     "playwright": "^1.65.0",

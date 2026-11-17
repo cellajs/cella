@@ -54,8 +54,8 @@ type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {
 export type LinkTokenKind = TokenKindCarriedBy<'link'>;
 
 /**
- * The emailed URL that opens a link token. Keep the `/invoke-token/` path: `middlewares/app.ts` answers it with
- * `Referrer-Policy: no-referrer`, so the secret in it never leaks through a Referer.
+ * The emailed URL that opens a link token. Keep the `/invoke-token/` path: `scrubUrl` redacts the secret in it from
+ * logs and traces by that path.
  */
 export const tokenLinkUrl = (kind: LinkTokenKind, rawToken: string) => `${appConfig.backendAuthUrl}/invoke-token/${kind}/${rawToken}`;
 
