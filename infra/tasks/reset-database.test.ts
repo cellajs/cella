@@ -110,12 +110,14 @@ describe('sequenceDatabaseReset', () => {
     expect(plan.confirm).not.toHaveBeenCalled();
   });
 
-  it('refuses when the target database is absent, naming what it did find', async () => {
-    // Guards against a right-instance/wrong-name reset silently creating a new empty database.
-    const { plan } = makePlan({ listDatabases: vi.fn(async () => [{ name: 'rdb' }]) });
+  it('resumes a reset that stopped after its delete: the missing database is made again and granted, after the typed confirmation', async () => {
+    const confirm = vi.fn(async () => true);
+    const { plan, calls } = makePlan({ confirm, listDatabases: vi.fn(async () => [{ name: 'rdb' }]) });
 
-    await expect(sequenceDatabaseReset(plan)).rejects.toThrow(/has no database 'cella' \(found: rdb\)/);
-    expect(plan.confirm).not.toHaveBeenCalled();
+    const result = await sequenceDatabaseReset(plan);
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ resumed: true, databases: [{ name: 'rdb' }] }));
+    expect(calls.filter((call) => call === 'createBackup' || call === 'deleteDatabase')).toEqual([]);
+    expect(result.granted).toEqual(['admin_role', 'runtime_role']);
   });
 
   it('shows the operator the exact token and every database on the instance', async () => {

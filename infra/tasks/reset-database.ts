@@ -11,6 +11,8 @@ export interface ResetTarget {
   databases: RdbDatabase[];
   /** `<database>@<instance>`, the exact string the operator must type. */
   token: string;
+  /** The database is missing: an earlier reset stopped after its delete, and this one only makes it again and grants the roles. */
+  resumed: boolean;
 }
 
 export interface ResetDatabasePlan {
@@ -37,6 +39,7 @@ export interface ResetDatabasePlan {
 
 export interface ResetDatabaseResult {
   instanceId: string;
+  /** Empty for a resumed reset, whose backup the stopped one took. */
   backupId: string;
   granted: string[];
   aborted?: 'declined';
@@ -71,23 +74,22 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
   }
 
   const databases = await plan.listDatabases(instance.id);
-  if (!databases.some((database) => database.name === plan.databaseName)) {
-    throw new Error(
-      `Instance '${plan.instanceName}' has no database '${plan.databaseName}' (found: ${databases.map((d) => d.name).join(', ') || 'none'}).`,
-    );
-  }
-
   const target: ResetTarget = {
     instanceName: plan.instanceName,
     instanceId: instance.id,
     databaseName: plan.databaseName,
     databases,
     token: `${plan.databaseName}@${plan.instanceName}`,
+    resumed: !databases.some((database) => database.name === plan.databaseName),
   };
 
   if (!(await plan.confirm(target))) {
     plan.log('Aborted; nothing was touched.');
     return { instanceId: instance.id, backupId: '', granted: [], aborted: 'declined' };
+  }
+  if (target.resumed) {
+    plan.log(`${plan.databaseName} is missing, as a reset that stopped after its delete leaves it: it is made again.`);
+    return { instanceId: instance.id, backupId: '', granted: await recreate(plan, instance.id) };
   }
 
   plan.log(`Backing up ${plan.databaseName}...`);
@@ -111,19 +113,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
   }
 
   try {
-    await plan.createDatabase(instance.id, plan.databaseName);
-    plan.log(`${checkMark} Created empty database ${plan.databaseName}`);
-
-    // Deletion drops database privileges. The recreated app stays unreachable
-    // until both roles regain them.
-    const granted: string[] = [];
-    for (const role of plan.roles) {
-      await plan.setPrivilege(instance.id, plan.databaseName, role, plan.permission);
-      granted.push(role);
-      plan.log(`${checkMark} Granted ${plan.permission} on ${plan.databaseName} to ${role}`);
-    }
-
-    return { instanceId: instance.id, backupId: backup.id, granted };
+    return { instanceId: instance.id, backupId: backup.id, granted: await recreate(plan, instance.id) };
   } catch (error) {
     throw new ResetIrrecoverableError(
       `${plan.databaseName} was deleted but could not be rebuilt: ${errorMessage(error)}`,
@@ -132,6 +122,19 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
       plan.databaseName,
     );
   }
+}
+
+/** Make the empty database and grant each role on it: the delete dropped its privileges, and the app stays unreachable until both hold. */
+async function recreate(plan: ResetDatabasePlan, instanceId: string): Promise<string[]> {
+  await plan.createDatabase(instanceId, plan.databaseName);
+  plan.log(`${checkMark} Created empty database ${plan.databaseName}`);
+  const granted: string[] = [];
+  for (const role of plan.roles) {
+    await plan.setPrivilege(instanceId, plan.databaseName, role, plan.permission);
+    granted.push(role);
+    plan.log(`${checkMark} Granted ${plan.permission} on ${plan.databaseName} to ${role}`);
+  }
+  return granted;
 }
 
 /** For example, `pre-reset-cella-20260717-1345`; sorts chronologically. */

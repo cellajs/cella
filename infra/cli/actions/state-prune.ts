@@ -45,7 +45,11 @@ export async function runStatePrune(context: InfraContext): Promise<void> {
   const lock = await acquireStackLockOrExit({ appConfig, ...stateKey, stack, operation: 'state-remove' });
   try {
     const listed = spawnSync('pulumi', ['stack', '--show-urns', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' });
-    if (!listed.stdout?.includes(urn)) {
+    if (listed.status !== 0) {
+      console.error(`${crossMark} pulumi stack --show-urns exited ${listed.status}: ${listed.stderr?.trim()}`);
+      return endAction(1);
+    }
+    if (!listed.stdout.includes(urn)) {
       console.warn(`${warningMark} The state of ${context.environment} does not list that URN: nothing to remove.`);
       return;
     }

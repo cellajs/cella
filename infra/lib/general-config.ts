@@ -14,7 +14,7 @@ export interface GeneralConfig {
     volumeSizeGb: PerMode<number>;
   };
   assets: {
-    /** Days before stale, content-hashed frontend chunks under `assets/` expire. */
+    /** Days, counted from the publish that replaced a release. */
     retentionDays: PerMode<number>;
   };
   schedule: {

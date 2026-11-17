@@ -29,6 +29,8 @@ export interface InventoryFacts {
   policies: InventoryPolicy[];
   /** The project's machines, in every zone of the region, with the Instance API's creation time; undefined without an operator key. */
   machines?: Array<{ id: string; name: string; createdAt?: string }>;
+  /** The project's volumes no machine holds, in every zone of the region; undefined without an operator key. */
+  volumes?: Array<{ id: string; name: string; createdAt?: string }>;
   /** Each role's machine that serves, from the live record. */
   liveMachines: Record<string, string>;
   /** The environment's machine roles: a machine named for one of their slots is the engine's. */
@@ -185,6 +187,11 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
       found.machines.push({ detail: `${name}: ${older} (a failed run left it, or someone named it so)`, item: [name, older] });
     }
   }
+  for (const { id, name, createdAt } of facts.volumes ?? []) {
+    if (createdAt && now - Date.parse(createdAt) < limitMs) continue;
+    const loose = 'a volume no machine holds, older than a deploy runs';
+    found.machines.push({ detail: `${name || id}: ${loose} (a run stopped between deleting its machine and the volume)`, item: [name || id, loose] });
+  }
   return found;
 }
 
@@ -290,6 +297,35 @@ async function listAll<T>(auth: { secretKey: string }, url: (page: number) => st
   return all;
 }
 
+/** The project's volumes no machine holds in the zones given: Block Storage ones nothing references, and local ones without a server. */
+async function looseVolumes(
+  auth: { secretKey: string },
+  zones: readonly string[],
+  projectId: string,
+): Promise<NonNullable<InventoryFacts['volumes']>> {
+  const perZone = await Promise.all(
+    zones.map(async (zone) => {
+      const [block, local] = await Promise.all([
+        listAll<{ id: string; name: string; created_at?: string; references?: unknown[] }>(
+          auth,
+          (page) => `https://api.scaleway.com/block/v1/zones/${zone}/volumes?project_id=${projectId}&page=${page}&page_size=100`,
+          'volumes',
+        ),
+        listAll<{ id: string; name: string; creation_date?: string; server?: unknown }>(
+          auth,
+          (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/volumes?project=${projectId}&page=${page}&per_page=100`,
+          'volumes',
+        ),
+      ]);
+      return [
+        ...block.filter(({ references }) => !references?.length).map(({ id, name, created_at }) => ({ id, name, createdAt: created_at })),
+        ...local.filter(({ server }) => !server).map(({ id, name, creation_date }) => ({ id, name, createdAt: creation_date })),
+      ];
+    }),
+  );
+  return perZone.flat();
+}
+
 /**
  * The inventory: what can act in the environment and what runs in its project, against what the code declares, read on
  * the observer key, and the machines on the operator key when the run holds it. Rotate keys deletes every key beside the declared ones; an
@@ -318,7 +354,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           ({ name, path }) => ({ name, path }),
           () => ({}),
         );
-      const [applications, groups, apiKeys, policies, servers, mainJob] = await Promise.all([
+      const [applications, groups, apiKeys, policies, servers, volumes, mainJob] = await Promise.all([
         listAll<InventoryFacts['applications'][number]>(auth, org('applications'), 'applications'),
         listAll<InventoryFacts['groups'][number]>(auth, org('groups'), 'groups'),
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
@@ -340,6 +376,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
               () => undefined,
             )
           : undefined,
+        operatorSecretKey ? looseVolumes({ secretKey: operatorSecretKey }, zones, session.projectId).catch(() => undefined) : undefined,
         job
           ? readJobDefinitionSecrets(auth, { region, definitionId: job.definitionId })
               .then((references) => Promise.all(references.map(async (reference) => ({ ...reference, ...(await secretPlace(reference.secretId)) }))))
@@ -363,7 +400,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
       const machines = servers?.map(({ id, name, creation_date }) => ({ id, name, ...(creation_date ? { createdAt: creation_date } : {}) }));
       const roles = machineRoles(session.appConfig).map((role) => role.role);
-      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId, applied };
+      return { applications, groups, apiKeys, policies: withRules, machines, volumes, liveMachines, roles, mainJob, organizationId, applied };
     } catch {
       return undefined;
     }
@@ -433,7 +470,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           : found.machines.length > 0
             ? {
                 ...b.error(found.machines.map((finding) => finding.detail).join('; ')),
-                headline: `${count(found.machines.length, 'machine', 'machines')} no deploy accounts for`,
+                headline: `${count(found.machines.length, 'machine or volume', 'machines or volumes')} no deploy accounts for`,
                 items: found.machines.map((finding) => finding.item),
                 fix: unknownMaker,
               }

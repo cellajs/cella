@@ -83,7 +83,7 @@ Each check reports `ok | warn | missing | error | unknown`. `unknown` means "cou
 
 The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in. They flag what nobody declared, such as an extra key or policy.
 
-They also flag a person's key without an end date, a machine the live record does not name, and a main job whose image, command, schedule or env differs from the last apply.
+They also flag a person's key without an end date, a machine the live record does not name, a volume no machine holds, and a main job whose image, command, schedule or env differs from the last apply.
 
 They find only what an intruder did not disguise: they read the live machines from the live record, which the deploy key writes. `inventory.machines` needs the operator key and is `unknown` without it.
 

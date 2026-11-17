@@ -1,11 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineConfig as appConfig } from '../config/engine-config';
-import { generalConfig } from '../config/general.config';
 import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
-import { resolvePerMode } from '../lib/general-config';
 import { appStorageNeeds, services } from '../lib/services';
 import { CONTROL_PREFIX, lockKey } from '../lib/stack/control-store';
 import { deployMode, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
@@ -118,9 +116,6 @@ const transloaditStoreAccess = (bucketName: pulumi.Input<string>) =>
 // setup adopts them again (lib/stack/kept-resources.ts). A policy stays so a kept bucket admits no more principals than before.
 const kept = { retainOnDelete: true };
 
-// Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
-const assetRetentionDays = resolvePerMode(generalConfig.assets.retentionDays, deployMode);
-
 const { backupDays } = appConfig.retention;
 
 // Frontend static files bucket, only when a default-route service exists to serve it.
@@ -135,18 +130,12 @@ const frontendBucket = needs.spaBucket
       versioning: { enabled: true },
       lifecycleRules: [
         {
-          // Versioned expiration creates delete markers, so purge noncurrent objects after 30 days and remove markers once no versions remain.
+          // A deploy deletes the hashed files no release served within the retention lists (tasks/frontend-assets.ts), which leaves each a
+          // delete marker: the noncurrent versions go after 30 days, then the markers.
           id: 'cleanup-old-versions',
           enabled: true,
           noncurrentVersionExpiration: { noncurrentDays: 30 },
           expiration: { expiredObjectDeleteMarker: true },
-        },
-        {
-          // Expire immutable chunks after the open-tab window; versioning creates a marker here and the old-version rule performs the deletion.
-          id: 'expire-stale-assets',
-          enabled: true,
-          expiration: { days: assetRetentionDays },
-          prefix: 'assets/',
         },
       ],
     })

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isHashedPath, uploadFrontendAssets } from './frontend-assets';
+import { isHashedPath, keptPublishes, uploadFrontendAssets } from './frontend-assets';
 
 /** Objects the bucket already holds (key + ETag), served by the mocked listing. */
 let remoteObjects: Array<{ Key: string; ETag?: string }>;
@@ -91,7 +91,7 @@ describe('uploadFrontendAssets', () => {
     const result = await uploadFrontendAssets({ distDir, bucket: 'b', region: 'r', sha: 'c'.repeat(40), log: () => {} });
 
     expect(result).toEqual({ uploaded: 3, skipped: 2 });
-    const entries = [`releases/${'c'.repeat(40)}/index.html`, `releases/${'c'.repeat(40)}/sw.js`];
+    const entries = [`releases/${'c'.repeat(40)}/assets.json`, `releases/${'c'.repeat(40)}/index.html`, `releases/${'c'.repeat(40)}/sw.js`];
     expect(Object.keys(puts).sort()).toEqual(['assets/app-def456.js', 'favicon.ico', ...entries, 'static/openapi.json']);
     expect(puts['assets/app-def456.js']?.CacheControl).toBe('public, max-age=31536000, immutable');
     expect(puts['static/openapi.json']?.CacheControl).toBe('public, max-age=3600');
@@ -106,5 +106,18 @@ describe('uploadFrontendAssets', () => {
     // later pages' keys (they would re-upload as false-new otherwise).
     expect(listCalls).toBe(2);
     expect(result).toEqual({ uploaded: 3, skipped: 2 });
+  });
+});
+
+describe('keptPublishes', () => {
+  it('keeps the live release however old, and each release replaced within the retention: a release that served long is never pruned', () => {
+    const now = new Date('2026-11-17T12:00:00Z');
+    const publishes = [
+      { commit: 'live', at: '2026-09-01T00:00:00Z' },
+      { commit: 'before', at: '2026-08-01T00:00:00Z' },
+    ];
+    expect(keptPublishes(publishes, now, 14).map(({ commit }) => commit)).toEqual(['live']);
+    const recent = [{ commit: 'new', at: '2026-11-10T00:00:00Z' }, ...publishes];
+    expect(keptPublishes(recent, now, 14).map(({ commit }) => commit)).toEqual(['new', 'live']);
   });
 });

@@ -11,7 +11,7 @@ export const DUMPS_PREFIX = 'dumps/';
 const DUMP_TIMEOUT_MS = 30 * 60_000;
 
 export interface FinalDumpOptions {
-  rdb: Pick<RdbClient, 'findInstance' | 'createBackup' | 'getBackup' | 'exportBackup'>;
+  rdb: Pick<RdbClient, 'findInstance' | 'listDatabases' | 'createBackup' | 'getBackup' | 'exportBackup'>;
   instanceName: string;
   databaseName: string;
   environment: string;
@@ -29,12 +29,17 @@ export interface FinalDumpOptions {
  * Write a final dump of the environment's database into the boot-diag bucket, before a teardown deletes the instance: a backup made through
  * the managed database's API, exported, and streamed from its download link to `dumps/<environment>/<time><ext>`, the extension being the
  * exported file's (`.dump` when its link names none). No statement of the bucket's policy lets the uploads key or the observer read there.
- * @returns the object's key, or undefined when the environment has no managed database instance.
+ * @returns the object's key, or undefined when the environment has no managed database instance, or an instance without the database, which
+ * a destroy that stopped between the two deletes leaves.
  * @throws when the backup, its export or the upload fails: the teardown then destroys nothing.
  */
 export async function writeFinalDump(opts: FinalDumpOptions): Promise<string | undefined> {
   const instance = await opts.rdb.findInstance(opts.instanceName);
   if (!instance) return undefined;
+  if (!(await opts.rdb.listDatabases(instance.id)).some((database) => database.name === opts.databaseName)) {
+    opts.log(`${opts.instanceName} holds no database ${opts.databaseName}: nothing to dump.`);
+    return undefined;
+  }
   const now = opts.now ?? new Date();
   const stamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
   opts.log(`Backing up ${opts.databaseName} on ${opts.instanceName}...`);

@@ -158,7 +158,7 @@ Third-party keys are pasted anew in **Env vars & secrets**.
 
 ### Rotate keys
 
-`pnpm infra` → **More** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones. It needs an Owner API key and your operator key.
+`pnpm infra` → **More** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones. It asks for your operator key first, then an Owner API key.
 
 After a compromise, one **Rotate keys** per environment covers the deploy and uploads keys. The observer's reads no key, and the operators' end within the day. The inventory names a key an intruder added. Delete it in the console.
 

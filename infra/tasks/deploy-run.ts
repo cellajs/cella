@@ -68,9 +68,15 @@ export interface DeployEffects {
   engineStamp(): EngineStamp | undefined;
   /** The description of the app the engine image holds, which names what a target's own description changes. */
   engineDescription(): Promise<Record<string, unknown>>;
+  /**
+   * What an earlier run of a target every role serves left undone: a machine of a role beside the one the live record names, and the
+   * frontend's entry files when they are not the target's. Empty when the run has nothing to do.
+   */
+  leftovers(request: { roles: readonly MachineRole[]; record: LiveRecord; sha: string; frontendBucket: string }): Promise<string[]>;
   /** Switch the roles given (tasks/switch-machines.ts). */
   switchMachines(request: SwitchRequest): Promise<void>;
-  publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
+  /** Publish the release's entry files to the bucket root, then delete the hashed files no release served within the retention lists. */
+  publishEntryFiles(opts: { distDir: string; bucket: string; region: string; sha: string }): Promise<void>;
   /** The boot accounts this run's machines uploaded to the keys the compose step named, one per role; none for a role with no account yet. */
   bootAccounts(envs: readonly MachineEnv[]): Promise<RunBootAccount[]>;
   /** Write a run's record and log to the environment's diagnostics bucket. */
@@ -203,11 +209,16 @@ export async function runDeploy(
         target,
       );
       const retired = Object.keys(live.record.roles).filter((role) => !live?.roles.some((declared) => declared.role === role));
-      unchanged = pending.length === 0 && retired.length === 0;
+      const serves = pending.length === 0 && retired.length === 0;
+      // A run that failed after its switches left work every role serving the target hides: the steps after the switch run again.
+      const left = serves ? await fx.leftovers({ roles: live.roles, record: live.record, sha: opts.sha, frontendBucket: env.frontend_bucket }) : [];
+      unchanged = serves && left.length === 0;
       say(
         unchanged
           ? `[deploy] every role serves ${opts.sha.slice(0, 10)} (retry ${opts.retry}, rotation ${live.rotation}): unchanged`
-          : `[deploy] to switch: ${[...pending, ...retired.map((role) => `${role} (retired)`)].join(', ')}`,
+          : serves
+            ? `[deploy] every role serves ${opts.sha.slice(0, 10)}; an earlier run left ${left.join(', ')}`
+            : `[deploy] to switch: ${[...pending, ...retired.map((role) => `${role} (retired)`)].join(', ')}`,
       );
     });
 
@@ -323,7 +334,9 @@ export async function runDeploy(
 
       // Strictly after the switches, so users only load the new entry files once every pool serves the new release. Skipped for a frontend-less registry.
       if (env.frontend_bucket) {
-        await step('Publish frontend entry files', () => fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }));
+        await step('Publish frontend entry files', () =>
+          fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region, sha: opts.sha }),
+        );
       }
       await step('Smoke tests', () =>
         fx.task('smoke', [
@@ -378,8 +391,16 @@ async function writeRunRecordToBucket(opts: { bucket: string; region: string; re
   );
 }
 
-async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
-  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string; sha: string }): Promise<void> {
+  const [{ PutObjectCommand }, { engineConfig }, { generalConfig }, { resolvePerMode }, { pruneFrontendAssets }] = await Promise.all([
+    import('@aws-sdk/client-s3'),
+    import('../config/engine-config'),
+    import('../config/general.config'),
+    import('../lib/general-config'),
+    import('./frontend-assets'),
+  ]);
+  const { mode } = engineConfig;
+  if (mode !== 'production' && mode !== 'staging') throw new Error(`a deploy goes to production or staging, not '${mode}'`);
   const { accessKey, secretKey } = deployS3Key();
   const s3 = await makeS3Client(opts.region, accessKey, secretKey);
   for (const file of ENTRY_FILES) {
@@ -397,6 +418,9 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
     );
     console.info(`[deploy] published ${basename(path)} (${body.length} bytes)`);
   }
+  await pruneFrontendAssets({ ...opts, retentionDays: resolvePerMode(generalConfig.assets.retentionDays, mode) }).catch((err) =>
+    console.warn(`[deploy] frontend assets: the prune failed (${errorMessage(err)}); the next publish deletes what it left`),
+  );
 }
 
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
@@ -487,6 +511,34 @@ function createRealEffects(): DeployEffects {
         readRotations(s3, naming.bootDiagBucket, stack),
       ]);
       return { roles: machineRoles(appConfig), record, rotation: rotations.counter };
+    },
+    async leftovers({ roles, record, sha, frontendBucket }) {
+      const [{ engineConfig }, { deriveInfra }, { listRoleMachines }, { publicFrontendFile, releaseEntryPrefix }] = await Promise.all([
+        import('../config/engine-config'),
+        import('../lib/naming'),
+        import('./switch-machines'),
+        import('./frontend-assets'),
+      ]);
+      const { naming, region, zone } = deriveInfra(engineConfig);
+      const scope = { zone, projectId: process.env.SCW_DEFAULT_PROJECT_ID ?? '', naming };
+      const auth = { secretKey: deployS3Key().secretKey };
+      const strays = await Promise.all(
+        roles.map(async ({ role }) =>
+          (await listRoleMachines(auth, { ...scope, role }))
+            .filter(({ id }) => id !== record.roles[role]?.machine)
+            .map(({ id }) => `machine ${id} of ${role}`),
+        ),
+      );
+      const entries = await Promise.all(
+        (frontendBucket ? ENTRY_FILES : []).map(async ({ name }) => {
+          const [released, published] = await Promise.all([
+            publicFrontendFile(frontendBucket, region, `${releaseEntryPrefix(sha)}${name}`),
+            publicFrontendFile(frontendBucket, region, name),
+          ]);
+          return released && !(published && released.equals(published)) ? [`the published ${name}`] : [];
+        }),
+      );
+      return [...strays, ...entries].flat();
     },
     engineStamp: () => readEngineStamp(),
     engineDescription: async () => (await import('../lib/deploy/app-description')).appDescription(),

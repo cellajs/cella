@@ -35,7 +35,7 @@ import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { sleep } from '../lib/utils/sleep';
 import { bakeDefinition, parseBuildRows } from './build-images';
-import { ENTRY_FILE_NAMES, releaseEntryPrefix, uploadFrontendAssets } from './frontend-assets';
+import { ENTRY_FILE_NAMES, publicFrontendFile, releaseEntryPrefix, uploadFrontendAssets } from './frontend-assets';
 import { frontendBuildEnv } from './frontend-build-env';
 
 // 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
@@ -103,8 +103,8 @@ async function missingParts(opts: BuildReleaseOptions, fx: BuildEffects, manifes
 /**
  * Make sure a release is built. When the boot-diag bucket lacks its manifest or an archive the manifest names, a builder machine, made in the
  * first zone that has its type in stock, builds all of them and writes them through the links it was given; a builder a dead deploy left is
- * deleted first, and this one is deleted when it is done or the wait ends. The frontend files are uploaded from their archive when the
- * frontend bucket lacks the release's entry files, which are then written to `distDir`. Returns the release's manifest, checked.
+ * deleted first, and this one is deleted when it is done or the wait ends. The frontend files are uploaded from their archive, and the
+ * release's entry files are then written to `distDir`. Returns the release's manifest, checked.
  */
 export async function buildRelease(
   opts: BuildReleaseOptions,
@@ -154,7 +154,8 @@ export async function buildRelease(
   }
   if (!manifest) throw new Error(`the release ${opts.sha.slice(0, 10)} has no manifest after its build`);
 
-  if (opts.withFrontend && manifest.frontend && !(await fx.entryFile('index.html'))) {
+  // On every deploy: the prune may have deleted a file of a release deployed again, and the upload skips each file the bucket holds.
+  if (opts.withFrontend && manifest.frontend) {
     log('[build] uploading the frontend files from their archive');
     await fx.uploadFrontend(manifest.frontend);
   }
@@ -281,10 +282,7 @@ function liveEffects(opts: {
       return links;
     },
     repositoryKey: () => readRepositoryKey(secrets),
-    entryFile: async (name) => {
-      const res = await fetch(`https://${opts.frontendBucket}.s3.${opts.region}.scw.cloud/${releaseEntryPrefix(opts.sha)}${name}`);
-      return res.ok ? Buffer.from(await res.arrayBuffer()) : undefined;
-    },
+    entryFile: (name) => publicFrontendFile(opts.frontendBucket, opts.region, `${releaseEntryPrefix(opts.sha)}${name}`),
     uploadFrontend: async (digest) => {
       const object = await getObject(frontendArchiveKey(opts.sha));
       const archive = Buffer.from((await object.Body?.transformToByteArray()) ?? []);

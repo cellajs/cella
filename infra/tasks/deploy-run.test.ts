@@ -55,6 +55,7 @@ function makeFake(
     stamp?: EngineStamp | null;
     description?: string | null;
     describes?: Record<string, unknown>;
+    leftovers?: string[];
   } = {},
 ) {
   const ops: string[] = [];
@@ -88,6 +89,7 @@ function makeFake(
       ops.push('live:read');
       return { roles: ROLES, record: opts.live ?? { schemaVersion: 1, roles: {} }, rotation: opts.rotation ?? 0 };
     },
+    leftovers: async () => opts.leftovers ?? [],
     engineStamp: () => (opts.stamp === null ? undefined : (opts.stamp ?? { mode: 'production', descriptionHash: DESCRIPTION })),
     engineDescription: async () => ({ services: { backend: {} } }),
     switchMachines: async (request) => {
@@ -224,6 +226,15 @@ describe('the same deploy twice', () => {
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     expect(ops.filter((op) => op.startsWith('task:') || op.startsWith('switch:'))).toEqual([]);
     expect(records.at(-1)?.record.outcome).toBe('unchanged');
+  });
+
+  it('runs the steps after the switch again when an earlier run of the target stopped after its switch: no machine is booted', async () => {
+    const { fx, ops, switches, records } = makeFake({ live: serving(SHA), leftovers: ['the published index.html'] });
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(switches[0]?.pending).toEqual([]);
+    expect(ops).toContain('publish-entry');
+    expect(ops).toContain('task:smoke');
+    expect(records.at(-1)?.record.outcome).toBe('deployed');
   });
 
   it('replaces every machine of the live commit after a raised retry counter or a rotation', async () => {

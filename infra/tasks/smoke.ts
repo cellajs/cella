@@ -160,6 +160,15 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       return verdict(res.ok && matched, detail);
     });
 
+  // A chunk the bucket lost answers the SPA fallback or a 404, while index.html still names it.
+  if (defaultRouteUrl)
+    await check('entry script loads', async () => {
+      const entry = extractEntryAsset((await get(`${defaultRouteUrl}/`)).body);
+      if (!entry) return verdict(false, 'no hashed entry asset found in served index.html');
+      const res = await get(new URL(entry, `${defaultRouteUrl}/`).href);
+      return verdict(res.ok && !isHtmlDocument(res.body), `${entry}: status=${res.status}`);
+    });
+
   await check('primary /openapi.json reachable', async () => {
     const res = await get(`${primaryUrl}/openapi.json`);
     return verdict(res.ok, `status=${res.status}`);

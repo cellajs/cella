@@ -129,14 +129,16 @@ export async function deleteMachine(auth: ScwAuth, zone: string, serverId: strin
       volume.volume_type === 'l_ssd'
         ? `${instanceApi(zone)}/volumes/${volume.id}`
         : `https://api.scaleway.com/block/v1/zones/${zone}/volumes/${volume.id}`;
-    for (let tries = 0; tries < 12; tries++) {
-      const done = await scwSend(auth, 'DELETE', url).then(
+    let done = false;
+    for (let tries = 0; tries < 12 && !done; tries++) {
+      done = await scwSend(auth, 'DELETE', url).then(
         () => true,
         (error: unknown) => scwErrorStatus(error) === 404,
       );
-      if (done) break;
-      await sleep(5_000);
+      if (!done) await sleep(5_000);
     }
+    // No later run finds the volume through its server, which is gone: the inventory lists it until it is deleted in the console.
+    if (!done) console.warn(`the volume ${volume.id} of ${server.name} could not be deleted: delete it in the console`);
   }
 }
 

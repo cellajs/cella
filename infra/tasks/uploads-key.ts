@@ -74,12 +74,13 @@ export async function writeUploadsKey(opts: {
   let keep: string | undefined;
   if (step.change === 'make') {
     const key = await createApiKey(opts.auth, { applicationId, description: 'Uploads key', defaultProjectId: opts.projectId });
-    // The access half's container is made anew, as its description names the key.
+    // The access half's container names the stored key: it is made anew and written last. Until then a rerun finds no key stored and
+    // makes one, where an access half written first would name a key whose secret half failed to follow.
     const old = await opts.secrets.getSecretByName(accessHalf.secretName, RUNTIME_FOLDER);
     if (old) await opts.secrets.deleteSecret(old.id);
     const halves = [
-      { half: accessHalf, value: key.access_key, description: storedKeyDescription(key.access_key) },
       { half: secretHalf, value: key.secret_key, description: 'Secret half of the uploads key' },
+      { half: accessHalf, value: key.access_key, description: storedKeyDescription(key.access_key) },
     ];
     for (const { half, value, description } of halves) {
       const container =

@@ -16,6 +16,15 @@ const REDACTED = '[redacted: secret-bearing endpoint]';
 const networkAttempts = 3;
 const networkRetryDelayMs = 2000;
 
+/** The undici codes of a connection that never opened: the request never reached Scaleway. */
+const unsentCodes = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT']);
+
+/** Whether a failed fetch never reached the endpoint. Sending it again then creates nothing twice. */
+function neverSent(error: unknown): boolean {
+  const cause = error instanceof Error ? error.cause : undefined;
+  return typeof cause === 'object' && cause !== null && 'code' in cause && unsentCodes.has(String(cause.code));
+}
+
 export interface ScwAuth {
   secretKey: string;
   /** Injected for tests; defaults to global fetch. */
@@ -37,23 +46,28 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
   }
   const fetchImpl = resolveFetch(auth.fetchImpl);
   let res: Awaited<ReturnType<FetchLike>>;
+  let tried = 0;
   try {
     res = await retry(
-      () =>
-        fetchImpl(url, {
+      (attempt) => {
+        tried = attempt;
+        return fetchImpl(url, {
           method,
           headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'application/json' },
           body: body !== undefined ? JSON.stringify(body) : undefined,
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        }),
+        });
+      },
       {
         attempts: networkAttempts,
         delayMs: networkRetryDelayMs,
+        // A create that timed out may have been made: only a POST that never left is sent again.
+        retryable: method === 'POST' ? neverSent : undefined,
         onRetry: (attempt, error) => console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error)}); retrying`),
       },
     );
   } catch (err) {
-    throw new Error(`Scaleway ${method} ${url} failed after ${networkAttempts} attempts: ${errorMessage(err)}`);
+    throw new Error(`Scaleway ${method} ${url} failed after ${tried} attempts: ${errorMessage(err)}`);
   }
   const text = await res.text();
   if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
