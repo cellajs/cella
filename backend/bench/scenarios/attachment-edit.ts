@@ -7,7 +7,7 @@ import { benchUser } from '../bench-user';
  * own attachment 20 times. Steps up 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak), past what a laptop takes.
  */
 export default defineScenario({
-  description: 'Attachment edit: the write path under a step-up, one rename per request.',
+  description: 'the write path under a step-up, one rename per request',
   phases: [
     { name: 'hold 25', duration: 10, arrivalRate: 25 },
     { name: 'hold 50', duration: 10, arrivalRate: 50 },

@@ -8,7 +8,7 @@ import { attachmentId } from '../seeds/ids';
  * warm-up, 300 VUs arrive within half a second and each reads the one attachment 10 times back to back.
  */
 export default defineScenario({
-  description: 'Detail read: a few hundred signed-in readers of one attachment at once.',
+  description: 'a few hundred signed-in readers of one attachment at once',
   phases: [
     { name: 'warm up', duration: 5, arrivalRate: 10 },
     { name: 'stampede', duration: 0.5, arrivalCount: 300 },

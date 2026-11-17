@@ -8,7 +8,7 @@ import { REPLAY_COUNTERS, REPLAY_HISTOGRAMS, runReplay } from '../sync/replay';
  * one round trip per replayed write costs a user.
  */
 export default defineScenario({
-  description: 'Offline replay: a queue of offline edits merges by last writer wins and drains one write at a time.',
+  description: 'a queue of offline edits merges by last writer wins and drains one write at a time',
   counters: REPLAY_COUNTERS,
   histograms: REPLAY_HISTOGRAMS,
   primary: 'sync.replay_write_ms.p95',

@@ -7,7 +7,7 @@ import { REVOCATION_COUNTERS, REVOCATION_HISTOGRAMS, runRevocation } from '../sy
  * share. `sync.kept_in_tolerance` counts a kept answer the target still took with its range key while the key lived.
  */
 export default defineScenario({
-  description: 'Access revocation: a removed member stops hearing and reading the organization while others write.',
+  description: 'a removed member stops hearing and reading the organization while others write',
   counters: REVOCATION_COUNTERS,
   histograms: REVOCATION_HISTOGRAMS,
   primary: 'sync.revoke_signal_ms.p95',

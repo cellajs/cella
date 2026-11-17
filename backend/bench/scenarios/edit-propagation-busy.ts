@@ -5,7 +5,7 @@ import { PROPAGATION_COUNTERS, PROPAGATION_HISTOGRAMS, runPropagation } from '..
 
 /** `edit-propagation` without its pauses, while background writers edit other rows at `PROPAGATION_LOAD` edits per second. */
 export default defineScenario({
-  description: 'Busy edit propagation: how late an edit reaches a reader while others write.',
+  description: 'how late an edit reaches a reader while others write',
   counters: PROPAGATION_COUNTERS,
   histograms: PROPAGATION_HISTOGRAMS,
   primary: 'sync.visible_ms.p95',
