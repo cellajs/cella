@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import type { LinkPreview } from '#/lib/module';
 
 /** The page a share link answers with: Open Graph tags for a chat's unfurl, and a script that sends a browser on into the app. */
-export const linkPreviewPage = ({ title, ogTitle, description, redirectUrl }: LinkPreview) => html`
+export const linkPreviewPage = ({ title, ogTitle, description, redirectUrl, image = '/thumbnail.jpg', indexable }: LinkPreview) => html`
   <!DOCTYPE html>
   <html lang="${appConfig.defaultLanguageCode}">
     <head>
@@ -12,13 +12,13 @@ export const linkPreviewPage = ({ title, ogTitle, description, redirectUrl }: Li
 
       <meta property="og:title" content="${ogTitle}" />
       <meta property="og:description" content="${description}" />
-      <meta property="og:image" content="${appConfig.frontendUrl}/thumbnail.jpg" />
+      <meta property="og:image" content="${appConfig.frontendUrl}${image}" />
       <meta property="og:url" content="${raw(redirectUrl)}" />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="${appConfig.name}" />
       <meta property="og:locale" content="en_US" />
 
-      <meta name="robots" content="index,follow" />
+      <meta name="robots" content="${indexable ? 'index,follow' : 'noindex,nofollow'}" />
     </head>
 
     <script>

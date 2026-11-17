@@ -1,5 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
+import { getAttachmentPreviewOp } from '#/modules/attachment/operations/get-attachment-preview';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { publicAttachmentHandlers } from '#/modules/attachment/public-handlers';
 
@@ -13,6 +14,7 @@ defineBackendModule({
     notification source for mentions.`,
   productEntity: 'attachment',
   yjsMaterializer: updateAttachmentOp,
+  productShareLink: { preview: getAttachmentPreviewOp },
   notifications: true,
   routes: [
     { path: '/tenants/:tenantId/organizations/:organizationId/attachments', app: attachmentHandlers },

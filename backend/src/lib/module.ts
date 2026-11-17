@@ -109,6 +109,10 @@ export interface LinkPreview {
   ogTitle: string;
   description: string;
   redirectUrl: string;
+  /** The Open Graph image, a path on the frontend; the app's `/thumbnail.jpg` when absent. */
+  image?: string;
+  /** Whether search engines may index the page: only for what anyone may read. */
+  indexable: boolean;
 }
 
 /** The channel a share link's code names. */
@@ -125,9 +129,11 @@ export interface ChannelShareLink {
   preview(ctx: DbContext, channel: LinkedChannel): Promise<LinkPreview>;
 }
 
-/** What a numbered product module's share link `/{code}/{letter}{n}` shows: its row numbered `n` in that channel, or a 404. */
+/**
+ * What a numbered product module's share link `/{code}/{letter}{n}` shows: its row numbered `n` in that channel, or a
+ * 404. The letter is the product's `numberedProducts` entry.
+ */
 export interface ProductShareLink {
-  letter: string;
   preview(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview>;
 }
 

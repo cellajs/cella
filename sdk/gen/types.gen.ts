@@ -187,6 +187,7 @@ export type Attachment = {
     | null;
   public: boolean;
   seq: number;
+  number: number;
   /**
    * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
    */

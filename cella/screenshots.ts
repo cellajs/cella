@@ -1,5 +1,6 @@
 import { defineScreenshotsBase, type Page } from '@cellajs/cli/screenshots';
 import { listMyMemberships, listOrganizations } from '../sdk/gen/index.ts';
+import { fileKindNames } from '../shared/src/utils/file-kind.ts';
 import { apiClient } from './a11y.ts';
 
 /**
@@ -223,5 +224,17 @@ export default defineScreenshotsBase({
         await hideDevUi(page);
       },
     },
+    // The image a file's share link previews with, one per kind: never the file itself, which a chat would copy.
+    ...fileKindNames.map((kind) => ({
+      id: `link-preview-${kind}`,
+      device: 'card' as const,
+      path: `/thumbnail?file=${kind}`,
+      out: `frontend/public/static/link-previews/${kind}`,
+      mode: 'dark' as const,
+      format: 'jpg' as const,
+      open: async (page: Page) => {
+        await hideDevUi(page);
+      },
+    })),
   ],
 });

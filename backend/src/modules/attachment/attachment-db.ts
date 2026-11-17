@@ -2,6 +2,7 @@ import { bigint, boolean, index, jsonb, snakeCase, uuid, varchar } from 'drizzle
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
+import { homeNumberIndex, numberColumn } from '#/db/utils/number-column';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { productColumns, productIndexes } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
@@ -11,6 +12,7 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productColumns('attachment'),
+    ...numberColumn,
     /** Storage placement only: bytes in the public S3 bucket, served from the CDN. Row readability for non-members is the separate `public` flag. */
     publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
@@ -31,6 +33,7 @@ export const attachmentsTable = snakeCase.table(
     index('attachments_group_id_index').on(table.groupId),
     // An index per sub-organization ancestor column; none for org-homed rows.
     ...channelRelationIndexes('attachments', table, 'attachment'),
+    homeNumberIndex('attachments', table, 'attachment'),
     organizationForeignKey(table),
     tenantSelectPolicy('attachments', table),
     ...writeThroughPolicies('attachments'),

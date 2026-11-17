@@ -6,6 +6,7 @@ import { CloudOffIcon } from 'lucide-react';
 import { type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent, useState } from 'react';
 import { attachmentIdOf, type MediaBlockType } from 'shared/blocknote';
 import { mediaBlockConfigs } from 'shared/utils/blocknote-schema-configs';
+import { formatBytes } from 'shared/utils/format-bytes';
 import { getFileKind } from '~/modules/attachment/file-placeholder';
 import { getBlockPendingUpload, type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { findAttachmentInCache, useAttachmentUpdateMutation } from '~/modules/attachment/query';
@@ -17,7 +18,6 @@ import type { AnyBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
 import { useCan } from '~/modules/entities/use-can';
 import { focusOnMount } from '~/utils/focus-on-mount';
-import { formatBytes } from '~/utils/format-bytes';
 
 /** The props the four media blocks share; `showPreview` and `previewWidth` are those of a block that previews its file. */
 interface MediaProps {

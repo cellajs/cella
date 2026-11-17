@@ -28,6 +28,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       convertedContentType: null,
       size: faker.number.int({ min: 1000, max: 10_000_000 }),
       keys: { original: `uploads/${mockNanoid()}/${filename}` },
+      number: 0,
       ...channelIds,
     };
   });
@@ -35,7 +36,12 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
 /** Attachment wire response with its writer ids resolved to actor references. */
 export const mockAttachmentResponse = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
-  return { ...attachment, ...mockActorRefs(attachment, key), deletedBy: null };
+  return {
+    ...attachment,
+    ...mockActorRefs(attachment, key),
+    number: withFakerSeed(`${key}:number`, () => faker.number.int({ min: 1, max: 999 })),
+    deletedBy: null,
+  };
 };
 
 export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);

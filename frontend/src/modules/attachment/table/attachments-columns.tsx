@@ -2,6 +2,7 @@ import { TrashIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig, isSeenTracked, seenWindowMs } from 'shared';
+import { formatBytes } from 'shared/utils/format-bytes';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DescriptionCell, DownloadCell, openDescriptionSheetFromCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
@@ -16,7 +17,6 @@ import { useCan } from '~/modules/entities/use-can';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { ActorCell } from '~/modules/user/actor-cell';
 import { cn } from '~/utils/cn';
-import { formatBytes } from '~/utils/format-bytes';
 
 const viewsTracked = isSeenTracked('attachment');
 

@@ -59,6 +59,18 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
       </div>
     );
   },
+  // A quote led by its kind, which Markdown keeps as `> **Warning:** …`; the editor's own markup carries a menu
+  toExternalHTML: ({ block, contentRef }) => {
+    const title = i18n.t((notifyOptions[block.props.type] ?? notifyOptions.warning).titleKey);
+    return (
+      <blockquote>
+        <p>
+          {title && <strong>{title}: </strong>}
+          <span ref={contentRef} />
+        </p>
+      </blockquote>
+    );
+  },
 });
 
 export const getNotifySlashItem = (editor: CustomBlockNoteEditor) => ({

@@ -60,6 +60,8 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'tenants',
     'deleted_storage',
     'channel_codes',
+    'product_numbering',
+    'product_number_moves',
     ...appFullCrudTables,
   ];
   // The CDC worker owns the sync state and its incident log; the API only reads them.
