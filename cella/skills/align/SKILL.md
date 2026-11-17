@@ -1,6 +1,6 @@
 ---
 name: align
-description: Apply pending cella upstream alignments to an app after an upgrade. Lists the open alignments with pnpm cella align, runs each one's codemod or manual steps in order, reads the app code typecheck cannot judge, gates on pnpm check, records what was handled, and reports each outcome in the upgrade PR.
+description: Apply pending cella upstream alignments to an app after an upgrade. Lists the open alignments with pnpm cella align, runs each one's codemod or manual steps in order, reads the app code typecheck cannot judge, gates on pnpm check, records what was handled, reads the upgrade's commits to the reference modules for patterns no alignment names, and reports each outcome in the upgrade PR.
 ---
 
 # Aligning an app with upstream cella
@@ -81,7 +81,45 @@ pnpm cella align mark <id>
 Removes the id from `cella/cella.alignments.json` (the file goes once the list is empty). Commit
 that change with the alignment's code changes, then return to step 2 for the next one.
 
-## 5. Report outcomes
+## 5. Read the reference modules
+
+An alignment reports what breaks, and an addition breaks nothing: a prop the template's page starts
+to pass, a permission it starts to ask, a helper its query moves to. The app's own product and
+channel modules copied these patterns from `attachment` (product) and `organization` (channel).
+Read every commit of the upgrade that changed those two modules:
+
+```sh
+old=$(git show origin/main:cella/cella.manifest.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).upstream.commit")
+new=$(node -p "require('./cella/cella.manifest.json').upstream.commit")
+repo=$(node -p "require('./cella/cella.manifest.json').upstream.repo")
+git log --reverse --format='%h %s' "$old..$new" -- {backend,frontend}/src/modules/{attachment,organization}
+git show <hash> -- {backend,frontend}/src/modules/{attachment,organization}  # its change
+gh pr view <number> --repo "$repo" --json body --jq .body                    # its why: the (#number) in the subject
+git grep -n <identifier> "$new" -- cella/alignments                          # the alignments that name it
+```
+
+An empty list ends the step. An app-owned module (`owner: 'app'`) whose entity
+`shared/config/hierarchy-config.ts` declares with `.product` is the twin of `attachment`, one
+declared with `.channel` the twin of `organization`; files pair by role with the name swapped
+(`attachment-queries.ts` and `<name>-queries.ts`, `organization-page.tsx` and `<name>-page.tsx`).
+
+- **Order**: commits without `!` in the subject first, since no alignment covers them. Then each `!`
+  commit, for what no alignment names: grep the alignments for each identifier its diff changes. A
+  change a later commit in the range rewrites is checked once, against the template file at `$new`.
+- **Skip**: a commit or hunk that changes only tests, stories or comments, and a change with no
+  counterpart in the app, such as attachment's file handling or what the organization does as the
+  spine (tenants, the lobby).
+- **Finding**: a pattern change the twin has not followed, confirmed by opening the app file; grep
+  the app's other modules of that kind for the same old form. Not a finding: what typecheck
+  reports, what an alignment's steps cover, a twin that reaches the same result under its own name.
+- **Act**: apply a mechanical finding (a missing prop, a swap to the template's helper) in the
+  upgrade PR, gated by `pnpm check`. One that needs a decision (a change users see, a style change
+  across many files) goes in the PR description (step 6).
+- **Where it bites**: the app file and the template file at `$new` can look nearly the same, and
+  only the diff shows that the template added something on purpose. An alignment finds the old form
+  by its name, and a twin that wrote the same behavior another way shows only in the reference diff.
+
+## 6. Report outcomes
 
 Once the upgrade PR exists, add one table to its description with a row per alignment that arrived
 with this upgrade, handled or not. Upstream reads these tables to learn which alignments were
@@ -93,6 +131,10 @@ precise, so fill it also when every row says `nothing`.
 | outcome | `nothing` (marked with no change), `config` (app-owned config or a cache bump only), `generate` (a regenerate only), `code` (app code changed), `open` (left for later) |
 | missed | what the app had to do that the README did not say, or `-` |
 
+Under the table, list the findings of step 5, applied or open, one line each: the upstream commit,
+the template file, the app file and the change. Upstream reads a finding from a `!` commit as a
+step its alignments missed.
+
 The arrived ids are the alignments upstream added between the app's previous upgrade and this
 one. `gh pr edit` does not update a description reliably, and not at all from a cloud session, so
 write it through the REST API:
@@ -101,7 +143,7 @@ write it through the REST API:
 old=$(git show origin/main:cella/cella.manifest.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).upstream.commit")
 new=$(node -p "require('./cella/cella.manifest.json').upstream.commit")
 git diff --name-only --diff-filter=A "$old" "$new" -- cella/alignments | grep README.md
-gh api repos/{owner}/{repo}/pulls/<number> --jq .body > /tmp/body.md   # then append the table
+gh api repos/{owner}/{repo}/pulls/<number> --jq .body > /tmp/body.md   # then append the table and the findings
 gh api -X PATCH repos/{owner}/{repo}/pulls/<number> -F body=@/tmp/body.md
 ```
 
