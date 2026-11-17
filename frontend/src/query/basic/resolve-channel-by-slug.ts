@@ -1,4 +1,4 @@
-import { type DefaultError, type FetchQueryOptions, onlineManager, type QueryKey } from '@tanstack/react-query';
+import { type DefaultError, onlineManager, type QueryExecuteOptions, type QueryKey } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { isUuid } from 'shared/utils/entity-id';
@@ -13,7 +13,7 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   tenantId: string;
   /** Looks up a cached entity by id or slug (list cache), scoped to tenant. */
   findInCache: (idOrSlug: string, tenantId: string) => T | undefined;
-  detailQueryOptions: (id: string) => FetchQueryOptions<T, DefaultError, T, TQueryKey>;
+  detailQueryOptions: (id: string) => QueryExecuteOptions<T, DefaultError, T, T, TQueryKey>;
   /** Fetches the entity by slug when it isn't resolvable from cache; an id in the param reads the detail query by id. */
   fetchBySlug: () => Promise<T>;
   /** Default true: skip the id-based read while offline, resolving to undefined. False always reads and waits for reconnection. */

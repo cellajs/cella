@@ -1,7 +1,9 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { dropTargetForElements, draggable as makeDraggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge/attach-closest-edge';
+import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge/extract-closest-edge';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DropIndicator } from '~/modules/common/drop-indicator';

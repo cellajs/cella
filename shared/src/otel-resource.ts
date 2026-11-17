@@ -1,12 +1,13 @@
 import type { Attributes } from '@opentelemetry/api';
 import {
   detectResources,
-  envDetector,
   hostDetector,
   osDetector,
   processDetector,
   type Resource,
+  resourceAttributesEnvDetector,
   resourceFromAttributes,
+  serviceNameEnvDetector,
 } from '@opentelemetry/resources';
 
 /**
@@ -15,4 +16,6 @@ import {
  * service builds it for its traces and metrics, and the pino transport's worker thread builds it for the logs.
  */
 export const serviceResource = (serviceAttributes: Attributes): Resource =>
-  detectResources({ detectors: [envDetector, hostDetector, osDetector, processDetector] }).merge(resourceFromAttributes(serviceAttributes));
+  detectResources({ detectors: [resourceAttributesEnvDetector, serviceNameEnvDetector, hostDetector, osDetector, processDetector] }).merge(
+    resourceFromAttributes(serviceAttributes),
+  );

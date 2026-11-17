@@ -1,7 +1,7 @@
 import type { LucideProps } from 'lucide-react';
 import { cn } from '~/utils/cn';
 
-export function GithubIcon({ className, size: _, strokeWidth: __, absoluteStrokeWidth: ___, ...props }: LucideProps) {
+export function GithubIcon({ className, size: _, strokeWidth: __, nonScalingStroke: ___, ...props }: Omit<LucideProps, 'absoluteStrokeWidth'>) {
   return (
     <svg viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" className={cn('lucide', className)} {...props}>
       <path

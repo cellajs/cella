@@ -1,9 +1,9 @@
-import type { Attributes, AttributeValue } from '@opentelemetry/api';
+import type { AnyValue, Attributes } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { isFailedQueryMessage, redactedFailedQuery, replaceInStack } from '../utils/failed-query.ts';
 import { scrubText, scrubUrl } from '../utils/scrub-url.ts';
 
-function isStringArray(value: AttributeValue): value is (string | null | undefined)[] {
+function isStringArray(value: AnyValue): value is (string | null | undefined)[] {
   return Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
 }
 

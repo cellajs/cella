@@ -1,5 +1,5 @@
 import { SendIcon } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -13,7 +13,7 @@ export function RequestInfoForm() {
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const form = event.currentTarget;
