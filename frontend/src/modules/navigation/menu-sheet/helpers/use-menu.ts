@@ -19,7 +19,7 @@ export function useMenu(userId: string | undefined) {
   for (const list of lists) itemsByType.set(list.entityType, menuItemsFromList(list.query.data, myMemberships?.results ?? []));
   const menu = buildMenu(itemsByType, appConfig.menuStructure);
 
-  const isLoading = lists.some(({ query }) => query.isPending);
+  const isLoading = lists.some(({ query }) => query.isLoading);
   const error = lists.find(({ query }) => query.error)?.query.error;
 
   return { menu, isLoading, error };

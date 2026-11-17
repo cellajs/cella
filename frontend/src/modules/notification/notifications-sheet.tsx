@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { BellIcon } from 'lucide-react';
+import { BellIcon, ServerCrashIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ListNotificationsResponse } from 'sdk';
@@ -23,7 +23,7 @@ import { isModifiedClick } from '~/utils/is-modified-click';
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {
   const { t } = useTranslation();
-  const { data, isLoading } = useQuery(notificationsQueryOptions());
+  const { data, isLoading, error } = useQuery(notificationsQueryOptions());
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const { mutate: markRead } = useMarkNotificationsReadMutation();
 
@@ -53,7 +53,8 @@ export function NotificationsSheet() {
       <div className="flex flex-col gap-2 px-3 py-2">
         {isLoading && <Spinner className="mt-8" />}
 
-        {!isLoading && items.length === 0 && <ContentPlaceholder icon={BellIcon} title="c:no_notifications" />}
+        {!data && error && <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />}
+        {data && items.length === 0 && <ContentPlaceholder icon={BellIcon} title="c:no_notifications" />}
 
         <ul className="flex flex-col gap-1 pb-60">
           {items.map((notification) => (

@@ -21,10 +21,10 @@ export function SsoEntryPage() {
   const { connectionId } = useParams({ from: '/_public/auth/sso/$connectionId' });
   const { redirect } = useSearch({ from: '/_public/auth/sso/$connectionId' });
 
-  const { data, error, isPending } = useQuery(ssoEntryQueryOptions(connectionId));
+  const { data, error } = useQuery(ssoEntryQueryOptions(connectionId));
 
-  if (error) return <ErrorNotice error={error} boundary="auth" />;
-  if (isPending || !data) return <Spinner size="lg" />;
+  // A failed refetch keeps the entry it had.
+  if (!data) return error ? <ErrorNotice error={error} boundary="auth" /> : <Spinner size="lg" />;
 
   const { institution, organization, federation, status } = data;
   const organizationName = organization?.name ?? appConfig.name;

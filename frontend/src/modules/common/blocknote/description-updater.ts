@@ -8,8 +8,8 @@ import { queryClient } from '~/query/query-client';
 
 type DescribedEntity = { id: string; organizationId: string; description: string | null };
 
-/** The prepared update mutation, called with the new description. */
-type DescriptionMutation = (ops: { description: string }) => Promise<unknown>;
+/** The prepared update mutation, called with the new description. Its `mutate`: the editor awaits no save, and a failed one reports itself. */
+type DescriptionMutation = (ops: { description: string }) => unknown;
 
 /**
  * Collaborative half of description persistence: the relay writes the row through the same update operation, and card

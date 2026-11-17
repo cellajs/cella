@@ -16,13 +16,12 @@ function UserSheet({ id, organizationId }: { id: string; organizationId: string 
 
   const { data: user, isLoading, isError } = useQuery(userQueryOptions(id));
 
+  // A failed refetch keeps the profile it had.
+  if (user) return <UserProfile user={user} organizationId={isSelf ? undefined : organizationId} isSheet />;
   if (isLoading) return <PageSpinner />;
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
-  if (!user)
-    return <ContentPlaceholder icon={isOnline ? FlameKindlingIcon : WifiOffIcon} title={isOnline ? 'error:no_user_found' : 'c:offline.text'} />;
-
-  return <UserProfile user={user} organizationId={isSelf ? undefined : organizationId} isSheet />;
+  return <ContentPlaceholder icon={isOnline ? FlameKindlingIcon : WifiOffIcon} title={isOnline ? 'error:no_user_found' : 'c:offline.text'} />;
 }
 
 export function UserSheetHandler() {

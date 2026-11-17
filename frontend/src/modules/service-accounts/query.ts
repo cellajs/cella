@@ -10,7 +10,6 @@ import {
   type RevokeApiKeyResponse,
   revokeApiKey,
 } from 'sdk';
-import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { withStepUp } from '~/modules/auth/step-up';
 import { StepUpDismissedError } from '~/modules/auth/step-up-retry';
@@ -30,7 +29,7 @@ const serviceAccountKeys = {
 export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
-    queryFn: () => listServiceAccounts({ path, query: { maxPageSize: appConfig.pageSizes.default } }),
+    queryFn: () => fetchAllPages((page) => listServiceAccounts({ path, query: page }), syncChunkSize),
   });
 
 export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
