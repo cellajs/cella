@@ -1,4 +1,5 @@
-import { GetObjectCommand, ListObjectsV2Command, type S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, type S3Client } from '@aws-sdk/client-s3';
+import { listObjectEtags } from '../scaleway/s3-client';
 
 /**
  * A machine's own account of a boot: the agent uploads it at the end of every boot, healthy or not, to the diagnostics
@@ -17,14 +18,7 @@ export interface BootAccountReader {
 export function bucketBootAccountReader(s3: Pick<S3Client, 'send'>, bucket: string): BootAccountReader {
   return {
     async list() {
-      const keys: string[] = [];
-      let token: string | undefined;
-      do {
-        const page = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: BOOT_ACCOUNTS_PREFIX, ContinuationToken: token }));
-        for (const object of page.Contents ?? []) if (object.Key) keys.push(object.Key.slice(BOOT_ACCOUNTS_PREFIX.length));
-        token = page.IsTruncated ? page.NextContinuationToken : undefined;
-      } while (token);
-      return keys;
+      return [...(await listObjectEtags(s3, bucket, BOOT_ACCOUNTS_PREFIX)).keys()].map((key) => key.slice(BOOT_ACCOUNTS_PREFIX.length));
     },
     async read(key) {
       const object = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: `${BOOT_ACCOUNTS_PREFIX}${key}` }));

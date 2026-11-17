@@ -17,12 +17,12 @@ const networkAttempts = 3;
 const networkRetryDelayMs = 2000;
 
 /** The undici codes of a connection that never opened: the request never reached Scaleway. */
-const UNSENT_CODES = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT']);
+const unsentCodes = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT']);
 
-/** Whether a failed fetch never reached the endpoint, so sending it again creates nothing twice. */
+/** Whether a failed fetch never reached the endpoint. Sending it again then creates nothing twice. */
 function neverSent(error: unknown): boolean {
   const cause = error instanceof Error ? error.cause : undefined;
-  return typeof cause === 'object' && cause !== null && 'code' in cause && UNSENT_CODES.has(String(cause.code));
+  return typeof cause === 'object' && cause !== null && 'code' in cause && unsentCodes.has(String(cause.code));
 }
 
 export interface ScwAuth {

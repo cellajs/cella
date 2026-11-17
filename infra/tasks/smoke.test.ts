@@ -153,7 +153,7 @@ describe('runSmoke', () => {
     if (url.endsWith('/health')) return Promise.resolve(res({ status: 204, ok: true, headers: new Headers({ 'x-app-version': SHA }) }));
     if (url.includes('/__smoke_')) return Promise.resolve(res({ body: '<html><body>app</body></html>' }));
     if (url.includes('/assets/')) return Promise.resolve(res({ body: 'export {};' }));
-    // frontend root (used by both check 1 and check 5)
+    // frontend root, which the index, entry script and header checks read
     return Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders() }));
   }
 
@@ -216,7 +216,6 @@ describe('runSmoke', () => {
     const sha = results.find((r) => r.name === 'primary reports deployed SHA');
     expect(sha?.status).toBe('fail');
     expect(sha?.detail).toContain('old9999');
-    // The other five still ran and passed.
     expect(results.filter((r) => r.status === 'ok')).toHaveLength(6);
   });
 

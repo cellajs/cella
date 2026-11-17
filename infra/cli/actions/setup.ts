@@ -18,11 +18,11 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
   if (mode === 'resume') await printLaunchChecklist(context);
   // The operator key that stores the new deploy key's copy is asked before the Owner moment, which deletes the keys it replaces: no
   // prompt then stands between the delete and the copy.
-  if (mode === 'rotate-keys') await acquireOperatorKey(context);
+  const rotationKey = mode === 'rotate-keys' ? await acquireOperatorKey(context) : undefined;
   const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
   const moment = writesIdentities ? await runOwnerMoment(context, mode) : undefined;
   if (writesIdentities && !moment) return;
-  const operatorKey = await acquireOperatorKey(context);
+  const operatorKey = rotationKey ?? (await acquireOperatorKey(context));
   // An Owner key never writes the state: the rotation is recorded with the operator key. Its counter makes the deploys it starts (the live
   // release again, then the target) replace every machine, and none keeps the uploads key the rotation deleted. Those deploys run on the
   // main job's copy of the deploy key, which is replaced first: a failed copy ends the rotation before they start on the deleted key.

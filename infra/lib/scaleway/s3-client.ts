@@ -35,3 +35,16 @@ export function stateKeyOf(key: { accessKey: string; secretKey: string }, projec
 export function deployS3Key(env: NodeJS.ProcessEnv = process.env): { accessKey: string; secretKey: string } {
   return { accessKey: env.SCW_ACCESS_KEY ?? env.AWS_ACCESS_KEY_ID ?? '', secretKey: env.SCW_SECRET_KEY ?? env.AWS_SECRET_ACCESS_KEY ?? '' };
 }
+
+/** Every key of the bucket under `prefix` with its ETag, in one paginated listing. */
+export async function listObjectEtags(s3: Pick<S3Client, 'send'>, bucket: string, prefix?: string): Promise<Map<string, string>> {
+  const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
+  const etags = new Map<string, string>();
+  let token: string | undefined;
+  do {
+    const page = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }));
+    for (const object of page.Contents ?? []) if (object.Key) etags.set(object.Key, object.ETag?.replaceAll('"', '') ?? '');
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
+  return etags;
+}

@@ -14,7 +14,7 @@ export interface GeneralConfig {
     volumeSizeGb: PerMode<number>;
   };
   assets: {
-    /** Days a replaced release keeps its content-hashed files under `assets/`, counted from the publish that replaced it. */
+    /** Days, counted from the publish that replaced a release. */
     retentionDays: PerMode<number>;
   };
   schedule: {

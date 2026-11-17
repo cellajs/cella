@@ -187,7 +187,6 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
       found.machines.push({ detail: `${name}: ${older} (a failed run left it, or someone named it so)`, item: [name, older] });
     }
   }
-  // A deploy deletes a machine's volume right after the machine: one that outlives a run lost its delete.
   for (const { id, name, createdAt } of facts.volumes ?? []) {
     if (createdAt && now - Date.parse(createdAt) < limitMs) continue;
     const loose = 'a volume no machine holds, older than a deploy runs';
