@@ -6,7 +6,7 @@ import { benchUser, ORG_PATH } from '../bench-user';
  * transaction. Each VU loads the page 15 times. Steps up 10 → 15 → 20 arrivals/s (~1200 req/s peak).
  */
 export default defineScenario({
-  description: 'Page load: what a tab fetches when it opens an organization.',
+  description: 'what a tab fetches when it opens an organization',
   phases: [
     { name: 'hold 10', duration: 10, arrivalRate: 10 },
     { name: 'hold 15', duration: 10, arrivalRate: 15 },

@@ -7,7 +7,7 @@ import { LIST_COUNTERS, LIST_HISTOGRAMS, runListRead } from '../sync/list-read';
 
 /** `sync/list-read.ts` drives it on the large-list organization (`seeds/large-list.bench.ts`); `LIST_ROWS` and `LIST_READS` shape it. */
 export default defineScenario({
-  description: 'Full list read: what a fresh client pays to read a whole large list, as fetchAllPages does.',
+  description: 'what a fresh client pays to read a whole large list, as fetchAllPages does',
   counters: LIST_COUNTERS,
   histograms: LIST_HISTOGRAMS,
   primary: 'sync.full_list_ms.p95',

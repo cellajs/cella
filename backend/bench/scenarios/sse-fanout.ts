@@ -18,7 +18,7 @@ const edits = new Map<string, { sentAt: number; waiting: Set<number> }>();
  * announcement at once, for comparison. `sync.heard_ms` and `sync.all_heard_ms` count from the writer's call.
  */
 export default defineScenario({
-  description: 'SSE fan-out: many live subscribers fetching what the stream announces.',
+  description: 'many live subscribers fetching what the stream announces',
   phases: [
     { name: 'ramp subscribers', duration: 10, arrivalRate: 8 },
     { name: 'hold with writes', duration: 20, arrivalRate: 12 },

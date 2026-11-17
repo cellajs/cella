@@ -8,7 +8,7 @@ import { CATCHUP_COUNTERS, CATCHUP_HISTOGRAMS, runCatchup } from '../sync/catchu
  * `CATCHUP_MODE=spread` reads each gap in the client's slot of the server's spread window, as users see it.
  */
 export default defineScenario({
-  description: 'Reconnect catchup: every stream ends at once, as on a deploy, and every client catches up together.',
+  description: 'every stream ends at once, as on a deploy, and every client catches up together',
   counters: CATCHUP_COUNTERS,
   histograms: CATCHUP_HISTOGRAMS,
   primary: 'sync.caught_up_ms.p95',

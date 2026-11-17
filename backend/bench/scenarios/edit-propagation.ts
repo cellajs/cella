@@ -5,7 +5,7 @@ import { PROPAGATION_COUNTERS, PROPAGATION_HISTOGRAMS, runPropagation } from '..
 
 /** `sync/propagation.ts` drives it; `PROPAGATION_EDITS`, `PROPAGATION_WARMUPS` and `PROPAGATION_GAP_MS` in `config.ts` shape it. */
 export default defineScenario({
-  description: 'Edit propagation: how long until a reader viewing the channel holds an edit, with the stack at rest.',
+  description: 'how long until a reader viewing the channel holds an edit, with the stack at rest',
   counters: PROPAGATION_COUNTERS,
   histograms: PROPAGATION_HISTOGRAMS,
   primary: 'sync.visible_ms.p95',

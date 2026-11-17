@@ -7,7 +7,7 @@ import { benchUser } from '../bench-user';
  * arrivals/s (~2000 req/s).
  */
 export default defineScenario({
-  description: 'GET /me: the cheapest signed-in request, repeated.',
+  description: 'the cheapest signed-in request, GET /me, repeated',
   phases: [
     { name: 'ramp up', duration: 10, arrivalRate: 50 },
     { name: 'sustained', duration: 15, arrivalRate: 100 },

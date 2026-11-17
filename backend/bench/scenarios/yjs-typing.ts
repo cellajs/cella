@@ -12,7 +12,7 @@ const sumOf = (counters: Record<string, number>, prefix: string) =>
  * client leaves: wait that long before a run whose activity count must be exact.
  */
 export default defineScenario({
-  description: 'Yjs typing: documents x typing clients on the relay; peer and Saved latency, pg_notify, materializations, fan-out.',
+  description: 'documents x typing clients on the relay; peer and Saved latency, pg_notify, materializations, fan-out',
   counters: [
     'yjs.keystrokes',
     'yjs.notifications',

@@ -20,7 +20,7 @@ const parseBatch = (text: string): Partial<BatchResponse> => {
  * batches. Each VU creates a batch of 10 and deletes it, 5 times. Steps up 5 → 10 arrivals/s (~1000 rows/s peak).
  */
 export default defineScenario({
-  description: 'Attachment churn: batches of 10 attachments are created and deleted again.',
+  description: 'batches of 10 attachments are created and deleted again',
   phases: [
     { name: 'hold 5', duration: 10, arrivalRate: 5 },
     { name: 'hold 10', duration: 20, arrivalRate: 10 },
