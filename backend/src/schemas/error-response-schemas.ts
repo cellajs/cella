@@ -77,6 +77,13 @@ const errorResponseOptions = [
       'The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.',
   },
   {
+    code: 415,
+    name: 'UnsupportedMediaTypeError',
+    description: 'Unsupported media type',
+    schemaDescription:
+      "The request body came without a `Content-Type`, or with one the operation does not declare. Send the body as one of the operation's media types, such as `application/json`.",
+  },
+  {
     code: 429,
     name: 'TooManyRequestsError',
     description: 'Too many requests',

@@ -6,13 +6,12 @@ import { streamSubscriberManager } from './subscriber-manager';
 
 const user = 'user-revoke';
 
-/** Registers a subscriber whose stream records SSE writes and the abort/close calls the listener makes. */
+/** Registers a subscriber whose stream records SSE writes and whether the listener aborted it. */
 const register = (sessionId: string) => {
-  const stream = { aborted: false, closed: false, written: [] as unknown[] };
+  const stream = { aborted: false, written: [] as unknown[] };
   Object.assign(stream, {
     writeSSE: async (message: unknown) => void stream.written.push(message),
     abort: () => (stream.aborted = true),
-    close: async () => (stream.closed = true),
   });
   const subscriber = { id: sessionId, stream, userId: user, sessionId, memberships: [] } as unknown as StreamSubscriber;
   streamSubscriberManager.register(subscriber, [`user:${user}`]);
@@ -32,12 +31,11 @@ describe('session.revoked closes the streams bound to the ended sessions', () =>
     const kept = register('session-2');
 
     authEvents.emit('session.revoked', { userId: user, sessionIds: ['session-1'], reason: 'sign_out' });
-    await vi.waitFor(() => expect(ended.closed).toBe(true));
+    await vi.waitFor(() => expect(ended.aborted).toBe(true));
 
     expect(ended.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
-    expect(ended.aborted).toBe(true);
     expect(registeredIds()).toEqual(['session-2']);
     expect(kept.written).toEqual([]);
-    expect(kept.closed).toBe(false);
+    expect(kept.aborted).toBe(false);
   });
 });

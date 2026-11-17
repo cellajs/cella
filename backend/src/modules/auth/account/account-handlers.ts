@@ -7,9 +7,8 @@ import { revokeMySessionsOp } from '#/modules/auth/account/operations/revoke-my-
 import { revokeUserSessionsOp } from '#/modules/auth/account/operations/revoke-user-sessions';
 import { toggleMfaOp } from '#/modules/auth/account/operations/toggle-mfa';
 import { deleteAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authAccountRoutes.getMyAuth, async (ctx) => ctx.json(await getMyAuthOp(ctx), 200));
 

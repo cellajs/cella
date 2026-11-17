@@ -83,6 +83,15 @@ export const zPayloadTooLargeError = zApiError.and(
 );
 
 /**
+ * The request body came without a `Content-Type`, or with one the operation does not declare. Send the body as one of the operation's media types, such as `application/json`.
+ */
+export const zUnsupportedMediaTypeError = zApiError.and(
+  z.object({
+    status: z.literal(415).optional(),
+  }),
+);
+
+/**
  * A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.
  */
 export const zTooManyRequestsError = zApiError.and(

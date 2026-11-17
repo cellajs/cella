@@ -1,7 +1,6 @@
 import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { compress } from 'hono/compress';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
@@ -9,6 +8,7 @@ import type { Env } from '#/core/context';
 import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
+import { compressResponse } from '#/middlewares/compress';
 import { loggerMiddleware } from '#/middlewares/logger';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
@@ -19,19 +19,14 @@ export const app = new OpenAPIHono<Env>();
 // Ambient log context in AsyncLocalStorage, first in the chain so every downstream log carries request ids
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
 
-// The invoke-token URL carries a single-use secret in its path, so `no-referrer` keeps it out of the Referer.
-// Registered before secureHeaders so it runs after it on unwind and overrides the global referrer policy.
-app.use('*', async (ctx, next) => {
-  await next();
-  if (ctx.req.path.includes('/invoke-token/')) ctx.res.headers.set('Referrer-Policy', 'no-referrer');
-});
-
 app.use(
   '*',
   secureHeaders({
     referrerPolicy: 'strict-origin-when-cross-origin',
     strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
     permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+    // A route that sets one of these headers keeps its own value.
+    overwrite: false,
   }),
 );
 
@@ -67,5 +62,4 @@ app.use('*', clientVersionMiddleware);
 
 app.use('*', dynamicBodyLimit);
 
-const compressMiddleware = compress();
-app.use('*', (ctx, next) => (ctx.req.method === 'GET' ? compressMiddleware(ctx, next) : next()));
+app.use('*', compressResponse);

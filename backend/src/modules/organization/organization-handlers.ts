@@ -7,10 +7,9 @@ import { getOrganizationsOp } from '#/modules/organization/operations/get-organi
 import { publishOrganizationOp } from '#/modules/organization/operations/publish-organization';
 import { updateOrganizationOp } from '#/modules/organization/operations/update-organization';
 import { organizationRoutes } from '#/modules/organization/organization-routes';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(organizationRoutes.batchCreateOrganizations, async (ctx) => ctx.json(await createOrganizationsOp(ctx, ctx.req.valid('json')), 201));
 
@@ -34,7 +33,7 @@ app.openapi(organizationRoutes.batchDeleteOrganizations, async (ctx) => {
 
 export const organizationHandlers = app;
 
-const listApp = new OpenAPIHono<Env>({ defaultHook });
+const listApp = new OpenAPIHono<Env>();
 
 listApp.openapi(organizationRoutes.listOrganizations, async (ctx) => {
   const query = ctx.req.valid('query');

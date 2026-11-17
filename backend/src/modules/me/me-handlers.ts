@@ -12,11 +12,10 @@ import { updateMeOp } from '#/modules/me/operations/update-me';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage, windowOf } from '#/utils/list-page';
 import { log } from '#/utils/logger';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(meRoutes.getMe, async (ctx) => ctx.json(await getMeOp(ctx), 200));
 

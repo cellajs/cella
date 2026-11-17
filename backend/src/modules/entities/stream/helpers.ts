@@ -25,20 +25,14 @@ export const maxStreamChangeIds = 400;
 const pendingStreamBytes = new WeakMap<SSEStreamingApi, number>();
 
 /**
- * Ends a stream its caller unregistered. Abort runs the handler's onAbort cleanup, ends the response body and releases
- * every write still waiting for the client; close lets keepAlive return.
+ * Unregisters and aborts a stream whose client stopped reading; one already ended stays as it is. The abort runs the
+ * handler's onAbort cleanup, ends the response body and releases every write still waiting for the client.
  */
-export async function endStream(stream: SSEStreamingApi): Promise<void> {
-  stream.abort();
-  await stream.close();
-}
-
-/** Unregisters and ends a stream whose client stopped reading; one already ended stays as it is. */
-async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi, pendingBytes: number): Promise<void> {
+function closeStalledStream(subscriberId: string, stream: SSEStreamingApi, pendingBytes: number): void {
   if (stream.aborted) return;
   log.warn('Closed a stream whose client stopped reading', { subscriberId, pendingBytes });
   streamSubscriberManager.unregister(subscriberId);
-  await endStream(stream);
+  stream.abort();
 }
 
 /**
@@ -83,8 +77,8 @@ async function writePing(stream: SSEStreamingApi, data: string): Promise<void> {
 }
 
 /**
- * Sends a ping at once and then every `intervalMs`, until the client aborts or the server closes the stream; `write`
- * swallows errors, so the flags are the only exit.
+ * Sends a ping at once and then every `intervalMs`, until the client leaves or the server aborts or closes the stream;
+ * `write` swallows errors, so the flags are the only exit.
  * @param pingData - Read for every ping; empty by default.
  */
 export async function keepAlive(stream: SSEStreamingApi, pingData: () => string = () => '', intervalMs = streamPingMs): Promise<void> {

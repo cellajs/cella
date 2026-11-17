@@ -45,12 +45,13 @@ describe('route helpers', () => {
     expect(routes.createThing.operationId).toBe('thingCreate');
   });
 
-  it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit for a body, the read limiter for a read', () => {
+  it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit and the media type gate for a body, the read limiter for a read', () => {
     expect(Object.keys(routes.getThing.responses)).toEqual(['200', '400', '429']);
     expect(routes.createThing.responses).toMatchObject({
       201: { description: 'Created' },
       400: sharedErrorResponses[400],
       413: sharedErrorResponses[413],
+      415: sharedErrorResponses[415],
     });
   });
 

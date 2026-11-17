@@ -9,10 +9,9 @@ import { checkInvitesOp } from '#/modules/memberships/operations/plan-invites';
 import { resendPendingInvitationOp } from '#/modules/memberships/operations/resend-pending-invitation';
 import { updateMembershipOp } from '#/modules/memberships/operations/update-membership';
 import { withdrawPendingInvitationOp } from '#/modules/memberships/operations/withdraw-pending-invitation';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(membershipRoutes.inviteMembers, async (ctx) => {
   const { emails, role } = ctx.req.valid('json');

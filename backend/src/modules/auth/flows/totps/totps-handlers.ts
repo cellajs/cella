@@ -13,13 +13,12 @@ import { verifyTotp } from '#/modules/auth/flows/totps/operations/verify-totp';
 import { deleteTotp, findTotp, insertTotp } from '#/modules/auth/flows/totps/totps-queries';
 import { authTotpsRoutes } from '#/modules/auth/flows/totps/totps-routes';
 import { encodeBase32 } from '#/utils/base32';
-import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
 /** How long a TOTP setup waits for its first code: the pending secret's cookie lives that long. */
 const totpSetupLifetime = new TimeSpan(5, 'm');
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
   const user = ctx.var.user;

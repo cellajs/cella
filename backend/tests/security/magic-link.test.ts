@@ -123,6 +123,7 @@ describe('magic link replay', async () => {
     const { error, response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
     await expectRefusal({ response, error }, 401, 'magic_expired');
     expect(cookieChange(response, 'session')).toBeUndefined();
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
   });
 
   it('lets the browser that opened the link open it again (positive control)', async () => {
@@ -162,6 +163,8 @@ describe('magic link opened in another browser', async () => {
     const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe(confirmPage);
+    // The link's URL holds the secret: no page it leads to may send it on as a Referer.
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
     expect(cookieChange(response, 'session')).toBeUndefined();
     expect(cookieChange(response, 'magic-pending')).toBe('set');
     expect(await openedAt(row.id)).toBeNull();

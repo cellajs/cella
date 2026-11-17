@@ -4,11 +4,10 @@ import { createRequestOp } from '#/modules/requests/operations/create-request';
 import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests';
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
 import { requestRoutes } from '#/modules/requests/requests-routes';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 import { log } from '#/utils/logger';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(requestRoutes.createRequest, async (ctx) => {
   const input = ctx.req.valid('json');

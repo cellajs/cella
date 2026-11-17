@@ -75,7 +75,7 @@
     "domhandler": "^6.0.1",
     "drizzle-kit": "1.0.0-rc.5",
     "drizzle-orm": "1.0.0-rc.5",
-    "hono": "^4.13.18",
+    "hono": "^4.13.19",
     "htmlparser2": "^12.0.0",
     "i18next": "^27.1.1",
     "isbot": "^5.2.3",

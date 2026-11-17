@@ -52,6 +52,7 @@ export const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     request: { params: tenantOrgParamSchema, body: jsonBody(mcpBodySchema) },
     responses: {
       200: json('JSON-RPC response', z.any()),
+      202: { description: 'Notification accepted\n\nEvery message was a notification or a response, which takes no answer.' },
       403: {
         description:
           'Forbidden\n\nA call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.',

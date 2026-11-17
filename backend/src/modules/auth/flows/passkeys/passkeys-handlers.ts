@@ -18,9 +18,8 @@ import {
 import { deletePasskey, insertPasskey } from '#/modules/auth/flows/passkeys/passkeys-queries';
 import { authPasskeysRoutes } from '#/modules/auth/flows/passkeys/passkeys-routes';
 import { findUserById } from '#/modules/user/user-queries';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   const user = ctx.var.user;

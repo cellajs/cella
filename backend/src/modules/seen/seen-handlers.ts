@@ -3,9 +3,8 @@ import type { Env } from '#/core/context';
 import { getUnseenCountsOp } from '#/modules/seen/operations/get-unseen-counts';
 import { markSeenOp } from '#/modules/seen/operations/mark-seen';
 import { seenRoutes } from '#/modules/seen/seen-routes';
-import { defaultHook } from '#/utils/default-hook';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(seenRoutes.markSeen, async (ctx) => {
   const { productIds, productType } = ctx.req.valid('json');
@@ -14,7 +13,7 @@ app.openapi(seenRoutes.markSeen, async (ctx) => {
 
 export const seenHandlers = app;
 
-const unseenApp = new OpenAPIHono<Env>({ defaultHook });
+const unseenApp = new OpenAPIHono<Env>();
 
 unseenApp.openapi(seenRoutes.getUnseenCounts, async (ctx) => ctx.json(await getUnseenCountsOp(ctx), 200));
 

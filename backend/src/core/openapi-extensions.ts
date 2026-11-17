@@ -49,7 +49,7 @@ export type SecurityRequirement = Record<string, string[]>;
  */
 export type GuardContext = 'actor' | 'session' | 'tenant' | 'organization';
 
-/** A middleware marked by `setMiddlewareExtension`: its extension type, the statuses it refuses with and, for a guard, what it accepts, sets and reads. */
+/** A middleware marked by `xMiddleware`: its extension type, the statuses it refuses with and, for a guard, what it accepts, sets and reads. */
 export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __extensionType: ExtensionType;
   __description?: string;

@@ -7,10 +7,9 @@ import { getNotificationsOp } from '#/modules/notification/operations/get-notifi
 import { markReadOp } from '#/modules/notification/operations/mark-read';
 import { getPreferencesOp, updatePreferencesOp } from '#/modules/notification/operations/preferences';
 import { setEmailCategoryOp } from '#/modules/notification/operations/unsubscribe';
-import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
-const app = new OpenAPIHono<Env>({ defaultHook });
+const app = new OpenAPIHono<Env>();
 
 app.openapi(notificationRoutes.listNotifications, async (ctx) => {
   const query = ctx.req.valid('query');

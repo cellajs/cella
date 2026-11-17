@@ -662,6 +662,24 @@
           }
         }
       },
+      "UnsupportedMediaTypeError": {
+        "description": "Unsupported media type",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnsupportedMediaTypeError"
+            }
+          }
+        }
+      },
       "TooManyRequestsError": {
         "description": "Too many requests",
         "headers": {
@@ -1106,6 +1124,55 @@
           "title": "Too large to save",
           "status": 413,
           "detail": "Shorten it or split it up.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
+          "severity": "warn",
+          "timestamp": "2025-01-01T12:00:00.000Z"
+        },
+        "x-tags": ["errors", "cella"]
+      },
+      "UnsupportedMediaTypeError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [415]
+              }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ],
+        "description": "The request body came without a `Content-Type`, or with one the operation does not declare. Send the body as one of the operation's media types, such as `application/json`.",
+        "example": {
+          "type": "invalid_request",
+          "title": "Something's missing or wrong",
+          "status": 415,
+          "detail": "Unsupported Media Type",
           "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -4430,6 +4497,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -4695,6 +4765,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5106,6 +5179,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -5350,6 +5426,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -5490,6 +5569,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5636,6 +5718,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5785,6 +5870,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -5901,6 +5989,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6288,6 +6379,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -6400,6 +6494,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6592,6 +6689,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -6778,6 +6878,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6982,6 +7085,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -7075,6 +7181,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -7258,6 +7367,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -7393,6 +7505,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -7501,6 +7616,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8603,6 +8721,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -8777,6 +8898,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -8898,6 +9022,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -9018,6 +9145,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -9241,6 +9371,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -9461,6 +9594,9 @@
               }
             }
           },
+          "202": {
+            "description": "Notification accepted\n\nEvery message was a notification or a response, which takes no answer."
+          },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
@@ -9530,6 +9666,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -9717,6 +9856,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -10261,6 +10403,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -10847,6 +10992,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -10981,6 +11129,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -11113,6 +11264,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11423,6 +11577,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12475,6 +12632,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           }
         }
       }
@@ -12611,6 +12771,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           }
         }
       }
@@ -13510,6 +13673,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -14017,6 +14183,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -14270,6 +14439,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -14398,6 +14570,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -14449,6 +14624,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           }
         }
       }
@@ -14498,6 +14676,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14737,6 +14918,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -14881,6 +15065,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -15089,6 +15276,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -15384,6 +15574,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -15703,6 +15896,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -15882,6 +16078,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -16021,6 +16220,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -16173,6 +16375,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -16388,6 +16593,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -16672,6 +16880,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -16894,6 +17105,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17273,6 +17487,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -17446,6 +17663,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17932,6 +18152,9 @@
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -18042,6 +18265,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

@@ -1,11 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
 import type { ExtensionType, ExtensionValueMetadata, GuardContext, SecurityRequirement, XMiddlewareHandler } from '#/core/openapi-extensions';
 import type { RateLimitPolicy } from '#/middlewares/rate-limiter/types';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
-
-type MiddlewareFunction<E extends Env = Env> = Parameters<typeof createMiddleware<E>>[0];
 
 type XMiddlewareOptions = {
   /** The JS function name for the middleware (used as identifier in OpenAPI spec) */
@@ -35,8 +32,8 @@ const extensionValueMetadata = new Map<ExtensionType, Map<string, ExtensionValue
 /** What every marked middleware documented, for the spec's `x-extensions`. */
 export const getExtensionValueMetadata = () => extensionValueMetadata;
 
-/** Sets `.name`, `.__extensionType`, `.__description`, `.__errors` and the guard metadata for OpenAPI introspection. */
-const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandler<E>, options: XMiddlewareOptions): XMiddlewareHandler<E> => {
+/** Marks `middleware` for OpenAPI introspection: `.name`, `.__extensionType`, `.__description`, `.__errors` and the guard metadata. */
+export const xMiddleware = <E extends Env = Env>(options: XMiddlewareOptions, middleware: MiddlewareHandler<E>): XMiddlewareHandler<E> => {
   const { functionName, type, name, description, errors, security, provides, requires, limiters, policy } = options;
 
   if (description) {
@@ -57,7 +54,3 @@ const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandl
   Object.defineProperty(extended, 'name', { value: functionName, writable: false });
   return extended;
 };
-
-/** Creates a middleware from `fn` and marks it with {@link setMiddlewareExtension}. */
-export const xMiddleware = <E extends Env = Env>(options: XMiddlewareOptions, fn: MiddlewareFunction<E>): XMiddlewareHandler<E> =>
-  setMiddlewareExtension(createMiddleware<E>(fn), options);
