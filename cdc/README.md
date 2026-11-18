@@ -43,7 +43,7 @@ record the flush in one transaction: activities, sequence values, counters, row 
 hand to the API → acknowledge the commit of the last source transaction of the flush
 ```
 
-The API receives the messages on its internal listener and fans them out to clients ([Sync engine](../cella/SYNC_ENGINE.md)). Clients order by `seq`, not arrival.
+The API receives the messages on its internal listener and fans them out to clients ([Sync engine](../cella/docs/SYNC_ENGINE.md)). Clients order by `seq`, not arrival.
 
 - `cdc/src/`: the worker
 - `cdc/src/pipeline/`: the steps above
@@ -104,7 +104,7 @@ A worker stuck on a failure for a while reports unhealthy. Its log names the pos
 
 A fix or a dropped slot ends the failure. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A worker that crash-loops never drops its slot: each restart starts the failure over. Only the WAL lag in its health answer shows it.
 
-Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE_MODES.md)).
+Each row names its answers per level ([Sync engine](../cella/docs/sync-engine/FAILURE_MODES.md)).
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
@@ -145,7 +145,7 @@ There is one repair, the rebuild. A verify only detects. Both start with a recou
 
 The worker settles the lost cases by itself before it reads the stream. It makes a new slot for one that is missing, invalidated or dropped at the WAL bound. The incident of that rebuild records the failure it could not get past.
 
-Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup. The API then ends every stream, and clients refetch ([Sync engine](../cella/SYNC_ENGINE.md#what-happens-when)).
+Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup. The API then ends every stream, and clients refetch ([Sync engine](../cella/docs/SYNC_ENGINE.md#what-happens-when)).
 
 In a lost case, rows changed between the old slot's last acknowledged position and the new slot get no activity and no change frame. They keep the `seq` they had. Counts, sequence values and every client's data are right again afterwards.
 
@@ -159,7 +159,7 @@ In a lost case, rows changed between the old slot's last acknowledged position a
 - **Only one worker may read the slot.**
 - **Transaction size:** a migration's writes are bulk by the companion's declaration, whatever their number; a backfill run by hand opens its transaction with the same marker statement (`SELECT pg_logical_emit_message(true, 'sync-bulk', '<label>')`), or stays under the limit.
 - **WAL retention is the recovery margin:** a worker that is down, waits for the API or is stuck on setup keeps WAL.
-- **Unbounded WAL** grows until the disk is full ([Deployment](../cella/DEPLOYMENT.md#overview)).
-- **Worker role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/MULTI_TENANCY.md#database-roles)).
+- **Unbounded WAL** grows until the disk is full ([Deployment](../cella/docs/DEPLOYMENT.md#overview)).
+- **Worker role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/docs/MULTI_TENANCY.md#database-roles)).
 - **Missing grant:** while the role lacks either, the worker reads nothing and reports unhealthy.
 - **A hung worker cannot hold API writes for long:** server-side timeouts take back its flush's row locks.

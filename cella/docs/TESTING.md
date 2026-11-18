@@ -23,7 +23,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 
 A second test shows the rightful user still gets through. An endpoint that refuses everyone then fails.
 
-Name the test after the attack, such as `must not leak attachments via another tenant's id`. Route-level ones go in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit.
+Name the test after the attack, such as `must not leak attachments via another tenant's id`. Route-level ones go in [backend/tests/security/](../../backend/tests/security/). Every security fix adds a test that reproduces the exploit.
 
 The attacks we test against:
 
@@ -64,7 +64,7 @@ The attacks we test against:
 - **Racing the sign-in plumbing:** concurrent code requests, or sign-in starts that grow the cookie header.
 - **Flooding the sign-in mail:** mail caps sidestepped by a known browser.
 
-Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). They cover an app's routes too, since the file reads its table from the generated OpenAPI document. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
+Rules for every route live in [route-guards.test.ts](../../backend/tests/security/route-guards.test.ts). They cover an app's routes too, since the file reads its table from the generated OpenAPI document. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
 
 ## Running tests
 
@@ -100,11 +100,11 @@ On a fresh test database, run the backend suite first. It creates and migrates t
 
 **Placement.** Pick by scope:
 
-- _Unit tests_: next to the code, or in the module's `tests/` folder when there are several, as [backend/src/lib/tests/](../backend/src/lib/tests/).
-- _Route/API-level tests_: the package's `tests/` folder, as [backend/tests/sign-in/](../backend/tests/sign-in/) and [backend/tests/security/](../backend/tests/security/).
+- _Unit tests_: next to the code, or in the module's `tests/` folder when there are several, as [backend/src/lib/tests/](../../backend/src/lib/tests/).
+- _Route/API-level tests_: the package's `tests/` folder, as [backend/tests/sign-in/](../../backend/tests/sign-in/) and [backend/tests/security/](../../backend/tests/security/).
 - _Integration tests_: `tests/integration/`, only for what needs replication slots, WebSockets or real roles.
 
-**Backend specifics.** Test env vars are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Use the `#/` import alias as in source.
+**Backend specifics.** Test env vars are preset in [backend/vitest.config.ts](../../backend/vitest.config.ts). Do not load `.env` in tests. Use the `#/` import alias as in source.
 
 Backend test files run in parallel, each worker on its own database. Parallel files never see each other's rows. Never assume a worker's database is empty: it keeps rows from earlier files. Clean up with `clearDatabase()`. A test with its own connection takes the URL from `shared/test-db`.
 
@@ -112,7 +112,7 @@ The shared test database belongs to every worktree. A branch that adds migration
 
 **App config.** A template test also runs in every app, on that app's config such as its hierarchy and policies. A test that needs a particular value sets it with the helpers in `shared/testing/`, then restores the app's. A fixture row fills every ancestor column the app's hierarchy gives the product, not only the organization.
 
-**New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
+**New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
 **Mutation hooks.** Test a product module's mutation hooks with the kit in `frontend/src/query/tests/mutation-hooks-kit.ts`. It runs them under the app's query client, offline and back. `attachment-mutation-hooks.test.ts` is the example.
 

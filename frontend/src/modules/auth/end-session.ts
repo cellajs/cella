@@ -16,7 +16,7 @@ import { getRouter } from '~/routes/-router-instance';
 import { stringifySearch } from '~/routes/-search-serializer';
 import { longWaitMs, shortWaitMs } from '~/utils/wait-for';
 
-/** Why a tab stops being its user: each is a row of the table in `cella/CLIENT.md`, which `end-session.test.ts` runs. */
+/** Why a tab stops being its user: each is a row of the table in `cella/docs/CLIENT.md`, which `end-session.test.ts` runs. */
 export type SessionEnd = 'sign-out' | 'lost' | 'elsewhere' | 'expired' | 'replaced';
 
 interface Ending {
@@ -99,7 +99,7 @@ async function end(reason: SessionEnd, user: MeUser | null, redirect?: string): 
 let running: Promise<void> | null = null;
 
 /**
- * Ends this tab's session, as the table in `cella/CLIENT.md` says for `reason`: every row clears memory first and
+ * Ends this tab's session, as the table in `cella/docs/CLIENT.md` says for `reason`: every row clears memory first and
  * commits collaborative edits, then forgets what its row forgets, and every row but `expired` leaves the page with a
  * load. With no stored user only a sign-out has anything to do: the server may hold a session the store never named.
  * A call while one runs joins it, as the 401s of the requests still in flight do.

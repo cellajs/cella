@@ -1,6 +1,6 @@
 # Deployment
 
-This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/en/docs/) with the [Infra CLI](../infra/README.md).
+This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/en/docs/) with the [Infra CLI](../../infra/README.md).
 
 ### TL;DR
 
@@ -132,7 +132,7 @@ The target's code never runs beside the deploy key. The builder evaluates the ta
 
 ### The schedule
 
-Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts). A release waits at most that long for its deploy.
+Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../../infra/config/general.config.ts). A release waits at most that long for its deploy.
 
 An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Full status** names a schedule that stopped, went missing or whose runs fail. Deploy logs says when the last scheduled run started.
 
@@ -215,11 +215,11 @@ A **switch** moves one role to its new machine:
 
 A start-first machine that never serves is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
 
-The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC worker](../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
+The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC worker](../../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
 
 ## Replacement strategies
 
-Each service declares its `replacementStrategy` in [config/services.config.ts](../infra/config/services.config.ts).
+Each service declares its `replacementStrategy` in [config/services.config.ts](../../infra/config/services.config.ts).
 
 | Strategy | Services | Behavior | Downtime |
 | --- | --- | --- | --- |
@@ -246,10 +246,10 @@ The setup's first apply makes the load balancer, before any machine. Its pools, 
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](../infra/config). A few fields take a per-mode map, such as a service's machine size. Every other field is one value. Every file there is part of the applied description. A release that changes one ends **apply needed** until **Review & apply changes** runs from a checkout that has the change.
+All tunable infra config lives in committed, type-checked files under [config/](../../infra/config). A few fields take a per-mode map, such as a service's machine size. Every other field is one value. Every file there is part of the applied description. A release that changes one ends **apply needed** until **Review & apply changes** runs from a checkout that has the change.
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
-| [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention, the schedule's cadence | **Review & apply changes** (privileged) |
-| [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |
+| [config/services.config.ts](../../infra/config/services.config.ts) | Per service: machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
+| [config/general.config.ts](../../infra/config/general.config.ts) | Database node and volume, asset retention, the schedule's cadence | **Review & apply changes** (privileged) |
+| [config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

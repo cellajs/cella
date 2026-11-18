@@ -380,13 +380,13 @@ const viteConfig = {
     {
       enforce: 'pre' as const,
       ...mdx({
-        // Template docs live under cella/. An app keeps its release-please CHANGELOG.md at the repo root
+        // Template docs live under cella/docs/. An app keeps its release-please CHANGELOG.md at the repo root
         // (cella/CHANGELOG.md is template-owned and overwritten on sync), so root-level SHOUTCASE .md compile too.
         include: /\/(src\/content\/docs\/.*\.(md|mdx)|(cella\/)?[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
         // Read component overrides (links, headings) from MDXProvider context. A
         // `components` prop does not cross into imported modules, and wrapper pages
-        // render imported repo docs (cella/*.md) as their body.
+        // render imported repo docs (cella/docs/*.md) as their body.
         providerImportSource: '@mdx-js/react',
         remarkPlugins: [
           remarkFrontmatter,
@@ -459,7 +459,7 @@ const viteConfig = {
     ...(isStorybook ? [] : [precompress()]),
   ],
   resolve: {
-    // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,
+    // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/docs/*.md,
     // package READMEs compiled by the mdx plugin) resolve their jsx runtime and MDX
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],

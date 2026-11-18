@@ -66,7 +66,7 @@ Cella favors a narrow stack over replaceable abstractions. React, TanStack Route
 | attachment | product entity | Content that always belongs to a channel and inherits its access. Syncs live and works offline. |
 | tenant & more | resource | A tracked row outside the hierarchy. The tenant is the isolation and billing boundary. |
 
-The hierarchy is declared once, in [hierarchy-config.ts](../shared/config/hierarchy-config.ts). The template starts with `organization -> attachment`. From the hierarchy the template derives:
+The hierarchy is declared once, in [hierarchy-config.ts](../../shared/config/hierarchy-config.ts). The template starts with `organization -> attachment`. From the hierarchy the template derives:
 
 - the id columns
 - permission checks up the ancestor chain
@@ -92,7 +92,7 @@ Accounts are identified by verified proofs, not email addresses.
 | **Permission engine** | Decide whether the actor may create, read, update, or delete the subject. |
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
-| **Secret columns** | One registry, [secret-columns.ts](../backend/src/db/secret-columns.ts), keeps secrets out of API responses, logs and CDC row images. |
+| **Secret columns** | One registry, [secret-columns.ts](../../backend/src/db/secret-columns.ts), keeps secrets out of API responses, logs and CDC row images. |
 
 The API and the optional Yjs relay share one permission engine in `shared/`. The frontend only shapes the interface with it. The backend decides.
 
@@ -115,7 +115,7 @@ Every period lives in `appConfig.retention` and holds for every tenant. The priv
 
 ## Contracts
 
-Backend modules define Hono routes with Zod schemas. Together they generate an OpenAPI 3.1 document for the [sdk](../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests and load tests.
+Backend modules define Hono routes with Zod schemas. Together they generate an OpenAPI 3.1 document for the [sdk](../../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests and load tests.
 
 ## Scaling
 

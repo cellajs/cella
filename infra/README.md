@@ -19,7 +19,7 @@ The engine names no app. What an app deploys lives in the registries under [conf
 
 ## How a release flows
 
-**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
+**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../cella/docs/deployment/FRESH_INSTALLATION.md)).
 
 **Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 

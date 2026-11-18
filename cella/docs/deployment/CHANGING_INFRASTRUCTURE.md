@@ -33,7 +33,7 @@ A deploy reads what the last apply made, and stops with "an apply makes it" when
 
 A deploy runs the engine the last **Review & apply changes** built. It holds every release against the description that engine carries:
 
-- every registry under [config/](../../infra/config)
+- every registry under [config/](../../../infra/config)
 - the engine's fields of the app config: domain, origin, buckets, enabled services and `singleVM`
 - the boot plan's contract version
 - the Node, pnpm and repository the root `package.json` names
@@ -60,7 +60,7 @@ Each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to it
 
 ## Identities
 
-An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets.
+An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets.
 
 No machine and no builder has an identity, as they fetch and write through links the deploy key signs. No identity changes when you toggle `enabled` or `singleVM` or change a runtime secret's consumers.
 

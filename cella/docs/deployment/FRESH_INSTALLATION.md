@@ -10,7 +10,7 @@ It commits the stack file and ends at the first deploy or at your first release.
 
 ## How the CLI runs
 
-Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. On a stack that is set up, `pnpm infra` opens on the home screen of the [Infra CLI](../../infra/README.md).
+Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. On a stack that is set up, `pnpm infra` opens on the home screen of the [Infra CLI](../../../infra/README.md).
 
 The wizard opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped.
 

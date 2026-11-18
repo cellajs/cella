@@ -14,7 +14,7 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * organization membership rows). Declared apart from config.default.ts so its types are inferred before the config
  * object is built.
  *
- * @see cella/PERMISSIONS.md
+ * @see cella/docs/PERMISSIONS.md
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()

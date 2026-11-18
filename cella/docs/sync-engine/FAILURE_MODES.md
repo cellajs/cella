@@ -14,7 +14,7 @@ Each failure has one answer per level:
 - **Mid:** recovers when the core cannot. The client runs catchup, the worker reads again.
 - **Lost case:** starts over. A client refetches once, the worker rebuilds its books.
 
-A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the tables below, in the [CDC worker's table](../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../backend/src/modules/notification/README.md#failure-modes).
+A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the tables below, in the [CDC worker's table](../../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../../backend/src/modules/notification/README.md#failure-modes).
 
 ## What fails
 

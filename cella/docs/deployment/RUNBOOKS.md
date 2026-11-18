@@ -161,7 +161,7 @@ ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SER
 
 `pnpm infra` → **More** → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. A reset that stopped after its delete finishes when you run it again. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
 
-Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../cdc/README.md#verify-and-rebuild)).
+Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../../cdc/README.md#verify-and-rebuild)).
 
 - **Nothing but you stops this.** Scaleway deletes a database in use, replication slot included.
 - **The typed name is the only guard.** You confirm by typing `<database>@<instance>`.

@@ -45,19 +45,19 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 ```
 
 The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed machine receives only the variables its runtime secrets and its service's `env` declare. Declare a secret one beside the
-Maple key in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts). Declare any other in the service's `env` in [services.config.ts](../infra/config/services.config.ts).
+Maple key in [runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
 
-The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals ([maple.ts](../frontend/src/lib/maple.ts)). It sends no
+The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals ([maple.ts](../../frontend/src/lib/maple.ts)). It sends no
 session replay, cookies or user id. The privacy policy relies on that. In development a local tracer keeps the spans for the devtools.
 
 ## Add a worker
 
 Every worker needs the parts below. CDC is the reference:
 
-- [tracing.ts](../cdc/src/lib/tracing.ts) starts the shared setup under the worker's service name.
-- [pino.ts](../cdc/src/lib/pino.ts) ships logs to the same destination and prints readable lines in development.
-- [index.ts](../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal.
-- A worker that serves HTTP mounts the shared health app ([health-app.ts](../shared/src/health-app.ts)).
+- [tracing.ts](../../cdc/src/lib/tracing.ts) starts the shared setup under the worker's service name.
+- [pino.ts](../../cdc/src/lib/pino.ts) ships logs to the same destination and prints readable lines in development.
+- [index.ts](../../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal.
+- A worker that serves HTTP mounts the shared health app ([health-app.ts](../../shared/src/health-app.ts)).
 
 ### Metrics
 
@@ -71,7 +71,7 @@ Use `@opentelemetry/api` directly in any service with OTel started. CDC's `withS
 
 ### Span names and attributes
 
-Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix such as `cdc.*`. Never inline strings. The shared tracing module also exports attribute builders. Add one when a group of spans shares attributes. Attribute keys are dotted lower snake case, such as `activity.subject_id`.
+Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.ts), grouped by service prefix such as `cdc.*`. Never inline strings. The shared tracing module also exports attribute builders. Add one when a group of spans shares attributes. Attribute keys are dotted lower snake case, such as `activity.subject_id`.
 
 ## What is emitted
 
@@ -91,8 +91,8 @@ No service serves a Prometheus scrape target. Metrics leave over OTLP. `/public/
 ## Redaction
 
 Tokens travel in request URLs, such as magic-link paths and OAuth callbacks. One function,
-`scrubUrl` in [scrub-url.ts](../shared/src/utils/scrub-url.ts), removes them from spans and logs alike. The span processor in
-[redacting-span-processor.ts](../shared/src/tracing/redacting-span-processor.ts) runs before every exporter. It also drops the
+`scrubUrl` in [scrub-url.ts](../../shared/src/utils/scrub-url.ts), removes them from spans and logs alike. The span processor in
+[redacting-span-processor.ts](../../shared/src/tracing/redacting-span-processor.ts) runs before every exporter. It also drops the
 caller's IP address. A new token route adds its template to `secretPathTemplates` in scrub-url.ts. A new token query key goes in `sensitiveQueryKeys`.
 
 ## Trace correlation

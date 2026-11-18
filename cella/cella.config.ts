@@ -47,6 +47,7 @@ export default defineConfig({
     'shared/locales/nl/appError.json',
     '.github/release-please-manifest.json',
     '.github/release-please-config.json',
+    '.github/SECURITY.md',
     'cella/a11y-ledger.json',
     'shared/locales/en/about.json',
     'shared/locales/nl/about.json',

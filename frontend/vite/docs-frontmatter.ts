@@ -25,7 +25,7 @@ const ID_PREFIX = 'spy-';
 
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
 const FENCED_CODE_BLOCK = /^(```|~~~).*?^\1.*?$/gms;
-/** Relative md imports in .mdx wrappers (e.g. `import Content from '../../cella/TESTING.md'`). */
+/** Relative md imports in .mdx wrappers (e.g. `import Content from '../../cella/docs/TESTING.md'`). */
 const RELATIVE_MD_IMPORT = /^import\s[^\n]*?from\s+['"](\.[^'"]+\.md)['"]/gm;
 
 /** A content heading (h2/h3/...) by its DOM id, which keeps the `spy-` prefix until the page module strips it to the bare hash slug. */
@@ -223,7 +223,7 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
       const relative = path.relative(contentDir, file).replaceAll(path.sep, '/');
       const key = `/src/content/docs/${relative}`;
       // updatedAt tracks the page plus its imported repo docs (wrapper pages render a
-      // repo doc as their body): a body edit in cella/SYNC_ENGINE.md bumps the page.
+      // repo doc as their body): a body edit in cella/docs/SYNC_ENGINE.md bumps the page.
       const parsed = parseFrontmatter(source);
       const frontmatter = resolver ? withUpdatedAt(parsed, [file, ...imports], resolver) : parsed;
       // One read of each imported document serves the structure, the size and the llms copy alike.

@@ -1,6 +1,6 @@
 # Tests
 
-All backend tests. See [Testing](../../cella/TESTING.md) for modes, placement rules, and the test database.
+All backend tests. See [Testing](../../cella/docs/TESTING.md) for modes, placement rules, and the test database.
 
 ## Structure
 

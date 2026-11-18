@@ -50,7 +50,7 @@ decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `
    what, since nobody hands out a role above their own, directly or through `organizationRoles` and `carryRole`.
 2. `shared/config/permissions-config.ts`: a `case '<name>'` with one line per channel and role (`1`
    allow, `0` deny, `'own'` creator only). A type without a case is denied to every role, and nothing
-   reports it. The model: [Permissions](../../PERMISSIONS.md).
+   reports it. The model: [Permissions](../../docs/PERMISSIONS.md).
 3. `shared/config/config.default.ts`: the opt-ins of step 6; a channel also goes in `menuStructure`, with
    `hideable: false` when it only groups others and has no life of its own for a member to hide.
 4. `pnpm --filter backend ts`. The registries typed `satisfies Record<…EntityType, …>` fail on the
@@ -80,7 +80,7 @@ and the renderers.
   `auditShape`, `tombstoneShape` and `stx`, named with `.openapi('<Name>', …)`), then
   `<name>Contract = evolutionContract.product('<name>', { createItem, updateOps, blockFields })`.
   `blockFields` names the BlockNote columns, empty when there are none. A request array takes a
-  `.max()`. `lens:check` fails a product without its contract ([Schema evolution](../../SCHEMA_EVOLUTION.md)).
+  `.max()`. `lens:check` fails a product without its contract ([Schema evolution](../../docs/SCHEMA_EVOLUTION.md)).
 - `operations/`, one file per operation:
   - **Create** (`create-attachments.ts`): normalize each item with `<name>Contract.normalizeCreateItem`.
     `checkIdempotency(ctx, <name>sTable, ids)` runs first, and only the items it did not return go on:
@@ -173,7 +173,7 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     calls `sendQueuedUpdates` with the single and the batch request: updates queued behind it go as one
     batch, and ops with a block field go alone.
   - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
-    ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
+    ([Paused writes](../../docs/SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
     row refetches only the lists it can belong to.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
@@ -226,8 +226,8 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `tenantContext` when a `<name>.created` handler writes product rows, whose fail-closed select policy
   hides every row outside a tenant transaction. Then `invalidateCache.user(user.id)`. A channel that
   declares `drafts` accepts `draft` and creates with `publishedAt: null`, as the organization does
-  ([Drafts](../../PERMISSIONS.md#drafts)).
-- The policy case needs elevation and self lines ([Permissions](../../PERMISSIONS.md#the-policy-consulted)).
+  ([Drafts](../../docs/PERMISSIONS.md#drafts)).
+- The policy case needs elevation and self lines ([Permissions](../../docs/PERMISSIONS.md#the-policy-consulted)).
 
 ### Frontend
 
@@ -265,13 +265,13 @@ exist need a data migration that gives them the new id column.
 - **Collaborative description**: a `description` in `blockFields`, `yjsMaterializer: update<Name>Op`
   in the backend module, and in `query.ts` `registerDescriptionColumns` plus
   `registerDescriptionDerivation` for the columns derived from it, as attachment does. Model:
-  [Sync engine](../../SYNC_ENGINE.md#yjs).
-- **Drafts** ([Sync engine](../../SYNC_ENGINE.md#drafts)): spread `...publishedColumn`
+  [Sync engine](../../docs/SYNC_ENGINE.md#yjs).
+- **Drafts** ([Sync engine](../../docs/SYNC_ENGINE.md#drafts)): spread `...publishedColumn`
   (`backend/src/db/utils/published-column.ts`) into the table and generate again. Publishing is a
   route of its own: read the row with `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })`,
   return a published row as it is, store `<name>Contract.resolveServerUpdateOps(row, { publishedAt })`
   and dispatch `<name>.updated`.
-- **Shared range answers** ([Sync engine](../../SYNC_ENGINE.md#shared-answers)): on the list route
+- **Shared range answers** ([Sync engine](../../docs/SYNC_ENGINE.md#shared-answers)): on the list route
   `xCache: [sharedRangeAnswers('<name>')]` and `parameters: [rangeKeyParameter]`, and in `query.ts`
   the range fetch sends its `rangeKey` as the `x-range-key` header, as attachment does. Only for a
   list whose range answer depends on the read scope and the URL alone: a field that differs per
@@ -289,7 +289,7 @@ exist need a data migration that gives them the new id column.
   `productViewCountJoin(<table>.id)` for a list, `productViewCountSchema` for the response field
   (`backend/src/modules/entities/`). Never query `product_counters` yourself.
 - **Embedding in another product**: an id array on the host, declared in `appConfig.productEmbeddings`
-  ([Embeddings](../../SYNC_ENGINE.md#embeddings)). A host write keeps only the ids `filterExistingProductIds` returns.
+  ([Embeddings](../../docs/SYNC_ENGINE.md#embeddings)). A host write keeps only the ids `filterExistingProductIds` returns.
 - **Limits**: `defaultRestrictions.quotas` for a per-tenant cap, `pageSizes` for the default page size of its list.
 - **Tables that are no entity**: register them in `backend/src/db/product-tables.ts`:
   `appPartitionConfigs` for a time-partitioned table with retention (its period from
@@ -302,7 +302,7 @@ exist need a data migration that gives them the new id column.
   not name): `membershipColumns` in `defineBackendModule`; it runs before the insert, inside the
   caller's transaction, for an item its caller gave no `extraFields`.
 - **Scheduled jobs and queues**: `jobs` and `queues` in `defineBackendModule`; the jobs worker
-  creates and runs them ([Jobs worker](../../JOBS.md)).
+  creates and runs them ([Jobs worker](../../docs/JOBS.md)).
 - **A per-user client store** (recent picks): `idbKvStorage('<base>')` with `skipHydration: true`,
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
 - **Error types of its own**: `<type>` and `<type>.text` in `shared/locales/en/appError.json`, thrown as
@@ -317,7 +317,7 @@ exist need a data migration that gives them the new id column.
 2. `pnpm test`. The suites that loop over every configured type (RLS isolation, schema verification,
    the product mock registry, request bodies, secret columns) now cover the entity. A failure there
    is a registration this skill names, never a test to adjust. Add a test only for a rule of the
-   entity's own, such as a policy with a row condition ([Testing](../../TESTING.md)).
+   entity's own, such as a policy with a row condition ([Testing](../../docs/TESTING.md)).
 3. In the running app (`pnpm seed`, then the `verify` skill): open the page, create, rename and
    delete a row, and reload. For a product, the `two-tab-sync-test` skill: a create in one tab shows
    in the other, and a create made offline replays when the tab is back online.

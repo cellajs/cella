@@ -2,7 +2,7 @@
 
 ## Project summary
 
-Cella is a TypeScript template for collaborative web apps with a sync engine for offline and realtime use. Postgres, OpenAPI and react-query are foundational layers. Stack, data model and entity kinds: [Architecture](./ARCHITECTURE.md).
+Cella is a TypeScript template for collaborative web apps with a sync engine for offline and realtime use. Postgres, OpenAPI and react-query are foundational layers. Stack, data model and entity kinds: [Architecture](./docs/ARCHITECTURE.md).
 
 Base config: [shared/config/config.default.ts](../shared/config/config.default.ts). Entity hierarchy and roles: [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Both feed `appConfig`, the merged runtime config exposed by `shared`. Every app changes config, hierarchy and permissions, so write entity-agnostic code and never hardcode the default entity set or its roles. Mode overrides: [shared/README.md](../shared/README.md). Secrets: `.env`.
 
@@ -13,23 +13,23 @@ Base config: [shared/config/config.default.ts](../shared/config/config.default.t
 ## Routing
 
 - **Backend** (Hono + OpenAPI): a module's routes are `createXRoutes` in `<module>-routes.ts`, never `createRoute`; `XRouteProps` documents each prop. A route's `operationId` is its key: set it only when the SDK name differs. Handlers use `.openapi()` in `<module>-handlers.ts`.
-- **Resource routes** follow aep.dev ([REST API](./INTEROPERABILITY.md#the-rest-api)): kebab-case collections between ids named `{<singular>Id}`, an update is a `patch`, an action is a custom method declared as the last segment `/~verb` (clients send `:verb`), batches are `~batch-create`, `~batch-update` and `~batch-delete`, a hard delete answers 204, and operationIds are `list<Plural>`, `get<Singular>`, `create<Singular>`, `update<Singular>`, `delete<Singular>` or lead with the verb. `createXRoute` refuses a `put`, a body on a `get` or `delete`, and a misnamed segment or verb at load. Protocol routes (auth, OAuth, MCP, yjs) keep the shapes their specs give them.
-- **Lists**: a list route's query extends `listQuerySchema` (`pageQuerySchema` without search, `productListQuerySchema` for a product) and orders through `orderByQuerySchema`; its handler answers through `readListPage`, which seals the page token. Every list then pages one way ([REST API](./INTEROPERABILITY.md#the-rest-api)). The frontend pages it with `tokenPaging` and reads a whole list with `fetchAllPages`.
+- **Resource routes** follow aep.dev ([REST API](./docs/INTEROPERABILITY.md#the-rest-api)): kebab-case collections between ids named `{<singular>Id}`, an update is a `patch`, an action is a custom method declared as the last segment `/~verb` (clients send `:verb`), batches are `~batch-create`, `~batch-update` and `~batch-delete`, a hard delete answers 204, and operationIds are `list<Plural>`, `get<Singular>`, `create<Singular>`, `update<Singular>`, `delete<Singular>` or lead with the verb. `createXRoute` refuses a `put`, a body on a `get` or `delete`, and a misnamed segment or verb at load. Protocol routes (auth, OAuth, MCP, yjs) keep the shapes their specs give them.
+- **Lists**: a list route's query extends `listQuerySchema` (`pageQuerySchema` without search, `productListQuerySchema` for a product) and orders through `orderByQuerySchema`; its handler answers through `readListPage`, which seals the page token. Every list then pages one way ([REST API](./docs/INTEROPERABILITY.md#the-rest-api)). The frontend pages it with `tokenPaging` and reads a whole list with `fetchAllPages`.
 - **Error responses**: a route documents the error statuses its guards, limiters, switch and request answer with (`chainErrors` in `x-routes.ts`), and spreads `errors(404, 409)` into `responses` for what its handler throws, nothing more: `errors()` of a status the chain answers is refused at load, and in tests an undocumented status answers a 500 naming the fix. A 5xx and the database's 409 `write_conflict` are never declared: the error table documents them once. A route that answers an error status with a body of its own declares it with `json()`. A response header a client must act on takes a `description`, which shows it in the docs; any other header takes none.
 - **Response labels**: a response `description` is a label of a few words; a longer explanation follows after a blank line, and the docs show it when the response row opens.
 - **Frontend** (TanStack Router, file-based): never edit the generated `routeTree.gen.ts`. Route files are thin shims (path, `staticData`, glue, the page import); `beforeLoad` and `loader` logic, components and search schemas live in modules (`route-logic.ts`, `route-components.tsx`, `search-params-schemas.ts`) via `getRouteApi`. The `_app` layout is the sign-in gate (`requireSession` for a protected page elsewhere), and error, not-found and pending components are the router's defaults. Layouts and option order: [frontend/README](../frontend/README.md#routes).
 
 ## Middleware & guards
 
-The API is same-origin: it has no CORS middleware. Guards and their usual chains: [Permissions](./PERMISSIONS.md#guards).
+The API is same-origin: it has no CORS middleware. Guards and their usual chains: [Permissions](./docs/PERMISSIONS.md#guards).
 
 - Type an operation on the narrowest context it needs: `DbContext`, `ActorContext` (no user row), `OrgContext`, `UserContext` (session fields only behind `userGuard`).
 - Mount `actorGuard` only on routes whose operations take `ActorContext`: an API key or access token sets no `ctx.var.user`.
 - `orgGuard` runs after `tenantGuard`, both after the guard that sets the actor. Wrap guards and limiters in `xMiddleware`; each declares the error statuses it refuses with (`errors`), and a guard its `security` and the context it `provides` and `requires`.
-- A write in an archived channel is refused ahead of the engine by `assertNotArchived`, from the organization's archived channel ids `orgGuard` provides; `getValidChannel` takes `ignoreArchive` only for the archive route and an invitation's withdrawal ([Archived channels](./PERMISSIONS.md#archived-channels)).
-- Product entity handlers use the tenant helpers in `backend/src/db/tenant-context.ts` (`tenantRead` with a `tenantId` on a route without `tenantGuard`); channel entity handlers use `ctx.var.db` ([Multi-tenancy](./MULTI_TENANCY.md)).
-- A product list route with `sharedRangeAnswers` in `xCache` answers a range read alike to every reader of one read scope, ahead of its guards: its rows never carry a field that differs per viewer, and its writes run in a tenant transaction ([Shared answers](./SYNC_ENGINE.md#shared-answers)).
-- A route at `/{<entity>Id}` of a channel or product takes an `ETag` and `If-Match` from `createXRoute` ([REST API](./INTEROPERABILITY.md#the-rest-api)): its 200 is the entity, its operation reads the row through `getValidProduct` or `getValidChannel`, which check the preconditions, and its update query adds `preconditionWhere` and answers no row with `assertNoWriteBetween`. An update that changes nothing writes nothing and answers the stored row after `assertPreconditionsChecked`.
+- A write in an archived channel is refused ahead of the engine by `assertNotArchived`, from the organization's archived channel ids `orgGuard` provides; `getValidChannel` takes `ignoreArchive` only for the archive route and an invitation's withdrawal ([Archived channels](./docs/PERMISSIONS.md#archived-channels)).
+- Product entity handlers use the tenant helpers in `backend/src/db/tenant-context.ts` (`tenantRead` with a `tenantId` on a route without `tenantGuard`); channel entity handlers use `ctx.var.db` ([Multi-tenancy](./docs/MULTI_TENANCY.md)).
+- A product list route with `sharedRangeAnswers` in `xCache` answers a range read alike to every reader of one read scope, ahead of its guards: its rows never carry a field that differs per viewer, and its writes run in a tenant transaction ([Shared answers](./docs/SYNC_ENGINE.md#shared-answers)).
+- A route at `/{<entity>Id}` of a channel or product takes an `ETag` and `If-Match` from `createXRoute` ([REST API](./docs/INTEROPERABILITY.md#the-rest-api)): its 200 is the entity, its operation reads the row through `getValidProduct` or `getValidChannel`, which check the preconditions, and its update query adds `preconditionWhere` and answers no row with `assertNoWriteBetween`. An update that changes nothing writes nothing and answers the stored row after `assertPreconditionsChecked`.
 - Declare a secret column only in `backend/src/db/secret-columns.ts`: response schemas, log redaction and the CDC row image derive from it.
 
 ## Error handling
@@ -40,7 +40,7 @@ The client's global handler (`frontend/src/query/on-error.ts`) toasts every `Api
 
 ## Auth and permissions
 
-Sign-in and sessions: [Authentication](./AUTHENTICATION.md). An account without an identity, a demo's: [Anonymous sessions](./ANONYMOUS_SESSIONS.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Decisions: [Permissions](./PERMISSIONS.md). Database backstop: [Multi-tenancy](./MULTI_TENANCY.md).
+Sign-in and sessions: [Authentication](./docs/AUTHENTICATION.md). An account without an identity, a demo's: [Anonymous sessions](./docs/ANONYMOUS_SESSIONS.md). Machine access: [Interoperability](./docs/INTEROPERABILITY.md). Decisions: [Permissions](./docs/PERMISSIONS.md). Database backstop: [Multi-tenancy](./docs/MULTI_TENANCY.md).
 
 - A backend check takes its `Access` from `accessFrom(ctx)` and a frontend check goes through `useCan`; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
 - Tokens are issued, redeemed and spent through `auth/tokens/`, the only importer of `tokens-db`.
@@ -48,15 +48,15 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). An account without 
 
 ## State & API
 
-- **Server state**: TanStack Query; options, keys and mutations live in the module's `query.ts` ([Client](./CLIENT.md)).
+- **Server state**: TanStack Query; options, keys and mutations live in the module's `query.ts` ([Client](./docs/CLIENT.md)).
 - **Client state**: Zustand stores as `*-store.ts` in their module, read through a selector (`useShallow` for four or more fields). React context only for compound UI or third-party providers, never for app or feature state.
-- **Persistence**: entities live in the query cache, never mirrored into Zustand; UI preferences in Zustand `persist`; never call `localStorage` from hooks or components. A new per-user store uses `idbKvStorage('<base>')` with `skipHydration: true`, registers in `local-user-storage.ts` (app-owned: `extra-local-user-stores.ts`), and scopes tenant, organization or entity inside its state, never in the key ([per-user database](./CLIENT.md#the-per-user-database)).
+- **Persistence**: entities live in the query cache, never mirrored into Zustand; UI preferences in Zustand `persist`; never call `localStorage` from hooks or components. A new per-user store uses `idbKvStorage('<base>')` with `skipHydration: true`, registers in `local-user-storage.ts` (app-owned: `extra-local-user-stores.ts`), and scopes tenant, organization or entity inside its state, never in the key ([per-user database](./docs/CLIENT.md#the-per-user-database)).
 - **SDK**: never edit the generated `sdk/gen/`. Run `pnpm sdk` after a backend route or schema change and import types from `sdk`; module-specific types go in the module's `types.ts`.
 - **Membership**: the frontend uses `included.membership` only to seed `meKeys.memberships`; never flatten it onto entities or read it in UI, cache mutations or feature logic.
 - **DB schemas**: Drizzle tables live in module `*-db.ts` files, and an entity table registers in the pinned `channel-tables.ts` or `product-tables.ts`. Entity ids are UUID v7; nanoid only for short ids (tenant ids) or ids longer than a UUID.
 - **Validation**: Zod schemas in `<module>-schema.ts`, shared ones in `backend/src/schemas/`. A request string takes `.max()` (a `maxLength` constant or its column's length) before any refinement; a request array takes `.max()` before any refinement; a request record is a `boundedRecord` or a `z.partialRecord` over an enum, and a list in a query string is a `csvQuerySchema`.
 - **Types**: infer them from Zod. Avoid `as`; prefer `Object.assign`, `satisfies` or `as const`. **Never use `as unknown as`** without explicit permission: try `isNull()`, a generic type parameter or a dedicated type, and where nothing fits (a library type gap, a test mock) comment why.
-- **Query modules**: keys, cache writes, optimistic placeholders, invalidation and slug resolution use the helpers in `frontend/src/query/basic/`, and mutation defaults are set with `setMutationDefaults` at the top level of a `query.ts` that the module's `<name>-module.ts` imports ([add-entity](./skills/add-entity/SKILL.md)). Read a queued mutation through the `mutation-variables.ts` shapes, never a cast, and register a version (`registerVariablesVersion`) when its shape changes ([Paused writes](./SYNC_ENGINE.md#paused-writes)).
+- **Query modules**: keys, cache writes, optimistic placeholders, invalidation and slug resolution use the helpers in `frontend/src/query/basic/`, and mutation defaults are set with `setMutationDefaults` at the top level of a `query.ts` that the module's `<name>-module.ts` imports ([add-entity](./skills/add-entity/SKILL.md)). Read a queued mutation through the `mutation-variables.ts` shapes, never a cast, and register a version (`registerVariablesVersion`) when its shape changes ([Paused writes](./docs/SYNC_ENGINE.md#paused-writes)).
 - **Update forms**: an update form submits through `handleChanges` of `useFormWithDraft`, which sends the fields that differ from the defaults. Its `defaultValues` hold the rendered fields alone, and after a save it resets from the response.
 
 ## OpenAPI & mocks
@@ -67,18 +67,18 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). An account without 
 
 ## Sync engine
 
-Model: [Sync engine](./SYNC_ENGINE.md).
+Model: [Sync engine](./docs/SYNC_ENGINE.md).
 
 - Mint a write's `stx` when the edit is made (`createStxForUpdate` and its siblings) and pass it in the mutation variables; a create handler finds a replay by its row ids (`checkIdempotency()`).
 - An update dispatches `<type>.updated` with `changedFields`, the field names the write accepted (`resolved.acceptedFieldNames`), index-aligned with `after`: the yjs module records an outside write for each row whose list names the description. An update that accepts no field writes nothing, dispatches nothing and answers the stored row. A server-driven write passes no list and leaves the stored `stx` alone; a soft delete stores its own ids through `stxWithIds`.
-- A fact that is no product row reaches clients as a stream signal of ids, declared in `defineBackendModule` and `defineFrontendModule` (`signals`), sent after the commit with `sendSignal`, and versioned when a client that was away must still hear it ([Changes and signals](./SYNC_ENGINE.md#changes-and-signals)).
+- A fact that is no product row reaches clients as a stream signal of ids, declared in `defineBackendModule` and `defineFrontendModule` (`signals`), sent after the commit with `sendSignal`, and versioned when a client that was away must still hear it ([Changes and signals](./docs/SYNC_ENGINE.md#changes-and-signals)).
 - Sync-derived per-user state extends only through sync events (`sync-events.ts`); never import module logic into the prioritizer.
 - Columns derived from a collaborative description register in `query.ts` ([add-entity](./skills/add-entity/SKILL.md#6-optional-capabilities)), a description shown in place builds on `useInPlaceDescription`, and a backend write that dispatches no `<type>.updated` calls `recordYjsOutsideWrite` ([Yjs](../yjs/README.md#outside-writes)).
-- A breaking wire-shape change ships as an append-only lens in `shared/src/schema-evolution/` (never edit a shipped one) and, until the first lens ships, bumps the number `appConfig.clientCacheVersion` ([Cache-bust](./SCHEMA_EVOLUTION.md#cache-bust-interim)). Every entity module routes bodies through its `evolutionContract`.
+- A breaking wire-shape change ships as an append-only lens in `shared/src/schema-evolution/` (never edit a shipped one) and, until the first lens ships, bumps the number `appConfig.clientCacheVersion` ([Cache-bust](./docs/SCHEMA_EVOLUTION.md#cache-bust-interim)). Every entity module routes bodies through its `evolutionContract`.
 
 ## Cross-product references
 
-Relationships between products are data, never permission indirection: permissions and public read flow through the hierarchy's channel columns. Exactly two mechanisms exist ([Embeddings](./SYNC_ENGINE.md#embeddings)): a host id array declared in `appConfig.productEmbeddings`, whose config-driven machinery never needs engine code, and the mutation bus (`onMutation`/`dispatchMutation`) for lifecycle side effects an embedding cannot express.
+Relationships between products are data, never permission indirection: permissions and public read flow through the hierarchy's channel columns. Exactly two mechanisms exist ([Embeddings](./docs/SYNC_ENGINE.md#embeddings)): a host id array declared in `appConfig.productEmbeddings`, whose config-driven machinery never needs engine code, and the mutation bus (`onMutation`/`dispatchMutation`) for lifecycle side effects an embedding cannot express.
 
 Derive usage counts on the client from synced host rows, and let a host write keep only ids of live rows in its organization (`filterExistingProductIds`). A child-side host FK (a nullable `<host>Id` column pointing at another product) is deprecated: sync views, CDC, propagation hints and counters do not see it ([conversion guide](https://github.com/cellajs/cella/blob/0.23.0/cella/migrations/20260730T1009-owned-host-embedding/README.md)).
 
@@ -90,7 +90,7 @@ Derive usage counts on the client from synced host rows, and let a host write ke
 - **Row stamps**: a table a user or a service writes spreads `auditColumns()`, a product table also `tombstoneColumns()`; writer columns reference `actors`, except on invitations and tokens. Every write moves `updatedAt`/`updatedBy` (a publish and a soft delete too), only through `updateStamps` or `deleteStamps`; a moment comes only from `getIsoDate()`, and a timestamp column is `isoTimestamp()`, never drizzle's `timestamp()`. A reversible state is a boolean or a status, never a client-sent timestamp; a one-way act is `<verb>At` plus `<verb>By`. On the wire a writer is an `ActorRef` (`withActorRefs`); a base schema carries no writers, a full one spreads `auditShape`.
 - **Icons**: `lucide-react` with `*Icon` names, sized with `size-*` classes, never lucide's `size` prop. An icon prop is typed `IconComponent`; a custom SVG icon carries the `lucide` class. A close X is `size-4` like the icons beside it, whatever its button's size; only the attachment viewer's toolbar draws all its icons at `size-5`.
 - **Environment**: one validated `env` module per process, and `process.env` is read only there and in the config builder. Config decides per environment, env per machine. A flag is only `true`, and an absent value is `.optional()`.
-- **Retention**: every period lives in `appConfig.retention`. A rule that only deletes aged rows is an entry of `sweepRules`, run by the nightly `retention` job; any other pg-boss job does only what reaches outside the database. A table with stored files names its columns in `backend/src/db/storage-columns.ts` ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+- **Retention**: every period lives in `appConfig.retention`. A rule that only deletes aged rows is an entry of `sweepRules`, run by the nightly `retention` job; any other pg-boss job does only what reaches outside the database. A table with stored files names its columns in `backend/src/db/storage-columns.ts` ([Data lifecycle](./docs/ARCHITECTURE.md#data-lifecycle)).
 - **Alignments**: every breaking change ships a `cella/alignments/<id>/` folder in the same PR ([alignments](./alignments/README.md)).
 - **Dependencies**: a library for encryption, signatures, an auth protocol or a parser at a security boundary stays even when own code would save packages; fix how it is called. Own code replaces a package only for plumbing a reviewer reads in one pass.
 - **Temporary scripts**: a script that serves one run (a measurement, an intake, a migration aid, a driver experiment) lives in the gitignored `.scratch/` at the repo root; `.todos/` holds plans and findings, no scripts. The finding outlives the script, recorded in the plan, PR or alignment README. A committed script needs a caller (a package script, CI, a hook or a skill step) that has run it end to end; one nothing calls is deleted.
@@ -124,11 +124,11 @@ Derive usage counts on the client from synced host rows, and let a host write ke
 
 Verify every change (a run, a measurement or a hand check the PR description reports); committing a test is a separate decision. A committed test earns its place by one of four reasons: it proves an attack fails, reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball.
 
-Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test, and the test modes: [Testing](./TESTING.md#goals).
+Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test, and the test modes: [Testing](./docs/TESTING.md#goals).
 
 ## Deploy debugging
 
-A deploy that never serves its new version almost always hit a boot-time crash, not the load balancer: read the boot accounts first ([Debug a failed deploy](./deployment/RUNBOOKS.md#debug-a-failed-deploy)).
+A deploy that never serves its new version almost always hit a boot-time crash, not the load balancer: read the boot accounts first ([Debug a failed deploy](./docs/deployment/RUNBOOKS.md#debug-a-failed-deploy)).
 
 ## Commits & PRs
 

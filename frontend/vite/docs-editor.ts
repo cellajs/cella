@@ -52,7 +52,7 @@ function parentOf(slug: string): string | null {
   return idx === -1 ? null : slug.slice(0, idx);
 }
 
-/** A relative import of an .mdx page, such as `import Content from '../../cella/TESTING.md'`. */
+/** A relative import of an .mdx page, such as `import Content from '../../cella/docs/TESTING.md'`. */
 const RELATIVE_IMPORT = /^(import\s[^\n]*?from\s+['"])(\.[^'"]+)(['"])/gm;
 
 /**

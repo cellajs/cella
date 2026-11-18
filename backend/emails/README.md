@@ -36,7 +36,7 @@ Brevo reads the subject and body as templates. The mailer's `neutralizeBrevoTags
 
 ## Chat text
 
-A system message, such as a new request or the record of a removed tenant, goes to the operator's [system room](../../cella/deployment/RUNBOOKS.md#the-system-room) in Matrix, and to mail where the room does not take it. Its template opts in with `chat(lng, statics, details)` beside `translate` and `component`. It returns a `ChatText` from [chat-text.ts](chat-text.ts):
+A system message, such as a new request or the record of a removed tenant, goes to the operator's [system room](../../cella/docs/deployment/RUNBOOKS.md#the-system-room) in Matrix, and to mail where the room does not take it. Its template opts in with `chat(lng, statics, details)` beside `translate` and `component`. It returns a `ChatText` from [chat-text.ts](chat-text.ts):
 
 - `headlineHtml`: translated inline HTML from a key under `chat.*` in the `backend` namespace. The first line, which a phone shows.
 - `quote`: plain text a person typed, or a record's lines.

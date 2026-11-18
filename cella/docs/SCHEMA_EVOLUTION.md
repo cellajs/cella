@@ -22,11 +22,11 @@ A breaking schema change, such as renaming `attachment.name` to `attachment.titl
 
 Until the first lens ships, a breaking schema change resets client caches:
 
-1. **Raise `appConfig.clientCacheVersion` by one** in [config.default.ts](../shared/config/config.default.ts) in the PR that breaks a cached wire shape.
+1. **Raise `appConfig.clientCacheVersion` by one** in [config.default.ts](../../shared/config/config.default.ts) in the PR that breaks a cached wire shape.
 2. **Title the PR `feat!`**, as for any breaking change.
 3. **Clients wipe, mutations stay.** A cache an older bundle wrote loses its queries at boot, and queued mutations replay on the fresh cache.
 4. **Newer cache, stale bundle.** A cache a newer bundle wrote is left alone, as a lens pointer ahead of the bundle is.
-5. **CI gate.** The breaking-change gate of the lint job in [ci.yml](../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
+5. **CI gate.** The breaking-change gate of the lint job in [ci.yml](../../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
 
 **Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the breaking-change gate in ci.yml.
 
@@ -59,7 +59,7 @@ export default defineLens({
 });
 ```
 
-A `delta` renames, adds, drops or retypes a field ([define.ts](../shared/src/schema-evolution/define.ts)). `custom` converters cover what a delta cannot express. A lens has no restructuring operation. Model a rare restructure as a drop plus an add with a computed default. Keep splits and cross-entity moves as one-off scripts.
+A `delta` renames, adds, drops or retypes a field ([define.ts](../../shared/src/schema-evolution/define.ts)). `custom` converters cover what a delta cannot express. A lens has no restructuring operation. Model a rare restructure as a drop plus an add with a computed default. Keep splits and cross-entity moves as one-off scripts.
 
 ## Entity coverage
 
@@ -73,7 +73,7 @@ Membership fields, enrichment output and Yjs-edited descriptions sit outside the
 
 ## Evolution contract
 
-Every entity module registers its wire bodies once through one of the two [evolutionContract](../backend/src/core/schema-evolution/evolution-contract.ts) factories. It routes its bodies through what the factory returns: lens-widened create and update schemas, and the functions that normalize a body to canonical keys.
+Every entity module registers its wire bodies once through one of the two [evolutionContract](../../backend/src/core/schema-evolution/evolution-contract.ts) factories. It routes its bodies through what the factory returns: lens-widened create and update schemas, and the functions that normalize a body to canonical keys.
 
 ```ts
 export const attachmentContract = evolutionContract.product('attachment', {

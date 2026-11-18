@@ -37,7 +37,7 @@ Transloadit produces up to four cloud objects per file, stored as one `keys` map
 
 **One id, minted early.** `onBeforeFileAdded` assigns `file.meta.attachmentId` when a file is picked. That id keys the local blob, rides through Transloadit as `user_meta.attachmentId`, and becomes the row id; the upload-status badge, raw-blob eviction and blob deletion with the entity all look the blob up by it. A custom Uppy instance must pass that meta.
 
-Every path stores the raw file locally before the Tus upload. Creates go through the mutation, so an offline upload leaves an optimistic row that renders from local bytes and replays as a [paused write](../../../../cella/SYNC_ENGINE.md#paused-writes).
+Every path stores the raw file locally before the Tus upload. Creates go through the mutation: an offline upload leaves an optimistic row that renders from local bytes and replays as a [paused write](../../../../cella/docs/SYNC_ENGINE.md#paused-writes).
 
 ## Statuses
 
@@ -58,7 +58,7 @@ The backend enforces everything:
 
 A presigned URL serves a raster image, audio, video or a PDF inline as the type the row declares and any other file as a download. An uploaded page never renders on the bucket's host. It works for two hours. It outlives a member's removal or the file's deletion by two hours at most.
 
-A deleted attachment keeps its files for the deleted-items period. When the row goes, removed by the retention procedure or with its channel or organization, the deletion queue's job deletes its files, and for an organization everything under its prefix ([Data lifecycle](../../../../cella/ARCHITECTURE.md#data-lifecycle)). The buckets keep deleted objects recoverable until their noncurrent versions expire.
+A deleted attachment keeps its files for the deleted-items period. When the row goes, removed by the retention procedure or with its channel or organization, the deletion queue's job deletes its files, and for an organization everything under its prefix ([Data lifecycle](../../../../cella/docs/ARCHITECTURE.md#data-lifecycle)). The buckets keep deleted objects recoverable until their noncurrent versions expire.
 
 The frontend gates upload (an unconditional `can.attachment.create`, on a channel in `attachmentUploadTargets`), inline rename and description edits (`update`; without it the sheet opens read-only) and row and bulk delete (`delete`, resolved per row).
 
