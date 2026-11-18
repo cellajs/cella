@@ -11,35 +11,32 @@ import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-gri
 import { FloatingAction } from '~/modules/navigation/floating-nav/floating-action';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-type SortOrder = 'asc' | 'desc';
+type EntityGridBarSearch<TOrderBy extends string> = { q?: string; orderBy: TOrderBy; role?: string };
 
-type EntityGridBarSearch<TSort extends string> = { q?: string; sort: TSort; order?: SortOrder; role?: string };
-
-/** One entry of a grid's sort menu; picking it writes its order too. */
-export type GridSortOption<TSort extends string = string> = { name: TKey; icon: IconComponent; value: TSort; order: SortOrder };
+/** One entry of a grid's sort menu: the list query's `orderBy` it writes. */
+export type GridSortOption<TOrderBy extends string = string> = { name: TKey; icon: IconComponent; value: TOrderBy };
 
 /** The sorts a grid can offer; `displayOrder` is the caller's menu order, so only a grid of their own offers it. */
 export const gridSortOptions = {
-  displayOrder: { name: 'c:menu_order', icon: MenuIcon, value: 'displayOrder', order: 'asc' },
-  name: { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name', order: 'asc' },
-  createdAt: { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt', order: 'desc' },
+  displayOrder: { name: 'c:menu_order', icon: MenuIcon, value: 'displayOrder asc' },
+  name: { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name asc' },
+  createdAt: { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt desc' },
 } as const satisfies Record<string, GridSortOption>;
 
 /** A grid opens on its first sort option, so its default is always one the menu shows. */
-export const gridSortDefaults = <TSort extends string>([first]: readonly [GridSortOption<TSort>, ...GridSortOption<TSort>[]]) => ({
-  sort: first.value,
-  order: first.order,
+export const gridSortDefaults = <TOrderBy extends string>([first]: readonly [GridSortOption<TOrderBy>, ...GridSortOption<TOrderBy>[]]) => ({
+  orderBy: first.value,
 });
 
-interface EntityGridBarProps<TSort extends string> {
+interface EntityGridBarProps<TOrderBy extends string> {
   queryKey: QueryKey;
   label: TKey;
   /** Scopes the role filter to this entity's roles. */
   entityType: ChannelEntityType;
-  searchVars: EntityGridBarSearch<TSort>;
-  setSearch: (search: Partial<EntityGridBarSearch<TSort>>) => void;
+  searchVars: EntityGridBarSearch<TOrderBy>;
+  setSearch: (search: Partial<EntityGridBarSearch<TOrderBy>>) => void;
   /** The first is the default (`gridSortDefaults`). */
-  sortOptions: readonly GridSortOption<TSort>[];
+  sortOptions: readonly GridSortOption<TOrderBy>[];
   focusView?: boolean;
   /** A floating button on a phone; from `sm` up it stays while the bar hides. */
   action?: TableBarAction;
@@ -51,9 +48,9 @@ interface EntityGridBarProps<TSort extends string> {
   alwaysShow?: boolean;
 }
 
-export function EntityGridBar<TSort extends string>(props: EntityGridBarProps<TSort>) {
+export function EntityGridBar<TOrderBy extends string>(props: EntityGridBarProps<TOrderBy>) {
   const { searchVars, setSearch, sortOptions, focusView = false, action, roleFilter = true, alwaysShow = false } = props;
-  const { sort, role } = searchVars;
+  const { orderBy, role } = searchVars;
   const isMobile = useBreakpointBelow('sm');
 
   const total = useListQueryTotal(props.queryKey);
@@ -79,10 +76,10 @@ export function EntityGridBar<TSort extends string>(props: EntityGridBarProps<TS
       searchFilters={roleFilter ? searchFilters : undefined}
       sort={{
         options: sortOptions,
-        value: sort,
+        value: orderBy,
         onChange: (value) => {
           const option = sortOptions.find((option) => option.value === value);
-          if (option) setSearch({ sort: option.value, order: option.order });
+          if (option) setSearch({ orderBy: option.value });
         },
       }}
       controls={props.viewToggle}

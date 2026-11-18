@@ -7,7 +7,7 @@ import { csvSearchParam, listSearchDefaults, listSearchSchema } from '~/modules/
 export const organizationsSearchDefaults = listSearchDefaults(zListOrganizationsQuery);
 
 /** The system table lists organizations the admin is no member of, which have no menu order: it opens newest first. */
-export const organizationsTableSearchDefaults = { ...organizationsSearchDefaults, sort: 'createdAt', order: 'desc' } as const;
+export const organizationsTableSearchDefaults = { ...organizationsSearchDefaults, orderBy: 'createdAt desc' } as const;
 
 export const organizationsRouteSearchParamsSchema = listSearchSchema(zListOrganizationsQuery, organizationsTableSearchDefaults).extend({
   /** The tenant kinds the system table covers; empty covers the kinds the app lists by default. */

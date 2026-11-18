@@ -34,7 +34,7 @@ export function OrganizationsTableBar({
 
   const newsletterButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { q, order, sort, kind } = searchVars;
+  const { q, orderBy, kind } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', kind: [] } });
   const searchFilters = useTenantKindFilter({
     value: kind,
@@ -62,7 +62,7 @@ export function OrganizationsTableBar({
     });
   };
 
-  const fetchExport = (page: PageRequest) => fetchOrganizationsForExport({ q, sort, order }, page);
+  const fetchExport = (page: PageRequest) => fetchOrganizationsForExport({ q, orderBy }, page);
 
   return (
     <TableBarShell

@@ -12,10 +12,10 @@ import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 export function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
-  const { q, role, accounts, sort, order } = search;
+  const { q, role, accounts, orderBy } = search;
 
   const [columns, setColumns] = useColumns();
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
 
   const queryOptions = usersListQueryOptions(search);
   const list = useInfiniteRows(queryOptions);
@@ -25,7 +25,7 @@ export function UsersTable() {
     <>
       <UsersTableBar
         queryKey={queryOptions.queryKey}
-        searchVars={{ q, role, accounts, sort, order }}
+        searchVars={{ q, role, accounts, orderBy }}
         {...{ selected, columns, setSearch, setColumns, clearSelection }}
       />
       <SearchScope q={q}>

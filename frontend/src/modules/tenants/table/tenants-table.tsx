@@ -17,10 +17,10 @@ export function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
-  const { q, kind, sort, order } = search;
+  const { q, kind, orderBy } = search;
 
   const [columns, setColumns] = useColumns();
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
   const updateTenant = useTenantUpdateMutation();
 
   const queryOptions = tenantsListQueryOptions(search);

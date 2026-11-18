@@ -20,10 +20,10 @@ export function OrganizationsTable() {
 
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/_app/system/organizations' });
 
-  const { q, kind, sort, order } = search;
+  const { q, kind, orderBy } = search;
 
   const [columns, setColumns] = useColumns();
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
 
   const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts' });
 

@@ -9,14 +9,8 @@ export type MutationData<T> = Omit<T, 'url'>;
 /** A list page as the API sends it, or a whole list read page by page, which names no next page. */
 export type QueryData<TItem> = { results: TItem[]; totalSize: number; nextPageToken?: string };
 
-export type SortOrder = 'asc' | 'desc';
-
-/** The fields a list orders by: its `orderBy` values without a direction. */
-export type SortFieldOf<TOrderBy> = TOrderBy extends `${infer F} ${SortOrder}` ? F : Extract<TOrderBy, string>;
-
-/** A list request's own params as its cache key holds them: no paging, and `orderBy` as the sort and order a table names. */
-export type ListFilters<TQuery> = Omit<TQuery, 'pageToken' | 'maxPageSize' | 'skip' | 'orderBy' | 'afterSeq' | 'untilSeq'> &
-  ('orderBy' extends keyof TQuery ? { sort?: SortFieldOf<NonNullable<TQuery['orderBy']>>; order?: SortOrder } : unknown);
+/** A list request's own params as its cache key holds them: no paging and no range read. */
+export type ListFilters<TQuery> = Omit<TQuery, 'pageToken' | 'maxPageSize' | 'skip' | 'afterSeq' | 'untilSeq'>;
 
 /** The page token an infinite list reads a page with: the previous page's `nextPageToken`, '' for the first page. */
 export type PageParam = string;
