@@ -3,7 +3,7 @@ import { hierarchy } from 'shared';
 import { isMaxMergeKey, signalVersionPrefix } from '#/modules/entities/counter-keys';
 import { type VersionedSignal, versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import type { CdcActivity, ParseMessageResult } from '../pipeline/parse-message';
-import type { CdcRowData, PendingEvent } from '../types';
+import type { CdcRowData, CounterDeltas, PendingEvent } from '../types';
 import { getCountDeltas } from './count-deltas';
 import { isTombstone } from './is-tombstone';
 
@@ -12,7 +12,7 @@ export interface BatchUnifiedDeltaPlan {
   /** One per organization: reserves `sequence` and stamps its events in WAL order. */
   orgSequenceGroups: OrgSequenceGroup[];
   /** Merged across all events by channelKey; excludes sequence and frontier deltas. */
-  countDeltasByChannelKey: Map<string, Record<string, number>>;
+  countDeltasByChannelKey: CounterDeltas;
 }
 
 /** The stampable changes of one organization in one flush, which take consecutive values of its sequence. */
@@ -36,7 +36,7 @@ export function resolveChannelKey(entityType: string, rowData: CdcRowData, activ
 }
 
 /** Merges deltas into those of a channel key: a count adds up, a stamp or a frontier keeps the highest value. */
-export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
+export function mergeDelta(map: CounterDeltas, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);
   if (existing) {
     for (const [key, value] of Object.entries(deltas)) {
@@ -88,7 +88,7 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHiera
   const orgSequenceGroups = [...Map.groupBy(stamped, organizationOf)].map(([orgKey, group]) => ({ orgKey, events: group }));
 
   const signalsOf = flushSignals(events, h);
-  const countDeltasByChannelKey = new Map<string, Record<string, number>>();
+  const countDeltasByChannelKey: CounterDeltas = new Map();
   for (const event of events) {
     const { result, cascadeCounts } = event;
     for (const { channelKey, deltas } of getCountDeltas(result.tableMeta, result.activity, result.rowData, result.oldRowData, h, signalsOf(event))) {
@@ -112,7 +112,7 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHiera
  */
 export function signalVersionsOf(
   events: PendingEvent[],
-  counters: Map<string, Record<string, number>>,
+  counters: CounterDeltas,
   h: EntityHierarchy = hierarchy,
 ): Map<PendingEvent, Record<string, number>> {
   const signalsOf = flushSignals(events, h);

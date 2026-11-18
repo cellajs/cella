@@ -26,6 +26,9 @@ export type TableMeta = (
   strippedKeys: ReadonlySet<string>;
 };
 
+/** Counter values per channel key: the deltas a flush adds, or the counts a counter row holds. */
+export type CounterDeltas = Map<string, Record<string, number>>;
+
 /** A change the worker keeps, on its way from its source transaction to a flush. */
 export interface PendingEvent {
   /** Position of the change itself. A failure is reported at the position of the first change of its flush. */
@@ -42,7 +45,7 @@ export interface PendingEvent {
    * On the delete of a channel: what the rows that went with it take off the counts of the channels that remain, per
    * channel key. Their own deletes are no change the worker keeps, so this change carries their counts.
    */
-  cascadeCounts?: Map<string, Record<string, number>>;
+  cascadeCounts?: CounterDeltas;
   /**
    * The sequence value the change's product row holds once its flush is recorded: the stamp, or the value read back for
    * a change delivered again. A delete gets neither, and neither does a row that left its table since.

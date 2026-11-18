@@ -1,4 +1,5 @@
 import { isPlainCountKey } from '#/modules/entities/counter-keys';
+import type { CounterDeltas } from '../types';
 
 /** A `pg_current_snapshot()`: transactions below `xmin` are over, those from `xmax` on had not started, `xip` were running. */
 export interface Snapshot {
@@ -6,9 +7,6 @@ export interface Snapshot {
   xmax: bigint;
   xip: Set<bigint>;
 }
-
-/** Counter deltas per channel key. */
-export type CounterDeltas = Map<string, Record<string, number>>;
 
 const xidRange = 1n << 32n;
 

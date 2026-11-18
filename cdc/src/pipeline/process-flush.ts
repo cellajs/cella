@@ -9,8 +9,8 @@ import { withSpan } from '../lib/tracing';
 import { wsClient } from '../network/websocket-client';
 import { generateActivityId, type ProductRow, sendMessageToApi, sendProductMessagesToApi } from '../services/api-messages';
 import { metrics } from '../services/cdc-metrics';
-import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
-import type { PendingEvent } from '../types';
+import { addCounts, fence, plainCounts } from '../services/fence';
+import type { CounterDeltas, PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
 import { computeBatchUnifiedDeltas, isStampable, signalVersionsOf } from '../utils/compute-unified-deltas';
 
