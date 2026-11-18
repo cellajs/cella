@@ -15,22 +15,22 @@ type GetMembersInput = z.infer<typeof memberListQuerySchema>;
  * per-member counts (`counts`) and, for the organization's admins only, each member's MFA switch (`mfa`).
  */
 export async function getMembersOp(ctx: UserContext, input: GetMembersInput, { offset, limit }: PageWindow) {
-  const { include, orderBy, entityId, entityType, q, role, userIds } = input;
-  const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
+  const { include, orderBy, channelId, channelType, q, role, userIds } = input;
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
 
   const includeCounts = include.includes('counts');
   // The organization's admins alone: to any member, the list would name the accounts without a second factor.
   const includeMfa = include.includes('mfa') && administeredOrganizationIds(ctx, [ctx.var.organization.id]).length > 0;
   const listOpts = {
     ...orderBy,
-    entityType,
+    channelType,
     q,
     role,
     userIds,
     offset,
     limit,
     organizationId: ctx.var.organization.id,
-    entityId: entity.id,
+    channelId: entity.id,
     includeCounts,
     includeMfa,
   };

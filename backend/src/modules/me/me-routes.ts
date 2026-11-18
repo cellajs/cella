@@ -14,7 +14,7 @@ import {
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { entityWithTypeSchema, pageQuerySchema, paginationSchema } from '#/schemas';
+import { channelRefSchema, pageQuerySchema, paginationSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 export const meRoutes = createXRoutes(['me', 'cella'], {
@@ -86,7 +86,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Leave channel',
     description: 'Removes the current user from a channel entity they are a member of.',
-    request: { body: jsonBody(entityWithTypeSchema) },
+    request: { body: jsonBody(channelRefSchema) },
     responses: { 204: { description: 'Membership left' }, ...errors(404, 409) },
   }),
   getUploadToken: xRoute({

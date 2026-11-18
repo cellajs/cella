@@ -35,7 +35,7 @@ describe('Pending invitations list', async () => {
   let member: { id: string; email: string; sessionCookie: string };
 
   const listPending = async (as: { sessionCookie: string }) => {
-    const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
+    const query = new URLSearchParams({ channelId: organization.id, channelType: 'organization' });
     const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/invitations?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
     return { status, items: (body as { results: PendingRow[] }).results };
@@ -46,7 +46,7 @@ describe('Pending invitations list', async () => {
   const check = (emails: string[]) =>
     call(checkMemberInvite, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
+      query: { channelId: organization.id, channelType: 'organization' },
       body: { emails },
       headers: { ...defaultHeaders, Cookie: inviter.sessionCookie },
     });

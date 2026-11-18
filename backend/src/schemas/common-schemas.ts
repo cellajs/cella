@@ -78,7 +78,7 @@ export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organiza
 export const userIdParamSchema = z.object({ userId: validIdSchema });
 
 /** A channel entity by type and id. */
-export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
+export const channelRefSchema = z.object({ channelId: validIdSchema, channelType: channelEntityTypeSchema });
 
 /**
  * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,

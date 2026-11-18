@@ -97,8 +97,8 @@ export function ChannelInvitationsList({ channel }: { channel: EnrichedChannel }
   const { t } = useTranslation();
 
   const queryOptions = channelInvitationsQueryOptions({
-    entityId: channel.id,
-    entityType: channel.entityType,
+    channelId: channel.id,
+    channelType: channel.entityType,
     tenantId: channel.tenantId,
     organizationId: channelOrganizationId(channel),
   });

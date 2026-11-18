@@ -146,7 +146,7 @@ describe('Rejected invitations', async () => {
     await markDeclined(declined.inactiveMembership.id);
     await createInvitation({ organization, email: 'pending-address@security-test.com', createdBy: admin.id });
 
-    const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
+    const query = new URLSearchParams({ channelId: organization.id, channelType: 'organization' });
     const listed = await baseApp.request(`/tenants/${organization.tenantId}/organizations/${organization.id}/invitations?${query}`, {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });

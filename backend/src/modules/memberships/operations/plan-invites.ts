@@ -5,10 +5,10 @@ import { findInvitationsByEmails } from '#/modules/memberships/invitations-queri
 import { findInviteeAccounts } from '#/modules/memberships/memberships-queries';
 import type { inviteOutcomeSchema, membershipCheckBodySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
-import type { entityWithTypeSchema } from '#/schemas';
+import type { channelRefSchema } from '#/schemas';
 
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;
-type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof entityWithTypeSchema>;
+type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof channelRefSchema>;
 type StoredInvitation = Awaited<ReturnType<typeof findInvitationsByEmails>>[number];
 
 /** One address with what an invite does with it, and the row the invite acts on; only the outcome goes on the wire. */
@@ -23,7 +23,7 @@ interface PlanInvitesInput {
   /** Trimmed and lowercased, as the body schema leaves them; a repeat is planned once. */
   emails: string[];
   entity: { id: string };
-  entityType: ChannelEntityType;
+  channelType: ChannelEntityType;
   /** Invitations to this draft wait for its publish, so nobody joins it at once. */
   held: boolean;
 }
@@ -33,12 +33,12 @@ interface PlanInvitesInput {
  * already sees: the channel's invitations by address and its members by their listed (primary) address. An account
  * behind an address picks the email and whether a token is minted, never the answer.
  */
-export async function planInvites(ctx: UserContext, { emails, entity, entityType, held }: PlanInvitesInput): Promise<PlannedAddress[]> {
+export async function planInvites(ctx: UserContext, { emails, entity, channelType, held }: PlanInvitesInput): Promise<PlannedAddress[]> {
   const { user, isSystemAdmin } = ctx.var;
   const uniqueEmails = [...new Set(emails)];
 
   const [accounts, invitations] = await Promise.all([
-    findInviteeAccounts(ctx, { emails: uniqueEmails, entityType, entityId: entity.id }),
+    findInviteeAccounts(ctx, { emails: uniqueEmails, channelType, channelId: entity.id }),
     findInvitationsByEmails(ctx, { emails: uniqueEmails, channelId: entity.id }),
   ]);
   const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
@@ -58,7 +58,7 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
 
     // An organization member invited below the organization by their listed address joins at once, unless the channel
     // is a draft that holds the role: then nobody joins before its publish.
-    const joinsDirectly = entityType !== 'organization' && !!account.orgMembershipId && isListedAddress && !held;
+    const joinsDirectly = channelType !== 'organization' && !!account.orgMembershipId && isListedAddress && !held;
     const isAdminInvitingSelf = user.email === email && isSystemAdmin;
     if (joinsDirectly || isAdminInvitingSelf) return { email, outcome: 'add', userId: account.userId };
 
@@ -80,9 +80,9 @@ export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
  * or sent. It needs the same `update` an invite does. Every address that is not a member or invited before reads as a
  * new invitation: whether an organization member joins a channel at once depends on the role picked later.
  */
-export async function checkInvitesOp(ctx: UserContext, { emails, entityId, entityType }: CheckInvitesInput) {
-  const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
+export async function checkInvitesOp(ctx: UserContext, { emails, channelId, channelType }: CheckInvitesInput) {
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
 
-  const plan = await planInvites(ctx, { emails, entity, entityType, held: true });
+  const plan = await planInvites(ctx, { emails, entity, channelType, held: true });
   return { outcomes: plan.map((item) => toInviteOutcome(item.outcome === 'add' ? { ...item, outcome: 'invite' } : item)) };
 }

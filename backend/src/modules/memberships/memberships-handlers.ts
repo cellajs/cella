@@ -15,20 +15,17 @@ const app = new OpenAPIHono<Env>();
 
 app.openapi(membershipRoutes.inviteMembers, async (ctx) => {
   const { emails, role } = ctx.req.valid('json');
-  const { entityId, entityType } = ctx.req.valid('query');
-  return ctx.json(await createMembershipsOp(ctx, { emails, role, entityId, entityType }), 200);
+  return ctx.json(await createMembershipsOp(ctx, { emails, role, ...ctx.req.valid('query') }), 200);
 });
 
 app.openapi(membershipRoutes.checkMemberInvite, async (ctx) => {
   const { emails } = ctx.req.valid('json');
-  const { entityId, entityType } = ctx.req.valid('query');
-  return ctx.json(await checkInvitesOp(ctx, { emails, entityId, entityType }), 200);
+  return ctx.json(await checkInvitesOp(ctx, { emails, ...ctx.req.valid('query') }), 200);
 });
 
 app.openapi(membershipRoutes.batchDeleteMembers, async (ctx) => {
-  const { entityType, entityId } = ctx.req.valid('query');
   const { ids } = ctx.req.valid('json');
-  return ctx.json(await deleteMembershipsOp(ctx, { userIds: ids, entityId, entityType }), 200);
+  return ctx.json(await deleteMembershipsOp(ctx, { userIds: ids, ...ctx.req.valid('query') }), 200);
 });
 
 app.openapi(membershipRoutes.updateMembership, async (ctx) => {

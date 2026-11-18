@@ -10383,16 +10383,16 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "entityId": {
+                  "channelId": {
                     "type": "string",
                     "maxLength": 50
                   },
-                  "entityType": {
+                  "channelType": {
                     "type": "string",
                     "enum": ["organization"]
                   }
                 },
-                "required": ["entityId", "entityType"]
+                "required": ["channelId", "channelType"]
               }
             }
           }
@@ -10857,7 +10857,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -10866,7 +10866,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11054,7 +11054,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11063,7 +11063,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11191,7 +11191,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11200,7 +11200,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11685,7 +11685,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11694,7 +11694,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           },
           {
@@ -12041,7 +12041,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -12050,7 +12050,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           },
           {

@@ -40,12 +40,12 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const scope = { entityId: 'org-1', entityType: 'organization', tenantId: 'tenant-1', organizationId: 'org-1' } as const;
+const scope = { channelId: 'org-1', channelType: 'organization', tenantId: 'tenant-1', organizationId: 'org-1' } as const;
 // Members lists are paged in the app; the untagged copies also seed flat lists, which the writes handle too.
 const pagedKey = [...membersListQueryOptions(scope).queryKey];
 const searchKey = [...membersListQueryOptions({ ...scope, q: 'ada' }).queryKey];
 const roleKey = [...membersListQueryOptions({ ...scope, role: memberRole }).queryKey];
-const otherChannelKey = [...membersListQueryOptions({ ...scope, entityId: 'org-2' }).queryKey];
+const otherChannelKey = [...membersListQueryOptions({ ...scope, channelId: 'org-2' }).queryKey];
 
 const member = (id: string, role: MembershipBase['role'] = memberRole) =>
   ({ id, name: id, membership: membership(`m-${id}`, { userId: id, channelId: 'org-1', role }) }) as Member;
@@ -75,7 +75,7 @@ describe('useMembershipsDeleteMutation', () => {
   type Context = [readonly unknown[], unknown][];
   const variablesFor = (...ids: string[]) => ({
     members: ids.map((id) => member(id)),
-    query: { entityId: 'org-1', entityType: 'organization' as const },
+    query: { channelId: 'org-1', channelType: 'organization' as const },
     path: { tenantId: 'tenant-1', organizationId: 'org-1' },
     body: { ids: ids.map((id) => `m-${id}`) },
   });

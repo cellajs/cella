@@ -17,10 +17,10 @@ import { takeInvitationMails } from '#/modules/memberships/operations/take-invit
 import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
-import type { entityWithTypeSchema } from '#/schemas';
+import type { channelRefSchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
-type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.infer<typeof entityWithTypeSchema>;
+type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.infer<typeof channelRefSchema>;
 
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
@@ -30,26 +30,26 @@ type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { ou
  * An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done. Returns
  * what happened to each address.
  */
-export async function createMembershipsOp(ctx: UserContext, { emails, role, entityId, entityType }: CreateMembershipsInput) {
+export async function createMembershipsOp(ctx: UserContext, { emails, role, channelId, channelType }: CreateMembershipsInput) {
   const { db, user, organization, tenantId } = ctx.var;
 
-  const channelRoles = hierarchy.getRoles(entityType);
-  if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType });
+  const channelRoles = hierarchy.getRoles(channelType);
+  if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType: channelType });
 
-  const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
   assertTenantInvites(ctx.var.tenant);
 
   // The memberships an accept brings along above the channel are checked here too: the accept has no inviter to ask.
-  assertRoleGrant(ctx, { subject: buildSubjectFromEntity(entityType, entity), role, action: 'update' });
-  for (const along of membershipsBroughtAlong(entity, role, findMenuParent(entityType))) {
+  assertRoleGrant(ctx, { subject: buildSubjectFromEntity(channelType, entity), role, action: 'update' });
+  for (const along of membershipsBroughtAlong(entity, role, findMenuParent(channelType))) {
     const subject = buildSubject(along.channelType, channelIdColumnsOf(entity), { id: along.channelId });
     assertRoleGrant(ctx, { subject, role: along.role, action: 'update' });
   }
 
   // Held: invites are recorded but emails are held and existing users are not added, all released at publish.
-  const held = isHeldInvitation(entityType, entity, role);
+  const held = isHeldInvitation(channelType, entity, role);
 
-  const plan = await planInvites(ctx, { emails, entity, entityType, held });
+  const plan = await planInvites(ctx, { emails, entity, channelType, held });
   const planned = <O extends PlannedAddress['outcome']>(outcome: O) => plan.filter((item): item is Planned<O> => item.outcome === outcome);
   const invites = planned('invite');
   const adds = planned('add');
@@ -59,7 +59,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
   const raisedIds = new Set(raised.map(({ invitation }) => invitation.id));
 
   // Seats: new invitations and, at the organization, members added at once. A resend and a member take none.
-  const seatTakers = [...invites, ...(entityType === 'organization' ? adds : [])];
+  const seatTakers = [...invites, ...(channelType === 'organization' ? adds : [])];
   const newSeats = seatTakers.length;
   const seatQuota = ctx.var.tenant.restrictions.quotas.user;
   if (seatQuota !== 0 && newSeats > 0) {
@@ -68,7 +68,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
       // An address this request charges is left out of the pending count, so a second invitation costs no second seat.
       countInvitationSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
     ]);
-    if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
+    if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType: channelType });
   }
 
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
@@ -95,7 +95,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
       role,
       status: held ? 'held' : 'pending',
       createdBy: user.id,
-      channelType: entityType,
+      channelType,
       tenantId,
       ...channelIdColumnsOf(entity),
       channelId: entity.id,
@@ -109,7 +109,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
     await mailWithinCaps(ctx, { invitations, organization, by: user.id, taken });
 
     if (adds.length) {
-      const channel = { type: entityType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };
+      const channel = { type: channelType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };
       await sendInvitationMails(ctx, { sender: user, channel, organization, invited: [], added: adds });
     }
   }
@@ -118,8 +118,8 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, enti
     invited: inserted.length,
     resent: resends.length,
     added: adds.length,
-    entityType,
-    entityId,
+    channelType,
+    channelId,
   });
 
   return { results: createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id)), outcomes: plan.map(toInviteOutcome), held };

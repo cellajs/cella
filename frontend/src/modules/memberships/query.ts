@@ -15,7 +15,7 @@ import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters } from '~/query/types';
 
-type ChannelInvitationsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
+type ChannelInvitationsParams = Pick<ListInvitationsData['query'], 'channelId' | 'channelType'> & ListInvitationsData['path'];
 type MemberFilters = ListFilters<ListMembersData['query']>;
 type MembersParams = MemberFilters & ListMembersData['path'];
 type ChannelInvitationsListParams = ChannelInvitationsParams & { limit?: number };
@@ -25,10 +25,10 @@ const keys = {
   list: {
     base: ['member', 'list'] as const,
     members: (filters: MembersParams) => [...keys.list.base, filters] as const,
-    similarMembers: (filters: Pick<MembersParams, 'tenantId' | 'organizationId' | 'entityId' | 'entityType'>) =>
+    similarMembers: (filters: Pick<MembersParams, 'tenantId' | 'organizationId' | 'channelId' | 'channelType'>) =>
       [...keys.list.base, filters] as const,
     pending: (filters: ChannelInvitationsParams) => ['invites', ...keys.list.base, filters] as const,
-    similarPending: (filters: Pick<ChannelInvitationsParams, 'entityId' | 'entityType'>) => ['invites', ...keys.list.base, filters] as const,
+    similarPending: (filters: Pick<ChannelInvitationsParams, 'channelId' | 'channelType'>) => ['invites', ...keys.list.base, filters] as const,
   },
   check: (channelId?: string) => ['invites', 'check', channelId] as const,
   update: ['member', 'update'] as const,
@@ -72,7 +72,7 @@ export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined,
     queryFn: async ({ signal }): Promise<InviteOutcome[]> => {
       if (!channel) return [];
       const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
-      const query = { entityId: channel.id, entityType: channel.entityType };
+      const query = { channelId: channel.id, channelType: channel.entityType };
       const results = await Promise.all(inviteBatches(emails).map((batch) => checkMemberInvite({ path, query, body: { emails: batch }, signal })));
       return results.flatMap(({ outcomes }) => outcomes);
     },
@@ -82,10 +82,10 @@ export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined,
 
 export const membersListQueryOptions = (params: MembersListParams) => {
   const {
-    entityId,
+    channelId,
     tenantId,
     organizationId,
-    entityType,
+    channelType,
     q = membersSearchDefaults.q,
     sort = membersSearchDefaults.sort,
     order = membersSearchDefaults.order,
@@ -96,8 +96,8 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   } = params;
   // `include` stays out of the cache key so queries with/without counts share the same cache
   const filters = { q, sort, order, role, userIds };
-  const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
-  const query = { ...filters, include, entityId, entityType };
+  const keyFilters = { channelId, channelType, tenantId, organizationId, ...filters };
+  const query = { ...filters, include, channelId, channelType };
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
@@ -107,11 +107,11 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 };
 
 export const channelInvitationsQueryOptions = (params: ChannelInvitationsListParams) => {
-  const { entityId, tenantId, organizationId, entityType, limit = appConfig.pageSizes.invitations } = params;
-  const query = { entityId, entityType };
+  const { channelId, tenantId, organizationId, channelType, limit = appConfig.pageSizes.invitations } = params;
+  const query = { channelId, channelType };
 
   return infiniteQueryOptions({
-    queryKey: keys.list.pending({ entityId, entityType, tenantId, organizationId }),
+    queryKey: keys.list.pending({ channelId, channelType, tenantId, organizationId }),
     ...tokenPaging((pageToken, signal) =>
       listInvitations({ query: { ...query, ...pageQuery(limit, pageToken) }, path: { tenantId, organizationId }, signal }),
     ),
@@ -128,6 +128,6 @@ const fetchMembersPage = (
 
 /** A page of members for a table export. Bypasses cache; rows carry their counts and MFA setting, as in the members table. */
 export const fetchMembersForExport = (params: MembersParams, page: PageRequest) => {
-  const { tenantId, organizationId, q, sort, order, role, entityId, entityType } = params;
-  return fetchMembersPage({ q, sort, order, role, entityId, entityType, include: 'counts,mfa' }, { tenantId, organizationId }, page);
+  const { tenantId, organizationId, q, sort, order, role, channelId, channelType } = params;
+  return fetchMembersPage({ q, sort, order, role, channelId, channelType, include: 'counts,mfa' }, { tenantId, organizationId }, page);
 };

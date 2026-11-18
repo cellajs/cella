@@ -37,7 +37,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Atta
   const canAsMember = useCan({ asMember: true });
   const canEdit = canAsMember('update', 'attachment', attachment);
 
-  const membersQuery = useInfiniteQuery(membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }));
+  const membersQuery = useInfiniteQuery(membersListQueryOptions({ channelId: homeId, channelType: homeType, tenantId, organizationId }));
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutate } = useAttachmentUpdateMutation(tenantId, organizationId);

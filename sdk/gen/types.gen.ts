@@ -4343,8 +4343,8 @@ export type DeclineInvitationResponse = DeclineInvitationResponses[keyof Decline
 
 export type LeaveMembershipData = {
   body: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   path?: never;
   query?: never;
@@ -4651,8 +4651,8 @@ export type InviteMembersData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:invite';
 };
@@ -4727,8 +4727,8 @@ export type CheckMemberInviteData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:check-invite';
 };
@@ -4788,8 +4788,8 @@ export type BatchDeleteMembersData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete';
 };
@@ -4982,8 +4982,8 @@ export type ListMembersData = {
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
     /**
      * A field to order by, then `asc` or `desc`; ascending when left out.
      */
@@ -5116,8 +5116,8 @@ export type ListInvitationsData = {
      * Results to pass over after the page token's position, or from the start without a token.
      */
     skip?: number;
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
     /**
      * A field to order by, then `asc` or `desc`; ascending when left out.
      */

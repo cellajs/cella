@@ -87,8 +87,8 @@ export function MembersTableBar({
   }, []);
 
   const fetchExport = (page: PageRequest) => {
-    const { id: entityId, entityType, tenantId } = channel;
-    return fetchMembersForExport({ q, sort, order, role, entityId, entityType, tenantId, organizationId }, page);
+    const { id: channelId, entityType: channelType, tenantId } = channel;
+    return fetchMembersForExport({ q, sort, order, role, channelId, channelType, tenantId, organizationId }, page);
   };
 
   return (

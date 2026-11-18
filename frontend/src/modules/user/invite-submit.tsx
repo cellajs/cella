@@ -117,7 +117,7 @@ export function useInviteSubmit({ channel, shownOut, onDone, onPartial }: UseInv
     }
 
     const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
-    const query = { entityId: channel.id, entityType: channel.entityType };
+    const query = { channelId: channel.id, channelType: channel.entityType };
 
     membershipInvite(
       { body, path, query, channel },

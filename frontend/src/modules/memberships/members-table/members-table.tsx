@@ -31,7 +31,7 @@ export function MembersTable({ channel, isSheet = false, inviteOnOpen }: Members
 
   const { mutate: updateMembership } = useMemberUpdateMutation();
 
-  const { id: entityId, entityType, tenantId } = channel;
+  const { id: channelId, entityType: channelType, tenantId } = channel;
   const organizationId = channelOrganizationId(channel);
 
   const can = useCan();
@@ -39,11 +39,11 @@ export function MembersTable({ channel, isSheet = false, inviteOnOpen }: Members
 
   const { q, role, sort, order } = search;
 
-  const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
+  const [columns, setColumns] = useColumns(canUpdate, isSheet, channelType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // `counts` and `mfa` feed the insight and MFA columns
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, include: 'counts,mfa' });
+  const queryOptions = membersListQueryOptions({ channelId, channelType, tenantId, organizationId, ...search, include: 'counts,mfa' });
 
   const list = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(list.rows);
@@ -56,8 +56,8 @@ export function MembersTable({ channel, isSheet = false, inviteOnOpen }: Members
       updateMembership({
         path: { membershipId: membership.id, tenantId, organizationId },
         body: { role: membership.role },
-        channelId: entityId,
-        channelType: entityType,
+        channelId,
+        channelType,
       });
     }
   };
