@@ -35,7 +35,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: tenantOrgParamSchema, body: jsonBody(startLtiToolRegistrationBodySchema) },
     responses: {
       200: json('Registration address', ltiToolRegistrationStartSchema, {
-        url: `https://peer-review.example.com/lti/register?openid_configuration=${encodeURIComponent(ltiIssuerUrl('configuration'))}&registration_token=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my`,
+        url: `https://peer-review.example.com/lti/register?openid_configuration=${encodeURIComponent(ltiIssuerUrl('configuration'))}&registration_token=example-registration-token`,
         expiresAt: '2026-11-18T13:00:00.000Z',
       }),
     },
@@ -138,7 +138,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: ltiResourceLinkParamSchema },
     responses: {
       200: json('Launch started', ltiLaunchStartSchema, {
-        url: `${loginInitiationUrl}?token=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my`,
+        url: `${loginInitiationUrl}?token=example-launch-token`,
         expiresAt: '2026-11-18T13:05:00.000Z',
       }),
       ...errors(409),

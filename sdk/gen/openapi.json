@@ -10443,7 +10443,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "url": "https://peer-review.example.com/lti/register?openid_configuration=http%3A%2F%2Flocalhost%3A3700%2Foauth%2Flti%2Fopenid-configuration&registration_token=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my",
+                  "url": "https://peer-review.example.com/lti/register?openid_configuration=http%3A%2F%2Flocalhost%3A3700%2Foauth%2Flti%2Fopenid-configuration&registration_token=example-registration-token",
                   "expiresAt": "2026-11-18T13:00:00.000Z"
                 },
                 "schema": {
@@ -11364,7 +11364,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "url": "http://localhost:3000/api/lti-launches/~initiate-login?token=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my",
+                  "url": "http://localhost:3000/api/lti-launches/~initiate-login?token=example-launch-token",
                   "expiresAt": "2026-11-18T13:05:00.000Z"
                 },
                 "schema": {
@@ -19944,7 +19944,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "url": "http://localhost:3000/api/auth/lti/register?link=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my",
+                  "url": "http://localhost:3000/api/auth/lti/register?link=example-registration-link",
                   "expiresAt": "2026-11-18T13:00:00.000Z"
                 },
                 "schema": {

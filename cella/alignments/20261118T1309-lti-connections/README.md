@@ -1,6 +1,6 @@
 ---
 breaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: compiler
 generate: true
 ---
@@ -63,8 +63,8 @@ tab.
 
 ## Blast radius
 
-Every app: the template code names the new token kinds, and the schema changes need a migration. No lens or
-`clientCacheVersion` change. An app that never reads connections, tokens or service accounts itself has only the config
+Every app: the template code names the new token kinds, and the schema changes need a migration. No lens.
+`clientCacheVersion` rises by one: a connection's `federation` may be null and its `config` differs per kind. An app that never reads connections, tokens or service accounts itself has only the config
 lines, the pinned files and the migration to do.
 
 ## Run

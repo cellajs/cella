@@ -86,7 +86,7 @@ export const organizationConnectionRoutes = createXRoutes(['connections', 'cella
     request: { params: tenantOrgParamSchema },
     responses: {
       200: json('Registration link', ltiRegistrationLinkSchema, {
-        url: `${appConfig.backendAuthUrl}/lti/register?link=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my`,
+        url: `${appConfig.backendAuthUrl}/lti/register?link=example-registration-link`,
         expiresAt: '2026-11-18T13:00:00.000Z',
       }),
     },
