@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Executor } from '../lib/db';
+import type { CounterDeltas } from '../types';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import { changeEvent, tableMetaOf } from './factories';
 
@@ -164,7 +165,7 @@ describe('mergeDelta', () => {
   });
 
   it('starts a channel it has no deltas for with a copy, so the caller keeps its own object', () => {
-    const map = new Map<string, Record<string, number>>();
+    const map: CounterDeltas = new Map();
     const first = { 'e:c:task': 1 };
     mergeDelta(map, 'org-1', first);
     mergeDelta(map, 'org-1', { 'e:c:task': 1 });

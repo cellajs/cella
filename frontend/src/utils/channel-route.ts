@@ -1,10 +1,11 @@
-import { appConfig, type ChannelEntityType, hierarchy, type ProductEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy, typedEntries } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
+import type { NotificationLinkSearch } from 'shared/utils/notification-link';
 import { getChannelProductRoute, getProductDeepLink } from '~/lib/entity-modules';
-import type { EnrichedChannel } from '~/modules/entities/types';
+import type { AncestorSlugs, EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { channelRouteConfig } from '~/routes-config';
-import { getField } from '~/utils/get-field';
 
 /**
  * One entry of `channelRouteConfig` (`routes-config.tsx`, which apps pin and fill with their channels): the one piece of a
@@ -38,23 +39,22 @@ export const getChannelRoute = (item: EnrichedChannel): EntityRoute => resolveCh
 /** The route params of an entity's own page, typed for links to its other routes (its page tabs); `EntityRoute` widens them. */
 export const getChannelRouteParams = (item: EnrichedChannel): Record<string, string> => resolveChannelRoute(item).params;
 
-function resolveChannelRoute(item: EnrichedChannel): ChannelRoute {
-  const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
-  const config = channelRouteConfig[entityType];
-
-  // `ancestorSlugs` is this entity's exact ancestor set; map each to its route param.
+/** The route of an `entityType` page by `channelRouteConfig`. A slug param takes a slug, or an id the route's `beforeLoad` rewrites. */
+function buildChannelRoute(entityType: ChannelEntityType, tenantId: string, ancestorSlugs: AncestorSlugs, slug: string): ChannelRoute {
   const params: Record<string, string> = { tenantId };
-  for (const [type, ancestorSlug] of Object.entries(ancestorSlugs)) {
-    if (ancestorSlug) params[channelRouteConfig[type as ChannelEntityType].paramName] = ancestorSlug;
+  for (const [type, ancestorSlug] of typedEntries(ancestorSlugs)) {
+    if (ancestorSlug) params[channelRouteConfig[type].paramName] = ancestorSlug;
   }
-  for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    const { paramName } = channelRouteConfig[ancestor];
-    const id = getField(item, appConfig.entityIdColumnKeys[ancestor]);
-    if (!params[paramName] && typeof id === 'string') params[paramName] = id;
-  }
-
+  const config = channelRouteConfig[entityType];
   params[config.paramName] = slug;
   return { to: config.path, params, search: {} };
+}
+
+function resolveChannelRoute(item: EnrichedChannel): ChannelRoute {
+  const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
+  const slugs: AncestorSlugs = {};
+  for (const { type, id } of hierarchy.resolveNonNullAncestors(entityType, asRecord(item))) slugs[type] = ancestorSlugs[type] ?? id;
+  return buildChannelRoute(entityType, tenantId, slugs, slug);
 }
 
 /**
@@ -65,12 +65,7 @@ function resolveChannelRoute(item: EnrichedChannel): ChannelRoute {
 export const getCreatedChannelRoute = (
   entityType: ChannelEntityType,
   channel: { tenantId: string; organizationId: string; slug: string },
-): EntityRoute => {
-  const config = channelRouteConfig[entityType];
-  const params: Record<string, string> = { tenantId: channel.tenantId, organizationSlug: channel.organizationId };
-  params[config.paramName] = channel.slug;
-  return { to: config.path, params, search: {} };
-};
+): EntityRoute => buildChannelRoute(entityType, channel.tenantId, { organization: channel.organizationId }, channel.slug);
 
 /**
  * Route to a channel's nearest ancestor page: the deepest non-null ancestor id column on the row,
@@ -82,29 +77,15 @@ export const getNearestAncestorRoute = (
   channel: { tenantId: string; organizationId: string } & Record<string, unknown>,
 ): EntityRoute => {
   const { tenantId, organizationId } = channel;
-  const params = { tenantId, organizationSlug: organizationId };
-  for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    // Compared as string so a single-channel hierarchy does not narrow `ancestor` to never.
-    if ((ancestor as string) === 'organization') break;
-    const id = channel[appConfig.entityIdColumnKeys[ancestor]];
-    if (typeof id !== 'string') continue;
-    const config = channelRouteConfig[ancestor];
-    return { to: config.path, params: { ...params, [config.paramName]: id }, search: {} };
-  }
-  return { to: channelRouteConfig.organization.path, params, search: {} };
+  const [nearest] = hierarchy.resolveNonNullAncestors(entityType, channel);
+  return buildChannelRoute(nearest?.type ?? 'organization', tenantId, { organization: organizationId }, nearest?.id ?? organizationId);
 };
 
-/** Where a product sits, as a notification or share link carries it: its home channel, and the product to open there. */
-export interface ProductLocation {
-  tenantId: string;
-  organizationId: string;
-  channelType: ChannelEntityType;
-  channelId: string;
-  productType?: ProductEntityType;
-  subjectId?: string;
-  /** Grouping context of the subject (a comment's host item); the host opens when the product declares one. */
-  contextId?: string | null;
-}
+/**
+ * Where a product sits, as a notification or share link carries it: its home channel, and the product to open there.
+ * An inbox row's `contextId` is null when the subject has no grouping context.
+ */
+export type ProductLocation = Omit<NotificationLinkSearch, 'nid' | 'contextId'> & { contextId?: string | null };
 
 /**
  * Search that opens the subject on the target page, from the subject product's `deepLinkParam`. Both its own
@@ -132,9 +113,5 @@ export function getProductRoute(location: ProductLocation): EntityRoute {
 function getChannelPageRoute({ tenantId, organizationId, channelType, channelId }: ProductLocation): ChannelRoute {
   const channel = findInCache<EnrichedChannel>(channelType, channelId);
   if (channel) return resolveChannelRoute(channel);
-
-  const config = channelRouteConfig[channelType];
-  const params: Record<string, string> = { tenantId, organizationSlug: organizationId };
-  params[config.paramName] = channelId;
-  return { to: config.path, params, search: {} };
+  return buildChannelRoute(channelType, tenantId, { organization: organizationId }, channelId);
 }

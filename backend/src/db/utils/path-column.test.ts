@@ -1,53 +1,29 @@
 import { sql } from 'drizzle-orm';
-import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { deepHierarchy as deepH } from 'shared/testing/deep-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getSeedDb } from '#/db/db';
 
 const seedDb = getSeedDb();
 
-/** The generated-column SQL rule and the JS rule must produce identical paths for every row shape. */
-const roles = createRoleRegistry(['admin', 'member'] as const);
-
-// Synthetic org-homed product: binding to the real config would break the assertion in apps that re-home it.
-const orgHomedH = createEntityHierarchy(roles).user().organization({ roles: roles.all }).product('doc', { parent: 'organization' }).build();
 describe('pathColumnSql (SQL shape)', () => {
-  it('org-homed product: just the org id', () => {
-    expect(orgHomedH.pathColumnSql('doc', false)).toBe('"organization_id"::text');
-  });
-
   it('organization: its own id', () => {
-    expect(orgHomedH.pathColumnSql('organization', true)).toBe('"id"::text');
+    expect(deepH.pathColumnSql('organization')).toBe('"id"::text');
   });
 
-  it('deep product: COALESCE-wrapped intermediate ancestors, root-first', () => {
-    expect(deepH.pathColumnSql('item', false)).toBe(
-      `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || COALESCE('/' || "course_section_id"::text, '') || COALESCE('/' || "project_id"::text, '')`,
-    );
-  });
-
-  it('deep channel: ancestors plus own id', () => {
-    expect(deepH.pathColumnSql('project', true)).toBe(
+  it('deep channel: COALESCE-wrapped intermediate ancestors, root-first, plus own id', () => {
+    expect(deepH.pathColumnSql('project')).toBe(
       `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || COALESCE('/' || "course_section_id"::text, '') || '/' || "id"::text`,
     );
   });
 });
 
+/** The generated-column SQL rule and the JS rule must produce identical paths for every row shape. */
 describe('SQL ≍ JS path parity on a live deep-chain table', () => {
-  const itemExpr = deepH.pathColumnSql('item', false);
-  const projectExpr = deepH.pathColumnSql('project', true);
+  const projectExpr = deepH.pathColumnSql('project');
 
   beforeAll(async () => {
     await seedDb.execute(
       sql.raw(`
-        create table test_path_parity_items (
-          id varchar primary key,
-          organization_id varchar not null,
-          course_id varchar,
-          course_section_id varchar,
-          project_id varchar,
-          path text generated always as (${itemExpr}) stored
-        );
         create table test_path_parity_projects (
           id varchar primary key,
           organization_id varchar not null,
@@ -60,40 +36,15 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
   });
 
   afterAll(async () => {
-    await seedDb.execute(sql.raw('drop table if exists test_path_parity_items; drop table if exists test_path_parity_projects;'));
-  });
-
-  const itemRows = [
-    { id: 'i1', organizationId: 'o1', courseId: 'c1', courseSectionId: 's1', projectId: 'p1' },
-    { id: 'i2', organizationId: 'o1', courseId: 'c1', courseSectionId: 's1', projectId: null },
-    { id: 'i3', organizationId: 'o1', courseId: 'c1', courseSectionId: null, projectId: null },
-    { id: 'i4', organizationId: 'o1', courseId: null, courseSectionId: null, projectId: null },
-    // Sparse chain (org-level project): section/course null but project set.
-    { id: 'i5', organizationId: 'o1', courseId: null, courseSectionId: null, projectId: 'p9' },
-  ];
-
-  it('item rows: stored path equals computeProductPath', async () => {
-    for (const row of itemRows) {
-      await seedDb.execute(
-        sql.raw(
-          `insert into test_path_parity_items (id, organization_id, course_id, course_section_id, project_id)
-           values ('${row.id}', '${row.organizationId}', ${row.courseId ? `'${row.courseId}'` : 'null'},
-                   ${row.courseSectionId ? `'${row.courseSectionId}'` : 'null'},
-                   ${row.projectId ? `'${row.projectId}'` : 'null'})`,
-        ),
-      );
-    }
-    const stored = await seedDb.execute<{ id: string; path: string }>(sql.raw('select id, path from test_path_parity_items order by id'));
-    for (const { id, path } of stored.rows) {
-      const row = itemRows.find((r) => r.id === id);
-      expect(path, `item ${id}`).toBe(deepH.computeProductPath('item', row ?? {}));
-    }
+    await seedDb.execute(sql.raw('drop table if exists test_path_parity_projects;'));
   });
 
   it('channel rows: stored path equals computeChannelPath', async () => {
     const projectRows = [
       { id: 'p1', organizationId: 'o1', courseId: 'c1', courseSectionId: 's1' },
       { id: 'p2', organizationId: 'o1', courseId: null, courseSectionId: null },
+      // Sparse chain: course null but section set.
+      { id: 'p3', organizationId: 'o1', courseId: null, courseSectionId: 's9' },
     ];
     for (const row of projectRows) {
       await seedDb.execute(

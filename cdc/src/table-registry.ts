@@ -1,28 +1,29 @@
-import { getColumns, getTableName, type Table } from 'drizzle-orm';
+import { getColumns, getTableName } from 'drizzle-orm';
 import { typedEntries } from 'shared';
+import { secretColumnsOf } from '#/db/secret-columns';
 import { entityTables, resourceTables } from '#/tables';
-import type { EntityTableMeta, ResourceTableMeta, TableMeta } from './types';
+import type { TableMeta } from './types';
 
-/** The camelCase key of each column of a table by its database name, both as the Drizzle schema declares them. */
-function buildColumnNameMap(table: Table): Map<string, string> {
-  return new Map(Object.entries(getColumns(table)).map(([key, column]) => [column.name, key]));
-}
+/**
+ * Varchar length at or above which a column is stripped from in-memory row data. Column lists are incompatible with
+ * REPLICA IDENTITY FULL, and the publication carries every column. Stripping happens in the parser, after change detection.
+ */
+const cdcExcludeColumnLengthThreshold = 10_000;
 
 function buildTableRegistry(): Map<string, TableMeta> {
+  const tracked = [
+    ...typedEntries(entityTables).map(([type, table]) => ({ kind: 'entity' as const, type, table })),
+    ...typedEntries(resourceTables).map(([type, table]) => ({ kind: 'resource' as const, type, table })),
+  ];
   const registry = new Map<string, TableMeta>();
 
-  for (const [type, table] of typedEntries(entityTables)) {
-    const tableName = getTableName(table);
-    const columnNameMap = buildColumnNameMap(table);
-    const meta: EntityTableMeta = { kind: 'entity', table, type, columnNameMap };
-    registry.set(tableName, meta);
-  }
-
-  for (const [type, table] of typedEntries(resourceTables)) {
-    const tableName = getTableName(table);
-    const columnNameMap = buildColumnNameMap(table);
-    const meta: ResourceTableMeta = { kind: 'resource', table, type, columnNameMap };
-    registry.set(tableName, meta);
+  for (const meta of tracked) {
+    const tableName = getTableName(meta.table);
+    const columns = Object.entries(getColumns(meta.table));
+    const columnNameMap = new Map(columns.map(([key, column]) => [column.name, key]));
+    const longKeys = columns.filter(([, column]) => column.length !== undefined && column.length >= cdcExcludeColumnLengthThreshold);
+    const strippedKeys = new Set([...longKeys.map(([key]) => key), ...secretColumnsOf(tableName)]);
+    registry.set(tableName, { ...meta, columnNameMap, strippedKeys });
   }
 
   return registry;

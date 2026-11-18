@@ -2,6 +2,7 @@ import { getTableName, sql } from 'drizzle-orm';
 import { frontierPrefix } from '#/modules/entities/counter-keys';
 import type { Executor } from '../lib/db';
 import { log } from '../lib/pino';
+import type { CounterDeltas } from '../types';
 import { type BatchUnifiedDeltaPlan, mergeDelta } from './compute-unified-deltas';
 
 /** Rows per stamp statement: two bind parameters each, far below the protocol's 65,535. */
@@ -33,15 +34,15 @@ async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Reco
  * transactions that touch the same rows take their locks the same way round.
  * @returns The counter row of each channel the plan wrote, as the flush left it.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor): Promise<Map<string, Record<string, number>>> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor): Promise<CounterDeltas> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
-  const written = new Map<string, Record<string, number>>();
+  const written: CounterDeltas = new Map();
 
   const handledChannelKeys = new Set<string>();
   /** The last seq of each row by table: a row changed twice in one flush is stamped once, with its newest position. */
   const lastSeqByTable = new Map<string, Map<string, number>>();
   /** `e:f:` deltas of the organizations and the count deltas of the other channels for phase 2, keyed by channel. */
-  const phase2Deltas = new Map<string, Record<string, number>>();
+  const phase2Deltas: CounterDeltas = new Map();
 
   // Phase 1: one RETURNING UPSERT per organization sequence.
   for (const group of [...orgSequenceGroups].sort((a, b) => (a.orgKey < b.orgKey ? -1 : 1))) {
