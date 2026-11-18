@@ -24,8 +24,6 @@ const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: vi.fn(), state: { matches: [] } }) }));
-const resolveChannelPath = vi.fn((_channelId: string): string | null => null);
-vi.mock('~/query/realtime/view-declaration', () => ({ resolveChannelPath: (channelId: string) => resolveChannelPath(channelId) }));
 
 // Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
 const documentListeners = new Map<string, () => void>();
@@ -40,7 +38,7 @@ const background = { min: 2_000, max: 30_000 };
 const viewing = { min: 0, max: 0 };
 const onOpen = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
-const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
+const base = { productType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, path: 'org-1', hasCreates: false };
 const cursor = () => syncStore.getState().getOrgSeq('org-1', 'attachment');
 
 /** What the API client books when the read budget refuses a GET. */
@@ -81,7 +79,7 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
     expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
-    expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
+    expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ productType: 'attachment', organizationId: 'org-1', rows: items });
 
     // The row's next change names its new position, and its range starts where the cursor moved to.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 9 });
@@ -96,7 +94,7 @@ describe('fetch-prioritizer', () => {
   it('reads a channel without a cursor of its own from the organization cursor catchup moved', async () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
 
-    enqueueRange({ ...base, channelId: 'project-9', afterSeq: 2, untilSeq: 7 });
+    enqueueRange({ ...base, channelId: 'project-9', path: 'org-1/project-9', afterSeq: 2, untilSeq: 7 });
     await flushAllNow();
 
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 5, untilSeq: 7 });
@@ -109,7 +107,7 @@ describe('fetch-prioritizer', () => {
       const syncedRows = vi.fn();
       const off = onSyncedRows(syncedRows);
       fetchRangeAndPatch.mockResolvedValue({ status, items: [] });
-      enqueueRange({ ...base, afterSeq: 0, untilSeq: 9, isCreate: true });
+      enqueueRange({ ...base, afterSeq: 0, untilSeq: 9, hasCreates: true });
 
       // One attempt per flush: a failing fetch is retried before it falls back, so the range cannot loop.
       for (let attempt = 0; attempt < 3; attempt++) await flushAllNow();
@@ -222,14 +220,14 @@ describe('fetch-prioritizer', () => {
     const off = onSyncedRows(syncedRows);
     const items = [{ id: 'a1' }, { id: 'a2' }];
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
-    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, isCreate: true });
-    enqueueRange({ ...base, afterSeq: 6, untilSeq: 9, isCreate: true });
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, hasCreates: true });
+    enqueueRange({ ...base, afterSeq: 6, untilSeq: 9, hasCreates: true });
 
     await flushAllNow();
     off();
 
     expect(syncedRows).toHaveBeenCalledTimes(1);
-    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
+    expect(syncedRows).toHaveBeenCalledWith({ productType: 'attachment', organizationId: 'org-1', rows: items });
     expect(invalidateUnseenCounts).not.toHaveBeenCalled();
   });
 
@@ -252,19 +250,16 @@ describe('fetch-prioritizer', () => {
   });
 
   it('narrows a covering fetch no further than the channel every due channel lies under', async () => {
-    const knownPaths: Record<string, string> = { 'proj-a': 'org-1/course-1/proj-a', 'proj-b': 'org-1/course-1/proj-b' };
-    resolveChannelPath.mockImplementation((channelId) => knownPaths[channelId] ?? null);
-
-    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
-    enqueueRange({ ...base, channelId: 'proj-b', afterSeq: 8, untilSeq: 12 });
+    enqueueRange({ ...base, channelId: 'proj-a', path: 'org-1/course-1/proj-a', afterSeq: 4, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', path: 'org-1/course-1/proj-b', afterSeq: 8, untilSeq: 12 });
     await flushAllNow();
     // Both projects lie under the course: one read of its subtree covers them.
     expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('course-1');
 
-    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 12, untilSeq: 14 });
-    enqueueRange({ ...base, channelId: 'proj-c', afterSeq: 14, untilSeq: 16 });
+    enqueueRange({ ...base, channelId: 'proj-a', path: 'org-1/course-1/proj-a', afterSeq: 12, untilSeq: 14 });
+    enqueueRange({ ...base, channelId: 'proj-c', path: 'org-1/course-2/proj-c', afterSeq: 14, untilSeq: 16 });
     await flushAllNow();
-    // A channel whose path is not cached leaves the read on the whole organization.
+    // Paths that share only the organization leave the read on the whole organization.
     expect(fetchRangeAndPatch.mock.calls[1][5]).toBeUndefined();
   });
 
@@ -288,7 +283,7 @@ describe('fetch-prioritizer', () => {
 
   it('holds the changes of a muted channel view until it is opened, then fetches them', async () => {
     getSyncTier.mockReturnValue(onOpen);
-    enqueueRange({ ...base, channelId: 'project-9', afterSeq: 3, untilSeq: 7 });
+    enqueueRange({ ...base, channelId: 'project-9', path: 'org-1/project-9', afterSeq: 3, untilSeq: 7 });
     // No timer either: a browser runs a timeout past 2^31-1 ms at once, and would spin.
     expect(vi.getTimerCount()).toBe(0);
 

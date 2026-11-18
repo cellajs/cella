@@ -148,6 +148,7 @@ describe('what the leader tells the other tabs', () => {
       organizationId: 'org-1',
       tenantId: 'tenant-1',
       channelId: null,
+      path: 'org-1',
       rows: [],
       overflow: null,
       spreadWindow: null,

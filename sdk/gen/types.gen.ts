@@ -383,6 +383,10 @@ export type StreamChange = {
    */
   channelId: string | null;
   /**
+   * The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share
+   */
+  path: string;
+  /**
    * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
    */
   rows: Array<{
@@ -391,7 +395,16 @@ export type StreamChange = {
      * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
      */
     seq: number | null;
-    stx: StxBase | null;
+    stx: {
+      /**
+       * Unique mutation ID
+       */
+      mutationId: string;
+      /**
+       * Tab/instance identifier for echo prevention
+       */
+      sourceId: string;
+    } | null;
     /**
      * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
      */

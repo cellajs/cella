@@ -3,7 +3,7 @@ import { onChangeEvent, publishChangeEvent } from '~/query/realtime/sync-events'
 
 const change = {
   action: 'create' as const,
-  entityType: 'attachment' as const,
+  productType: 'attachment' as const,
   organizationId: 'org-1',
   channelId: null,
   subjectId: 'attachment-1',

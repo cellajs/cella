@@ -89,7 +89,7 @@ describe('download service', () => {
   it("removes the stored file of an attachment a move took out of this reader's reach", async () => {
     await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-2', status: 'downloaded' }));
 
-    publishChangeEvent({ action: 'moveOut', entityType: 'attachment', organizationId: ctx.organizationId, channelId: null, subjectId: 'att-2' });
+    publishChangeEvent({ action: 'moveOut', productType: 'attachment', organizationId: ctx.organizationId, channelId: null, subjectId: 'att-2' });
 
     await vi.waitFor(async () => expect(await attachmentsDb.downloadQueue.get('att-2')).toBeUndefined());
   });

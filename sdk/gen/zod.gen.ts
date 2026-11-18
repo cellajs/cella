@@ -325,11 +325,17 @@ export const zStreamChange = z.object({
   organizationId: z.string(),
   tenantId: z.string(),
   channelId: z.string().nullable(),
+  path: z.string(),
   rows: z.array(
     z.object({
       subjectId: z.string(),
       seq: z.int().nullable(),
-      stx: zStxBase.nullable(),
+      stx: z
+        .object({
+          mutationId: z.string().max(36),
+          sourceId: z.string().max(64),
+        })
+        .nullable(),
       actorId: z.string().nullable(),
     }),
   ),

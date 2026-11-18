@@ -26,6 +26,8 @@ export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 
 export type StxBase = z.infer<typeof stxBaseSchema>;
 
+/** The stx fields that name a write and its source, by which a client tells its own echo. */
+export const stxIdsSchema = stxBaseSchema.pick({ mutationId: true, sourceId: true });
+
 /** The optional stx is what prevents echoing the change back to its source. */
-export const idsWithStxBodySchema = (maxItems = 50) =>
-  idsBodySchema(maxItems).extend({ stx: stxBaseSchema.pick({ mutationId: true, sourceId: true }).optional() });
+export const idsWithStxBodySchema = (maxItems = 50) => idsBodySchema(maxItems).extend({ stx: stxIdsSchema.optional() });

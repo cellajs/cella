@@ -3,7 +3,6 @@ import { type EntityType, hierarchy, isSeenTracked } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
-import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
@@ -45,8 +44,8 @@ function removeAtOrInside(entityType: EntityType, channelId: string): ItemData[]
 function dropChannel(organizationId: string, channelId: string): Set<string> {
   for (const productType of productTypesBelowChannels()) {
     for (const row of removeAtOrInside(productType, channelId)) {
-      const homeChannelId = resolveHomeChannelId(productType, row);
-      publishChangeEvent({ action: 'delete', entityType: productType, organizationId, channelId: homeChannelId, subjectId: row.id });
+      const homeChannelId = hierarchy.resolveDeepestAncestorId(productType, row);
+      publishChangeEvent({ action: 'delete', productType, organizationId, channelId: homeChannelId, subjectId: row.id });
     }
   }
 
