@@ -1883,14 +1883,13 @@ export type GetTokenDataResponses = {
      */
     inviterName?: string;
     invitation?: {
-      entityType: 'organization';
+      channelType: 'organization';
       tenantId: string;
       organizationId: string;
       channelId: string;
-      entityName: string;
+      channelName: string;
       organizationName?: string;
       role: 'admin' | 'member';
-      inviterName: string;
     };
   };
 };

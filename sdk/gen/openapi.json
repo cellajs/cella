@@ -6228,7 +6228,7 @@
                     "invitation": {
                       "type": "object",
                       "properties": {
-                        "entityType": {
+                        "channelType": {
                           "type": "string",
                           "enum": ["organization"]
                         },
@@ -6241,7 +6241,7 @@
                         "channelId": {
                           "type": "string"
                         },
-                        "entityName": {
+                        "channelName": {
                           "type": "string"
                         },
                         "organizationName": {
@@ -6250,12 +6250,9 @@
                         "role": {
                           "type": "string",
                           "enum": ["admin", "member"]
-                        },
-                        "inviterName": {
-                          "type": "string"
                         }
                       },
-                      "required": ["entityType", "tenantId", "organizationId", "channelId", "entityName", "role", "inviterName"]
+                      "required": ["channelType", "tenantId", "organizationId", "channelId", "channelName", "role"]
                     }
                   },
                   "required": ["email"]

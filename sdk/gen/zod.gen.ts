@@ -1161,14 +1161,13 @@ export const zGetTokenDataResponse = z.object({
   inviterName: z.string().optional(),
   invitation: z
     .object({
-      entityType: z.enum(['organization']),
+      channelType: z.enum(['organization']),
       tenantId: z.string(),
       organizationId: z.string(),
       channelId: z.string(),
-      entityName: z.string(),
+      channelName: z.string(),
       organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
-      inviterName: z.string(),
     })
     .optional(),
 });
