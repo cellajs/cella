@@ -431,6 +431,56 @@ export const zLtiInstallation = z.object({
 });
 
 /**
+ * An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.
+ */
+export const zLtiResourceLink = z.object({
+  id: z.string(),
+  channelType: z.enum(['organization']),
+  channelId: z.string(),
+  installationId: z.string(),
+  title: z.string(),
+  custom: z.record(z.string(), z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+});
+
+/**
  * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
  */
 export const zProtectedResourceMetadata = z.object({
@@ -1872,6 +1922,101 @@ export const zRejectLtiInstallationPath = z.object({
  * Installation rejected
  */
 export const zRejectLtiInstallationResponse = z.void();
+
+export const zListLtiResourceLinksPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiResourceLinksQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+});
+
+/**
+ * LTI resource links
+ */
+export const zListLtiResourceLinksResponse = z.object({
+  results: z.array(zLtiResourceLink),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zCreateLtiResourceLinkBody = z.object({
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  installationId: z.string().max(50),
+  title: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
+  custom: z.record(z.string(), z.string().max(255)).optional(),
+});
+
+export const zCreateLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * LTI resource link
+ */
+export const zCreateLtiResourceLinkResponse = zLtiResourceLink;
+
+export const zDeleteLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * Resource link deleted
+ */
+export const zDeleteLtiResourceLinkResponse = z.void();
+
+export const zUpdateLtiResourceLinkBody = z.object({
+  title: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
+    .optional(),
+  custom: z.record(z.string(), z.string().max(255)).optional(),
+});
+
+export const zUpdateLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * LTI resource link
+ */
+export const zUpdateLtiResourceLinkResponse = zLtiResourceLink;
+
+export const zStartLtiLaunchPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * Launch started
+ */
+export const zStartLtiLaunchResponse = z.object({
+  url: z.string(),
+  ltiToolOrigins: z.array(z.string()),
+  expiresAt: z.string(),
+});
+
+export const zInitiateLtiLoginQuery = z.object({
+  token: z.string().max(2048),
+});
 
 export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),

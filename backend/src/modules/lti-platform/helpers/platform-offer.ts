@@ -27,3 +27,35 @@ export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.va
 /** The personal fields whose claims an LTI tool asked for: the most an approval may release. */
 export const requestedFields = (claims: readonly string[]): LtiReleasableField[] =>
   ltiReleasableFields.filter((field) => ltiFieldClaims[field].some((claim) => claims.includes(claim)));
+
+/** What a launch can tell about the person, from the user as the API serves it: the address only once proven. */
+interface PersonalValues {
+  name: string;
+  givenName: string | null;
+  familyName: string | null;
+  email: string | null;
+  thumbnailUrl: string | null;
+}
+
+const claimValues = {
+  name: (person) => person.name,
+  given_name: (person) => person.givenName,
+  family_name: (person) => person.familyName,
+  email: (person) => person.email,
+  picture: (person) => person.thumbnailUrl,
+} satisfies Record<(typeof ltiFieldClaims)[LtiReleasableField][number], (person: PersonalValues) => string | null>;
+
+/**
+ * The personal claims of a launch: of each released field, the claims the LTI tool asked for, where the person has a
+ * value. None when nothing is released.
+ */
+export const releasedClaims = (released: readonly LtiReleasableField[], asked: readonly string[], person: PersonalValues): Record<string, string> => {
+  const claims: Record<string, string> = {};
+  for (const field of released) {
+    for (const claim of ltiFieldClaims[field]) {
+      const value = asked.includes(claim) ? claimValues[claim](person) : null;
+      if (value) claims[claim] = value;
+    }
+  }
+  return claims;
+};

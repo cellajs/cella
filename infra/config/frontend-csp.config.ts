@@ -66,7 +66,8 @@ export function frontendCsp(appConfig: EngineConfig): string {
     connectSrc,
     `img-src 'self' blob: https: data:`,
     `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
-    `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
+    // As an LTI platform the app frames the LTI tools its tenants install, from whatever HTTPS origin they registered.
+    `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io${appConfig.has.ltiPlatform ? ' https:' : ''}`,
     `font-src 'self' data:`,
     `frame-ancestors 'self'`,
     `object-src 'none'`,

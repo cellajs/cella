@@ -46,6 +46,8 @@ export type TokenPolicy =
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
  * - `lti-registration` lives as long as the platform's own registration token usually does; `lti-tool-registration`, the
  *   token the app hands an LTI tool as a platform, as long.
+ * - `lti-launch` is a launch record: it names the person, the tenant and the resource link, and lives as long as a
+ *   frame takes to load the LTI tool's login and come back to the launch endpoint.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },
@@ -56,6 +58,7 @@ export const tokenPolicies = {
   'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm') },
   'lti-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
   'lti-tool-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
+  'lti-launch': { carrier: 'handoff', ttl: new TimeSpan(5, 'm'), namesMinter: true },
 } as const satisfies Record<TokenKind, TokenPolicy>;
 
 type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {

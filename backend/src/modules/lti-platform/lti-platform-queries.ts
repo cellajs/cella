@@ -3,17 +3,21 @@ import { hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type LtiInstallationModel, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
+import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 
-const { secretHash: _secretHash, ltiToolConfig, ...clientColumns } = getColumns(oauthClientsTable);
+const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, ...clientColumns } = getColumns(oauthClientsTable);
 
-/** An installation with its service account and its registration; the where clause keeps LTI registrations only. */
+/**
+ * An installation with its service account and its registration; the where clause keeps LTI registrations only, whose
+ * login address `oauth_clients_lti_check` holds present.
+ */
 const installationSelect = {
   account: serviceAccountsTable,
   installation: ltiInstallationsTable,
-  client: { ...clientColumns, ltiToolConfig: sql<LtiToolConfig>`${ltiToolConfig}` },
+  client: { ...clientColumns, ltiToolConfig: sql<LtiToolConfig>`${ltiToolConfig}`, initiateLoginUri: sql<string>`${initiateLoginUri}` },
 };
 
 const installationJoin = (ctx: DbContext) =>
@@ -31,6 +35,14 @@ export async function findLtiInstallations(ctx: DbContext, { tenantId }: { tenan
   return installationJoin(ctx)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)))
     .orderBy(desc(ltiInstallationsTable.createdAt));
+}
+
+/** One installation of the tenant with its registration; undefined when the tenant has no such installation. */
+export async function findLtiInstallation(ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) {
+  const [found] = await installationJoin(ctx).where(
+    and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)),
+  );
+  return found;
 }
 
 /**
@@ -93,4 +105,63 @@ export async function updateLtiInstallation(
 /** Deletes a registration private to the tenant. The service account that installs it and its side row cascade. */
 export async function deleteTenantLtiRegistration(ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) {
   await ctx.var.db.delete(oauthClientsTable).where(and(eq(oauthClientsTable.id, id), eq(oauthClientsTable.tenantId, tenantId)));
+}
+
+/** The resource links placed in one channel of the tenant, oldest first: the order their tabs show in. */
+export async function findLtiResourceLinks(ctx: DbContext, { tenantId, channelId }: { tenantId: string; channelId: string }) {
+  return ctx.var.db
+    .select()
+    .from(ltiResourceLinksTable)
+    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
+    .orderBy(ltiResourceLinksTable.createdAt, ltiResourceLinksTable.id);
+}
+
+/** One resource link of the organization; undefined when it has none of that id. */
+export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }: { id: string; organizationId: string }) {
+  const [found] = await ctx.var.db
+    .select()
+    .from(ltiResourceLinksTable)
+    .where(and(eq(ltiResourceLinksTable.id, id), eq(ltiResourceLinksTable.organizationId, organizationId)));
+  return found;
+}
+
+export async function insertLtiResourceLink(ctx: DbContext, { values }: { values: typeof ltiResourceLinksTable.$inferInsert }) {
+  const [inserted] = await ctx.var.db.insert(ltiResourceLinksTable).values(values).returning();
+  return inserted;
+}
+
+export async function updateLtiResourceLink(
+  ctx: DbContext,
+  { id, values }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'updatedAt' | 'updatedBy'>> },
+) {
+  const [updated] = await ctx.var.db.update(ltiResourceLinksTable).set(values).where(eq(ltiResourceLinksTable.id, id)).returning();
+  return updated;
+}
+
+export async function deleteLtiResourceLink(ctx: DbContext, { id }: { id: string }) {
+  await ctx.var.db.delete(ltiResourceLinksTable).where(eq(ltiResourceLinksTable.id, id));
+}
+
+/** A resource link with the installation it launches and that installation's registration; undefined when either is gone. */
+export async function findLtiLaunchTarget(ctx: DbContext, { resourceLinkId }: { resourceLinkId: string }) {
+  const [found] = await ctx.var.db
+    .select({ resourceLink: ltiResourceLinksTable, ...installationSelect })
+    .from(ltiResourceLinksTable)
+    .innerJoin(
+      serviceAccountsTable,
+      and(eq(serviceAccountsTable.id, ltiResourceLinksTable.installationId), eq(serviceAccountsTable.tenantId, ltiResourceLinksTable.tenantId)),
+    )
+    .innerJoin(ltiInstallationsTable, eq(ltiInstallationsTable.serviceAccountId, serviceAccountsTable.id))
+    .innerJoin(oauthClientsTable, eq(oauthClientsTable.id, serviceAccountsTable.oauthClientId))
+    .where(and(eq(ltiResourceLinksTable.id, resourceLinkId), isNotNull(ltiToolConfig)));
+  return found;
+}
+
+/** An LTI registration by its `client_id`, with the addresses a launch may return to; undefined for any other client. */
+export async function findLtiRegistration(ctx: DbContext, { clientId }: { clientId: string }) {
+  const [found] = await ctx.var.db
+    .select({ id: oauthClientsTable.id, redirectUris: oauthClientsTable.redirectUris })
+    .from(oauthClientsTable)
+    .where(and(eq(oauthClientsTable.id, clientId), isNotNull(ltiToolConfig)));
+  return found;
 }

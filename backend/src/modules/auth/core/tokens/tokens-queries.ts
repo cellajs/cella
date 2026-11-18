@@ -261,23 +261,35 @@ export const insertHandoffToken = async (
   ctx: DbContext,
   { values }: { values: Omit<InsertTokenModel, 'email'> & { kind: HandoffTokenKind; tenantId: string } },
 ) => {
-  await ctx.var.db.insert(tokensTable).values(values);
+  const [inserted] = await ctx.var.db.insert(tokensTable).values(values).returning({ id: tokensTable.id });
+  return inserted;
+};
+
+/** A handoff row as its readers see it: no address, its tenant present (`tokens_subject_check`). */
+const handoffColumns = {
+  id: tokensTable.id,
+  kind: tokensTable.kind,
+  tenantId: sql<string>`${tokensTable.tenantId}`,
+  createdBy: tokensTable.createdBy,
+  ltiResourceLinkId: tokensTable.ltiResourceLinkId,
+  expiresAt: tokensTable.expiresAt,
+};
+
+/** The handoff token of `kind` a raw value names, and when `id` is given only the row of that id. */
+const handoffNamedBy = ({ kind, rawToken, id }: { kind: HandoffTokenKind; rawToken: string; id?: string }) =>
+  and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind), id === undefined ? undefined : eq(tokensTable.id, id));
+
+/** Reads the handoff token a raw value names, expired or not, and leaves it in place; undefined when none matches. */
+export const findHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string }) => {
+  const [found] = await ctx.var.db.select(handoffColumns).from(tokensTable).where(handoffNamedBy(opts)).limit(1);
+  return found;
 };
 
 /**
  * Deletes the handoff token a raw value names, expired or not: of two concurrent requests, exactly one gets the row.
- * Undefined when none matches. A handoff row holds no address: `tokens_subject_check` holds its tenant present.
+ * Undefined when none matches.
  */
-export const deleteHandoffToken = async (ctx: DbContext, { kind, rawToken }: { kind: HandoffTokenKind; rawToken: string }) => {
-  const [spent] = await ctx.var.db
-    .delete(tokensTable)
-    .where(and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind)))
-    .returning({
-      id: tokensTable.id,
-      kind: tokensTable.kind,
-      tenantId: sql<string>`${tokensTable.tenantId}`,
-      createdBy: tokensTable.createdBy,
-      expiresAt: tokensTable.expiresAt,
-    });
+export const deleteHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string; id?: string }) => {
+  const [spent] = await ctx.var.db.delete(tokensTable).where(handoffNamedBy(opts)).returning(handoffColumns);
   return spent;
 };

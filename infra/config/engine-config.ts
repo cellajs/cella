@@ -31,6 +31,8 @@ export interface EngineConfig {
   };
   /** Service endpoint config keyed by slug (enabled flags + public URLs). */
   services: Record<string, EngineServiceEndpoint>;
+  /** Switches the frontend CSP reads: an LTI platform frames LTI tools. */
+  has: { ltiPlatform: boolean };
   /** Contact-map style URLs per color mode; the frontend CSP allows their origins. */
   mapStyleUrls?: Record<string, string>;
   retention: { backupDays: number };

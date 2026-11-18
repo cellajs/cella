@@ -38,6 +38,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'api_keys',
     'oauth_clients',
     'lti_installations',
+    'lti_resource_links',
     'signing_keys',
     'oidc_payloads',
     'users',

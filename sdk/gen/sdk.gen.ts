@@ -71,6 +71,9 @@ import type {
   CreateLtiRegistrationLinkData,
   CreateLtiRegistrationLinkErrors,
   CreateLtiRegistrationLinkResponses,
+  CreateLtiResourceLinkData,
+  CreateLtiResourceLinkErrors,
+  CreateLtiResourceLinkResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -104,6 +107,9 @@ import type {
   DeleteLtiConnectionData,
   DeleteLtiConnectionErrors,
   DeleteLtiConnectionResponses,
+  DeleteLtiResourceLinkData,
+  DeleteLtiResourceLinkErrors,
+  DeleteLtiResourceLinkResponses,
   DeleteMeData,
   DeleteMeErrors,
   DeleteMeResponses,
@@ -190,6 +196,9 @@ import type {
   HandleMcpData,
   HandleMcpErrors,
   HandleMcpResponses,
+  InitiateLtiLoginData,
+  InitiateLtiLoginErrors,
+  InitiateLtiLoginResponses,
   InviteMembersData,
   InviteMembersErrors,
   InviteMembersResponses,
@@ -225,6 +234,9 @@ import type {
   ListLtiInstallationsData,
   ListLtiInstallationsErrors,
   ListLtiInstallationsResponses,
+  ListLtiResourceLinksData,
+  ListLtiResourceLinksErrors,
+  ListLtiResourceLinksResponses,
   ListMembersData,
   ListMembersErrors,
   ListMembersResponses,
@@ -343,6 +355,9 @@ import type {
   StartGithubOAuthErrors,
   StartGoogleOAuthData,
   StartGoogleOAuthErrors,
+  StartLtiLaunchData,
+  StartLtiLaunchErrors,
+  StartLtiLaunchResponses,
   StartLtiToolRegistrationData,
   StartLtiToolRegistrationErrors,
   StartLtiToolRegistrationResponses,
@@ -373,6 +388,9 @@ import type {
   UpdateConnectionData,
   UpdateConnectionErrors,
   UpdateConnectionResponses,
+  UpdateLtiResourceLinkData,
+  UpdateLtiResourceLinkErrors,
+  UpdateLtiResourceLinkResponses,
   UpdateMeData,
   UpdateMeErrors,
   UpdateMembershipData,
@@ -418,6 +436,7 @@ import {
   zCreateConnectionResponse,
   zCreateDemoResponse,
   zCreateLtiRegistrationLinkResponse,
+  zCreateLtiResourceLinkResponse,
   zCreatePasskeyResponse,
   zCreatePushSubscriptionResponse,
   zCreateRequestResponse,
@@ -428,6 +447,7 @@ import {
   zDeleteConnectionResponse,
   zDeleteInvitationResponse,
   zDeleteLtiConnectionResponse,
+  zDeleteLtiResourceLinkResponse,
   zDeleteMeResponse,
   zDeletePasskeyResponse,
   zDeleteTotpResponse,
@@ -465,6 +485,7 @@ import {
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
   zListLtiInstallationsResponse,
+  zListLtiResourceLinksResponse,
   zListMembersResponse,
   zListMyInvitationsResponse,
   zListMyMembershipsResponse,
@@ -498,6 +519,7 @@ import {
   zSignInWithPasskeyResponse,
   zSignInWithTotpResponse,
   zSignOutResponse,
+  zStartLtiLaunchResponse,
   zStartLtiToolRegistrationResponse,
   zStartOAuthConnectResponse,
   zStepUpResponse,
@@ -506,6 +528,7 @@ import {
   zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
   zUpdateConnectionResponse,
+  zUpdateLtiResourceLinkResponse,
   zUpdateMembershipResponse,
   zUpdateMeResponse,
   zUpdateNotificationPreferencesResponse,
@@ -2007,6 +2030,159 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zRejectLtiInstallationResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject',
+    ...options,
+  });
+
+/**
+ * Get LTI resource links
+ *
+ * The LTI tools placed in a channel, in the order their tabs show. Requires permission to read the channel.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [listLtiResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
+ *
+ * @param {listLtiResourceLinksData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiResourceLinks = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiResourceLinksData, ThrowOnError>,
+): RequestResult<ListLtiResourceLinksResponses, ListLtiResourceLinksErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiResourceLinksResponses, ListLtiResourceLinksErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiResourceLinksResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links',
+    ...options,
+  });
+
+/**
+ * Create LTI resource link
+ *
+ * Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [createLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
+ *
+ * @param {createLtiResourceLinkData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.body.channelId - `string`
+ * @param {enum} options.body.channelType - `enum`
+ * @param {string} options.body.installationId - `string`
+ * @param {string} options.body.title - `string`
+ * @param {object=} options.body.custom - `object` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 413, 415, 429
+ */
+export const createLtiResourceLink = <ThrowOnError extends boolean = true>(
+  options: Options<CreateLtiResourceLinkData, ThrowOnError>,
+): RequestResult<CreateLtiResourceLinkResponses, CreateLtiResourceLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateLtiResourceLinkResponses, CreateLtiResourceLinkErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateLtiResourceLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete LTI resource link
+ *
+ * Removes a resource link and its launches that have not reached the LTI tool. Requires permission to update its channel.
+ *
+ * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [deleteLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
+ *
+ * @param {deleteLtiResourceLinkData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiResourceLinkId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deleteLtiResourceLink = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteLtiResourceLinkData, ThrowOnError>,
+): RequestResult<DeleteLtiResourceLinkResponses, DeleteLtiResourceLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteLtiResourceLinkResponses, DeleteLtiResourceLinkErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeleteLtiResourceLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}',
+    ...options,
+  });
+
+/**
+ * Update LTI resource link
+ *
+ * Renames a resource link or replaces its custom values. Requires permission to update its channel.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [updateLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
+ *
+ * @param {updateLtiResourceLinkData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiResourceLinkId - `string`
+ * @param {string=} options.body.title - `string` (optional)
+ * @param {object=} options.body.custom - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
+ */
+export const updateLtiResourceLink = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateLtiResourceLinkData, ThrowOnError>,
+): RequestResult<UpdateLtiResourceLinkResponses, UpdateLtiResourceLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateLtiResourceLinkResponses, UpdateLtiResourceLinkErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateLtiResourceLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Start LTI launch
+ *
+ * Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel. Requires permission to read its channel and an active installation.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch** ·· [startLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch) ·· _lti-platform · cella_
+ *
+ * @param {startLtiLaunchData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiResourceLinkId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const startLtiLaunch = <ThrowOnError extends boolean = true>(
+  options: Options<StartLtiLaunchData, ThrowOnError>,
+): RequestResult<StartLtiLaunchResponses, StartLtiLaunchErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<StartLtiLaunchResponses, StartLtiLaunchErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zStartLtiLaunchResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch',
+    ...options,
+  });
+
+/**
+ * Initiate LTI login
+ *
+ * The page a launch frame loads: it posts the login initiation (1EdTech Security Framework, section 5.1.1.1) to the LTI tool's login address, with hints that refer to the launch record. Loading it leaves the record for the launch endpoint, which spends it.
+ *
+ * **GET /lti-launches:initiate-login** ·· [initiateLtiLogin](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/lti-launches:initiate-login) ·· _lti-platform · cella_
+ *
+ * @param {initiateLtiLoginData} options
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 200, 400, 401, 404, 429
+ */
+export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
+  options: Options<InitiateLtiLoginData, ThrowOnError>,
+): RequestResult<InitiateLtiLoginResponses, InitiateLtiLoginErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<InitiateLtiLoginResponses, InitiateLtiLoginErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/lti-launches:initiate-login',
     ...options,
   });
 

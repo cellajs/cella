@@ -17,7 +17,7 @@ MCP client / registered app
 OAuth worker  (/oauth/*)
   ├─ discovery, authorize, pushed authorization requests, token, revocation, JWKS
   ├─ interaction routes the app renders as /auth/consent
-  ├─ LTI platform routes (has.ltiPlatform): configuration, LTI tool registration
+  ├─ LTI platform routes (has.ltiPlatform): configuration, LTI tool registration, launch
   └─ store: oauth_clients rows, oidc_payloads, signing_keys
         │
         ▼
@@ -46,6 +46,8 @@ A registered app shows its registered name and logo. A client known by its metad
 A client that registers only through dynamic client registration (RFC 7591) cannot connect. It needs a Client ID Metadata Document or a registered app.
 
 An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started. Its row in `oauth_clients` is private to that tenant and is no client of the provider: no authorization request or consent names it.
+
+A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
 
 The grant policy on the server decides whether a consent is possible. The person must also be a member of the resource's tenant. The page shows a refusal and disables Accept. A posted accept is refused all the same.
 

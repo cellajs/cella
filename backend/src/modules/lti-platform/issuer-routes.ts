@@ -9,7 +9,9 @@ import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { ltiToolRegistrationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { ltiPlatformConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
+import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
 import { ltiClaimsSupported, ltiIssuerPaths, ltiIssuerUrl, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
+import { authorizeLtiLaunchOp } from '#/modules/lti-platform/operations/authorize-lti-launch';
 import { registerLtiToolOp } from '#/modules/lti-platform/operations/register-lti-tool';
 import { runWithLogContext } from '#/utils/logger';
 
@@ -46,10 +48,15 @@ const registrationError = (ctx: Context<Env>, status: 400 | 401, error: string, 
 
 const bearerToken = (header: string | undefined) => /^Bearer +(\S{1,512})$/i.exec(header ?? '')?.[1];
 
+/** The parameters of a launch's authentication request: the query of a GET, the form of a POST. */
+const authenticationParams = async (ctx: Context<Env>): Promise<Record<string, unknown>> =>
+  ctx.req.method === 'POST' ? ctx.req.parseBody().catch(() => ({})) : ctx.req.query();
+
 /**
  * The platform's LTI routes the OAuth worker serves under the issuer, beside the provider: the configuration an LTI
- * tool reads and the registration endpoint it posts to. Both answer 404 while `has.ltiPlatform` is off. The provider's
- * own dynamic client registration stays off: these routes admit an LTI tool only with a registration token.
+ * tool reads, the registration endpoint it posts to and the launch endpoint it sends the browser to. Each answers 404
+ * while `has.ltiPlatform` is off. The provider's own dynamic client registration stays off: these routes admit an LTI
+ * tool only with a registration token.
  */
 export function createLtiIssuerApp(provider: Provider): Hono<Env> {
   const app = new Hono<Env>();
@@ -72,6 +79,12 @@ export function createLtiIssuerApp(provider: Provider): Hono<Env> {
       if (err.type === 'lti_tool_metadata_invalid') return registrationError(ctx, 400, 'invalid_client_metadata', `Refused: ${err.meta?.member}`);
       throw err;
     }
+  });
+
+  app.on(['GET', 'POST'], `${servicePaths.oauth}${ltiIssuerPaths.authorization}`, async (ctx) => {
+    const answer = await authorizeLtiLaunchOp(await authenticationParams(ctx));
+    if ('refusal' in answer) return launchRefusalPage(ctx, answer.refusal.text, answer.refusal.status);
+    return autoPostPage(ctx, answer.post);
   });
 
   return app;

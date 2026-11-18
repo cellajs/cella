@@ -22,3 +22,20 @@ export const mockLtiInstallationResponse = (key = 'ltiInstallation:default') => 
   });
   return { ...installation, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
 };
+
+export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => {
+  const resourceLink = withFakerSeed(key, () => {
+    const createdAt = mockPastIsoDate();
+    return {
+      id: mockUuid(),
+      channelType: 'organization' as const,
+      channelId: mockUuid(),
+      installationId: mockUuid(),
+      title: 'Peer review',
+      custom: { round: '1' },
+      createdAt,
+      updatedAt: createdAt,
+    };
+  });
+  return { ...resourceLink, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
+};

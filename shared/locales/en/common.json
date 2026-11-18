@@ -502,6 +502,8 @@
   "loading": "Loading...",
   "local_only": "Only on this device",
   "locked": "Locked",
+  "lti_launch_failed": "{{name}} could not be opened.",
+  "lti_launch_loading": "Opening {{name}}...",
   "magic": "Magic link",
   "magic_link_check_email": "Check your email inbox",
   "magic_link_check_email.development.text": "No email goes out until the app has an email key. The link is printed in the terminal running pnpm dev.",

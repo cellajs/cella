@@ -283,6 +283,7 @@ export const config = {
     'step-up',
     'lti-registration',
     'lti-tool-registration',
+    'lti-launch',
   ] as const,
 
   /**

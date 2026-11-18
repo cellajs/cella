@@ -26,6 +26,7 @@ import {
   deleteSessionCodeToken,
   deleteUnredeemedLinkToken,
   findBoundToken,
+  findHandoffToken,
   findLinkToken,
   findTokenBySingleUse,
   insertHandoffToken,
@@ -379,30 +380,43 @@ export const spendCookieToken = async (
   return spent;
 };
 
-/** A kind whose policy names the minter takes the user's id; any other takes none. */
-type IssueHandoffTokenOpts =
-  | { kind: MinterNamedTokenKind; tenantId: string; createdBy: string }
-  | { kind: Exclude<HandoffTokenKind, MinterNamedTokenKind>; tenantId: string; createdBy?: undefined };
+/** A kind whose policy names the minter takes the user's id; any other takes none. An `lti-launch` record names its resource link. */
+type IssueHandoffTokenOpts = { tenantId: string; ltiResourceLinkId?: string } & (
+  | { kind: MinterNamedTokenKind; createdBy: string }
+  | { kind: Exclude<HandoffTokenKind, MinterNamedTokenKind>; createdBy?: undefined }
+);
 
 /**
  * Issues a handoff token. It replaces no earlier one: a tenant may hand links to several platforms at once.
- * @returns The raw value, which exists only here and in the URL handed over, and when it expires.
+ * @returns The row's id, the raw value, which exists only here and in the URL handed over, and when it expires.
  */
-export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy }: IssueHandoffTokenOpts) => {
+export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy, ltiResourceLinkId }: IssueHandoffTokenOpts) => {
   const { raw, hash } = newHashedToken();
   const expiresAt = isoDateIn(tokenPolicies[kind].ttl);
-  await insertHandoffToken(ctx, { values: { kind, tenantId, createdBy, secretHash: hash, expiresAt } });
-  return { rawToken: raw, expiresAt };
+  const { id } = await insertHandoffToken(ctx, { values: { kind, tenantId, createdBy, ltiResourceLinkId, secretHash: hash, expiresAt } });
+  return { id, rawToken: raw, expiresAt };
+};
+
+type HandoffTokenRef = { kind: HandoffTokenKind; rawToken: string };
+
+/** Refuses a handoff row that is missing or expired. */
+const liveHandoff = <T extends { id: string; expiresAt: string }>(kind: HandoffTokenKind, found: T | undefined) => {
+  if (!found) throw new AppError(401, `${kind}_not_found`, 'warn');
+  if (isExpiredDate(found.expiresAt)) throw new AppError(401, `${kind}_expired`, 'warn', { meta: { tokenId: found.id } });
+  return found;
 };
 
 /**
- * Spends the handoff token a raw value names. The row goes in one statement: of two requests presenting it, exactly
- * one gets it. A refused expired one goes too. Inside a caller's transaction (`txCtx`) the spend rolls back with it.
+ * Reads the live handoff token a raw value names and leaves it to be spent, for a page that hands it on.
  * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, or spent), 401 `<kind>_expired`.
  */
-export const spendHandoffToken = async ({ kind, rawToken, txCtx = dbCtx }: { kind: HandoffTokenKind; rawToken: string; txCtx?: DbContext }) => {
-  const spent = await deleteHandoffToken(txCtx, { kind, rawToken });
-  if (!spent) throw new AppError(401, `${kind}_not_found`, 'warn');
-  if (isExpiredDate(spent.expiresAt)) throw new AppError(401, `${kind}_expired`, 'warn', { meta: { tokenId: spent.id } });
-  return spent;
-};
+export const readHandoffToken = async ({ kind, rawToken }: HandoffTokenRef) => liveHandoff(kind, await findHandoffToken(dbCtx, { kind, rawToken }));
+
+/**
+ * Spends the handoff token a raw value names, and when `id` is given only the row of that id. The row goes in one
+ * statement: of two requests presenting it, exactly one gets it. A refused expired one goes too. Inside a caller's
+ * transaction (`txCtx`) the spend rolls back with it.
+ * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, or spent), 401 `<kind>_expired`.
+ */
+export const spendHandoffToken = async ({ kind, rawToken, id, txCtx = dbCtx }: HandoffTokenRef & { id?: string; txCtx?: DbContext }) =>
+  liveHandoff(kind, await deleteHandoffToken(txCtx, { kind, rawToken, id }));

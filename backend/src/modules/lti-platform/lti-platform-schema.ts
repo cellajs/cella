@@ -4,9 +4,9 @@ import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
-import { mockLtiInstallationResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import { serviceAccountStatuses } from '#/modules/service-accounts/service-accounts-db';
-import { tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
+import { channelEntityTypeSchema, channelRefSchema, pageQuerySchema, tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
 import { boundedRecord } from '#/schemas/common-schemas';
 import { auditShape } from '#/schemas/entity-base';
 
@@ -116,3 +116,49 @@ export const ltiInstallationSchema = z
     example: mockLtiInstallationResponse(),
     'x-tags': schemaTags('data', 'lti-platform', 'cella'),
   });
+
+/** The path of one resource link in its organization. */
+export const ltiResourceLinkParamSchema = tenantOrgParamSchema.extend({ ltiResourceLinkId: validIdSchema });
+
+export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend(channelRefSchema.shape);
+
+const resourceLinkCustomSchema = customParametersSchema.describe(
+  "Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters",
+);
+
+export const createLtiResourceLinkBodySchema = channelRefSchema.extend({
+  installationId: validIdSchema.describe('An approved LTI installation of the tenant'),
+  title: validNameSchema,
+  custom: resourceLinkCustomSchema.optional(),
+});
+
+export const updateLtiResourceLinkBodySchema = z.object({ title: validNameSchema.optional(), custom: resourceLinkCustomSchema.optional() });
+
+export const ltiResourceLinkSchema = z
+  .object({
+    id: z.string().describe('The resource link, and the `resource_link.id` its launches carry'),
+    channelType: channelEntityTypeSchema,
+    channelId: z.string(),
+    installationId: z.string().describe('The LTI installation it launches'),
+    title: z.string(),
+    custom: z.record(z.string(), z.string()),
+    createdAt: z.string(),
+    updatedAt: z.string().nullable(),
+    ...auditShape,
+  })
+  .openapi('LtiResourceLink', {
+    description:
+      'An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.',
+    example: mockLtiResourceLinkResponse(),
+    'x-tags': schemaTags('data', 'lti-platform', 'cella'),
+  });
+
+export const ltiLaunchStartSchema = z.object({
+  url: z.string().describe('The login initiation page to load in the frame; it holds a one-use launch record'),
+  ltiToolOrigins: z
+    .array(z.string())
+    .describe("The origins of the LTI tool's pages in the frame: the frame host answers their platform storage messages"),
+  expiresAt: z.string().describe('When the launch record stops working, unless the launch used it before'),
+});
+
+export const initiateLtiLoginQuerySchema = z.object({ token: z.string().max(maxLength.url).describe('The launch record a launch start answered') });

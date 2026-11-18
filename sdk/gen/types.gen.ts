@@ -545,6 +545,60 @@ export type LtiInstallation = {
 };
 
 /**
+ * An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.
+ */
+export type LtiResourceLink = {
+  /**
+   * The resource link, and the `resource_link.id` its launches carry
+   */
+  id: string;
+  channelType: 'organization';
+  channelId: string;
+  /**
+   * The LTI installation it launches
+   */
+  installationId: string;
+  title: string;
+  custom: {
+    [key: string]: string;
+  };
+  createdAt: string;
+  updatedAt: string | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+};
+
+/**
  * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
  */
 export type ProtectedResourceMetadata = {
@@ -4332,6 +4386,357 @@ export type RejectLtiInstallationResponses = {
 };
 
 export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
+
+export type ListLtiResourceLinksData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links';
+};
+
+export type ListLtiResourceLinksErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiResourceLinksError = ListLtiResourceLinksErrors[keyof ListLtiResourceLinksErrors];
+
+export type ListLtiResourceLinksResponses = {
+  /**
+   * LTI resource links
+   */
+  200: {
+    results: Array<LtiResourceLink>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiResourceLinksResponse = ListLtiResourceLinksResponses[keyof ListLtiResourceLinksResponses];
+
+export type CreateLtiResourceLinkData = {
+  body: {
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * An approved LTI installation of the tenant
+     */
+    installationId: string;
+    title: string;
+    /**
+     * Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters
+     */
+    custom?: {
+      [key: string]: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links';
+};
+
+export type CreateLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateLtiResourceLinkError = CreateLtiResourceLinkErrors[keyof CreateLtiResourceLinkErrors];
+
+export type CreateLtiResourceLinkResponses = {
+  /**
+   * LTI resource link
+   */
+  201: LtiResourceLink;
+};
+
+export type CreateLtiResourceLinkResponse = CreateLtiResourceLinkResponses[keyof CreateLtiResourceLinkResponses];
+
+export type DeleteLtiResourceLinkData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}';
+};
+
+export type DeleteLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteLtiResourceLinkError = DeleteLtiResourceLinkErrors[keyof DeleteLtiResourceLinkErrors];
+
+export type DeleteLtiResourceLinkResponses = {
+  /**
+   * Resource link deleted
+   */
+  204: void;
+};
+
+export type DeleteLtiResourceLinkResponse = DeleteLtiResourceLinkResponses[keyof DeleteLtiResourceLinkResponses];
+
+export type UpdateLtiResourceLinkData = {
+  body: {
+    title?: string;
+    /**
+     * Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters
+     */
+    custom?: {
+      [key: string]: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}';
+};
+
+export type UpdateLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateLtiResourceLinkError = UpdateLtiResourceLinkErrors[keyof UpdateLtiResourceLinkErrors];
+
+export type UpdateLtiResourceLinkResponses = {
+  /**
+   * LTI resource link
+   */
+  200: LtiResourceLink;
+};
+
+export type UpdateLtiResourceLinkResponse = UpdateLtiResourceLinkResponses[keyof UpdateLtiResourceLinkResponses];
+
+export type StartLtiLaunchData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch';
+};
+
+export type StartLtiLaunchErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartLtiLaunchError = StartLtiLaunchErrors[keyof StartLtiLaunchErrors];
+
+export type StartLtiLaunchResponses = {
+  /**
+   * Launch started
+   */
+  200: {
+    /**
+     * The login initiation page to load in the frame; it holds a one-use launch record
+     */
+    url: string;
+    /**
+     * The origins of the LTI tool's pages in the frame: the frame host answers their platform storage messages
+     */
+    ltiToolOrigins: Array<string>;
+    /**
+     * When the launch record stops working, unless the launch used it before
+     */
+    expiresAt: string;
+  };
+};
+
+export type StartLtiLaunchResponse = StartLtiLaunchResponses[keyof StartLtiLaunchResponses];
+
+export type InitiateLtiLoginData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * The launch record a launch start answered
+     */
+    token: string;
+  };
+  url: '/lti-launches:initiate-login';
+};
+
+export type InitiateLtiLoginErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Launch record refused
+   *
+   * A page with one line of text: the record was used before, never existed or expired.
+   */
+  401: unknown;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLoginError = InitiateLtiLoginErrors[keyof InitiateLtiLoginErrors];
+
+export type InitiateLtiLoginResponses = {
+  /**
+   * Login initiation
+   *
+   * A page that posts the login initiation to the LTI tool as it loads.
+   */
+  200: unknown;
+};
 
 export type GetMcpProtectedResourceMetadataData = {
   body?: never;

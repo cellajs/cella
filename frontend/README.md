@@ -42,7 +42,7 @@ A feature folder in `src/modules/<name>/` registers itself in `<name>-module.ts`
 
 Then the channel row's `toolsConfig` applies the channel's own order and hidden ids. It is reconciled fail-closed: an unknown id drops, a new tool joins at its default order, and a `locked` tool cannot be hidden by a channel.
 
-**Page tabs.** A layout route names its tabs slot in `staticData.tabsSlot`, and its bar merges child routes that declare `staticData.navTab` with that slot's tools, rendered through a one-line `$tool` route. An entity link targets the layout route without a tab: the layout redirects to the first visible tab, and so does a navigation to a hidden one.
+**Page tabs.** A layout route names its tabs slot in `staticData.tabsSlot`, and its bar merges child routes that declare `staticData.navTab` with that slot's tools, rendered through a one-line `$tool` route. A channel's LTI resource links follow as tabs captioned by their titles, through the same route, where `SlotTabHost` renders the launch frame. An entity link targets the layout route without a tab: the layout redirects to the first visible tab, and so does a navigation to a hidden one.
 
 **Adding content.** A settings tool is a card built from the tool bases in `modules/entities/channel-settings-tools.tsx` (the danger zone is `dangerToolBase` with `DeleteToolCard`, and a channel below the organization archives through `archiveToolBase` with `ArchiveToolCard`), on a settings route that renders `<ChannelSettingsPage entity={...} />`. Such a channel's page shows `ArchivedBanner` under its header while it is archived. A tabs tool needs only its channel's `$tool` route. `ToolCard` and `TabsArrangementCard` are the card shells.
 

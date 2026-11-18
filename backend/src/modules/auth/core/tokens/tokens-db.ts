@@ -8,6 +8,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { authStrategiesEnum } from '#/modules/auth/core/strategies';
 import { connectionsTable } from '#/modules/connections/connections-db';
+import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
@@ -57,6 +58,8 @@ export const tokensTable = snakeCase.table(
     authStrategy: varchar({ enum: authStrategiesEnum }),
     /** For a `confirm-mfa` challenge of an SSO sign-in: the connection it came through, recorded on the mfa session too. */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
+    /** For an `lti-launch` record: the resource link it launches. A removed placement takes its live launches along. */
+    ltiResourceLinkId: uuid().references(() => ltiResourceLinksTable.id, { onDelete: 'cascade' }),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
