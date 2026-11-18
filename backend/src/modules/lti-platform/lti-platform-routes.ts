@@ -2,7 +2,6 @@ import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { ltiIssuerUrl } from '#/modules/lti-platform/helpers/platform-offer';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import {
   approveLtiInstallationBodySchema,
@@ -35,7 +34,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: tenantOrgParamSchema, body: jsonBody(startLtiToolRegistrationBodySchema) },
     responses: {
       200: json('Registration address', ltiToolRegistrationStartSchema, {
-        url: `https://peer-review.example.com/lti/register?openid_configuration=${encodeURIComponent(ltiIssuerUrl('configuration'))}&registration_token=example-registration-token`,
+        url: 'https://peer-review.example.com/lti/register?openid_configuration=https%3A%2F%2Fapp.example.com%2Foauth%2Flti%2Fopenid-configuration&registration_token=example-registration-token',
         expiresAt: '2026-11-18T13:00:00.000Z',
       }),
     },
