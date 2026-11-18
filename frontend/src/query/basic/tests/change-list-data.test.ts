@@ -12,7 +12,7 @@ const rows = (...ids: string[]): Row[] => ids.map((id) => ({ id }));
 const ids = (items: Row[]) => items.map((row) => row.id);
 
 const flatKey: QueryKey = ['task', 'list', 'org-1', 'org-1'];
-const pagedKey: QueryKey = ['task', 'list', { sort: 'createdAt', order: 'desc' }];
+const pagedKey: QueryKey = ['task', 'list', { orderBy: 'createdAt desc' }];
 
 const infinite = (pages: Row[][], totalSize: number): InfiniteQueryData<Row> => ({
   pages: pages.map((results) => ({ results, totalSize })),

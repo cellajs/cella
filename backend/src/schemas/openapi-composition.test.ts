@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { uploadTokenSchema } from '#/modules/me/me-schema';
 import { booleanTransformSchema, validSlugSchema } from './common-schemas';
 import { nullableUserMinimalBaseSchema, userMinimalBaseSchema } from './minimal-base';
-import { streamChangeSchema } from './stream-schemas';
 import { nullableStxBaseSchema, stxBaseSchema } from './sync-transaction-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -16,7 +15,6 @@ registry.register(
 );
 registry.register('UploadToken', uploadTokenSchema);
 registry.register('SlugFixture', z.object({ slug: validSlugSchema }));
-registry.register('StreamChange', streamChangeSchema);
 
 const schemas = new OpenApiGeneratorV31(registry.definitions).generateComponents().components?.schemas ?? {};
 
@@ -39,7 +37,6 @@ describe('OpenAPI composition conventions', () => {
     const nullableStxRef = { anyOf: [{ $ref: '#/components/schemas/StxBase' }, { type: 'null' }] };
     expect(schemas).toMatchObject({
       ReusableUnionFixture: { properties: { user: nullableUserRef, stx: nullableStxRef } },
-      StreamChange: { properties: { rows: { items: { properties: { stx: nullableStxRef } } } } },
     });
 
     // Nullable wrappers must not surface as named component schemas (SDK/docs export noise).

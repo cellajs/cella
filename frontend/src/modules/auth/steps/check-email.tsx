@@ -39,7 +39,7 @@ export function CheckEmailStep({ invitation }: { invitation?: TokenInvitation })
   const restrictedMode = useRestrictedMode();
 
   const title = invitation
-    ? t('c:invite_join', { name: invitation.entityName })
+    ? t('c:invite_join', { name: invitation.channelName })
     : inviteOtherAccount
       ? t('c:invite_sign_in')
       : appConfig.has.selfRegistration

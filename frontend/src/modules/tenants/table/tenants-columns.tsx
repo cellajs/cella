@@ -100,7 +100,7 @@ export const useColumns = () => {
               />
             }
           >
-            <EntityAvatar type="organization" className="size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
+            <EntityAvatar entity={org} className="size-8" />
             <CellLabel className="max-sm:sr-only">{org.name || '-'}</CellLabel>
           </Button>
         );

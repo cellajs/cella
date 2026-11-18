@@ -54,10 +54,7 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
             !isActive &&
             'pointer-fine:group-[:not(:hover,:focus-visible)]:resting-avatar pointer-coarse:group-[:not(:focus-visible)]:resting-avatar',
         )}
-        type={organization.entityType}
-        id={organization.id}
-        name={organization.name}
-        url={organization.thumbnailUrl}
+        entity={organization}
       />
     </SidebarNavButton>
   );

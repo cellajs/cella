@@ -16,7 +16,7 @@ const { organizationsListQueryOptions, fetchOrganizationsForExport } = await imp
 const { fetchMembersForExport } = await import('~/modules/memberships/query');
 
 const path = { tenantId: 'tenant-1', organizationId: 'org-1' };
-const channel = { entityId: 'org-1', entityType: 'organization' as const, ...path };
+const channel = { channelId: 'org-1', channelType: 'organization' as const, ...path };
 
 describe('included parts on mount', () => {
   const cached = (rows: { included?: Record<string, unknown> }[]) => ({
@@ -41,6 +41,6 @@ describe('export fetchers', () => {
     await fetchMembersForExport({ ...channel, role: memberRole }, { maxPageSize: 1000 });
 
     expect(vi.mocked(sdk.listOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts' } });
-    expect(vi.mocked(sdk.listMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
+    expect(vi.mocked(sdk.listMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', channelId: 'org-1' }, path });
   });
 });

@@ -11,11 +11,11 @@ export type StreamFrame = { event: 'change'; data: StreamChange } | { event: 'si
 /** Frame bytes a stream may hold unsent, counted as each frame's JSON without its SSE envelope: the next frame closes it, and its client's reconnect catches up. */
 export const maxPendingStreamBytes = 64 * 1024;
 
-/** Rows one change frame names in full: 20 rows of about 700 B (an update's stx) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
-export const maxStreamChangeRows = 20;
+/** Rows one change frame names in full: 62 rows of about 225 B (four UUIDs and a seq) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
+export const maxStreamChangeRows = 62;
 
 /**
- * Rows a change frame names by id alone past `maxStreamChangeRows`: 400 UUIDs make about 16 KB, as 20 full rows do.
+ * Rows a change frame names by id alone past `maxStreamChangeRows`: 400 UUIDs make about 16 KB, near what a frame of full rows weighs.
  * Past it a frame names none: a create or update still names its range, and after a delete or a move-out the client
  * refetches the lists and drops the type's cached details below the frame's channel.
  */

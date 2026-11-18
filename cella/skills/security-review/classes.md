@@ -484,7 +484,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`, `utils/list-page.ts` (page tokens, a purpose per list and params).
   - `backend/src/utils/hash-pii.ts`, `hash-token.ts`.
   - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
-  - CDC strip: `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
+  - CDC strip: `cdc/src/table-registry.ts` (`strippedKeys`), `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
   - Browser: `frontend/src/query/local-user-db.ts`, `frontend/src/query/local-user-storage.ts`, `frontend/src/query/idb-kv-storage.ts`, `frontend/src/lib/sw.ts`, `frontend/src/modules/auth/end-session.ts`, `frontend/src/query/on-error.ts`.
   - `.env.example` lists every secret name; no seed script reads a secret.
 - **Holds:**

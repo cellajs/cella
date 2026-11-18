@@ -30,7 +30,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => leaveMembership({ body: { entityId: channel.id, entityType: channel.entityType } }),
+    mutationFn: () => leaveMembership({ body: { channelId: channel.id, channelType: channel.entityType } }),
     onSuccess: () => {
       toaster.success(t('c:success.leave_channel', { name: channel.name }));
       if (redirectPath !== null) navigate({ to: redirectPath, replace: true });

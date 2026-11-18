@@ -2,10 +2,10 @@ export { apiErrorSchema } from '#/schemas/api-error-schemas';
 export {
   booleanTransformSchema,
   channelEntityTypeSchema,
+  channelRefSchema,
   cookieSchema,
   csvQuerySchema,
   entityTypeSchema,
-  entityWithTypeSchema,
   /** @public */
   fullResponseQuerySchema,
   type IncludeOption,

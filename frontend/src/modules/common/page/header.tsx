@@ -32,13 +32,7 @@ export function PageHeader({ entity, panel, subline, typeLabel, avatarBadge, par
       {/* Scrolled to its top, it lines up with the nav rail and the nav sheet headers */}
       <div className="bg-background/50 dark:bg-background/75 absolute bottom-0 flex min-h-16 w-full p-1 backdrop-blur-xs" id={pageTopHashNav.hash}>
         <div className={cn('relative shrink-0', isUser ? 'mx-3 -mt-12 size-20 sm:-mt-15 sm:size-26' : 'mx-2 my-1 size-12')}>
-          <EntityAvatar
-            id={entity.id}
-            name={entity.name}
-            type={entity.entityType}
-            url={entity.thumbnailUrl}
-            className={cn('size-full', isUser && 'ring-4 ring-black/10')}
-          />
+          <EntityAvatar entity={entity} className={cn('size-full', isUser && 'ring-4 ring-black/10')} />
           {avatarBadge}
         </div>
 

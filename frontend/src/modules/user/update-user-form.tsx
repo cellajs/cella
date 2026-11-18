@@ -20,23 +20,14 @@ import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUpdateUser } from '~/modules/user/query';
 import { useCurrentUser } from '~/modules/user/user-store';
-import { formResolver } from '~/utils/form-resolver';
+import { formResolver, formValuesOf } from '~/utils/form-resolver';
 
-const formSchema = zUpdateUserBody;
+const formSchema = zUpdateUserBody.pick({ thumbnailUrl: true, givenName: true, familyName: true, slug: true, languageCode: true, newsletter: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
 /** Accepts both User (self-update) and BaseUser (admin table). Only `id` is required; other fields pre-fill the form. */
 type FormUser = Pick<User, 'id'> & Partial<FormValues>;
-
-const toFormValues = (user: FormUser): FormValues => ({
-  thumbnailUrl: user.thumbnailUrl,
-  givenName: user.givenName,
-  familyName: user.familyName,
-  slug: user.slug,
-  languageCode: user.languageCode,
-  newsletter: user.newsletter,
-});
 
 interface UpdateUserFormProps {
   user: FormUser;
@@ -50,7 +41,7 @@ export function UpdateUserForm({ user, sheet: isSheet }: UpdateUserFormProps) {
 
   const { mutate: updateUser, isPending } = useUpdateUser(user.id);
 
-  const formOptions = { resolver: formResolver(formSchema), defaultValues: toFormValues(user) };
+  const formOptions = { resolver: formResolver(formSchema), defaultValues: formValuesOf(formSchema, user) };
 
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
@@ -63,7 +54,7 @@ export function UpdateUserForm({ user, sheet: isSheet }: UpdateUserFormProps) {
         const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_resource', { resource: t('c:user') });
         toaster.success(message);
 
-        form.reset(toFormValues(updatedUser));
+        form.reset(formValuesOf(formSchema, updatedUser));
         if (isSheet) sheeter.getState().remove(formContainerId);
       },
     });
@@ -72,7 +63,7 @@ export function UpdateUserForm({ user, sheet: isSheet }: UpdateUserFormProps) {
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex w-full flex-col gap-6">
-        <AvatarFormField form={form} label={t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
+        <AvatarFormField form={form} label={t('c:profile_picture')} name="thumbnailUrl" entity={{ ...user, entityType: 'user' }} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
             <InputFormField control={form.control} name="givenName" label={t('c:given_name')} autoComplete="given-name" />

@@ -22,7 +22,7 @@ import type { ApiError } from '~/lib/api';
 import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { syncChunkSize } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
-import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import { pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters, MutationData } from '~/query/types';
 
 /** The list's filters as the route holds them: the kinds as a list, which the request joins with commas. */
@@ -44,13 +44,12 @@ export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number
     q = tenantsSearchDefaults.q,
     status,
     kind = [],
-    sort = tenantsSearchDefaults.sort,
-    order = tenantsSearchDefaults.order,
+    orderBy = tenantsSearchDefaults.orderBy,
     // pageSizes has no tenants entry
     limit = appConfig.pageSizes.users,
   } = params;
-  const filters = { q, status, kind, sort, order };
-  const query = { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order) };
+  const filters = { q, status, kind, orderBy };
+  const query = { ...filters, kind: tenantKindsParam(kind) };
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),

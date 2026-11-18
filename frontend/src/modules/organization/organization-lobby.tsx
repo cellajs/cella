@@ -49,10 +49,7 @@ export function OrganizationLobby() {
       <Link {...getChannelRoute(organization)} className="group/lobby-link focus-effect flex flex-col items-center rounded-lg p-2">
         <EntityAvatar
           className="size-18 rounded-xl text-3xl transition-opacity group-hover/lobby-link:opacity-100 sm:opacity-80"
-          type={organization.entityType}
-          id={organization.id}
-          name={organization.name}
-          url={organization.thumbnailUrl}
+          entity={organization}
         />
         <h1 className="link-decoration group-active/lobby-link:link-decoration-strong mt-5 text-2xl font-semibold group-hover/lobby-link:underline">
           {organization.name}

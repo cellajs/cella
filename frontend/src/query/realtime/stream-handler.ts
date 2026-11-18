@@ -12,14 +12,14 @@ import { publishChangeEvent } from '~/query/realtime/sync-events';
 
 /** Changes carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
 export function handleStreamChange(change: StreamChange): void {
-  const { productType: entityType, action, organizationId, overflow } = change;
+  const { productType, action, organizationId, overflow } = change;
   const subjectIds = overflow ? (overflow.subjectIds ?? []) : change.rows.map(({ subjectId }) => subjectId);
 
-  const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.row_count': subjectIds.length };
+  const spanAttributes = { 'sync.entity_type': productType, 'sync.action': action, 'sync.row_count': subjectIds.length };
 
   withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
     // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
-    for (const subjectId of subjectIds) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId, subjectId });
+    for (const subjectId of subjectIds) publishChangeEvent({ action, productType, organizationId, channelId: change.channelId, subjectId });
 
     if (overflow) handleOverflow(change, overflow);
     else handleProductChange(change);
@@ -32,14 +32,14 @@ export function handleStreamChange(change: StreamChange): void {
  * removal drops every cached detail of the type below the frame's channel: the readable ones refetch when opened.
  */
 function handleOverflow(change: StreamChange, { afterSeq, untilSeq, subjectIds }: NonNullable<StreamChange['overflow']>): void {
-  const { productType: entityType, organizationId } = change;
-  invalidateEmbeddingHosts(entityType, organizationId);
+  const { productType, organizationId } = change;
+  invalidateEmbeddingHosts(productType, organizationId);
   const removal = change.action === 'delete' || change.action === 'moveOut';
   if (!removal && afterSeq !== null && untilSeq !== null) enqueueAnnouncedRange(change, { afterSeq, untilSeq });
   else if (removal && subjectIds) removeRows(change, subjectIds);
   else {
-    invalidateUndelivered(entityType, organizationId, [change.channelId], true);
-    if (removal) cacheOps.removeEntityDetailsBelow(entityType, change.channelId ?? organizationId);
+    invalidateUndelivered(productType, organizationId, [change.channelId], true);
+    if (removal) cacheOps.removeEntityDetailsBelow(productType, change.channelId ?? organizationId);
   }
 }
 
@@ -48,29 +48,30 @@ function handleOverflow(change: StreamChange, { afterSeq, untilSeq, subjectIds }
  * at once on screen; a move-out drops each row from the cache.
  */
 function removeRows(change: StreamChange, subjectIds: string[]): void {
-  const { productType: entityType, action, organizationId } = change;
-  const channelId = change.channelId;
-  const keys = getEntityQueryKeys(entityType);
+  const { productType, action, organizationId, channelId } = change;
+  const keys = getEntityQueryKeys(productType);
   for (const subjectId of subjectIds) {
-    if (action === 'moveOut') cacheOps.removeEntity(entityType, subjectId, organizationId);
+    if (action === 'moveOut') cacheOps.removeEntity(productType, subjectId, organizationId);
     else cacheOps.invalidateEntityDetail(subjectId, keys, 'none');
   }
-  applyUnfetchableRemovalUnseen(entityType, subjectIds, channelId);
-  if (action === 'delete') invalidateUndelivered(entityType, organizationId, [channelId], false);
+  applyUnfetchableRemovalUnseen(productType, subjectIds, channelId);
+  if (action === 'delete') invalidateUndelivered(productType, organizationId, [channelId], false);
 }
 
 /** Hands an announced range to the fetch prioritizer, which fetches it on the tier of its scope. */
 function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
+  const { productType, organizationId, tenantId, channelId, path, spreadWindow, propagation, rangeKey } = change;
   enqueueRange({
-    entityType: change.productType,
-    organizationId: change.organizationId,
-    tenantId: change.tenantId,
-    channelId: change.channelId,
+    productType,
+    organizationId,
+    tenantId,
+    channelId,
+    path,
     ...range,
-    isCreate: change.action === 'create',
-    spreadWindowMs: change.spreadWindow ?? undefined,
-    propagation: change.propagation ?? undefined,
-    rangeKey: change.rangeKey,
+    hasCreates: change.action === 'create',
+    spreadWindow,
+    propagation,
+    rangeKey,
   });
 }
 
@@ -89,7 +90,7 @@ function isOwnEcho(action: StreamChange['action'], row: StreamChange['rows'][num
 }
 
 function handleProductChange(change: StreamChange): void {
-  const { productType: entityType, action, propagation } = change;
+  const { productType, action, propagation } = change;
 
   // An own echo fetches nothing: the write's answer brings the stored row. A frame of only own rows fetches nothing.
   const rows = change.rows.filter((row) => {
@@ -115,5 +116,5 @@ function handleProductChange(change: StreamChange): void {
     if (propagation) propagateEmbeddings(propagation);
   }
 
-  console.debug(`[handleProductChange] ${entityType}:${action} rows=${rows.length}`);
+  console.debug(`[handleProductChange] ${productType}:${action} rows=${rows.length}`);
 }

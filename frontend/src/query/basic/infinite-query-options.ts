@@ -1,7 +1,7 @@
 import { hashKey, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { ApiError } from '~/lib/api';
 import { getQueryItems, isInfiniteQueryData } from '~/query/basic/mutate-query';
-import type { PageParam, QueryData, SortOrder } from '~/query/types';
+import type { PageParam, QueryData } from '~/query/types';
 
 /** Pages a list by the `nextPageToken` each page names, until one names none. staleTime is omitted so it inherits the global default from query-client.ts. */
 const baseInfiniteQueryOptions = {
@@ -50,8 +50,6 @@ export const tokenPaging = <TPage extends QueryData<unknown>>(fetchPage: (pageTo
   meta: { suppressGlobalErrorToast: (error: ApiError) => restartErrors.has(error) },
   ...baseInfiniteQueryOptions,
 });
-
-export const orderByParam = <TSort extends string>(sort: TSort, order: SortOrder): `${TSort} ${SortOrder}` => `${sort} ${order}`;
 
 type Live<T> = Exclude<T, { deletedAt: string }>;
 

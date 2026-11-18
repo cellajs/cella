@@ -16,7 +16,7 @@ const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor, q
       title: name,
       size: 'small',
       onItemClick: () => editor.insertInlineContent([{ type: 'mention', props: { name, id, slug } }]),
-      icon: <EntityAvatar type="user" id={id} name={name} url={thumbnailUrl} className="size-5" />,
+      icon: <EntityAvatar entity={{ entityType: 'user', id, name, thumbnailUrl }} className="size-5" />,
     }));
 };
 

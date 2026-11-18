@@ -1,16 +1,15 @@
-import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { type FileKindName, fileKindOf } from 'shared/utils/file-kind';
 import { formatBytes } from 'shared/utils/format-bytes';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { channelTables } from '#/db/channel-tables';
 import { homeChannelOf } from '#/db/utils/home-channel';
 import type { LinkedChannel, LinkPreview } from '#/lib/module';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentHost, findLinkedAttachment } from '#/modules/attachment/attachment-queries';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findMovedEntityId } from '#/modules/numbering/numbering-queries';
 
 const kindWords: Record<FileKindName, string> = {
@@ -29,29 +28,17 @@ const kindWords: Record<FileKindName, string> = {
 
 const notFound = () => new AppError(404, 'not_found', 'warn', { entityType: 'attachment', willRedirect: true });
 
-/**
- * The notification link to the file: signs a visitor in first, then opens the file over the row that keeps it, a task
- * say, on its channel's page, else on its own home channel's. Any channel type routes there, through the page its
- * module names.
- */
+/** The `/n` link: signs a visitor in, then opens the file over its host on the host's channel page, else on its own. */
 const openUrl = async (ctx: DbContext, attachment: AttachmentModel) => {
   const host = await findAttachmentHost(ctx, attachment);
-  const { id: channelId, type: channelType } = host?.home ?? homeChannelOf('attachment', attachment);
   return buildNotificationLink(appConfig.frontendUrl, {
     tenantId: attachment.tenantId,
     organizationId: attachment.organizationId,
-    channelType,
-    channelId,
+    ...(host?.home ?? homeChannelOf('attachment', attachment)),
     productType: 'attachment',
     subjectId: attachment.id,
     contextId: host?.id,
   });
-};
-
-const channelName = async (ctx: DbContext, { channelType, channelId }: Pick<LinkedChannel, 'channelType' | 'channelId'>) => {
-  const table = channelTables[channelType]();
-  const [channel] = await ctx.var.db.select({ name: table.name }).from(table).where(eq(table.id, channelId)).limit(1);
-  return channel?.name;
 };
 
 const shortDate = (iso: string) => {
@@ -60,10 +47,7 @@ const shortDate = (iso: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
 };
 
-/**
- * The unfurl of a file's share link `/{code}/a7`: its name, kind and channel, size, date and uploader, over a picture
- * of its kind, never of the file. Like a task's, it shows for a private file too: opening it still takes access.
- */
+/** Unfurl of `/{code}/a7` over a picture of the file's kind, never the file; shown for a private file too, as opening takes access. */
 export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview> {
   const found = await findLinkedAttachment(ctx, { channelId: channel.channelId, number });
 
@@ -82,8 +66,8 @@ export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChan
   }
 
   const attachment = await withActorRef(ctx, found);
-  const name = await channelName(ctx, channel);
-  if (name === undefined) throw notFound();
+  const linked = await resolveEntity(ctx, { entityType: channel.channelType, identifier: channel.channelId });
+  if (!linked) throw notFound();
 
   const kind = fileKindOf(attachment.convertedContentType || attachment.contentType);
   const { filename } = attachment;
@@ -91,7 +75,7 @@ export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChan
   const added = `added ${shortDate(attachment.createdAt)}${attachment.createdBy ? ` by ${attachment.createdBy.name}` : ''}`;
 
   return {
-    title: `${kindWords[kind]} in ${name || 'Untitled'}`,
+    title: `${kindWords[kind]} in ${linked.name || 'Untitled'}`,
     ogTitle: attachment.name || filename,
     description: [extension, attachment.size > 0 && formatBytes(attachment.size), added].filter(Boolean).join(' · '),
     redirectUrl: await openUrl(ctx, found),

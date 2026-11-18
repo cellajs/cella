@@ -6,9 +6,12 @@ export const operationSearchSchema = z.object({ q: z.string().optional(), filter
 /** operationTag is a string because tag names are fetched at runtime. */
 export const operationsRouteSearchParamsSchema = operationSearchSchema.extend({ operationTag: z.string().optional() });
 
+/** `orderBy` as a list route holds it (`method desc`); the columns are fetched at runtime, so any one with a direction. */
 export const operationsTableRouteSearchParamsSchema = operationSearchSchema.extend({
-  sort: z.string().optional(),
-  order: z.enum(['asc', 'desc']).optional().catch(undefined),
+  orderBy: z
+    .templateLiteral([z.string(), ' ', z.enum(['asc', 'desc'])])
+    .optional()
+    .catch(undefined),
 });
 
 /** schemaTag is a string because schema tag names are backend-configured (tags with `kind: 'schema'`). */

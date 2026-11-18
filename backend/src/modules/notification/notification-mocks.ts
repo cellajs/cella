@@ -33,7 +33,6 @@ export function mockSeedNotification(
   userId: string,
   actorId: string | null,
 ): InsertNotificationModel {
-  const home = homeChannelOf(productType, subject);
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,
@@ -42,8 +41,7 @@ export function mockSeedNotification(
     productType,
     subjectId: subject.id,
     contextId: subject.id,
-    channelId: home.id,
-    channelType: home.type,
+    ...homeChannelOf(productType, subject),
     organizationId: subject.organizationId,
     tenantId: subject.tenantId,
     activityId: `seed:${subject.id}`,

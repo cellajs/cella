@@ -4,7 +4,8 @@ vi.mock('../lib/db', () => ({ cdcDb: {} }));
 vi.mock('../pipeline/handle-message', () => ({ runBetweenFlushes: vi.fn() }));
 
 import { compareBooks } from '../pipeline/verify';
-import { addCounts, type CounterDeltas, fence, isVisibleIn, parseSnapshot, plainCounts } from '../services/fence';
+import { addCounts, fence, isVisibleIn, parseSnapshot, plainCounts } from '../services/fence';
+import type { CounterDeltas } from '../types';
 
 const counters = (entries: Record<string, Record<string, number>>): CounterDeltas => new Map(Object.entries(entries));
 

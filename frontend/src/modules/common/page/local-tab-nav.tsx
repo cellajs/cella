@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
+import type { AvatarEntity } from '~/modules/common/entity-avatar';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
-import { type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
+import { TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
 import { getScrollParent, viewportTopOf } from '~/utils/scroll-parent';
 
 export type LocalTab = { id: string; label: TKey };
@@ -11,7 +12,7 @@ interface LocalTabNavProps {
   activeId: string;
   onTabChange: (id: string) => void;
   title?: string;
-  avatar?: TabNavAvatar;
+  avatar?: AvatarEntity;
   className?: string;
 }
 

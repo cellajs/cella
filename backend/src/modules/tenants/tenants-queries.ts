@@ -11,6 +11,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions, publicSharingTenantKinds } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
+import { minimalBaseColumns, toMinimalBase } from '#/schemas/minimal-base';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
@@ -39,7 +40,7 @@ const selectTenants = (ctx: DbContext) =>
   ctx.var.db
     .select({
       ...tenantColumns,
-      organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']),
+      organization: minimalBaseColumns(organizationsTable),
     })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
@@ -54,7 +55,7 @@ type TenantRow = Awaited<ReturnType<typeof selectTenants>>[number];
 const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   ...tenant,
   restrictions: normalizeRestrictions(tenant.restrictions),
-  organization: organization && { ...organization, entityType: 'organization' as const },
+  organization: organization && toMinimalBase('organization', organization),
 });
 
 /** `EXISTS` on the tenant a row's `tenantId` column names being of one of `kinds`, for a list or count of another table; no kind matches nothing. */

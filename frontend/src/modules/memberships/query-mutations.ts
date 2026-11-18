@@ -79,11 +79,11 @@ const restoreMemberLists = (previousLists: MemberListSnapshot[] = []) => {
 };
 
 /** What an invite or a withdrawal changes: the channel's pending rows, what a check answers, and its members. */
-const invalidateInvites = ({ id: entityId, entityType, organizationId }: EnrichedChannel) => {
-  const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ entityId, entityType }));
+const invalidateInvites = ({ id: channelId, entityType: channelType, organizationId }: EnrichedChannel) => {
+  const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ channelId, channelType }));
   for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
-  queryClient.invalidateQueries({ queryKey: memberQueryKeys.check(entityId) });
-  invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+  queryClient.invalidateQueries({ queryKey: memberQueryKeys.check(channelId) });
+  invalidateOnMembershipChange(queryClient, channelType, channelId, organizationId);
 };
 
 export const useInviteMemberMutation = () =>
@@ -149,7 +149,7 @@ export const useMemberUpdateMutation = () =>
 
       updateMyMembershipCache(membershipInfo);
 
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
+      const similarKey = memberQueryKeys.list.similarMembers({ channelId, channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
       context.previousLists = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
 
@@ -157,8 +157,12 @@ export const useMemberUpdateMutation = () =>
     },
     onSuccess: async (updatedMembership, { channelId, channelType, path: { tenantId, organizationId } }, { toastMessage }) => {
       updateMyMembershipCache(updatedMembership);
+      // A memberships read still running may predate this write and undo it on landing. A fresh read replaces it, and catchup, which awaits it, gets the fresh one.
+      if (queryClient.getQueryState(meKeys.memberships)?.fetchStatus === 'fetching') {
+        void queryClient.refetchQueries({ queryKey: meKeys.memberships, exact: true });
+      }
 
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
+      const similarKey = memberQueryKeys.list.similarMembers({ channelId, channelType, tenantId, organizationId });
       patchMemberLists(similarKey, (members) => updateMembers(members, updatedMembership));
 
       // Role-filtered lists must refetch when the role changes
@@ -190,18 +194,18 @@ export const useMembershipsDeleteMutation = () =>
     onMutate: async (variables) => {
       const {
         members,
-        query: { entityId, entityType },
+        query: { channelId, channelType },
         path: { tenantId, organizationId },
       } = variables;
       const ids = members.map(({ id }) => id);
 
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      const similarKey = memberQueryKeys.list.similarMembers({ channelId, channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
 
       return patchMemberLists(similarKey, (members) => members.filter(({ id }) => !ids.includes(id)));
     },
-    onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
-      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+    onSuccess: (_, { query: { channelId, channelType }, path: { organizationId } }) => {
+      invalidateOnMembershipChange(queryClient, channelType, channelId, organizationId);
       toaster.success(t('c:success.remove_members'));
     },
     onError: (_, __, previousLists) => restoreMemberLists(previousLists),
@@ -225,8 +229,8 @@ export const useChangeEntityRoleMutation = () =>
         throw new Error('offline');
       }
 
-      const { id: entityId, entityType, tenantId } = entity;
-      const membership = findMembership(getCachedMemberships() ?? [], entityId);
+      const { id: channelId, entityType: channelType, tenantId } = entity;
+      const membership = findMembership(getCachedMemberships() ?? [], channelId);
       const organizationId = channelOrganizationId(entity);
 
       if (membership) {
@@ -237,7 +241,7 @@ export const useChangeEntityRoleMutation = () =>
       const { email } = getCurrentUser();
       if (!email) throw new Error('An account without an address joins nothing');
       const result = await inviteMembers({
-        query: { entityId, entityType },
+        query: { channelId, channelType },
         path: { tenantId, organizationId },
         body: { emails: [email], role },
       });

@@ -6,7 +6,7 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
-type OrgGridSearch = { q?: string; sort: NonNullable<OrgSearch['sort']>; order: NonNullable<OrgSearch['order']> };
+type OrgGridSearch = { q?: string; orderBy: NonNullable<OrgSearch['orderBy']> };
 
 const sortOptions = [gridSortOptions.name, gridSortOptions.createdAt] as const;
 

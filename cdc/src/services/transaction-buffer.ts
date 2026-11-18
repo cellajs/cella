@@ -4,7 +4,7 @@ import { entityCountPrefix } from '#/modules/entities/counter-keys';
 import { resourceLimits } from '../constants';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { PendingEvent } from '../types';
+import type { CounterDeltas, PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
@@ -53,7 +53,7 @@ export class TransactionBuffer {
   private suppressedCount = 0;
 
   /** What the suppressed deletes of the current transaction take off the row counts, per channel key. */
-  private cascadeCounts = new Map<string, Record<string, number>>();
+  private cascadeCounts: CounterDeltas = new Map();
 
   /** Set while the current transaction is discarded: its label, and the tracked changes it had so far. */
   private discarded: DiscardedTransaction | null = null;

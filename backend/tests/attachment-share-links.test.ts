@@ -47,9 +47,9 @@ describe('attachment share links', async () => {
 
   // The code of the channel the plan homes attachments in: the organization in the template
   const homeCode = async () => {
-    const home = homeChannelOf('attachment', { organizationId: organization.id, ...plan.channelIdColumns });
-    const table = channelTables[home.type]();
-    return (await adminDb.select({ code: table.code }).from(table).where(eq(table.id, home.id)))[0].code;
+    const { channelId, channelType } = homeChannelOf('attachment', { organizationId: organization.id, ...plan.channelIdColumns });
+    const table = channelTables[channelType]();
+    return (await adminDb.select({ code: table.code }).from(table).where(eq(table.id, channelId)))[0].code;
   };
 
   it('numbers files per home channel from 1, in insert order', async () => {

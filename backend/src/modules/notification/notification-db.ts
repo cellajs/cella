@@ -41,7 +41,7 @@ export const notificationsTable = snakeCase.table(
     productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     subjectId: uuid().notNull(),
     /** Grouping/deep-link context (e.g. the host thread), from the source's `resolveContextId`; equals `subjectId` by default. */
-    contextId: uuid(),
+    contextId: uuid().notNull(),
     /** The subject's home channel (`homeChannelOf`): the channel its seen count keys on, so badges and inbox agree. */
     channelId: uuid().notNull(),
     channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),

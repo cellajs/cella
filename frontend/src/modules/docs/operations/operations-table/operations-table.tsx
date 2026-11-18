@@ -51,7 +51,7 @@ export function OperationsTable() {
   const { search, setSearch } = useSearchParams<OperationsTableRouteSearchParams>({ from: '/_public/docs/operations_/table' });
   const { q, filter } = search;
 
-  const { sortColumns, setSortColumns } = useSortColumns(search.sort, search.order, setSearch);
+  const { sortColumns, setSortColumns } = useSortColumns(search.orderBy, setSearch);
 
   const { data: info } = useSuspenseQuery(infoQueryOptions);
   const extensions = info.extensions.filter((ext) => ext.kind === 'middleware');

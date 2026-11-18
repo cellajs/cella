@@ -120,7 +120,7 @@ export function ChannelTileHeading({ leading, meta }: { leading?: ReactNode; met
   const entity = useTileEntity();
   return (
     <>
-      {leading ?? <EntityAvatar className="size-8 sm:size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />}
+      {leading ?? <EntityAvatar className="size-8 sm:size-10" entity={entity} />}
       <div className="flex grow flex-col gap-0.5 truncate">
         <div className="inline-flex items-center gap-2 truncate text-sm leading-5 font-semibold">
           <span className="truncate">

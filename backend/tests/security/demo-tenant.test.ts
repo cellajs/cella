@@ -97,7 +97,7 @@ describe('Demo tenants', async () => {
 
     const invite = (tenantId: string, organizationId: string) => ({
       path: { tenantId, organizationId },
-      query: { entityType: 'organization' as const, entityId: organizationId },
+      query: { channelType: 'organization' as const, channelId: organizationId },
       body: { emails: ['third-party@security-test.com'], role: memberRole },
     });
     const invited = await call(inviteMembers, { ...invite(demo.tenant.id, demo.tenant.organization.id), headers: demo.headers });

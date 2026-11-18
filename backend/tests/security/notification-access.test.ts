@@ -165,9 +165,8 @@ describe('Notification access', async () => {
     const fresh = items.find((item) => item.subjectId === attachmentIds.fresh);
     expect(fresh).toMatchObject({
       subjectName: 'Fresh item',
-      channelName: 'Renamed organization',
-      channelThumbnailUrl: 'https://example.com/organization.png',
-      organizationName: 'Renamed organization',
+      channel: { name: 'Renamed organization', thumbnailUrl: 'https://example.com/organization.png' },
+      organization: { name: 'Renamed organization', entityType: 'organization' },
     });
   });
 
@@ -208,7 +207,7 @@ describe('Notification access', async () => {
       // The stayer still belongs, so the rows stay, but none names its item or channel.
       const { results: items, unreadCount } = await inbox(stayer);
       expect(unreadCount).toBe(2);
-      for (const item of items) expect(item).toMatchObject({ subjectName: '', channelName: '', channelThumbnailUrl: null });
+      for (const item of items) expect(item).toMatchObject({ subjectName: '', channel: null });
 
       await fanOutMention();
       expect(mailsTo(stayer.email)).toEqual([]);

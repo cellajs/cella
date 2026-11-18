@@ -684,20 +684,18 @@ export class EntityHierarchy<
   };
 
   /**
-   * SQL twin of {@link computeProductPath} / {@link computeChannelPath}, kept adjacent and held
-   * identical by the path parity tests. Produces the generated-column expression
-   * `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`, appending
-   * `'/' || "id"::text` when `appendOwnId` (channel entities). It updates atomically on
-   * reparenting, skips nullable intermediate ancestors, and requires a non-null organization.
-   * Channel tables store this expression as a generated column (`appendOwnId` true).
+   * SQL twin of {@link computeChannelPath}, kept adjacent and held identical by the path parity tests. Produces the
+   * generated-column expression `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ... || '/' || "id"::text`.
+   * It updates atomically on reparenting, skips nullable intermediate ancestors, and requires a non-null organization.
+   * Channel tables store this expression as a generated column.
    */
-  readonly pathColumnSql = (entityType: string, appendOwnId: boolean): string => {
+  readonly pathColumnSql = (entityType: string): string => {
     const [root, ...deeper] = [...this.getOrderedAncestors(entityType)].reverse();
     if (root === undefined) return `"id"::text`;
 
     const parts = [`"${entityIdColumnName(root)}"::text`];
     for (const ancestor of deeper) parts.push(`COALESCE('/' || "${entityIdColumnName(ancestor)}"::text, '')`);
-    if (appendOwnId) parts.push(`'/' || "id"::text`);
+    parts.push(`'/' || "id"::text`);
     return parts.join(' || ');
   };
 

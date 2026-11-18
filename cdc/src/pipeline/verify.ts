@@ -11,14 +11,14 @@ import { resourceLimits } from '../constants';
 import { cdcDb, type Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
-import { type CounterDeltas, fence, fenceMarkerPrefix } from '../services/fence';
+import { fence, fenceMarkerPrefix } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
+import type { CounterDeltas } from '../types';
 import { runBetweenFlushes } from './handle-message';
 
 const { countTimeoutMs, verifyTimeoutMs, verifyRetryMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
 
-type Counters = Map<string, Record<string, number>>;
 type Incident = typeof syncIncidentsTable.$inferInsert;
 
 /** Why the books were rebuilt, as the incident says it. */
@@ -34,7 +34,7 @@ type IncidentDetails = Pick<Incident, 'positionFrom' | 'error' | 'corrections'>;
  * channels the count yields are compared: a counter row of a channel that is gone is nobody's book.
  * @returns One difference per key that is wrong; empty when the books are right.
  */
-export function compareBooks(stored: Counters, counted: Counters, alreadyCounted: CounterDeltas): SyncCorrection[] {
+export function compareBooks(stored: CounterDeltas, counted: CounterDeltas, alreadyCounted: CounterDeltas): SyncCorrection[] {
   const differences: SyncCorrection[] = [];
   for (const [channelKey, countedCounts] of counted) {
     const storedCounts = stored.get(channelKey) ?? {};
@@ -53,7 +53,7 @@ export function compareBooks(stored: Counters, counted: Counters, alreadyCounted
   return differences;
 }
 
-async function readStoredCounters(db: Executor): Promise<Counters> {
+async function readStoredCounters(db: Executor): Promise<CounterDeltas> {
   const rows = await db.execute<{ channel_key: string; counts: Record<string, number> }>(sql`SELECT channel_key, counts FROM channel_counters`);
   return new Map(rows.rows.map((row) => [row.channel_key, row.counts]));
 }
@@ -205,8 +205,8 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
   if (operations > 0 || fence.mode || replicationStatus() !== 'active') return null;
   operations += 1;
   const marker = randomUUID();
-  let stored: Counters = new Map();
-  let counted: Counters = new Map();
+  let stored: CounterDeltas = new Map();
+  let counted: CounterDeltas = new Map();
   let counting: Promise<void> = Promise.resolve();
   let timer: NodeJS.Timeout | undefined;
 

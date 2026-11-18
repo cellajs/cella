@@ -32,7 +32,7 @@ import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { liveItems, orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import { liveItems, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
@@ -89,16 +89,14 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
     tenantId,
     organizationId,
     q = attachmentsSearchDefaults.q,
-    sort = attachmentsSearchDefaults.sort,
-    order = attachmentsSearchDefaults.order,
+    orderBy = attachmentsSearchDefaults.orderBy,
     limit = appConfig.pageSizes.attachments,
   } = params;
 
-  const filters = { q, sort, order };
-  const query = { q, orderBy: orderByParam(sort, order) };
+  const filters = { q, orderBy };
 
   const paging = tokenPaging((pageToken, signal) =>
-    listAttachments({ path: { tenantId, organizationId }, query: { ...query, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
+    listAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
   );
   return syncedListOptions(
     infiniteQueryOptions({

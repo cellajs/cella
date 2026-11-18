@@ -44,8 +44,8 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 });
 
 app.openapi(meRoutes.leaveMembership, async (ctx) => {
-  const { entityType, entityId } = ctx.req.valid('json');
-  await leaveMembershipOp(ctx, entityType, entityId);
+  const { channelType, channelId } = ctx.req.valid('json');
+  await leaveMembershipOp(ctx, channelType, channelId);
   return ctx.body(null, 204);
 });
 

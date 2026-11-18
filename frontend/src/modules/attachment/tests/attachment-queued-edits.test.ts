@@ -250,6 +250,7 @@ describe('the echo of the tab’s own write', () => {
       productType: 'attachment',
       ...ctx,
       channelId: null,
+      path: ctx.organizationId,
       rows: [{ subjectId: att1, seq: 3, stx: stored.stx, actorId: 'user-a' }],
       overflow: null,
       spreadWindow: null,

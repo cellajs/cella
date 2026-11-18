@@ -22,21 +22,18 @@ function InvitationRow({ item: { entity, invitation, organizationName } }: { ite
   const { mutate, isPending, variables } = useHandleInvitationMutation();
 
   // An accept opens the channel joined, through the link that resolves its route
-  const open = () =>
-    navigate({
-      to: '/n',
-      search: { tenantId: entity.tenantId, organizationId: invitation.organizationId, channelId: entity.id, channelType: entity.entityType },
-    });
+  const { tenantId, organizationId, channelId, channelType } = invitation;
+  const open = () => navigate({ to: '/n', search: { tenantId, organizationId, channelId, channelType } });
   const values = {
     inviterName: invitation.createdBy.name,
-    entityName: entity.name,
+    channelName: entity.name,
     organizationName,
     role: t(`c:${invitation.role}`),
   };
 
   return (
     <li className={rowClass}>
-      <EntityAvatar type={entity.entityType} className="size-8" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
+      <EntityAvatar entity={entity} className="size-8" />
       <div className="min-w-0 flex-1">
         <p>{t(organizationName ? 'c:invite_accept_as_account_in_organization.text' : 'c:invite_accept_as_account.text', values)}</p>
         <p className="text-muted-foreground">

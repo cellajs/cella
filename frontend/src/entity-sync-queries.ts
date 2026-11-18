@@ -17,13 +17,13 @@ export const buildEntitySyncQueries = ({ targetEntityId, targetEntityType, tenan
   const memberListLimit = 200;
   const queryOrganizationId = targetEntityType === 'organization' ? targetEntityId : currentOrganizationId;
 
-  const addMembersQuery = (channelEntityType: ChannelEntityType) => {
+  const addMembersQuery = (channelType: ChannelEntityType) => {
     syncQueries.push(
       membersListQueryOptions({
-        entityId: targetEntityId,
+        channelId: targetEntityId,
         tenantId,
         organizationId: queryOrganizationId,
-        entityType: channelEntityType,
+        channelType,
         limit: memberListLimit,
       }),
     );

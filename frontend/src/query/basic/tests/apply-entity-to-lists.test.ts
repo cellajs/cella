@@ -63,7 +63,7 @@ describe('spliceEntitiesIntoListCaches: canonical-home policy', () => {
     queryClient.setQueryData(homeKey, { results: [], totalSize: 0 });
     queryClient.setQueryData(filteredKey, { pages: [{ results: [], totalSize: 0 }], pageParams: [{ page: 0 }] });
 
-    const inserted = spliceEntitiesIntoListCaches(queryClient, [row('a')]);
+    const inserted = spliceEntitiesIntoListCaches(queryClient, 'attachment', orgId, [row('a')]);
 
     const home = () => queryClient.getQueryData<{ results: ItemData[]; totalSize: number }>(homeKey);
     const filtered = () => queryClient.getQueryData<{ pages: { results: ItemData[]; totalSize: number }[] }>(filteredKey);
@@ -74,7 +74,7 @@ describe('spliceEntitiesIntoListCaches: canonical-home policy', () => {
 
     // Once the search list holds the row too, an update reaches both, without an insert or a total drift.
     queryClient.setQueryData(filteredKey, { pages: [{ results: [row('a', { name: 'old' })], totalSize: 1 }], pageParams: [{ page: 0 }] });
-    const updated = spliceEntitiesIntoListCaches(queryClient, [row('a', { name: 'new' })]);
+    const updated = spliceEntitiesIntoListCaches(queryClient, 'attachment', orgId, [row('a', { name: 'new' })]);
 
     expect(home()).toMatchObject({ results: [{ id: 'a', name: 'new' }], totalSize: 1 });
     expect(filtered()?.pages[0]).toMatchObject({ results: [{ id: 'a', name: 'new' }], totalSize: 1 });

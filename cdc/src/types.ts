@@ -12,24 +12,22 @@ export interface CdcRowData extends RowData {
   id: string;
 }
 
-/** A tracked entity table: its Drizzle table, entity type and column names. */
-export interface EntityTableMeta {
-  kind: 'entity';
-  table: (typeof entityTables)[keyof typeof entityTables];
-  type: keyof typeof entityTables;
+/**
+ * What the worker knows of a tracked table, from the table registry. A resource table (a membership, a tenant, an API
+ * key) has no place of its own in the hierarchy.
+ */
+export type TableMeta = (
+  | { kind: 'entity'; table: (typeof entityTables)[keyof typeof entityTables]; type: keyof typeof entityTables }
+  | { kind: 'resource'; table: (typeof resourceTables)[keyof typeof resourceTables]; type: keyof typeof resourceTables }
+) & {
+  /** camelCase key per database column name. */
   columnNameMap: Map<string, string>;
-}
+  /** camelCase keys the parser drops from row images: long-text columns and the table's secret columns. */
+  strippedKeys: ReadonlySet<string>;
+};
 
-/** A tracked resource table (a membership, a tenant, an API key): no place of its own in the hierarchy. */
-export interface ResourceTableMeta {
-  kind: 'resource';
-  table: (typeof resourceTables)[keyof typeof resourceTables];
-  type: keyof typeof resourceTables;
-  columnNameMap: Map<string, string>;
-}
-
-/** What the worker knows of a tracked table, from the table registry. */
-export type TableMeta = EntityTableMeta | ResourceTableMeta;
+/** Counter values per channel key: the deltas a flush adds, or the counts a counter row holds. */
+export type CounterDeltas = Map<string, Record<string, number>>;
 
 /** A change the worker keeps, on its way from its source transaction to a flush. */
 export interface PendingEvent {
@@ -47,7 +45,7 @@ export interface PendingEvent {
    * On the delete of a channel: what the rows that went with it take off the counts of the channels that remain, per
    * channel key. Their own deletes are no change the worker keeps, so this change carries their counts.
    */
-  cascadeCounts?: Map<string, Record<string, number>>;
+  cascadeCounts?: CounterDeltas;
   /**
    * The sequence value the change's product row holds once its flush is recorded: the stamp, or the value read back for
    * a change delivered again. A delete gets neither, and neither does a row that left its table since.

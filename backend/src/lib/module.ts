@@ -96,7 +96,7 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
   /** Recipients beyond mentions (thread participants, assignees, ...) with their notification kind. */
   resolveRecipients?(tx: DbOrTx, row: TRow): Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
-  resolveContextId?(row: TRow): string | null;
+  resolveContextId?(row: TRow): string;
   /** Whether a created row's mentions are new to their users; false for a row made from rows that told them (a merge). Defaults to true. */
   readsMentionsOnCreate?(row: TRow): boolean;
   /** Display names for context ids, read inside a tenant transaction. */
@@ -129,10 +129,7 @@ export interface ChannelShareLink {
   preview(ctx: DbContext, channel: LinkedChannel): Promise<LinkPreview>;
 }
 
-/**
- * What a numbered product module's share link `/{code}/{letter}{n}` shows: its row numbered `n` in that channel, or a
- * 404. The letter is the product's `numberedProducts` entry.
- */
+/** What `/{code}/{letter}{n}` shows for a numbered product: its row `n` in that channel, or a 404. */
 export interface ProductShareLink {
   preview(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview>;
 }

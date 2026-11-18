@@ -1,15 +1,15 @@
 import type { SortColumn } from '~/modules/common/data-grid';
 
-// biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-type SetSearch = (newValues: any) => void;
+// Method syntax keeps the parameter bivariant: a route's setSearch takes its own `orderBy` values, and its schema reads any other as its default
+type SetOrderBy = { setSearch(values: { orderBy?: string }): void }['setSearch'];
 
-export const useSortColumns = (sort: SortColumn['columnKey'] | undefined, order: 'asc' | 'desc' | undefined, setSearch: SetSearch) => {
-  const sortColumns: SortColumn[] = sort && order ? [{ columnKey: sort, direction: order === 'asc' ? 'ASC' : 'DESC' }] : [];
+/** The grid's sort column from a list's `orderBy` (`'name desc'`, ascending without a direction), and its writer back. */
+export const useSortColumns = (orderBy: string | undefined, setSearch: SetOrderBy) => {
+  const [columnKey, order = 'asc'] = orderBy?.split(' ') ?? [];
+  const sortColumns: SortColumn[] = columnKey ? [{ columnKey, direction: order === 'asc' ? 'ASC' : 'DESC' }] : [];
 
-  const setSortColumns = (newSortColumns: SortColumn[]) => {
-    if (newSortColumns.length === 0) return setSearch({ sort: undefined, order: undefined });
-    setSearch({ sort: newSortColumns[0].columnKey, order: newSortColumns[0].direction === 'ASC' ? 'asc' : 'desc' });
-  };
+  const setSortColumns = ([first]: SortColumn[]) =>
+    setSearch({ orderBy: first && `${first.columnKey} ${first.direction === 'ASC' ? 'asc' : 'desc'}` });
 
   return { sortColumns, setSortColumns };
 };
