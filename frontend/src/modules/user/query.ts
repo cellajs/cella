@@ -40,7 +40,6 @@ export const usersListQueryOptions = (params: UsersListParams) => {
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
     ...tokenPaging((pageToken, signal) => listUsers({ query: { ...filters, ...pageQuery(limit, pageToken) }, signal })),
-    refetchOnMount: true,
   });
 };
 

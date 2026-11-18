@@ -130,6 +130,7 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
     queryKey: keys.detail.byId(id),
     queryFn: () => getAttachment({ path: { tenantId, organizationId, attachmentId: id } }),
     initialData: () => findAttachmentInCache(id),
+    staleTime: syncStaleTime,
   });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');

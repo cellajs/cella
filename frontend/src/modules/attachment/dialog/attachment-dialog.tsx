@@ -31,7 +31,7 @@ export function AttachmentDialog() {
   const groupAttachments = useGroupAttachments(tenantId, organizationId, groupId);
 
   // Covers a page reload where the list cache is not populated when the dialog opens.
-  const { data: singleAttachment, isFetching: isFetchingSingle } = useQuery({
+  const { data: singleAttachment, isLoading: isLoadingSingle } = useQuery({
     ...attachmentQueryOptions(tenantId ?? '', organizationId ?? '', initialAttachmentId),
     enabled: !!tenantId && !!organizationId && !!initialAttachmentId && !groupAttachments,
   });
@@ -48,7 +48,7 @@ export function AttachmentDialog() {
   const index = resolvedItems.findIndex(({ id }) => id === initialAttachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
-  const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
+  const blocking = isLoading || awaitingContext || awaitingGroup || isLoadingSingle;
   if (blocking && !carouselShown) {
     return (
       <div className="flex h-full items-center justify-center">

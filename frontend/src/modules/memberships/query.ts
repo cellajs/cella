@@ -114,7 +114,6 @@ export const channelInvitationsQueryOptions = (params: ChannelInvitationsListPar
     ...tokenPaging((pageToken, signal) =>
       listInvitations({ query: { ...query, ...pageQuery(limit, pageToken) }, path: { tenantId, organizationId }, signal }),
     ),
-    refetchOnMount: true,
   });
 };
 
