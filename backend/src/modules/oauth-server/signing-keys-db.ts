@@ -3,8 +3,8 @@ import type { JWK } from 'jose';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
-/** `next` is published before it signs anything; `current` signs. */
-const signingKeyStatuses = ['next', 'current'] as const;
+/** `next` is published before it signs anything; `current` signs; `previous` stays published for the tokens it signed. */
+const signingKeyStatuses = ['next', 'current', 'previous'] as const;
 
 /**
  * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens). The private JWK is encrypted
@@ -22,7 +22,7 @@ export const signingKeysTable = snakeCase.table(
     createdAt: timestampColumns.createdAt,
   },
   (table) => [
-    // One signer and one successor at a time, whatever races at first boot or during a rollout.
+    // One key per status at a time, whatever races at first boot or during a rollout.
     uniqueIndex('signing_keys_one_per_status_idx').on(table.status),
   ],
 );

@@ -8,6 +8,10 @@ import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 
 let server: Server | undefined;
+let keyCheckTimer: NodeJS.Timeout | undefined;
+
+/** How often the worker rotates a due keystore and rebuilds its provider when the signing key changed. */
+const keyCheckMs = 60 * 60 * 1000;
 
 /**
  * The authorization server as its own process on the same public origin: the reverse proxy routes
@@ -28,14 +32,34 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
   }
 
   // Loaded here so an app with the server off never loads oidc-provider, which warns about the Node version on import.
-  const [{ ensureSigningKeys }, { createProvider }, { createOauthListener }] = await Promise.all([
+  const [{ currentSigningKeyId, ensureSigningKeys, rotateSigningKeys }, { createProvider }, { createOauthListener }] = await Promise.all([
     import('#/modules/oauth-server/keystore'),
     import('#/modules/oauth-server/provider'),
     import('#/modules/oauth-server/server'),
   ]);
   await ensureSigningKeys();
-  const provider = await createProvider();
-  server = createServer(createOauthListener(provider));
+  await rotateSigningKeys();
+  // Read before the provider loads its keys: a rotation in between costs one extra rebuild, never a missed one.
+  let signerKid = await currentSigningKeyId();
+  let listener = createOauthListener(await createProvider());
+  // Each request runs on the listener of its arrival: a swap leaves requests in flight on the old provider.
+  server = createServer((req, res) => listener(req, res));
+
+  keyCheckTimer = setInterval(async () => {
+    try {
+      // Replaces a signing key whose row was deleted after a leak.
+      await ensureSigningKeys();
+      await rotateSigningKeys();
+      const kid = await currentSigningKeyId();
+      if (kid === signerKid) return;
+      listener = createOauthListener(await createProvider());
+      signerKid = kid;
+      baseLog.info('OAuth provider rebuilt on a new signing key', { kid });
+    } catch (err) {
+      baseLog.error('OAuth signing key check failed', { err });
+    }
+  }, keyCheckMs);
+  keyCheckTimer.unref();
 
   server.listen(port, listenHost(), () => baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`));
 
@@ -53,5 +77,6 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
 
 /** Closes the authorization server's listener: its own process's shutdown, and the API's cleanup under `singleVM`. */
 export function shutdownOauthWorker(): void {
+  clearInterval(keyCheckTimer);
   server?.close();
 }
