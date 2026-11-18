@@ -1,10 +1,15 @@
+import { eq } from 'drizzle-orm';
 import { calculateJwkThumbprint, exportJWK, generateKeyPair, importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import { listAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { ensureSigningKeys, loadSigningJwks } from '#/modules/oauth-server/keystore';
+import { baseDb } from '#/db/db';
+import { ensureSigningKeys, loadSigningJwks, rotateSigningKeys } from '#/modules/oauth-server/keystore';
 import { resourceUri } from '#/modules/oauth-server/resources';
+import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
+import { isoDateAgo } from '#/utils/iso-date';
+import { TimeSpan } from '#/utils/time-span';
 import { adminRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
@@ -26,7 +31,8 @@ async function removedKey(): Promise<SigningKey> {
 
 /**
  * Whoever holds a private signing key mints any token they like. Taking a key out of the keystore is what revokes its
- * tokens: the verifier knows only the `current` and `next` keys.
+ * tokens: the verifier knows only the keys the keystore holds. A rotation keeps the retired signer as `previous`, and
+ * the rotation after it takes that key out.
  */
 describe('signing key rotation', async () => {
   const call = await createAppClient();
@@ -66,5 +72,23 @@ describe('signing key rotation', async () => {
 
   it('still verifies a token signed by the current key (positive control)', async () => {
     expect(await forgedServiceToken(current)).toMatchObject({ status: 200 });
+  });
+
+  /** Makes the next rotation due, as the passing of the rotation period does. */
+  async function ageNextKey() {
+    await baseDb
+      .update(signingKeysTable)
+      .set({ createdAt: isoDateAgo(new TimeSpan(365, 'd')) })
+      .where(eq(signingKeysTable.status, 'next'));
+  }
+
+  it('still verifies a token signed by the retired key after one rotation, not after a second', async () => {
+    await ageNextKey();
+    expect(await rotateSigningKeys()).toBe(true);
+    expect(await forgedServiceToken(current)).toMatchObject({ status: 200 });
+
+    await ageNextKey();
+    expect(await rotateSigningKeys()).toBe(true);
+    expect(await forgedServiceToken(current)).toMatchObject({ status: 401, error: { reason: 'invalid_token' } });
   });
 });

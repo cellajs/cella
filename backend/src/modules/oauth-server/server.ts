@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import process from 'node:process';
 import { getRequestListener } from '@hono/node-server';
 import { RESPONSE_ALREADY_SENT } from '@hono/node-server/utils/response';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { servicePaths } from 'shared';
@@ -13,7 +13,7 @@ import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
 import { type HealthComponent, mapDatabaseComponent, rollupStatus } from '#/lib/health-helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
-import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
+import { currentSigningKeyId } from '#/modules/oauth-server/keystore';
 import { runWithLogContext } from '#/utils/logger';
 
 const oauthMount = servicePaths.oauth;
@@ -26,8 +26,7 @@ async function probeHealth(): Promise<FullHealth> {
   try {
     await baseDb.execute(sql`select 1`);
     components.database = mapDatabaseComponent(true, Date.now() - startedAt);
-    const [key] = await baseDb.select({ id: signingKeysTable.id }).from(signingKeysTable).where(eq(signingKeysTable.status, 'current')).limit(1);
-    signingKey = key !== undefined;
+    signingKey = (await currentSigningKeyId()) !== undefined;
   } catch {
     // The store did not answer, or the key query it reached first did not: reported below.
     components.database ??= mapDatabaseComponent(false, null);

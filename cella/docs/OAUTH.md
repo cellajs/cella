@@ -73,7 +73,7 @@ A change to anything else the grant policy reads, such as the user row, counts a
 
 ## Keystore
 
-`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live. `current` signs, and `next` is published ahead of use. No job rotates them.
+`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Of the three live keys, `current` signs, `next` is published ahead of use, and `previous` stays published for the tokens it signed before the last rotation. The keys rotate on a schedule while the authorization server runs, with no restart. Deleting a leaked key's row revokes every token it signed. The authorization server replaces it at its next key check, or at once after a restart.
 
 ## Store and sweep
 
