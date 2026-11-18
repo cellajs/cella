@@ -17,7 +17,7 @@ import {
   syncChunkSize,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import type { ItemData, RoutableItemData } from '~/query/basic/types';
+import type { ItemData } from '~/query/basic/types';
 import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
@@ -115,9 +115,8 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
     writeKeepingMark<ItemData>(queryClient, keys.detail.byId(row.id), (old) => old && { ...old, ...guarded });
   }
 
-  const route = (row: ItemData): RoutableItemData => ({ ...row, entityType, organizationId });
   // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
-  const { seen, spliced, sawFilteredList } = spliceEntitiesIntoListCaches(queryClient, [...tombstones, ...live].map(route), {
+  const { seen, spliced, sawFilteredList } = spliceEntitiesIntoListCaches(queryClient, entityType, organizationId, [...tombstones, ...live], {
     isRemoved: isSoftDeleted,
     removeOnParentChannelChange: true,
     rowFor: (entity, cachedItem) => guardYjsOwnedFields(entityType, entity, cachedItem ?? references.get(entity.id)),
@@ -126,7 +125,7 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (!sawFilteredList) {
     for (const row of live) {
-      const homeChannelId = hierarchy.resolveDeepestAncestorId(entityType, route(row));
+      const homeChannelId = hierarchy.resolveDeepestAncestorId(entityType, row);
       if (!homeChannelId || seen.has(row.id) || spliced.has(row.id)) continue;
       console.warn(
         `[CacheOps] New ${entityType} row ${row.id} reached no list cache: ` +

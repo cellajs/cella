@@ -1,11 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type EntityType, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { type ListChanges, writeKeepingMark, writeListChanges } from '~/query/basic/cache-mutations';
 import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
+import type { ItemData, OrgRoutableItemData } from '~/query/basic/types';
 
 /** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
 export const matchesCanonicalHome = (queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean =>
@@ -39,21 +39,20 @@ interface SpliceResult {
  */
 export function spliceEntitiesIntoListCaches(
   queryClient: QueryClient,
-  entities: RoutableItemData[],
+  entityType: EntityType,
+  organizationId: string,
+  entities: ItemData[],
   options: {
-    isRemoved?: (entity: RoutableItemData) => boolean;
+    isRemoved?: (entity: ItemData) => boolean;
     removeOnParentChannelChange?: boolean;
-    rowFor?: (entity: RoutableItemData, cachedItem: ItemData | undefined) => ItemData;
+    rowFor?: (entity: ItemData, cachedItem: ItemData | undefined) => ItemData;
   } = {},
 ): SpliceResult {
   const { isRemoved, removeOnParentChannelChange = false, rowFor = (entity) => entity } = options;
   const result: SpliceResult = { seen: new Set(), spliced: new Set(), sawFilteredList: false };
-  const [first] = entities;
-  if (!first) return result;
+  if (entities.length === 0) return result;
 
-  const { entityType, organizationId = null } = first;
-  const keys = getEntityQueryKeys(entityType);
-  const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
+  const listPrefix = getEntityQueryKeys(entityType).list.org(organizationId);
   const homed = entities.map((entity) => ({ entity, homeChannelId: hierarchy.resolveDeepestAncestorId(entityType, entity) }));
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
@@ -70,7 +69,7 @@ export function spliceEntitiesIntoListCaches(
       } else if (cachedItem) {
         result.seen.add(entity.id);
         changes.update.push(rowFor(entity, cachedItem));
-      } else if (organizationId && homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId)) {
+      } else if (homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId)) {
         result.spliced.add(entity.id);
         changes.create.push(rowFor(entity, undefined));
       }
@@ -87,7 +86,7 @@ export function spliceEntitiesIntoListCaches(
  */
 export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
   for (const entity of entities) {
-    spliceEntitiesIntoListCaches(queryClient, [entity]);
+    spliceEntitiesIntoListCaches(queryClient, entity.entityType, entity.organizationId, [entity]);
     writeKeepingMark<ItemData>(queryClient, getEntityQueryKeys(entity.entityType).detail.byId(entity.id), (cached) => cached && entity);
   }
 }
