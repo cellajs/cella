@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types.ts';
+import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, EntityType } from '../../../types.ts';
 import type { PublicReadGrants } from '../public-read.ts';
 import type { HierarchyOverrides } from './resolve-hierarchy.ts';
 
@@ -15,7 +15,8 @@ export interface AccessMembership {
 }
 
 export type SubjectForPermission = {
-  entityType: ChannelEntityType | ProductEntityType;
+  /** `user`: a person seen through one membership row, its ancestor ids those of the row's channel. @see build-subject.ts */
+  entityType: EntityType;
   id?: string;
   /** Creator ID used by the built-in `own` condition. */
   createdBy?: string | null;

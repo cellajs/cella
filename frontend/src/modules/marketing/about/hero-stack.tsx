@@ -64,7 +64,7 @@ const openCode = numbered([
       'listOrganizations: xRoute({',
       "  method: 'get',",
       "  path: '/',",
-      '  xGuard: [userGuard, relatableGuard],',
+      '  xGuard: [userGuard],',
       '  request: {',
       '    query: organizationListQuerySchema,',
       '  },',

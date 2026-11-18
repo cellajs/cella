@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types.ts';
+import type { ChannelEntityType, EntityActionType, EntityType } from '../../../types.ts';
 import { appConfig } from '../../config-builder/app-config.ts';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import { allActionsAllowed, allActionsDenied } from '../action-helpers.ts';
@@ -39,7 +39,7 @@ export const getMembershipIndex = <T extends AccessMembership>(memberships: T[])
 };
 
 /** Indexes one entity type's policies by channel type and role. */
-export const buildPolicyIndex = (policies: PolicyMatrix, entityType: ChannelEntityType | ProductEntityType): PolicyIndex => {
+export const buildPolicyIndex = (policies: PolicyMatrix, entityType: EntityType): PolicyIndex => {
   const index: PolicyIndex = new Map();
   const entityPolicies = policies[entityType] ?? [];
   for (const policy of entityPolicies) index.set(`${policy.channelType}:${policy.role}`, policy.permissions);
@@ -56,9 +56,9 @@ export const getSubjectChannelId = (subject: SubjectForPermission, channelType: 
 
 /**
  * One subject's decision from prebuilt membership and policy indexes, reading memberships on `orderedChannels` (most
- * specific first). Named row conditions are matched against the subject's row fields. A product grant reaches only
- * rows homed at its channel unless `hierarchy.elevatedGrants` holds its `${channelType}:${role}`; a channel subject
- * counts every grant above it.
+ * specific first). Named row conditions are matched against the subject's row fields. A product or `user` grant reaches
+ * only rows homed at its channel unless `hierarchy.elevatedGrants` holds its `${channelType}:${role}`; a channel
+ * subject counts every grant above it.
  */
 export const checkWithIndices = <T extends AccessMembership>(
   membershipIndex: MembershipIndex<T>,
@@ -82,8 +82,9 @@ export const checkWithIndices = <T extends AccessMembership>(
   const conditionRow = conditionRowOf(subject);
   const conditionActor: ConditionActor = { actorId };
 
-  const isProductSubject = subject.entityType !== primaryChannel;
-  const homeChannel = isProductSubject ? orderedChannels.find((channelType) => getSubjectChannelId(subject, channelType)) : undefined;
+  // A product or `user` subject lies at a home channel; a channel subject is its own.
+  const isHomedSubject = subject.entityType !== primaryChannel;
+  const homeChannel = isHomedSubject ? orderedChannels.find((channelType) => getSubjectChannelId(subject, channelType)) : undefined;
 
   for (const channelType of orderedChannels) {
     if (hierarchy.getRoles(channelType).length === 0) {
@@ -97,7 +98,7 @@ export const checkWithIndices = <T extends AccessMembership>(
       const permissions = policyIndex.get(`${channelType}:${held.role}`);
       // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
-      if (isProductSubject && channelType !== homeChannel && !hierarchy.elevatedGrants.has(`${channelType}:${held.role}`)) continue;
+      if (isHomedSubject && channelType !== homeChannel && !hierarchy.elevatedGrants.has(`${channelType}:${held.role}`)) continue;
 
       for (const action of appConfig.entityActions) {
         const policyValue = permissions[action];
@@ -145,7 +146,7 @@ export function getAllDecisions<T extends AccessMembership>(
   const engineOptions = options ?? {};
 
   // Built once per entity type of the call: its policy index and the channels its memberships sit on.
-  const perEntityType = new Map<ChannelEntityType | ProductEntityType, { policyIndex: PolicyIndex; channels: ChannelEntityType[] }>();
+  const perEntityType = new Map<EntityType, { policyIndex: PolicyIndex; channels: ChannelEntityType[] }>();
   const decide = (subject: SubjectForPermission): PermissionDecision<T> => {
     let indexes = perEntityType.get(subject.entityType);
     if (!indexes) {

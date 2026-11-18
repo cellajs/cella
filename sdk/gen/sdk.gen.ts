@@ -2298,7 +2298,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get list of members
  *
- * Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.
+ * Retrieves members (users) of a channel entity by ID, including their associated membership data, for a caller whose roles read the channel's people. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/members** ·· [listMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/members) ·· _memberships · cella_
  *
@@ -2330,7 +2330,7 @@ export const listMembers = <ThrowOnError extends boolean = true>(
 /**
  * Get list of invitations
  *
- * Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
+ * Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it and whose roles read its people: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/invitations** ·· [listInvitations](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/invitations) ·· _memberships · cella_
  *
@@ -2589,7 +2589,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
 /**
  * Get list of organizations
  *
- * Returns a list of organizations across tenants: the `-` tenant reads every tenant.
+ * Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `memberUserId` it lists that user's organizations where the caller sees them.
  *
  * **GET /tenants/-/organizations** ·· [listOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/tenants/-/organizations) ·· _organizations · cella · channel_
  *
@@ -2599,7 +2599,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
- * @param {string=} options.query.relatableUserId - `string` (optional)
+ * @param {string=} options.query.memberUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum | boolean=} options.query.excludeHidden - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
@@ -3191,7 +3191,7 @@ export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
 /**
  * Get user
  *
- * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.
+ * Retrieves a user by ID. The requesting user's roles must let it see the user, through one of the user's memberships. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.
  *
  * **GET /users/{userId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/{userId}) ·· _users · cella_
  *
@@ -3199,7 +3199,7 @@ export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.userId - `string`
  * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(
   options: Options<GetUserData, ThrowOnError>,

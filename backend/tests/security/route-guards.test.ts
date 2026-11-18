@@ -148,15 +148,6 @@ describe('Route guards', async () => {
     expect(stale, 'these routesWithoutLimiter entries name a route that has a limiter now, or no route: drop them').toEqual([]);
   });
 
-  it('must not list or read by another user without the guard that relates the caller to that user', () => {
-    // A system admin reads any user, so a route behind sysAdminGuard names one without the relation.
-    const relatable = operations.filter(
-      ({ parameters, guards }) => parameters.includes('relatableUserId') || (parameters.includes('userId') && !guards.includes('sysAdminGuard')),
-    );
-    expect(relatable.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getUser', 'listOrganizations']));
-    for (const operation of relatable) expect(operation.guards, nameOf(operation)).toContain('relatableGuard');
-  });
-
   it('must not answer an organization member with a server error, whatever the ids name', async () => {
     // A route that reads a scope its guard chain never set fails here before it reads a row: its guards let the member
     // in, and the ids beyond the tenant and the organization name nothing. This reaches the handler of a read and of a

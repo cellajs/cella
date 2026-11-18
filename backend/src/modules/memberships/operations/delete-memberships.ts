@@ -5,17 +5,21 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
+import { assertReadsPeople } from '#/permissions/visible-people';
 import type { channelRefSchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
 type DeleteMembershipsInput = z.infer<typeof channelRefSchema> & { userIds: string[] };
 
 /**
- * Deletes the channel's memberships of these users, which needs `delete` on it; a user id without one comes back rejected.
+ * Deletes the channel's memberships of these users, which needs `delete` on it and the read of its people; a user id
+ * without one comes back rejected.
+ * @throws AppError 403 `forbidden` (`entityType: 'user'`) when the actor's roles do not read the channel's people.
  * @throws AppError 403 `role_exceeds_actor` when one of them outranks the actor (`assertRoleGrant`): nobody is removed.
  */
 export async function deleteMembershipsOp(ctx: UserContext, { userIds, channelId, channelType }: DeleteMembershipsInput) {
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'delete');
+  assertReadsPeople(ctx, channelType, entity);
 
   const targets = await findMembershipsByUserIdsAndChannel(ctx, { userIds, channelId: entity.id });
   const rejectedIds = userIds.filter((id) => !targets.some((target) => target.userId === id));

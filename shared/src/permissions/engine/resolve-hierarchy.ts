@@ -17,7 +17,8 @@ export interface ResolvedHierarchy {
   getRoles: (type: string) => readonly EntityRole[];
   /**
    * The channels whose memberships decide on an entity type, most specific first: a channel itself, then its
-   * ancestors; a product only its ancestors. The first entry is the primary channel for membership capture.
+   * ancestors; a product only its ancestors; `user` every channel, since a membership row lies in any of them. The
+   * first entry is the primary channel for membership capture.
    */
   orderedChannels: (entityType: string) => ChannelEntityType[];
 }
@@ -34,6 +35,8 @@ export const resolveHierarchy = (overrides?: HierarchyOverrides): ResolvedHierar
     channelEntityTypes: overrides?.hierarchy ? h.channelTypes : appConfig.channelEntityTypes,
     getRoles: h.getRoles,
     orderedChannels: (entityType) => {
+      // Parents are declared before their children: reversed, every channel comes before its ancestors.
+      if (h.getKind(entityType) === 'user') return [...h.channelTypes].reverse();
       const ancestors = h.getOrderedAncestors(entityType);
       return h.isChannel(entityType) ? [entityType, ...ancestors] : [...ancestors];
     },

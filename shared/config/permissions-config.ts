@@ -16,5 +16,10 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
       // 'own': members manage what they created; admins manage everything
       channels.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
       break;
+    case 'user':
+      // Whom a role sees: the people whose membership rows lie where it reads. Both roles see the whole organization.
+      channels.organization.admin({ read: 1 });
+      channels.organization.member({ read: 1 });
+      break;
   }
 });

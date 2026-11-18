@@ -6,20 +6,14 @@ import type { AccessMembership, SubjectForPermission } from './types.ts';
  * hierarchy, possibly synthetic, so a subject whose entity type exists only in a fixture still validates.
  * @throws Error naming `Subject[index]`
  */
-export const validateSubject = (
-  subject: SubjectForPermission,
-  index: number | undefined,
-  entityGuards: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
-): void => {
+export const validateSubject = (subject: SubjectForPermission, index: number | undefined, entityGuards: Pick<EntityHierarchy, 'getKind'>): void => {
   const prefix = index !== undefined ? `Subject[${index}]` : 'Subject';
 
   if (!subject.entityType) {
     throw new Error(`[Permission] ${prefix} missing entityType`);
   }
 
-  const isChannel = entityGuards.isChannel(subject.entityType);
-  const isProduct = entityGuards.isProduct(subject.entityType);
-  if (!isChannel && !isProduct) {
+  if (!entityGuards.getKind(subject.entityType)) {
     throw new Error(`[Permission] ${prefix} has invalid entityType: ${subject.entityType}`);
   }
 

@@ -212,7 +212,8 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   and `insertEntityLock` before the limiter; read and update (`patch`) at `/{<name>Id}` with
   `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
   `/tenants/:tenantId/organizations/:organizationId/<name>s`; the user's list across organizations at `/`
-  with `[userGuard, relatableGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`.
+  with `[userGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`, where another user's list
+  (`memberUserId`) keeps to the organizations in which the caller sees them, as `getOrganizationsOp` does.
   The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`. When no sent value differs
   from the locked row (`filterNoOpFields`), the operation calls `assertPreconditionsChecked` and returns that row,
   as `updateOrganization` does.

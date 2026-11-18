@@ -28,7 +28,7 @@ export interface AccessScopes {
  * scopes; a key or token still holding the old name fails closed (403, like any denied action).
  */
 export const deriveAccessScopes = (policyMatrix: PolicyMatrix): AccessScopes => {
-  const types = Object.keys(policyMatrix) as AccessScopedEntityType[];
+  const types = Object.keys(policyMatrix).filter((type): type is AccessScopedEntityType => type !== 'user');
   const all: AccessScopes['all'] = types.flatMap((type) => scopeVerbs.map((verb): AccessScope => `${type}:${verb}`));
   const known = new Set<string>(all);
   const required: AccessScopes['required'] = (type, action) => `${type}:${action === 'read' ? 'read' : 'write'}`;

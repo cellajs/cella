@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, EntityType } from '../../types.ts';
 
 /**
  * Raised by `validateAncestorScope` when a required ancestor channel id is `undefined`. Each tier
@@ -6,11 +6,11 @@ import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
  * relay to a WebSocket close (`4400`).
  */
 export class MissingAncestorError extends Error {
-  readonly entityType: ChannelEntityType | ProductEntityType;
+  readonly entityType: EntityType;
   readonly missingChannel: ChannelEntityType;
   readonly missingKey: string;
 
-  constructor(entityType: ChannelEntityType | ProductEntityType, missingChannel: ChannelEntityType, missingKey: string) {
+  constructor(entityType: EntityType, missingChannel: ChannelEntityType, missingKey: string) {
     super(`[Permission] ${entityType} missing required ancestor for ${missingChannel} (${missingKey})`);
     this.name = 'MissingAncestorError';
     this.entityType = entityType;

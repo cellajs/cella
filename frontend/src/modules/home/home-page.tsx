@@ -26,7 +26,7 @@ export function HomePage() {
   const user = useCurrentUser();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const { data: invitations } = useQuery(meInvitationsQueryOptions());
-  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ memberUserId: user.id }));
 
   const sections = resolvePlacementList(slot, getTools(slot));
   const isOrganizationAdmin = !!myMemberships?.results.some(

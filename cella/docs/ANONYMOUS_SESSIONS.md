@@ -23,7 +23,7 @@ The row keeps its placeholder, so the unique `email` column holds. The API never
 
 A session's memberships bind it to its tenants, and `tenantGuard` keeps it there: an anonymous account is a member of what its flow made it a member of, and of nothing else.
 
-Every other route that authenticates a session, one with `userGuard` and no tenant guard, refuses an anonymous one with 403 `anonymous_session_restricted` unless the route carries `xAnonymous: true`, documented as `x-anonymous`. `createXRoute` puts the gate right after the guard that authenticates the session, ahead of `stepUpGuard`, `sysAdminGuard` and `relatableGuard`. Whatever comes next, the refusal is the same.
+Every other route that authenticates a session, one with `userGuard` and no tenant guard, refuses an anonymous one with 403 `anonymous_session_restricted` unless the route carries `xAnonymous: true`, documented as `x-anonymous`. `createXRoute` puts the gate right after the guard that authenticates the session, ahead of `stepUpGuard` and `sysAdminGuard`. Whatever comes next, the refusal is the same.
 
 The rule for admitting a route:
 

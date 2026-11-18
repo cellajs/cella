@@ -29,7 +29,7 @@ export type QueryOptionsWithKey = { queryKey: readonly unknown[] };
 export interface ChannelListParams {
   q?: string;
   /** Channels this user is a member of. */
-  relatableUserId?: string;
+  memberUserId?: string;
   /** Channels below this organization. */
   organizationId?: string;
 }

@@ -10,7 +10,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// Member previews list the organization's top role, so the viewer holds it to appear in one.
+// Member previews list the organization's top role: the viewer holds it to appear in one.
 const [previewedRole] = hierarchy.getRoles('organization');
 
 type OrgList = {
@@ -20,17 +20,17 @@ type OrgList = {
 
 /**
  * A profile lists the organizations a user is a member of. Viewing another user's profile shows only the organizations
- * the viewer shares with them: the target's membership elsewhere, in another tenant, is not the viewer's to see.
+ * in which the viewer sees them: the target's membership elsewhere, in another tenant, is not the viewer's to see.
  */
-describe('Organizations of another user (relatableUserId)', async () => {
+describe("Another user's organizations, where the caller sees them (memberUserId)", async () => {
   const call = await createAppClient();
   let shared: { id: string; tenantId: string };
   let foreign: { id: string; tenantId: string };
   let target: { id: string; sessionCookie: string };
   let viewer: { id: string; email: string; sessionCookie: string };
 
-  const listAs = (as: { sessionCookie: string }, relatableUserId: string) =>
-    call(listOrganizations, { query: { relatableUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+  const listAs = (as: { sessionCookie: string }, memberUserId: string) =>
+    call(listOrganizations, { query: { memberUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
 
   beforeAll(async () => {
     shared = await createTestOrganization();
@@ -52,7 +52,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     hidden = false,
   ) => insertOrgMembership(userId, org, { role, displayOrder, hidden });
 
-  it("must not list another tenant's organization via relatableUserId", async () => {
+  it("must not list another tenant's organization via memberUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);
     expect(response.status).toBe(200);
     const { results: items, totalSize: total } = data as OrgList;
@@ -74,27 +74,24 @@ describe('Organizations of another user (relatableUserId)', async () => {
     expect((asAdmin.data as OrgList).results.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
   });
 
-  it('must not pass a malformed relatableUserId to the database', async () => {
+  it('must not pass a malformed memberUserId to the database', async () => {
     const { baseApp } = await import('#/routes');
     // Raw requests: the SDK validates the query itself and would throw before the server is reached.
-    const listRaw = (as: { sessionCookie: string }, relatableUserId: string) =>
-      baseApp.request(`/tenants/-/organizations?${new URLSearchParams({ relatableUserId })}`, {
+    const listRaw = (as: { sessionCookie: string }, memberUserId: string) =>
+      baseApp.request(`/tenants/-/organizations?${new URLSearchParams({ memberUserId })}`, {
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
 
-    // Another user named by anything but a user id relates to nobody: the guard refuses before any query.
+    // The query schema refuses anything but a user id before any query, the user's own slug and a system admin alike.
     const junk = await listRaw(viewer, 'not-a-user-id');
-    await expectRefusal(junk, 403, 'forbidden');
-
-    // Callers the guard lets through, the user by their own slug and a system admin, meet the query schema.
     const [viewerRow] = await getUserByEmail(viewer.email);
     const ownSlug = await listRaw(viewer, viewerRow.slug);
     const sysAdmin = await createSystemAdminUser('relatable-malformed-sysadmin@security-test.com');
     const asAdmin = await listRaw({ sessionCookie: await createTestSession(sysAdmin) }, 'not-a-user-id');
-    for (const answer of [ownSlug, asAdmin]) await expectRefusal(answer, 400, 'form.invalid_format');
+    for (const answer of [junk, ownSlug, asAdmin]) await expectRefusal(answer, 400, 'form.invalid_format');
   });
 
-  it("must not filter another user's list by their hidden rows or role via relatableUserId", async () => {
+  it("must not filter another user's list by their hidden rows or role via memberUserId", async () => {
     // Two more organizations the viewer shares with the target, named against the target's menu order.
     const alpha = await createTestOrganization({ name: 'Alpha shared' });
     const bravo = await createTestOrganization({ name: 'Bravo shared' });
@@ -109,7 +106,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
-      call(listOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+      call(listOrganizations, { query: { memberUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     const idsOf = (data: unknown) => (data as OrgList).results.map((org) => org.id).filter((id) => pair.includes(id));
 
     // The listed user's hidden rows and role are not the viewer's to filter on: refused, never dropped.

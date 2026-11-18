@@ -9,8 +9,11 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import type { MeUser } from '~/modules/me/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 
-/** A grant a consumer passes: an entity action, or `archive`, the update grant on a channel whatever its archived state. */
-export type PlacementGrant = EntityActionType | 'archive';
+/**
+ * A grant a consumer passes: an entity action, `archive`, the update grant on a channel whatever its archived state, or
+ * `people`, the read of the channel's people.
+ */
+export type PlacementGrant = EntityActionType | 'archive' | 'people';
 
 /** Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via `staticData.navTab`. */
 export interface PlacementDescriptor {

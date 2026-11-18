@@ -137,15 +137,17 @@ export const defaultNavTabPath = (parentRouteId: string, options?: ResolvePlacem
   resolveNavTabs(parentRouteId, options)[0]?.path;
 
 /**
- * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, and a tab that
- * `surfaces` or the channel arrangement hides, to the landing tab. It reads only the arrangement layers ({@link isPlacementHidden}),
- * never `requires`/`visibleTo`, whose inputs may still be loading; {@link useNavTabRedirect} covers changes while on a tab.
+ * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, a tab that
+ * `surfaces` or the channel arrangement hides ({@link isPlacementHidden}), and a tab whose `requires` the caller's `grants`
+ * lack, to the landing tab, or to the layout's own path when no tab is left. Without `grants` (the memberships could not
+ * be read) it leaves `requires` to the server, and it never reads `visibleTo`; {@link useNavTabRedirect} covers changes
+ * while on a tab.
  * @throws A replacing redirect that keeps params and hash. It keeps a bare parent's search and drops a hidden tab's own sort and filters.
  */
 export function guardNavTabs(
   matches: readonly { routeId: string; fullPath: string; params: unknown }[],
   parentRouteId: string,
-  options: Pick<ResolvePlacementOptions, 'slotConfig'> = {},
+  options: Pick<ResolvePlacementOptions, 'slotConfig' | 'grants'> = {},
 ): void {
   const deepest = matches[matches.length - 1];
   if (!deepest) return;
@@ -157,15 +159,19 @@ export function guardNavTabs(
   let needsLanding = fromBareParent;
   if (!needsLanding) {
     const target = findActiveTab(getNavTabCandidates(parentRouteId), toolParam(deepest.params), deepest.fullPath);
-    needsLanding = target !== undefined && isPlacementHidden(slot, target, options);
+    const ungranted = !!target?.requires && !!options.grants && !options.grants.includes(target.requires);
+    needsLanding = target !== undefined && (isPlacementHidden(slot, target, options) || ungranted);
   }
   if (!needsLanding) return;
 
   // The landing tab is the first one this surface resolves: the app's `surfaces` order sets it.
   const landing = resolveNavTabs(parentRouteId, options)[0];
-  if (!landing) return;
+  if (landing) throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
 
-  throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
+  // No tab is left: a refused tab goes to the layout itself, which this guard then lets through, never in a loop.
+  // Cast: a route's fullPath is a plain string; link paths are the loose LinkComponentProps, as for the tabs above.
+  const layoutPath = getRoutesById()[parentRouteId]?.fullPath as PageTab['path'] | undefined;
+  if (!fromBareParent && layoutPath) throw redirect({ to: layoutPath, params: true, search: {}, replace: true, hash: true });
 }
 
 /**

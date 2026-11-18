@@ -34,7 +34,7 @@ export async function getMenuData() {
     appConfig.channelEntityTypes.map(async (entityType) => {
       const listQuery = getChannelListQuery(entityType);
       if (!listQuery) return;
-      const options = { ...listQuery({ relatableUserId: userId }), pages: menuListPages };
+      const options = { ...listQuery({ memberUserId: userId }), pages: menuListPages };
       await coldRead(queryClient.infiniteQuery({ ...options, staleTime: 'static' }));
       void queryClient.infiniteQuery(options).catch(() => {});
     }),

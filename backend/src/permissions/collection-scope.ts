@@ -1,6 +1,5 @@
 import {
   type Access,
-  accessScopes,
   type ChannelEntityType,
   publicReadGrants as configuredPublicReadGrants,
   type EntityHierarchy,
@@ -13,6 +12,7 @@ import {
   policyMatrix,
   type RowConditionName,
   resolveHierarchy,
+  scopeAllows,
 } from 'shared';
 import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -51,15 +51,16 @@ export const hasNoReadScope = (filter: CollectionReadFilter): boolean => !filter
  * elevated role reads its channel's whole subtree, at the organization the whole organization; any other grant reads
  * the rows homed at its channel. A row-condition cell (`read: 'own'`) contributes a conditional scope, so the role can
  * still list, and public read joins as an organization-wide `'public'` scope.
- * @param ancestors - Most specific first, ending at the organization: `[project, course, organization]`.
+ * @param channels - Where a row may be homed, most specific first, ending at the organization: a product's ancestors
+ * (`[project, course, organization]`), or for `user` every channel, each before its ancestors.
  */
 const resolveScopes = (
   policies: PolicyMatrix,
   memberships: ActorBinding[],
-  entityType: ProductEntityType,
+  entityType: ProductEntityType | 'user',
   organizationId: string,
   elevatedGrants: ReadonlySet<string>,
-  ancestors: readonly ChannelEntityType[],
+  channels: readonly ChannelEntityType[],
   publicGrants: PublicReadGrants,
 ): CollectionReadFilter => {
   const entityPolicies = getEntityPolicies(policies, entityType);
@@ -67,7 +68,7 @@ const resolveScopes = (
   const byKey = new Map<string, ReadScope>();
   const add = (channelType: ChannelEntityType, channelId: string, condition?: RowConditionName, homeOnly = false) => {
     const key = `${channelType}:${condition ?? ''}:${homeOnly}`;
-    const deeperChannels = homeOnly ? ancestors.slice(0, ancestors.indexOf(channelType)) : [];
+    const deeperChannels = homeOnly ? channels.slice(0, channels.indexOf(channelType)) : [];
     const scope = byKey.get(key) ?? {
       channelType,
       channelIds: [],
@@ -84,11 +85,11 @@ const resolveScopes = (
     const inOrganization =
       level === 'organization'
         ? membership.channelId === organizationId
-        : membership.organizationId === organizationId && !!membership.channelId && ancestors.includes(level);
+        : membership.organizationId === organizationId && !!membership.channelId && channels.includes(level);
     if (!inOrganization) continue;
 
     const read = getPolicyPermissions(entityPolicies, level, membership.role)?.read ?? 0;
-    const homeOnly = level !== ancestors[0] && !elevatedGrants.has(`${level}:${membership.role}`);
+    const homeOnly = level !== channels[0] && !elevatedGrants.has(`${level}:${membership.role}`);
     if (read === 1 && level === 'organization' && !homeOnly) return { orgWide: true, scopes: [] };
     if (read === 1) add(level, membership.channelId, undefined, homeOnly);
     else if (isRowCondition(read)) add(level, membership.channelId, read, homeOnly);
@@ -100,27 +101,28 @@ const resolveScopes = (
 };
 
 /**
- * Scope filter for a product collection read: what the caller's bindings let it read in one organization.
+ * Scope filter for a product collection read, or for `user` the membership rows whose people the caller sees: what the
+ * caller's bindings let it read in one organization.
  * @param requested - Home-channel narrowing from the request; without it the read aggregates over the readable scope.
  * @throws AppError 404 `not_found` when a requested home channel is outside the caller's readable scope.
  */
 export const resolveCollectionReadFilter = (
   access: Access<ActorBinding>,
-  entityType: ProductEntityType,
+  entityType: ProductEntityType | 'user',
   organizationId: string,
   requested?: { homeChannelId?: string; homeChannelIds?: string[] },
   rules: ReadRules = {},
 ): CollectionReadFilter => {
   const { policies = policyMatrix, publicGrants = configuredPublicReadGrants } = rules;
-  const { hierarchy } = resolveHierarchy(rules);
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
+  const { hierarchy, orderedChannels } = resolveHierarchy(rules);
+  const channels = orderedChannels(entityType);
   // The product's parent: where a requested home channel and the narrowed scopes compare.
-  const homeLevel = ancestors[0];
+  const homeLevel = channels[0];
   const atHome = (channelIds: string[], condition?: RowConditionName): ReadScope[] =>
     channelIds.length === 0 ? [] : [{ channelType: homeLevel, channelIds, ...(condition && { condition }) }];
 
   // A scoped API key or token that lacks the `<type>:read` access scope reads nothing, sysadmin or not.
-  if (!('visitor' in access) && !accessScopes.allows(access.scopes, entityType, 'read')) return { orgWide: false, scopes: [] };
+  if (!scopeAllows(access, entityType, 'read')) return { orgWide: false, scopes: [] };
 
   // Administrator short-circuit, matching the engine: they may pass the guard without a membership.
   if (!('visitor' in access) && access.isSystemAdmin) {
@@ -131,7 +133,7 @@ export const resolveCollectionReadFilter = (
   }
 
   const memberships = 'visitor' in access ? [] : access.memberships;
-  const filter = resolveScopes(policies, memberships, entityType, organizationId, hierarchy.elevatedGrants, ancestors, publicGrants);
+  const filter = resolveScopes(policies, memberships, entityType, organizationId, hierarchy.elevatedGrants, channels, publicGrants);
   if (!requested || (requested.homeChannelId === undefined && requested.homeChannelIds === undefined)) return filter;
 
   const homeGranted = filter.scopes.filter((scope) => scope.channelType === homeLevel && !scope.condition && !scope.deeperChannels);

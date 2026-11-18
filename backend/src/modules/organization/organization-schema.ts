@@ -123,7 +123,7 @@ export const organizationUpdateBodySchema = organizationContract.updateBodySchem
 
 export const organizationListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['id', 'name', 'createdAt', 'displayOrder'], 'displayOrder asc'),
-  relatableUserId: validUuidSchema.optional(),
+  memberUserId: validUuidSchema.optional().describe('Lists the organizations in which this user is a member and the caller sees them.'),
   role: z.enum(roles.all).optional(),
   excludeHidden: booleanTransformSchema,
   include: includeQuerySchema,

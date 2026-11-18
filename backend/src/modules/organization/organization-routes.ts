@@ -1,5 +1,5 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { actorGuard, relatableGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { actorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -32,12 +32,13 @@ export const organizationRoutes = createXRoutes(['organizations', 'cella', 'chan
   listOrganizations: xRoute({
     method: 'get',
     path: '/',
-    xGuard: [userGuard, relatableGuard],
+    xGuard: [userGuard],
     xAnonymous: true,
     summary: 'Get list of organizations',
-    description: 'Returns a list of organizations across tenants: the `-` tenant reads every tenant.',
+    description:
+      "Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `memberUserId` it lists that user's organizations where the caller sees them.",
     request: { query: organizationListQuerySchema },
-    responses: { 200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()) },
+    responses: { 200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()), ...errors(403) },
   }),
   getOrganization: xRoute({
     method: 'get',

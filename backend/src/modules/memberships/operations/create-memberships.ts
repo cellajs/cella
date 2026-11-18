@@ -17,6 +17,7 @@ import { takeInvitationMails } from '#/modules/memberships/operations/take-invit
 import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
+import { assertReadsPeople } from '#/permissions/visible-people';
 import type { channelRefSchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
@@ -25,7 +26,7 @@ type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.inf
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
 /**
- * Invites each address as its plan says: a new invitation, the earlier one sent again (a higher role replaces a lower
+ * Invites each address as its plan says, for an inviter who may update the channel and read its people: a new invitation, the earlier one sent again (a higher role replaces a lower
  * one), an organization member added at once, or a declined invitation or a member left out.
  * An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done. Returns
  * what happened to each address.
@@ -37,6 +38,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
   if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType: channelType });
 
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
+  assertReadsPeople(ctx, channelType, entity);
   assertTenantInvites(ctx.var.tenant);
 
   // The memberships an accept brings along above the channel are checked here too: the accept has no inviter to ask.

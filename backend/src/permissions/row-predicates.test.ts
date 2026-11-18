@@ -372,10 +372,12 @@ interface DeepScenario {
   policies: PolicyMatrix;
   memberships: MembershipBaseModel[];
   userId: string | undefined;
+  /** `item` by default; `user` reads the rows as membership rows, whose people a role sees. */
+  entityType?: ProductEntityType | 'user';
 }
 
-/** An anonymous scenario holds no memberships, as the `Access` union has it. */
-const randomDeepScenario = (random: () => number): DeepScenario => {
+/** An anonymous scenario holds no memberships, as the `Access` union has it. A `user` cell is 0 or 1 alone. */
+const randomDeepScenario = (random: () => number, entityType: ProductEntityType | 'user' = deepItem): DeepScenario => {
   const memberships: MembershipBaseModel[] = [];
   if (random() < 0.5) memberships.push(deepMembership('organization', rootId, pick(random, deepChannelRoles.organization)));
   if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, deepChannelRoles.course)));
@@ -383,14 +385,15 @@ const randomDeepScenario = (random: () => number): DeepScenario => {
   if (random() < 0.5) memberships.push(deepMembership('courseSection', 's1', pick(random, deepChannelRoles.courseSection)));
   if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, deepChannelRoles.project)));
   if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, deepChannelRoles.project)));
-  const policies = deepPolicies(() => randomReadValue(random));
+  const readValue = () => (entityType === 'user' ? pick(random, [0, 1] as const) : randomReadValue(random));
+  const policies = deepPolicies(readValue, undefined, entityType === 'user' ? 'user' : 'item');
   const userId = random() < 0.9 ? pick(random, users) : undefined;
-  return { policies, memberships: userId === undefined ? [] : memberships, userId };
+  return { policies, memberships: userId === undefined ? [] : memberships, userId, entityType };
 };
 
-const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
+const deepRowSubject = (row: DeepParityRow, entityType: ProductEntityType | 'user' = deepItem): SubjectForPermission =>
   ({
-    entityType: 'item',
+    entityType,
     id: row.id,
     createdBy: row.createdBy,
     channelIds: { organization: rootId, course: row.courseId, courseSection: row.courseSectionId, project: row.projectId },
@@ -399,7 +402,7 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
 const deepEngineReadableIds = (scenario: DeepScenario, deepHierarchy: EntityHierarchy): Set<string> => {
   const readable = new Set<string>();
   for (const row of deepRows) {
-    const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row), {
+    const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row, scenario.entityType), {
       actorId: scenario.userId,
       hierarchy: deepHierarchy,
     });
@@ -416,7 +419,7 @@ const deepAccess = (scenario: DeepScenario): Access<MembershipBaseModel> =>
 
 const deepSqlReadableIds = async (scenario: DeepScenario, deepHierarchy: EntityHierarchy): Promise<Set<string>> => {
   const access = deepAccess(scenario);
-  const filter = resolveCollectionReadFilter(access, deepItem, rootId, undefined, {
+  const filter = resolveCollectionReadFilter(access, scenario.entityType ?? deepItem, rootId, undefined, {
     policies: scenario.policies,
     publicGrants: {},
     hierarchy: deepHierarchy,
@@ -454,12 +457,13 @@ afterAll(async () => {
 });
 
 // Every role elevated: each grant reaches its channel's whole subtree, so intermediate grants cover deeper rows.
+// `user` reads the same rows as membership rows: a person is visible through any row the engine and SQL agree on.
 describe('deep-chain parity: intermediate ancestor grants agree between engine and SQL', () => {
-  it('agrees on every row across random policies, multi-level memberships and actors', async () => {
+  it.each([deepItem, 'user' as const])('agrees on every %s row across random policies, multi-level memberships and actors', async (entityType) => {
     const random = mulberry32(0xdeec);
 
     for (let i = 0; i < 250; i++) {
-      const scenario = randomDeepScenario(random);
+      const scenario = randomDeepScenario(random, entityType);
       const label = deepScenarioLabel('0xdeec', i, scenario);
 
       const fromEngine = deepEngineReadableIds(scenario, deepSubtreeHierarchy);
@@ -490,18 +494,21 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
 
 // Non-elevated product roles see rows homed at their grant level; elevated roles keep subtree scope.
 describe('elevated-role parity: home-scoped grants agree between engine and SQL', () => {
-  it('agrees on every row across random policies and memberships with admins and staff elevated', async () => {
-    const random = mulberry32(0x50b7);
+  it.each([deepItem, 'user' as const])(
+    'agrees on every %s row across random policies and memberships with admins and staff elevated',
+    async (entityType) => {
+      const random = mulberry32(0x50b7);
 
-    for (let i = 0; i < 100; i++) {
-      const scenario = randomDeepScenario(random);
-      const label = deepScenarioLabel('0x50b7', i, scenario);
+      for (let i = 0; i < 100; i++) {
+        const scenario = randomDeepScenario(random, entityType);
+        const label = deepScenarioLabel('0x50b7', i, scenario);
 
-      const fromEngine = deepEngineReadableIds(scenario, deepElevatedHierarchy);
-      const fromSql = await deepSqlReadableIds(scenario, deepElevatedHierarchy);
-      expect(fromSql, label).toEqual(fromEngine);
-    }
-  });
+        const fromEngine = deepEngineReadableIds(scenario, deepElevatedHierarchy);
+        const fromSql = await deepSqlReadableIds(scenario, deepElevatedHierarchy);
+        expect(fromSql, label).toEqual(fromEngine);
+      }
+    },
+  );
 
   it('scopes a non-elevated course grant to course-HOMED rows only', async () => {
     const scenario: DeepScenario = {

@@ -154,7 +154,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B1 Object-level access across every read path
 - **Gain:** cross-tenant read.
-- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `listUsers` search, activities, notifications, `relatableGuard`.
+- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `listUsers` search, who sees whom (`read` on `user`), activities, notifications.
 - **Advisories:** none.
 - **Files:**
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
@@ -163,7 +163,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`.
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).
-  - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/middlewares/guard/relatable-guard.ts`.
+  - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/permissions/visible-people.ts`.
   - Activities: no read route, and no API code reads the table.
   - Callers: `getValidProduct` in `modules/attachment/operations/{get-attachment,update-attachment,link-attachment-keys}.ts` and `authorize-yjs-editor.ts`; `getValidChannel` in organization, memberships (`get-members`, `list-invitations`, `plan-invites`, `create-memberships`, `delete-memberships`, `update-membership`, `resend-pending-invitation`, `withdraw-pending-invitation`) and service-accounts operations; `resolveCollectionReadFilter` in the attachments list, `get-unseen-counts.ts`, `mark-seen.ts`, `propagation-hints.ts`, `view-read-status.ts`; `splitByPermission` in `delete-attachments.ts`, `delete-organizations.ts`; `filterExistingProductIds` in `entities/embedding-queries.ts`; `checkAccessFanout` in `notification/operations/fan-out.ts`.
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
@@ -175,7 +175,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
   - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
   - `notification-access`: inbox, instant mail and digest naming a left organization's items. `mark-seen`: confirming a deleted or hidden attachment.
-  - `relatable-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
+  - `member-visibility`, `user-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
   - `yjs-token` and `tests/yjs-http`: token or pull/push for an entity the caller may not update; `tests/mcp` and `mcp-server.test.ts`: a call outside scopes.
   - `tests/integration/rls-security`: attachment reads across tenants and without tenant context as `runtime_role`; `tests/integration/schema-verification`: channel tables have no RLS, composite FK on product tables.
   - `permission-engine-boundary`: any file but `check-access.ts` importing `getAllDecisions`. `tests/channel-discovery` (contract test). `route-guards`. `tests/organization-member-previews` (at most 3 previews, only `UserMinimalBase` fields). `pnpm test:core:runtime`.
@@ -190,7 +190,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/memberships/` (also holds the invitation routes in `memberships-routes.ts`).
   - `backend/src/modules/auth/core/invitations/operations/{accept-invitation-token,confirm-invitation-address,get-token-data,may-sign-up,resend-invitation}.ts`.
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
-  - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
+  - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
   - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/leave-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
@@ -217,7 +217,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `givenName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
-  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
+  - `user-mfa-visibility`: a member who sees the user and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
   - `member-personal-view`: another member's hide, mute and order in `listMembers`; pins that email is shown org-wide.
   - `profile-image-urls`: an avatar or banner pointed at another host. `trace-redaction`: a token in a request span and in the request log line (D1).
   - `cdc/src/tests/secret-columns.test.ts`: a new column matching the secret pattern in neither map.
@@ -508,15 +508,16 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/rate-limiter/limiters.ts`.
   - `shared/src/utils/safe-equal.ts`: the code's own comparison helper (the hono `timingSafeEqual` is not imported).
   - Call sites: `isRecognizedBrowser` in `check-email` (`auth/general/general-handlers.ts`), `magicLinkLimiter.exempt`, `send-magic-link.ts`; `maySignUp` in `send-magic-link.ts` and `handle-oauth-callback.ts`; `findUserByEmail` in anonymous paths (`send-magic-link.ts`, `modules/requests/operations/create-request.ts`, `handle-oauth-callback.ts`, `provision-sso-user.ts`).
-  - Tests: `backend/tests/security/{account-enumeration,product-existence,relatable-organizations,pending-invitations}.test.ts`.
+  - Tests: `backend/tests/security/{account-enumeration,product-existence,member-visibility,user-organizations,pending-invitations}.test.ts`.
 - **Holds:**
   - `account-enumeration`: an email in the passkey challenge body changing the answer; a passkey no account holds naming an email (same 404 for account and stranger); `recognized` true for an address the prober's browser never signed in to; a waitlist form answering account, stranger and repeat differently. The owner's browser still learns `recognized: true` (positive control).
   - `product-existence`: getAttachment and updateAttachment confirming an unreadable id (404 for missing and unreadable; 403 only for a readable row).
-  - `relatable-organizations`: organizations of another user across tenants, a malformed `relatableUserId` reaching the database, role and hidden filters on another user's list.
+  - `member-visibility`: every route that names a person (users, search, profile, another user's organizations, member and invitation lists, invites) finding someone the viewer's roles do not read; an unseen member's invite plan differing from an outsider's.
+  - `user-organizations`: organizations of another user across tenants and where the caller sees them, a malformed `memberUserId` reaching the database, role and hidden filters on another user's list.
   - `pending-invitations`: the pending list, resend, invite response and invite check telling an account from a new address.
   - `tenant-access`: missing, inactive and foreign tenants told apart; `checkSlug` 204/409.
   - `brute-force-limits`: mailing one address forever, the magic budget telling account from none, check-email lookups without end.
-  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`listUsers` outside a shared organization.
+  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`listUsers` outside the organizations the viewer reads people in.
   - `unsubscribe-tokens`: the token is verified before the user lookup (401 first, 404 only after a valid HMAC).
 - **Asks:** every "does X exist" answer in the API as a table against the Refusals table; every comparison of a secret.
 - **Not this class:** invitation token takeover and invoke-token under a cross-site GET belong to C7. Cookie MAC forgery, session revocation and the device cap belong to A2 and A1. `sso_email_unproven` and SSO address trust belong to A4. Brute-force budgets of TOTP and step-up codes belong to A3. Mail content, who can mail whom and Brevo params belong to D3. Secrets at rest and in logs belong to D1. Relay tokens belong to B5.

@@ -51,6 +51,7 @@ export {
   accessScopes,
   allActionsAllowed,
   archiveVeto,
+  buildPeopleSubject,
   buildSubject,
   buildSubjectFromEntity,
   checkAccess,
@@ -68,6 +69,7 @@ export {
   publicReadGrants,
   type RoleGrant,
   resolveHierarchy,
+  scopeAllows,
   validateAncestorScope,
 } from './src/permissions/index.ts';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows.ts';

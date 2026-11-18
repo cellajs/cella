@@ -26,7 +26,7 @@ export function buildMenuFromCache(userId: string): UserMenu {
 
   for (const entityType of menuEntityTypes) {
     const listQuery = getChannelListQuery(entityType);
-    const data = listQuery ? queryClient.getQueryData(listQuery({ relatableUserId: userId }).queryKey) : undefined;
+    const data = listQuery ? queryClient.getQueryData(listQuery({ memberUserId: userId }).queryKey) : undefined;
     byType.set(entityType, menuItemsFromList(data, memberships));
   }
 

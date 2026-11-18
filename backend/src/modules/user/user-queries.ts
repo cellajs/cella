@@ -13,12 +13,16 @@ import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
 import { hasProvenEmail, lastSeenOrder, memberSelect, servedUserSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
+import { visibleUserFilter } from '#/permissions/visible-people';
+
+type VisibleTo = Parameters<typeof visibleUserFilter>[1];
+
 import { getIsoDate } from '#/utils/iso-date';
 import type { MergePatch } from '#/utils/merge-patch';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
 
-/** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
+/** EXISTS filter limiting user rows to members of one of `organizationIds`. */
 const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) =>
   exists(
     ctx.var.db
@@ -40,8 +44,8 @@ interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema
   /** Searches name and email. */
   q?: string;
   role?: SystemRoleModel['role'];
-  /** Limits the list to members of one of these organizations; unset lists every user. */
-  memberOfAny?: string[];
+  /** The caller: limits the list to the people it sees (`visibleUserFilter`); unset lists every user. */
+  visibleTo?: VisibleTo;
   /** Leaves out the accounts without a proven address. */
   provenOnly?: boolean;
   limit: number;
@@ -51,10 +55,10 @@ interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema
 /** A page of users as members see them, each with its system role (null without one), and the total. */
 export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { q, role, memberOfAny, provenOnly = false, sort, order, limit, offset } = opts;
+  const { q, role, visibleTo, provenOnly = false, sort, order, limit, offset } = opts;
 
   const filters: SQL[] = [];
-  if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
+  if (visibleTo) filters.push(visibleUserFilter(ctx, visibleTo));
   if (provenOnly) filters.push(hasProvenEmail(usersTable.id));
   if (role) filters.push(eq(systemRolesTable.role, role));
   const search = searchFilter([usersTable.name, usersTable.email], q);
@@ -129,14 +133,14 @@ interface FindMemberUserOpts {
   /** An id, or a slug when `bySlug`. */
   identifier: string;
   bySlug?: boolean;
-  /** Limits the read to a member of one of these organizations. */
-  memberOfAny?: string[];
+  /** The caller: limits the read to a person it sees (`visibleUserFilter`). */
+  visibleTo?: VisibleTo;
 }
 
-/** A user as members see them; undefined when none matches, which includes a user outside `memberOfAny`. */
-export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = false, memberOfAny }: FindMemberUserOpts) => {
+/** A user as members see them; undefined when none matches, which includes a user `visibleTo` does not see. */
+export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = false, visibleTo }: FindMemberUserOpts) => {
   const filters: SQL[] = [bySlug ? eq(usersTable.slug, identifier) : eq(usersTable.id, identifier)];
-  if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
+  if (visibleTo) filters.push(visibleUserFilter(ctx, visibleTo));
   const [user] = await ctx.var.db
     .select(memberSelect)
     .from(usersTable)

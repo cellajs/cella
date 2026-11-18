@@ -60,7 +60,7 @@ defineFrontendModule({
       slot: 'user.profile',
       render: ({ user, isSheet }) => (
         <div className="container pt-4">
-          <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
+          <OrganizationsGrid fixedQuery={{ memberUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
         </div>
       ),
     },

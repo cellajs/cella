@@ -8,13 +8,13 @@ export const userBaseSchema = channelBaseSchema
   .extend({
     description: z.string().nullable(),
     email: z.email().nullable().openapi({
-      description: 'The proven email address, shown to every user who shares an organization with this one; null for an anonymous account.',
+      description: 'The proven email address, shown to every user whose roles let them see this one; null for an anonymous account.',
     }),
     entityType: z.literal('user'),
   })
   .openapi('UserBase', {
     description:
-      'The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.',
+      'The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.',
     example: mockUserBase(),
     'x-tags': schemaTags('embedded', 'users', 'cella'),
   });

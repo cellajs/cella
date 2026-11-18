@@ -20,7 +20,7 @@ type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFiel
 
 /** Channels the user can pick as a parent; shares its cache with the picker's own list query. */
 export function useParentChannels(parentType: ChannelEntityType, organizationId?: string, enabled = true) {
-  // No user filter: a list endpoint answers with the caller's channels, and `relatableUserId` would narrow those to their own memberships
+  // No user filter: a list endpoint answers with the caller's channels, and `memberUserId` would narrow those to their own memberships
   const listQuery = getChannelListQuery(parentType);
   if (!listQuery) throw new Error(`Channel '${parentType}' declares no list query to pick a parent from`);
   const query = useInfiniteQuery({ ...listQuery({ organizationId }), enabled });

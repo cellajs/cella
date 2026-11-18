@@ -68,7 +68,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads no people; an unscoped one reads them as its actor does. A membership change reaches every check within seconds.
 
 ## The policy consulted
 
@@ -99,6 +99,10 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
         channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
         channels.organization.member({ create: 1, read: 1, update: "own", delete: "own" });
         break;
+      case "user":
+        channels.organization.admin({ read: 1 });
+        channels.organization.member({ read: 1 });
+        break;
     }
   },
 );
@@ -109,6 +113,8 @@ Policies only declare grants: omitted actions and missing role/channel rows deny
 Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child. Only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
 
 Product entities have only **home** rows, where `create` grants creating inside that channel.
+
+**People** (`user`) have home rows too: each membership is homed at its channel. Only `read` may be granted, and it decides whom a role sees ([What members see](#what-members-see)).
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`.
 
@@ -185,7 +191,7 @@ The frontend asks the engine. The backend decides. A control calls `can(action, 
 
 `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
-A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, the gate lets the user through and the server decides.
+A channel's tabs ask the same question before a tab loads: `guardNavTabs` sends a tab whose `requires` the user's grants lack to the first tab they allow, or to the channel's default path. When the memberships cannot be read, it lets the user through and the server decides.
 
 ## Enforcement paths
 
@@ -220,7 +226,6 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |
 | `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks | 403 `step_up_required` |
 | `sysAdminGuard` | A system admin from an allowed IP address | 403 |
-| `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
 A service account passes `tenantGuard` and `orgGuard` as a member does, since they read the actor's bindings. They turn away only an actor with no foothold at all. What a member may do with a row is the engine's answer, on the paths above. An actor bound to nothing in the organization gets `tenantGuard`'s 403, since a tenant holds one organization.
 
@@ -239,10 +244,11 @@ The members an answer names beside its type, such as `resource`, are top-level m
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads, a create the placement denies, or a bulk call where nothing is allowed | 403 `forbidden`, `entityType` | The caller already knows the row |
+| A channel's members or invitations, or an invite, for a caller whose roles do not read that channel's people | 403 `forbidden`, `entityType: 'user'` | The caller reads the channel: the answer names what it may not read |
 | A write in an archived channel, or into one | 403 `channel_archived` with `entityType` | The caller reads the channel, so the answer names the state that refuses, not the id |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `reason: 'role_exceeds_actor'`, `role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
-| Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
+| Another user the caller does not see, missing and unseen alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
 | An organization slug another organization holds, in any tenant | `slug_exists` from create and rename. The slug check answers 409 taken, 204 free | A slug is the organization's public URL path, unique across tenants. Every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<kind>_not_found` or `<kind>_expired` | The token was the proof, so without it the request is not authenticated |
 | A passkey the server does not hold for the account | 404 `passkey_not_found` | The credential id comes from the caller's own authenticator, so the answer reveals no account |
@@ -256,11 +262,17 @@ The members an answer names beside its type, such as `resource`, are top-level m
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. A channel below the organization narrows nothing: the directory is organization-wide.
+A role's `read` on `user` decides whom its holders see. You see a person when your roles let you read one of their memberships. Every member holds a membership of the organization: an organization role that reads people sees the whole directory. A role on a channel below sees that channel's members, and an elevated role the members of its subtree. You always see yourself, and a system admin sees everyone.
 
-Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
+The people you see show their `UserBase` fields, email address included: in member lists, on their profile and in the user search, which matches name and address. They also show `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
 
-A member also sees the addresses invited to a channel they read, never the account behind one. Resending an invitation takes `update` on that channel.
+A channel's member list and its invitations need the read of people at that channel. The invitations show the addresses invited, never the account behind one. Resending an invitation takes `update` on that channel.
+
+The directory and a channel's member list are two reads. A grant reaches the memberships of its own channel, and only an elevated role reaches the subtree. An organization member whose role reads people, but is not elevated, sees everyone in the directory yet may not open a project's member list without a role there that reads people.
+
+Inviting takes `update` on the channel and the read of its people. An organization member the inviter does not see, because the inviter reads this channel's people but not the directory, gets an invitation they accept, as an address outside the organization does.
+
+Member counts, per role and pending, are not people: whoever reads the channel sees them. The name and avatar of whoever wrote a row you read stay visible, whoever it is.
 
 A change here must also change the privacy statement, which tells users the same.
 
