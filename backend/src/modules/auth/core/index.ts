@@ -1,7 +1,7 @@
 /**
  * What the rest of the app may import from the auth module; everything else under `modules/auth` is the module's own
  * (`core/` the session substrate, `flows/` the app's sign-in methods, `account/` the account-security surface), and
- * `backend/tests/auth-boundary.test.ts` holds the line. The boundary is described in `cella/AUTHENTICATION.md`.
+ * `backend/tests/auth-boundary.test.ts` holds the line. The boundary is described in `cella/docs/AUTHENTICATION.md`.
  */
 
 export { insertAnonymousUser, startAnonymousSession } from '#/modules/auth/core/anonymous/anonymous-account';

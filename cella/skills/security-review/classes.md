@@ -38,7 +38,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-recheck.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
   - `backend/src/utils/hash-token.ts` (session lookup by SHA-256 of the token) and `shared/src/utils/safe-equal.ts` (hash both sides, then `timingSafeEqual`).
-  - `cella/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
+  - `cella/docs/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
 - **Holds:**
   - `cookie-integrity`: an unsigned cookie, a value signed for another cookie name, a past max age, a foreign secret.
   - `session-model`: a forged secret via a cached session id, the stored hash replayed as a cookie, an expired session via a warm cache, a failed lookup that must not sign out.
@@ -86,7 +86,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/connections/`: routes, queries, `operations/{create,update,delete,get,assert-claim-values-free}`.
   - Tenant strategies: no tenants strategy module; the policy field is `tenants.authStrategies` in `modules/tenants/tenants-db.ts`, enforced in `backend/src/middlewares/guard/tenant-guard.ts`.
   - Redirect: `backend/src/lib/error.ts` (redirect handling).
-  - Docs: `cella/AUTHENTICATION.md`, `cella/authentication/SSO.md`.
+  - Docs: `cella/docs/AUTHENTICATION.md`, `cella/docs/authentication/SSO.md`.
   - Routes: social starts and callbacks use `publicGuard` with `tokenLimiter` on callbacks; SSO routes are all `publicGuard`; connections CRUD uses `userGuard, sysAdminGuard, tenantGuard`.
   - Tests live at: `backend/tests/sign-in/{oauth,sso,sso-policy}.test.ts`, `backend/tests/sso-federation-client.test.ts`, `backend/tests/connections.test.ts`, `backend/tests/invitations/claim-on-signup.test.ts`, `backend/tests/security/oauth-connect.test.ts`.
 - **Holds:**
@@ -503,7 +503,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** account enumeration, the Refusals table of PERMISSIONS.md as the policy, timing-safe comparison of tokens and hashes, invited addresses, `listUsers` search by address, a 429 as an oracle, error `type` differences, response sizes.
 - **Advisories:** 1 (hono timing comparison).
 - **Files:**
-  - `cella/PERMISSIONS.md` (the Refusals table).
+  - `cella/docs/PERMISSIONS.md` (the Refusals table).
   - `backend/src/modules/user/operations/get-users.ts`, `get-user.ts` (`getUsersOp`, `getUserOp`).
   - `backend/src/middlewares/rate-limiter/limiters.ts`.
   - `shared/src/utils/safe-equal.ts`: the code's own comparison helper (the hono `timingSafeEqual` is not imported).
@@ -626,7 +626,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `.github/workflows/ci.yml`, `.github/workflows/release.yml` (no `.github/actions`); `lefthook.yaml`.
   - `infra/config/frontend-csp.config.ts`, set by `infra/caddy/Caddyfile` from `{$FRONTEND_CSP}`.
   - Dockerfiles: `Dockerfile`, `infra/agent/Dockerfile`, `infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
-  - `pnpm cella audit` lives in `@cellajs/cli` (not in this repo; `cella/SECURITY.md` names it); the repo config is the `updateConfig` block in `pnpm-workspace.yaml`. Root `SECURITY.md` exists.
+  - `pnpm cella audit` lives in `@cellajs/cli` (not in this repo; `.github/SECURITY.md` names it); the repo config is the `updateConfig` block in `pnpm-workspace.yaml`.
   - CI has no merge queue (`ci.yml` says so).
 - **Holds:**
   - Fresh release blocked: `minimumReleaseAge: 1440` refuses a version published under a day ago.

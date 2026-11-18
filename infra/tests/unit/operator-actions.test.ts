@@ -54,11 +54,11 @@ const RETIRED_LABELS = [
 ];
 
 const DOCS = [
-  'cella/DEPLOYMENT.md',
-  'cella/deployment/FRESH_INSTALLATION.md',
-  'cella/deployment/KEYS.md',
-  'cella/deployment/CHANGING_INFRASTRUCTURE.md',
-  'cella/deployment/RUNBOOKS.md',
+  'cella/docs/DEPLOYMENT.md',
+  'cella/docs/deployment/FRESH_INSTALLATION.md',
+  'cella/docs/deployment/KEYS.md',
+  'cella/docs/deployment/CHANGING_INFRASTRUCTURE.md',
+  'cella/docs/deployment/RUNBOOKS.md',
   'infra/README.md',
   'infra/tasks/README.md',
 ];

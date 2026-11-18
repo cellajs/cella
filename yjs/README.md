@@ -88,7 +88,7 @@ A client knows when the relay holds all its edits: the relay confirms every save
 
 After a pause in typing, the relay merges base and log and sends the result to the backend with the editors of that window. It also does so periodically while typing goes on.
 
-The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/SYNC_ENGINE.md)).
+The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/docs/SYNC_ENGINE.md)).
 
 The template registers the attachment update operation as its materializer. An app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and only a product with a materializer persists collaborative content.
 

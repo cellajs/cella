@@ -217,7 +217,7 @@ A replayed create is idempotent by its row ids, and a replayed delete by its mut
 
 ## Resilience
 
-The REST API and the database work whatever the CDC worker does. The worker records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../cdc/README.md#failure-and-recovery)).
+The REST API and the database work whatever the CDC worker does. The worker records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../../cdc/README.md#failure-and-recovery)).
 
 ### REST fallback
 

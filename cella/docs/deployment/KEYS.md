@@ -87,7 +87,7 @@ An environment's secret folders sit at the root of its own Scaleway project. Eac
 - `/runtime/`: one container per value, read by the deploy key
 - `/engine/`: the deploy key's copy and the database passwords, read only by the operator
 
-`/runtime/` holds every runtime secret, the uploads key's two halves and the repository read key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)).
+`/runtime/` holds every runtime secret, the uploads key's two halves and the repository read key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../../infra/config/runtime-secrets.config.ts)).
 
 On a shared host the services share their secrets: they read one env file.
 
@@ -144,7 +144,7 @@ A rotation ends by deploying the live release again on new machines: until one s
 
 ### Rotate secrets
 
-**Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
+**Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
 
 **Env vars & secrets** lists the values infra makes as one row, with the date of the last rotation. That row opens **Rotate secrets**.
 

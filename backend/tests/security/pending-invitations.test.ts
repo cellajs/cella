@@ -26,7 +26,7 @@ const newcomer = 'pending-newcomer@security-test.com';
 /**
  * Anyone can create a tenant with an organization and invite any address to it, so the inviter is the attacker here: an
  * invitation must look the same whether an account holds the address or not. Members still see who is invited, as
- * they see every member's address (`cella/PERMISSIONS.md`, What members see).
+ * they see every member's address (`cella/docs/PERMISSIONS.md`, What members see).
  */
 describe('Pending invitations list', async () => {
   const call = await createAppClient();

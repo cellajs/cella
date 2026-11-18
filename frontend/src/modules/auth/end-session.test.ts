@@ -54,7 +54,7 @@ afterEach(async () => {
   for (const owner of [person.id, other.id]) await Dexie.delete(dbName(owner));
 });
 
-// The table in cella/CLIENT.md, "Ending a session": one row per reason, and per page or account where the row differs.
+// The table in cella/docs/CLIENT.md, "Ending a session": one row per reason, and per page or account where the row differs.
 const signedOut = { userId: null, lastUserId: null };
 const lapsed = { userId: null, lastUserId: person.id };
 const table = [

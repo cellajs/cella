@@ -1,6 +1,6 @@
 # shared/src/schema-evolution
 
-The lens registry and engine. What a lens is and how a breaking change ships: [Schema evolution](../../../cella/SCHEMA_EVOLUTION.md).
+The lens registry and engine. What a lens is and how a breaking change ships: [Schema evolution](../../../cella/docs/SCHEMA_EVOLUTION.md).
 
 | File | Holds |
 | --- | --- |

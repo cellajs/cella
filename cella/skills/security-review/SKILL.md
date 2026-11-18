@@ -19,7 +19,7 @@ The unit of a review is a **vector class**, never an advisory or a file: every a
 
 ## The pipeline per class
 
-Each class goes through up to three agents, each writing one file into the untracked `.todos/security-review/` folder (`briefs/<class>.md`, `reports/<class>-attacker.md`, `reports/<class>.md`). Open findings never enter the public repo; the public residue is the run's PR: per class a fix commit, its test, and one attack sentence in `cella/TESTING.md`.
+Each class goes through up to three agents, each writing one file into the untracked `.todos/security-review/` folder (`briefs/<class>.md`, `reports/<class>-attacker.md`, `reports/<class>.md`). Open findings never enter the public repo; the public residue is the run's PR: per class a fix commit, its test, and one attack sentence in `cella/docs/TESTING.md`.
 
 | Step | Agent | Model | Reads | Writes |
 | --- | --- | --- | --- | --- |

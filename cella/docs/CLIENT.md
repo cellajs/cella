@@ -76,7 +76,7 @@ A write with an `stx` retries a network failure until the server answers. The se
 
 ## Files and blobs
 
-An attachment row is an ordinary product in the query cache. Its bytes live in the per-user database's `blobs` table and never enter the query cache. The [Attachment module](../frontend/src/modules/attachment/README.md) works from that table:
+An attachment row is an ordinary product in the query cache. Its bytes live in the per-user database's `blobs` table and never enter the query cache. The [Attachment module](../../frontend/src/modules/attachment/README.md) works from that table:
 
 - **Uploads** are stored locally first.
 - **Downloads** follow the cached rows, within the device's offline files tier.

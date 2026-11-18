@@ -9,9 +9,9 @@ const docsTransform = remarkLinkRepoPaths({
   repoRoot,
   repoUrl,
   docRoutes: {
-    'cella/ARCHITECTURE.md': '/docs/page/architecture',
-    'cella/CLIENT.md': '/docs/page/architecture/client',
-    'cella/TESTING.md': '/docs/page/guides/testing',
+    'cella/docs/ARCHITECTURE.md': '/docs/page/architecture',
+    'cella/docs/CLIENT.md': '/docs/page/architecture/client',
+    'cella/docs/TESTING.md': '/docs/page/guides/testing',
   },
 });
 
@@ -80,7 +80,7 @@ describe('remarkLinkRepoPaths', () => {
 });
 
 describe('relative markdown links in repo docs', () => {
-  const repoDocFile = { path: path.join(repoRoot, 'cella', 'AGENTS.md') };
+  const repoDocFile = { path: path.join(repoRoot, 'cella', 'docs', 'PERMISSIONS.md') };
   const contentFile = { path: path.join(repoRoot, 'frontend', 'src', 'content', 'docs', 'quickstart.md') };
   const link = (url: string): Node => ({ type: 'link', url, children: [{ type: 'text', value: 'x' }] });
 
@@ -92,12 +92,12 @@ describe('relative markdown links in repo docs', () => {
   }
 
   it('rewrites relative links in repo docs to GitHub blob URLs', () => {
-    expect(runLink('../shared/config/config.default.ts', repoDocFile).url).toBe(`${repoUrl}/blob/main/shared/config/config.default.ts`);
-    expect(runLink('./ARCHITECTURE.md', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/ARCHITECTURE.md`);
+    expect(runLink('../../shared/config/config.default.ts', repoDocFile).url).toBe(`${repoUrl}/blob/main/shared/config/config.default.ts`);
+    expect(runLink('./ARCHITECTURE.md', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/docs/ARCHITECTURE.md`);
   });
 
   it('keeps the hash fragment', () => {
-    expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/ARCHITECTURE.md#anchor`);
+    expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/docs/ARCHITECTURE.md#anchor`);
   });
 
   it('maps repository docs with first-class pages to internal docs routes', () => {
@@ -109,7 +109,7 @@ describe('relative markdown links in repo docs', () => {
   });
 
   it('keeps using GitHub for repository docs without a first-class page', () => {
-    expect(runLink('./SECURITY.md', repoDocFile, docsTransform).url).toBe(`${repoUrl}/blob/main/cella/SECURITY.md`);
+    expect(runLink('./OTEL.md', repoDocFile, docsTransform).url).toBe(`${repoUrl}/blob/main/cella/docs/OTEL.md`);
   });
 
   it('leaves unresolvable or out-of-repo relative links untouched', () => {
@@ -125,8 +125,8 @@ describe('relative markdown links in repo docs', () => {
 });
 
 describe('an app without a repo URL', () => {
-  const noRepoTransform = remarkLinkRepoPaths({ repoRoot, repoUrl: '', docRoutes: { 'cella/ARCHITECTURE.md': '/docs/page/architecture' } });
-  const repoDocFile = { path: path.join(repoRoot, 'cella', 'AGENTS.md') };
+  const noRepoTransform = remarkLinkRepoPaths({ repoRoot, repoUrl: '', docRoutes: { 'cella/docs/ARCHITECTURE.md': '/docs/page/architecture' } });
+  const repoDocFile = { path: path.join(repoRoot, 'cella', 'docs', 'PERMISSIONS.md') };
   const text = (value: string): Node => ({ type: 'text', value });
 
   it('leaves repo paths as plain code', () => {
@@ -138,7 +138,7 @@ describe('an app without a repo URL', () => {
   it('keeps links to docs pages and reduces the others to their text', () => {
     const tree = para(
       { type: 'link', url: './ARCHITECTURE.md', children: [text('page')] },
-      { type: 'link', url: './SECURITY.md', children: [text('file')] },
+      { type: 'link', url: './OTEL.md', children: [text('file')] },
       { type: 'link', url: './does-not-exist.md', children: [text('missing')] },
     );
     noRepoTransform(tree as never, repoDocFile);

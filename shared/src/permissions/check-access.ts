@@ -46,7 +46,7 @@ const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>
   isSystemAdmin: engineAccess.isSystemAdmin,
 });
 
-/** The request-path check. @see cella/PERMISSIONS.md */
+/** The request-path check. @see cella/docs/PERMISSIONS.md */
 export const checkAccess = <T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,

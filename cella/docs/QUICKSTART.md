@@ -24,7 +24,7 @@ pnpm seed       # seed test data
 pnpm dev
 ```
 
-The app opens at http://localhost:3000. A git worktree gets ports of its own ([Dev ports](../shared/README.md#dev-ports)). Sign in with a magic link as the seeded admin, whose address is `ADMIN_EMAIL` in the root `.env`. The backend prints the link in its console in development.
+The app opens at http://localhost:3000. A git worktree gets ports of its own ([Dev ports](../../shared/README.md#dev-ports)). Sign in with a magic link as the seeded admin, whose address is `ADMIN_EMAIL` in the root `.env`. The backend prints the link in its console in development.
 
 Commit the migrations `pnpm generate` wrote and the SDK files the first `pnpm check` regenerates. They carry your app's name and port.
 
@@ -59,7 +59,7 @@ pnpm offline
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
    - A coding agent with the `add-entity` skill takes a new entity to a page that syncs.
 3. Update root `package.json`. `.env` lists the secrets each feature needs, such as email.
-4. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
+4. The [MDX files](../../frontend/src/content/docs) mention cella documentation. Change or remove them.
 5. Start building!
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
@@ -74,7 +74,7 @@ pnpm cella
 
 ## Infra CLI
 
-Sets up and deploys a full stack on Scaleway ([infra guide](../infra/README.md)).
+Sets up and deploys a full stack on Scaleway ([infra guide](../../infra/README.md)).
 
 ```bash
 pnpm infra
@@ -82,7 +82,7 @@ pnpm infra
 
 ## Load tests
 
-Load tests against the dev stack ([bench guide](../backend/bench/README.md)).
+Load tests against the dev stack ([bench guide](../../backend/bench/README.md)).
 
 ```bash
 pnpm cella bench

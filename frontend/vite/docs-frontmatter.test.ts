@@ -68,7 +68,7 @@ describe('extractHeadings', () => {
   });
 
   it('extracts from a real repo doc (wrapper page body)', () => {
-    const source = readFileSync(path.resolve(import.meta.dirname, '../../cella/TESTING.md'), 'utf8');
+    const source = readFileSync(path.resolve(import.meta.dirname, '../../cella/docs/TESTING.md'), 'utf8');
     const headings = extractHeadings(source, { stripLeadingH1: true });
     const ids = headings.map((h) => h.id);
     expect(ids).toContain('spy-running-tests');
@@ -112,7 +112,7 @@ describe('extractStructure sections', () => {
 
   it('strips mdx imports, jsx tags, comments and markdown syntax to plain text', () => {
     const src = [
-      "import Content from '../../cella/TESTING.md'",
+      "import Content from '../../cella/docs/TESTING.md'",
       '',
       '## Section',
       '',
@@ -171,7 +171,7 @@ describe('extractStructure sections', () => {
 
   it('follows wrapper-page imports for sections (real repo doc)', () => {
     const wrapperPath = path.resolve(import.meta.dirname, '../src/content/docs/fixture.mdx');
-    const wrapperSource = "import Content from '../../../../cella/TESTING.md'\n\n<Content />\n";
+    const wrapperSource = "import Content from '../../../../cella/docs/TESTING.md'\n\n<Content />\n";
     const { headings, sections } = pageStructure(wrapperPath, wrapperSource);
     expect(headings.length).toBeGreaterThan(0);
     expect(sections.length).toBeGreaterThan(0);

@@ -8,7 +8,7 @@
     "cella/skills": ".claude/skills"
   },
   "edit": {
-    "quickstart": "cella/QUICKSTART.md",
+    "quickstart": "cella/docs/QUICKSTART.md",
     "configTemplate": "shared/config/config.template.ts",
     "config": "shared/config/config.default.ts",
     "cliConfig": "cella/cella.config.ts",

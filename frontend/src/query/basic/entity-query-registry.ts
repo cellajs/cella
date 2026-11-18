@@ -59,7 +59,9 @@ function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void 
   const carries = (key: readonly unknown[], id: string) =>
     key.some((segment) => segment === id || (segment != null && typeof segment === 'object' && Object.values(segment).includes(id)));
   const fail = (builder: string, requirement: string): never => {
-    throw new Error(`registerEntityQueryKeys(${entityType}): ${builder} must ${requirement} (createEntityKeys contract - see cella/SYNC_ENGINE.md)`);
+    throw new Error(
+      `registerEntityQueryKeys(${entityType}): ${builder} must ${requirement} (createEntityKeys contract - see cella/docs/SYNC_ENGINE.md)`,
+    );
   };
 
   const home = keys.list.home(sentinelOrg, sentinelHome);

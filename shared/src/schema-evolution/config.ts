@@ -1,5 +1,5 @@
 /**
- * Timing for the manual expand-to-contract step (`cella/SCHEMA_EVOLUTION.md`); no code reads
+ * Timing for the manual expand-to-contract step (`cella/docs/SCHEMA_EVOLUTION.md`); no code reads
  * `expandWindowMinDays` or `staleBundleMaxDays` yet. Pure constants with no runtime dependencies.
  */
 export const schemaEvolutionPolicy: {

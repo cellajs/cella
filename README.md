@@ -30,8 +30,8 @@
 
 #### Contents
 
-- [Quickstart](./cella/QUICKSTART.md)
-- [Architecture](./cella/ARCHITECTURE.md)
+- [Quickstart](./cella/docs/QUICKSTART.md)
+- [Architecture](./cella/docs/ARCHITECTURE.md)
 - [Agent guidelines](./cella/AGENTS.md)
 
 
@@ -49,4 +49,4 @@ For best DX, **do not** just clone or copy this repo. Use the create CLI:
 pnpm create @cellajs/cella
 ```
 
-Then read the [Quickstart](./cella/QUICKSTART.md).
+Then read the [Quickstart](./cella/docs/QUICKSTART.md).

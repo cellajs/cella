@@ -63,7 +63,7 @@ It ends with `## Gaps, by gain` (GAP and UNSURE rows, highest gain first) and `#
 ## 9. Fix brief          the builder's input, see below
 ```
 
-The four reasons a test earns its place (`cella/TESTING.md`): it proves an attack fails, reproduces a shipped bug, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball. A test that mirrors its implementation is not a candidate.
+The four reasons a test earns its place (`cella/docs/TESTING.md`): it proves an attack fails, reproduces a shipped bug, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball. A test that mirrors its implementation is not a candidate.
 
 **The fix brief (§9).** The first line is the tier: `small` (at most three files, an exact change, no migration) or `large`. Then per confirmed gap: the file and line, the exact change in one or two sentences, the test (file, name after the attack, reason), the doc sentence to correct, and whether the change is breaking (an alignment) or needs a migration. Then the tests the builder runs while iterating, and the commit subject. A judge who cannot write the exact change writes the decision into §7 instead and leaves the gap out of the fix brief.
 
@@ -85,7 +85,7 @@ Strongest model, one per run, after every builder has reported. It turns the cla
 
 **Prompt.** "You are combining the class fixes of security review run `<run>` into one PR. Make the worktree `<worktree>` on branch `fix/security-review-<run>` from main at `<commit>`. Merge these class branches in this order with `--no-ff`: `<list, stacked ones after their base, request-schema sweeps last>`. Read `roles.md` section Combiner. Reply with under 250 words: the PR URL, each conflict and how it was resolved, the migration consolidation, every suite with pass and fail counts, whether `pnpm check` passed, and anything you could not settle."
 
-**Conflicts.** The fixes are independent, so a conflict keeps both sides' intent: every new bullet in `cella/TESTING.md`, every key in a locale file, every row in a table test, every alignment folder, and one bump of `appConfig.clientCacheVersion` to the highest value any branch reached. Fix code is not rewritten to resolve a conflict; when two fixes touch the same lines, the two commit messages decide, and a conflict they cannot decide goes into the reply.
+**Conflicts.** The fixes are independent. A conflict keeps both sides' intent: every new bullet in `cella/docs/TESTING.md`, every key in a locale file, every row in a table test, every alignment folder, and one bump of `appConfig.clientCacheVersion` to the highest value any branch reached. Fix code is not rewritten to resolve a conflict; when two fixes touch the same lines, the two commit messages decide, and a conflict they cannot decide goes into the reply.
 
 **Migrations.** Read every migration the branches added and copy out each hand-written statement. Delete those migrations and their journal and snapshot entries, run `pnpm -C <worktree> generate` once, and put the hand-written statements back before the constraint each protects. Diff the deleted SQL against the generated SQL: every statement is present or the reply says why it is not needed. When `pnpm generate` produces nothing or something unexpected, stop and report; never hand-write a migration.
 
