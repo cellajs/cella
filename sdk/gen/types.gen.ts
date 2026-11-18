@@ -575,7 +575,7 @@ export type InviteOutcome = {
 };
 
 /**
- * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
  */
 export type UserBase = {
   id: string;
@@ -587,7 +587,7 @@ export type UserBase = {
   bannerUrl: string | null;
   description: string | null;
   /**
-   * The proven email address, shown to every user who shares an organization with this one; null for an anonymous account.
+   * The proven email address, shown to every user whose roles let them see this one; null for an anonymous account.
    */
   email: string | null;
   entityType: 'user';
@@ -5065,7 +5065,7 @@ export type ListMembersResponses = {
    */
   200: {
     /**
-     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+     * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
     results: Array<
       UserBase & {
@@ -5678,7 +5678,10 @@ export type ListOrganizationsData = {
       | 'displayOrder'
       | 'displayOrder asc'
       | 'displayOrder desc';
-    relatableUserId?: string;
+    /**
+     * Lists this user's organizations where the caller sees them.
+     */
+    sharedWithUserId?: string;
     role?: 'admin' | 'member';
     excludeHidden?: 'true' | 'false' | boolean;
     /**
@@ -7110,10 +7113,6 @@ export type GetUserErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -7123,7 +7122,7 @@ export type GetUserError = GetUserErrors[keyof GetUserErrors];
 
 export type GetUserResponses = {
   /**
-   * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+   * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
    */
   200: UserBase & {
     lastSeenAt: string | null;
@@ -7794,7 +7793,7 @@ export type ListUsersData = {
       | 'lastSeenAt desc';
     role?: 'admin';
     /**
-     * Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.
+     * Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Anyone else lists the accounts their roles let them see, anonymous ones included.
      */
     includeAnonymous?: 'true' | 'false' | boolean;
   };
@@ -7828,7 +7827,7 @@ export type ListUsersResponses = {
    */
   200: {
     /**
-     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+     * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
     results: Array<
       UserBase & {

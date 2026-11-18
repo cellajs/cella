@@ -1,6 +1,6 @@
 import { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
-import type { EntityActionType } from '../../types.ts';
-import type { AccessScope, AccessScopedEntityType } from './access-scopes.ts';
+import type { EntityActionType, EntityType } from '../../types.ts';
+import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 import { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
@@ -21,10 +21,14 @@ export type Access<T extends AccessMembership = AccessMembership> = (ActorFields
 
 /**
  * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its actor's grants allow,
- * never more. Unscoped access (a session, or `scopes: null`) passes untouched.
+ * never more. Unscoped access (a session, or `scopes: null`) passes untouched. People are never a scope: a key or token
+ * that carries scopes reads no one.
  */
-const scopeAllows = (access: Access, entityType: AccessScopedEntityType, action: EntityActionType): boolean =>
-  'visitor' in access || accessScopes.allows(access.scopes, entityType, action);
+export const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean => {
+  if ('visitor' in access) return true;
+  if (entityType === 'user') return access.scopes == null;
+  return accessScopes.allows(access.scopes, entityType, action);
+};
 
 /** System admins bypass every check; a visitor holds nothing. */
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>

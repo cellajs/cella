@@ -64,7 +64,7 @@ The policy guards tenant routes only. Under a refused method the person still re
 - `GET /notifications`: their own inbox, which names the tenant's channels and items
 - `GET /organizations`: their organizations
 - `/me/memberships`: their memberships
-- `GET /users/{id}`: the profiles of their co-members
+- `GET /users/{id}`: the profiles of the people their roles let them see
 
 An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address. The account gets a mail pointing to its institution's sign-in.
 

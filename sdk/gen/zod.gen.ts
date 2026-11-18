@@ -465,7 +465,7 @@ export const zInviteOutcome = z.object({
 });
 
 /**
- * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
  */
 export const zUserBase = z.object({
   id: z.string(),
@@ -2393,7 +2393,7 @@ export const zListOrganizationsQuery = z.object({
     ])
     .optional()
     .default('displayOrder asc'),
-  relatableUserId: z.uuid().optional(),
+  sharedWithUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeHidden: z
     .union([z.enum(['true', 'false']), z.boolean()])
@@ -2919,7 +2919,7 @@ export const zGetUserQuery = z.object({
 });
 
 /**
- * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ * The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
  */
 export const zGetUserResponse = zUserBase.and(
   z.object({

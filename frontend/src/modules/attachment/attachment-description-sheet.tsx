@@ -34,10 +34,16 @@ function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Atta
   const homeId = deepest?.id ?? organizationId;
   const homeType = deepest?.type ?? 'organization';
 
+  const can = useCan();
   const canAsMember = useCan({ asMember: true });
   const canEdit = canAsMember('update', 'attachment', attachment);
+  // The home channel's ancestor ids are the attachment's own
+  const readsPeople = can('read', 'user', { ...attachment, id: homeId, entityType: homeType });
 
-  const membersQuery = useInfiniteQuery(membersListQueryOptions({ channelId: homeId, channelType: homeType, tenantId, organizationId }));
+  const membersQuery = useInfiniteQuery({
+    ...membersListQueryOptions({ channelId: homeId, channelType: homeType, tenantId, organizationId }),
+    enabled: readsPeople,
+  });
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutate } = useAttachmentUpdateMutation(tenantId, organizationId);

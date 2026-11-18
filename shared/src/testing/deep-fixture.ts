@@ -59,16 +59,20 @@ export const deepOverrides: HierarchyOverrides = { hierarchy: deepHierarchy };
 
 type DeepCells = Partial<Record<EntityActionType, PolicyCellInput>>;
 
-/** One `item` policy row per channel level and role the hierarchy declares; `cellsFor` decides its cells (omitted actions deny). */
+/**
+ * One policy row of `entityType` (`item`, or `user` for whom each role sees) per channel level and role the hierarchy
+ * declares; `cellsFor` decides its cells (omitted actions deny).
+ */
 export const deepItemPolicies = (
   cellsFor: (channelType: DeepChannelType, role: string) => DeepCells,
   overrides: HierarchyOverrides = deepOverrides,
+  entityType: 'item' | 'user' = 'item',
 ): PolicyMatrix =>
   // The matrix builder is typed by the app's entities and roles; the deep vocabulary is cast to them.
   configurePolicyMatrix(
     deepEntityTypes as unknown as readonly EntityType[],
-    ({ entityType, channels }) => {
-      if ((entityType as string) !== 'item') return;
+    ({ entityType: policyType, channels }) => {
+      if ((policyType as string) !== entityType) return;
       const builders = channels as unknown as Record<DeepChannelType, Record<string, (perms: DeepCells) => void>>;
       for (const [channelType, roles] of Object.entries(deepChannelRoles) as [DeepChannelType, readonly string[]][]) {
         for (const role of roles) builders[channelType]?.[role]?.(cellsFor(channelType, role));
@@ -81,4 +85,5 @@ export const deepItemPolicies = (
 export const deepReadPolicies = (
   readValue: (channelType: DeepChannelType, role: string) => PolicyCellInput,
   overrides: HierarchyOverrides = deepOverrides,
-): PolicyMatrix => deepItemPolicies((channelType, role) => ({ read: readValue(channelType, role) }), overrides);
+  entityType: 'item' | 'user' = 'item',
+): PolicyMatrix => deepItemPolicies((channelType, role) => ({ read: readValue(channelType, role) }), overrides, entityType);

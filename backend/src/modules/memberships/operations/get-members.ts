@@ -6,17 +6,20 @@ import { findMembersPaginated } from '#/modules/memberships/memberships-queries'
 import type { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { administeredOrganizationIds } from '#/permissions/administered-organizations';
 import { getValidChannel } from '#/permissions/get-valid-channel';
+import { assertReadsPeople } from '#/permissions/visible-people';
 import type { PageWindow } from '#/utils/list-page';
 
 type GetMembersInput = z.infer<typeof memberListQuerySchema>;
 
 /**
- * A page of a channel's members for anyone who may read it, each membership as the caller may see it. `include` adds
- * per-member counts (`counts`) and, for the organization's admins only, each member's MFA switch (`mfa`).
+ * A page of a channel's members for anyone who may read it and its people, each membership as the caller may see it.
+ * `include` adds per-member counts (`counts`) and, for the organization's admins only, each member's MFA switch (`mfa`).
+ * @throws AppError 403 `forbidden` (`entityType: 'user'`) when the caller's roles do not read the channel's people.
  */
 export async function getMembersOp(ctx: UserContext, input: GetMembersInput, { offset, limit }: PageWindow) {
   const { include, orderBy, channelId, channelType, q, role, userIds } = input;
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
+  assertReadsPeople(ctx, channelType, entity);
 
   const includeCounts = include.includes('counts');
   // The organization's admins alone: to any member, the list would name the accounts without a second factor.

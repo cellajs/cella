@@ -2,7 +2,11 @@ import type { InfiniteQueryExecuteOptions, QueryExecuteOptions, QueryKey } from 
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import { type ApiError, isRateLimited } from '~/lib/api';
 import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
+import { canAccess, userAccess } from '~/modules/entities/use-can';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import type { UserMenuItem } from '~/modules/me/types';
+import { memberQueryKeys } from '~/modules/memberships/query';
+import { userStore } from '~/modules/user/user-store';
 import { productTypeOf } from '~/query/cache-migration';
 import { queryClient } from '~/query/query-client';
 import { isOpaqueScope } from '~/query/realtime/catchup-processor';
@@ -68,6 +72,9 @@ async function syncWithinBudget(item: UserMenuItem, signal: AbortSignal): Promis
   }
 }
 
+/** A members list (`['member', 'list', …]`) or an invitations list (the same behind `'invites'`): a channel's people. */
+const listsPeople = (key: QueryKey) => [0, 1].some((at) => memberQueryKeys.list.base.every((part, i) => key[at + i] === part));
+
 /**
  * Seeds the offline cache for one menu item. A product list reads on its own stale time: it fetches when it is cold or
  * marked for a refetch, and a fresh one is left to catchup. Any other query, and a product list of an `opaque` scope,
@@ -79,12 +86,16 @@ async function syncMenuItem(item: UserMenuItem): Promise<boolean> {
   if (item.membership.hidden) return false;
 
   const { organizationId } = item.membership;
+  const { user, isSystemAdmin } = userStore.getState();
+  const memberships = queryClient.getQueryData(myMembershipsQueryOptions().queryKey)?.results ?? [];
+  // A channel's members and invitations answer 403 to a user whose roles read none of its people.
+  const readsPeople = canAccess(userAccess(user, isSystemAdmin, memberships), 'read', 'user', item);
   const queries = buildEntitySyncQueries({
     targetEntityId: item.id,
     targetEntityType: item.entityType,
     tenantId: item.tenantId,
     currentOrganizationId: organizationId,
-  });
+  }).filter((source) => readsPeople || !listsPeople(source.queryKey));
 
   const results = await Promise.allSettled(
     queries.map(async (source) => {

@@ -1,8 +1,8 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, inArray, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { ChannelEntityType, EntityRole } from 'shared';
-import type { DbContext, OrgContext } from '#/core/context';
+import type { Access, ChannelEntityType, EntityRole } from 'shared';
+import type { ActorBinding, DbContext, OrgContext } from '#/core/context';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
@@ -13,6 +13,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
+import { readableMembershipsWhere } from '#/permissions/visible-people';
 import { minimalBaseColumns, toMinimalBase, type UserMinimalBase } from '#/schemas/minimal-base';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
@@ -35,13 +36,17 @@ interface FindInviteeAccountsOpts {
   emails: string[];
   channelType: ChannelEntityType;
   channelId: string;
+  /** The inviter, whose read of people in this organization decides `visible`. */
+  access: Access<ActorBinding>;
 }
 
 /**
  * The accounts behind invited addresses, one row per address an account holds: its primary address, its membership
- * of the channel (with the role) and whether it is a member of the organization. Addresses no account holds have no row.
+ * of the channel (with the role), whether it is a member of the organization and whether the inviter sees it there.
+ * Addresses no account holds have no row. One statement for every address: a visible and an unseen member take as long.
  */
-export const findInviteeAccounts = async (ctx: OrgContext, { emails, channelType, channelId }: FindInviteeAccountsOpts) => {
+export const findInviteeAccounts = async (ctx: { var: Pick<OrgContext['var'], 'db' | 'organizationId'> }, opts: FindInviteeAccountsOpts) => {
+  const { emails, channelType, channelId, access } = opts;
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
 
@@ -53,6 +58,12 @@ export const findInviteeAccounts = async (ctx: OrgContext, { emails, channelType
       membershipId: membershipsTable.id,
       membershipRole: membershipsTable.role,
       orgMembershipId: orgMemberships.id,
+      visible: sql<boolean>`${exists(
+        db
+          .select({ id: membershipsTable.id })
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.userId, usersTable.id), readableMembershipsWhere(access, [organizationId]))),
+      )}`,
     })
     .from(emailsTable)
     .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
@@ -304,4 +315,13 @@ export const rotateTenantMemberBindings = async (ctx: DbContext, { tenantId }: T
     )
     .returning({ id: actorsTable.id });
   return rotated.map(({ id }) => id);
+};
+
+/** The organizations in which the caller sees the user: where it may read one of the user's membership rows. */
+export const findOrganizationIdsWhereSeen = async (ctx: DbContext, { userId, access }: { userId: string; access: Access<ActorBinding> }) => {
+  const rows = await ctx.var.db
+    .selectDistinct({ organizationId: membershipsTable.organizationId })
+    .from(membershipsTable)
+    .where(and(eq(membershipsTable.userId, userId), readableMembershipsWhere(access)));
+  return rows.map(({ organizationId }) => organizationId);
 };

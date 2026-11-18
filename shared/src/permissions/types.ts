@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ChannelRoleOf, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, ChannelRoleOf, EntityActionType, EntityRole, EntityType } from '../../types.ts';
 import type { RowConditionName } from './row-conditions.ts';
 
 /**
@@ -21,8 +21,8 @@ export interface PolicyEntry {
 
 export type EntityPolicies = PolicyEntry[];
 
-/** Only channel and product entities have policies; user access uses separate logic. */
-export type PolicyMatrix = Partial<Record<ChannelEntityType | ProductEntityType, EntityPolicies>>;
+/** Channel and product entities have policies, and `user`, whose `read` decides whom a role sees. */
+export type PolicyMatrix = Partial<Record<EntityType, EntityPolicies>>;
 
 /** Permissions are partial: an omitted action denies, so a policy lists only what it grants. */
 export type PolicySetter = (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void;

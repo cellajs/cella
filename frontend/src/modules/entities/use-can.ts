@@ -3,19 +3,22 @@ import type { ActorRef, MembershipBase } from 'sdk';
 import {
   type Access,
   archiveVeto,
+  buildPeopleSubject,
   buildSubject,
   buildSubjectFromEntity,
   type ChannelEntityType,
   checkAccess,
   type EntityActionType,
+  type EntityType,
   hierarchy,
   type ProductEntityType,
   type SubjectForPermission,
 } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore, useUserStore } from '~/modules/user/user-store';
 import { findInCache } from '~/query/basic/find-in-list-cache';
+import { queryClient } from '~/query/query-client';
 
 /** A cached channel or product row, read by its id, type, writer, archived flag and ancestor id columns. */
 export type CanRow = {
@@ -30,11 +33,13 @@ const newRowId = 'new';
 
 /**
  * What `can` and the route guard ask about: `row` itself when it is of `entityType`, else a new `entityType` row homed
- * at the channel `row` is. Null when `entityType` has no place under that channel.
+ * at the channel `row` is; for `user`, the people of the channel `row` is. Null when `entityType` has no place under
+ * that channel.
  * @throws MissingAncestorError when the row lacks an ancestor id column
  */
-export const canSubject = (entityType: ChannelEntityType | ProductEntityType, row: CanRow): SubjectForPermission | null => {
+export const canSubject = (entityType: EntityType, row: CanRow): SubjectForPermission | null => {
   const columns = asRecord(row);
+  if (entityType === 'user') return hierarchy.isChannel(row.entityType) ? buildPeopleSubject(row.entityType, { ...columns, id: row.id }) : null;
   if (row.entityType === entityType) return buildSubjectFromEntity(entityType, { ...columns, id: row.id, createdBy: row.createdBy?.id ?? null });
 
   const ancestorIds = hierarchy.ancestorIdsHomedAt(entityType, row.entityType, columns);
@@ -54,6 +59,15 @@ export const archivedChannelIds = (row: CanRow): ReadonlySet<string> => {
   return new Set(cached?.archived ? [cached.id] : []);
 };
 
+/**
+ * Whether `access` may take `action` on `row`, or on a new `entityType` row homed at the channel `row` is: the engine's
+ * answer without the archive veto, for route guards and code outside React.
+ */
+export const canAccess = (access: Access, action: EntityActionType, entityType: EntityType, row: CanRow): boolean => {
+  const subject = canSubject(entityType, row);
+  return !!subject && checkAccess(access, action, subject).allowed;
+};
+
 /** The signed-in user's access over their memberships; no user is a visitor. */
 export const userAccess = (user: { id: string } | null, isSystemAdmin: boolean, memberships: MembershipBase[]): Access =>
   user ? { actorId: user.id, isSystemAdmin, scopes: null, memberships } : { visitor: true };
@@ -70,12 +84,26 @@ export function useCan({ asMember, ignoreArchive }: { asMember?: boolean; ignore
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
   const { data: myMemberships } = useQuery({ ...myMembershipsQueryOptions(), enabled: !!user });
 
-  /** Whether the user may take `action` on `row`, or on a new `entityType` row homed at the channel `row` is. */
-  return (action: EntityActionType, entityType: ChannelEntityType | ProductEntityType, row: CanRow): boolean => {
+  /** Whether the user may take `action` on `row`, or on a new `entityType` row homed at the channel `row` is; `read` on `user` reads its people. */
+  return (action: EntityActionType, entityType: EntityType, row: CanRow): boolean => {
     if (user && !myMemberships) return false;
+    if (!canAccess(userAccess(user, isSystemAdmin && !asMember, myMemberships?.results ?? []), action, entityType, row)) return false;
+    if (ignoreArchive) return true;
     const subject = canSubject(entityType, row);
-    if (!subject) return false;
-    const allowed = checkAccess(userAccess(user, isSystemAdmin && !asMember, myMemberships?.results ?? []), action, subject).allowed;
-    return allowed && (ignoreArchive || !archiveVeto(action, subject, archivedChannelIds(row)));
+    return !!subject && !archiveVeto(action, subject, archivedChannelIds(row));
   };
+}
+
+/**
+ * The signed-in user's access over their memberships, which it reads itself: on a cold load they may not be cached yet.
+ * Null where they cannot be read (offline with none cached): the caller then lets the user through and the server decides.
+ */
+export async function currentAccess(): Promise<Access | null> {
+  const memberships = await queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 'static' }).then(
+    ({ results }) => results,
+    () => null,
+  );
+  if (!memberships) return null;
+  const { user, isSystemAdmin } = userStore.getState();
+  return userAccess(user, isSystemAdmin, memberships);
 }

@@ -39,3 +39,13 @@ export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
   entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns> & Record<string, unknown>,
 ): SubjectForPermission => buildSubject(entityType, entity, { id: entity.id, createdBy: entity.createdBy, row: entity });
+
+/**
+ * A person as seen through a membership row of `channelType`: the subject `read` on `user` decides. `channel` is the
+ * channel row, or a membership row with its `channelId` as `id`; both carry the ancestor id columns.
+ * @throws MissingAncestorError when the channel lacks an ancestor id
+ */
+export const buildPeopleSubject = (channelType: ChannelEntityType, channel: { id: string } & Partial<ChannelIdColumns>): SubjectForPermission => {
+  const { channelIds } = buildSubject(channelType, channel, { id: channel.id });
+  return { entityType: 'user', channelIds: { ...channelIds, [channelType]: channel.id } };
+};

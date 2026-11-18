@@ -56,10 +56,6 @@
             "name": "Public",
             "description": "No sign-in required."
           },
-          "relatableGuard": {
-            "name": "Shared organization",
-            "description": "Requires sharing an organization with the user named in the request. System admins also pass."
-          },
           "stepUpGuard": {
             "name": "Step-up",
             "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code."
@@ -478,7 +474,7 @@
     },
     {
       "name": "users",
-      "description": "Endpoints for reading other users: the users who share an organization with the requesting user, or every user for a system admin. Unlike channel entities such as organizations, a user is a global entity that is not scoped to an organization. Administrative operations on users are system endpoints.",
+      "description": "Endpoints for reading other users: the users the requesting user's roles let it see, or every user for a system admin. Unlike channel entities such as organizations, a user is a global entity that is not scoped to an organization. Administrative operations on users are system endpoints.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2664,7 +2660,7 @@
           "email": {
             "type": ["string", "null"],
             "format": "email",
-            "description": "The proven email address, shown to every user who shares an organization with this one; null for an anonymous account."
+            "description": "The proven email address, shown to every user whose roles let them see this one; null for an anonymous account."
           },
           "entityType": {
             "type": "string",
@@ -2672,7 +2668,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
-        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+        "description": "The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
         "example": {
           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -11626,7 +11622,7 @@
         "operationId": "listMembers",
         "tags": ["memberships", "cella"],
         "summary": "Get list of members",
-        "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.",
+        "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data, for a caller whose roles read the channel's people. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
@@ -11934,7 +11930,7 @@
                             "required": ["lastSeenAt", "membership"]
                           }
                         ],
-                        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                        "description": "The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -11993,7 +11989,7 @@
         "operationId": "listInvitations",
         "tags": ["memberships", "cella"],
         "summary": "Get list of invitations",
-        "description": "Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
+        "description": "Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it and whose roles read its people: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
@@ -13018,9 +13014,9 @@
         "operationId": "listOrganizations",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
-        "description": "Returns a list of organizations across tenants: the `-` tenant reads every tenant.",
+        "description": "Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `sharedWithUserId` it lists that user's organizations where the caller sees them.",
         "x-anonymous": true,
-        "x-guard": ["userGuard", "relatableGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
@@ -13097,10 +13093,12 @@
           {
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "description": "Lists this user's organizations where the caller sees them."
             },
             "required": false,
-            "name": "relatableUserId",
+            "description": "Lists this user's organizations where the caller sees them.",
+            "name": "sharedWithUserId",
             "in": "query"
           },
           {
@@ -16452,9 +16450,9 @@
         "operationId": "getUser",
         "tags": ["users", "cella"],
         "summary": "Get user",
-        "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.",
+        "description": "Retrieves a user by ID. The requesting user's roles must let it see the user, through one of the user's memberships. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.",
         "x-anonymous": true,
-        "x-guard": ["userGuard", "relatableGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
@@ -16531,7 +16529,7 @@
                       "required": ["lastSeenAt"]
                     }
                   ],
-                  "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                  "description": "The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                   "example": {
                     "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                     "createdAt": "2024-01-28T04:41:50.387Z",
@@ -16557,9 +16555,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17901,10 +17896,10 @@
                 }
               ],
               "default": "false",
-              "description": "Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with."
+              "description": "Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Anyone else lists the accounts their roles let them see, anonymous ones included."
             },
             "required": false,
-            "description": "Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.",
+            "description": "Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Anyone else lists the accounts their roles let them see, anonymous ones included.",
             "name": "includeAnonymous",
             "in": "query"
           }
@@ -17969,7 +17964,7 @@
                             "required": ["lastSeenAt"]
                           }
                         ],
-                        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                        "description": "The user fields shown to every user whose roles let them see this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",

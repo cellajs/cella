@@ -1,13 +1,19 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, EntityRole } from 'shared';
-import type { UserContext } from '#/core/context';
+import type { OrgContext, UserContext } from '#/core/context';
 import { findInvitationsByEmails } from '#/modules/memberships/invitations-queries';
 import { findInviteeAccounts } from '#/modules/memberships/memberships-queries';
 import type { inviteOutcomeSchema, membershipCheckBodySchema } from '#/modules/memberships/memberships-schema';
+import type { UserModel } from '#/modules/user/user-db';
+import { type AccessContext, accessFrom } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
+import { assertReadsPeople } from '#/permissions/visible-people';
 import type { channelRefSchema } from '#/schemas';
 
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;
+
+/** What the plan reads of the request: the organization, the inviter's bindings and its address. */
+type PlanContext = { var: Pick<OrgContext['var'], 'db' | 'organizationId'> & AccessContext['var'] & { user: Pick<UserModel, 'email'> } };
 type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof channelRefSchema>;
 type StoredInvitation = Awaited<ReturnType<typeof findInvitationsByEmails>>[number];
 
@@ -30,15 +36,16 @@ interface PlanInvitesInput {
 
 /**
  * What an invite does with each address. Anyone may invite any address, so the answer rests only on what the inviter
- * already sees: the channel's invitations by address and its members by their listed (primary) address. An account
- * behind an address picks the email and whether a token is minted, never the answer.
+ * already sees: the channel's invitations by address, its members by their listed (primary) address, and the
+ * organization's members the inviter's roles let it see. An account behind an address picks the email and whether a
+ * token is minted, never the answer.
  */
-export async function planInvites(ctx: UserContext, { emails, entity, channelType, held }: PlanInvitesInput): Promise<PlannedAddress[]> {
+export async function planInvites(ctx: PlanContext, { emails, entity, channelType, held }: PlanInvitesInput): Promise<PlannedAddress[]> {
   const { user, isSystemAdmin } = ctx.var;
   const uniqueEmails = [...new Set(emails)];
 
   const [accounts, invitations] = await Promise.all([
-    findInviteeAccounts(ctx, { emails: uniqueEmails, channelType, channelId: entity.id }),
+    findInviteeAccounts(ctx, { emails: uniqueEmails, channelType, channelId: entity.id, access: accessFrom(ctx) }),
     findInvitationsByEmails(ctx, { emails: uniqueEmails, channelId: entity.id }),
   ]);
   const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
@@ -56,9 +63,10 @@ export async function planInvites(ctx: UserContext, { emails, entity, channelTyp
     const isListedAddress = account.primaryEmail === email;
     if (account.membershipId && account.membershipRole && isListedAddress) return { email, outcome: 'member', role: account.membershipRole };
 
-    // An organization member invited below the organization by their listed address joins at once, unless the channel
-    // is a draft that holds the role: then nobody joins before its publish.
-    const joinsDirectly = channelType !== 'organization' && !!account.orgMembershipId && isListedAddress && !held;
+    // An organization member the inviter sees, invited below the organization by their listed address, joins at once,
+    // unless the channel is a draft that holds the role: then nobody joins before its publish. An inviter who reads this
+    // channel's people but not the directory may not see the member, who then gets an invitation like an outsider.
+    const joinsDirectly = channelType !== 'organization' && !!account.orgMembershipId && account.visible && isListedAddress && !held;
     const isAdminInvitingSelf = user.email === email && isSystemAdmin;
     if (joinsDirectly || isAdminInvitingSelf) return { email, outcome: 'add', userId: account.userId };
 
@@ -77,11 +85,12 @@ export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
 
 /**
  * What an invite would do with each address, for the invite form to show as addresses are added; nothing is written
- * or sent. It needs the same `update` an invite does. Every address that is not a member or invited before reads as a
+ * or sent. It needs the same `update` and read of the channel's people an invite does. Every address that is not a member or invited before reads as a
  * new invitation: whether an organization member joins a channel at once depends on the role picked later.
  */
 export async function checkInvitesOp(ctx: UserContext, { emails, channelId, channelType }: CheckInvitesInput) {
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
+  assertReadsPeople(ctx, channelType, entity);
 
   const plan = await planInvites(ctx, { emails, entity, channelType, held: true });
   return { outcomes: plan.map((item) => toInviteOutcome(item.outcome === 'add' ? { ...item, outcome: 'invite' } : item)) };

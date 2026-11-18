@@ -1,7 +1,6 @@
 export * from '#/middlewares/guard/actor-guard';
 export * from '#/middlewares/guard/org-guard';
 export * from '#/middlewares/guard/public-guard';
-export * from '#/middlewares/guard/relatable-guard';
 export * from '#/middlewares/guard/service-guard';
 export * from '#/middlewares/guard/step-up-guard';
 export * from '#/middlewares/guard/sys-admin-guard';

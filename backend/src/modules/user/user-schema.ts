@@ -82,6 +82,6 @@ export const userListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'], 'createdAt desc'),
   role: z.enum(appConfig.systemRoles).optional(),
   includeAnonymous: booleanTransformSchema.describe(
-    'Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.',
+    'Also lists the anonymous accounts, without a proven address, such as a demo takes; a system admin alone may set it. Anyone else lists the accounts their roles let them see, anonymous ones included.',
   ),
 });

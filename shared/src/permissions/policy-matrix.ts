@@ -1,7 +1,7 @@
-import type { ChannelEntityType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, EntityRole, EntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
-import { type AccessScopedEntityType, type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
+import { type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
 import type { PublicReadGrants } from './public-read.ts';
 import { isRowCondition } from './row-conditions.ts';
@@ -16,7 +16,7 @@ import type {
   PolicySetter,
 } from './types.ts';
 
-const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly EntityRole[], entries: PolicyEntry[]) => {
+const createChannelPolicyBuilder = (entityType: EntityType, channelType: ChannelEntityType, roles: readonly EntityRole[], entries: PolicyEntry[]) => {
   const builder: Record<string, PolicySetter> = {};
 
   for (const role of roles) {
@@ -30,6 +30,13 @@ const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: reado
           throw new Error(
             `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +
               'which can never match: the row does not exist yet. Use 1 or 0 for create.',
+          );
+        }
+        // People are only seen or not: what a role may change about a person is decided elsewhere.
+        if (entityType === 'user' && value !== 0 && (action !== 'read' || value !== 1)) {
+          throw new Error(
+            `[Permission] "${channelType}.${role}" sets ${action}: ${JSON.stringify(value)} on 'user', which takes only read: 1. ` +
+              'A role either reads the people of its channel or it does not.',
           );
         }
         return value;
@@ -50,7 +57,8 @@ export interface PermissionsConfigResult {
 
 /**
  * Builds the policy matrix, the public read grants and the access scopes from the app's callback, which runs once per
- * channel and product type; an omitted action denies. @see public-read.ts
+ * channel and product type and once for `user`; an omitted action denies. @see public-read.ts
+ * @throws Error for a `user` cell other than `read: 1`, for public read on `user`, and when the callback throws for `user`.
  */
 export const configurePermissions = (
   entityTypes: readonly EntityType[],
@@ -62,25 +70,33 @@ export const configurePermissions = (
 
   const { channelEntityTypes, getRoles } = resolveHierarchy(overrides);
 
-  const permissionableTypes = entityTypes.filter((type): type is ChannelEntityType | ProductEntityType => type !== 'user');
-
-  for (const entityType of permissionableTypes) {
+  for (const entityType of entityTypes) {
     const entries: PolicyEntry[] = [];
     // Cast: each channel's builder holds the roles the hierarchy declares for it, a pairing `recordFromKeys` cannot follow.
     const channels = recordFromKeys(channelEntityTypes, (channelType) =>
-      createChannelPolicyBuilder(channelType, getRoles(channelType), entries),
+      createChannelPolicyBuilder(entityType, channelType, getRoles(channelType), entries),
     ) as ChannelPolicyBuilder;
 
     const config: PolicyConfiguration = {
       entityType,
       channels,
       publicRead: () => {
+        if (entityType === 'user') throw new Error('[Permission] publicRead() on "user": people are read only through a role.');
         if (publicReadGrants[entityType]) throw new Error(`[Permission] publicRead() called twice for "${entityType}"`);
         publicReadGrants[entityType] = true;
       },
     };
 
-    callback(config);
+    try {
+      callback(config);
+    } catch (error) {
+      if (entityType !== 'user') throw error;
+      throw new Error(
+        '[Permission] The permissions callback threw for "user". Add a `case \'user\'` that grants read to the roles that ' +
+          'see people, or none, ahead of a `default` branch that throws.',
+        { cause: error },
+      );
+    }
 
     if (entries.length > 0) policies[entityType] = entries;
   }
@@ -93,7 +109,7 @@ export const configurePolicyMatrix = (entityTypes: readonly EntityType[], callba
   configurePermissions(entityTypes, callback, overrides).policyMatrix;
 
 /** Total lookup: an entity type the matrix does not cover yields no entries, which the engine reads as denied. */
-export const getEntityPolicies = (policies: PolicyMatrix, entityType: AccessScopedEntityType): EntityPolicies => policies[entityType] ?? [];
+export const getEntityPolicies = (policies: PolicyMatrix, entityType: EntityType): EntityPolicies => policies[entityType] ?? [];
 
 /** A channel/role pair with no entry yields `undefined`, which callers read as denied. */
 export const getPolicyPermissions = (policies: EntityPolicies, channelType: string, role: string): EntityActionPermissions | undefined =>

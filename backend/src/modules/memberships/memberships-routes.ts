@@ -81,7 +81,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get list of members',
     description:
-      'Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.',
+      "Retrieves members (users) of a channel entity by ID, including their associated membership data, for a caller whose roles read the channel's people. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.",
     request: { params: tenantOrgParamSchema, query: memberListQuerySchema },
     responses: { 200: json('Members', paginationSchema(memberSchema), mockPaginatedMembersResponse()) },
   }),
@@ -91,7 +91,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get list of invitations',
     description:
-      'Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
+      'Returns the held and pending invitations of a channel entity, identified by ID, to every user who may read it and whose roles read its people: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
     request: { params: tenantOrgParamSchema, query: invitationListQuerySchema },
     responses: { 200: json('Invitations', paginationSchema(invitationSchema), mockPaginatedChannelInvitationsResponse()) },
   }),
