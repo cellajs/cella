@@ -93,6 +93,8 @@ export interface HasFlagsConfig {
   chatSupport: boolean;
   /** Visitors can take a demo (`createDemo`): a throwaway account with a `demo` tenant, signed in by a `demo` session. */
   demos: boolean;
+  /** The app as an LTI platform: organization admins install LTI tools that register by Dynamic Registration. Needs `services.oauth`. */
+  ltiPlatform: boolean;
 }
 
 /**

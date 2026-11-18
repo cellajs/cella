@@ -12,6 +12,7 @@ import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
 import { type HealthComponent, mapDatabaseComponent, rollupStatus } from '#/lib/health-helpers';
+import { createLtiIssuerApp } from '#/modules/lti-platform/issuer-routes';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { currentSigningKeyId } from '#/modules/oauth-server/keystore';
 import { runWithLogContext } from '#/utils/logger';
@@ -60,11 +61,12 @@ function withAmbientRequest(handle: (req: IncomingMessage, res: ServerResponse) 
 
 /**
  * One Node request listener for the authorization server process: the provider (a plain Node handler, mounted with
- * the prefix stripped), the interaction routes the app renders itself, and the health endpoint.
+ * the prefix stripped), the interaction routes the app renders itself, the LTI platform's routes and the health endpoint.
  */
 export function createOauthListener(provider: Provider): Listener {
   const oidc = withAmbientRequest(provider.callback());
   const interactions = getRequestListener(createInteractionsApp(provider).fetch);
+  const lti = getRequestListener(createLtiIssuerApp(provider).fetch);
   const health = getRequestListener(createHealthApp({ version: env.RELEASE_SHA, full: probeHealth }).fetch);
 
   return (req, res) => {
@@ -76,6 +78,10 @@ export function createOauthListener(provider: Provider): Listener {
     }
     if (url.startsWith(`${oauthMount}/interaction/`)) {
       interactions(req, res);
+      return;
+    }
+    if (url.startsWith(`${oauthMount}/lti/`)) {
+      lti(req, res);
       return;
     }
     if (url === oauthMount || url.startsWith(`${oauthMount}/`) || url.startsWith(`${oauthMount}?`)) {

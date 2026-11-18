@@ -14,9 +14,12 @@ import { log } from '#/utils/logger';
  * Name and status. Accounts are disabled, never deleted, so provenance keeps pointing at them. A change reaches every
  * process with the commit: the account's keys and tokens, and for an installed app its users' tokens in the tenant.
  * Re-enabling gives the account's keys their access back, so it asks the step-up a new key asks.
+ * @throws AppError 409 `service_account_pending` for a status change of a pending installation, which only its
+ *   approval or rejection decides.
  */
 export async function updateServiceAccountOp(ctx: UserContext, serviceAccountId: string, input: UpdateServiceAccountInput) {
   const account = await getManagedServiceAccount(ctx, serviceAccountId);
+  if (input.status && account.status === 'pending') throw new AppError(409, 'service_account_pending', 'warn', { meta: { serviceAccountId } });
   if (input.status === 'active' && account.status !== 'active') await requireStepUp(ctx, 'factor');
   const updated = await updateServiceAccount(ctx, {
     id: serviceAccountId,

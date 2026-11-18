@@ -397,11 +397,11 @@ export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, create
 
 /**
  * Spends the handoff token a raw value names. The row goes in one statement: of two requests presenting it, exactly
- * one gets it. A refused expired one goes too.
+ * one gets it. A refused expired one goes too. Inside a caller's transaction (`txCtx`) the spend rolls back with it.
  * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, or spent), 401 `<kind>_expired`.
  */
-export const spendHandoffToken = async ({ kind, rawToken }: { kind: HandoffTokenKind; rawToken: string }) => {
-  const spent = await deleteHandoffToken(dbCtx, { kind, rawToken });
+export const spendHandoffToken = async ({ kind, rawToken, txCtx = dbCtx }: { kind: HandoffTokenKind; rawToken: string; txCtx?: DbContext }) => {
+  const spent = await deleteHandoffToken(txCtx, { kind, rawToken });
   if (!spent) throw new AppError(401, `${kind}_not_found`, 'warn');
   if (isExpiredDate(spent.expiresAt)) throw new AppError(401, `${kind}_expired`, 'warn', { meta: { tokenId: spent.id } });
   return spent;

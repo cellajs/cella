@@ -8,7 +8,8 @@ import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-export const serviceAccountStatuses = ['active', 'disabled'] as const;
+/** `pending`: an installed LTI tool an admin has not approved yet; only its approval or rejection ends that state. */
+export const serviceAccountStatuses = ['pending', 'active', 'disabled'] as const;
 
 /**
  * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`

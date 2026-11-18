@@ -44,7 +44,8 @@ export type TokenPolicy =
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
  *   site started, reads them. The others are Strict.
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
- * - `lti-registration` lives as long as the platform's own registration token usually does.
+ * - `lti-registration` lives as long as the platform's own registration token usually does; `lti-tool-registration`, the
+ *   token the app hands an LTI tool as a platform, as long.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },
@@ -54,6 +55,7 @@ export const tokenPolicies = {
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax' },
   'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm') },
   'lti-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
+  'lti-tool-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
 } as const satisfies Record<TokenKind, TokenPolicy>;
 
 type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {

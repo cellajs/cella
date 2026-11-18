@@ -1,0 +1,599 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "07b0c623-1153-4ad9-afee-3ca2c871b207",
+  "prevIds": [
+    "0cc3e57d-12e6-42bb-8b56-af4085c66dae"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|tbl|public.lti_installations",
+        "n|tbl|public.lti_installations",
+        "e|tbl|public.lti_installations",
+        "n|rel|public.lti_installations",
+        "n|type|public.lti_installations",
+        "n|rel|public.lti_installations_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "tenant_id"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.tenant_id",
+        "n|col|public.oauth_clients.tenant_id",
+        "e|col|public.oauth_clients.tenant_id"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "jwks_uri"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.jwks_uri",
+        "n|col|public.oauth_clients.jwks_uri",
+        "e|col|public.oauth_clients.jwks_uri"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "initiate_login_uri"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.initiate_login_uri",
+        "n|col|public.oauth_clients.initiate_login_uri",
+        "e|col|public.oauth_clients.initiate_login_uri"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "target_link_uri"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.target_link_uri",
+        "n|col|public.oauth_clients.target_link_uri",
+        "e|col|public.oauth_clients.target_link_uri"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "lti_tool_config"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.lti_tool_config",
+        "n|col|public.oauth_clients.lti_tool_config",
+        "e|col|public.oauth_clients.lti_tool_config"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "n|con|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.lti_installations.service_account_id",
+        "n|col|public.service_accounts.id",
+        "e|uniqueness|public.service_accounts.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_approved_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.approved_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "oauth_clients"
+      ],
+      "writes": [
+        "s|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "n|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "e|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "n|con|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.oauth_clients.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "oauth_clients"
+      ],
+      "writes": [
+        "s|ck|public.oauth_clients.oauth_clients_lti_check",
+        "n|ck|public.oauth_clients.oauth_clients_lti_check",
+        "e|ck|public.oauth_clients.oauth_clients_lti_check",
+        "n|con|public.oauth_clients.oauth_clients_lti_check"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|col|public.oauth_clients.lti_tool_config",
+        "n|col|public.oauth_clients.initiate_login_uri",
+        "n|col|public.oauth_clients.target_link_uri",
+        "n|col|public.oauth_clients.jwks_uri"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "lti_installations",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "service_account_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "released_fields",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "approved_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "approved_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "jwks_uri",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "initiate_login_uri",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "target_link_uri",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "lti_tool_config",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_service_account_id_service_accounts_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "service_account_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "service_accounts",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_approved_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "approved_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "oauth_clients_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_pkey",
+        "columns": [
+          "service_account_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "oauth_clients_lti_check",
+        "value": "(\"lti_tool_config\" IS NULL) = (\"initiate_login_uri\" IS NULL) AND (\"lti_tool_config\" IS NULL) = (\"target_link_uri\" IS NULL) AND (\"lti_tool_config\" IS NULL OR \"jwks_uri\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

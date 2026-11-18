@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { UserGrantRefusal } from 'shared/oauth-consent';
 import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -45,7 +45,8 @@ export async function grantRefusal({ userId, clientId, tenantId }: UserGrantSubj
         eq(serviceAccountsTable.status, 'active'),
       ),
     )
-    .where(eq(oauthClientsTable.id, clientId))
+    // An LTI tool's registration grants a person nothing: it reaches the app only through a launch.
+    .where(and(eq(oauthClientsTable.id, clientId), isNull(oauthClientsTable.ltiToolConfig)))
     .limit(1);
   if (app) return app.installationId ? null : 'app_not_installed';
 

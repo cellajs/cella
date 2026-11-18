@@ -34,7 +34,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
       },
     });
     if (!input.key) return { serviceAccount, apiKey: null };
-    const apiKey = await issueApiKey(txCtx, { actorId: serviceAccount.id, tenantId, createdBy: creatorId, key: input.key });
+    const apiKey = await issueApiKey(txCtx, { account: serviceAccount, createdBy: creatorId, key: input.key });
     return { serviceAccount, apiKey };
   });
 

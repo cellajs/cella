@@ -179,6 +179,13 @@ export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFe
   description: 'Fetches for each IP address.',
 });
 
+/** LTI tool registrations per IP at the issuer: each one presents a registration token, and a tool registers once. */
+export const ltiToolRegistrationLimiter = rateLimiter('limit', 'ltiToolRegistration', ['ip'], {
+  limits: { points: 20, duration: 60 * 60 },
+  name: 'LTI tool registrations',
+  description: 'Registration requests for each IP address, refused or not.',
+});
+
 /**
  * Per-second ceiling for API keys and access tokens, run by `serviceGuard` for every machine caller: a runaway
  * integration hits this long before the hourly points budget.

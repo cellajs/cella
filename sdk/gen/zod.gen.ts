@@ -376,6 +376,61 @@ export const zStreamError = z.object({
 });
 
 /**
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.
+ */
+export const zLtiInstallation = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  name: z.string(),
+  logoUri: z.string().nullable(),
+  domain: z.string(),
+  description: z.string().nullable(),
+  claims: z.array(z.string()),
+  requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
+  releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
+  status: z.enum(['pending', 'active', 'disabled']),
+  approvedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+});
+
+/**
  * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
  */
 export const zProtectedResourceMetadata = z.object({
@@ -618,7 +673,7 @@ export const zServiceAccount = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  status: z.enum(['active', 'disabled']),
+  status: z.enum(['pending', 'active', 'disabled']),
   bindings: z.array(
     z.object({
       channelType: z.enum(['organization']),
@@ -1754,6 +1809,69 @@ export const zPreviewProductLinkPath = z.object({
     .max(11)
     .regex(/^[a-z][1-9][0-9]*$/),
 });
+
+export const zStartLtiToolRegistrationBody = z.object({
+  registrationUrl: z.string().max(2048),
+});
+
+export const zStartLtiToolRegistrationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Registration address
+ */
+export const zStartLtiToolRegistrationResponse = z.object({
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+export const zListLtiInstallationsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiInstallationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * LTI installations
+ */
+export const zListLtiInstallationsResponse = z.object({
+  results: z.array(zLtiInstallation),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zApproveLtiInstallationBody = z.object({
+  releasedFields: z.array(z.enum(['name', 'email', 'picture'])).max(3),
+});
+
+export const zApproveLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Approved installation
+ */
+export const zApproveLtiInstallationResponse = zLtiInstallation;
+
+export const zRejectLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Installation rejected
+ */
+export const zRejectLtiInstallationResponse = z.void();
 
 export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),

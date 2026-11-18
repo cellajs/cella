@@ -9,6 +9,9 @@ import type {
   AcceptInvitationTokenData,
   AcceptInvitationTokenErrors,
   AcceptInvitationTokenResponses,
+  ApproveLtiInstallationData,
+  ApproveLtiInstallationErrors,
+  ApproveLtiInstallationResponses,
   ArchiveChannelData,
   ArchiveChannelErrors,
   ArchiveChannelResponses,
@@ -219,6 +222,9 @@ import type {
   ListLtiConnectionsData,
   ListLtiConnectionsErrors,
   ListLtiConnectionsResponses,
+  ListLtiInstallationsData,
+  ListLtiInstallationsErrors,
+  ListLtiInstallationsResponses,
   ListMembersData,
   ListMembersErrors,
   ListMembersResponses,
@@ -283,6 +289,9 @@ import type {
   RegisterLtiPlatformData,
   RegisterLtiPlatformErrors,
   RegisterLtiPlatformResponses,
+  RejectLtiInstallationData,
+  RejectLtiInstallationErrors,
+  RejectLtiInstallationResponses,
   RemovePushSubscriptionData,
   RemovePushSubscriptionErrors,
   RemovePushSubscriptionResponses,
@@ -334,6 +343,9 @@ import type {
   StartGithubOAuthErrors,
   StartGoogleOAuthData,
   StartGoogleOAuthErrors,
+  StartLtiToolRegistrationData,
+  StartLtiToolRegistrationErrors,
+  StartLtiToolRegistrationResponses,
   StartMicrosoftOAuthData,
   StartMicrosoftOAuthErrors,
   StartOAuthConnectData,
@@ -386,6 +398,7 @@ import type {
 import {
   zAcceptInvitationResponse,
   zAcceptInvitationTokenResponse,
+  zApproveLtiInstallationResponse,
   zArchiveChannelResponse,
   zBatchCreateAttachmentsResponse,
   zBatchCreateOrganizationsResponse,
@@ -451,6 +464,7 @@ import {
   zListConnectionsResponse,
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
+  zListLtiInstallationsResponse,
   zListMembersResponse,
   zListMyInvitationsResponse,
   zListMyMembershipsResponse,
@@ -468,6 +482,7 @@ import {
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
   zRedeemLinkTokenResponse,
+  zRejectLtiInstallationResponse,
   zRemovePushSubscriptionResponse,
   zRemoveUserFactorResponse,
   zResendInvitationResponse,
@@ -483,6 +498,7 @@ import {
   zSignInWithPasskeyResponse,
   zSignInWithTotpResponse,
   zSignOutResponse,
+  zStartLtiToolRegistrationResponse,
   zStartOAuthConnectResponse,
   zStepUpResponse,
   zToggleMfaResponse,
@@ -1892,6 +1908,109 @@ export const previewProductLink = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Start LTI tool registration
+ *
+ * Starts an LTI tool's Dynamic Registration: answers the LTI tool's registration address with the platform's configuration address and a one-use registration token added, to open in a frame or a new tab. The LTI tool registers itself with the token; its registration is private to the organization's tenant and waits for an admin's approval. Requires permission to update the organization.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations:start-registration** ·· [startLtiToolRegistration](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations:start-registration) ·· _lti-platform · cella_
+ *
+ * @param {startLtiToolRegistrationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.body.registrationUrl - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
+ */
+export const startLtiToolRegistration = <ThrowOnError extends boolean = true>(
+  options: Options<StartLtiToolRegistrationData, ThrowOnError>,
+): RequestResult<StartLtiToolRegistrationResponses, StartLtiToolRegistrationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<StartLtiToolRegistrationResponses, StartLtiToolRegistrationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zStartLtiToolRegistrationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:start-registration',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get LTI installations
+ *
+ * The LTI tools installed in the organization's tenant, pending, approved or disabled, each with its registration. Requires permission to update the organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations** ·· [listLtiInstallations](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations) ·· _lti-platform · cella_
+ *
+ * @param {listLtiInstallationsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiInstallations = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiInstallationsData, ThrowOnError>,
+): RequestResult<ListLtiInstallationsResponses, ListLtiInstallationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiInstallationsResponses, ListLtiInstallationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiInstallationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations',
+    ...options,
+  });
+
+/**
+ * Approve LTI installation
+ *
+ * Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve** ·· [approveLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve) ·· _lti-platform · cella_
+ *
+ * @param {approveLtiInstallationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiInstallationId - `string`
+ * @param {enum[]} options.body.releasedFields - `enum[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
+ */
+export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
+  options: Options<ApproveLtiInstallationData, ThrowOnError>,
+): RequestResult<ApproveLtiInstallationResponses, ApproveLtiInstallationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ApproveLtiInstallationResponses, ApproveLtiInstallationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zApproveLtiInstallationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Reject LTI installation
+ *
+ * Rejects a pending LTI tool. It never acted: its installation and its registration are deleted.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject** ·· [rejectLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject) ·· _lti-platform · cella_
+ *
+ * @param {rejectLtiInstallationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiInstallationId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
+  options: Options<RejectLtiInstallationData, ThrowOnError>,
+): RequestResult<RejectLtiInstallationResponses, RejectLtiInstallationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RejectLtiInstallationResponses, RejectLtiInstallationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRejectLtiInstallationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject',
+    ...options,
+  });
+
+/**
  * Protected resource metadata
  *
  * RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
@@ -3047,7 +3166,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
 /**
  * Update service account
  *
- * Renames, disables or re-enables a service account. Accounts are never deleted.
+ * Renames, disables or re-enables a service account. An account that acted is disabled, never deleted. A pending LTI tool installation changes status only by its approval or rejection.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}** ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/PATCH/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}) ·· _service-accounts · cella_
  *
@@ -3057,7 +3176,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.serviceAccountId - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateServiceAccount = <ThrowOnError extends boolean = true>(
   options: Options<UpdateServiceAccountData, ThrowOnError>,
@@ -3102,7 +3221,7 @@ export const listApiKeys = <ThrowOnError extends boolean = true>(
 /**
  * Create API key
  *
- * Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.
+ * Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window. An account that installs an app or an LTI tool takes no key: it acts through its registration.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys** ·· [createApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys) ·· _service-accounts · cella_
  *
@@ -3115,7 +3234,7 @@ export const listApiKeys = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.expiresAt - `string` (optional)
  * @param {string=} options.body.rollFrom - `string` (optional)
  * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 415, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const createApiKey = <ThrowOnError extends boolean = true>(
   options: Options<CreateApiKeyData, ThrowOnError>,

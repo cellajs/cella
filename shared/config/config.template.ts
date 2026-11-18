@@ -228,6 +228,7 @@ export const config = {
     uploads: false,
     chatSupport: false,
     demos: false,
+    ltiPlatform: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
@@ -255,7 +256,16 @@ export const config = {
    * a worked example.
    */
   federations: {} as Record<string, FederationConfig>,
-  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up', 'lti-registration'] as const,
+  tokenKinds: [
+    'oauth-verification',
+    'invitation',
+    'confirm-mfa',
+    'magic',
+    'oauth-connect',
+    'step-up',
+    'lti-registration',
+    'lti-tool-registration',
+  ] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

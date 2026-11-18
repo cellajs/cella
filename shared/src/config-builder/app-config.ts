@@ -64,7 +64,7 @@ const mode = rawMode as ConfigMode;
 // MCP takes access tokens only, and the app's authorization server (`services.oauth`) issues them. Checked for every
 // mode, so a combination only production has fails in development and in CI too.
 for (const [name, overrides] of typedEntries(configModes)) {
-  const { services, enabledAuthStrategies } = mergeDeep(structuredClone(defaultConfig), overrides);
+  const { services, enabledAuthStrategies, has } = mergeDeep(structuredClone(defaultConfig), overrides);
   const { mcp, oauth } = services;
   if (mcp.enabled && !oauth.enabled) {
     throw new Error(
@@ -77,6 +77,13 @@ for (const [name, overrides] of typedEntries(configModes)) {
     throw new Error(
       `Invalid config: the lti sign-in method is enabled in ${name} mode while services.oauth is off. An LTI platform ` +
         "checks the app's signatures against the authorization server's key set: enable services.oauth in that mode, or remove lti.",
+    );
+  }
+  // As an LTI platform the app is an issuer: its configuration, registration and launch are the authorization server's.
+  if (has.ltiPlatform && !oauth.enabled) {
+    throw new Error(
+      `Invalid config: has.ltiPlatform is on in ${name} mode while services.oauth is off. The LTI platform's issuer is the ` +
+        'authorization server, which serves its configuration, registration and launch: enable services.oauth in that mode, or turn has.ltiPlatform off.',
     );
   }
 }

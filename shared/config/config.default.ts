@@ -234,6 +234,7 @@ export const config = {
     uploads: true,
     chatSupport: false,
     demos: false,
+    ltiPlatform: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
@@ -273,7 +274,16 @@ export const config = {
       mfaAcr: ['https://refeds.org/profile/mfa'],
     },
   } satisfies Record<string, FederationConfig>,
-  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up', 'lti-registration'] as const,
+  tokenKinds: [
+    'oauth-verification',
+    'invitation',
+    'confirm-mfa',
+    'magic',
+    'oauth-connect',
+    'step-up',
+    'lti-registration',
+    'lti-tool-registration',
+  ] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

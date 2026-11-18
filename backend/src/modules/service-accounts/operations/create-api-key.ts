@@ -30,7 +30,7 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
       if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'apiKey' } });
       log.info('ApiKey rolled', { from: input.rollFrom, overlapEnd: expiresAt });
     }
-    return issueApiKey(txCtx, { actorId: account.id, tenantId, createdBy: ctx.var.actor.id, key: input });
+    return issueApiKey(txCtx, { account, createdBy: ctx.var.actor.id, key: input });
   });
   invalidateCache.serviceAccount(account);
 
