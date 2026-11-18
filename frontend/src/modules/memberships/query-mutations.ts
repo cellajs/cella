@@ -157,6 +157,10 @@ export const useMemberUpdateMutation = () =>
     },
     onSuccess: async (updatedMembership, { channelId, channelType, path: { tenantId, organizationId } }, { toastMessage }) => {
       updateMyMembershipCache(updatedMembership);
+      // A memberships read still running may predate this write and undo it on landing. A fresh read replaces it, and catchup, which awaits it, gets the fresh one.
+      if (queryClient.getQueryState(meKeys.memberships)?.fetchStatus === 'fetching') {
+        void queryClient.refetchQueries({ queryKey: meKeys.memberships, exact: true });
+      }
 
       const similarKey = memberQueryKeys.list.similarMembers({ channelId, channelType, tenantId, organizationId });
       patchMemberLists(similarKey, (members) => updateMembers(members, updatedMembership));

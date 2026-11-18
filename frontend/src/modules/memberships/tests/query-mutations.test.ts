@@ -17,7 +17,10 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { success: vi.fn()
 
 const { queryClient } = await import('~/query/query-client');
 const { membersListQueryOptions } = await import('~/modules/memberships/query');
-const { useMembershipsDeleteMutation } = await import('~/modules/memberships/query-mutations');
+const { useMemberUpdateMutation, useMembershipsDeleteMutation } = await import('~/modules/memberships/query-mutations');
+const { meKeys } = await import('~/modules/me/query');
+// Registers the organization keys that a membership write invalidates.
+await import('~/modules/organization/query');
 
 type Options<TVariables, TContext> = { onMutate: (variables: TVariables) => Promise<TContext> };
 
@@ -98,5 +101,38 @@ describe('useMembershipsDeleteMutation', () => {
 
     expect(context).toHaveLength(3);
     for (const [key, previous] of context) expect(previous).toBe(before.get(key));
+  });
+});
+
+describe('useMemberUpdateMutation', () => {
+  type Memberships = { results: MembershipBase[]; totalSize: number };
+  const memberships = (hidden: boolean): Memberships => ({ results: [membership('m-1', { hidden, displayOrder: 1 })], totalSize: 1 });
+  const variables = {
+    path: { tenantId: 'tenant-1', organizationId: 'org-1', membershipId: 'm-1' },
+    body: { hidden: true },
+    channelId: 'channel-m-1',
+    channelType: 'organization' as const,
+  };
+  type Context = { previousLists: unknown[]; toastMessage: string };
+  type UpdateOptions = Options<typeof variables, Context> & {
+    onSuccess: (data: MembershipBase, vars: typeof variables, context: Context) => Promise<void>;
+  };
+  const options = () => optionsOf<UpdateOptions>(useMemberUpdateMutation);
+
+  it('onSuccess: a memberships read that started before a hide and lands after it keeps the hide, also for a caller awaiting it', async () => {
+    queryClient.setQueryData(meKeys.memberships, memberships(false));
+    // The first read answers with what the server held before the write, and lands only after the write's answer.
+    let landStaleRead: (data: Memberships) => void = () => {};
+    let reads = 0;
+    const queryFn = () => (++reads === 1 ? new Promise<Memberships>((resolve) => (landStaleRead = resolve)) : Promise.resolve(memberships(true)));
+    // Catchup awaits a memberships read the same way.
+    const awaited = queryClient.query({ queryKey: meKeys.memberships, queryFn, staleTime: 0 });
+
+    const context = await options().onMutate(variables);
+    await options().onSuccess(membership('m-1', { hidden: true, displayOrder: 1 }), variables, context);
+    landStaleRead(memberships(false));
+
+    expect((await awaited).results[0].hidden).toBe(true);
+    expect(queryClient.getQueryData<Memberships>(meKeys.memberships)?.results[0].hidden).toBe(true);
   });
 });
