@@ -23,7 +23,7 @@ pnpm testbed -- env ORG_PATH=<tenantId>/<orgSlug> [PAGES=<path>,...] [ONLY=reloa
 
 - `ORG_PATH`: an organization the user administers that holds attachments. On the seeded testbed:
   `SELECT o.tenant_id, o.slug FROM organizations o JOIN memberships m ON m.organization_id = o.id AND m.role = 'admin' JOIN users u ON u.id = m.user_id AND u.email = 'agent-test@cellajs.com' JOIN attachments a ON a.organization_id = o.id GROUP BY 1, 2 LIMIT 3;`
-- `PAGES`: the pages a reload checks, `/home`, the organization's attachments and `/account` by default. An app appends its own main pages (a board, a list): the reload and cold checks then cover them.
+- `PAGES`: the pages a reload checks, `/home`, `/account` and the organization's attachments by default. An app appends its own main pages (a board, a list): the reload check covers them, and the cold and nouser checks reopen the last one. That page renders from what the device holds: `/account` waits for its security data, which a cold boot never holds.
 - The run takes about three minutes, prints PASS or FAIL per assert, writes `offline-evidence.json` and `shots/`, and exits 1 when an assert failed. A frontend change needs the testbed restarted (`pnpm testbed stop`, then `pnpm testbed`), which rebuilds it.
 
 ## The matrix
@@ -49,6 +49,6 @@ What a headless browser cannot reach. Check these before a release that touches 
 ## Reading a failure
 
 - A `reload` or `cold` failure with `spinnerOnly` names a route whose `beforeLoad` or loader awaits a read that was never cached. Find the await in the route logic: a read the page can go without fails over to the cache or to nothing offline.
-- An `error: true` names a network error that reached the router: a guard rethrew it. Only a missing user may show the notice.
+- An `error: true` names a network error that reached the router: a guard rethrew it. Only a missing user may show the notice, or a page whose own data a cold boot never holds (`/account`). Such a page loads by itself once back online.
 - `detect` above 10 s: the probe repeats attempts that timed out, or `responseWaitMs` grew.
 - `description` with the parked-edits notice: the rebase found a conflict or did not run. Its console lines start with `[yjs]`.
