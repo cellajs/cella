@@ -131,6 +131,8 @@ export const appServices = defineServices({
     drainPolicy: 'requests',
     // The app origin and the LB's fallback backend: anything no path route matches lands on the SPA proxy.
     lbRoute: 'default',
+    // Caddy's binary carries this file capability, and exec refuses it without one.
+    capabilities: ['NET_BIND_SERVICE'],
     // The SPA proxy reads no app secret, so it gets no standard env and no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,

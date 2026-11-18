@@ -89,9 +89,12 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   }
 
   try {
-    const [{ baseApp: app }, { registerOpenApiDocs }] = await Promise.all([import('#/routes'), import('#/core/openapi-registration')]);
+    const [{ baseApp: app }, { registerOpenApiDocs, writeOpenApiCache }] = await Promise.all([
+      import('#/routes'),
+      import('#/core/openapi-registration'),
+    ]);
 
-    await registerOpenApiDocs(app);
+    await writeOpenApiCache(registerOpenApiDocs(app));
 
     // Record generation metadata in the manifest (used for cache invalidation, gitignored)
     writeFileSync(MANIFEST_PATH, JSON.stringify({ ...(hash && { diffHash: hash }), generatedAt: new Date().toISOString() }, null, 2));

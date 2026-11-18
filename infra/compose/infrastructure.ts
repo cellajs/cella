@@ -114,6 +114,15 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   return meta;
 }
 
+/** A container of an app service keeps only the capabilities it declares, and no exec grants it more. */
+function privileges(cfg: AppServiceConfig): Pick<ComposeService, 'cap_drop' | 'cap_add' | 'security_opt'> {
+  return {
+    cap_drop: ['ALL'],
+    ...(cfg.capabilities?.length ? { cap_add: cfg.capabilities } : {}),
+    security_opt: ['no-new-privileges:true'],
+  };
+}
+
 /** Expand one app service entry into a full Compose service block. */
 function appBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const environment = {
@@ -127,6 +136,7 @@ function appBlock(slug: string, cfg: AppServiceConfig): ComposeService {
     // The app starts once its release companion (migrations) exited 0: one `compose up --wait` runs both, and a failed migration fails it.
     ...(cfg.release ? { depends_on: { [releaseServiceName(slug)]: { condition: 'service_completed_successfully' as const } } } : {}),
     restart: 'unless-stopped',
+    ...privileges(cfg),
     // The pools forward to the host ports directly, with no ingress hop on the machine; their check asks the machine's agent, which probes the app's own health path.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
     // SIGTERM drain window for in-flight requests.
@@ -156,6 +166,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
     pull_policy: 'never',
     profiles: [slug],
     restart: 'no',
+    ...privileges(cfg),
     env_file: ENV_FILES,
     environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
   };

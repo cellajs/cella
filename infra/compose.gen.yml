@@ -11,6 +11,10 @@ services:
       backend-release:
         condition: service_completed_successfully
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4000:4000'
       - '4005:4005'
@@ -58,6 +62,10 @@ services:
     pull_policy: never
     profiles: [backend]
     restart: 'no'
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     env_file:
       - .env
       - path: .env.runtime
@@ -73,6 +81,10 @@ services:
     pull_policy: never
     profiles: [cdc]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4001:4001'
     stop_grace_period: '30s'
@@ -109,6 +121,10 @@ services:
     pull_policy: never
     profiles: [yjs]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4002:4002'
     stop_grace_period: '30s'
@@ -149,6 +165,10 @@ services:
     pull_policy: never
     profiles: [mcp]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4003:4003'
     stop_grace_period: '30s'
@@ -185,6 +205,10 @@ services:
     pull_policy: never
     profiles: [oauth]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4004:4004'
     stop_grace_period: '30s'
@@ -221,6 +245,10 @@ services:
     pull_policy: never
     profiles: [jobs]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '4006:4006'
     stop_grace_period: '30s'
@@ -254,6 +282,12 @@ services:
     pull_policy: never
     profiles: [frontend]
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
     ports:
       - '80:80'
     stop_grace_period: '30s'
