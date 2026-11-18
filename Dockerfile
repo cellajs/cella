@@ -11,9 +11,9 @@
 #   runtime : node:<NODE_VERSION>-alpine + non-root `app` user +
 #              RELEASE_SHA/NODE_ENV, the parent of every production target
 #
-#   manifests: all workspace manifests + lockfile (shared by every service;
-#              `--filter` scopes each install, and lockfile changes already
-#              invalidate all services)
+#   manifests: the lockfile + the manifests of the packages the services build
+#              from (shared by every service; `--filter` scopes each install,
+#              and lockfile changes already invalidate all services)
 #
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
 # rolldown build) → `<svc>` (production target). Targets: `backend` (also reused by
@@ -48,6 +48,7 @@ RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').pa
 # -----------------------------------------------------------------------------
 # Shared: production runtime base (non-root user, release metadata)
 # -----------------------------------------------------------------------------
+# The process can read its code and dependencies but not rewrite them: files a production stage copies stay root's.
 FROM ${NODE_IMAGE} AS runtime
 
 RUN addgroup --system --gid 1001 app && \
@@ -86,9 +87,9 @@ COPY yjs/package.json ./yjs/
 # backend: Hono API server
 # =============================================================================
 
-# Install production dependencies only (--ignore-scripts avoids native build issues). The filter has no
-# `...`: that would follow workspace links, devDependencies included, and install the `dependencies` of
-# shared, sdk, cdc and yjs too, which the bundle inlines.
+# Install production dependencies only; none of them needs its install script. The filter has no `...`: that would
+# follow workspace links, devDependencies included, and install the `dependencies` of shared, sdk, cdc and yjs too,
+# which the bundle inlines.
 FROM manifests AS backend-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -104,7 +105,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 COPY tsconfig.json ./
 COPY backend/ ./backend/
 COPY shared/ ./shared/
-COPY sdk/ ./sdk/
 COPY cdc/ ./cdc/
 COPY yjs/ ./yjs/
 
@@ -115,20 +115,15 @@ RUN pnpm build
 FROM runtime AS backend
 
 # Built application
-COPY --from=backend-builder --chown=app:app /app/backend/dist ./backend/dist
-COPY --from=backend-builder --chown=app:app /app/backend/package.json ./backend/
+COPY --from=backend-builder /app/backend/dist ./backend/dist
+COPY --from=backend-builder /app/backend/package.json ./backend/
 
 # Production dependencies
-COPY --from=backend-deps --chown=app:app /app/node_modules ./node_modules
-COPY --from=backend-deps --chown=app:app /app/backend/node_modules ./backend/node_modules
-
-# Runtime data. The bundle inlines the shared workspace into backend/dist, and the deps stage installs
-# the backend's own `dependencies` only, so of shared only its translations and JSON data are here.
-COPY --from=backend-builder --chown=app:app /app/shared/locales ./shared/locales
-COPY --from=backend-builder --chown=app:app /app/shared/json ./shared/json
+COPY --from=backend-deps /app/node_modules ./node_modules
+COPY --from=backend-deps /app/backend/node_modules ./backend/node_modules
 
 # Drizzle migrations
-COPY --chown=app:app backend/drizzle ./backend/drizzle
+COPY backend/drizzle ./backend/drizzle
 
 # GeoIP databases download here at runtime (backend/src/lib/geoip.ts); the image ships none.
 USER root
@@ -137,11 +132,6 @@ USER app
 
 EXPOSE 4000
 
-# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts); this baked one covers a standalone
-# run of the API, on its configured port.
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
-
 WORKDIR /app/backend
 # The passkey library asks Web Crypto which algorithms it supports at load, which Node 26 answers with experimental warnings.
 CMD ["node", "--disable-warning=ExperimentalWarning", "dist/main.js"]
@@ -149,9 +139,8 @@ CMD ["node", "--disable-warning=ExperimentalWarning", "dist/main.js"]
 # =============================================================================
 # cdc: Change Data Capture worker
 # =============================================================================
-# Connects to PostgreSQL logical replication and forwards to backend WebSocket.
 
-# Install production dependencies only (--ignore-scripts avoids native build issues)
+# Install production dependencies only; none of them needs its install script.
 FROM manifests AS cdc-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -168,19 +157,18 @@ COPY tsconfig.json ./
 COPY cdc/ ./cdc/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/
-COPY sdk/ ./sdk/
 
 WORKDIR /app/cdc
 RUN pnpm build
 
-# Production image (internal-only: no EXPOSE, no baked healthcheck)
+# Production image
 FROM runtime AS cdc
 
-COPY --from=cdc-builder --chown=app:app /app/cdc/dist ./cdc/dist
-COPY --from=cdc-builder --chown=app:app /app/cdc/package.json ./cdc/
+COPY --from=cdc-builder /app/cdc/dist ./cdc/dist
+COPY --from=cdc-builder /app/cdc/package.json ./cdc/
 
-COPY --from=cdc-deps --chown=app:app /app/node_modules ./node_modules
-COPY --from=cdc-deps --chown=app:app /app/cdc/node_modules ./cdc/node_modules
+COPY --from=cdc-deps /app/node_modules ./node_modules
+COPY --from=cdc-deps /app/cdc/node_modules ./cdc/node_modules
 
 WORKDIR /app/cdc
 CMD ["node", "dist/cdc-worker.js"]
@@ -188,9 +176,8 @@ CMD ["node", "dist/cdc-worker.js"]
 # =============================================================================
 # yjs: collaborative editing relay worker
 # =============================================================================
-# Pure binary passthrough: no Y.Doc instantiation on server.
 
-# Install production dependencies only (--ignore-scripts avoids native build issues)
+# Install production dependencies only; none of them needs its install script.
 FROM manifests AS yjs-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -214,19 +201,14 @@ RUN pnpm build
 # Production image
 FROM runtime AS yjs
 
-COPY --from=yjs-builder --chown=app:app /app/yjs/dist ./yjs/dist
-COPY --from=yjs-builder --chown=app:app /app/yjs/package.json ./yjs/
+COPY --from=yjs-builder /app/yjs/dist ./yjs/dist
+COPY --from=yjs-builder /app/yjs/package.json ./yjs/
 
-COPY --from=yjs-deps --chown=app:app /app/node_modules ./node_modules
-COPY --from=yjs-deps --chown=app:app /app/yjs/node_modules ./yjs/node_modules
+COPY --from=yjs-deps /app/node_modules ./node_modules
+COPY --from=yjs-deps /app/yjs/node_modules ./yjs/node_modules
 
 # WebSocket port
 EXPOSE 4002
-
-# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts);
-# this baked one covers standalone runs.
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4002/health || exit 1
 
 WORKDIR /app/yjs
 # lib0 probes localStorage at load; without Web Storage it uses its in-memory store and Node 26 prints no warning.

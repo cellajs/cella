@@ -95,6 +95,7 @@ export interface ComposeService {
   network_mode?: 'host';
   cap_add?: readonly string[];
   cap_drop?: readonly string[];
+  security_opt?: readonly string[];
   volumes?: readonly string[];
   ports?: readonly string[];
   stop_grace_period?: string;
@@ -167,6 +168,8 @@ export interface AppServiceConfig {
   placement?: ServicePlacement;
   /** Per-service machine type. Required: every service declares its own, there is no shared fallback. A single type for all modes, or a per-mode map. */
   instanceType: PerMode<string>;
+  /** Linux capabilities the container keeps; Compose drops every other one. */
+  capabilities?: readonly string[];
   /** Service-specific environment variables. Merged after the standard env so it can override it; do not repeat the engine-injected `NODE_ENV`/`APP_MODE`/`TZ`. */
   env?: Readonly<Record<string, string>>;
   /**

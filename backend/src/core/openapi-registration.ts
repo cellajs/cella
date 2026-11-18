@@ -15,8 +15,8 @@ const scopeDescription = (scope: string): string => {
   return verb === 'read' ? `Read ${entity}s` : `Create, update and delete ${entity}s`;
 };
 
-/** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint. */
-export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
+/** Register OpenAPI schemas and mount the /openapi.json endpoint. */
+export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
 
   const extensions = buildExtensionEntries(getExtensionValueMetadata());
@@ -79,6 +79,14 @@ export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   // The endpoint serves this normalized document: `app.doc31` would rebuild it per request and skip the normalization.
   app.get('/openapi.json', (ctx) => ctx.json(openApiDoc));
 
+  return openApiDoc;
+};
+
+/**
+ * Writes the spec to `openapi.cache.json`, the input of the SDK and the docs, when its content changed. A deployed API
+ * never writes it: its image is read-only to the process.
+ */
+export const writeOpenApiCache = async (openApiDoc: ReturnType<typeof registerOpenApiDocs>) => {
   const cachePath = './openapi.cache.json';
   // The SDK and docs are generated from this file and committed, so a checkout on shifted dev ports writes the configured URLs.
   const nextDoc = withConfiguredDevPorts(JSON.stringify(openApiDoc, null, 2));

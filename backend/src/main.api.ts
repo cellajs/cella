@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
-import { registerOpenApiDocs } from '#/core/openapi-registration';
+import { registerOpenApiDocs, writeOpenApiCache } from '#/core/openapi-registration';
 import { baseDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
@@ -29,7 +29,9 @@ const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
-await registerOpenApiDocs(app);
+const openApiDoc = registerOpenApiDocs(app);
+// The SDK's dev watcher regenerates from the cache this writes.
+if (appConfig.isLocal) await writeOpenApiCache(openApiDoc);
 
 const main = async () => {
   const { port, internalPort } = appConfig.services.backend;
