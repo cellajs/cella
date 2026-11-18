@@ -1,7 +1,7 @@
-import { appConfig, type ChannelEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import type { AncestorSlugs } from '~/modules/entities/types';
 import type { EnrichableChannel } from '~/query/enrichment/types';
-import { getField } from '~/utils/get-field';
 import { objectKeys } from '~/utils/object-keys';
 
 /** entityType -> entityId -> slug */
@@ -20,20 +20,14 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
  * one without them. Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug
  * corrects the URL later.
  */
-export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: readonly ChannelEntityType[], slugIndex: SlugIndex): EnrichableChannel {
+export function enrichWithAncestorSlugs(item: EnrichableChannel, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableChannel {
+  const ancestors = hierarchy.resolveNonNullAncestors(entityType, asRecord(item));
   if (ancestors.length === 0) return item;
 
   const slugs: AncestorSlugs = {};
-  let found = false;
+  for (const { type, id } of ancestors) slugs[type] = slugIndex.get(type)?.get(id) ?? id;
 
-  for (const ancestorType of ancestors) {
-    const ancestorId = getField(item, appConfig.entityIdColumnKeys[ancestorType]);
-    if (typeof ancestorId !== 'string') continue;
-    slugs[ancestorType] = slugIndex.get(ancestorType)?.get(ancestorId) ?? ancestorId;
-    found = true;
-  }
-
-  if (!found || !hasAncestorSlugsChanged(item.ancestorSlugs ?? null, slugs)) return item;
+  if (!hasAncestorSlugsChanged(item.ancestorSlugs ?? null, slugs)) return item;
 
   return { ...item, ancestorSlugs: slugs };
 }
