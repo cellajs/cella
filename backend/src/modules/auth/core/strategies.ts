@@ -4,9 +4,10 @@ import { federationKeys } from '#/modules/auth/core/federations/federation-keys'
 
 /**
  * The built-in sign-in methods; `anonymous` is the session minted for an account without an identity (a demo's), which
- * no other method signs in. A federation key from `appConfig.federations` is a method too ({@link AuthStrategy}).
+ * no other method signs in, and `lti` the embedded session an LTI launch starts. A federation key from
+ * `appConfig.federations` is a method too ({@link AuthStrategy}).
  */
-const baseAuthStrategies = [...oauthProviders, 'passkey', 'totp', 'email', 'magic', 'anonymous'] as const;
+const baseAuthStrategies = [...oauthProviders, 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti'] as const;
 
 /** A sign-in method as a session records it: a built-in one, or a federation key. */
 export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;

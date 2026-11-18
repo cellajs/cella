@@ -138,7 +138,6 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     responses: {
       200: json('Launch started', ltiLaunchStartSchema, {
         url: `${loginInitiationUrl}?token=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my`,
-        ltiToolOrigins: ['https://peer-review.example.com'],
         expiresAt: '2026-11-18T13:05:00.000Z',
       }),
       ...errors(409),

@@ -272,6 +272,7 @@ const handoffColumns = {
   tenantId: sql<string>`${tokensTable.tenantId}`,
   createdBy: tokensTable.createdBy,
   ltiResourceLinkId: tokensTable.ltiResourceLinkId,
+  connectionId: tokensTable.connectionId,
   expiresAt: tokensTable.expiresAt,
 };
 

@@ -33,6 +33,8 @@ export interface EngineConfig {
   services: Record<string, EngineServiceEndpoint>;
   /** Switches the frontend CSP reads: an LTI platform frames LTI tools. */
   has: { ltiPlatform: boolean };
+  /** The LTI platform origins the CSP of a document under `/embed/` lets frame it. */
+  ltiFrameAncestors: string[];
   /** Contact-map style URLs per color mode; the frontend CSP allows their origins. */
   mapStyleUrls?: Record<string, string>;
   retention: { backupDays: number };

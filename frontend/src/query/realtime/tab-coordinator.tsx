@@ -3,10 +3,11 @@ import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
+import { sharedNamePrefix } from '~/lib/embedded-context';
 import { markBundleStale } from '~/query/schema-version-guard';
 
-const channelName = `${appConfig.slug}-tab-sync`;
-const leaderLockName = `${appConfig.slug}-tab-leader`;
+const channelName = `${sharedNamePrefix}-tab-sync`;
+const leaderLockName = `${sharedNamePrefix}-tab-leader`;
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
 

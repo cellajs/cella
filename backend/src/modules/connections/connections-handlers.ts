@@ -1,8 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { createLtiRegistrationLinkOp } from '#/modules/auth/flows/lti/operations/create-lti-registration-link';
 import { connectionRoutes, organizationConnectionRoutes } from '#/modules/connections/connections-routes';
 import { createConnectionOp } from '#/modules/connections/operations/create-connection';
+import { createLtiRegistrationLinkOp } from '#/modules/connections/operations/create-lti-registration-link';
 import { deleteConnectionOp } from '#/modules/connections/operations/delete-connection';
 import { deleteLtiConnectionOp } from '#/modules/connections/operations/delete-lti-connection';
 import { getConnectionsOp } from '#/modules/connections/operations/get-connections';

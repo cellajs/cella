@@ -5,7 +5,7 @@ import { getChannelProductRoute, getProductDeepLink } from '~/lib/entity-modules
 import type { AncestorSlugs, EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import { channelRouteConfig } from '~/routes-config';
+import { channelRouteConfig, embeddedChannelRouteConfig } from '~/routes-config';
 
 /**
  * One entry of `channelRouteConfig` (`routes-config.tsx`, which apps pin and fill with their channels): the one piece of a
@@ -114,4 +114,18 @@ function getChannelPageRoute({ tenantId, organizationId, channelType, channelId 
   const channel = findInCache<EnrichedChannel>(channelType, channelId);
   if (channel) return resolveChannelRoute(channel);
   return buildChannelRoute(channelType, tenantId, { organization: organizationId }, channelId);
+}
+
+/**
+ * The embedded page a finished LTI launch opens: the one `embeddedChannelRouteConfig` names for the channel's type,
+ * else its organization's. Ids fill the params, which the route's `beforeLoad` rewrites to slugs.
+ */
+export function getEmbeddedChannelRoute({ tenantId, organizationId, channelType, channelId }: ProductLocation): EntityRoute {
+  const entries: Partial<Record<ChannelEntityType, (typeof embeddedChannelRouteConfig)[keyof typeof embeddedChannelRouteConfig]>> =
+    embeddedChannelRouteConfig;
+  const own = entries[channelType];
+  const { path, paramName } = own ?? embeddedChannelRouteConfig.organization;
+  const params: Record<string, string> = { tenantId, [channelRouteConfig.organization.paramName]: organizationId };
+  params[paramName] = own ? channelId : organizationId;
+  return { to: path, params, search: {} };
 }

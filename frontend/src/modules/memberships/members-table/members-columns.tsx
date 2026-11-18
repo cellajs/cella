@@ -1,6 +1,7 @@
 import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { isEmbedded } from '~/lib/embedded-context';
 import { getMemberStatIcon, isMemberCountHidden } from '~/lib/entity-modules';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -21,7 +22,8 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       minWidth: 200,
       sortable: true,
       resizable: true,
-      renderCell: ({ row, tabIndex }) => <UserCell user={row} email={row.email} tabIndex={tabIndex} className="font-medium" />,
+      // An embedded page mounts no user sheet: a profile leads out of the frame.
+      renderCell: ({ row, tabIndex }) => <UserCell user={row} email={row.email} tabIndex={tabIndex} className="font-medium" readOnly={isEmbedded} />,
     },
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true, cellClass: 'text-muted-foreground' }),
     {

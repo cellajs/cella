@@ -187,6 +187,23 @@ export const ltiToolRegistrationLimiter = rateLimiter('limit', 'ltiToolRegistrat
 });
 
 /**
+ * LTI logins per IP: each one stores a one-use nonce. The ceiling sits well above a course: a class behind one school
+ * address launches at once.
+ */
+export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
+  limits: { points: 600, duration: 60 },
+  name: 'LTI logins',
+  description: 'Login initiations for each IP address, refused or not.',
+});
+
+/** LTI launch posts and finishes per IP, two per launch: a finish checks a signature and may fetch the platform's key set. */
+export const ltiLaunchLimiter = rateLimiter('limit', 'ltiLaunch', ['ip'], {
+  limits: { points: 600, duration: 60 },
+  name: 'LTI launches',
+  description: 'Launch posts and finishes for each IP address, refused or not.',
+});
+
+/**
  * Per-second ceiling for API keys and access tokens, run by `serviceGuard` for every machine caller: a runaway
  * integration hits this long before the hourly points budget.
  */

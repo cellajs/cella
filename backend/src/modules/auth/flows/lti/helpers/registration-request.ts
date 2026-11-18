@@ -1,11 +1,11 @@
 import { appConfig } from 'shared';
-import { ltiToolConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
+import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 
 /** Where a platform starts a launch's login. */
 const ltiLoginUrl = () => `${appConfig.backendAuthUrl}/lti/login`;
 
-/** Where a platform posts a launch. */
-const ltiLaunchUrl = () => `${appConfig.backendAuthUrl}/lti/launch`;
+/** Where a platform posts a launch: the one `redirect_uri` the app registers. */
+export const ltiLaunchUrl = () => `${appConfig.backendAuthUrl}/lti/launch`;
 
 /**
  * The app as an LTI tool in a Dynamic Registration request: every platform gets these members. A platform verifies

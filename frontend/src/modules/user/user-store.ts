@@ -6,11 +6,12 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
+import { sharedNamePrefix } from '~/lib/embedded-context';
 import type { MeUser } from '~/modules/me/types';
 import { uiStore } from '~/modules/ui/ui-store';
 
-/** The `localStorage` key the store persists to, which every tab of the browser shares. */
-export const userStorageKey = `${appConfig.slug}-user`;
+/** The `localStorage` key the store persists to, which every tab of the browser shares; an embedded document has its own. */
+export const userStorageKey = `${sharedNamePrefix}-user`;
 
 /**
  * Who a persisted value of the store names, each `null` when absent or unreadable. The default is what `localStorage`

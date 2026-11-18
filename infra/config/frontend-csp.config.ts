@@ -1,8 +1,22 @@
 import { enabledServices } from '../lib/services';
 import type { EngineConfig } from './engine-config';
 
-/** The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets and the map styles. */
-export function frontendCsp(appConfig: EngineConfig): string {
+/**
+ * Who may frame a document under `/embed/`: the LTI platforms `ltiFrameAncestors` names, nobody while it names none.
+ * @throws when an entry is no bare origin: a path or a `;` would change the policy.
+ */
+export function embedFrameAncestors(appConfig: EngineConfig): string {
+  for (const entry of appConfig.ltiFrameAncestors) {
+    if (URL.parse(entry)?.origin !== entry) throw new Error(`frontend-csp: ltiFrameAncestors entry '${entry}' is not an origin`);
+  }
+  return appConfig.ltiFrameAncestors.join(' ') || "'none'";
+}
+
+/**
+ * The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets
+ * and the map styles. A document under `/embed/` passes `embedFrameAncestors`; every other one is framed by the app alone.
+ */
+export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"): string {
   const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
   const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
   const servicePublicUrl = (slug: string): string => {
@@ -69,7 +83,7 @@ export function frontendCsp(appConfig: EngineConfig): string {
     // As an LTI platform the app frames the LTI tools its tenants install, from whatever HTTPS origin they registered.
     `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io${appConfig.has.ltiPlatform ? ' https:' : ''}`,
     `font-src 'self' data:`,
-    `frame-ancestors 'self'`,
+    `frame-ancestors ${frameAncestors}`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

@@ -28,6 +28,7 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
     },
     retention: { backupDays: 7 },
     has: { ltiPlatform: false },
+    ltiFrameAncestors: [],
     ...overrides,
   };
 }

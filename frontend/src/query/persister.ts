@@ -3,6 +3,7 @@ import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tan
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { isRecord } from 'shared/utils/as-record';
+import { sharedNamePrefix } from '~/lib/embedded-context';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
 import { noteCacheChange, trackCacheWrite } from '~/query/cache-written';
@@ -19,7 +20,7 @@ type DehydratedMutation = DehydratedState['mutations'][number];
 const inCurrentShape = (mutations: DehydratedMutation[]): DehydratedMutation[] =>
   mutations.flatMap((mutation) => upgradePersistedMutation(mutation) ?? []);
 
-const sessionIdStorageKey = `${appConfig.slug}-tab-session-id`;
+const sessionIdStorageKey = `${sharedNamePrefix}-tab-session-id`;
 const orphanMaxAgeMs = 2 * 60 * 60 * 1000;
 
 /** A failure that says nothing of the data: no response, as offline, a server error, a timeout or a rate limit. Another 4xx, such as a 403 or 404, may say it is gone. */
@@ -81,7 +82,7 @@ const tabSessionId = getTabSessionId();
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 
 /** Tabs of every bundle version lock and query this name, so it never changes. */
-const tabLockPrefix = `${appConfig.slug}-tab-open:`;
+const tabLockPrefix = `${sharedNamePrefix}-tab-open:`;
 
 /** Holds this tab's lock until the tab closes: other tabs' restore reads it as this tab being open. */
 function holdTabLock(): void {

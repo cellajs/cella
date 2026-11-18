@@ -46,6 +46,15 @@ describe('frontend Caddyfile', () => {
     expect(headerValue('Content-Security-Policy')).toBe('{$FRONTEND_CSP}');
   });
 
+  // The embedded pages show inside an LTI platform's frame: only theirs may carry another framing policy.
+  it('gives a page under /embed/ the {$FRONTEND_EMBED_CSP} env and no X-Frame-Options, every other response both of its own', () => {
+    expect(caddyfile).toMatch(
+      /@framedByApp not path \/embed\/\*\s*\n\s*header @framedByApp \{\s*\n\s*Content-Security-Policy "\{\$FRONTEND_CSP\}"\s*\n\s*X-Frame-Options "SAMEORIGIN"/,
+    );
+    expect(caddyfile).toMatch(/@embedded path \/embed\/\*\s*\n\s*header @embedded Content-Security-Policy "\{\$FRONTEND_EMBED_CSP\}"/);
+    expect(caddyfile.match(/X-Frame-Options "/g)).toHaveLength(1);
+  });
+
   it("serves /health locally (the agent's check depends on it)", () => {
     expect(caddyfile).toMatch(/handle\s+\/health\s*\{/);
     expect(caddyfile).toMatch(/respond\s+"ok"\s+200/);

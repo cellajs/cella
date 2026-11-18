@@ -6,8 +6,6 @@ export const loginInitiationUrl = `${appConfig.backendUrl}/lti-launches/~initiat
 
 /** The parts of an LTI registration a launch reads. */
 interface LaunchClient {
-  initiateLoginUri: string;
-  redirectUris: string[];
   ltiToolConfig: LtiToolConfig;
 }
 
@@ -17,16 +15,6 @@ const resourceLinkMessage = (config: LtiToolConfig) => config.messages.find(({ t
 /** Where a resource link launch lands: the target its message registered, else the LTI tool's own. */
 export const launchTargetLinkUri = ({ ltiToolConfig }: LaunchClient) =>
   resourceLinkMessage(ltiToolConfig)?.target_link_uri ?? ltiToolConfig.target_link_uri;
-
-/**
- * The origins of the LTI tool's pages a launch shows in the frame: its login, launch and target addresses. Their
- * platform storage messages are the ones the frame host answers.
- */
-export const ltiToolOrigins = ({ initiateLoginUri, redirectUris, ltiToolConfig }: LaunchClient) => {
-  const targets = ltiToolConfig.messages.flatMap(({ target_link_uri }) => target_link_uri ?? []);
-  const addresses = [initiateLoginUri, ...redirectUris, ltiToolConfig.target_link_uri, ...targets];
-  return [...new Set(addresses.map((address) => new URL(address).origin))];
-};
 
 /** The `custom` claim: the LTI tool's custom parameters, its resource link message's over them, the resource link's over both. */
 export const launchCustom = ({ ltiToolConfig }: LaunchClient, resourceLinkCustom: Record<string, string>): Record<string, string> => ({

@@ -35,7 +35,7 @@ export function LtiLaunchFrame({ channel, resourceLink }: LtiLaunchFrameProps) {
     const storage: PlatformStorage = new Map();
     const onMessage = (event: MessageEvent) => {
       const frame = frameRef.current?.contentWindow ?? null;
-      const reply = answerStorageMessage(event, { frame, ltiToolOrigins: launch.ltiToolOrigins, storage });
+      const reply = answerStorageMessage(event, { frame, storage });
       if (reply) frame?.postMessage(reply.message, reply.targetOrigin);
     };
     window.addEventListener('message', onMessage);

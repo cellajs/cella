@@ -1,0 +1,593 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6fef1f32-168d-4882-b231-5d0c8ceab8d3",
+  "prevIds": [
+    "7419899a-754c-43a7-a806-d1a6baac783c"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|tbl|public.lti_contexts",
+        "n|tbl|public.lti_contexts",
+        "e|tbl|public.lti_contexts",
+        "n|rel|public.lti_contexts",
+        "n|type|public.lti_contexts",
+        "n|rel|public.lti_contexts_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_connection_id_context_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|idx|public.lti_contexts_connection_id_context_id_idx",
+        "e|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|rel|public.lti_contexts_connection_id_context_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id",
+        "n|col|public.lti_contexts.context_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_channel_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_channel_id_idx",
+        "n|idx|public.lti_contexts_channel_id_idx",
+        "e|idx|public.lti_contexts_channel_id_idx",
+        "n|rel|public.lti_contexts_channel_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.channel_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.lti_contexts.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id",
+        "n|col|public.connections.id",
+        "e|uniqueness|public.connections.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_contexts.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_contexts.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "n|con|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.lti_contexts.tenant_id",
+        "n|col|public.lti_contexts.organization_id",
+        "n|col|public.organizations.tenant_id",
+        "n|col|public.organizations.id",
+        "e|uniqueness|public.organizations.id.tenant_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "lti_contexts",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "organization_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "connection_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "context_id",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "label",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "title",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "types",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": "'{}'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "channel_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_connection_id_context_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "connection_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "context_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_channel_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "channel_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_connection_id_connections_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "connection_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "connections",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_GWuG77TCefJB_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organizations",
+        "columnsTo": [
+          "tenant_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

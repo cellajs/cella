@@ -1,5 +1,5 @@
 import type { UserContext } from '#/core/context';
-import { issueHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { issueHandoffToken } from '#/modules/auth/core';
 import { ltiIssuerUrl } from '#/modules/lti-platform/helpers/platform-offer';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';

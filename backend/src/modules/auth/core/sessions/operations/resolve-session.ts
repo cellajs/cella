@@ -1,8 +1,9 @@
 import type { Context } from 'hono';
+import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { loadCachedSession } from '#/middlewares/guard/session-cache';
-import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { type CookieName, deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import type { SessionFacts, SessionModel } from '#/modules/auth/core/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/core/sessions/sessions-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -72,17 +73,35 @@ export const readBrowserSession = async (sessionToken: string | undefined): Prom
   return readSession(sessionToken);
 };
 
+/** The cookie a session lives in: the app's own, or the embedded one an LTI launch sets in another site's frame. */
+export type SessionCookieName = Extract<CookieName, 'session' | 'embedded-session'>;
+
+/** Whether a request asks for the embedded session, by the header or the query marker. */
+export const asksForEmbeddedSession = (ctx: Context) => ctx.req.header(embeddedSessionHeader) === '1' || ctx.req.query(embeddedSessionParam) === '1';
+
+/**
+ * The session cookie a request reads: the embedded one when it asks for it, else the app's own. One browser may hold
+ * both for the app's origin; neither is read for a request meant for the other.
+ */
+export const sessionCookieOf = (ctx: Context): SessionCookieName => (asksForEmbeddedSession(ctx) ? 'embedded-session' : 'session');
+
+interface ResolveSessionOpts {
+  clearOnError?: boolean;
+  /** The cookie to read; by default the one the request asks for (`sessionCookieOf`). */
+  cookie?: SessionCookieName;
+}
+
 /**
  * The app session a request presents, read from its session cookie only, so any process serving the app's origin can
  * call it with a raw request context. With `clearOnError`, a refusal also deletes the cookie: it holds the only copy of
  * the token, so a failed read (the database away) keeps it.
  * @throws AppError 401 without a session cookie, or for an unknown, revoked or expired token.
  */
-export const resolveSession = async (ctx: Context, { clearOnError = false }: { clearOnError?: boolean } = {}): Promise<ResolvedSession> => {
+export const resolveSession = async (ctx: Context, { clearOnError = false, cookie = sessionCookieOf(ctx) }: ResolveSessionOpts = {}) => {
   try {
-    return await readBrowserSession(getAuthCookie(ctx, 'session'));
+    return await readBrowserSession(getAuthCookie(ctx, cookie));
   } catch (err) {
-    if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, 'session');
+    if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, cookie);
     throw err;
   }
 };
@@ -92,4 +111,5 @@ export const resolveSession = async (ctx: Context, { clearOnError = false }: { c
  * expired or revoked token), while a failed read stays the request's failure, so the database being away never reads
  * as signed out.
  */
-export const findSession = (ctx: Context): Promise<ResolvedSession | null> => resolveSession(ctx).catch(refusalAsNull);
+export const findSession = (ctx: Context, cookie?: SessionCookieName): Promise<ResolvedSession | null> =>
+  resolveSession(ctx, { cookie }).catch(refusalAsNull);

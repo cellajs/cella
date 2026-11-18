@@ -249,6 +249,12 @@ export const config = {
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
   enabledOAuthProviders: ['github'] as const,
   /**
+   * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while
+   * `enabledAuthStrategies` names `lti`: the frontend's CSP for those documents lists them in `frame-ancestors`. Empty
+   * lets no page frame them.
+   */
+  ltiFrameAncestors: [] as string[],
+  /**
    * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities provider
    * slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is
    * live when those are set. Every mode but production signs in through its `sandbox`. A tenant's connection names one
@@ -266,6 +272,7 @@ export const config = {
     'lti-registration',
     'lti-tool-registration',
     'lti-launch',
+    'lti-nonce',
   ] as const,
 
   /**

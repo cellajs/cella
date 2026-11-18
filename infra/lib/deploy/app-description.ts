@@ -8,9 +8,9 @@ import { supplierContext } from './static-env';
 
 /**
  * The fields of the engine config the engine reads, and no other field of the app's config: a change to one of them owes an apply.
- * The switches reach the engine only through the env suppliers' values, which the description holds.
+ * The switches and the LTI framing origins reach the engine only through the env suppliers' values, which the description holds.
  */
-function engineFields(config: EngineConfig): Omit<EngineConfig, 'has'> {
+function engineFields(config: EngineConfig): Omit<EngineConfig, 'has' | 'ltiFrameAncestors'> {
   const { s3 } = config;
   return {
     slug: config.slug,

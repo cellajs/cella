@@ -304,7 +304,7 @@ export type MeAuthData = {
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;
     browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext';
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
@@ -968,7 +968,7 @@ export type Tenant = {
      */
     allowUnregisteredClients: boolean;
   };
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext'>;
   createdAt: string;
   createdBy:
     | {
@@ -2358,7 +2358,7 @@ export type RevokeMySessionsResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext';
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
@@ -3536,6 +3536,263 @@ export type RegisterLtiPlatformResponses = {
   200: unknown;
 };
 
+export type InitiateLtiLoginData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * The platform's issuer
+     */
+    iss?: string;
+    /**
+     * The platform's hint of who launches, echoed in the authentication request
+     */
+    login_hint?: string;
+    /**
+     * Where the platform means the launch to land
+     */
+    target_link_uri?: string;
+    /**
+     * The platform's hint of what it launches, echoed in the authentication request
+     */
+    lti_message_hint?: string;
+    /**
+     * The LTI deployment the launch comes from
+     */
+    lti_deployment_id?: string;
+    /**
+     * The client id the platform gave the app; needed when the issuer holds several
+     */
+    client_id?: string;
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
+  url: '/auth/lti/login';
+};
+
+export type InitiateLtiLoginErrors = {
+  /**
+   * Login refused
+   *
+   * A page naming why: the platform offers no platform storage.
+   */
+  400: unknown;
+  /**
+   * Platform unknown
+   *
+   * A page: no active LTI connection matches the issuer and client id, or the login hint is missing.
+   */
+  401: unknown;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLoginError = InitiateLtiLoginErrors[keyof InitiateLtiLoginErrors];
+
+export type InitiateLtiLoginResponses = {
+  /**
+   * Login page
+   *
+   * A page that stores the launch value in platform storage and moves on to the platform.
+   */
+  200: unknown;
+};
+
+export type InitiateLtiLoginByPostData = {
+  body: {
+    /**
+     * The platform's issuer
+     */
+    iss?: string;
+    /**
+     * The platform's hint of who launches, echoed in the authentication request
+     */
+    login_hint?: string;
+    /**
+     * Where the platform means the launch to land
+     */
+    target_link_uri?: string;
+    /**
+     * The platform's hint of what it launches, echoed in the authentication request
+     */
+    lti_message_hint?: string;
+    /**
+     * The LTI deployment the launch comes from
+     */
+    lti_deployment_id?: string;
+    /**
+     * The client id the platform gave the app; needed when the issuer holds several
+     */
+    client_id?: string;
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/login';
+};
+
+export type InitiateLtiLoginByPostErrors = {
+  /**
+   * Login refused
+   *
+   * A page naming why: the platform offers no platform storage.
+   */
+  400: unknown;
+  /**
+   * Platform unknown
+   *
+   * A page: no active LTI connection matches the issuer and client id, or the login hint is missing.
+   */
+  401: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLoginByPostError = InitiateLtiLoginByPostErrors[keyof InitiateLtiLoginByPostErrors];
+
+export type InitiateLtiLoginByPostResponses = {
+  /**
+   * Login page
+   *
+   * A page that stores the launch value in platform storage and moves on to the platform.
+   */
+  200: unknown;
+};
+
+export type ReceiveLtiLaunchData = {
+  body: {
+    /**
+     * The signed launch
+     */
+    id_token?: string;
+    /**
+     * The state the login sent
+     */
+    state?: string;
+    /**
+     * The platform's refusal, in place of an ID token
+     */
+    error?: string;
+    error_description?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/launch';
+};
+
+export type ReceiveLtiLaunchErrors = {
+  /**
+   * Launch refused
+   *
+   * A field is longer than a launch carries.
+   */
+  400: unknown;
+  /**
+   * Launch refused
+   *
+   * A page: the state names no active LTI connection, or the platform posted an error.
+   */
+  401: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ReceiveLtiLaunchError = ReceiveLtiLaunchErrors[keyof ReceiveLtiLaunchErrors];
+
+export type ReceiveLtiLaunchResponses = {
+  /**
+   * Launch page
+   *
+   * A page that reads the launch value from platform storage and posts it on, same-origin.
+   */
+  200: unknown;
+};
+
+export type FinishLtiLaunchData = {
+  body: {
+    id_token?: string;
+    state?: string;
+    storage_value?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/finish';
+};
+
+export type FinishLtiLaunchErrors = {
+  /**
+   * Launch refused
+   *
+   * The platform's key set could not be read, or a field is longer than a launch carries.
+   */
+  400: unknown;
+  /**
+   * Launch not valid
+   *
+   * A page naming the check the launch failed, or the platform it names is not connected.
+   */
+  401: unknown;
+  /**
+   * Launch refused
+   *
+   * A page: not same-origin, an anonymous launch, a launch without roles, or a test user.
+   */
+  403: unknown;
+  /**
+   * Organization gone
+   *
+   * A page: the connection's tenant holds no organization.
+   */
+  404: unknown;
+  /**
+   * Course not set up
+   *
+   * A page: an instructor opens the app from this course first.
+   */
+  409: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type FinishLtiLaunchError = FinishLtiLaunchErrors[keyof FinishLtiLaunchErrors];
+
 export type GetStepUpData = {
   body?: never;
   path?: never;
@@ -4682,10 +4939,6 @@ export type StartLtiLaunchResponses = {
      */
     url: string;
     /**
-     * The origins of the LTI tool's pages in the frame: the frame host answers their platform storage messages
-     */
-    ltiToolOrigins: Array<string>;
-    /**
      * When the launch record stops working, unless the launch used it before
      */
     expiresAt: string;
@@ -4694,7 +4947,7 @@ export type StartLtiLaunchResponses = {
 
 export type StartLtiLaunchResponse = StartLtiLaunchResponses[keyof StartLtiLaunchResponses];
 
-export type InitiateLtiLoginData = {
+export type InitiateLtiLogin2Data = {
   body?: never;
   path?: never;
   query: {
@@ -4706,7 +4959,7 @@ export type InitiateLtiLoginData = {
   url: '/lti-launches:initiate-login';
 };
 
-export type InitiateLtiLoginErrors = {
+export type InitiateLtiLogin2Errors = {
   /**
    * Bad request
    */
@@ -4727,9 +4980,9 @@ export type InitiateLtiLoginErrors = {
   429: TooManyRequestsError;
 };
 
-export type InitiateLtiLoginError = InitiateLtiLoginErrors[keyof InitiateLtiLoginErrors];
+export type InitiateLtiLogin2Error = InitiateLtiLogin2Errors[keyof InitiateLtiLogin2Errors];
 
-export type InitiateLtiLoginResponses = {
+export type InitiateLtiLogin2Responses = {
   /**
    * Login initiation
    *
@@ -8198,7 +8451,7 @@ export type UpdateTenantData = {
      */
     kind?: 'live' | 'test' | 'demo';
     status?: 'active' | 'suspended' | 'deleted';
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */

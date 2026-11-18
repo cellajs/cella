@@ -56,7 +56,10 @@ export const tokensTable = snakeCase.table(
     sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
     /** For a `confirm-mfa` challenge: the method the sign-in started with, which the mfa session it ends in records. */
     authStrategy: varchar({ enum: authStrategiesEnum }),
-    /** For a `confirm-mfa` challenge of an SSO sign-in: the connection it came through, recorded on the mfa session too. */
+    /**
+     * For a `confirm-mfa` challenge of an SSO sign-in: the connection it came through, recorded on the mfa session too.
+     * For an `lti-nonce`: the connection whose platform the launch must come from.
+     */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     /** For an `lti-launch` record: the resource link it launches. A removed placement takes its live launches along. */
     ltiResourceLinkId: uuid().references(() => ltiResourceLinksTable.id, { onDelete: 'cascade' }),

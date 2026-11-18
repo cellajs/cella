@@ -5,14 +5,14 @@ import { approveLtiInstallation, createLtiResourceLink, startLtiLaunch, startLti
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { ltiClaims, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
-import { ltiClaims, ltiToolConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
 import { ltiContextTypes, ltiRolesFor } from '#/modules/lti-platform/launch-context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
-import { startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -35,16 +35,6 @@ const fakeLtiTool = (host: string) => ({
     messages: [{ type: 'LtiResourceLinkRequest' }],
   },
 });
-
-/** The hidden fields and the address of an auto-posting page. */
-const parseForm = (page: string) => {
-  const decodeHtml = (value: string) =>
-    value.replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
-  const fields = Object.fromEntries(
-    [...page.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)].map(([, name, value]) => [name, decodeHtml(value)]),
-  );
-  return { action: decodeHtml(/<form method="post" action="([^"]*)"/.exec(page)?.[1] ?? ''), fields };
-};
 
 describe('LTI launch', async () => {
   const call = await createAppClient();
@@ -145,7 +135,7 @@ describe('LTI launch', async () => {
 
     const { page, login } = await startLaunch(org, resourceLinkId);
     expect(page.status).toBe(200);
-    expect(login.action).toBe('https://peer-review.example.com/login');
+    expect(login.action).toBe('https://peer-review.example.com/login?lti_storage_target=_parent');
     expect(login.fields).toMatchObject({
       iss: appConfig.oauthUrl,
       client_id: tool.clientId,

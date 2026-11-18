@@ -1,8 +1,8 @@
 import { generateId } from 'shared/utils/entity-id';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
-import { ltiToolConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
+import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { spendHandoffToken } from '#/modules/auth/core';
 import { ltiClaimsSupported, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
 import { insertLtiToolRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { type LtiToolConfig, type LtiToolRegistrationRequest, ltiToolRegistrationRequestSchema } from '#/modules/lti-platform/lti-platform-schema';

@@ -3,7 +3,7 @@ import { boolean, check, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } f
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { ConnectionConfig } from '#/modules/connections/connections-schema';
+import type { ConnectionConfig, LtiConnectionConfig } from '#/modules/connections/connections-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** The party a connection trusts: an institution behind an SSO federation, or an LTI platform that launches the app. */
@@ -57,3 +57,10 @@ export const connectionsTable = snakeCase.table(
 
 export type ConnectionModel = typeof connectionsTable.$inferSelect;
 export type InsertConnectionModel = typeof connectionsTable.$inferInsert;
+
+/** An LTI connection as its readers type it: issuer, client id and the LTI config present. */
+export type LtiConnection = ConnectionModel & { kind: 'lti'; issuer: string; clientId: string; config: LtiConnectionConfig };
+
+/** Whether a connection row is an LTI connection with its config (`connections_kind_check` holds the columns). */
+export const isLtiConnection = (row: ConnectionModel): row is LtiConnection =>
+  row.kind === 'lti' && row.issuer !== null && row.clientId !== null && row.config.jwksUri !== undefined;

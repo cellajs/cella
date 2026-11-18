@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
-import { ltiToolConfigurationMember } from '#/modules/auth/flows/lti/lti-schema';
+import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import { serviceAccountStatuses } from '#/modules/service-accounts/service-accounts-db';
@@ -155,9 +155,6 @@ export const ltiResourceLinkSchema = z
 
 export const ltiLaunchStartSchema = z.object({
   url: z.string().describe('The login initiation page to load in the frame; it holds a one-use launch record'),
-  ltiToolOrigins: z
-    .array(z.string())
-    .describe("The origins of the LTI tool's pages in the frame: the frame host answers their platform storage messages"),
   expiresAt: z.string().describe('When the launch record stops working, unless the launch used it before'),
 });
 

@@ -15,6 +15,8 @@ One word per layer: **anonymous** is the account and its session, **visitor** a 
 
 Only a server flow calls these. The flow decides the name, the expiry and what the account is a member of; `createDemo` (`tenants/operations/create-demo.ts`) is the worked example: one transaction builds the account, a tenant of kind `demo`, its organization and the membership, then the app's `onDemoCreated` hooks run.
 
+An LTI launch's first arrival is made with `insertAnonymousUser` too, beside an `lti` identity that signs it in again. The API serves it with `isAnonymous` as it has no proven address, but its session is the embedded one of method `lti`, no anonymous session: the gate below does not refuse it, and no step-up admits it.
+
 ## What the API serves
 
 The row keeps its placeholder, so the unique `email` column holds. The API never serves it: `User.email` and `UserBase.email` are the proven address or `null`, and `User.isAnonymous` says why. `findUserById` and the session cache keep the row for the server's own flows; the handlers that return a `User` read `findServedUserById`, and member lists `memberSelect`. The client keys on `isAnonymous`, never on the address, and treats a `null` address as absent: no `mailto:`, no prefilled form, no account to invite by.

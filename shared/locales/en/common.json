@@ -502,6 +502,7 @@
   "loading": "Loading...",
   "local_only": "Only on this device",
   "locked": "Locked",
+  "lti": "LTI launch",
   "lti_launch_failed": "{{name}} could not be opened.",
   "lti_launch_loading": "Opening {{name}}...",
   "magic": "Magic link",

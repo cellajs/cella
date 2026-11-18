@@ -380,8 +380,11 @@ export const spendCookieToken = async (
   return spent;
 };
 
-/** A kind whose policy names the minter takes the user's id; any other takes none. An `lti-launch` record names its resource link. */
-type IssueHandoffTokenOpts = { tenantId: string; ltiResourceLinkId?: string } & (
+/**
+ * A kind whose policy names the minter takes the user's id; any other takes none. An `lti-launch` record names its
+ * resource link, an `lti-nonce` its connection.
+ */
+type IssueHandoffTokenOpts = { tenantId: string; ltiResourceLinkId?: string; connectionId?: string } & (
   | { kind: MinterNamedTokenKind; createdBy: string }
   | { kind: Exclude<HandoffTokenKind, MinterNamedTokenKind>; createdBy?: undefined }
 );
@@ -390,10 +393,11 @@ type IssueHandoffTokenOpts = { tenantId: string; ltiResourceLinkId?: string } & 
  * Issues a handoff token. It replaces no earlier one: a tenant may hand links to several platforms at once.
  * @returns The row's id, the raw value, which exists only here and in the URL handed over, and when it expires.
  */
-export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy, ltiResourceLinkId }: IssueHandoffTokenOpts) => {
+export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy, ltiResourceLinkId, connectionId }: IssueHandoffTokenOpts) => {
   const { raw, hash } = newHashedToken();
   const expiresAt = isoDateIn(tokenPolicies[kind].ttl);
-  const { id } = await insertHandoffToken(ctx, { values: { kind, tenantId, createdBy, ltiResourceLinkId, secretHash: hash, expiresAt } });
+  const values = { kind, tenantId, createdBy, ltiResourceLinkId, connectionId, secretHash: hash, expiresAt };
+  const { id } = await insertHandoffToken(ctx, { values });
   return { id, rawToken: raw, expiresAt };
 };
 

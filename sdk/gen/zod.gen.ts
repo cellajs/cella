@@ -258,7 +258,7 @@ export const zMeAuthData = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -833,7 +833,7 @@ export const zTenant = z.object({
     }),
     allowUnregisteredClients: z.boolean(),
   }),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext'])),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -1356,7 +1356,7 @@ export const zRevokeMySessionsResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -1658,6 +1658,39 @@ export const zRegisterLtiPlatformQuery = z.object({
   link: z.string().max(255),
   openid_configuration: z.string().max(2048),
   registration_token: z.string().max(2048).optional(),
+});
+
+export const zInitiateLtiLoginQuery = z.object({
+  iss: z.string().max(255).optional(),
+  login_hint: z.string().max(4096).optional(),
+  target_link_uri: z.string().max(2048).optional(),
+  lti_message_hint: z.string().max(4096).optional(),
+  lti_deployment_id: z.string().max(255).optional(),
+  client_id: z.string().max(255).optional(),
+  lti_storage_target: z.string().max(255).optional(),
+});
+
+export const zInitiateLtiLoginByPostBody = z.object({
+  iss: z.string().max(255).optional(),
+  login_hint: z.string().max(4096).optional(),
+  target_link_uri: z.string().max(2048).optional(),
+  lti_message_hint: z.string().max(4096).optional(),
+  lti_deployment_id: z.string().max(255).optional(),
+  client_id: z.string().max(255).optional(),
+  lti_storage_target: z.string().max(255).optional(),
+});
+
+export const zReceiveLtiLaunchBody = z.object({
+  id_token: z.string().max(32768).optional(),
+  state: z.string().max(2048).optional(),
+  error: z.string().max(255).optional(),
+  error_description: z.string().max(2048).optional(),
+});
+
+export const zFinishLtiLaunchBody = z.object({
+  id_token: z.string().max(32768).optional(),
+  state: z.string().max(2048).optional(),
+  storage_value: z.string().max(255).optional(),
 });
 
 export const zGetStepUpQuery = z.object({
@@ -2010,11 +2043,10 @@ export const zStartLtiLaunchPath = z.object({
  */
 export const zStartLtiLaunchResponse = z.object({
   url: z.string(),
-  ltiToolOrigins: z.array(z.string()),
   expiresAt: z.string(),
 });
 
-export const zInitiateLtiLoginQuery = z.object({
+export const zInitiateLtiLogin2Query = z.object({
   token: z.string().max(2048),
 });
 
@@ -3310,8 +3342,8 @@ export const zUpdateTenantBody = z.object({
   kind: z.enum(['live', 'test', 'demo']).optional(),
   status: z.enum(['active', 'suspended', 'deleted']).optional(),
   authStrategies: z
-    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
-    .max(9)
+    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']))
+    .max(10)
     .optional(),
   restrictions: z
     .object({

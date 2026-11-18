@@ -1,9 +1,16 @@
+import type { z } from '@hono/zod-openapi';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
 import { i18n } from '#/lib/i18n';
+import { type PageFrame, refusalPage, type StorageExchange, storagePage } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { registrationPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { authLtiRoutes } from '#/modules/auth/flows/lti/lti-routes';
+import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
+import { finishLtiLaunchOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { initiateLtiLoginOp } from '#/modules/auth/flows/lti/operations/initiate-lti-login';
+import { receiveLtiLaunchOp } from '#/modules/auth/flows/lti/operations/receive-lti-launch';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 
 const app = new OpenAPIHono<Env>();
@@ -16,6 +23,34 @@ app.openapi(authLtiRoutes.registerLtiPlatform, async (ctx) => {
   } catch (err) {
     const refusal = toClientError(err, { path: ctx.req.path, method: ctx.req.method }, { exposeServerMessage: false });
     return registrationPage(ctx, refusal.title, refusal.status);
+  }
+});
+
+/** Answers a launch step's storage page, or its refusal as a page the platform's frame shows. */
+const answerStoragePage = async (ctx: Context<Env>, step: (frame: PageFrame) => Promise<StorageExchange>) => {
+  const frame: PageFrame = { ancestor: null };
+  try {
+    return storagePage(ctx, frame, await step(frame));
+  } catch (err) {
+    return refusalPage(ctx, frame, err);
+  }
+};
+
+const answerLogin = (ctx: Context<Env>, params: z.infer<typeof ltiLoginParamsSchema>) =>
+  answerStoragePage(ctx, (frame) => initiateLtiLoginOp(params, frame));
+
+app.openapi(authLtiRoutes.initiateLtiLogin, (ctx) => answerLogin(ctx, ctx.req.valid('query')));
+
+app.openapi(authLtiRoutes.initiateLtiLoginByPost, (ctx) => answerLogin(ctx, ctx.req.valid('form')));
+
+app.openapi(authLtiRoutes.receiveLtiLaunch, (ctx) => answerStoragePage(ctx, (frame) => receiveLtiLaunchOp(ctx.req.valid('form'), frame)));
+
+app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
+  const frame: PageFrame = { ancestor: null };
+  try {
+    return ctx.redirect(await finishLtiLaunchOp(ctx, ctx.req.valid('form'), frame), 303);
+  } catch (err) {
+    return refusalPage(ctx, frame, err);
   }
 });
 

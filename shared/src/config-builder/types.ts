@@ -419,6 +419,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
+  ltiFrameAncestors: string[];
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;

@@ -1,6 +1,14 @@
-import { and, arrayOverlaps, eq, inArray, ne } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { type ConnectionKind, type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
+import type { UserId } from '#/db/utils/ids';
+import { updateStamps } from '#/db/utils/stamps';
+import {
+  type ConnectionKind,
+  type ConnectionModel,
+  connectionsTable,
+  type InsertConnectionModel,
+  isLtiConnection,
+} from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -195,4 +203,42 @@ export const findAddressGovernance = async (ctx: DbContext, { email }: { email: 
     .where(eq(emailsTable.email, email))
     .limit(1);
   return row;
+};
+
+interface FindActiveLtiConnectionsOpts {
+  issuer: string;
+  /** Narrows to the connections of these client ids; every connection of the issuer when left out. */
+  clientIds?: string[];
+}
+
+/** The active LTI connections of a platform's issuer, whichever tenant holds them: what a launch is checked against. */
+export const findActiveLtiConnections = async (ctx: DbContext, { issuer, clientIds }: FindActiveLtiConnectionsOpts) => {
+  const rows = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(
+      and(
+        eq(connectionsTable.kind, 'lti'),
+        eq(connectionsTable.status, 'active'),
+        eq(connectionsTable.issuer, issuer),
+        clientIds === undefined ? undefined : inArray(connectionsTable.clientId, clientIds),
+      ),
+    )
+    .limit(2);
+  return rows.filter(isLtiConnection);
+};
+
+/**
+ * Adds an LTI deployment to a connection unless it holds it already, in one statement: concurrent launches of two new
+ * deployments keep both.
+ */
+export const addLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
+  const deploymentIds = sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb)`;
+  await ctx.var.db
+    .update(connectionsTable)
+    .set({
+      config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', ${deploymentIds} || jsonb_build_array(${deploymentId}::text))`,
+      ...updateStamps(by),
+    })
+    .where(and(eq(connectionsTable.id, id), sql`not (${deploymentIds} @> jsonb_build_array(${deploymentId}::text))`));
 };

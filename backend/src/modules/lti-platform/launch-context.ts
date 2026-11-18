@@ -1,5 +1,5 @@
 import { type ChannelEntityType, hierarchy } from 'shared';
-import { lisContextRoles, lisContextTypes } from '#/modules/auth/flows/lti/lti-schema';
+import { lisContextRoles, lisContextTypes } from '#/lib/lti-vocabulary';
 
 /**
  * Whether a channel type is an LTI context, and of which LIS context types (`lisContextTypes`); null for a channel type

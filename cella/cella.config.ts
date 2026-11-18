@@ -64,6 +64,7 @@ export default defineConfig({
     'backend/src/modules/notification/notification-seed-subjects.ts',
     'backend/src/modules/auth/flows/sso/role-from-claims.ts',
     'backend/src/modules/lti-platform/launch-context.ts',
+    'backend/src/modules/auth/flows/lti/lti-context-channel.ts',
     'backend/src/schemas/app-schemas.ts',
     'frontend/src/query/extra-local-user-stores.ts',
     'frontend/src/routes-config.tsx',

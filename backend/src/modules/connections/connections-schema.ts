@@ -19,7 +19,7 @@ const ssoConnectionConfigSchema = z.object({
 const platformAddressSchema = z.string().max(maxLength.url);
 
 /** LTI deployments one connection keeps; a platform makes one per place the app is installed. */
-const maxLtiDeployments = 100;
+export const maxLtiDeployments = 100;
 
 /** An LTI connection's protocol part: the platform's endpoints from its configuration, and its LTI deployments. */
 const ltiConnectionConfigSchema = z.object({

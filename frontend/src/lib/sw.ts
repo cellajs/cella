@@ -14,12 +14,14 @@ declare const __FRONTEND_URL__: string;
 declare const __APP_MODE__: ConfigMode;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network,
-// text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell, and share links,
-// which the server redirects to their preview.
+// text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell, share links,
+// which the server redirects to their preview, and embedded pages: the shell the worker holds carries the framing
+// policy of every other page, which keeps them out of an LTI platform's frame.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
 const navigationDenylist = [
   /\.(?:txt|md|json)$/i,
   new RegExp(shareLinkPath),
+  /^\/embed\//,
   ...(apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : []),
 ];
 
@@ -109,10 +111,10 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(focusOrOpenApp(url));
 });
 
-/** An open tab navigates to the subject; otherwise a new window opens on it. */
+/** An open tab navigates to the subject; otherwise a new window opens on it. An embedded page in a frame is no tab. */
 async function focusOrOpenApp(url: string): Promise<void> {
   const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  const existing = clientList[0];
+  const existing = clientList.find((client) => client.frameType === 'top-level');
   if (!existing) {
     await self.clients.openWindow(url);
     return;

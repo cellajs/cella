@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
-import { issueHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { issueHandoffToken } from '#/modules/auth/core';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 

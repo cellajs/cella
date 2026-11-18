@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './__root'
 import { Route as AppRouteRouteImport } from './_app/route'
 import { Route as PublicRouteRouteImport } from './_public/route'
+import { Route as EmbedRouteRouteImport } from './embed/route'
 import { Route as AppIndexRouteImport } from './_app/index'
 import { Route as AppAccountRouteImport } from './_app/account'
 import { Route as AppHomeRouteImport } from './_app/home'
@@ -22,6 +23,7 @@ import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicDocsRouteRouteImport } from './_public/docs/route'
 import { Route as PublicErrorRouteImport } from './_public/error'
 import { Route as PublicThumbnailRouteImport } from './_public/thumbnail'
+import { Route as EmbedNRouteImport } from './embed/n'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
 import { Route as AppSystemToolRouteImport } from './_app/system/$tool'
 import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organizations'
@@ -45,6 +47,7 @@ import { Route as PublicDocsOperationsRouteImport } from './_public/docs/operati
 import { Route as PublicDocsOverviewRouteImport } from './_public/docs/overview'
 import { Route as PublicDocsPagesRouteImport } from './_public/docs/pages'
 import { Route as PublicDocsSchemasRouteImport } from './_public/docs/schemas'
+import { Route as EmbedTenantIdOrganizationSlugRouteRouteImport } from './embed/$tenantId.$organizationSlug/route'
 import { Route as AppTenantIdOrganizationSlugIndexRouteImport } from './_app/$tenantId.$organizationSlug/index'
 import { Route as AppTenantIdOrganizationSlugOrganizationRouteRouteImport } from './_app/$tenantId.$organizationSlug/organization/route'
 import { Route as PublicMarketingLegalIndexRouteImport } from './_public/_marketing/legal.index'
@@ -54,6 +57,7 @@ import { Route as PublicAuthEmailVerificationReasonRouteImport } from './_public
 import { Route as PublicAuthSsoConnectionIdRouteImport } from './_public/auth/sso.$connectionId'
 import { Route as PublicDocsOperationsTableRouteImport } from './_public/docs/operations_.table'
 import { Route as PublicDocsPageSplatRouteImport } from './_public/docs/page.$'
+import { Route as EmbedTenantIdOrganizationSlugOrganizationRouteImport } from './embed/$tenantId.$organizationSlug/organization'
 import { Route as AppTenantIdOrganizationSlugOrganizationToolRouteImport } from './_app/$tenantId.$organizationSlug/organization/$tool'
 import { Route as AppTenantIdOrganizationSlugOrganizationAttachmentsRouteImport } from './_app/$tenantId.$organizationSlug/organization/attachments'
 import { Route as AppTenantIdOrganizationSlugOrganizationMembersRouteImport } from './_app/$tenantId.$organizationSlug/organization/members'
@@ -65,6 +69,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 } as any)
 const PublicRouteRoute = PublicRouteRouteImport.update({
   id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedRouteRoute = EmbedRouteRouteImport.update({
+  id: '/embed',
+  path: '/embed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -120,6 +129,11 @@ const PublicThumbnailRoute = PublicThumbnailRouteImport.update({
   id: '/thumbnail',
   path: '/thumbnail',
   getParentRoute: () => PublicRouteRoute,
+} as any)
+const EmbedNRoute = EmbedNRouteImport.update({
+  id: '/n',
+  path: '/n',
+  getParentRoute: () => EmbedRouteRoute,
 } as any)
 const AppTenantIdOrganizationSlugRouteRoute =
   AppTenantIdOrganizationSlugRouteRouteImport.update({
@@ -239,6 +253,12 @@ const PublicDocsSchemasRoute = PublicDocsSchemasRouteImport.update({
   path: '/schemas',
   getParentRoute: () => PublicDocsRouteRoute,
 } as any)
+const EmbedTenantIdOrganizationSlugRouteRoute =
+  EmbedTenantIdOrganizationSlugRouteRouteImport.update({
+    id: '/$tenantId/$organizationSlug',
+    path: '/$tenantId/$organizationSlug',
+    getParentRoute: () => EmbedRouteRoute,
+  } as any)
 const AppTenantIdOrganizationSlugIndexRoute =
   AppTenantIdOrganizationSlugIndexRouteImport.update({
     id: '/',
@@ -292,6 +312,12 @@ const PublicDocsPageSplatRoute = PublicDocsPageSplatRouteImport.update({
   path: '/page/$',
   getParentRoute: () => PublicDocsRouteRoute,
 } as any)
+const EmbedTenantIdOrganizationSlugOrganizationRoute =
+  EmbedTenantIdOrganizationSlugOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
+    getParentRoute: () => EmbedTenantIdOrganizationSlugRouteRoute,
+  } as any)
 const AppTenantIdOrganizationSlugOrganizationToolRoute =
   AppTenantIdOrganizationSlugOrganizationToolRouteImport.update({
     id: '/$tool',
@@ -319,6 +345,7 @@ const AppTenantIdOrganizationSlugOrganizationSettingsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/embed': typeof EmbedRouteRouteWithChildren
   '/system': typeof AppSystemRouteRouteWithChildren
   '/auth': typeof PublicAuthRouteRouteWithChildren
   '/docs': typeof PublicDocsRouteRouteWithChildren
@@ -328,7 +355,9 @@ export interface FileRoutesByFullPath {
   '/organizations': typeof AppOrganizationsRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
+  '/embed/n': typeof EmbedNRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
+  '/embed/$tenantId/$organizationSlug': typeof EmbedTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
@@ -358,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs/operations/table': typeof PublicDocsOperationsTableRoute
   '/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/embed/$tenantId/$organizationSlug/organization': typeof EmbedTenantIdOrganizationSlugOrganizationRoute
   '/$tenantId/$organizationSlug/': typeof AppTenantIdOrganizationSlugIndexRoute
   '/legal/': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
@@ -367,6 +397,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
+  '/embed': typeof EmbedRouteRouteWithChildren
   '/system': typeof AppSystemRouteRouteWithChildren
   '/auth': typeof PublicAuthRouteRouteWithChildren
   '/account': typeof AppAccountRoute
@@ -375,6 +406,8 @@ export interface FileRoutesByTo {
   '/organizations': typeof AppOrganizationsRoute
   '/error': typeof PublicErrorRoute
   '/thumbnail': typeof PublicThumbnailRoute
+  '/embed/n': typeof EmbedNRoute
+  '/embed/$tenantId/$organizationSlug': typeof EmbedTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/$tool': typeof AppSystemToolRoute
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
@@ -404,6 +437,7 @@ export interface FileRoutesByTo {
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs/operations/table': typeof PublicDocsOperationsTableRoute
   '/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/embed/$tenantId/$organizationSlug/organization': typeof EmbedTenantIdOrganizationSlugOrganizationRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugIndexRoute
   '/legal': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
@@ -415,6 +449,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
+  '/embed': typeof EmbedRouteRouteWithChildren
   '/_app/system': typeof AppSystemRouteRouteWithChildren
   '/_public/auth': typeof PublicAuthRouteRouteWithChildren
   '/_public/docs': typeof PublicDocsRouteRouteWithChildren
@@ -425,8 +460,10 @@ export interface FileRoutesById {
   '/_public/_marketing': typeof PublicMarketingRouteWithChildren
   '/_public/error': typeof PublicErrorRoute
   '/_public/thumbnail': typeof PublicThumbnailRoute
+  '/embed/n': typeof EmbedNRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
+  '/embed/$tenantId/$organizationSlug': typeof EmbedTenantIdOrganizationSlugRouteRouteWithChildren
   '/_app/system/$tool': typeof AppSystemToolRoute
   '/_app/system/organizations': typeof AppSystemOrganizationsRoute
   '/_app/system/requests': typeof AppSystemRequestsRoute
@@ -456,6 +493,7 @@ export interface FileRoutesById {
   '/_public/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/_public/docs/operations_/table': typeof PublicDocsOperationsTableRoute
   '/_public/docs/page/$': typeof PublicDocsPageSplatRoute
+  '/embed/$tenantId/$organizationSlug/organization': typeof EmbedTenantIdOrganizationSlugOrganizationRoute
   '/_app/$tenantId/$organizationSlug/': typeof AppTenantIdOrganizationSlugIndexRoute
   '/_public/_marketing/legal/': typeof PublicMarketingLegalIndexRoute
   '/_app/$tenantId/$organizationSlug/organization/$tool': typeof AppTenantIdOrganizationSlugOrganizationToolRoute
@@ -467,6 +505,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/embed'
     | '/system'
     | '/auth'
     | '/docs'
@@ -476,7 +515,9 @@ export interface FileRouteTypes {
     | '/organizations'
     | '/error'
     | '/thumbnail'
+    | '/embed/n'
     | '/$tenantId/$organizationSlug'
+    | '/embed/$tenantId/$organizationSlug'
     | '/system/$tool'
     | '/system/organizations'
     | '/system/requests'
@@ -506,6 +547,7 @@ export interface FileRouteTypes {
     | '/auth/sso/$connectionId'
     | '/docs/operations/table'
     | '/docs/page/$'
+    | '/embed/$tenantId/$organizationSlug/organization'
     | '/$tenantId/$organizationSlug/'
     | '/legal/'
     | '/$tenantId/$organizationSlug/organization/$tool'
@@ -515,6 +557,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/embed'
     | '/system'
     | '/auth'
     | '/account'
@@ -523,6 +566,8 @@ export interface FileRouteTypes {
     | '/organizations'
     | '/error'
     | '/thumbnail'
+    | '/embed/n'
+    | '/embed/$tenantId/$organizationSlug'
     | '/system/$tool'
     | '/system/organizations'
     | '/system/requests'
@@ -552,6 +597,7 @@ export interface FileRouteTypes {
     | '/auth/sso/$connectionId'
     | '/docs/operations/table'
     | '/docs/page/$'
+    | '/embed/$tenantId/$organizationSlug/organization'
     | '/$tenantId/$organizationSlug'
     | '/legal'
     | '/$tenantId/$organizationSlug/organization/$tool'
@@ -562,6 +608,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_public'
+    | '/embed'
     | '/_app/system'
     | '/_public/auth'
     | '/_public/docs'
@@ -572,8 +619,10 @@ export interface FileRouteTypes {
     | '/_public/_marketing'
     | '/_public/error'
     | '/_public/thumbnail'
+    | '/embed/n'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
+    | '/embed/$tenantId/$organizationSlug'
     | '/_app/system/$tool'
     | '/_app/system/organizations'
     | '/_app/system/requests'
@@ -603,6 +652,7 @@ export interface FileRouteTypes {
     | '/_public/auth/sso/$connectionId'
     | '/_public/docs/operations_/table'
     | '/_public/docs/page/$'
+    | '/embed/$tenantId/$organizationSlug/organization'
     | '/_app/$tenantId/$organizationSlug/'
     | '/_public/_marketing/legal/'
     | '/_app/$tenantId/$organizationSlug/organization/$tool'
@@ -614,6 +664,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
+  EmbedRouteRoute: typeof EmbedRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -630,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PublicRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embed': {
+      id: '/embed'
+      path: '/embed'
+      fullPath: '/embed'
+      preLoaderRoute: typeof EmbedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -708,6 +766,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/thumbnail'
       preLoaderRoute: typeof PublicThumbnailRouteImport
       parentRoute: typeof PublicRouteRoute
+    }
+    '/embed/n': {
+      id: '/embed/n'
+      path: '/n'
+      fullPath: '/embed/n'
+      preLoaderRoute: typeof EmbedNRouteImport
+      parentRoute: typeof EmbedRouteRoute
     }
     '/_app/$tenantId/$organizationSlug': {
       id: '/_app/$tenantId/$organizationSlug'
@@ -870,6 +935,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicDocsSchemasRouteImport
       parentRoute: typeof PublicDocsRouteRoute
     }
+    '/embed/$tenantId/$organizationSlug': {
+      id: '/embed/$tenantId/$organizationSlug'
+      path: '/$tenantId/$organizationSlug'
+      fullPath: '/embed/$tenantId/$organizationSlug'
+      preLoaderRoute: typeof EmbedTenantIdOrganizationSlugRouteRouteImport
+      parentRoute: typeof EmbedRouteRoute
+    }
     '/_app/$tenantId/$organizationSlug/': {
       id: '/_app/$tenantId/$organizationSlug/'
       path: '/'
@@ -932,6 +1004,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/docs/page/$'
       preLoaderRoute: typeof PublicDocsPageSplatRouteImport
       parentRoute: typeof PublicDocsRouteRoute
+    }
+    '/embed/$tenantId/$organizationSlug/organization': {
+      id: '/embed/$tenantId/$organizationSlug/organization'
+      path: '/organization'
+      fullPath: '/embed/$tenantId/$organizationSlug/organization'
+      preLoaderRoute: typeof EmbedTenantIdOrganizationSlugOrganizationRouteImport
+      parentRoute: typeof EmbedTenantIdOrganizationSlugRouteRoute
     }
     '/_app/$tenantId/$organizationSlug/organization/$tool': {
       id: '/_app/$tenantId/$organizationSlug/organization/$tool'
@@ -1150,9 +1229,40 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
   PublicRouteRouteChildren,
 )
 
+interface EmbedTenantIdOrganizationSlugRouteRouteChildren {
+  EmbedTenantIdOrganizationSlugOrganizationRoute: typeof EmbedTenantIdOrganizationSlugOrganizationRoute
+}
+
+const EmbedTenantIdOrganizationSlugRouteRouteChildren: EmbedTenantIdOrganizationSlugRouteRouteChildren =
+  {
+    EmbedTenantIdOrganizationSlugOrganizationRoute:
+      EmbedTenantIdOrganizationSlugOrganizationRoute,
+  }
+
+const EmbedTenantIdOrganizationSlugRouteRouteWithChildren =
+  EmbedTenantIdOrganizationSlugRouteRoute._addFileChildren(
+    EmbedTenantIdOrganizationSlugRouteRouteChildren,
+  )
+
+interface EmbedRouteRouteChildren {
+  EmbedNRoute: typeof EmbedNRoute
+  EmbedTenantIdOrganizationSlugRouteRoute: typeof EmbedTenantIdOrganizationSlugRouteRouteWithChildren
+}
+
+const EmbedRouteRouteChildren: EmbedRouteRouteChildren = {
+  EmbedNRoute: EmbedNRoute,
+  EmbedTenantIdOrganizationSlugRouteRoute:
+    EmbedTenantIdOrganizationSlugRouteRouteWithChildren,
+}
+
+const EmbedRouteRouteWithChildren = EmbedRouteRoute._addFileChildren(
+  EmbedRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
+  EmbedRouteRoute: EmbedRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

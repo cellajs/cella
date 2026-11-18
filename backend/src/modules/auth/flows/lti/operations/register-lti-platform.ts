@@ -2,15 +2,14 @@ import type { z } from '@hono/zod-openapi';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { type GuardedFetchInit, guardedFetch } from '#/lib/guarded-fetch';
+import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,
-  ltiPlatformConfigurationMember,
   ltiPlatformConfigurationSchema,
   type ltiRegisterQuerySchema,
   ltiRegistrationResponseSchema,
-  ltiToolConfigurationMember,
 } from '#/modules/auth/flows/lti/lti-schema';
 import { insertConnection } from '#/modules/connections/connections-queries';
 import { log } from '#/utils/logger';
