@@ -49,7 +49,6 @@ export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
     queryFn: async (): Promise<EnrichedOrganization> => getOrganization({ path: { tenantId, organizationId: id }, query: { include: 'counts' } }),
-    placeholderData: (): EnrichedOrganization | undefined => findOrganizationByIdOrSlug(id, tenantId),
     structuralSharing: preserveIncluded,
   });
 

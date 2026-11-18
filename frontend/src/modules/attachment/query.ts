@@ -5,6 +5,7 @@ import { type Attachment, getAttachment, type ListAttachmentsData, listAttachmen
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig, hierarchy } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
+import type { ApiError } from '~/lib/api';
 import { clearStoredUploads, hasPendingUploads, isPendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import type {
   CreateAttachmentInput,
@@ -137,7 +138,13 @@ export const findAttachmentInCache = createCacheFinder<Attachment>('attachment')
 
 /** An attachment by id from the cache, else from the permission-checked endpoint; null when it is gone or denied. */
 export const fetchAttachment = (tenantId: string, organizationId: string, id: string) =>
-  queryClient.query({ ...attachmentQueryOptions(tenantId, organizationId, id), staleTime: 'static' }).catch(() => null);
+  queryClient
+    .query({
+      ...attachmentQueryOptions(tenantId, organizationId, id),
+      staleTime: 'static',
+      meta: { suppressGlobalErrorToast: ({ status }) => status === 403 || status === 404 },
+    })
+    .catch(() => null);
 
 export const useGroupAttachments = (tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) => {
   const { data } = useQuery({
@@ -160,7 +167,7 @@ type DeleteData = Awaited<ReturnType<typeof deleteAttachmentsMutationFn>>;
 /** Shared by the live hook and the offline-replay defaults: callbacks take the QueryClient and derive the org key from durable variables, since onMutate does not re-run on replay. */
 export const attachmentCreateOptions = (
   queryClient: QueryClient,
-): UseMutationOptions<CreateData, Error, CreateAttachmentVars, { optimisticAttachments: OrgRoutableItemData[] }> => ({
+): UseMutationOptions<CreateData, ApiError, CreateAttachmentVars, { optimisticAttachments: OrgRoutableItemData[] }> => ({
   mutationKey: keys.create,
   scope: { id: 'attachment' },
   mutationFn: createAttachmentsMutationFn,
@@ -190,7 +197,7 @@ export const attachmentCreateOptions = (
 
 const attachmentUpdateOptions = (
   queryClient: QueryClient,
-): UseMutationOptions<UpdateData, Error, UpdateAttachmentFullVars, { previousAttachment: Attachment | undefined }> => ({
+): UseMutationOptions<UpdateData, ApiError, UpdateAttachmentFullVars, { previousAttachment: Attachment | undefined }> => ({
   mutationKey: keys.update,
   scope: { id: 'attachment' },
   mutationFn: (variables, context) =>
@@ -232,7 +239,7 @@ const attachmentUpdateOptions = (
 
 const attachmentDeleteOptions = (
   queryClient: QueryClient,
-): UseMutationOptions<DeleteData, Error, DeleteAttachmentVars, { deletedAttachments: Attachment[] }> => ({
+): UseMutationOptions<DeleteData, ApiError, DeleteAttachmentVars, { deletedAttachments: Attachment[] }> => ({
   mutationKey: keys.delete,
   scope: { id: 'attachment' },
   mutationFn: deleteAttachmentsMutationFn,

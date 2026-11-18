@@ -139,7 +139,7 @@ export function DataTable<TData>({
   const [loaded, setLoaded] = useState({ rows, sortKey });
   if (rows && !isLoading && (loaded.rows !== rows || loaded.sortKey !== sortKey)) setLoaded({ rows, sortKey });
 
-  // A sort that has to load keeps the old rows: the skeleton would unmount the grid, and keyboard focus and the current cell with it.
+  // A sort that moves to another query keeps the old rows: the skeleton would unmount the grid, and keyboard focus and the current cell with it.
   const isLoadingRows = isLoading || !rows;
   const keepsRows = isLoadingRows && !error && loaded.sortKey !== sortKey && !!loaded.rows?.length;
   const shownRows = keepsRows ? loaded.rows : rows;

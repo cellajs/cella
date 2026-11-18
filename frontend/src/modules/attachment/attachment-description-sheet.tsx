@@ -40,8 +40,8 @@ function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Atta
   const membersQuery = useInfiniteQuery(membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }));
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
-  const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
-  const updateData = createDescriptionUpdater('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
+  const { mutate } = useAttachmentUpdateMutation(tenantId, organizationId);
+  const updateData = createDescriptionUpdater('attachment', attachment, (ops) => mutate({ id: attachment.id, ops }));
 
   // The stored text wherever no live editor is: faded and inert while the relay syncs, at the editor's height so the swap does not reflow.
   const waitingFallback = (

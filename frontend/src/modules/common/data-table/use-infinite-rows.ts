@@ -1,12 +1,12 @@
-import { type InfiniteData, type QueryKey, type UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { type InfiniteData, keepPreviousData, type QueryKey, type UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { getQueryItems } from '~/query/basic/mutate-query';
 import type { QueryData } from '~/query/types';
 
-/** Flattens a paged list query into table rows. */
+/** Flattens a paged list query into table rows; a search, filter or sort keeps the previous rows until its own arrive. */
 export function useInfiniteRows<TRow, TError, TQueryKey extends QueryKey, TPageParam>(
   options: UseInfiniteQueryOptions<QueryData<TRow>, TError, InfiniteData<QueryData<TRow>>, TQueryKey, TPageParam>,
 ) {
-  const query = useInfiniteQuery({ ...options, select: (data) => getQueryItems(data) });
+  const query = useInfiniteQuery({ placeholderData: keepPreviousData, ...options, select: (data) => getQueryItems(data) });
   const { data: rows, isLoading, isFetching, error, fetchNextPage, hasNextPage } = query;
 
   return { rows, isLoading, isFetching, error, hasNextPage, fetchMore: fetchNextPage };

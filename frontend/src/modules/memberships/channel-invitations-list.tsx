@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { BirdIcon, MailIcon, XIcon } from 'lucide-react';
+import { BirdIcon, MailIcon, ServerCrashIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
 import { resendInvitation } from 'sdk';
@@ -102,20 +102,22 @@ export function ChannelInvitationsList({ channel }: { channel: EnrichedChannel }
     tenantId: channel.tenantId,
     organizationId: channelOrganizationId(channel),
   });
-  const { rows = [], isLoading, hasNextPage, fetchMore, isFetching } = useInfiniteRows(queryOptions);
-  const total = useListQueryTotal(queryOptions.queryKey) ?? rows.length;
+  const { rows, isLoading, error, hasNextPage, fetchMore, isFetching } = useInfiniteRows(queryOptions);
+  const total = useListQueryTotal(queryOptions.queryKey) ?? rows?.length ?? 0;
 
-  if (!isLoading && !rows.length) return <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:invites') }} />;
+  if (!rows && error) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
+  if (!isLoading && !rows?.length)
+    return <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:invites') }} />;
 
   return (
     <Accordion className="flex flex-col gap-2">
       <TileListHeading title={t('c:pending_waiting')} count={total} />
-      {rows.map((row) => (
+      {rows?.map((row) => (
         <PendingTile key={row.id} row={row} channel={channel} onResent={() => queryClient.invalidateQueries({ queryKey: queryOptions.queryKey })} />
       ))}
       {hasNextPage && (
         <Button variant="ghost" className="w-full" loading={isFetching} onClick={() => fetchMore()}>
-          {t('c:show_more', { count: total - rows.length })}
+          {t('c:show_more', { count: total - (rows?.length ?? 0) })}
         </Button>
       )}
     </Accordion>

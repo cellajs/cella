@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { CopyIcon, TrashIcon } from 'lucide-react';
+import { CopyIcon, ServerCrashIcon, TrashIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import type { Connection, CreateConnectionData, Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-form-with-draft';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -106,9 +107,9 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
 
   return (
     <ToolCard label="c:connection_other" description={t('c:connections.text')} unsaved id={formContainerId} className={className}>
-      {isPending ? (
-        <Spinner />
-      ) : (
+      {/* A failed first read shows the failure: an empty list would offer to create the tenant's first connection. */}
+      {!connections && (isPending ? <Spinner /> : <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />)}
+      {connections && (
         <div className="flex flex-col gap-6 text-sm">
           {ssoConnections.map((connection) => (
             <div key={connection.id} className="flex flex-col gap-3 rounded-md border p-4">

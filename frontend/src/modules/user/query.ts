@@ -17,7 +17,7 @@ type UserFilters = ListFilters<NonNullable<ListUsersData['query']>>;
 /** The list's params as the system route holds them: the account sets as a list, which the request turns into `includeAnonymous`. */
 type UsersListParams = Omit<UserFilters, 'includeAnonymous'> & { accounts?: (typeof accountSetValues)[number][]; limit?: number };
 
-const keys = createEntityKeys<UserFilters>('user');
+const keys = { ...createEntityKeys<UserFilters>('user'), pendingSystemInvites: ['user', 'pendingSystemInvites'] as const };
 
 export const userQueryKeys = keys;
 
@@ -47,8 +47,7 @@ export const usersListQueryOptions = (params: UsersListParams) => {
 };
 
 /** How many addresses hold an unexpired system invitation. */
-export const pendingSystemInvitesQueryOptions = () =>
-  queryOptions({ queryKey: ['user', 'pendingSystemInvites'] as const, queryFn: () => countSystemInvitations() });
+export const pendingSystemInvitesQueryOptions = () => queryOptions({ queryKey: keys.pendingSystemInvites, queryFn: () => countSystemInvitations() });
 
 const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();

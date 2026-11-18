@@ -1,4 +1,4 @@
-import { queryOptions, useMutation } from '@tanstack/react-query';
+import { queryOptions, skipToken, useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   type GetTokenDataData,
@@ -47,8 +47,7 @@ export const authHealthQueryOptions = queryOptions({
 export const tokenDataQueryOptions = (kind: TokenKind, tokenId?: string) =>
   queryOptions({
     queryKey: authKeys.token(kind, tokenId),
-    queryFn: () => getTokenData({ path: { kind, id: tokenId ?? '' } }),
-    enabled: !!tokenId,
+    queryFn: tokenId ? () => getTokenData({ path: { kind, id: tokenId } }) : skipToken,
     gcTime: 0,
     meta: { persist: false },
   });
@@ -72,8 +71,7 @@ export const pendingMfaQueryOptions = queryOptions({
 export const ssoEntryQueryOptions = (connectionId?: string) =>
   queryOptions({
     queryKey: authKeys.ssoEntry(connectionId),
-    queryFn: () => getSsoEntry({ path: { connectionId: connectionId ?? '' } }),
-    enabled: !!connectionId,
+    queryFn: connectionId ? () => getSsoEntry({ path: { connectionId } }) : skipToken,
   });
 
 /** Bound to one interaction, gone when it is answered: never persisted. */
