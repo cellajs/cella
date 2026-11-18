@@ -41,7 +41,7 @@ function seedRoutes(id: string, tabsSlot: string) {
     options: { staticData: { navTab: { id: 'settings', label: key('c:settings'), order: 20, requires: 'update' } } },
   });
   const toolHost = fakeRoute({ path: '$tool', fullPath: `${id}/$tool` });
-  routesById[id] = fakeRoute({ children: [members, settings, toolHost], options: { staticData: { tabsSlot } } });
+  routesById[id] = fakeRoute({ fullPath: id, children: [members, settings, toolHost], options: { staticData: { tabsSlot } } });
 }
 
 describe('guardNavTabs forwards bare-parent and disabled-tab navigations in beforeLoad', () => {
@@ -53,7 +53,7 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
   type Match = { routeId: string; fullPath: string; params: unknown };
 
   /** Runs the guard, returning the thrown redirect's navigation options (undefined = passed). */
-  function runGuard(matches: Match[], options?: Pick<ResolvePlacementOptions, 'slotConfig'>) {
+  function runGuard(matches: Match[], options?: Pick<ResolvePlacementOptions, 'slotConfig' | 'grants'>) {
     try {
       guardNavTabs(matches, '/org', options);
     } catch (thrown) {
@@ -75,6 +75,14 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
     // With members hidden the landing becomes the registry reports tab, via the $tool host
     const options = runGuard([parentMatch, membersMatch], { slotConfig: { hidden: ['members'] } });
     expect(options?.to).toBe('/org/$tool');
+  });
+
+  it('sends a tab the grants refuse to the layout when no tab is left, and lets the layout through', () => {
+    const settingsMatch: Match = { routeId: '/org/settings', fullPath: '/org/settings', params: {} };
+    expect(runGuard([parentMatch, settingsMatch], { grants: [] })?.to).toBe('/org/members');
+    const nothingLeft = { slotConfig: { hidden: ['members', 'reports'] }, grants: [] };
+    expect(runGuard([parentMatch, settingsMatch], nothingLeft)).toMatchObject({ to: '/org', replace: true });
+    expect(runGuard([parentMatch], nothingLeft)).toBeUndefined();
   });
 
   it('leaves behind the search of a tab it forwards off: its sort and filters mean nothing to the landing tab', () => {

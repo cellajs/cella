@@ -14,27 +14,25 @@ import type { UserMinimalBase } from '#/schemas/minimal-base';
 import type { PageWindow } from '#/utils/list-page';
 
 /**
- * A page of the caller's organizations, or with `sharedWithUserId` of that user's, limited to the ones where the caller
- * sees them unless the caller is a system admin. Without `sharedWithUserId` a system admin lists every organization.
+ * A page of the caller's organizations, or with `memberUserId` of that user's, limited to the ones where the caller
+ * sees them unless the caller is a system admin. Without `memberUserId` a system admin lists every organization.
  * `include=members` previews the admins of each organization whose people the caller reads.
  * @throws 403 `forbidden` when `role` or `excludeHidden` filters another user's list, and with `entityType: 'user'` for
  * a user the caller does not see anywhere, missing and unseen alike.
  */
 export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>, { offset, limit }: PageWindow) {
   const { user, memberships } = ctx.var;
-  const { q, orderBy, sharedWithUserId, role, excludeHidden, include, kind } = input;
+  const { q, orderBy, memberUserId, role, excludeHidden, include, kind } = input;
   const { sort, order } = orderBy;
 
   const entityType = 'organization';
-  const isSystemAdmin = ctx.var.isSystemAdmin && !sharedWithUserId;
+  const isSystemAdmin = ctx.var.isSystemAdmin && !memberUserId;
 
-  const targetUserId = sharedWithUserId ?? user.id;
-  const ofAnotherUser = !!sharedWithUserId && sharedWithUserId !== user.id;
+  const targetUserId = memberUserId ?? user.id;
+  const ofAnotherUser = !!memberUserId && memberUserId !== user.id;
   // Another user's organizations are listed only where the caller sees them; a system admin sees all of them.
   const whereCallerSeesUser =
-    ofAnotherUser && !ctx.var.isSystemAdmin
-      ? await findOrganizationIdsWhereSeen(ctx, { userId: sharedWithUserId, access: accessFrom(ctx) })
-      : undefined;
+    ofAnotherUser && !ctx.var.isSystemAdmin ? await findOrganizationIdsWhereSeen(ctx, { userId: memberUserId, access: accessFrom(ctx) }) : undefined;
   // One answer for a missing user and an unseen one: it never tells whether a user exists.
   if (whereCallerSeesUser?.length === 0) throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
 

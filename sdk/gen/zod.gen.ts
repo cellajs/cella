@@ -2393,7 +2393,7 @@ export const zListOrganizationsQuery = z.object({
     ])
     .optional()
     .default('displayOrder asc'),
-  sharedWithUserId: z.uuid().optional(),
+  memberUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeHidden: z
     .union([z.enum(['true', 'false']), z.boolean()])

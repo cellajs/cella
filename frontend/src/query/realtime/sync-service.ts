@@ -2,11 +2,9 @@ import type { InfiniteQueryExecuteOptions, QueryExecuteOptions, QueryKey } from 
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import { type ApiError, isRateLimited } from '~/lib/api';
 import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
-import { canAccess, userAccess } from '~/modules/entities/use-can';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { canAccess, currentAccess } from '~/modules/entities/use-can';
 import type { UserMenuItem } from '~/modules/me/types';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { userStore } from '~/modules/user/user-store';
 import { productTypeOf } from '~/query/cache-migration';
 import { queryClient } from '~/query/query-client';
 import { isOpaqueScope } from '~/query/realtime/catchup-processor';
@@ -86,10 +84,9 @@ async function syncMenuItem(item: UserMenuItem): Promise<boolean> {
   if (item.membership.hidden) return false;
 
   const { organizationId } = item.membership;
-  const { user, isSystemAdmin } = userStore.getState();
-  const memberships = queryClient.getQueryData(myMembershipsQueryOptions().queryKey)?.results ?? [];
   // A channel's members and invitations answer 403 to a user whose roles read none of its people.
-  const readsPeople = canAccess(userAccess(user, isSystemAdmin, memberships), 'read', 'user', item);
+  const access = await currentAccess();
+  const readsPeople = !access || canAccess(access, 'read', 'user', item);
   const queries = buildEntitySyncQueries({
     targetEntityId: item.id,
     targetEntityType: item.entityType,

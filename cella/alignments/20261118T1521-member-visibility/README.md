@@ -2,14 +2,14 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: relatableGuard, relatableUserId, permissions-config, guardNavTabs, listMembers, listInvitations, inviteMembers
+grep: relatableGuard, relatableUserId, requireEntityAction, permissions-config, guardNavTabs, listMembers, inviteMembers
 ---
 
 # Roles decide whom members see
 
 An app adds a `case 'user'` to `shared/config/permissions-config.ts` that grants `read` to every role whose holders see
 people; without one, members see nobody but themselves. `relatableGuard` is gone and the list query parameter
-`relatableUserId` is `sharedWithUserId`. A tab that lists a channel's people declares `requires: 'people'`, and a
+`relatableUserId` is `memberUserId`. A tab that lists a channel's people declares `requires: 'people'`, and a
 channel route passes `grants` to `guardNavTabs`.
 
 ## What & why
@@ -39,12 +39,12 @@ No script: manual.
      break;
    ```
 
-2. Grant `read` to each channel role whose holders open that channel's member list or invite to it, unless an elevated organization role of theirs reaches it: a grant reads only the memberships of its own channel.
+2. Grant `read` to each channel role whose holders open that channel's member list, invite to it or manage its members, unless an elevated organization role of theirs reaches it: a grant reads only the memberships of its own channel.
 3. For "only people who share a channel": leave the organization roles out and grant `read` to the roles of the channels whose members may see each other.
 4. For "nobody": keep `case 'user'` with no grant.
-5. Each channel list route with `[userGuard, relatableGuard]`: drop the guard, rename its `relatableUserId` query parameter to `sharedWithUserId`, and keep another user's list to the organizations `findOrganizationIdsWhereSeen` returns, answering 403 `forbidden` with `entityType: 'user'` when there are none, as `getOrganizationsOp` does.
-6. Rename `relatableUserId` to `sharedWithUserId` in frontend list calls, then run `pnpm sdk`.
-7. On each tab that lists a channel's members, set `requires: 'people'`, and give the channel's layout route `grants: await loadChannelTabGrants(channel)` in its `guardNavTabs` call.
+5. Each channel list route with `[userGuard, relatableGuard]`: drop the guard, rename its `relatableUserId` query parameter to `memberUserId`, and keep another user's list to the organizations `findOrganizationIdsWhereSeen` returns, answering 403 `forbidden` with `entityType: 'user'` when there are none, as `getOrganizationsOp` does.
+6. Rename `relatableUserId` to `memberUserId` in frontend list calls, then run `pnpm sdk`.
+7. On each tab that lists a channel's members, set `requires: 'people'`, and give the channel's layout route `grants: await loadChannelTabGrants(channel)` in its `guardNavTabs` call. A tab route that called the removed `requireEntityAction` sets its `requires` the same way.
 8. If a role sees fewer people than before, change the privacy statement (`frontend/src/modules/marketing/legal/privacy-text.tsx`), which says members see each other's address.
 
 ## Verify

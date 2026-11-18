@@ -175,7 +175,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
   - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
   - `notification-access`: inbox, instant mail and digest naming a left organization's items. `mark-seen`: confirming a deleted or hidden attachment.
-  - `member-visibility`, `relatable-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
+  - `member-visibility`, `user-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
   - `yjs-token` and `tests/yjs-http`: token or pull/push for an entity the caller may not update; `tests/mcp` and `mcp-server.test.ts`: a call outside scopes.
   - `tests/integration/rls-security`: attachment reads across tenants and without tenant context as `runtime_role`; `tests/integration/schema-verification`: channel tables have no RLS, composite FK on product tables.
   - `permission-engine-boundary`: any file but `check-access.ts` importing `getAllDecisions`. `tests/channel-discovery` (contract test). `route-guards`. `tests/organization-member-previews` (at most 3 previews, only `UserMinimalBase` fields). `pnpm test:core:runtime`.
@@ -217,7 +217,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `givenName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
-  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
+  - `user-mfa-visibility`: a member who sees the user and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
   - `member-personal-view`: another member's hide, mute and order in `listMembers`; pins that email is shown org-wide.
   - `profile-image-urls`: an avatar or banner pointed at another host. `trace-redaction`: a token in a request span and in the request log line (D1).
   - `cdc/src/tests/secret-columns.test.ts`: a new column matching the secret pattern in neither map.
@@ -508,12 +508,12 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/rate-limiter/limiters.ts`.
   - `shared/src/utils/safe-equal.ts`: the code's own comparison helper (the hono `timingSafeEqual` is not imported).
   - Call sites: `isRecognizedBrowser` in `check-email` (`auth/general/general-handlers.ts`), `magicLinkLimiter.exempt`, `send-magic-link.ts`; `maySignUp` in `send-magic-link.ts` and `handle-oauth-callback.ts`; `findUserByEmail` in anonymous paths (`send-magic-link.ts`, `modules/requests/operations/create-request.ts`, `handle-oauth-callback.ts`, `provision-sso-user.ts`).
-  - Tests: `backend/tests/security/{account-enumeration,product-existence,member-visibility,relatable-organizations,pending-invitations}.test.ts`.
+  - Tests: `backend/tests/security/{account-enumeration,product-existence,member-visibility,user-organizations,pending-invitations}.test.ts`.
 - **Holds:**
   - `account-enumeration`: an email in the passkey challenge body changing the answer; a passkey no account holds naming an email (same 404 for account and stranger); `recognized` true for an address the prober's browser never signed in to; a waitlist form answering account, stranger and repeat differently. The owner's browser still learns `recognized: true` (positive control).
   - `product-existence`: getAttachment and updateAttachment confirming an unreadable id (404 for missing and unreadable; 403 only for a readable row).
   - `member-visibility`: every route that names a person (users, search, profile, another user's organizations, member and invitation lists, invites) finding someone the viewer's roles do not read; an unseen member's invite plan differing from an outsider's.
-  - `relatable-organizations`: organizations of another user across tenants, a malformed `sharedWithUserId` reaching the database, role and hidden filters on another user's list.
+  - `user-organizations`: organizations of another user across tenants and where the caller sees them, a malformed `memberUserId` reaching the database, role and hidden filters on another user's list.
   - `pending-invitations`: the pending list, resend, invite response and invite check telling an account from a new address.
   - `tenant-access`: missing, inactive and foreign tenants told apart; `checkSlug` 204/409.
   - `brute-force-limits`: mailing one address forever, the magic budget telling account from none, check-email lookups without end.

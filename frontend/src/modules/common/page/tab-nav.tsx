@@ -139,8 +139,9 @@ export const defaultNavTabPath = (parentRouteId: string, options?: ResolvePlacem
 /**
  * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, a tab that
  * `surfaces` or the channel arrangement hides ({@link isPlacementHidden}), and a tab whose `requires` the caller's `grants`
- * lack, to the landing tab. Without `grants` (the memberships could not be read) it leaves `requires` to the server, and
- * it never reads `visibleTo`; {@link useNavTabRedirect} covers changes while on a tab.
+ * lack, to the landing tab, or to the layout's own path when no tab is left. Without `grants` (the memberships could not
+ * be read) it leaves `requires` to the server, and it never reads `visibleTo`; {@link useNavTabRedirect} covers changes
+ * while on a tab.
  * @throws A replacing redirect that keeps params and hash. It keeps a bare parent's search and drops a hidden tab's own sort and filters.
  */
 export function guardNavTabs(
@@ -165,9 +166,12 @@ export function guardNavTabs(
 
   // The landing tab is the first one this surface resolves: the app's `surfaces` order sets it.
   const landing = resolveNavTabs(parentRouteId, options)[0];
-  if (!landing) return;
+  if (landing) throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
 
-  throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
+  // No tab is left: a refused tab goes to the layout itself, which this guard then lets through, never in a loop.
+  // Cast: a route's fullPath is a plain string; link paths are the loose LinkComponentProps, as for the tabs above.
+  const layoutPath = getRoutesById()[parentRouteId]?.fullPath as PageTab['path'] | undefined;
+  if (!fromBareParent && layoutPath) throw redirect({ to: layoutPath, params: true, search: {}, replace: true, hash: true });
 }
 
 /**

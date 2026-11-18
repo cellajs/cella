@@ -17,8 +17,8 @@ interface OrganizationsGridProps {
 }
 
 export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: OrganizationsGridProps) {
-  const sharedWithUserId = fixedQuery?.sharedWithUserId;
-  const ofAnotherUser = useUserStore((state) => !!sharedWithUserId && sharedWithUserId !== state.user?.id);
+  const memberUserId = fixedQuery?.memberUserId;
+  const ofAnotherUser = useUserStore((state) => !!memberUserId && memberUserId !== state.user?.id);
 
   const { search: baseSearch, setSearch } = useSearchParams<OrgGridSearch>({ saveDataInSearch, defaults: gridSortDefaults(sortOptions) });
 

@@ -12,7 +12,7 @@ import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
  * sits in a dependency array, and the menu then stays as it was after a mute, a hide or a reorder.
  */
 export function useMenu(userId: string | undefined) {
-  const lists = useChannelListQueries(menuEntityTypes, { sharedWithUserId: userId ?? '' }, !!userId);
+  const lists = useChannelListQueries(menuEntityTypes, { memberUserId: userId ?? '' }, !!userId);
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
   const itemsByType = new Map<ChannelEntityType, UserMenuItem[]>(menuEntityTypes.map((entityType) => [entityType, []]));

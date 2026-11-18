@@ -11,13 +11,14 @@ import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
+import { assertReadsPeople } from '#/permissions/visible-people';
 import { log } from '#/utils/logger';
 
 type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
 
 /**
- * Updates a membership's role, which needs `update` on its channel and neither the new nor the old role above the
- * actor's own (`assertRoleGrant`), or the member's own hide, mute and menu order. Its route admits sessions only, so a
+ * Updates a membership's role, which needs `update` on its channel, the read of its people and neither the new nor the
+ * old role above the actor's own (`assertRoleGrant`), or the member's own hide, mute and menu order. Its route admits sessions only, so a
  * service account never edits a membership.
  * @throws 400 `invalid_request` when hiding a channel type whose menu section sets `hideable: false`.
  */
@@ -54,8 +55,9 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   const action = role !== undefined ? 'update' : 'read';
   const { entity } = await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
 
-  // Nobody raises a member past their own role, nor changes the role of a member who outranks them.
+  // Nobody changes the role of a member they do not see, raises one past their own role, or changes one who outranks them.
   if (role !== undefined) {
+    assertReadsPeople(ctx, updatedType, entity);
     const subject = buildSubjectFromEntity(updatedType, entity);
     for (const handedOut of [role, membershipToUpdate.role]) assertRoleGrant(ctx, { subject, role: handedOut, action: 'update' });
   }

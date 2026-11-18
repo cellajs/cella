@@ -60,11 +60,11 @@ type OrganizationsListParams = OrganizationFilters & { limit?: number };
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
   orderBy = organizationsSearchDefaults.orderBy,
-  sharedWithUserId,
+  memberUserId,
   excludeHidden,
   role,
   kind = [],
-}: OrganizationFilters) => ({ q, orderBy, sharedWithUserId, excludeHidden, role, kind });
+}: OrganizationFilters) => ({ q, orderBy, memberUserId, excludeHidden, role, kind });
 
 // Cache enrichment adds the ancestor slugs.
 const fetchOrganizationsPage = async (

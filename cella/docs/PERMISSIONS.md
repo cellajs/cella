@@ -68,7 +68,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes, and reads no people. A membership change reaches every check within seconds.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads no people; an unscoped one reads them as its actor does. A membership change reaches every check within seconds.
 
 ## The policy consulted
 
@@ -191,7 +191,7 @@ The frontend asks the engine. The backend decides. A control calls `can(action, 
 
 `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
-A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, the gate lets the user through and the server decides.
+A channel's tabs ask the same question before a tab loads: `guardNavTabs` sends a tab whose `requires` the user's grants lack to the first tab they allow, or to the channel's default path. When the memberships cannot be read, it lets the user through and the server decides.
 
 ## Enforcement paths
 

@@ -13014,7 +13014,7 @@
         "operationId": "listOrganizations",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
-        "description": "Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `sharedWithUserId` it lists that user's organizations where the caller sees them.",
+        "description": "Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `memberUserId` it lists that user's organizations where the caller sees them.",
         "x-anonymous": true,
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
@@ -13094,11 +13094,11 @@
             "schema": {
               "type": "string",
               "format": "uuid",
-              "description": "Lists this user's organizations where the caller sees them."
+              "description": "Lists the organizations in which this user is a member and the caller sees them."
             },
             "required": false,
-            "description": "Lists this user's organizations where the caller sees them.",
-            "name": "sharedWithUserId",
+            "description": "Lists the organizations in which this user is a member and the caller sees them.",
+            "name": "memberUserId",
             "in": "query"
           },
           {

@@ -1,5 +1,15 @@
 import { eq } from 'drizzle-orm';
-import { checkMemberInvite, getUser, inviteMembers, listInvitations, listMembers, listOrganizations, listUsers } from 'sdk';
+import {
+  batchDeleteMembers,
+  checkMemberInvite,
+  getUser,
+  inviteMembers,
+  listInvitations,
+  listMembers,
+  listOrganizations,
+  listUsers,
+  updateMembership,
+} from 'sdk';
 import { type ChannelEntityType, type EntityRole, policyMatrix } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -34,6 +44,24 @@ const assumePeopleRead = (role: EntityRole, read: 0 | 1) => {
 
 type Session = { id: string; sessionCookie: string };
 type Listed = { results: { id: string }[] };
+/** Who asks: `viewer` reads, `manager` (an organization admin with the same read of people) invites and manages members. */
+type Askers = { viewer: Session; manager: Session };
+
+const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
+
+/** Every operation that names a person by id (a `userId` or `memberUserId` parameter) and is not for system admins alone. */
+const operationsNamingAPerson = async () => {
+  const { baseApp } = await import('#/routes');
+  const { paths = {} } = baseApp.getOpenAPI31Document({ openapi: '3.1.0', info: { title: 'people', version: '0' } });
+  return Object.values(paths).flatMap((item) =>
+    httpMethods.flatMap((method) => {
+      const operation = item[method];
+      if (!operation || ((operation['x-guard'] as string[] | undefined) ?? []).includes('sysAdminGuard')) return [];
+      const parameters = (operation.parameters ?? []).flatMap((parameter) => ('name' in parameter ? [parameter.name] : []));
+      return parameters.includes('userId') || parameters.includes('memberUserId') ? [String(operation.operationId)] : [];
+    }),
+  );
+};
 
 /**
  * Whom a member sees is decided by their role's read of people, on every route that names a person: an organization
@@ -41,8 +69,10 @@ type Listed = { results: { id: string }[] };
  */
 describe('who sees whom', async () => {
   const call = await createAppClient();
+  const db = getSeedDb();
   let org: { id: string; tenantId: string };
   let target: Session;
+  let created = 0;
 
   beforeAll(async () => {
     org = await createTestOrganization();
@@ -51,9 +81,11 @@ describe('who sees whom', async () => {
 
   afterAll(async () => await clearSecurityTestData());
 
-  const headersOf = (viewer: Session) => ({ ...defaultHeaders, Cookie: viewer.sessionCookie });
+  const headersOf = (asker: Session) => ({ ...defaultHeaders, Cookie: asker.sessionCookie });
   const orgPath = () => ({ tenantId: org.tenantId, organizationId: org.id });
   const channel = () => ({ channelId: org.id, channelType: 'organization' as const });
+  /** A member of its own for a surface that changes or removes one. */
+  const newMember = () => createOrgUser(call, org.tenantId, org.id, `visibility-member-${++created}`, memberRole);
 
   /** One answer for an unseen person, missing and unrelated alike. */
   const refused = async (answer: Parameters<typeof expectRefusal>[0], label: string) => {
@@ -61,34 +93,65 @@ describe('who sees whom', async () => {
     return false;
   };
 
-  /** Each surface answers whether the viewer finds the target there. */
-  const surfaces: Record<string, (viewer: Session) => Promise<boolean>> = {
-    'list users': async (viewer) => {
+  /** Each surface, by operation, answers whether the asker finds or reaches the person there. */
+  const surfaces: Record<string, (askers: Askers) => Promise<boolean>> = {
+    listUsers: async ({ viewer }) => {
       const { data } = await call(listUsers, { query: {}, headers: headersOf(viewer) });
       return (data as Listed).results.some(({ id }) => id === target.id);
     },
-    search: async (viewer) => {
+    'listUsers search': async ({ viewer }) => {
       const { data } = await call(listUsers, { query: { q: 'visibility-target' }, headers: headersOf(viewer) });
       return (data as Listed).results.some(({ id }) => id === target.id);
     },
-    'get one user': async (viewer) => {
+    getUser: async ({ viewer }) => {
       const answer = await call(getUser, { path: { userId: target.id }, headers: headersOf(viewer) });
-      return answer.response.status === 200 || refused(answer, 'get one user');
+      return answer.response.status === 200 || refused(answer, 'getUser');
     },
-    'relatable guard': async (viewer) => {
-      const answer = await call(listOrganizations, { query: { sharedWithUserId: target.id }, headers: headersOf(viewer) });
-      return answer.response.status === 200 || refused(answer, 'relatable guard');
+    listOrganizations: async ({ viewer }) => {
+      const answer = await call(listOrganizations, { query: { memberUserId: target.id }, headers: headersOf(viewer) });
+      return answer.response.status === 200 || refused(answer, 'listOrganizations');
     },
-    "the organization's member list": async (viewer) => {
+    listMembers: async ({ viewer }) => {
       const answer = await call(listMembers, { path: orgPath(), query: channel(), headers: headersOf(viewer) });
-      if (answer.response.status !== 200) return refused(answer, 'member list');
+      if (answer.response.status !== 200) return refused(answer, 'listMembers');
       return (answer.data as Listed).results.some(({ id }) => id === target.id);
     },
-    'the invitation list': async (viewer) => {
+    listInvitations: async ({ viewer }) => {
       const answer = await call(listInvitations, { path: orgPath(), query: channel(), headers: headersOf(viewer) });
-      return answer.response.status === 200 || refused(answer, 'invitation list');
+      return answer.response.status === 200 || refused(answer, 'listInvitations');
+    },
+    checkMemberInvite: async ({ manager }) => {
+      const body = { emails: [`visibility-invitee-${++created}@security-test.com`] };
+      const answer = await call(checkMemberInvite, { path: orgPath(), query: channel(), body, headers: headersOf(manager) });
+      return answer.response.status === 200 || refused(answer, 'checkMemberInvite');
+    },
+    inviteMembers: async ({ manager }) => {
+      const body = { emails: [`visibility-invitee-${++created}@security-test.com`], role: memberRole };
+      const answer = await call(inviteMembers, { path: orgPath(), query: channel(), body, headers: headersOf(manager) });
+      return answer.response.status === 200 || refused(answer, 'inviteMembers');
+    },
+    batchDeleteMembers: async ({ manager }) => {
+      const member = await newMember();
+      const body = { ids: [member.id] };
+      const answer = await call(batchDeleteMembers, { path: orgPath(), query: channel(), body, headers: headersOf(manager) });
+      if (answer.response.status !== 200) return refused(answer, 'batchDeleteMembers');
+      return !(answer.data as { rejectedIds: string[] }).rejectedIds.includes(member.id);
+    },
+    updateMembership: async ({ manager }) => {
+      const member = await newMember();
+      const [membership] = await db.select({ id: membershipsTable.id }).from(membershipsTable).where(eq(membershipsTable.userId, member.id));
+      const path = { ...orgPath(), membershipId: membership?.id ?? '' };
+      const answer = await call(updateMembership, { path, body: { role: adminRole }, headers: headersOf(manager) });
+      return answer.response.status === 200 || refused(answer, 'updateMembership');
     },
   };
+
+  it('covers every operation that names a person: a new one is examined here before it ships', async () => {
+    const naming = await operationsNamingAPerson();
+    // The reader finds the known ones, so an empty list cannot pass for full coverage.
+    expect(naming).toEqual(expect.arrayContaining(['getUser', 'listOrganizations']));
+    expect(Object.keys(surfaces)).toEqual(expect.arrayContaining(naming));
+  });
 
   describe.each([
     { label: 'a member whose role reads people', read: 1 as const, sees: true },
@@ -96,27 +159,21 @@ describe('who sees whom', async () => {
   ])('$label', ({ read, sees }) => {
     assumePeopleRead(memberRole, read);
     assumePeopleRead(adminRole, read);
-    let viewer: Session;
+    let askers: Askers;
 
     beforeAll(async () => {
-      viewer = await createOrgUser(call, org.tenantId, org.id, `visibility-viewer-${read}`, memberRole);
+      askers = {
+        viewer: await createOrgUser(call, org.tenantId, org.id, `visibility-viewer-${read}`, memberRole),
+        manager: await createOrgUser(call, org.tenantId, org.id, `visibility-manager-${read}`, adminRole),
+      };
     });
 
     it.each(Object.keys(surfaces))(`%s: ${sees ? 'finds' : 'never finds'} another member`, async (surface) => {
-      expect(await surfaces[surface]?.(viewer)).toBe(sees);
-    });
-
-    it.runIf(read === 0)('may neither check nor send an invite, even as an admin', async () => {
-      const admin = await createOrgUser(call, org.tenantId, org.id, 'visibility-admin-0', adminRole);
-      const body = { emails: ['visibility-invitee@security-test.com'] };
-      const answers = [
-        await call(checkMemberInvite, { path: orgPath(), query: channel(), body, headers: headersOf(admin) }),
-        await call(inviteMembers, { path: orgPath(), query: channel(), body: { ...body, role: memberRole }, headers: headersOf(admin) }),
-      ];
-      for (const answer of answers) await expectRefusal(answer, 403, 'forbidden', 'invite');
+      expect(await surfaces[surface]?.(askers)).toBe(sees);
     });
 
     it('always finds themself', async () => {
+      const { viewer } = askers;
       const { data } = await call(listUsers, { query: {}, headers: headersOf(viewer) });
       expect((data as Listed).results.map(({ id }) => id)).toContain(viewer.id);
       expect((await call(getUser, { path: { userId: viewer.id }, headers: headersOf(viewer) })).response.status).toBe(200);
@@ -126,15 +183,16 @@ describe('who sees whom', async () => {
   describe('a system admin with no membership', () => {
     assumePeopleRead(memberRole, 0);
     assumePeopleRead(adminRole, 0);
-    let viewer: Session;
+    let askers: Askers;
 
     beforeAll(async () => {
       const admin = await createSystemAdminUser('visibility-sysadmin@security-test.com');
-      viewer = { id: admin.id, sessionCookie: await createTestSession(admin) };
+      const session = { id: admin.id, sessionCookie: await createTestSession(admin) };
+      askers = { viewer: session, manager: session };
     });
 
     it.each(Object.keys(surfaces))('%s: finds every member', async (surface) => {
-      expect(await surfaces[surface]?.(viewer)).toBe(true);
+      expect(await surfaces[surface]?.(askers)).toBe(true);
     });
   });
 });

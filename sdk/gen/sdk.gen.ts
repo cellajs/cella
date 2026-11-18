@@ -2589,7 +2589,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
 /**
  * Get list of organizations
  *
- * Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `sharedWithUserId` it lists that user's organizations where the caller sees them.
+ * Returns a list of organizations across tenants: the `-` tenant reads every tenant. With `memberUserId` it lists that user's organizations where the caller sees them.
  *
  * **GET /tenants/-/organizations** ·· [listOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/tenants/-/organizations) ·· _organizations · cella · channel_
  *
@@ -2599,7 +2599,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
- * @param {string=} options.query.sharedWithUserId - `string` (optional)
+ * @param {string=} options.query.memberUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum | boolean=} options.query.excludeHidden - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)

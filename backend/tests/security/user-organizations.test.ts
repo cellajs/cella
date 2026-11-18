@@ -10,7 +10,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// Member previews list the organization's top role, so the viewer holds it to appear in one.
+// Member previews list the organization's top role: the viewer holds it to appear in one.
 const [previewedRole] = hierarchy.getRoles('organization');
 
 type OrgList = {
@@ -20,17 +20,17 @@ type OrgList = {
 
 /**
  * A profile lists the organizations a user is a member of. Viewing another user's profile shows only the organizations
- * the viewer shares with them: the target's membership elsewhere, in another tenant, is not the viewer's to see.
+ * in which the viewer sees them: the target's membership elsewhere, in another tenant, is not the viewer's to see.
  */
-describe('Organizations of another user (sharedWithUserId)', async () => {
+describe("Another user's organizations, where the caller sees them (memberUserId)", async () => {
   const call = await createAppClient();
   let shared: { id: string; tenantId: string };
   let foreign: { id: string; tenantId: string };
   let target: { id: string; sessionCookie: string };
   let viewer: { id: string; email: string; sessionCookie: string };
 
-  const listAs = (as: { sessionCookie: string }, sharedWithUserId: string) =>
-    call(listOrganizations, { query: { sharedWithUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+  const listAs = (as: { sessionCookie: string }, memberUserId: string) =>
+    call(listOrganizations, { query: { memberUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
 
   beforeAll(async () => {
     shared = await createTestOrganization();
@@ -52,7 +52,7 @@ describe('Organizations of another user (sharedWithUserId)', async () => {
     hidden = false,
   ) => insertOrgMembership(userId, org, { role, displayOrder, hidden });
 
-  it("must not list another tenant's organization via sharedWithUserId", async () => {
+  it("must not list another tenant's organization via memberUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);
     expect(response.status).toBe(200);
     const { results: items, totalSize: total } = data as OrgList;
@@ -74,11 +74,11 @@ describe('Organizations of another user (sharedWithUserId)', async () => {
     expect((asAdmin.data as OrgList).results.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
   });
 
-  it('must not pass a malformed sharedWithUserId to the database', async () => {
+  it('must not pass a malformed memberUserId to the database', async () => {
     const { baseApp } = await import('#/routes');
     // Raw requests: the SDK validates the query itself and would throw before the server is reached.
-    const listRaw = (as: { sessionCookie: string }, sharedWithUserId: string) =>
-      baseApp.request(`/tenants/-/organizations?${new URLSearchParams({ sharedWithUserId })}`, {
+    const listRaw = (as: { sessionCookie: string }, memberUserId: string) =>
+      baseApp.request(`/tenants/-/organizations?${new URLSearchParams({ memberUserId })}`, {
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
 
@@ -91,7 +91,7 @@ describe('Organizations of another user (sharedWithUserId)', async () => {
     for (const answer of [junk, ownSlug, asAdmin]) await expectRefusal(answer, 400, 'form.invalid_format');
   });
 
-  it("must not filter another user's list by their hidden rows or role via sharedWithUserId", async () => {
+  it("must not filter another user's list by their hidden rows or role via memberUserId", async () => {
     // Two more organizations the viewer shares with the target, named against the target's menu order.
     const alpha = await createTestOrganization({ name: 'Alpha shared' });
     const bravo = await createTestOrganization({ name: 'Bravo shared' });
@@ -106,7 +106,7 @@ describe('Organizations of another user (sharedWithUserId)', async () => {
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
-      call(listOrganizations, { query: { sharedWithUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+      call(listOrganizations, { query: { memberUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     const idsOf = (data: unknown) => (data as OrgList).results.map((org) => org.id).filter((id) => pair.includes(id));
 
     // The listed user's hidden rows and role are not the viewer's to filter on: refused, never dropped.

@@ -5679,9 +5679,9 @@ export type ListOrganizationsData = {
       | 'displayOrder asc'
       | 'displayOrder desc';
     /**
-     * Lists this user's organizations where the caller sees them.
+     * Lists the organizations in which this user is a member and the caller sees them.
      */
-    sharedWithUserId?: string;
+    memberUserId?: string;
     role?: 'admin' | 'member';
     excludeHidden?: 'true' | 'false' | boolean;
     /**
