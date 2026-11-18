@@ -53,7 +53,7 @@ export async function resolveChannelBySlug<
     const options = detailQueryOptions(cached.id);
 
     // The list row seeds the detail so the cache-first read below returns at once. A list row is no detail (no counts), so
-    // the seed is stamped never fetched and revalidated below whatever the navigation: observers do not refetch on mount.
+    // the seed is stamped never fetched and revalidated below whatever the navigation.
     const seeded = !queryClient.getQueryData<T>(options.queryKey);
     if (seeded) writeKeepingMark<T>(queryClient, options.queryKey, () => cached, { updatedAt: 0 });
 

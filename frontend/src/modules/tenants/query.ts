@@ -55,7 +55,6 @@ export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
     ...tokenPaging((pageToken, signal) => listTenants({ query: { ...query, ...pageQuery(limit, pageToken) }, signal })),
-    refetchOnMount: true,
   });
 };
 

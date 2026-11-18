@@ -20,5 +20,7 @@ export const unseenCountsQueryOptions = () =>
       return counts;
     },
     staleTime: 60 * 1000,
+    // A badge that mounts keeps the counts it has: the app loader, catchup and window focus recount, and each recount can drop a delta that lands mid-read.
+    refetchOnMount: false,
     refetchOnWindowFocus: true,
   });

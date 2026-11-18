@@ -60,7 +60,6 @@ export const queryClient: QueryClient =
         gcTime: defaultGcTime,
         staleTime: defaultStaleTime,
 
-        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
 

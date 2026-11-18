@@ -57,7 +57,6 @@ export const meConnectedAppsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.connectedApps,
     queryFn: () => fetchAllPages((page) => listConnectedApps({ query: page }), syncChunkSize),
-    refetchOnMount: true,
   });
 
 export const meInvitationsQueryOptions = () =>
@@ -84,9 +83,16 @@ export const applyUpdatedSelf = (updatedUser: User) => {
   userStore.getState().updateUser(updatedUser);
 };
 
-/** The frontend's source of truth for the user's memberships, read without an abort signal: catchup awaits it, so an unmount must not cancel it. */
+/**
+ * The frontend's source of truth for the user's memberships, read without an abort signal: catchup awaits it, so an unmount
+ * must not cancel it. It goes stale only when marked: signals and catchup keep it current, and nearly every page mounts a reader.
+ */
 export const myMembershipsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.memberships, queryFn: () => fetchAllPages((page) => listMyMemberships({ query: page }), syncChunkSize) });
+  queryOptions({
+    queryKey: meKeys.memberships,
+    queryFn: () => fetchAllPages((page) => listMyMemberships({ query: page }), syncChunkSize),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 
 /**
  * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,

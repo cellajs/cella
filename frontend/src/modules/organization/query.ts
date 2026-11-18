@@ -50,6 +50,8 @@ export const organizationQueryOptions = (id: string, tenantId: string) =>
     queryKey: keys.detail.byId(id),
     queryFn: async (): Promise<EnrichedOrganization> => getOrganization({ path: { tenantId, organizationId: id }, query: { include: 'counts' } }),
     structuralSharing: preserveIncluded,
+    // Each tab mounts a reader, and the counts are costly: the layout revalidates on entry, and signals and catchup invalidate.
+    refetchOnMount: false,
   });
 
 type OrganizationsListParams = OrganizationFilters & { limit?: number };

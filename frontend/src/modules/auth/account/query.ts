@@ -49,8 +49,7 @@ const accountKeys = {
   },
 };
 
-// A mount past the stale time refetches: a session or passkey added elsewhere must show.
-export const meAuthQueryOptions = () => queryOptions({ queryKey: accountKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: accountKeys.auth, queryFn: () => getMyAuth() });
 
 /** A new authenticator key with its QR code. Once confirmed it is the second factor: never persisted, and gone with the setup. */
 export const totpKeyQueryOptions = () =>

@@ -50,7 +50,6 @@ export const requestsListQueryOptions = ({ limit = appConfig.pageSizes.requests,
   return infiniteQueryOptions({
     queryKey: requestsKeys.table.entries(filters),
     ...tokenPaging((pageToken, signal) => fetchRequestsPage(filters, pageQuery(limit, pageToken), signal)),
-    refetchOnMount: true,
   });
 };
 

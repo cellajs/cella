@@ -42,7 +42,6 @@ export const usersListQueryOptions = (params: UsersListParams) => {
     ...tokenPaging((pageToken, signal) =>
       listUsers({ query: { q, role, includeAnonymous, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
     ),
-    refetchOnMount: true,
   });
 };
 
