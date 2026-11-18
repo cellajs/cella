@@ -1,5 +1,6 @@
-import { type ChannelEntityType, hierarchy, type ProductEntityType, typedEntries } from 'shared';
+import { type ChannelEntityType, hierarchy, typedEntries } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import type { NotificationLinkSearch } from 'shared/utils/notification-link';
 import { getChannelProductRoute, getProductDeepLink } from '~/lib/entity-modules';
 import type { AncestorSlugs, EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
@@ -80,17 +81,11 @@ export const getNearestAncestorRoute = (
   return buildChannelRoute(nearest?.type ?? 'organization', tenantId, { organization: organizationId }, nearest?.id ?? organizationId);
 };
 
-/** Where a product sits, as a notification or share link carries it: its home channel, and the product to open there. */
-export interface ProductLocation {
-  tenantId: string;
-  organizationId: string;
-  channelType: ChannelEntityType;
-  channelId: string;
-  productType?: ProductEntityType;
-  subjectId?: string;
-  /** Grouping context of the subject (a comment's host item); the host opens when the product declares one. */
-  contextId?: string | null;
-}
+/**
+ * Where a product sits, as a notification or share link carries it: its home channel, and the product to open there.
+ * An inbox row's `contextId` is null when the subject has no grouping context.
+ */
+export type ProductLocation = Omit<NotificationLinkSearch, 'nid' | 'contextId'> & { contextId?: string | null };
 
 /**
  * Search that opens the subject on the target page, from the subject product's `deepLinkParam`. Both its own
