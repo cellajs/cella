@@ -120,7 +120,7 @@ describe('buildStreamChange: a frame past the row cap', () => {
     const named = buildStreamChange(
       event(
         'delete',
-        many(25, () => 0),
+        many(maxStreamChangeRows + 5, () => 0),
       ),
     );
     const unnamed = buildStreamChange(
@@ -131,7 +131,7 @@ describe('buildStreamChange: a frame past the row cap', () => {
     );
 
     expect(named).toMatchObject({ rows: [], propagation: null, overflow: { afterSeq: null, untilSeq: null } });
-    expect(named.overflow?.subjectIds).toEqual(Array.from({ length: 25 }, (_, index) => `a${index}`));
+    expect(named.overflow?.subjectIds).toEqual(Array.from({ length: maxStreamChangeRows + 5 }, (_, index) => `a${index}`));
     expect(unnamed.overflow).toEqual({ afterSeq: null, untilSeq: null, subjectIds: null });
   });
 
@@ -141,5 +141,17 @@ describe('buildStreamChange: a frame past the row cap', () => {
     const bytes = Buffer.byteLength(JSON.stringify(buildStreamChange(event('update', rows))));
 
     expect(bytes).toBeLessThan(maxPendingStreamBytes / 4);
+
+    // A full row names its writer and its write by ids; the write's field timestamps stay off the frame.
+    const fieldTimestamps = { name: '1763456789012:0003:abcdefgh', description: '1763456789012:0004:abcdefgh' };
+    const full = Array.from({ length: maxStreamChangeRows }, (_, index) => ({
+      ...row(generateId(), index + 1),
+      actorId: generateId(),
+      stx: { mutationId: generateId(), sourceId: generateId(), fieldTimestamps },
+    }));
+    const fullChange = buildStreamChange(event('update', full));
+
+    expect(fullChange.rows[0].stx).toEqual({ mutationId: full[0].stx.mutationId, sourceId: full[0].stx.sourceId });
+    expect(Buffer.byteLength(JSON.stringify(fullChange))).toBeLessThan(maxPendingStreamBytes / 4);
   });
 });

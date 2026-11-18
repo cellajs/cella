@@ -284,18 +284,18 @@ describe('entities listeners: an audience under sustained change', () => {
     const reader = adminReader('reader-user');
 
     await spendBurst();
-    // Three rows a message, as the worker sends them under load: 18 held rows become 21, past what one frame names.
-    for (let seq = 1; seq <= 21; seq += 3) {
+    // Three rows a message, as the worker sends them under load: 60 held rows become 63, past what one frame names.
+    for (let seq = 1; seq <= 63; seq += 3) {
       await change(updateEvent([2, 1, 0].map((i) => ({ seq: seq + i, rowData: row(`att-${seq + i}`) }))));
     }
 
     const frames = reader.sent.filter(({ event }) => event === 'change').map(({ data }) => JSON.parse(data));
     expect(frames.slice(changeBurst).map(({ rows, overflow }) => [rows.length, overflow])).toEqual([
-      [20, null],
+      [62, null],
       [1, null],
     ]);
     expect(frames[changeBurst].rows[0]).toMatchObject({ subjectId: 'att-1', seq: 1 });
-    expect(frames[changeBurst + 1].rows[0]).toMatchObject({ subjectId: 'att-21', seq: 21 });
+    expect(frames[changeBurst + 1].rows[0]).toMatchObject({ subjectId: 'att-63', seq: 63 });
   });
 
   // Last in the file: the bundles stay closed for the rest of the process.

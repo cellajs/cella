@@ -25,7 +25,7 @@ function overflowOf(action: StreamChange['action'], entries: StreamChange['rows'
 
 /**
  * The change frame of rows of a product event, with no entity data, in two tiers by weight: up to
- * `maxStreamChangeRows` each row with its seq, its writer and the stx of its write; past that their ids up to
+ * `maxStreamChangeRows` each row with its seq, its writer and its write's mutation and source ids; past that their ids up to
  * `maxStreamChangeIds` and their range, and past those the range alone.
  * @param rows - The rows to name: those of the event its receivers may read, a create's, update's or soft delete's each with its seq.
  * @returns What every receiver of these rows gets.
@@ -37,7 +37,12 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
   const path = hierarchy.computeProductPath(entityType, asRecord(event)) ?? event.organizationId;
 
-  const entries = rows.map(({ rowData, seq, stx, actorId }) => ({ subjectId: rowData.id, seq: seq ?? null, stx, actorId }));
+  const entries = rows.map(({ rowData, seq, stx, actorId }) => ({
+    subjectId: rowData.id,
+    seq: seq ?? null,
+    stx: stx && { mutationId: stx.mutationId, sourceId: stx.sourceId },
+    actorId,
+  }));
   const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
