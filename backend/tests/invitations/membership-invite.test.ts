@@ -51,7 +51,7 @@ describe('Membership Invitation', async () => {
     await call(inviteMembers, {
       path: { tenantId, organizationId },
       body: inviteData,
-      query: { entityId: organizationId, entityType: 'organization' as const },
+      query: { channelId: organizationId, channelType: 'organization' as const },
       headers: { ...defaultHeaders, Cookie: sessionCookie || '' },
     });
 

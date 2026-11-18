@@ -2048,8 +2048,8 @@ export const declineInvitation = <ThrowOnError extends boolean = true>(
  * **POST /me/memberships:leave** ·· [leaveMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/memberships:leave) ·· _me · cella_
  *
  * @param {leaveMembershipData} options
- * @param {string} options.body.entityId - `string`
- * @param {enum} options.body.entityType - `enum`
+ * @param {string} options.body.channelId - `string`
+ * @param {enum} options.body.channelType - `enum`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const leaveMembership = <ThrowOnError extends boolean = true>(
@@ -2186,8 +2186,8 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
  * @param {inviteMembersData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
  * @param {string[]} options.body.emails - `string[]`
  * @param {enum} options.body.role - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
@@ -2216,8 +2216,8 @@ export const inviteMembers = <ThrowOnError extends boolean = true>(
  * @param {checkMemberInviteData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
  * @param {string[]} options.body.emails - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
  */
@@ -2245,8 +2245,8 @@ export const checkMemberInvite = <ThrowOnError extends boolean = true>(
  * @param {batchDeleteMembersData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
  * @param {string[]} options.body.ids - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
@@ -2309,8 +2309,8 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.maxPageSize - `integer` (optional)
  * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {string=} options.query.include - `string` (optional)
@@ -2340,8 +2340,8 @@ export const listMembers = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.pageToken - `string` (optional)
  * @param {integer=} options.query.maxPageSize - `integer` (optional)
  * @param {integer=} options.query.skip - `integer` (optional)
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */

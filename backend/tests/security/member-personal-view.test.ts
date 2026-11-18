@@ -20,7 +20,7 @@ describe("A member's personal view in the members list", async () => {
   let other: { id: string; sessionCookie: string };
 
   const listMembers = async (as: { sessionCookie: string }) => {
-    const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
+    const query = new URLSearchParams({ channelId: organization.id, channelType: 'organization' });
     const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/members?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
     expect(status).toBe(200);

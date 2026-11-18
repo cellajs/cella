@@ -115,7 +115,7 @@ describe('The stream lets go of what its client cannot hold', async () => {
       .where(and(eq(membershipsTable.userId, removed.id), eq(membershipsTable.organizationId, org.id)));
     const deleted = await call(batchDeleteMembers, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      query: { entityId: org.id, entityType: 'organization' },
+      query: { channelId: org.id, channelType: 'organization' },
       body: { ids: [removed.id] },
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });

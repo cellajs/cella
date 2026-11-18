@@ -1,8 +1,7 @@
 import type { QueryClient, QueryKey, QueryMeta, SkipToken } from '@tanstack/react-query';
-import type { ProductEntityType } from 'shared';
+import { hierarchy, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { isRateLimited } from '~/lib/api';
-import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { getEntityRangeFetch, rowOutsideRange, seqOf, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
@@ -78,7 +77,7 @@ function fitsList(entityType: ProductEntityType, queryKey: QueryKey, row: ItemDa
   if (typeof deletedAt === 'string' && deletedAt.length > 0) return false;
   // A home key ends with its channel's id (`createEntityKeys`), a key that spans homes with its filters.
   const [, , , homeChannelId] = queryKey;
-  return typeof homeChannelId !== 'string' || resolveHomeChannelId(entityType, row) === homeChannelId;
+  return typeof homeChannelId !== 'string' || hierarchy.resolveDeepestAncestorId(entityType, row) === homeChannelId;
 }
 
 /** The read with a later range applied: a range row replaces its copy or enters where it fits, and leaves where it no longer does. */

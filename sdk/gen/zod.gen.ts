@@ -325,11 +325,17 @@ export const zStreamChange = z.object({
   organizationId: z.string(),
   tenantId: z.string(),
   channelId: z.string().nullable(),
+  path: z.string(),
   rows: z.array(
     z.object({
       subjectId: z.string(),
       seq: z.int().nullable(),
-      stx: zStxBase.nullable(),
+      stx: z
+        .object({
+          mutationId: z.string().max(36),
+          sourceId: z.string().max(64),
+        })
+        .nullable(),
       actorId: z.string().nullable(),
     }),
   ),
@@ -1161,14 +1167,13 @@ export const zGetTokenDataResponse = z.object({
   inviterName: z.string().optional(),
   invitation: z
     .object({
-      entityType: z.enum(['organization']),
+      channelType: z.enum(['organization']),
       tenantId: z.string(),
       organizationId: z.string(),
       channelId: z.string(),
-      entityName: z.string(),
+      channelName: z.string(),
       organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
-      inviterName: z.string(),
     })
     .optional(),
 });
@@ -1864,8 +1869,8 @@ export const zDeclineInvitationPath = z.object({
 export const zDeclineInvitationResponse = zChannelBase;
 
 export const zLeaveMembershipBody = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -1954,8 +1959,8 @@ export const zInviteMembersPath = z.object({
 });
 
 export const zInviteMembersQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -1990,8 +1995,8 @@ export const zCheckMemberInvitePath = z.object({
 });
 
 export const zCheckMemberInviteQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -2013,8 +2018,8 @@ export const zBatchDeleteMembersPath = z.object({
 });
 
 export const zBatchDeleteMembersQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -2103,8 +2108,8 @@ export const zListMembersQuery = z.object({
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
   orderBy: z
     .enum([
       'id',
@@ -2184,8 +2189,8 @@ export const zListInvitationsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
 });
 
@@ -2261,7 +2266,7 @@ export const zListNotificationsResponse = z.object({
       kind: z.enum(['mention', 'comment', 'reply']),
       productType: z.enum(['attachment']),
       subjectId: z.uuid(),
-      contextId: z.uuid().nullable(),
+      contextId: z.uuid(),
       channelId: z.uuid(),
       channelType: z.enum(['organization']),
       organizationId: z.uuid(),
@@ -2274,10 +2279,24 @@ export const zListNotificationsResponse = z.object({
           }),
         )
         .nullable(),
-      channelName: z.string(),
-      channelThumbnailUrl: z.string().nullable(),
-      organizationName: z.string(),
-      organizationThumbnailUrl: z.string().nullable(),
+      channel: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
+      organization: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
       subjectName: z.string(),
     }),
   ),

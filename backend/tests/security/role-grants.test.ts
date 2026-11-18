@@ -130,7 +130,7 @@ describe('Role grants above the actor', async () => {
         attempt: ({ org, otherAdmin }, actor) =>
           call(batchDeleteMembers, {
             path: { tenantId: org.tenantId, organizationId: org.id },
-            query: { entityId: org.id, entityType: 'organization' },
+            query: { channelId: org.id, channelType: 'organization' },
             body: { ids: [otherAdmin.id] },
             headers: headers(actor),
           }),

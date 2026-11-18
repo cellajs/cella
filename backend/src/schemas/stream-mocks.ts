@@ -6,13 +6,16 @@ import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 export const mockStreamChange = (key = 'stream-change:default') =>
   withFakerSeed(key, () => {
     const organizationId = mockUuid();
+    const channelId = mockUuid();
+    const { mutationId, sourceId } = mockStxBase(`${key}:stx`);
     return {
       action: 'update' as const,
       productType: 'attachment' as const,
       organizationId,
       tenantId: mockNanoid(),
-      channelId: mockUuid(),
-      rows: [{ subjectId: mockUuid(), seq: faker.number.int({ min: 1, max: 500 }), stx: mockStxBase(`${key}:stx`), actorId: mockUuid() }],
+      channelId,
+      path: `${organizationId}/${channelId}`,
+      rows: [{ subjectId: mockUuid(), seq: faker.number.int({ min: 1, max: 500 }), stx: { mutationId, sourceId }, actorId: mockUuid() }],
       overflow: null,
       spreadWindow: null,
       propagation: null,

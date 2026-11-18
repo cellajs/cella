@@ -30,7 +30,7 @@ const mockOptions = [
 const avatarOptions = mockOptions.map(({ value, label }) => ({
   value,
   label,
-  icon: <EntityAvatar className="size-6" id={value} name={label} url={`https://picsum.photos/100/100?random=${value}`} />,
+  icon: <EntityAvatar className="size-6" entity={{ id: value, name: label, thumbnailUrl: `https://picsum.photos/100/100?random=${value}` }} />,
 }));
 
 const largeOptions = Array.from({ length: 1000 }, (_, i) => ({ value: i.toString(), label: `Option ${i + 1}` }));

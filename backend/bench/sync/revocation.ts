@@ -111,7 +111,7 @@ export async function runRevocation(vu: RevocationVu, product: BenchProduct): Pr
   try {
     await vu.think(vu.short ? 200 : beforeMs);
     const calledAt = performance.now();
-    const res = await vu.client().http.post(`${ORG_PATH}/members/~batch-delete?entityId=${ORG_ID}&entityType=organization`, {
+    const res = await vu.client().http.post(`${ORG_PATH}/members/~batch-delete?channelId=${ORG_ID}&channelType=organization`, {
       json: { ids: [userId(targetUser)] },
       headers: { cookie: benchCookie(revokerUser) },
       name: 'POST /members/~batch-delete',

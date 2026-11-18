@@ -109,7 +109,7 @@ describe('Member escalation over HTTP', async () => {
       attempt: ({ org }, actor) =>
         call(inviteMembers, {
           path: { tenantId: org.tenantId, organizationId: org.id },
-          query: { entityId: org.id, entityType: 'organization' },
+          query: { channelId: org.id, channelType: 'organization' },
           body: { emails: [`newcomer-${actor.id}@security-test.com`], role: adminRole },
           headers: headers(actor),
         }),
@@ -128,7 +128,7 @@ describe('Member escalation over HTTP', async () => {
       attempt: (fixture, actor) =>
         call(batchDeleteMembers, {
           path: { tenantId: fixture.org.tenantId, organizationId: fixture.org.id },
-          query: { entityId: fixture.org.id, entityType: 'organization' },
+          query: { channelId: fixture.org.id, channelType: 'organization' },
           body: { ids: [counterpart(fixture, actor).id] },
           headers: headers(actor),
         }),

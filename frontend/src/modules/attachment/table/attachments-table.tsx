@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
+import { zAttachment } from 'sdk/zod.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { useCanUploadAttachments } from '~/modules/attachment/helpers/use-can-upload-attachments';
 import { attachmentsCanonicalOptions, attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
@@ -21,11 +22,14 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
+const [defaultField, defaultOrder = 'asc'] = attachmentsSearchDefaults.orderBy.split(' ');
+const defaultSortKey = zAttachment.keyof().parse(defaultField);
+
 /** Default-view rows from the canonical query in the server's default order; outside the component, so the getter stays stable. */
 function selectDefaultViewRows({ results }: { results: Attachment[] }) {
-  const { sort, order } = attachmentsSearchDefaults;
-  const direction = order === 'asc' ? 1 : -1;
-  return [...results].sort((a, b) => (a[sort] < b[sort] ? -direction : a[sort] > b[sort] ? direction : 0));
+  const direction = defaultOrder === 'asc' ? 1 : -1;
+  const value = (row: Attachment) => String(row[defaultSortKey]);
+  return [...results].sort((a, b) => (value(a) < value(b) ? -direction : value(a) > value(b) ? direction : 0));
 }
 
 export interface AttachmentsTableProps {
@@ -40,18 +44,18 @@ export function AttachmentsTable({ channel }: AttachmentsTableProps) {
   const organizationId = channelOrganizationId(channel);
   const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
 
-  const { q, sort, order } = search;
+  const { q, orderBy } = search;
 
   const [columns, setColumns] = useColumnVisibility(useColumns(channel));
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
 
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
-  const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
+  const isDefaultView = isDefaultListView({ q, orderBy }, attachmentsSearchDefaults);
 
   const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId });
   const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, select: selectDefaultViewRows });
 
-  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId, q, sort, order });
+  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId, q, orderBy });
   const filtered = useInfiniteRows({ ...queryOptions, enabled: !isDefaultView });
 
   const { isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
@@ -72,7 +76,7 @@ export function AttachmentsTable({ channel }: AttachmentsTableProps) {
   return (
     <>
       <AttachmentsTableBar
-        searchVars={{ q, sort, order }}
+        searchVars={{ q, orderBy }}
         queryKey={isDefaultView ? canonicalOptions.queryKey : queryOptions.queryKey}
         {...{ channel, selected, setSearch, columns, setColumns, clearSelection, canUpload }}
       />

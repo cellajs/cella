@@ -17,10 +17,10 @@ export function RequestsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
-  const { q, sort, order } = search;
+  const { q, orderBy } = search;
 
   const [columns, setColumns] = useColumns();
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
 
   const queryOptions = requestsListQueryOptions(search);
   const list = useInfiniteRows(queryOptions);

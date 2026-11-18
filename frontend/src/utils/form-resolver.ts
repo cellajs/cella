@@ -26,3 +26,10 @@ export const formResolver = <Input extends FieldValues, Output, Context = unknow
   const shape = schema instanceof z.ZodObject ? schema.shape : {};
   return (values, context, options) => resolve(emptyBlanks(shape, values), context, options);
 };
+
+/** The row's value for each field of the schema: an update form's `defaultValues`, and its reset from the saved row. */
+export const formValuesOf = <S extends z.ZodObject>(schema: S, row: z.infer<S>): z.infer<S> => {
+  const values: Partial<Record<string, unknown>> = row;
+  // fromEntries types its keys as plain strings; they are the schema's keys
+  return Object.fromEntries(Object.keys(schema.shape).map((key) => [key, values[key]])) as z.infer<S>;
+};

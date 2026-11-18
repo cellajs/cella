@@ -104,7 +104,7 @@ const productOf = (type: SyntheticProduct) => type as ProductEntityType;
 
 /** A registry entry of a synthetic table: its kind, type and drizzle table. The cast covers the column map, which these paths read as absent. */
 const metaOf = (type: SyntheticProduct | SyntheticChannel) =>
-  ({ kind: 'entity', type, table: getEntityTable(type), columnNameMap: new Map() }) as unknown as TableMeta;
+  ({ kind: 'entity', type, table: getEntityTable(type), columnNameMap: new Map(), strippedKeys: new Set() }) as unknown as TableMeta;
 
 const ancestors = { organizationId: 'o1', courseId: 'c1', courseSectionId: 's1', projectId: 'p1' };
 const taskRow = (id: string, values: Record<string, unknown> = {}): Row => ({ id, ...ancestors, name: 'Task', items: [], ...values });

@@ -9,13 +9,15 @@ const meta = { title: 'common/EntityAvatar', component: EntityAvatar, tags: ['au
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const WithFallback: Story = { args: { id: '1', name: 'Alice', type: 'user' } };
+export const WithFallback: Story = { args: { entity: { id: '1', name: 'Alice', entityType: 'user' } } };
 
-export const WithImage: Story = { args: { id: '1', name: 'Alice', url: 'https://i.pravatar.cc/150?u=alice', type: 'user' } };
+export const WithImage: Story = {
+  args: { entity: { id: '1', name: 'Alice', thumbnailUrl: 'https://i.pravatar.cc/150?u=alice', entityType: 'user' } },
+};
 
 export const WithIcon: Story = { args: { icon: ShieldCheckIcon } };
 
-export const Organization: Story = { args: { id: '2', name: 'Acme Corp', type: 'organization' } };
+export const Organization: Story = { args: { entity: { id: '2', name: 'Acme Corp', entityType: 'organization' } } };
 
 const sizes = [
   'size-5',
@@ -44,7 +46,7 @@ export const Sizes: Story = {
       {sizeRows.map(({ name, type }, index) => (
         <div key={name} className="flex items-center gap-4">
           {sizes.map((size) => (
-            <EntityAvatar key={size} id={String(index)} name={name} type={type} className={size} />
+            <EntityAvatar key={size} entity={{ entityType: type, id: String(index), name }} className={size} />
           ))}
         </div>
       ))}
@@ -55,12 +57,12 @@ export const Sizes: Story = {
 export const DifferentInitials: Story = {
   render: () => (
     <div className="flex items-center gap-4">
-      <EntityAvatar id="1" name="Alice Smith" type="user" />
-      <EntityAvatar id="2" name="Flip van Haaren" type="user" />
-      <EntityAvatar id="3" name="Mia Wu" type="user" />
-      <EntityAvatar id="10" name="Charlie" type="user" />
-      <EntityAvatar id="20" name="Acme (NL)" type="organization" />
-      <EntityAvatar id="30" name="" type="user" />
+      <EntityAvatar entity={{ entityType: 'user', id: '1', name: 'Alice Smith' }} />
+      <EntityAvatar entity={{ entityType: 'user', id: '2', name: 'Flip van Haaren' }} />
+      <EntityAvatar entity={{ entityType: 'user', id: '3', name: 'Mia Wu' }} />
+      <EntityAvatar entity={{ entityType: 'user', id: '10', name: 'Charlie' }} />
+      <EntityAvatar entity={{ entityType: 'organization', id: '20', name: 'Acme (NL)' }} />
+      <EntityAvatar entity={{ entityType: 'user', id: '30', name: '' }} />
     </div>
   ),
 };

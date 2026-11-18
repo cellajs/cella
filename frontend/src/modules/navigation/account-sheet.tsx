@@ -103,7 +103,7 @@ export function AccountSheet() {
           <div className="absolute -top-15 left-1/2 -translate-x-1/2">
             {/* Pops in once the sheet has landed */}
             <div className="transition-[opacity,scale] delay-200 duration-300 ease-out starting:opacity-0 motion-safe:starting:scale-80">
-              <EntityAvatar className="size-20 ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+              <EntityAvatar className="size-20 ring-4 ring-black/10" entity={user} />
             </div>
             <ProfilePictureButton user={user} className={revealOnCoverHover} />
           </div>

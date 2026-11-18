@@ -7,7 +7,7 @@ const firstId = '00000000-0000-4000-8000-000000000001';
 const secondId = '00000000-0000-4000-8000-000000000002';
 
 describe('memberListQuerySchema', () => {
-  const baseQuery = { entityId: firstId, entityType: 'organization' as const };
+  const baseQuery = { channelId: firstId, channelType: 'organization' as const };
 
   it('parses a bounded comma-separated UUID list once at the request boundary', () => {
     expect(memberListQuerySchema.parse({ ...baseQuery, userIds: `${firstId}, ${secondId}` }).userIds).toEqual([firstId, secondId]);

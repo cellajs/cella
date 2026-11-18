@@ -74,11 +74,8 @@ export function MenuSheetItem({ item, isSubitem, unseenCount: givenCount }: Menu
             'bg-card size-8 group-hover/menu-sheet-item:opacity-100 group-data-[compact=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
             Icon && 'bg-transparent shadow-none',
           )}
-          type={item.entityType}
-          id={item.id}
+          entity={item}
           icon={Icon}
-          name={item.name}
-          url={item.thumbnailUrl}
         />
         {mark?.badge}
       </span>

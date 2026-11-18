@@ -4,7 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { maxStreamChangeIds } from '#/modules/entities/stream/helpers';
 import { validIdSchema } from '#/schemas/common-schemas';
 import { mockStreamChange, mockStreamError, mockStreamSignal } from '#/schemas/stream-mocks';
-import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
+import { stxIdsSchema } from '#/schemas/sync-transaction-schemas';
 
 /** The client patches every host column its own productEmbeddings config declares for the embedded product. */
 const propagationHintSchema = z.object({
@@ -39,7 +39,7 @@ const streamChangeRowSchema = z.object({
     .describe(
       'Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table',
     ),
-  stx: nullableStxBaseSchema,
+  stx: z.union([stxIdsSchema, z.null()]),
   actorId: z
     .string()
     .nullable()
@@ -56,6 +56,11 @@ export const streamChangeSchema = z
     organizationId: z.string(),
     tenantId: z.string(),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
+    path: z
+      .string()
+      .describe(
+        "The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share",
+      ),
     rows: z
       .array(streamChangeRowSchema)
       .describe(

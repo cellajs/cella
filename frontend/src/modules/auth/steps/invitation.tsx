@@ -60,11 +60,12 @@ export function InvitationStep({ tokenData, federations }: { tokenData: TokenDat
     <>
       <AuthHeader
         image={invitation && <InvitationAvatar invitation={invitation} />}
-        title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
+        title={t('c:invite_join', { name: invitation?.channelName ?? appConfig.name })}
         description={
           invitation
             ? t(invitation.organizationName ? 'c:invite_join_in_organization.text' : 'c:invite_join.text', {
                 ...invitation,
+                inviterName,
                 role: t(`c:${invitation.role}`),
               })
             : inviterName && t('c:invite_join_system.text', { inviterName })

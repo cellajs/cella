@@ -27,13 +27,13 @@ const memberStatTable = (productType: MemberStatProductType): MemberStatTable =>
 const memberStatChannelTypes = hierarchy.getOrderedDescendants('organization').filter(isChannel);
 
 /** Rows a member gets credited for: live, published rows they created within the viewed scope. */
-const liveAuthoredWhere = (productType: MemberStatProductType, entityType: ChannelEntityType, entityId: string, organizationId: string) => {
+const liveAuthoredWhere = (productType: MemberStatProductType, channelType: ChannelEntityType, channelId: string, organizationId: string) => {
   const t = memberStatTable(productType);
   const scope: (SQL | undefined)[] = [
     eq(t.createdBy, usersTable.id),
     // Org clamp is redundant for sub-channel scopes but lets a `(created_by, organization_id)` index drive every scope
     eq(t.organizationId, organizationId),
-    ...(entityType === 'organization' ? [] : [buildSubtreeCoverWhere(t, productType, entityId)]),
+    ...(channelType === 'organization' ? [] : [buildSubtreeCoverWhere(t, productType, channelId)]),
     isNull(t.deletedAt),
     // Drafts stay invisible to other members; a no-op for tables without `publishedAt`.
     publishedRowsPredicate(t),
@@ -49,28 +49,28 @@ const activityStamp = (t: MemberStatTable): PgColumn => t.publishedAt ?? t.creat
  * per request in the viewed channel; the product subqueries read RLS-guarded tables, so the members
  * query runs under `tenantRead` when counts are requested.
  */
-export const memberCountsSelect = (entityType: ChannelEntityType, entityId: string, organizationId: string) => {
+export const memberCountsSelect = (channelType: ChannelEntityType, channelId: string, organizationId: string) => {
   // Membership counts per descendant channel type, scoped by the viewed channel's ancestor column
   // on the membership rows themselves (populated by insertMemberships for every level).
-  const scopeColumn = getColumns(membershipsTable)[appConfig.entityIdColumnKeys[entityType]].name;
-  const descendantChannels = hierarchy.getOrderedDescendants(entityType).filter(isChannel);
+  const scopeColumn = getColumns(membershipsTable)[appConfig.entityIdColumnKeys[channelType]].name;
+  const descendantChannels = hierarchy.getOrderedDescendants(channelType).filter(isChannel);
   const membershipPairs = descendantChannels.map(
     (type) =>
       sql`${sql.raw(`'${type}'`)}, (SELECT count(*)::int FROM ${membershipsTable} mc
         WHERE mc.user_id = ${usersTable.id} AND mc.channel_type = ${sql.raw(`'${type}'`)}
-          AND mc.${sql.raw(scopeColumn)} = ${entityId})`,
+          AND mc.${sql.raw(scopeColumn)} = ${channelId})`,
   );
 
   const productPairs = appConfig.memberStatProductTypes.map((type) => {
     const table = memberStatTable(type);
-    const where = liveAuthoredWhere(type, entityType, entityId, organizationId);
+    const where = liveAuthoredWhere(type, channelType, channelId, organizationId);
     return sql`${sql.raw(`'${type}'`)}, (SELECT count(*)::int FROM ${table} WHERE ${where})`;
   });
 
   // Epoch ms of the member's latest live row per product type; null when never.
   const activityPairs = appConfig.memberStatProductTypes.map((type) => {
     const table = memberStatTable(type);
-    const where = liveAuthoredWhere(type, entityType, entityId, organizationId);
+    const where = liveAuthoredWhere(type, channelType, channelId, organizationId);
     return sql`${sql.raw(`'${type}'`)}, (SELECT (extract(epoch from max(${activityStamp(table)})) * 1000)::bigint
       FROM ${table} WHERE ${where})`;
   });
@@ -88,12 +88,12 @@ export const memberCountsSelect = (entityType: ChannelEntityType, entityId: stri
  * those members trail the recent posters under the default descending sort (plain DESC is NULLS
  * FIRST in Postgres).
  */
-export const lastPostedAtOrder = (entityType: ChannelEntityType, entityId: string, organizationId: string) => {
+export const lastPostedAtOrder = (channelType: ChannelEntityType, channelId: string, organizationId: string) => {
   const primary = appConfig.memberStatProductTypes[0];
   if (!primary) return sql`'-infinity'`;
   const table = memberStatTable(primary);
   return sql`coalesce((SELECT max(${activityStamp(table)}) FROM ${table}
-    WHERE ${liveAuthoredWhere(primary, entityType, entityId, organizationId)}), '-infinity')`;
+    WHERE ${liveAuthoredWhere(primary, channelType, channelId, organizationId)}), '-infinity')`;
 };
 
 /** Response shape for `member.counts`; membership keys are scoped to the viewed channel, so all optional. */

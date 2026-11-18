@@ -22,7 +22,7 @@ import {
   updatedMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
 import { memberSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import { batchResponseSchema, channelRefSchema, idsBodySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
   inviteMembers: xRoute({
@@ -33,7 +33,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     summary: 'Invite members',
     description:
       "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a declined invitation or a member left out. A declined invitation keeps its address from being invited again until the sweep removes it, `retention.declinedInvitationHoldDays` after the decline. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationEmailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
-    request: { params: tenantOrgParamSchema, query: entityWithTypeSchema, body: jsonBody(membershipCreateBodySchema) },
+    request: { params: tenantOrgParamSchema, query: channelRefSchema, body: jsonBody(membershipCreateBodySchema) },
     responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()), ...errors(409) },
   }),
   checkMemberInvite: xRoute({
@@ -44,7 +44,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     summary: 'Check addresses before inviting',
     description:
       "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
-    request: { params: tenantOrgParamSchema, query: entityWithTypeSchema, body: jsonBody(membershipCheckBodySchema) },
+    request: { params: tenantOrgParamSchema, query: channelRefSchema, body: jsonBody(membershipCheckBodySchema) },
     responses: {
       200: json(
         'Invite outcomes\n\nOne outcome per address, judged from the members and invitations the caller can see.',
@@ -61,7 +61,7 @@ export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     summary: 'Remove members',
     description:
       'Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.',
-    request: { params: tenantOrgParamSchema, query: entityWithTypeSchema, body: jsonBody(idsBodySchema()) },
+    request: { params: tenantOrgParamSchema, query: channelRefSchema, body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()), ...errors(409) },
   }),
   updateMembership: xRoute({

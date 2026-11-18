@@ -44,7 +44,7 @@ function ingestSyncedRows(productType: ProductEntityType, fallbackChannelId: str
 
 /** Feeds every delivered sequence range into {@link ingestSyncedRows}; the exact recount owns a range that was not delivered. */
 export function subscribeUnseenSync(): () => void {
-  return onSyncedRows(({ entityType, organizationId, rows }) => ingestSyncedRows(entityType, organizationId, rows));
+  return onSyncedRows(({ productType, organizationId, rows }) => ingestSyncedRows(productType, organizationId, rows));
 }
 
 /** Removals without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1), an unseen one decrements; without a channel the counts are recounted once. */

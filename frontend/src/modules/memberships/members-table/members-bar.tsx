@@ -45,7 +45,7 @@ export function MembersTableBar({
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const inviteContainerRef = useRef<HTMLDivElement>(null);
 
-  const { q, role, order, sort } = searchVars;
+  const { q, role, orderBy } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
   const organizationId = channelOrganizationId(channel);
@@ -87,8 +87,8 @@ export function MembersTableBar({
   }, []);
 
   const fetchExport = (page: PageRequest) => {
-    const { id: entityId, entityType, tenantId } = channel;
-    return fetchMembersForExport({ q, sort, order, role, entityId, entityType, tenantId, organizationId }, page);
+    const { id: channelId, entityType: channelType, tenantId } = channel;
+    return fetchMembersForExport({ q, orderBy, role, channelId, channelType, tenantId, organizationId }, page);
   };
 
   return (

@@ -77,7 +77,7 @@ export async function inviteToOrganization(organization: { id: string; tenantId:
   const call = await createAppClient();
   return call(inviteMembers, {
     path: { tenantId: organization.tenantId, organizationId: organization.id },
-    query: { entityId: organization.id, entityType: 'organization' },
+    query: { channelId: organization.id, channelType: 'organization' },
     body: { emails, role },
     headers: { ...defaultHeaders, Cookie: cookie },
   });
@@ -91,7 +91,7 @@ export async function readMembersAs(organization: { id: string; tenantId: string
   const call = await createAppClient();
   return call(listMembers, {
     path: { tenantId: organization.tenantId, organizationId: organization.id },
-    query: { entityId: organization.id, entityType: 'organization' },
+    query: { channelId: organization.id, channelType: 'organization' },
     headers: { ...defaultHeaders, Cookie: cookie },
   });
 }

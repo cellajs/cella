@@ -307,7 +307,7 @@ describe('Attachment mentions (template notification source)', async () => {
     const row = items.find((item) => item.subjectId === attachmentId);
     expect(row).toMatchObject({ kind: 'mention', subjectId: attachmentId, productType: 'attachment' });
     expect(row?.actor?.id).toBe(tenant.user.id);
-    expect(row?.channelName).not.toBe('');
+    expect(row?.channel?.name).toBeTruthy();
     expect(row?.subjectName).not.toBe('');
   });
 

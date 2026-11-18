@@ -64,7 +64,7 @@ export const useColumns = () => {
             />
           }
         >
-          <EntityAvatar type="organization" className="size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <EntityAvatar entity={row} className="size-8" />
           <CellLabel className="font-medium">
             <HighlightText text={row.name || '-'} />
           </CellLabel>

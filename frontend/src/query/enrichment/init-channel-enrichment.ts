@@ -13,13 +13,12 @@ let isEnriching = false;
 const getRegisteredChannelTypes = (): ChannelEntityType[] => getRegisteredEntityTypes().filter(isChannel);
 
 function enrichListData(data: EnrichableListData, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableListData {
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
   let dataChanged = false;
 
   const newPages = data.pages.map((page) => {
     let pageChanged = false;
     const results = page.results.map((item) => {
-      const enriched = enrichWithAncestorSlugs(item, ancestors, slugIndex);
+      const enriched = enrichWithAncestorSlugs(item, entityType, slugIndex);
       if (enriched !== item) pageChanged = true;
       return enriched;
     });
@@ -64,11 +63,10 @@ function enrichEntityType(entityType: ChannelEntityType, slugIndex: SlugIndex) {
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
     const data = query.state.data as EnrichableChannel | undefined;
     if (!data) continue;
-    const enriched = enrichWithAncestorSlugs(data, ancestors, slugIndex);
+    const enriched = enrichWithAncestorSlugs(data, entityType, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 }

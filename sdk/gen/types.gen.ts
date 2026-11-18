@@ -383,6 +383,10 @@ export type StreamChange = {
    */
   channelId: string | null;
   /**
+   * The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share
+   */
+  path: string;
+  /**
    * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
    */
   rows: Array<{
@@ -391,7 +395,16 @@ export type StreamChange = {
      * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
      */
     seq: number | null;
-    stx: StxBase | null;
+    stx: {
+      /**
+       * Unique mutation ID
+       */
+      mutationId: string;
+      /**
+       * Tab/instance identifier for echo prevention
+       */
+      sourceId: string;
+    } | null;
     /**
      * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
      */
@@ -1883,14 +1896,13 @@ export type GetTokenDataResponses = {
      */
     inviterName?: string;
     invitation?: {
-      entityType: 'organization';
+      channelType: 'organization';
       tenantId: string;
       organizationId: string;
       channelId: string;
-      entityName: string;
+      channelName: string;
       organizationName?: string;
       role: 'admin' | 'member';
-      inviterName: string;
     };
   };
 };
@@ -4343,8 +4355,8 @@ export type DeclineInvitationResponse = DeclineInvitationResponses[keyof Decline
 
 export type LeaveMembershipData = {
   body: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   path?: never;
   query?: never;
@@ -4651,8 +4663,8 @@ export type InviteMembersData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:invite';
 };
@@ -4727,8 +4739,8 @@ export type CheckMemberInviteData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:check-invite';
 };
@@ -4788,8 +4800,8 @@ export type BatchDeleteMembersData = {
     organizationId: string;
   };
   query: {
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/members:batch-delete';
 };
@@ -4982,8 +4994,8 @@ export type ListMembersData = {
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
     /**
      * A field to order by, then `asc` or `desc`; ascending when left out.
      */
@@ -5116,8 +5128,8 @@ export type ListInvitationsData = {
      * Results to pass over after the page token's position, or from the start without a token.
      */
     skip?: number;
-    entityId: string;
-    entityType: 'organization';
+    channelId: string;
+    channelType: 'organization';
     /**
      * A field to order by, then `asc` or `desc`; ascending when left out.
      */
@@ -5354,7 +5366,7 @@ export type ListNotificationsResponses = {
       kind: 'mention' | 'comment' | 'reply';
       productType: 'attachment';
       subjectId: string;
-      contextId: string | null;
+      contextId: string;
       channelId: string;
       channelType: 'organization';
       organizationId: string;
@@ -5365,10 +5377,20 @@ export type ListNotificationsResponses = {
             givenName: string | null;
           })
         | null;
-      channelName: string;
-      channelThumbnailUrl: string | null;
-      organizationName: string;
-      organizationThumbnailUrl: string | null;
+      channel: {
+        id: string;
+        name: string;
+        slug: string;
+        thumbnailUrl: string | null;
+        entityType: 'organization';
+      } | null;
+      organization: {
+        id: string;
+        name: string;
+        slug: string;
+        thumbnailUrl: string | null;
+        entityType: 'organization';
+      } | null;
       subjectName: string;
     }>;
     /**

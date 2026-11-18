@@ -7,6 +7,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { mockInviteeInvitationResponse, mockInviteOutcome, mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import {
   channelEntityTypeSchema,
+  channelRefSchema,
   csvQuerySchema,
   includeQuerySchema,
   listQuerySchema,
@@ -117,8 +118,7 @@ export const membershipUpdateBodySchema = z
   .superRefine(refineWithType((body) => Object.values(body).some((value) => value !== undefined), 'invalid_request'));
 
 export const memberListQuerySchema = listQuerySchema.extend({
-  entityId: validIdSchema,
-  entityType: channelEntityTypeSchema,
+  ...channelRefSchema.shape,
   /** `lastPostedAt` orders by the member's latest product row in the viewed channel. */
   orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt'], 'lastSeenAt desc'),
   role: entityRoleSchema.optional(),
@@ -128,8 +128,7 @@ export const memberListQuerySchema = listQuerySchema.extend({
 });
 
 export const invitationListQuerySchema = pageQuerySchema.extend({
-  entityId: validIdSchema,
-  entityType: channelEntityTypeSchema,
+  ...channelRefSchema.shape,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
 });
 

@@ -10,7 +10,7 @@ import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-to
 import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import { instantEmailKinds } from '#/modules/notification/notification-kinds';
 import {
-  findChannelLabels,
+  findChannelsMinimal,
   findUsersMinimal,
   findVerifiedRecipients,
   stampNotificationsMailed,
@@ -48,8 +48,8 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   if (mailable.length === 0) return;
 
   const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
-  const channels = await findChannelLabels(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
-  const contextNames = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
+  const channels = await findChannelsMinimal(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
+  const contextNames = await findContextNames(mailable.map((row) => ({ ...row, id: row.contextId })));
 
   let mailed = 0;
 
@@ -67,11 +67,10 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
         email: user.email,
         lng: user.languageCode,
         name: user.name,
-        subjectName: contextNames.get(contextOf(notification)) ?? '',
+        subjectName: contextNames.get(notification.contextId) ?? '',
         excerpt: htmlToExcerpt(descriptionText(subject.description), excerptLength),
         link: buildNotificationLink(appConfig.frontendUrl, {
-          ...pick(notification, ['tenantId', 'organizationId', 'channelId', 'channelType', 'productType', 'subjectId']),
-          contextId: notification.contextId ?? undefined,
+          ...pick(notification, ['tenantId', 'organizationId', 'channelId', 'channelType', 'productType', 'subjectId', 'contextId']),
           nid: notification.id,
         }),
       };
@@ -92,11 +91,6 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   }
 
   if (mailed > 0) log.info('Instant notification emails sent', { count: mailed });
-}
-
-/** The id a row is titled by: its context, else the subject itself, as the inbox titles it. */
-function contextOf(row: WrittenNotification): string {
-  return row.contextId ?? row.subjectId;
 }
 
 /** Plain text of a stored body for the excerpt: block documents flatten, legacy HTML passes through. */

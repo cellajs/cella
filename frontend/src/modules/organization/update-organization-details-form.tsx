@@ -24,10 +24,11 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
-const formSchema = zUpdateOrganizationBody;
+const formSchema = zUpdateOrganizationBody.pick({ welcomeText: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
+// The editor takes a string, never null
 const toFormValues = (organization: Organization): FormValues => ({ welcomeText: organization.welcomeText ?? '' });
 
 interface UpdateOrganizationDetailsFormProps {

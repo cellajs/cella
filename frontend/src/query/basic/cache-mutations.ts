@@ -48,12 +48,10 @@ export async function cancelKeepingMark(client: QueryClient, queryKey: QueryKey)
   for (const query of owed) query.invalidate();
 }
 
-/** The order new rows enter a paged list in: the createdAt order its key names, else newest first. */
+/** The order new rows enter a paged list in: oldest first when its key's `orderBy` is createdAt ascending, else newest first. */
 function getQueryKeySortOrder(queryKey: QueryKey): 'asc' | 'desc' {
-  const sortData = queryKey.find(
-    (segment): segment is { sort: string; order?: 'asc' | 'desc' } => isFilterSegment(segment) && 'sort' in segment && 'order' in segment,
-  );
-  return sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
+  const orderBy = queryKey.filter(isFilterSegment).find((segment) => 'orderBy' in segment)?.orderBy;
+  return orderBy === 'createdAt' || orderBy === 'createdAt asc' ? 'asc' : 'desc';
 }
 
 /** One page's items after the action: a create appends when `insertOrder` is 'asc', else prepends. */

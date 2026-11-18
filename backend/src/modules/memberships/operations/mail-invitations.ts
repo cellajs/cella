@@ -61,10 +61,10 @@ async function mailInvitations(ctx: DbContext, { ids, organization, by }: MailIn
 
   const mailed: InvitationModel[] = [];
   for (const { channel, group } of batches) {
-    const { channelType, role, createdBy, tenantId, organizationId } = group[0];
+    const { createdBy } = group[0];
     const sent = await sendInvitationMails(ctx, {
       sender: await findUserById(ctx, { id: createdBy }),
-      channel: { type: channelType, id: channel.id, tenantId, organizationId, name: channel.name, role },
+      channel: { ...group[0], name: channel.name },
       organization,
       invited: group.map(({ email, userId, rawToken }) => ({ email, userId, rawToken })),
     });

@@ -29,10 +29,9 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
   const inactiveMembership = await findInvitationById(ctx, { id: tokenRecord.invitationId });
   if (inactiveMembership) {
     const { channelType, channelId, organizationId } = inactiveMembership;
-    const [entity, organization, inviter, connection] = await Promise.all([
+    const [entity, organization, connection] = await Promise.all([
       resolveEntity(ctx, { entityType: channelType, identifier: channelId }),
       channelType === 'organization' ? null : resolveEntity(ctx, { entityType: 'organization', identifier: organizationId }),
-      findUserById(ctx, { id: inactiveMembership.createdBy }),
       findSsoConnectionByTenant(ctx, { tenantId: inactiveMembership.tenantId }),
     ]);
     // The invited organization's institution, so the invitee is offered that sign-in first.
@@ -41,14 +40,13 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     }
     if (entity) {
       tokenData.invitation = {
-        entityType: channelType,
+        channelType,
         tenantId: inactiveMembership.tenantId,
         organizationId,
         channelId,
-        entityName: entity.name,
+        channelName: entity.name,
         organizationName: organization?.name,
         role: inactiveMembership.role,
-        inviterName: inviter?.name ?? '',
       };
     }
   }

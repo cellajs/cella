@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { hierarchy, isChannel, isProduct } from 'shared';
+import { hierarchy, isProduct } from 'shared';
 import { isReferenceStripWrite } from '../embeddings/embedding-strip';
 import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
@@ -15,13 +15,6 @@ import type { ParseMessageResult } from './parse-message';
  * (which `isReferenceStripWrite` relies on), and the generated `path` moves with the placement columns. None is a user's edit.
  */
 const stampedFields = new Set(['stx', 'seq', 'path']);
-
-/** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
-function rowLocationPath(entityType: string, row: Record<string, unknown>): string | null {
-  if (isProduct(entityType)) return hierarchy.computeProductPath(entityType, row);
-  if (isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
-  return null;
-}
 
 /**
  * An update as the worker records it: the activity with the fields that differ between the old and the new row, and
@@ -55,8 +48,9 @@ export function parseUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdat
 
   // Move-out: when the location path changes, or `public` goes false and takes the row from readers who had it through
   // the flag alone, the old row's permission subset lets dispatch tell subscribers who could read it and cannot now.
-  const oldLocation = rowLocationPath(tableMeta.type, oldRowData);
-  const newLocation = rowLocationPath(tableMeta.type, rowData);
+  // A channel's own id never changes in an update. Its ancestor path alone tells a move.
+  const oldLocation = hierarchy.computeProductPath(tableMeta.type, oldRowData);
+  const newLocation = hierarchy.computeProductPath(tableMeta.type, rowData);
   const moved = oldLocation !== null && newLocation !== null && oldLocation !== newLocation;
   const lostPublic = oldRowData.public === true && rowData.public === false;
   const movedFrom = moved || lostPublic ? pickPermissionRowData(oldRowData) : null;

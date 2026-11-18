@@ -9,7 +9,7 @@ import { stripForeignParams } from '~/utils/strip-foreign-params';
 
 export const Route = createFileRoute('/_public/docs/schemas')({
   validateSearch: schemasRouteSearchParamsSchema,
-  search: { middlewares: [stripForeignParams('operationTag', 'q', 'filter', 'sort', 'order')] },
+  search: { middlewares: [stripForeignParams('operationTag', 'q', 'filter', 'orderBy')] },
   loader: schemasLoader,
   head: () => pageHead(i18n.t('c:schema_other')),
   component: withSuspense(SchemasPage),

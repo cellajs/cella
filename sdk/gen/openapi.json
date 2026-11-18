@@ -2154,6 +2154,10 @@
             "type": ["string", "null"],
             "description": "Deepest channel entity ID above the rows, which groups unseen counts"
           },
+          "path": {
+            "type": "string",
+            "description": "The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share"
+          },
           "rows": {
             "type": "array",
             "items": {
@@ -2169,7 +2173,20 @@
                 "stx": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/StxBase"
+                      "type": "object",
+                      "properties": {
+                        "mutationId": {
+                          "type": "string",
+                          "maxLength": 36,
+                          "description": "Unique mutation ID"
+                        },
+                        "sourceId": {
+                          "type": "string",
+                          "maxLength": 64,
+                          "description": "Tab/instance identifier for echo prevention"
+                        }
+                      },
+                      "required": ["mutationId", "sourceId"]
                     },
                     {
                       "type": "null"
@@ -2241,24 +2258,24 @@
             "description": "Key of the receivers who read the same rows, valid for seconds. Sent in `x-range-key` with the range fetch this frame causes, it lets the fetch take the answer another receiver was just given; absent for a receiver who shares its read scope with no one"
           }
         },
-        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
+        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "path", "rows", "overflow", "spreadWindow", "propagation"],
         "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/me/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
           "action": "update",
           "productType": "attachment",
           "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
-          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
-          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
+          "tenantId": "4f7xc7b8a3yicq1i1j3ysv6s",
+          "channelId": "1d010285-4b76-4313-9edf-b8e38e2cac8f",
+          "path": "d00f807b-dcd4-4167-ba73-ee3fdf380db7/1d010285-4b76-4313-9edf-b8e38e2cac8f",
           "rows": [
             {
-              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
-              "seq": 143,
+              "subjectId": "8e83df1d-7465-47fa-97bc-05db4b58cd1e",
+              "seq": 454,
               "stx": {
                 "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
-                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
-                "fieldTimestamps": {}
+                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e"
               },
-              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
+              "actorId": "45b973a2-ab9d-436b-949d-ea2d340ca184"
             }
           ],
           "overflow": null,
@@ -6228,7 +6245,7 @@
                     "invitation": {
                       "type": "object",
                       "properties": {
-                        "entityType": {
+                        "channelType": {
                           "type": "string",
                           "enum": ["organization"]
                         },
@@ -6241,7 +6258,7 @@
                         "channelId": {
                           "type": "string"
                         },
-                        "entityName": {
+                        "channelName": {
                           "type": "string"
                         },
                         "organizationName": {
@@ -6250,12 +6267,9 @@
                         "role": {
                           "type": "string",
                           "enum": ["admin", "member"]
-                        },
-                        "inviterName": {
-                          "type": "string"
                         }
                       },
-                      "required": ["entityType", "tenantId", "organizationId", "channelId", "entityName", "role", "inviterName"]
+                      "required": ["channelType", "tenantId", "organizationId", "channelId", "channelName", "role"]
                     }
                   },
                   "required": ["email"]
@@ -10383,16 +10397,16 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "entityId": {
+                  "channelId": {
                     "type": "string",
                     "maxLength": 50
                   },
-                  "entityType": {
+                  "channelType": {
                     "type": "string",
                     "enum": ["organization"]
                   }
                 },
-                "required": ["entityId", "entityType"]
+                "required": ["channelId", "channelType"]
               }
             }
           }
@@ -10857,7 +10871,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -10866,7 +10880,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11054,7 +11068,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11063,7 +11077,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11191,7 +11205,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11200,7 +11214,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           }
         ],
@@ -11685,7 +11699,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -11694,7 +11708,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           },
           {
@@ -12041,7 +12055,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "entityId",
+            "name": "channelId",
             "in": "query"
           },
           {
@@ -12050,7 +12064,7 @@
               "enum": ["organization"]
             },
             "required": true,
-            "name": "entityType",
+            "name": "channelType",
             "in": "query"
           },
           {
@@ -12459,7 +12473,7 @@
                             "format": "uuid"
                           },
                           "contextId": {
-                            "type": ["string", "null"],
+                            "type": "string",
                             "format": "uuid"
                           },
                           "channelId": {
@@ -12514,17 +12528,49 @@
                               }
                             ]
                           },
-                          "channelName": {
-                            "type": "string"
+                          "channel": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "thumbnailUrl": {
+                                "type": ["string", "null"]
+                              },
+                              "entityType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              }
+                            },
+                            "required": ["id", "name", "slug", "thumbnailUrl", "entityType"]
                           },
-                          "channelThumbnailUrl": {
-                            "type": ["string", "null"]
-                          },
-                          "organizationName": {
-                            "type": "string"
-                          },
-                          "organizationThumbnailUrl": {
-                            "type": ["string", "null"]
+                          "organization": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "thumbnailUrl": {
+                                "type": ["string", "null"]
+                              },
+                              "entityType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              }
+                            },
+                            "required": ["id", "name", "slug", "thumbnailUrl", "entityType"]
                           },
                           "subjectName": {
                             "type": "string"
@@ -12544,10 +12590,8 @@
                           "tenantId",
                           "readAt",
                           "actor",
-                          "channelName",
-                          "channelThumbnailUrl",
-                          "organizationName",
-                          "organizationThumbnailUrl",
+                          "channel",
+                          "organization",
                           "subjectName"
                         ]
                       }

@@ -15,12 +15,12 @@ type ListInvitationsInput = z.infer<typeof invitationListQuerySchema>;
  * token was minted, since anyone may create an organization and invite any address. A resend names the row by its id.
  */
 export async function listInvitationsOp(ctx: UserContext, input: ListInvitationsInput, { offset, limit }: PageWindow) {
-  const { entityId, entityType, orderBy } = input;
-  const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
+  const { channelId, channelType, orderBy } = input;
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
 
   const { items: rawItems, total } = await findInvitationsPaginated(ctx, {
     organizationId: ctx.var.organization.id,
-    entityId: entity.id,
+    channelId: entity.id,
     ...orderBy,
     offset,
     limit,

@@ -4,7 +4,7 @@ import type { ProductEntityType } from 'shared';
 /** A change the stream announced, in the fields of its envelope; no row data yet. */
 export interface AnnouncedChange {
   action: StreamChange['action'];
-  entityType: ProductEntityType;
+  productType: ProductEntityType;
   organizationId: string;
   channelId: string | null;
   subjectId: string;
@@ -12,7 +12,7 @@ export interface AnnouncedChange {
 
 /** Rows a sequence-range fetch just delivered. */
 export interface SyncedRows {
-  entityType: ProductEntityType;
+  productType: ProductEntityType;
   organizationId: string;
   rows: { id: string; [key: string]: unknown }[];
 }

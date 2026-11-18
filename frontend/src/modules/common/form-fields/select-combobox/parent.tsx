@@ -48,7 +48,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
     items.map((item) => ({
       value: item.id,
       label: item.name,
-      icon: <EntityAvatar className="size-6" id={item.id} name={item.name} url={item.thumbnailUrl} />,
+      icon: <EntityAvatar className="size-6" entity={item} />,
     }));
 
   return (
