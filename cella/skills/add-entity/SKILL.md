@@ -153,8 +153,8 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     where `rangeFetch` spreads the `query` it receives (range and chunk limit) into the list request.
     Without the registration the first stream event for the type throws.
   - The canonical options (one list per parent channel, which sync keeps fresh, read whole through
-    `fetchAllPages`), the list options (`tokenPaging`, whose key holds the table's `sort` and `order`
-    and whose fetch sends them as `orderByParam(sort, order)`) and the detail options. The list
+    `fetchAllPages`), the list options (`tokenPaging`, whose key holds the table's `orderBy` as the
+    route's search holds it, and whose fetch sends it unchanged) and the detail options. The list
     fetches end in `.then(liveItems)`, which types their rows.
     Both list options are wrapped in `syncedListOptions` (`~/query/basic/synced-list-options`), so a
     list read keeps rows with a pending mutation as cached and runs on when the screen that started it

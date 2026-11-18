@@ -9,7 +9,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import { pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { ListFilters, MutationData } from '~/query/types';
 
@@ -33,15 +33,13 @@ export const userQueryOptions = (id: string) =>
 
 export const usersListQueryOptions = (params: UsersListParams) => {
   const defaults = usersSearchDefaults;
-  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, accounts = [], limit = appConfig.pageSizes.users } = params;
+  const { q = defaults.q, orderBy = defaults.orderBy, role, accounts = [], limit = appConfig.pageSizes.users } = params;
   const includeAnonymous = accounts.includes('anonymous') || undefined;
-  const filters = { q, sort, order, role, includeAnonymous };
+  const filters = { q, orderBy, role, includeAnonymous };
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    ...tokenPaging((pageToken, signal) =>
-      listUsers({ query: { q, role, includeAnonymous, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
-    ),
+    ...tokenPaging((pageToken, signal) => listUsers({ query: { ...filters, ...pageQuery(limit, pageToken) }, signal })),
     refetchOnMount: true,
   });
 };

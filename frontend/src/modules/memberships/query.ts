@@ -12,7 +12,7 @@ import { appConfig } from 'shared';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import type { PageRequest } from '~/query/basic/fetch-all-pages';
-import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
+import { pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters } from '~/query/types';
 
 type ChannelInvitationsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
@@ -87,15 +87,14 @@ export const membersListQueryOptions = (params: MembersListParams) => {
     organizationId,
     entityType,
     q = membersSearchDefaults.q,
-    sort = membersSearchDefaults.sort,
-    order = membersSearchDefaults.order,
+    orderBy = membersSearchDefaults.orderBy,
     role,
     userIds,
     include,
     limit = appConfig.pageSizes.members,
   } = params;
   // `include` stays out of the cache key so queries with/without counts share the same cache
-  const filters = { q, sort, order, role, userIds };
+  const filters = { q, orderBy, role, userIds };
   const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
   const query = { ...filters, include, entityId, entityType };
 
@@ -119,15 +118,11 @@ export const channelInvitationsQueryOptions = (params: ChannelInvitationsListPar
   });
 };
 
-const fetchMembersPage = (
-  { sort = membersSearchDefaults.sort, order = membersSearchDefaults.order, ...query }: MemberFilters,
-  path: ListMembersData['path'],
-  page: PageRequest,
-  signal?: AbortSignal,
-) => listMembers({ query: { ...query, orderBy: orderByParam(sort, order), ...page }, path, signal });
+const fetchMembersPage = (query: MemberFilters, path: ListMembersData['path'], page: PageRequest, signal?: AbortSignal) =>
+  listMembers({ query: { ...query, ...page }, path, signal });
 
 /** A page of members for a table export. Bypasses cache; rows carry their counts and MFA setting, as in the members table. */
 export const fetchMembersForExport = (params: MembersParams, page: PageRequest) => {
-  const { tenantId, organizationId, q, sort, order, role, entityId, entityType } = params;
-  return fetchMembersPage({ q, sort, order, role, entityId, entityType, include: 'counts,mfa' }, { tenantId, organizationId }, page);
+  const { tenantId, organizationId, q, orderBy, role, entityId, entityType } = params;
+  return fetchMembersPage({ q, orderBy, role, entityId, entityType, include: 'counts,mfa' }, { tenantId, organizationId }, page);
 };

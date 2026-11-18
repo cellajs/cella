@@ -17,7 +17,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import type { PageRequest } from '~/query/basic/fetch-all-pages';
-import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import { pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters } from '~/query/types';
 
 type RequestFilters = ListFilters<NonNullable<ListRequestsData['query']>>;
@@ -33,16 +33,10 @@ const requestsKeys = {
   delete: ['requests', 'delete'] as const,
 };
 
-const withDefaults = ({
-  q = requestsSearchDefaults.q,
-  sort = requestsSearchDefaults.sort,
-  order = requestsSearchDefaults.order,
-}: RequestFilters) => ({ q, sort, order });
+const withDefaults = ({ q = requestsSearchDefaults.q, orderBy = requestsSearchDefaults.orderBy }: RequestFilters) => ({ q, orderBy });
 
-const fetchRequestsPage = (filters: RequestFilters, page: PageRequest, signal?: AbortSignal) => {
-  const { q, sort, order } = withDefaults(filters);
-  return listRequests({ query: { q, orderBy: orderByParam(sort, order), ...page }, signal });
-};
+const fetchRequestsPage = (filters: RequestFilters, page: PageRequest, signal?: AbortSignal) =>
+  listRequests({ query: { ...withDefaults(filters), ...page }, signal });
 
 export const requestsListQueryOptions = ({ limit = appConfig.pageSizes.requests, ...params }: RequestsListParams) => {
   const filters = withDefaults(params);

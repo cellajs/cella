@@ -7,44 +7,20 @@ export const errorSearchSchema = z.object({ error: z.string().optional(), severi
 /** `userSheetId` opens the user sheet; a page that lists people declares it, since the sheet reads the route's search. */
 export const userSheetSearchSchema = z.object({ userSheetId: z.string().optional() });
 
-type SortOrder = 'asc' | 'desc';
-
-const sortOrderSchema = z.enum(['asc', 'desc']);
-
 /** A generated list query: its search, and the `orderBy` values its request schema takes and defaults. */
-interface ListQuery {
-  shape: { q: z.ZodOptional<z.ZodString>; orderBy: z.ZodDefault<z.ZodOptional<z.ZodEnum>> };
+interface ListQuery<E extends z.ZodEnum> {
+  shape: { q: z.ZodOptional<z.ZodString>; orderBy: z.ZodDefault<z.ZodOptional<E>> };
 }
 
-/** The fields a list orders by: its `orderBy` values without a direction. */
-type SortField<Q extends ListQuery> =
-  z.output<Q['shape']['orderBy']> extends infer V ? (V extends `${infer F} ${SortOrder}` ? F : Extract<V, string>) : never;
-
-type ListSearchDefaults<TSort extends string> = { q: string; sort: TSort; order: SortOrder };
-
-/** The fields of a list query's `orderBy`, and the sort and order it takes when a request names none. */
-function orderingOf<Q extends ListQuery>({ shape }: Q) {
-  const isField = (value: unknown): value is SortField<Q> => typeof value === 'string' && !value.includes(' ');
-  const sortSchema = z.enum(shape.orderBy.unwrap().unwrap().options.filter(isField));
-  const [sort, order = 'asc'] = String(shape.orderBy.parse(undefined)).split(' ');
-  return { sortSchema, defaults: { q: '', sort: sortSchema.parse(sort), order: sortOrderSchema.parse(order) } };
-}
-
-/** The search a list opens on: no search, and the sort and order the API takes when a request names none. */
-export const listSearchDefaults = <Q extends ListQuery>(query: Q): ListSearchDefaults<SortField<Q>> => orderingOf(query).defaults;
+/** The search a list opens on: no search, and the `orderBy` the API takes when a request names none. */
+export const listSearchDefaults = <E extends z.ZodEnum>({ shape }: ListQuery<E>) => ({ q: '', orderBy: shape.orderBy.parse(undefined) });
 
 /**
- * A list route's search: an absent or unknown sort or order (an old bookmark) reads as `defaults`, the API's unless a
- * view opens on its own. The query function sends them as one `orderBy` (`orderByParam`).
+ * A list route's search, with the API's own `orderBy` (`name desc`): an absent or unknown value (an old bookmark) reads
+ * as `defaults`, the API's unless a view opens on its own.
  */
-export const listSearchSchema = <Q extends ListQuery>(query: Q, defaults: ListSearchDefaults<SortField<Q>> = listSearchDefaults(query)) => {
-  const { sortSchema } = orderingOf(query);
-  return z.object({
-    q: query.shape.q,
-    sort: sortSchema.default(defaults.sort).catch(defaults.sort),
-    order: sortOrderSchema.default(defaults.order).catch(defaults.order),
-  });
-};
+export const listSearchSchema = <E extends z.ZodEnum>(query: ListQuery<E>, defaults = listSearchDefaults(query)) =>
+  z.object({ q: query.shape.q, orderBy: query.shape.orderBy.unwrap().default(defaults.orderBy).catch(defaults.orderBy) });
 
 /** A boolean search param: `true` or `false` in the URL, absent when unset; a navigate may pass the boolean. */
 export const booleanSearchParam = z

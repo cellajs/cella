@@ -129,7 +129,7 @@ describe('realtime cache ops', () => {
       totalSize: 1,
     }));
 
-    const filteredKey = [...keys.list.org('org-1'), { q: '', sort: 'createdAt', order: 'desc' }];
+    const filteredKey = [...keys.list.org('org-1'), { q: '', orderBy: 'createdAt desc' }];
     queryClient.setQueryData(filteredKey, {
       results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }],
       totalSize: 1,
@@ -231,13 +231,13 @@ describe('filtered list refetch for a new row', () => {
 
   const lists = {
     otherItem: { itemId: 'item-2' },
-    otherItemSorted: { itemId: 'item-2', sort: 'createdAt', order: 'desc', limit: 20 },
+    otherItemSorted: { itemId: 'item-2', orderBy: 'createdAt desc', limit: 20 },
     sameItem: { itemId: 'item-1' },
     otherItemSearch: { itemId: 'item-2', q: 'hello' },
     otherItemUndeclared: { itemId: 'item-2', authorId: 'user-1' },
     sameItemSearch: { itemId: 'item-1', q: 'hello' },
     sameItemUndeclared: { itemId: 'item-1', authorId: 'user-1' },
-    noItem: { sort: 'createdAt' },
+    noItem: { orderBy: 'createdAt desc' },
   };
 
   it('refetches after a delta fetch only the lists that one of the new rows can belong to', async () => {

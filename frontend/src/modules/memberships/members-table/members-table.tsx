@@ -37,10 +37,10 @@ export function MembersTable({ channel, isSheet = false, inviteOnOpen }: Members
   const can = useCan();
   const canUpdate = can('update', channel.entityType, channel);
 
-  const { q, role, sort, order } = search;
+  const { q, role, orderBy } = search;
 
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(orderBy, setSearch);
 
   // `counts` and `mfa` feed the insight and MFA columns
   const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, include: 'counts,mfa' });
@@ -66,7 +66,7 @@ export function MembersTable({ channel, isSheet = false, inviteOnOpen }: Members
     <>
       <MembersTableBar
         {...{ channel, selected, setSearch, columns, setColumns, clearSelection, isSheet, inviteOnOpen, canUpdate }}
-        searchVars={{ q, role, sort, order }}
+        searchVars={{ q, role, orderBy }}
         queryKey={queryOptions.queryKey}
       />
       <SearchScope q={q}>

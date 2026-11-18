@@ -21,18 +21,18 @@ const cases: Array<{ name: string; parse: Parse; defaults: Record<string, unknow
 describe('list search defaults', () => {
   // An old bookmark can name a sort column or filter value that no longer exists: the list opens on its defaults.
   // A stripped URL restores the view's own default, which can differ from the API's.
-  it.each(cases)('$name reads an absent sort and order as its default', ({ parse, defaults }) => {
-    expect(parse({})).toMatchObject({ sort: defaults.sort, order: defaults.order });
+  it.each(cases)('$name reads an absent orderBy as its default', ({ parse, defaults }) => {
+    expect(parse({})).toMatchObject({ orderBy: defaults.orderBy });
   });
 
-  it.each(cases)('$name reads an unknown sort, order or filter as its default', ({ parse, defaults, filters = [] }) => {
+  it.each(cases)('$name reads an unknown orderBy or filter as its default', ({ parse, defaults, filters = [] }) => {
     const unknownFilters = Object.fromEntries(filters.map((filter) => [filter, 'bogus']));
-    const fromSchema = parse({ sort: 'bogus', order: 'bogus', ...unknownFilters });
-    expect(fromSchema).toMatchObject({ sort: defaults.sort, order: defaults.order });
+    const fromSchema = parse({ orderBy: 'bogus desc', ...unknownFilters });
+    expect(fromSchema).toMatchObject({ orderBy: defaults.orderBy });
     for (const filter of filters) expect(fromSchema[filter]).toBeUndefined();
   });
 
-  it('the docs operations table reads an unknown order as none', () => {
-    expect(operationsTableRouteSearchParamsSchema.parse({ order: 'bogus' }).order).toBeUndefined();
+  it('the docs operations table reads an orderBy without a direction as none', () => {
+    expect(operationsTableRouteSearchParamsSchema.parse({ orderBy: 'method bogus' }).orderBy).toBeUndefined();
   });
 });

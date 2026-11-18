@@ -10,7 +10,7 @@ import { stripForeignParams } from '~/utils/strip-foreign-params';
 /** The pages table is for signed-in editors: the one page under the public layout that needs a session. */
 export const Route = createFileRoute('/_public/docs/pages')({
   validateSearch: pagesRouteSearchParamsSchema,
-  search: { middlewares: [stripForeignParams('operationTag', 'schemaTag', 'filter', 'sort', 'order')] },
+  search: { middlewares: [stripForeignParams('operationTag', 'schemaTag', 'filter', 'orderBy')] },
   beforeLoad: ({ location }) => requireSession(location),
   head: () => pageHead(i18n.t('c:page_other')),
   component: withSuspense(PagesTable),

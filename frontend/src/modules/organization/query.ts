@@ -26,7 +26,7 @@ import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
+import { pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
 import type { ListFilters, MutationData, QueryData } from '~/query/types';
@@ -57,21 +57,19 @@ type OrganizationsListParams = OrganizationFilters & { limit?: number };
 /** Search filters with the API defaults filled in; `include` is left out, so queries with and without counts share one list key. */
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
-  sort = organizationsSearchDefaults.sort,
-  order = organizationsSearchDefaults.order,
+  orderBy = organizationsSearchDefaults.orderBy,
   relatableUserId,
   excludeHidden,
   role,
   kind = [],
-}: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeHidden, role, kind });
+}: OrganizationFilters) => ({ q, orderBy, relatableUserId, excludeHidden, role, kind });
 
 // Cache enrichment adds the ancestor slugs.
 const fetchOrganizationsPage = async (
-  { sort, order, kind, ...query }: ReturnType<typeof withDefaults> & Pick<OrganizationFilters, 'include'>,
+  { kind, ...query }: ReturnType<typeof withDefaults> & Pick<OrganizationFilters, 'include'>,
   page: PageRequest,
   signal?: AbortSignal,
-): Promise<QueryData<EnrichedOrganization>> =>
-  listOrganizations({ query: { ...query, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...page }, signal });
+): Promise<QueryData<EnrichedOrganization>> => listOrganizations({ query: { ...query, kind: tenantKindsParam(kind), ...page }, signal });
 
 export const organizationsListQueryOptions = ({ include, limit = appConfig.pageSizes.organizations, ...params }: OrganizationsListParams) => {
   const filters = withDefaults(params);
@@ -162,5 +160,5 @@ export const useOrganizationDeleteMutation = () => {
 };
 
 /** A page of organizations for a table export. Bypasses cache; rows carry their counts. */
-export const fetchOrganizationsForExport = ({ q, sort, order }: Pick<OrganizationFilters, 'q' | 'sort' | 'order'>, page: PageRequest) =>
-  fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts' }, page);
+export const fetchOrganizationsForExport = ({ q, orderBy }: Pick<OrganizationFilters, 'q' | 'orderBy'>, page: PageRequest) =>
+  fetchOrganizationsPage({ ...withDefaults({ q, orderBy }), include: 'counts' }, page);
