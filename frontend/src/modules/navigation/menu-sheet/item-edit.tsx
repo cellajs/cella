@@ -50,11 +50,8 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, isArriving = fals
         'size-8 group-data-[compact=true]/options-item:size-6 group-data-[inactive=true]/options-item:opacity-70',
         Icon && 'bg-transparent shadow-none',
       )}
-      type={item.entityType}
-      id={item.id}
+      entity={item}
       icon={Icon}
-      name={item.name}
-      url={item.thumbnailUrl}
     />
   );
 

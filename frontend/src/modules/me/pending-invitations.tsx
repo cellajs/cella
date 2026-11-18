@@ -36,7 +36,7 @@ function InvitationRow({ item: { entity, invitation, organizationName } }: { ite
 
   return (
     <li className={rowClass}>
-      <EntityAvatar type={entity.entityType} className="size-8" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
+      <EntityAvatar entity={entity} className="size-8" />
       <div className="min-w-0 flex-1">
         <p>{t(organizationName ? 'c:invite_accept_as_account_in_organization.text' : 'c:invite_accept_as_account.text', values)}</p>
         <p className="text-muted-foreground">

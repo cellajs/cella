@@ -72,7 +72,7 @@ export function UpdateUserForm({ user, sheet: isSheet }: UpdateUserFormProps) {
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleChanges(onSubmit)} className="flex w-full flex-col gap-6">
-        <AvatarFormField form={form} label={t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
+        <AvatarFormField form={form} label={t('c:profile_picture')} name="thumbnailUrl" entity={{ ...user, entityType: 'user' }} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
             <InputFormField control={form.control} name="givenName" label={t('c:given_name')} autoComplete="given-name" />

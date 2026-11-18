@@ -91,7 +91,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <AvatarFormField
           form={form}
           label={t('c:resource_logo', { resource: t('c:organization') })}
-          type="organization"
           name="thumbnailUrl"
           entity={organization}
           organizationId={organization.id}

@@ -178,7 +178,7 @@ function CreatedBy({ actor }: { actor: NonNullable<ApiKey['createdBy']> }) {
       className="focus-effect active:press link-reveal inline-flex max-w-full items-center gap-1.5 rounded-md text-sm whitespace-nowrap"
       onClick={() => openProfile(actor.id)}
     >
-      <EntityAvatar type="user" className="size-5 shrink-0" id={actor.id} name={actor.name} url={actor.thumbnailUrl} />
+      <EntityAvatar entity={{ ...actor, entityType: 'user' }} className="size-5 shrink-0" />
       <span className="truncate">{actor.name}</span>
     </button>
   );

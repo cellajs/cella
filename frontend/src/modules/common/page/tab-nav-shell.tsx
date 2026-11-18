@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { type AvatarEntity, EntityAvatar } from '~/modules/common/entity-avatar';
 import { type TabIndicator, TabIndicatorBar } from '~/modules/common/page/tab-indicator';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -14,8 +13,6 @@ const truncateMiddle = (text: string, maxLength: number) => {
   const edgeLength = Math.floor((maxLength - 1) / 2);
   return `${text.slice(0, edgeLength)}…${text.slice(-edgeLength)}`;
 };
-
-export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: string; type?: EntityType };
 
 /** A tab of either bar: a link in PageTabNav, a button in LocalTabNav. */
 export const tabNavItemClass = tw(
@@ -42,7 +39,7 @@ export function TabNavLabel({ icon, ...caption }: TabNavLabelProps) {
 
 interface TabNavShellProps {
   title?: string;
-  avatar?: TabNavAvatar;
+  avatar?: AvatarEntity;
   className?: string;
   indicator?: TabIndicator;
   children: ReactNode;
@@ -59,15 +56,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
       )}
     >
       <div className="col-start-1 hidden min-w-max items-center transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex starting:opacity-0">
-        {avatar && (
-          <EntityAvatar
-            className="m-3 mr-2 size-5"
-            type={avatar.type ?? 'organization'}
-            id={avatar.id}
-            name={avatar.name}
-            url={avatar.thumbnailUrl}
-          />
-        )}
+        {avatar && <EntityAvatar className="m-3 mr-2 size-5" entity={avatar} />}
         {title && <div className="hidden max-w-42 truncate text-sm leading-5 font-semibold @4xl:block">{title}</div>}
       </div>
       {/* Each fade is no wider than the row's padding on its side, so it shows only on a tab cut off by the edge */}

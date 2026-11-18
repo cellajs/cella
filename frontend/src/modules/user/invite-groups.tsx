@@ -101,9 +101,7 @@ function InviteChip({ address, person, fact, pinned, onPin, onRemove }: InviteCh
       pressLabel={person && t('c:invite_chip_person', { name: person.name, address })}
       onRemove={onRemove}
       removeLabel={t('c:remove_resource', { resource: address })}
-      start={
-        person && <EntityAvatar type={person.entityType} className="size-6 text-xs" id={person.id} name={person.name} url={person.thumbnailUrl} />
-      }
+      start={person && <EntityAvatar entity={person} className="size-6 text-xs" />}
     >
       <span className="flex flex-wrap gap-x-1.5 whitespace-normal">
         {person ? (

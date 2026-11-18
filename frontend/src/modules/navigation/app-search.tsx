@@ -82,7 +82,7 @@ function SearchResultBlock({ results, entityType, label, hideSeparator, collapse
               className={cn('group group/recent justify-between', collapsed && 'hidden')}
             >
               <div className="flex min-w-0 items-center gap-2">
-                <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
+                <EntityAvatar entity={item} className="size-8" />
                 <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
                   <HighlightText text={item.name} />
                 </span>

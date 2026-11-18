@@ -168,7 +168,7 @@ export function MenuSheetDraggableItem({ item, siblings, listItems, isSubitem, i
       {previewContainer &&
         createPortal(
           <div className="max-w-64">
-            <EntityChip type={item.entityType} id={item.id} name={item.name} url={item.thumbnailUrl} icon={getMenuSection(item.entityType)?.icon} />
+            <EntityChip entity={item} icon={getMenuSection(item.entityType)?.icon} />
           </div>,
           previewContainer,
         )}

@@ -175,7 +175,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
             return (
               <ComboboxItem key={id} value={email} disabled={isLeftOut(email)} className="group/user-item justify-between">
                 <div className="flex min-w-0 items-center gap-2">
-                  <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
+                  <EntityAvatar entity={{ entityType, id, name, thumbnailUrl }} className="size-8" />
                   <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
                     <MiddleCut text={email} className="sm:hidden" />
                     <span className="max-sm:hidden">{name}</span>

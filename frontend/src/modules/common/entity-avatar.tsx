@@ -6,21 +6,22 @@ import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules
 import { cn } from '~/utils/cn';
 import { placeholderColorClass } from '~/utils/placeholder-color-class';
 
+/** The fields of an entity row that its avatar draws; a row passes whole. */
+export type AvatarEntity = { id?: string; entityType?: EntityType; name?: string | null; thumbnailUrl?: string | null };
+
 export interface EntityAvatarProps extends AvatarProps {
-  id?: string;
-  type?: EntityType;
-  name?: string | null;
-  url?: string | null;
+  entity?: AvatarEntity;
   className?: string;
   icon?: IconComponent;
 }
 
-export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
+export const EntityAvatar = memo(function EntityAvatar({ entity = {}, icon: Icon, className, ...props }: EntityAvatarProps) {
+  const { id, entityType, name, thumbnailUrl } = entity;
   if (Icon)
     return (
       <Avatar
         {...props}
-        data-type={type}
+        data-type={entityType}
         className={cn('bg-background items-center justify-center rounded-md data-[type=user]:rounded-full', className)}
       >
         <Icon className="fill-accent size-[70%] opacity-70" />
@@ -29,11 +30,11 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
 
   const avatarBackground = placeholderColorClass(id);
   const [initial, secondInitial] = getInitials(name);
-  const isUser = type === 'user';
+  const isUser = entityType === 'user';
 
   return (
-    <Avatar {...props} data-type={type} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
-      {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} className="transition-[filter]" />}
+    <Avatar {...props} data-type={entityType} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
+      {thumbnailUrl && <AvatarImage src={thumbnailUrl} alt={name ?? ''} draggable={false} className="transition-[filter]" />}
       {/* The fallback is the container, so the letters scale with the avatar; a user's two letters at every size, bolder below size-6 and a step smaller above it */}
       <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
         <span className="sr-only">{name}</span>

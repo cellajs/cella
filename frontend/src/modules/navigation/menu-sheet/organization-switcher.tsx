@@ -75,13 +75,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
         }}
       >
         <span className={cn('flex min-w-0 items-center gap-3', item.membership.hidden && 'text-muted-foreground')}>
-          <EntityAvatar
-            className={cn('size-6 shrink-0', item.membership.hidden && 'opacity-70')}
-            type={item.entityType}
-            id={item.id}
-            name={item.name}
-            url={item.thumbnailUrl}
-          />
+          <EntityAvatar className={cn('size-6 shrink-0', item.membership.hidden && 'opacity-70')} entity={item} />
           <span className="truncate">{item.name}</span>
           {unseenCount > 0 && <CountBadge count={unseenCount} variant={item.membership.hidden ? 'muted' : 'primary'} className="ml-auto shrink-0" />}
         </span>
@@ -146,13 +140,7 @@ export function OrganizationSwitcher({ organization }: { organization: UserMenuI
           aria-label={t(hasUnseenElsewhere ? 'c:switch_organization_unseen' : 'c:switch_organization', { name: organization.name })}
           className={cn('text-md data-dropdowner-active:bg-muted h-12 w-full justify-start border-0', menuColumnsClass)}
         >
-          <EntityAvatar
-            className="size-8 shrink-0"
-            type={organization.entityType}
-            id={organization.id}
-            name={organization.name}
-            url={organization.thumbnailUrl}
-          />
+          <EntityAvatar className="size-8 shrink-0" entity={organization} />
           <span className="min-w-0 grow truncate text-left">{organization.name}</span>
           {hasUnseenElsewhere && <StatusDot variant="primary" pulse={false} className="-mr-2" />}
           <ChevronsUpDownIcon className="text-faint-foreground size-4 shrink-0" />
