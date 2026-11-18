@@ -109,7 +109,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
     await mailWithinCaps(ctx, { invitations, organization, by: user.id, taken });
 
     if (adds.length) {
-      const channel = { type: channelType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };
+      const channel = { channelType, channelId: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };
       await sendInvitationMails(ctx, { sender: user, channel, organization, invited: [], added: adds });
     }
   }
