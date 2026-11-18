@@ -192,10 +192,7 @@ const ownedBy = appConfig.productEmbeddings.find(
   ({ embeddedProductType, lifecycle }) => embeddedProductType === 'attachment' && lifecycle === 'owned',
 );
 
-/**
- * The live row that keeps the attachment, a task whose description holds it, when an owned embedding declares one, with
- * its home channel; with no request scope. The file stays homed where it was uploaded when its host moves on.
- */
+/** The live row an owned embedding keeps the file in, with its home channel: the file stays behind when its host moves. */
 export const findAttachmentHost = async (ctx: DbContext, { id, organizationId }: { id: string; organizationId: string }) => {
   if (!ownedBy) return undefined;
   const host = getEntityTable(ownedBy.hostProductType) as unknown as PgTable &

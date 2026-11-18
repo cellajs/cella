@@ -29,11 +29,7 @@ const kindWords: Record<FileKindName, string> = {
 
 const notFound = () => new AppError(404, 'not_found', 'warn', { entityType: 'attachment', willRedirect: true });
 
-/**
- * The notification link to the file: signs a visitor in first, then opens the file over the row that keeps it, a task
- * say, on its channel's page, else on its own home channel's. Any channel type routes there, through the page its
- * module names.
- */
+/** The `/n` link: signs a visitor in, then opens the file over its host on the host's channel page, else on its own. */
 const openUrl = async (ctx: DbContext, attachment: AttachmentModel) => {
   const host = await findAttachmentHost(ctx, attachment);
   const { id: channelId, type: channelType } = host?.home ?? homeChannelOf('attachment', attachment);
@@ -60,10 +56,7 @@ const shortDate = (iso: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
 };
 
-/**
- * The unfurl of a file's share link `/{code}/a7`: its name, kind and channel, size, date and uploader, over a picture
- * of its kind, never of the file. Like a task's, it shows for a private file too: opening it still takes access.
- */
+/** Unfurl of `/{code}/a7` over a picture of the file's kind, never the file; shown for a private file too, as opening takes access. */
 export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview> {
   const found = await findLinkedAttachment(ctx, { channelId: channel.channelId, number });
 

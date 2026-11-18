@@ -129,10 +129,7 @@ export interface ChannelShareLink {
   preview(ctx: DbContext, channel: LinkedChannel): Promise<LinkPreview>;
 }
 
-/**
- * What a numbered product module's share link `/{code}/{letter}{n}` shows: its row numbered `n` in that channel, or a
- * 404. The letter is the product's `numberedProducts` entry.
- */
+/** What `/{code}/{letter}{n}` shows for a numbered product: its row `n` in that channel, or a 404. */
 export interface ProductShareLink {
   preview(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview>;
 }

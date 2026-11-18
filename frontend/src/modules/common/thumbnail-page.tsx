@@ -24,10 +24,7 @@ export function ThumbnailPage() {
   );
 }
 
-/**
- * The link preview image of a file's share link, at the same size: the icon and word of its kind, never the file
- * itself. `pnpm cella shoot` writes one per kind to `static/link-previews/<kind>.jpg`.
- */
+/** A file share link's preview: its kind, never the file; `pnpm cella shoot` writes one per kind to `static/link-previews`. */
 export function FileKindThumbnail({ kind }: { kind: FileKindName }) {
   const { t } = useTranslation();
   const { icon: Icon, label } = fileKindView(kind);

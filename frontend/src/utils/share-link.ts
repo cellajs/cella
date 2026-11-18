@@ -6,10 +6,7 @@ const frontendOrigin = new URL(appConfig.frontendUrl).origin;
 // The bare domain is shorter to paste; the load balancer sends it on to the app host with the path kept.
 const linkOrigin = redirectedApexOrigin(new URL(frontendOrigin).hostname, appConfig.domain) ?? frontendOrigin;
 
-/**
- * The link that unfurls in chats and opens a channel, or the product numbered `number` in it, in the app; the path
- * follows `shareLinkPath`. Null for a product type `numberedProducts` leaves out.
- */
+/** The link that unfurls in chats and opens a channel, or its product numbered `number`; null for an unnumbered type. */
 export function shareLink(code: string): string;
 export function shareLink(code: string, product: { type: ProductEntityType; number: number }): string | null;
 export function shareLink(code: string, product?: { type: ProductEntityType; number: number }) {
