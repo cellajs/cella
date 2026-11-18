@@ -38,10 +38,7 @@ interface ExportOptions {
   fileLink?: ExportFileLink;
 }
 
-/**
- * A media block as a copy writes it: the image itself only from a URL that serves its bytes, else a link to the file,
- * else its name. A caption follows as a line of its own, which Markdown keeps where it drops a figure's.
- */
+/** The image only from a URL serving its bytes, else a file link, else the name; the caption on its own line, which Markdown keeps. */
 const mediaForExport = (block: Extract<CustomBlock, { type: CustomBlockMediaTypes }>, { organizationId, fileLink }: ExportOptions): ExportBlock[] => {
   const ref = parseMediaRef(block.props.url, { organizationId });
   const fileUrl = ref.kind === 'asset' ? ref.url : ref.kind === 'orgKey' ? getPublicFileUrl(ref.key) : null;

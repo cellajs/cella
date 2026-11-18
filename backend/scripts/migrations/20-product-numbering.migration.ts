@@ -20,8 +20,7 @@ export const numberTriggerName = (tableName: string) => `${tableName}_number_tri
  * leaves its number in `product_number_moves`, where the old link reads that it moved. It takes the number it had in
  * the target channel before, or the next one. Numbers left behind are never handed out again.
  *
- * A table that joins `numberedProducts` numbers its rows at 0 once, oldest first, before its trigger exists: the trigger
- * refuses that update. A draft keeps 0. Rerun on numbered rows, the backfill finds nothing.
+ * A newly numbered table's rows at 0 are numbered once, oldest first, before its trigger exists, which would refuse that update.
  */
 function run(): SideEffectBlock {
   const counter = getTableName(productNumberingTable);

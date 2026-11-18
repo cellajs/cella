@@ -4,10 +4,7 @@ import { asRecord } from 'shared/utils/as-record';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { shareLink } from '~/utils/share-link';
 
-/**
- * The share link of a file, `/{code}/a7`: its home channel's code and its number. Null until the server numbers it,
- * while that channel is not cached, or in an app whose `numberedProducts` leaves attachments out.
- */
+/** A file's `/{code}/a7` link; null while unnumbered, its home channel uncached, or attachments not in `numberedProducts`. */
 export const attachmentShareLink = (attachment: Pick<Attachment, 'number' | 'organizationId'>) => {
   if (!attachment.number) return null;
   const [home] = hierarchy.resolveNonNullAncestors('attachment', asRecord(attachment));
