@@ -1,4 +1,4 @@
-import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge/extract-closest-edge';
 import { useRef } from 'react';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import { useOnlineManager } from '~/hooks/use-online-manager';

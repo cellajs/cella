@@ -1,7 +1,7 @@
 import type { LucideProps } from 'lucide-react';
 import { cn } from '~/utils/cn';
 
-export function ElementIcon({ className, size: _, strokeWidth: __, absoluteStrokeWidth: ___, ...props }: LucideProps) {
+export function ElementIcon({ className, size: _, strokeWidth: __, nonScalingStroke: ___, ...props }: Omit<LucideProps, 'absoluteStrokeWidth'>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" className={cn('lucide', className)} {...props}>
       <path

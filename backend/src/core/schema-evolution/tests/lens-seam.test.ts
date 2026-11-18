@@ -73,7 +73,7 @@ describe('createUpdateSchema widening', () => {
 });
 
 describe('arrayDeltaSchema', () => {
-  const deltaSchema = arrayDeltaSchema(z.string().uuid(), 2);
+  const deltaSchema = arrayDeltaSchema(z.uuid(), 2);
 
   it('validates item shape and applies defaults', () => {
     expect(deltaSchema.parse({ add: ['00000000-0000-4000-8000-000000000001'] })).toEqual({

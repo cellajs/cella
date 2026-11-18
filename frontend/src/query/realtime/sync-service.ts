@@ -1,4 +1,4 @@
-import type { FetchInfiniteQueryOptions, FetchQueryOptions, QueryKey } from '@tanstack/react-query';
+import type { InfiniteQueryExecuteOptions, QueryExecuteOptions, QueryKey } from '@tanstack/react-query';
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import { type ApiError, isRateLimited } from '~/lib/api';
 import { msUntilBudget, userReadShare } from '~/lib/reported-budgets';
@@ -10,8 +10,8 @@ import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
 import { waitFor, whenVisible } from '~/utils/wait-for';
 
-type SyncInfiniteCall = FetchInfiniteQueryOptions<unknown, ApiError, unknown, QueryKey, unknown>;
-type SyncSingleCall = FetchQueryOptions<unknown, ApiError, unknown, QueryKey>;
+type SyncInfiniteCall = InfiniteQueryExecuteOptions<unknown, ApiError, unknown, QueryKey, unknown>;
+type SyncSingleCall = QueryExecuteOptions<unknown, ApiError, unknown, unknown, QueryKey>;
 
 const isInfiniteCall = (options: SyncInfiniteCall | SyncSingleCall): options is SyncInfiniteCall => 'getNextPageParam' in options;
 

@@ -1,4 +1,4 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type CSSProperties, type Dispatch, type SetStateAction, useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';

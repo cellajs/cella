@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { ChevronRightIcon, CircleAlertIcon, CircleCheckIcon, ClipboardPasteIcon, ClockIcon, MailIcon, SendIcon, UsersRoundIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { type ComponentType, type FormEvent, Fragment, type ReactNode, type RefObject, useRef, useState } from 'react';
+import { type ComponentType, Fragment, type ReactNode, type RefObject, type SubmitEvent, useRef, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
@@ -217,7 +217,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode }: InviteUsersP
   const modes: InviteMode[] = channel ? ['email', 'search', 'bulk'] : ['email', 'bulk'];
   const Field = inviteMode ? inviteModes[inviteMode].Field : null;
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setReport(null);
     if (list.commitTyped() && list.commitPasted()) form.handleSubmit(onSubmit)(event);
