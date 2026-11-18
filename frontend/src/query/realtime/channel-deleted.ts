@@ -45,7 +45,7 @@ function dropChannel(organizationId: string, channelId: string): Set<string> {
   for (const productType of productTypesBelowChannels()) {
     for (const row of removeAtOrInside(productType, channelId)) {
       const homeChannelId = hierarchy.resolveDeepestAncestorId(productType, row);
-      publishChangeEvent({ action: 'delete', entityType: productType, organizationId, channelId: homeChannelId, subjectId: row.id });
+      publishChangeEvent({ action: 'delete', productType, organizationId, channelId: homeChannelId, subjectId: row.id });
     }
   }
 

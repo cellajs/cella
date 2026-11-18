@@ -90,11 +90,11 @@ class AttachmentDownloadService {
     // A delete by anyone else arrives through sync: a tombstone row in a fetched range, or the announcement of a hard
     // delete or of a move that took the row out of this reader's reach.
     this.syncUnsubscribes = [
-      onSyncedRows(({ entityType, rows }) => {
-        if (entityType === 'attachment') this.purge(rows.filter((row) => row.deletedAt).map((row) => row.id));
+      onSyncedRows(({ productType, rows }) => {
+        if (productType === 'attachment') this.purge(rows.filter((row) => row.deletedAt).map((row) => row.id));
       }),
-      onChangeEvent(({ entityType, action, subjectId }) => {
-        if (entityType === 'attachment' && (action === 'delete' || action === 'moveOut') && subjectId) this.purge([subjectId]);
+      onChangeEvent(({ productType, action, subjectId }) => {
+        if (productType === 'attachment' && (action === 'delete' || action === 'moveOut') && subjectId) this.purge([subjectId]);
       }),
     ];
 

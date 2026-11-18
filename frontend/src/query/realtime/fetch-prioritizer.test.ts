@@ -40,7 +40,7 @@ const background = { min: 2_000, max: 30_000 };
 const viewing = { min: 0, max: 0 };
 const onOpen = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
-const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
+const base = { productType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, hasCreates: false };
 const cursor = () => syncStore.getState().getOrgSeq('org-1', 'attachment');
 
 /** What the API client books when the read budget refuses a GET. */
@@ -81,7 +81,7 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
     expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
-    expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
+    expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ productType: 'attachment', organizationId: 'org-1', rows: items });
 
     // The row's next change names its new position, and its range starts where the cursor moved to.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 9 });
@@ -109,7 +109,7 @@ describe('fetch-prioritizer', () => {
       const syncedRows = vi.fn();
       const off = onSyncedRows(syncedRows);
       fetchRangeAndPatch.mockResolvedValue({ status, items: [] });
-      enqueueRange({ ...base, afterSeq: 0, untilSeq: 9, isCreate: true });
+      enqueueRange({ ...base, afterSeq: 0, untilSeq: 9, hasCreates: true });
 
       // One attempt per flush: a failing fetch is retried before it falls back, so the range cannot loop.
       for (let attempt = 0; attempt < 3; attempt++) await flushAllNow();
@@ -222,14 +222,14 @@ describe('fetch-prioritizer', () => {
     const off = onSyncedRows(syncedRows);
     const items = [{ id: 'a1' }, { id: 'a2' }];
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
-    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, isCreate: true });
-    enqueueRange({ ...base, afterSeq: 6, untilSeq: 9, isCreate: true });
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, hasCreates: true });
+    enqueueRange({ ...base, afterSeq: 6, untilSeq: 9, hasCreates: true });
 
     await flushAllNow();
     off();
 
     expect(syncedRows).toHaveBeenCalledTimes(1);
-    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
+    expect(syncedRows).toHaveBeenCalledWith({ productType: 'attachment', organizationId: 'org-1', rows: items });
     expect(invalidateUnseenCounts).not.toHaveBeenCalled();
   });
 

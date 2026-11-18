@@ -83,21 +83,21 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
     if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
-      const { organizationId, productType: entityType } = answer;
-      if (!hasEntityQueryKeys(entityType)) continue;
-      const viewKey = `${organizationId}:${entityType}`;
+      const { organizationId, productType } = answer;
+      if (!hasEntityQueryKeys(productType)) continue;
+      const viewKey = `${organizationId}:${productType}`;
 
       if (answer.status === 'forbidden') {
         console.debug(`[CatchupProcessor] View ${viewKey}: forbidden → dropped`);
         continue;
       }
 
-      const keys = getEntityQueryKeys(entityType);
+      const keys = getEntityQueryKeys(productType);
 
       if (answer.status === 'opaque') {
         opaqueScopes.add(viewKey);
         // Before the lists refetch, so a list read in flight finds no cursor move to read again.
-        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProductType }) => embeddedProductType === entityType);
+        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProductType }) => embeddedProductType === productType);
         if (!baselineOnly && hint) settleOpaqueHint(organizationId, hint, keys);
         // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
         if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
@@ -108,7 +108,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
       }
 
       const frontier = answer.frontier ?? 0;
-      const clientCursor = syncState.getOrgSeq(organizationId, entityType);
+      const clientCursor = syncState.getOrgSeq(organizationId, productType);
 
       // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it
       // refetches, unless the frontier is 0: no change exists that the read could have missed. A pending start over's refetch covers it.
@@ -117,7 +117,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
           console.debug(`[CatchupProcessor] View ${viewKey}: first session → full refetch`);
         }
-        syncState.setOrgSeq(organizationId, entityType, frontier);
+        syncState.setOrgSeq(organizationId, productType, frontier);
         continue;
       }
 
@@ -127,21 +127,21 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
 
       // A connection waits for the bound database's restore, so no list of this scope is on disk either: the next read fetches it whole.
       if (!hasAnyCachedList(keys, organizationId)) {
-        syncState.setOrgSeq(organizationId, entityType, frontier);
+        syncState.setOrgSeq(organizationId, productType, frontier);
         console.debug(`[CatchupProcessor] View ${viewKey}: no cached list → skip range fetch`);
         continue;
       }
 
       // Every gap goes through the fetch prioritizer; the viewing org flushes now and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
       enqueueCatchupRange({
-        entityType,
+        productType,
         organizationId,
         tenantId,
         channelId: null,
         afterSeq: clientCursor,
         untilSeq: frontier,
-        isCreate: false,
-        spreadWindowMs: organizations[organizationId]?.spreadWindow,
+        hasCreates: false,
+        spreadWindow: organizations[organizationId]?.spreadWindow,
       });
 
       if (getSyncTier(organizationId, null).min > 0) {
@@ -149,7 +149,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
         continue;
       }
 
-      const outcome = await flushChannelViewNow(entityType, organizationId, null);
+      const outcome = await flushChannelViewNow(productType, organizationId, null);
       console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → ${outcome}`);
     }
   }

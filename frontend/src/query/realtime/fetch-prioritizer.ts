@@ -25,21 +25,8 @@ const retryBaseMs = 2_000;
 /** Re-check delay while offline, where a fetch would fail; catchup reconciles on reconnect. */
 const offlineRecheckMs = 5_000;
 
-interface EnqueueInput {
-  entityType: ProductEntityType;
-  organizationId: string;
-  tenantId: string | null;
-  channelId: string | null;
-  afterSeq: number;
-  untilSeq: number;
-  isCreate: boolean;
-  spreadWindowMs?: number;
-  propagation?: StreamChange['propagation'];
-  rangeKey?: string;
-}
-
 interface DirtyEntry {
-  entityType: ProductEntityType;
+  productType: ProductEntityType;
   organizationId: string;
   tenantId: string | null;
   channelId: string | null;
@@ -53,6 +40,14 @@ interface DirtyEntry {
   rangeKey?: string;
 }
 
+type EnqueueInput = Pick<
+  DirtyEntry,
+  'productType' | 'organizationId' | 'tenantId' | 'channelId' | 'afterSeq' | 'untilSeq' | 'hasCreates' | 'rangeKey'
+> & {
+  spreadWindow?: number | null;
+  propagation?: StreamChange['propagation'];
+};
+
 const dirty = new Map<string, DirtyEntry>();
 /** Reads running per product type and organization, by `groupOf`: no range read of a group starts while it has one. */
 const busyGroups = new Map<string, number>();
@@ -60,8 +55,9 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let holdTimer: ReturnType<typeof setTimeout> | null = null;
 let listenersInstalled = false;
 
-const entryKey = (entityType: ProductEntityType, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
-const groupOf = ({ entityType, organizationId }: Pick<DirtyEntry, 'entityType' | 'organizationId'>) => `${entityType}:${organizationId}`;
+const entryKey = (productType: ProductEntityType, organizationId: string, channelId: string | null) =>
+  `${productType}:${channelId ?? organizationId}`;
+const groupOf = ({ productType, organizationId }: Pick<DirtyEntry, 'productType' | 'organizationId'>) => `${productType}:${organizationId}`;
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
 function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: number): number {
@@ -81,27 +77,27 @@ export function enqueueCatchupRange(input: EnqueueInput): void {
 }
 
 function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
-  const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
-  if (!hasEntityQueryKeys(entityType)) return;
+  const { productType, organizationId, tenantId, channelId, afterSeq, untilSeq, hasCreates, propagation } = input;
+  if (!hasEntityQueryKeys(productType)) return;
 
-  const caughtUp = syncStore.getState().getScopeSeq(organizationId, channelId, entityType);
+  const caughtUp = syncStore.getState().getScopeSeq(organizationId, channelId, productType);
   if (untilSeq <= caughtUp) return;
 
   // Anchoring after the caught-up position heals missed-change gaps and trims already-ingested overlap; with no baseline, trust the change's own range.
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
-  const key = entryKey(entityType, organizationId, channelId);
+  const key = entryKey(productType, organizationId, channelId);
   // The on-open tier gives an infinite delay: the entry waits for promoteLiveChannels.
-  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? defaultSpreadWindowMs);
+  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindow ?? defaultSpreadWindowMs);
   const entry: DirtyEntry = {
-    entityType,
+    productType,
     organizationId,
     tenantId,
     channelId,
     afterSeq: anchoredAfter,
     untilSeq,
     dueAt,
-    hasCreates: isCreate,
+    hasCreates,
     attempts: 0,
     propagations: propagation ? [propagation] : [],
     rangeKey: input.rangeKey,
@@ -123,11 +119,11 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
 
 /** Attach a catchup propagation hint to the pending org range of the hint's embedded product, so it runs after the fetch that ingests the fresh embedded rows. False when nothing is pending for that scope; the caller then propagates at once. */
 export function attachPendingPropagation(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   organizationId: string,
   propagation: NonNullable<StreamChange['propagation']>,
 ): boolean {
-  const entry = dirty.get(entryKey(entityType, organizationId, null));
+  const entry = dirty.get(entryKey(productType, organizationId, null));
   if (!entry) return false;
   entry.propagations.push(propagation);
   return true;
@@ -144,21 +140,21 @@ export function flushAllNow(): Promise<void> {
  * beside a running read of its group, and leaves the view queued while the read budget is spent.
  */
 export async function flushChannelViewNow(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   organizationId: string,
   channelId: string | null,
 ): Promise<'ok' | 'fallback' | 'requeued' | 'none'> {
-  const key = entryKey(entityType, organizationId, channelId);
+  const key = entryKey(productType, organizationId, channelId);
   const entry = dirty.get(key);
   if (!entry) return 'none';
   if (msUntilBudget('read', 0)) return 'requeued';
   dirty.delete(key);
-  return excludingRangeReads(entityType, organizationId, () => flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]));
+  return excludingRangeReads(productType, organizationId, () => flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]));
 }
 
 /** Runs `read` while no range read of its product type and organization starts: one read at a time keeps their patches in order. */
-export async function excludingRangeReads<T>(entityType: ProductEntityType, organizationId: string, read: () => Promise<T>): Promise<T> {
-  const group = groupOf({ entityType, organizationId });
+export async function excludingRangeReads<T>(productType: ProductEntityType, organizationId: string, read: () => Promise<T>): Promise<T> {
+  const group = groupOf({ productType, organizationId });
   busyGroups.set(group, (busyGroups.get(group) ?? 0) + 1);
   try {
     return await read();
@@ -204,7 +200,7 @@ function armTimer(): void {
 
 async function flushDue(): Promise<void> {
   const now = Date.now();
-  // Covering fetch: all due channels of one (entityType, org) share one bounded fetch, and rows route to their home lists during patching.
+  // Covering fetch: all due channels of one (productType, org) share one bounded fetch, and rows route to their home lists during patching.
   const groups = new Map<string, DirtyEntry[]>();
   for (const [key, entry] of dirty) {
     if (readableAt(entry, now) > now) continue;
@@ -215,7 +211,7 @@ async function flushDue(): Promise<void> {
     else groups.set(groupOf(entry), [entry]);
   }
   await Promise.all(
-    [...groups.values()].map((entries) => excludingRangeReads(entries[0].entityType, entries[0].organizationId, () => flushGroup(entries))),
+    [...groups.values()].map((entries) => excludingRangeReads(entries[0].productType, entries[0].organizationId, () => flushGroup(entries))),
   );
   armTimer();
 }
@@ -247,7 +243,7 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
 
 /** Flush one covering group: fetch the merged range once, then settle every entry from it. */
 async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'requeued'> {
-  const { entityType, organizationId } = due[0];
+  const { productType, organizationId } = due[0];
   const tenantId = due.find((entry) => entry.tenantId)?.tenantId ?? null;
 
   if (!onlineManager.isOnline()) {
@@ -258,7 +254,7 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
   // A read that waited behind another starts where that one ended, and an entry whose range the cursor passed reads nothing.
   const entries: DirtyEntry[] = [];
   for (const entry of due) {
-    const caughtUp = syncStore.getState().getScopeSeq(organizationId, entry.channelId, entityType);
+    const caughtUp = syncStore.getState().getScopeSeq(organizationId, entry.channelId, productType);
     if (entry.untilSeq > caughtUp) entries.push({ ...entry, afterSeq: caughtUp > 0 ? caughtUp : entry.afterSeq });
     else for (const propagation of entry.propagations) propagateEmbeddings(propagation);
   }
@@ -266,10 +262,10 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
 
   const afterSeq = Math.min(...entries.map((entry) => entry.afterSeq));
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
-  const keys = getEntityQueryKeys(entityType);
+  const keys = getEntityQueryKeys(productType);
   const channelId = coveringChannelId(entries);
   const rangeKey = entries.find((entry) => entry.rangeKey)?.rangeKey;
-  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId, rangeKey);
+  const result = await cacheOps.fetchRangeAndPatch(productType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId, rangeKey);
 
   // A refusal counts no attempt and marks no list: the range keeps its cursor and reads once the budget has reads left.
   if (result.status === 'limited') {
@@ -284,16 +280,16 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
   }
 
   // Each due channel advances to the shared upper bound, also past a range not delivered whole: its refetch mark recovers it, and no later catchup fetches it again.
-  for (const entry of entries) syncStore.getState().setScopeSeq(organizationId, entry.channelId, entityType, untilSeq);
+  for (const entry of entries) syncStore.getState().setScopeSeq(organizationId, entry.channelId, productType, untilSeq);
 
   // The org id is the fallback home for rows without ancestor ids.
-  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items });
+  if (result.status === 'ok') publishSyncedRows({ productType, organizationId, rows: result.items });
 
   // Overflow, unsupported, exhausted retries, or fewer rows than announced: a row changed again since, one this reader may not read, or one deleted with its channel.
   const undelivered = result.status !== 'ok' || result.reachedSeq < untilSeq;
   if (undelivered) {
     invalidateUndelivered(
-      entityType,
+      productType,
       organizationId,
       entries.map((entry) => entry.channelId),
       entries.some((entry) => entry.hasCreates),
@@ -313,14 +309,14 @@ async function flushGroup(due: DirtyEntry[]): Promise<'ok' | 'fallback' | 'reque
  * opened or read by the sync service, and `recountUnseen` asks for an exact unseen recount.
  */
 export function invalidateUndelivered(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   organizationId: string,
   channelIds: (string | null)[],
   recountUnseen: boolean,
 ): void {
   const anyViewing = channelIds.some((channelId) => isViewingChannel(organizationId, channelId));
-  cacheOps.invalidateEntityListForOrg(getEntityQueryKeys(entityType), organizationId, anyViewing ? 'active' : 'none');
-  if (recountUnseen) invalidateUnseenCounts(entityType);
+  cacheOps.invalidateEntityListForOrg(getEntityQueryKeys(productType), organizationId, anyViewing ? 'active' : 'none');
+  if (recountUnseen) invalidateUnseenCounts(productType);
 }
 
 /** Once the read budget has reads left, the product queries on screen whose read it refused read again. */
@@ -341,7 +337,7 @@ export function refetchRefusedAfterHold(): void {
 }
 
 function requeue(entry: DirtyEntry, delayMs: number): void {
-  const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
+  const key = entryKey(entry.productType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
   // A newer change re-enqueued this channel view mid-flight: merge this range back into it.
   if (existing) mergeRange(existing, entry);
