@@ -2,7 +2,7 @@ import type { DbContext } from '#/core/context';
 import { type DigestSection, describeDigestRow } from '#/modules/notification/helpers/render-digest-html';
 import {
   type FindUndigestedNotificationsOpts,
-  findChannelLabels,
+  findChannelsMinimal,
   findUndigestedNotifications,
   getUserAccess,
 } from '#/modules/notification/notification-queries';
@@ -37,7 +37,7 @@ export async function buildDigestForUser(ctx: DbContext, { userId, since, before
   if (rows.length === 0) return [];
 
   const contextNames = await findContextNames(rows.map((row) => ({ ...row, id: row.contextId })));
-  const channels = await findChannelLabels(ctx, { channelIds: rows.map((row) => row.channelId) });
+  const channels = await findChannelsMinimal(ctx, { channelIds: rows.map((row) => row.channelId) });
 
   const sections: DigestSection[] = [];
   for (const [channelId, channelRows] of Map.groupBy(rows, (row) => row.channelId)) {

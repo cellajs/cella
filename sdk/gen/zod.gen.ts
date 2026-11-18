@@ -2274,10 +2274,24 @@ export const zListNotificationsResponse = z.object({
           }),
         )
         .nullable(),
-      channelName: z.string(),
-      channelThumbnailUrl: z.string().nullable(),
-      organizationName: z.string(),
-      organizationThumbnailUrl: z.string().nullable(),
+      channel: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
+      organization: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
       subjectName: z.string(),
     }),
   ),

@@ -10,7 +10,7 @@ import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-to
 import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import { instantEmailKinds } from '#/modules/notification/notification-kinds';
 import {
-  findChannelLabels,
+  findChannelsMinimal,
   findUsersMinimal,
   findVerifiedRecipients,
   stampNotificationsMailed,
@@ -48,7 +48,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   if (mailable.length === 0) return;
 
   const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
-  const channels = await findChannelLabels(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
+  const channels = await findChannelsMinimal(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
   const contextNames = await findContextNames(mailable.map((row) => ({ ...row, id: row.contextId })));
 
   let mailed = 0;

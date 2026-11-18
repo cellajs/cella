@@ -3,7 +3,7 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { digestFrequencies, notificationsTable } from '#/modules/notification/notification-db';
 import { booleanTransformSchema, maxPageSizeSchema, pageQuerySchema, paginationSchema, validIdSchema } from '#/schemas';
 import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
-import { userMinimalBaseSchema } from '#/schemas/minimal-base';
+import { channelMinimalBaseSchema, minimalBaseSchema, userMinimalBaseSchema } from '#/schemas/minimal-base';
 
 const actorExample = mockUserMinimalBase('notification-actor');
 const nullableActorSchema = z.union([
@@ -14,18 +14,18 @@ const nullableActorSchema = z.union([
   z.null(),
 ]);
 
+/** The stored columns an inbox row answers with: all but its recipient, activity and mail stamp. */
+export const notificationRowSchema = createSelectSchema(notificationsTable).omit({ userId: true, activityId: true, mailedAt: true });
+
 // Route params accept ids in place of slugs (beforeLoad rewrites), so `tenantId`, `organizationId` and `channelId`
 // deep-link without resolving slugs first.
-export const notificationSchema = createSelectSchema(notificationsTable).omit({ userId: true, activityId: true, mailedAt: true }).extend({
+export const notificationSchema = notificationRowSchema.extend({
   /** Who caused it, for the card's avatar and sentence; null when the actor is no user or the user is gone. */
   actor: nullableActorSchema,
-  /** Display names for the card's sentence; empty when the subject is gone or the user may not read it. */
-  channelName: z.string(),
-  /** Null with no image, and when the subject is gone or the user may not read it. */
-  channelThumbnailUrl: z.string().nullable(),
-  /** The organization of the row, which the recipient belongs to, for the card's place. */
-  organizationName: z.string(),
-  organizationThumbnailUrl: z.string().nullable(),
+  /** The subject's home channel, for the card's place and sentence; null when the subject is gone or the user may not read it. */
+  channel: channelMinimalBaseSchema.nullable(),
+  /** The organization of the row, which the recipient belongs to; null once it is deleted, as a system admin keeps its rows. */
+  organization: minimalBaseSchema('organization').nullable(),
   /** The context's name, as the digest names it: the thread for a comment or reply, else the subject's own. */
   subjectName: z.string(),
 });

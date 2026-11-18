@@ -5365,10 +5365,20 @@ export type ListNotificationsResponses = {
             givenName: string | null;
           })
         | null;
-      channelName: string;
-      channelThumbnailUrl: string | null;
-      organizationName: string;
-      organizationThumbnailUrl: string | null;
+      channel: {
+        id: string;
+        name: string;
+        slug: string;
+        thumbnailUrl: string | null;
+        entityType: 'organization';
+      } | null;
+      organization: {
+        id: string;
+        name: string;
+        slug: string;
+        thumbnailUrl: string | null;
+        entityType: 'organization';
+      } | null;
       subjectName: string;
     }>;
     /**

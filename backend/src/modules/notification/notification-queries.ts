@@ -1,5 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
-import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
+import { and, asc, count, desc, eq, getColumns, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
 import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
@@ -16,12 +15,13 @@ import {
   notificationPreferencesTable,
   notificationsTable,
 } from '#/modules/notification/notification-db';
+import { notificationRowSchema } from '#/modules/notification/notification-schema';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { findExistingUserIds } from '#/modules/user/user-queries';
-import { toMinimalBase, type UserMinimalBase } from '#/schemas/minimal-base';
+import { type ChannelMinimalBase, minimalBaseColumns, toMinimalBase, type UserMinimalBase } from '#/schemas/minimal-base';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
@@ -49,6 +49,8 @@ export interface FindNotificationsOpts {
   limit: number;
 }
 
+const notificationRowColumns = pick(getColumns(notificationsTable), notificationRowSchema.keyof().options);
+
 /** A window of a user's inbox, newest first, and the rows the inbox holds. */
 export async function findNotificationsByUser(ctx: DbContext, { userId, unreadOnly, offset, limit }: FindNotificationsOpts) {
   const { db } = ctx.var;
@@ -57,7 +59,7 @@ export async function findNotificationsByUser(ctx: DbContext, { userId, unreadOn
   const where = and(...filters);
 
   const itemsQuery = db
-    .select()
+    .select(notificationRowColumns)
     .from(notificationsTable)
     .where(where)
     .orderBy(desc(notificationsTable.createdAt), desc(notificationsTable.id))
@@ -231,38 +233,28 @@ export async function getUserAccess(ctx: DbContext, { userIds }: { userIds: stri
   return result;
 }
 
-/** Columns every channel table has; the table union needs narrowing to select them. */
-type LabelledTable = AnyPgTable & { id: PgColumn; name: PgColumn; thumbnailUrl: PgColumn };
-
-export type ChannelLabel = { name: string; thumbnailUrl: string | null };
-
 /**
- * Name and thumbnail for a set of channel ids, organizations included, so a digest can group by channel and a card
- * can show its place without the caller knowing which table each id lives in.
+ * Minimal references for a set of channel ids, organizations included, keyed by id. The caller need not know which
+ * table each id lives in: a digest groups by channel and a card shows its place.
  *
  * Channel tables sit outside RLS (application-layer guards cover them), and the ids only ever come from rows the
  * recipient was already cleared to read, or from the organization of an inbox row, which the recipient belongs to.
  */
-export async function findChannelLabels(ctx: DbContext, { channelIds }: { channelIds: string[] }): Promise<Map<string, ChannelLabel>> {
-  const labels = new Map<string, ChannelLabel>();
-  if (channelIds.length === 0) return labels;
+export async function findChannelsMinimal(ctx: DbContext, { channelIds }: { channelIds: string[] }) {
+  const channels = new Map<string, ChannelMinimalBase>();
+  if (channelIds.length === 0) return channels;
 
   const unique = [...new Set(channelIds)];
 
   await Promise.all(
     appConfig.channelEntityTypes.map(async (channelType) => {
-      const table = getEntityTable(channelType) as LabelledTable;
-      const rows = await ctx.var.db
-        .select({ id: table.id, name: table.name, thumbnailUrl: table.thumbnailUrl })
-        .from(table)
-        .where(inArray(table.id, unique));
-      for (const row of rows) {
-        labels.set(String(row.id), { name: String(row.name), thumbnailUrl: row.thumbnailUrl === null ? null : String(row.thumbnailUrl) });
-      }
+      const table = getEntityTable(channelType);
+      const rows = await ctx.var.db.select(minimalBaseColumns(table)).from(table).where(inArray(table.id, unique));
+      for (const row of rows) channels.set(row.id, toMinimalBase(channelType, row));
     }),
   );
 
-  return labels;
+  return channels;
 }
 
 interface UserIdsOpts {

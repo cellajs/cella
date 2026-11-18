@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
+import { channelEntityTypeSchema } from '#/schemas/common-schemas';
 import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
 import { pick } from '#/utils/pick';
 
@@ -21,6 +22,11 @@ type MinimalBaseKey = (typeof minimalBaseKeys)[number];
  * entity stays unnamed and inlines where it is used.
  */
 export const minimalBaseSchema = <T extends string>(entityType: T) => minimalBaseFieldsSchema.extend({ entityType: z.literal(entityType) });
+
+/** A minimal reference to a channel of any type. */
+export const channelMinimalBaseSchema = minimalBaseFieldsSchema.extend({ entityType: channelEntityTypeSchema });
+
+export type ChannelMinimalBase = z.infer<typeof channelMinimalBaseSchema>;
 
 /** The minimal fields of a table or subquery, for a select; `entityType` is no column, {@link toMinimalBase} adds it. */
 export const minimalBaseColumns = <T extends Record<MinimalBaseKey, unknown>>(columns: T) => pick(columns, minimalBaseKeys);

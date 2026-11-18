@@ -12514,17 +12514,49 @@
                               }
                             ]
                           },
-                          "channelName": {
-                            "type": "string"
+                          "channel": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "thumbnailUrl": {
+                                "type": ["string", "null"]
+                              },
+                              "entityType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              }
+                            },
+                            "required": ["id", "name", "slug", "thumbnailUrl", "entityType"]
                           },
-                          "channelThumbnailUrl": {
-                            "type": ["string", "null"]
-                          },
-                          "organizationName": {
-                            "type": "string"
-                          },
-                          "organizationThumbnailUrl": {
-                            "type": ["string", "null"]
+                          "organization": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "thumbnailUrl": {
+                                "type": ["string", "null"]
+                              },
+                              "entityType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              }
+                            },
+                            "required": ["id", "name", "slug", "thumbnailUrl", "entityType"]
                           },
                           "subjectName": {
                             "type": "string"
@@ -12544,10 +12576,8 @@
                           "tenantId",
                           "readAt",
                           "actor",
-                          "channelName",
-                          "channelThumbnailUrl",
-                          "organizationName",
-                          "organizationThumbnailUrl",
+                          "channel",
+                          "organization",
                           "subjectName"
                         ]
                       }

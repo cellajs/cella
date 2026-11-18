@@ -87,17 +87,10 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
     if (!notification.readAt) onOpen({ ids: [notification.id] });
   };
 
-  const { actor, channelName, subjectName } = notification;
+  const { actor, channel, organization, subjectName } = notification;
   // A subject homed in the organization names no channel; the avatar's mark names the organization where it helps
   const hasChannel = notification.channelType !== 'organization';
-  const mark = hasChannel
-    ? { type: notification.channelType, id: notification.channelId, name: channelName, url: notification.channelThumbnailUrl }
-    : showOrganization && {
-        type: 'organization' as const,
-        id: notification.organizationId,
-        name: notification.organizationName,
-        url: notification.organizationThumbnailUrl,
-      };
+  const mark = hasChannel ? channel : showOrganization && organization;
   const content = (
     <>
       <span className={cn('relative shrink-0', notification.readAt && 'opacity-70')}>
@@ -105,7 +98,10 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
         {mark && (
           <EntityAvatar
             aria-hidden={hasChannel}
-            {...mark}
+            type={mark.entityType}
+            id={mark.id}
+            name={mark.name}
+            url={mark.thumbnailUrl}
             className={cn('absolute -right-1 -bottom-1 size-4 rounded-sm ring-2', notification.readAt ? 'ring-card' : 'ring-accent')}
           />
         )}
@@ -115,7 +111,7 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
         {t(hasChannel ? `c:notification.${notification.kind}` : `c:notification.${notification.kind}.no_channel`, {
           actor: actor?.givenName || actor?.name || t('c:someone'),
           subject: subjectName || t('c:unknown'),
-          channel: channelName || t('c:unknown'),
+          channel: channel?.name || t('c:unknown'),
         })}{' '}
         <span className="text-muted-foreground text-xs whitespace-nowrap">
           <span aria-hidden className="mr-1">
