@@ -1,6 +1,6 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
-import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiIssuerUrl } from '#/modules/lti-platform/helpers/platform-offer';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
@@ -152,6 +152,7 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
     path: '/~initiate-login',
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [publicGuard],
+    xRateLimiter: [ltiLaunchLimiter],
     summary: 'Initiate LTI login',
     description:
       "The page a launch frame loads: it posts the login initiation (1EdTech Security Framework, section 5.1.1.1) to the LTI tool's login address, with hints that refer to the launch record. Loading it leaves the record for the launch endpoint, which spends it.",

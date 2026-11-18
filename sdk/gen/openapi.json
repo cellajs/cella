@@ -245,7 +245,7 @@
           },
           "ltiLaunchLimiter": {
             "name": "LTI launches",
-            "description": "Launch posts and finishes for each IP address, refused or not.",
+            "description": "Launch steps for each IP address, refused or not.",
             "policy": {
               "mode": "limit",
               "points": 600,
@@ -2379,7 +2379,14 @@
           },
           "domain": {
             "type": "string",
-            "description": "The LTI tool's domain, where its launches go"
+            "description": "The domain the LTI tool names itself by: a label it picks"
+          },
+          "launchOrigins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"
           },
           "description": {
             "type": ["string", "null"]
@@ -2529,6 +2536,7 @@
           "name",
           "logoUri",
           "domain",
+          "launchOrigins",
           "description",
           "claims",
           "requestedFields",
@@ -2547,6 +2555,7 @@
           "name": "Peer review",
           "logoUri": "https://peer-review.example.com/logo.svg",
           "domain": "peer-review.example.com",
+          "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
           "description": "Students review the drafts of their peers.",
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
@@ -4331,8 +4340,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 100,
-                    "description": "The LTI deployments of the app at the platform; empty until the platform names one"
+                    "maxItems": 1,
+                    "description": "The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either"
                   }
                 },
                 "required": ["authorizationEndpoint", "tokenEndpoint", "jwksUri", "productFamilyCode", "version", "deploymentIds"]
@@ -6910,7 +6919,7 @@
         "operationId": "signOut",
         "tags": ["auth", "cella"],
         "summary": "Sign out",
-        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.",
+        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
         "x-guard": ["publicGuard"],
         "responses": {
           "204": {
@@ -9145,7 +9154,7 @@
         "operationId": "initiateLtiLogin",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Every page here may be framed by the connection's platform alone.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9250,7 +9259,7 @@
         "operationId": "initiateLtiLoginByPost",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch by form post",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Every page here may be framed by the connection's platform alone. A cross-site form post by design: the CSRF check leaves it out.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9445,7 +9454,7 @@
             "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
           },
           "403": {
-            "description": "Launch refused\n\nA page: not same-origin, an anonymous launch, a launch without roles, or a test user."
+            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user."
           },
           "404": {
             "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
@@ -10561,6 +10570,7 @@
                       "name": "Peer review",
                       "logoUri": "https://peer-review.example.com/logo.svg",
                       "domain": "peer-review.example.com",
+                      "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
                       "description": "Students review the drafts of their peers.",
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
@@ -11380,7 +11390,7 @@
           "feature": "ltiPlatform"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["readLimiter"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
         "parameters": [
           {
             "schema": {
@@ -19956,7 +19966,7 @@
         "operationId": "deleteLtiConnection",
         "tags": ["connections", "cella"],
         "summary": "Delete LTI connection",
-        "description": "Removes an LTI connection: its platform launches the app no more. Identities and sessions that came through it keep their rows; members stay members.",
+        "description": "Removes an LTI connection: its platform launches the app no more, and every session its launches started ends. Identities that came through it keep their rows; members stay members.",
         "x-enabled-by": {
           "strategy": "lti"
         },

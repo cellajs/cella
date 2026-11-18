@@ -19,10 +19,16 @@ export type { PendingSignUp } from '#/modules/auth/core/tokens/tokens-db';
  */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secretHash' | 'singleUseToken' | 'email'> & { email: string };
 
-const { secretHash: _secretHash, singleUseToken: _singleUseToken, email, ...columns } = getColumns(tokensTable);
+const { secretHash: _secretHash, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
 
-// Every read through these columns names an addressed kind, which `issueTokens` always gives an address.
-const tokenColumns = { ...columns, email: sql<string>`${email}` };
+/**
+ * A row these queries read, of an addressed kind, which `issueTokens` always gives an address.
+ * @throws Error for a row without one: a handoff token, which these queries never name.
+ */
+const addressed = <T extends { id: string; email: string | null }>(row: T) => {
+  if (row.email === null) throw new Error(`Token ${row.id} holds no address`);
+  return { ...row, email: row.email };
+};
 
 interface FindInvitationTokenOpts {
   id: string;
@@ -40,7 +46,7 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
     .from(tokensTable)
     .where(and(eq(tokensTable.kind, 'invitation'), eq(tokensTable.id, id)));
   const [token] = forUpdate ? await query.for('update') : await query;
-  return token;
+  return token && addressed(token);
 };
 
 /**
@@ -90,7 +96,7 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: { id: stri
     .set({ userId })
     .where(and(eq(tokensTable.id, id), isNull(tokensTable.userId)))
     .returning(tokenColumns);
-  return bound;
+  return bound && addressed(bound);
 };
 
 /** What decides which earlier tokens a new one replaces. */
@@ -139,7 +145,7 @@ export const deleteReplacedTokens = async (ctx: DbContext, { tokens }: { tokens:
 
 /** Stores new tokens; returns the stored rows without their secrets. */
 export const insertTokens = async (ctx: DbContext, { values }: { values: InsertTokenModel[] }) =>
-  ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
+  (await ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns)).map(addressed);
 
 /** Names the token a link of `kind` carries, by the hash of the raw value in its URL. */
 const namedBy = (kind: LinkTokenKind, rawToken: string) => and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind));
@@ -153,7 +159,7 @@ interface LinkTokenOpts {
 /** The link token a raw value names, read without redeeming it; undefined when there is none. */
 export const findLinkToken = async (ctx: DbContext, { kind, rawToken }: LinkTokenOpts): Promise<TokenRecord | undefined> => {
   const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(namedBy(kind, rawToken)).limit(1);
-  return token;
+  return token && addressed(token);
 };
 
 /** Deletes the unredeemed link a raw value names: neither its URL nor a confirmation page redeems it any more. */
@@ -179,7 +185,7 @@ export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, 
     .set({ singleUseToken, redeemedAt: getIsoDate(), expiresAt })
     .where(and(eq(tokensTable.id, id), isNull(tokensTable.redeemedAt)))
     .returning(tokenColumns);
-  return redeemed;
+  return redeemed && addressed(redeemed);
 };
 
 /** Unbinds a redeemed token from the browser that redeemed it: no single-use cookie names it any more. */
@@ -205,13 +211,13 @@ interface BoundTokenOpts {
 /** The token a browser's cookie of `kind` binds it to, whatever its state; undefined when it names no row. */
 export const findBoundToken = async (ctx: DbContext, { kind, cookie }: BoundTokenOpts) => {
   const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(boundTo(kind, cookie)).limit(1);
-  return token;
+  return token && addressed(token);
 };
 
 /** Deletes the token a browser's cookie of `kind` binds it to; returns the deleted row, undefined when there was none. */
 export const deleteBoundToken = async (ctx: DbContext, { kind, cookie }: BoundTokenOpts) => {
   const [spent] = await ctx.var.db.delete(tokensTable).where(boundTo(kind, cookie)).returning(tokenColumns);
-  return spent;
+  return spent && addressed(spent);
 };
 
 interface DeleteSessionCodeTokenOpts {
@@ -237,7 +243,7 @@ export const deleteSessionCodeToken = async (ctx: DbContext, { kind, sessionId, 
       ),
     )
     .returning(tokenColumns);
-  return spent;
+  return spent && addressed(spent);
 };
 
 interface FindTokenBySingleUseOpts {
@@ -253,7 +259,7 @@ export const findTokenBySingleUse = async (ctx: DbContext, { id, cookie }: FindT
     .from(tokensTable)
     .where(and(eq(tokensTable.id, id), eq(tokensTable.singleUseToken, hashToken(cookie))))
     .limit(1);
-  return token;
+  return token && addressed(token);
 };
 
 /** Stores a handoff token. It has no address, and it is never read back through {@link TokenRecord}. */
@@ -265,15 +271,24 @@ export const insertHandoffToken = async (
   return inserted;
 };
 
-/** A handoff row as its readers see it: no address, its tenant present (`tokens_subject_check`). */
+/** A handoff row as its readers see it: no address. */
 const handoffColumns = {
   id: tokensTable.id,
   kind: tokensTable.kind,
-  tenantId: sql<string>`${tokensTable.tenantId}`,
+  tenantId: tokensTable.tenantId,
   createdBy: tokensTable.createdBy,
   ltiResourceLinkId: tokensTable.ltiResourceLinkId,
   connectionId: tokensTable.connectionId,
   expiresAt: tokensTable.expiresAt,
+};
+
+/**
+ * A handoff row, which `insertHandoffToken` always gives a tenant.
+ * @throws Error for a row without one.
+ */
+const handedOff = <T extends { id: string; tenantId: string | null }>(row: T) => {
+  if (row.tenantId === null) throw new Error(`Token ${row.id} holds no tenant`);
+  return { ...row, tenantId: row.tenantId };
 };
 
 /** The handoff token of `kind` a raw value names, and when `id` is given only the row of that id. */
@@ -283,7 +298,7 @@ const handoffNamedBy = ({ kind, rawToken, id }: { kind: HandoffTokenKind; rawTok
 /** Reads the handoff token a raw value names, expired or not, and leaves it in place; undefined when none matches. */
 export const findHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string }) => {
   const [found] = await ctx.var.db.select(handoffColumns).from(tokensTable).where(handoffNamedBy(opts)).limit(1);
-  return found;
+  return found && handedOff(found);
 };
 
 /**
@@ -292,5 +307,5 @@ export const findHandoffToken = async (ctx: DbContext, opts: { kind: HandoffToke
  */
 export const deleteHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string; id?: string }) => {
   const [spent] = await ctx.var.db.delete(tokensTable).where(handoffNamedBy(opts)).returning(handoffColumns);
-  return spent;
+  return spent && handedOff(spent);
 };

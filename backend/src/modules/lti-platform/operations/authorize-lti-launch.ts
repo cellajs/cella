@@ -1,21 +1,19 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import { appConfig, buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
-import { i18n } from '#/lib/i18n';
 import { ltiClaims } from '#/lib/lti-vocabulary';
-import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { spendHandoffToken } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
-import { launchCustom, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { ltiContextTypes, ltiRolesFor } from '#/modules/lti-platform/launch-context';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
+import { readAsLauncher } from '#/modules/lti-platform/operations/start-lti-launch';
 import { findServedUserById } from '#/modules/user/user-queries';
-import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
@@ -36,11 +34,6 @@ const authenticationRequestSchema = z.object({
   nonce: requestParam,
   state: requestParam,
 });
-
-/** How the launch endpoint answers: a page posting to the LTI tool, or a refusal no address of the LTI tool hears. */
-export type LtiLaunchAnswer =
-  | { post: { action: string; fields: Record<string, string>; formOrigins: string[] } }
-  | { refusal: { status: 400; text: string } };
 
 /** An error the launch posts back to the registered `redirect_uri` (OpenID Connect Core, section 3.1.2.6). */
 class LaunchError extends Error {
@@ -100,41 +93,32 @@ const findContextChannel = async (channelType: ChannelEntityType, channel: Entit
   return null;
 };
 
-/**
- * Who launches, checked at this moment: the installation approved and active, and the person still able to read the
- * resource link's channel. A launch carries no system admin, as a token does not.
- */
+/** Who launches, checked at this moment: the installation approved and active, and the person able to launch. */
 const assertLaunchAllowed = async ({ personId, target }: { personId: string; target: LaunchTarget }) => {
   const { account, installation, resourceLink } = target;
   if (!installation.approvedAt || account.status !== 'active') throw new LaunchError('unauthorized_client', 'the installation is not active');
 
   const person = await findServedUserById(dbCtx, { id: personId });
-  const { memberships } = await readMemberships(personId);
-  if (!person) throw new LaunchError('access_denied', 'the person may not read the placement');
-  const readerCtx = {
-    var: {
-      db: baseDb,
-      tenantId: resourceLink.tenantId,
-      organizationId: resourceLink.organizationId,
-      actor: { id: personId, bindings: memberships, scopes: null },
-      isSystemAdmin: false,
-    },
-  };
-  const read = await getValidChannel(readerCtx, resourceLink.channelId, resourceLink.channelType, 'read').catch((err) => {
-    if (err instanceof AppError && err.status === 404) return null;
-    throw err;
-  });
-  if (!read) throw new LaunchError('access_denied', 'the person may not read the placement');
-  return { person, memberships, channel: read.entity };
+  const launcher =
+    person &&
+    (await readAsLauncher(personId, resourceLink).catch((err) => {
+      if (err instanceof AppError && err.status === 404) return null;
+      throw err;
+    }));
+  if (!person || !launcher) throw new LaunchError('access_denied', 'the person may not read the placement');
+  return { person, ...launcher };
 };
 
 /** The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
-  const { person, memberships, channel } = await assertLaunchAllowed({ personId, target });
+  const { person, access, channel } = await assertLaunchAllowed({ personId, target });
 
   const context = await findContextChannel(resourceLink.channelType, channel);
-  const role = context && memberships.find((membership) => membership.channelId === context.channel.id)?.role;
+  // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
+  const roles = context
+    ? ltiRolesFor(context.channelType, (action) => checkAccess(access, action, buildSubjectFromEntity(context.channelType, context.channel)).allowed)
+    : [];
   const custom = launchCustom(client, resourceLink.custom);
 
   return {
@@ -149,7 +133,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     [ltiClaims.deploymentId]: account.id,
     [ltiClaims.targetLinkUri]: launchTargetLinkUri(client),
     [ltiClaims.resourceLink]: { id: resourceLink.id, title: resourceLink.title },
-    [ltiClaims.roles]: context && role ? ltiRolesFor(context.channelType, role) : [],
+    [ltiClaims.roles]: roles,
     ...(context && {
       [ltiClaims.context]: { id: context.channel.id, label: context.channel.slug, title: context.channel.name, type: context.types },
     }),
@@ -161,23 +145,27 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
 
 /**
  * The launch endpoint (1EdTech Security Framework 1.0, section 5.1.1): checks the authentication request an LTI tool
- * sends the browser with, spends its launch record and answers a page that posts the signed ID token to the LTI tool.
- * No session reaches it: the record names the person, and the checks of the start run again now. A request without a
- * known LTI `client_id` or with a `redirect_uri` that client did not register is refused in place; any other refusal is
- * posted back to that `redirect_uri` as an error with the request's `state`.
+ * sends the browser with, spends its launch record and answers the page that posts the signed ID token to the LTI tool.
+ * No session reaches it: the record names the person, and the checks of the start run again now. Any refusal is posted
+ * back to the request's `redirect_uri` as an error with its `state`, unless no address of the LTI tool may hear it.
+ * @throws AppError 400 `lti_launch_refused` for a request without a known LTI `client_id` or with a `redirect_uri`
+ *   that client did not register, refused in place.
  */
-export async function authorizeLtiLaunchOp(params: Record<string, unknown>): Promise<LtiLaunchAnswer> {
+export async function authorizeLtiLaunchOp(params: Record<string, unknown>) {
   const parsed = authenticationRequestSchema.safeParse(params);
   const request = parsed.success ? parsed.data : undefined;
   const registration = request?.client_id ? await findLtiRegistration(dbCtx, { clientId: request.client_id }) : undefined;
   const redirectUri = request?.redirect_uri;
   if (!request || !registration || !redirectUri || !registration.redirectUris.includes(redirectUri)) {
-    log.warn('LTI launch refused in place', { clientId: request?.client_id });
-    return { refusal: { status: 400, text: i18n.t('error:lti_launch_refused') } };
+    // An LTI tool's admin reads which address was offered: commonly a target with a query its library sent as is.
+    throw new AppError(400, 'lti_launch_refused', 'warn', { meta: { clientId: request?.client_id ?? null, redirectUri: redirectUri ?? null } });
   }
 
+  // The LTI tool's endpoint may redirect to any address of its own that it registered.
   const answer = (fields: Record<string, string>) => ({
-    post: { action: redirectUri, fields: { ...fields, ...(request.state && { state: request.state }) }, formOrigins: [new URL(redirectUri).origin] },
+    action: redirectUri,
+    fields: { ...fields, ...(request.state && { state: request.state }) },
+    formOrigins: launchOrigins(registration),
   });
 
   try {

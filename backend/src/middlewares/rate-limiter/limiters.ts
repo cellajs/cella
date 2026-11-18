@@ -196,11 +196,15 @@ export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
   description: 'Login initiations for each IP address, refused or not.',
 });
 
-/** LTI launch posts and finishes per IP, two per launch: a finish checks a signature and may fetch the platform's key set. */
+/**
+ * LTI launch steps per IP, two per launch in either role: as LTI tool a launch post and its finish, which checks a
+ * signature and may fetch the platform's key set; as platform the login initiation page and the launch endpoint, which
+ * spends a launch record and signs an ID token.
+ */
 export const ltiLaunchLimiter = rateLimiter('limit', 'ltiLaunch', ['ip'], {
   limits: { points: 600, duration: 60 },
   name: 'LTI launches',
-  description: 'Launch posts and finishes for each IP address, refused or not.',
+  description: 'Launch steps for each IP address, refused or not.',
 });
 
 /**

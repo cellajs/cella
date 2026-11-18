@@ -6,7 +6,7 @@ import { AppError } from '#/core/error';
 import { appErrorHandler } from '#/lib/error';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { configSwitchGate } from '#/middlewares/config-switch';
-import { ltiToolRegistrationLimiter } from '#/middlewares/rate-limiter/limiters';
+import { ltiLaunchLimiter, ltiToolRegistrationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
 import { ltiIssuerPaths, ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
 import { authorizeLtiLaunchOp } from '#/modules/lti-platform/operations/authorize-lti-launch';
@@ -56,10 +56,13 @@ export function createLtiIssuerApp(provider: Provider): Hono<Env> {
     }
   });
 
-  app.on(['GET', 'POST'], `${servicePaths.oauth}${ltiIssuerPaths.authorization}`, async (ctx) => {
-    const answer = await authorizeLtiLaunchOp(await authenticationParams(ctx));
-    if ('refusal' in answer) return launchRefusalPage(ctx, answer.refusal.text, answer.refusal.status);
-    return autoPostPage(ctx, answer.post);
+  app.on(['GET', 'POST'], `${servicePaths.oauth}${ltiIssuerPaths.authorization}`, ltiLaunchLimiter, async (ctx) => {
+    try {
+      return autoPostPage(ctx, await authorizeLtiLaunchOp(await authenticationParams(ctx)));
+    } catch (err) {
+      if (!(err instanceof AppError) || err.type !== 'lti_launch_refused') throw err;
+      return launchRefusalPage(ctx, err);
+    }
   });
 
   return app;

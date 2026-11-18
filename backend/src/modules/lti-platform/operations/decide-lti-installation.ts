@@ -1,14 +1,13 @@
 import type { DbContext, UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { requestedFields } from '#/modules/lti-platform/helpers/platform-offer';
 import type { LtiReleasableField } from '#/modules/lti-platform/lti-installations-db';
-import { deleteTenantLtiRegistration, lockLtiInstallation, updateLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
+import { approveLtiInstallation, deleteTenantLtiRegistration, lockLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
 import { toLtiInstallation } from '#/modules/lti-platform/operations/get-lti-installations';
 import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
-import { countActiveServiceAccounts, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import { countActiveServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { log } from '#/utils/logger';
 
@@ -42,10 +41,7 @@ export async function approveLtiInstallationOp(ctx: UserContext, id: string, { r
     if (unrequested) throw new AppError(400, 'lti_field_not_requested', 'warn', { meta: { field: unrequested } });
     assertTenantQuota(ctx, 'serviceAccount', await countActiveServiceAccounts(txCtx, { tenantId }));
 
-    const stamps = updateStamps(ctx.var.actor.id);
-    const decision = { releasedFields: [...new Set(releasedFields)], approvedAt: stamps.updatedAt, approvedBy: stamps.updatedBy, ...stamps };
-    await updateServiceAccount(txCtx, { id, tenantId, values: { status: 'active', ...stamps } });
-    await updateLtiInstallation(txCtx, { serviceAccountId: id, values: decision });
+    const { stamps, decision } = await approveLtiInstallation(txCtx, { id, tenantId, releasedFields, by: ctx.var.actor.id });
     return { ...found, account: { ...found.account, status: 'active' as const, ...stamps }, installation: { ...found.installation, ...decision } };
   });
   invalidateCache.serviceAccount(approved.account);

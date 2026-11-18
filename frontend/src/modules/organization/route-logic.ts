@@ -1,7 +1,6 @@
 import { getOrganization } from 'sdk';
 import { guardNavTabs } from '~/modules/common/page/tab-nav';
 import { loadChannelTabGrants } from '~/modules/entities/use-channel-tab-options';
-import { loadLtiResourceLinkTabs } from '~/modules/lti-platform/query';
 import { findOrganizationByIdOrSlug, organizationQueryOptions } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { resolveChannelBySlug } from '~/query/basic/resolve-channel-by-slug';
@@ -35,15 +34,10 @@ type OrganizationTabsBeforeLoadArgs = {
   matches: readonly { routeId: string; fullPath: string; params: unknown }[];
 };
 
-/**
- * Opens the first tab the organization's bar resolves and forwards away from disabled tabs and the ones the user's grants
- * lack; its LTI resource links are tabs too.
- */
+/** Opens the first tab the organization's bar resolves and forwards away from disabled tabs and the ones the user's grants lack. */
 export const organizationTabsBeforeLoad = async ({ context, matches }: OrganizationTabsBeforeLoadArgs): Promise<void> => {
-  const [grants, linkedTabs] = await Promise.all([loadChannelTabGrants(context.organization), loadLtiResourceLinkTabs(context.organization)]);
   guardNavTabs(matches, '/_app/$tenantId/$organizationSlug/organization', {
     slotConfig: context.organization.toolsConfig['organization.tabs'],
-    grants,
-    linkedTabs,
+    grants: await loadChannelTabGrants(context.organization),
   });
 };

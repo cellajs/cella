@@ -3,6 +3,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
+import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiClaimsSupported, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
 import { insertLtiToolRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { type LtiToolConfig, type LtiToolRegistrationRequest, ltiToolRegistrationRequestSchema } from '#/modules/lti-platform/lti-platform-schema';
@@ -11,7 +12,7 @@ import { log } from '#/utils/logger';
 
 const metadataInvalid = (member: string) => new AppError(400, 'lti_tool_metadata_invalid', 'warn', { meta: { member } });
 
-/** Whether an address lies on one of the LTI tool's domains, which the admin sees when approving. */
+/** Whether an address lies on one of the domains the LTI tool declares. */
 const isOnDomains = (address: string, domains: string[]) => {
   const { host, hostname } = new URL(address);
   return domains.some((domain) => domain.toLowerCase() === host || domain.toLowerCase() === hostname);
@@ -19,8 +20,8 @@ const isOnDomains = (address: string, domains: string[]) => {
 
 /**
  * The request, checked against what the platform offers. Each of the LTI tool's launch addresses must lie on the
- * domains the admin approves: a launch posts a person's claims there. Of its messages and claims, the platform records
- * the ones it supports.
+ * domains it declares; the admin approves their origins (`launchOrigins`), where a launch posts a person's claims. Of
+ * its messages and claims, the platform records the ones it supports.
  * @throws AppError 400 `lti_tool_metadata_invalid` naming the first member refused.
  */
 const parseRegistrationRequest = (body: unknown) => {
@@ -31,20 +32,26 @@ const parseRegistrationRequest = (body: unknown) => {
 
   const domains = [config.domain, ...(config.secondary_domains ?? [])];
   const messages = config.messages.filter(({ type }) => ltiMessageTypes.includes(type));
-  const launchAddresses = [request.initiate_login_uri, ...request.redirect_uris, config.target_link_uri];
-  for (const { target_link_uri } of messages) if (target_link_uri) launchAddresses.push(target_link_uri);
-  if (!launchAddresses.every((address) => isOnDomains(address, domains))) throw metadataInvalid('domain');
+  const origins = launchOrigins({
+    initiateLoginUri: request.initiate_login_uri,
+    redirectUris: request.redirect_uris,
+    ltiToolConfig: { ...config, messages },
+  });
+  if (!origins.every((origin) => isOnDomains(origin, domains))) throw metadataInvalid('domain');
   if (!messages.length) throw metadataInvalid('messages');
 
   const recorded: LtiToolConfig = { ...config, messages, claims: config.claims.filter((claim) => ltiClaimsSupported.includes(claim)) };
   return { request, recorded };
 };
 
-/** The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. */
+/**
+ * The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. The
+ * platform serves no LTI service: it registers the launch alone, and grants no scope, so the answer names none.
+ */
 const registrationResponse = (request: LtiToolRegistrationRequest, recorded: LtiToolConfig, clientId: string, deploymentId: string) => ({
   client_id: clientId,
   application_type: request.application_type,
-  grant_types: request.grant_types,
+  grant_types: ['implicit'],
   response_types: request.response_types,
   redirect_uris: request.redirect_uris,
   initiate_login_uri: request.initiate_login_uri,
@@ -53,8 +60,6 @@ const registrationResponse = (request: LtiToolRegistrationRequest, recorded: Lti
   ...(request.logo_uri && { logo_uri: request.logo_uri }),
   token_endpoint_auth_method: request.token_endpoint_auth_method,
   id_token_signed_response_alg: 'RS256',
-  // The platform serves no LTI service: whatever the LTI tool asked, it is granted no scope.
-  scope: '',
   [ltiToolConfigurationMember]: { ...recorded, deployment_id: deploymentId },
 });
 
@@ -85,7 +90,6 @@ export async function registerLtiToolOp({ registrationToken, body }: { registrat
         logoUri: request.logo_uri,
         jwksUri: request.jwks_uri,
         initiateLoginUri: request.initiate_login_uri,
-        targetLinkUri: recorded.target_link_uri,
         ltiToolConfig: recorded,
         createdBy: token.createdBy,
       },

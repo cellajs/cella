@@ -17,7 +17,7 @@ that passes a `TokenKind` to `readBoundToken`, `findLiveBoundToken` or `spendCoo
 
 ## What & why
 
-**Registration as an LTI tool.** An organization admin creates a one-use registration link under LMS connections in
+**Registration as an LTI tool.** An organization admin creates a one-use registration link under LTI connections in
 organization settings and pastes it into a platform's Dynamic Registration. `connections` takes kind `lti` with
 `issuer` and `clientId`, and `federation` becomes nullable. A token row carries `email` or `tenantId`, exactly one: the
 registration link carries the tenant. `enabledAuthStrategies` may name `lti`, refused at config load without
@@ -34,8 +34,8 @@ An installation takes no API key and shows only in the LTI tools card: the API k
 **Launch from the platform.** A resource link places an approved installation in a channel (the new
 `lti_resource_links` table) and shows as a tab of that channel, after its declared tabs in the order the links were
 created; the arrangement in `toolsConfig` never lists them. A launch is a one-use `lti-launch` token, which names its
-resource link in the new `tokens` column `lti_resource_link_id`. Which channels are LTI contexts and which LTI role
-each app role sends are the app's call, in the pinned `backend/src/modules/lti-platform/launch-context.ts`. The
+resource link in the new `tokens` column `lti_resource_link_id`. Which channels are LTI contexts and which LTI roles
+a person's permissions there send are the app's call, in the pinned `backend/src/modules/lti-platform/launch-context.ts`. The
 frontend CSP allows HTTPS frames while `has.ltiPlatform` is on.
 
 **Launch into the LTI tool.** The login initiation and the launch post are left out of the CSRF check. The state is
@@ -78,8 +78,9 @@ No script: manual.
 2. Add `ltiPlatform: false` to `has` and `ltiFrameAncestors: [] as string[]` in the same file. A mode whose
    `enabledAuthStrategies` names `lti` lists the origins of the platforms that launch the app there.
 3. Copy `backend/src/modules/lti-platform/launch-context.ts` from the template: it is pinned, and the upgrade leaves it
-   to the app. Its default sends every channel as an LTI context of type Group, Instructor for a role the hierarchy marks
-   as elevated and Learner for any other. Change the two functions where the app's channels or roles mean otherwise.
+   to the app. Its default sends every channel as an LTI context of type Group, Instructor for whoever may update the
+   context's channel and Learner for whoever may only read it. Change the two functions where the app's channels or
+   permissions mean otherwise.
 4. Copy `backend/src/modules/auth/flows/lti/lti-context-channel.ts` from the template: it is pinned too. Its default
    makes every LTI context the organization, creates nothing and gives every launch the least privileged organization
    role. An app whose course is a channel below the organization names that type, creates the channel in

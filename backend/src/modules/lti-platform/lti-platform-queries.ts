@@ -1,12 +1,14 @@
 import { and, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
 import { hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type LtiInstallationModel, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
+import type { ActorId } from '#/db/utils/ids';
+import { updateStamps } from '#/db/utils/stamps';
+import { type LtiReleasableField, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
 import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import { insertServiceAccount, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -34,7 +36,7 @@ export type LtiInstallationRecord = Awaited<ReturnType<typeof findLtiInstallatio
 export async function findLtiInstallations(ctx: DbContext, { tenantId }: { tenantId: string }) {
   return installationJoin(ctx)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)))
-    .orderBy(desc(ltiInstallationsTable.createdAt));
+    .orderBy(desc(ltiInstallationsTable.createdAt), desc(ltiInstallationsTable.serviceAccountId));
 }
 
 /** One installation of the tenant with its registration; undefined when the tenant has no such installation. */
@@ -86,20 +88,24 @@ export async function insertLtiToolRegistration(ctx: DbContext, { client, organi
   });
 }
 
-/** Sets an installation's LTI side row; undefined when it has none. */
-export async function updateLtiInstallation(
-  ctx: DbContext,
-  {
-    serviceAccountId,
-    values,
-  }: { serviceAccountId: string; values: Partial<Omit<LtiInstallationModel, 'serviceAccountId' | 'createdAt' | 'createdBy'>> },
-) {
-  const [installation] = await ctx.var.db
-    .update(ltiInstallationsTable)
-    .set(values)
-    .where(eq(ltiInstallationsTable.serviceAccountId, serviceAccountId))
-    .returning();
-  return installation;
+interface ApproveLtiInstallationOpts {
+  id: string;
+  tenantId: string;
+  releasedFields: LtiReleasableField[];
+  by: ActorId;
+}
+
+/**
+ * Approves an installation inside the caller's transaction: its service account turns active and its side row records
+ * the released fields and the approval, both stamped by `by`.
+ * @returns What the two rows were set to.
+ */
+export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, by }: ApproveLtiInstallationOpts) {
+  const stamps = updateStamps(by);
+  const decision = { releasedFields: [...new Set(releasedFields)], approvedAt: stamps.updatedAt, approvedBy: stamps.updatedBy, ...stamps };
+  await updateServiceAccount(ctx, { id, tenantId, values: { status: 'active', ...stamps } });
+  await ctx.var.db.update(ltiInstallationsTable).set(decision).where(eq(ltiInstallationsTable.serviceAccountId, id));
+  return { stamps, decision };
 }
 
 /** Deletes a registration private to the tenant. The service account that installs it and its side row cascade. */
@@ -157,10 +163,10 @@ export async function findLtiLaunchTarget(ctx: DbContext, { resourceLinkId }: { 
   return found;
 }
 
-/** An LTI registration by its `client_id`, with the addresses a launch may return to; undefined for any other client. */
+/** An LTI registration by its `client_id`, with the addresses a launch may go to; undefined for any other client. */
 export async function findLtiRegistration(ctx: DbContext, { clientId }: { clientId: string }) {
   const [found] = await ctx.var.db
-    .select({ id: oauthClientsTable.id, redirectUris: oauthClientsTable.redirectUris })
+    .select(installationSelect.client)
     .from(oauthClientsTable)
     .where(and(eq(oauthClientsTable.id, clientId), isNotNull(ltiToolConfig)));
   return found;

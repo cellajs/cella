@@ -22,7 +22,7 @@ const ltiConnectionKeys = {
   delete: ['connections', 'delete-lti'] as const,
 };
 
-/** The LMSs the app is registered at for the organization's tenant. */
+/** The LTI platforms the app is registered at for the organization's tenant. */
 export const ltiConnectionsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: ltiConnectionKeys.list(path),

@@ -74,7 +74,7 @@ export function LtiLaunchFrame({ channel, resourceLink }: LtiLaunchFrameProps) {
       key={launch.url}
       src={launch.url}
       title={resourceLink.title}
-      sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"
+      sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads"
       allow="fullscreen; clipboard-write"
       className="h-[calc(100dvh-12rem)] min-h-96 w-full border-0"
     />

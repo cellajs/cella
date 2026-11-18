@@ -1,3 +1,4 @@
+import type { QueryKey } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, type EntityActionType, hierarchy } from 'shared';
@@ -111,7 +112,31 @@ function assertContextRoles(tool: Tool): void {
   }
 }
 
+/** A tab that data adds to a channel's bar: its id is the `$tool` param, its title the caption. */
+export interface DataTab {
+  id: string;
+  title: string;
+}
+
+/**
+ * A module's source of tabs that data defines, such as LTI resource links. Every channel's bar and menu show them after
+ * the declared tabs, in the order `query` lists them, and `SlotTabHost` renders one for a `$tool` id no tool has.
+ */
+export interface ChannelTabSource {
+  /** Lists a channel's tabs; the module's writes invalidate its key. */
+  query: (channel: EnrichedChannel) => { queryKey: QueryKey; queryFn: () => Promise<{ results: DataTab[] }> };
+  render: (channel: EnrichedChannel, tab: DataTab) => ReactNode;
+  /** The sentence the tabs arrangement shows on where these tabs go, as they keep no place in its stored order. */
+  arrangementNote: TKey;
+}
+
+const channelTabSources: ChannelTabSource[] = [];
+
+/** The registered sources of data-defined channel tabs, in registration order. */
+export const getChannelTabSources = (): readonly ChannelTabSource[] => channelTabSources;
+
 onFrontendModuleRegister((module) => {
+  if (module.channelTabs) channelTabSources.push(module.channelTabs);
   for (const tool of module.tools ?? []) {
     assertContextRoles(tool);
     const list = bySlot.get(tool.slot) ?? [];

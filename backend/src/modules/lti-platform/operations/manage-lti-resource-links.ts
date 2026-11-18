@@ -31,14 +31,14 @@ const toLtiResourceLink = (link: LtiResourceLinkModel) => ({
 });
 
 /**
- * A resource link of the organization, for a caller who may perform `action` on its channel.
+ * A resource link of the organization, for a caller who may update its channel.
  * @throws AppError 404 `not_found` for no such link, and what `getValidChannel` throws.
  */
-export async function getValidLtiResourceLink(ctx: UserContext, id: string, action: 'read' | 'update') {
+async function getUpdatableLtiResourceLink(ctx: UserContext, id: string) {
   const link = await findLtiResourceLink(ctx, { id, organizationId: ctx.var.organizationId });
   if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
-  const { entity } = await getValidChannel(ctx, link.channelId, link.channelType, action);
-  return { link, channel: entity };
+  await getValidChannel(ctx, link.channelId, link.channelType, 'update');
+  return link;
 }
 
 /** The resource links placed in a channel, for a caller who may read it. */
@@ -89,14 +89,14 @@ export async function createLtiResourceLinkOp(
 
 /** Renames a resource link or replaces its custom values, for a caller who may update its channel. */
 export async function updateLtiResourceLinkOp(ctx: UserContext, id: string, changes: { title?: string; custom?: Record<string, string> }) {
-  const { link } = await getValidLtiResourceLink(ctx, id, 'update');
+  const link = await getUpdatableLtiResourceLink(ctx, id);
   const updated = await updateLtiResourceLink(ctx, { id: link.id, values: { ...changes, ...updateStamps(ctx.var.actor.id) } });
   return withActorRef(ctx, toLtiResourceLink(updated ?? link));
 }
 
 /** Removes a resource link with its live launch records, for a caller who may update its channel. */
 export async function deleteLtiResourceLinkOp(ctx: UserContext, id: string) {
-  const { link } = await getValidLtiResourceLink(ctx, id, 'update');
+  const link = await getUpdatableLtiResourceLink(ctx, id);
   await deleteLtiResourceLink(ctx, { id: link.id });
   log.info('LTI resource link deleted', { resourceLinkId: link.id, installationId: link.installationId });
 }

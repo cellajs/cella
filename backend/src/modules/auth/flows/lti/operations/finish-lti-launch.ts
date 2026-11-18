@@ -14,13 +14,12 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { insertAnonymousUser } from '#/modules/auth/core/anonymous/anonymous-account';
 import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { decodeLaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
-import type { PageFrame } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { createLtiContextChannel, type LtiContext, ltiContextChannelType, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import type { ltiFinishFormSchema } from '#/modules/auth/flows/lti/lti-schema';
 import { findLaunchConnection, type LtiLaunch, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
 import type { LtiConnection } from '#/modules/connections/connections-db';
-import { addLtiDeployment } from '#/modules/connections/connections-queries';
+import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -114,21 +113,20 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
 /**
  * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
- * creates the person, applies the mapped role and records the context and a new LTI deployment, all in one
- * transaction. Then it starts the embedded session: no MFA challenge, the launch is the proof.
+ * creates the person, applies the mapped role and records the context, and the LTI deployment of a connection that
+ * held none, all in one transaction. Then it starts the embedded session: no MFA challenge, the launch is the proof.
  * @returns The embedded page of the channel to redirect to.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 409
  *   `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel at once, and
  *   what `findLaunchConnection` and `validateLtiLaunch` throw.
  */
-export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>, frame: PageFrame): Promise<string> {
+export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>): Promise<string> {
   if (ctx.req.header('Sec-Fetch-Site') !== 'same-origin') throw new AppError(403, 'lti_launch_cross_site', 'warn');
   const state = decodeLaunchState(form.state);
   const { id_token: token, storage_value: storageValue } = form;
   if (!state || !token || !storageValue) throw new AppError(401, 'lti_launch_invalid', 'warn', { meta: { rule: 'form' } });
 
   const { connection, header, claims } = await findLaunchConnection(token);
-  frame.ancestor = new URL(connection.config.authorizationEndpoint).origin;
   const launch = await validateLtiLaunch({ token, header, claims, connection, state, storageValue });
 
   const organization = await findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId });
@@ -171,7 +169,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     }
 
     await applyLtiRole(txCtx, { userId, channel, role: ltiContextRole({ ltiRoles, connection }) });
-    if (!connection.config.deploymentIds.includes(deploymentId)) await addLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId });
+    if (!connection.config.deploymentIds.length) await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId });
     return { userId, channel };
   });
   invalidateCache.user(userId);

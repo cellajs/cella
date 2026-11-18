@@ -28,12 +28,7 @@ export type TokenPolicy =
       sameSite: SameSite;
     }
   | { carrier: 'code'; ttl: TimeSpan }
-  | {
-      carrier: 'handoff';
-      ttl: TimeSpan;
-      /** Whether its row names the user who minted it (`createdBy`), on whose word a spend acts. */
-      namesMinter: boolean;
-    };
+  | { carrier: 'handoff'; ttl: TimeSpan };
 
 /**
  * One policy per token kind; an app that adds a token kind to `appConfig.tokenKinds` must add its policy here, its
@@ -59,10 +54,10 @@ export const tokenPolicies = {
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict' },
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax' },
   'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm') },
-  'lti-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
-  'lti-tool-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
-  'lti-launch': { carrier: 'handoff', ttl: new TimeSpan(5, 'm'), namesMinter: true },
-  'lti-nonce': { carrier: 'handoff', ttl: new TimeSpan(5, 'm'), namesMinter: false },
+  'lti-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h') },
+  'lti-tool-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h') },
+  'lti-launch': { carrier: 'handoff', ttl: new TimeSpan(5, 'm') },
+  'lti-nonce': { carrier: 'handoff', ttl: new TimeSpan(5, 'm') },
 } as const satisfies Record<TokenKind, TokenPolicy>;
 
 type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {
@@ -92,11 +87,6 @@ export type CodeTokenKind = TokenKindCarriedBy<'code'>;
 
 /** Token kinds handed to another system. */
 export type HandoffTokenKind = TokenKindCarriedBy<'handoff'>;
-
-/** Handoff kinds whose row names the user who minted it. */
-export type MinterNamedTokenKind = {
-  [T in HandoffTokenKind]: (typeof tokenPolicies)[T] extends { namesMinter: true } ? T : never;
-}[HandoffTokenKind];
 
 /** Token kinds issued to a person's address: every kind but a handoff. */
 export type AddressedTokenKind = Exclude<TokenKind, HandoffTokenKind>;

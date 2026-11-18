@@ -19,7 +19,7 @@ export {
   sessionCookieOf,
   sessionRefusal,
 } from '#/modules/auth/core/sessions/operations/resolve-session';
-export { closeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
+export { closeSessions, revokeConnectionSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 export type { SessionFacts, SessionModel, SessionRevocationReason } from '#/modules/auth/core/sessions/sessions-db';
 export { findSessionStates } from '#/modules/auth/core/sessions/sessions-queries';
 export { sessionBaseSchema } from '#/modules/auth/core/sessions/sessions-schema';

@@ -66,10 +66,13 @@ export function answerStorageMessage(event: Pick<MessageEvent, 'data' | 'origin'
   }
   if (typeof value !== 'string') return refuse('bad_request', 'value must be a string');
 
+  const exhausted = () => refuse('storage_exhaustion', 'This origin holds the most platform storage it may');
+  // A string's UTF-8 length is at least its length: a pair past the capacity is refused before anything encodes it.
+  if (key.length + value.length > storageCapacity.bytes) return exhausted();
   const next = new Map(values).set(key, value);
   const newOrigin = !scope.storage.has(origin);
   if (next.size > storageCapacity.keys || storedBytes(next) > storageCapacity.bytes || (newOrigin && scope.storage.size >= storageCapacity.origins)) {
-    return refuse('storage_exhaustion', 'This origin holds the most platform storage it may');
+    return exhausted();
   }
   scope.storage.set(origin, next);
   return reply({ key, value });

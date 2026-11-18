@@ -61,8 +61,8 @@ function AddLtiToolForm({ path }: { path: QueryOrgContext }) {
 
   const onSubmit = ({ registrationUrl }: FormValues, event?: BaseSyntheticEvent) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    // The submitted form, where focus returns when the dialog closes
-    const trigger = event?.target instanceof HTMLElement ? event.target : null;
+    // The button that submitted, an Enter in the field included: focus returns there when the dialog closes
+    const submitter = event?.nativeEvent instanceof SubmitEvent ? event.nativeEvent.submitter : null;
     start(
       { path, body: { registrationUrl } },
       {
@@ -72,7 +72,7 @@ function AddLtiToolForm({ path }: { path: QueryOrgContext }) {
           // However it closes, by the LTI tool's message or by hand, the list shows what the registration stored
           dialoger.getState().create(<LtiRegistrationFrame url={url} onClose={close} />, {
             id: registrationDialogId,
-            triggerRef: { current: trigger },
+            triggerRef: { current: submitter },
             className: 'md:max-w-3xl',
             title: t('c:add_resource', { resource: t('c:lti_tool') }),
             description: t('c:lti_registration_frame.text'),

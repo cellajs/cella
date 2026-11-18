@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { issueHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { encodeLaunchState, ltiStorageKey } from '#/modules/auth/flows/lti/helpers/launch-state';
-import type { PageFrame, StorageExchange } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
+import type { StorageExchange } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
 import { findActiveLtiConnections } from '#/modules/connections/connections-queries';
@@ -21,14 +21,13 @@ const dbCtx = { var: { db: baseDb } };
  * @throws AppError 401 `lti_platform_unknown` for an issuer and client id of no active connection, 400
  *   `lti_storage_missing` when the platform names no storage frame, 401 `lti_launch_invalid` without a login hint.
  */
-export async function initiateLtiLoginOp(params: z.infer<typeof ltiLoginParamsSchema>, frame: PageFrame): Promise<StorageExchange> {
+export async function initiateLtiLoginOp(params: z.infer<typeof ltiLoginParamsSchema>): Promise<StorageExchange> {
   const { iss: issuer, client_id: clientId, login_hint: loginHint, lti_message_hint: messageHint, lti_storage_target: target } = params;
   const connections = issuer ? await findActiveLtiConnections(dbCtx, { issuer, clientIds: clientId ? [clientId] : undefined }) : [];
   // Two connections of one issuer and no client id leave the login ambiguous.
   if (connections.length !== 1) throw new AppError(401, 'lti_platform_unknown', 'warn', { meta: { issuer: issuer ?? null } });
   const [connection] = connections;
   const authorization = new URL(connection.config.authorizationEndpoint);
-  frame.ancestor = authorization.origin;
 
   // Launch state lives in platform storage alone: a platform without it cannot launch the app.
   if (!target) throw new AppError(400, 'lti_storage_missing', 'warn', { meta: { connectionId: connection.id } });

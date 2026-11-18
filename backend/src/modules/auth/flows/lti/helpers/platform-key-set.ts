@@ -7,8 +7,11 @@ import type { LtiConnection } from '#/modules/connections/connections-db';
 /** How long a platform's key set is trusted before it is read again: a key the platform withdrew stops working by then. */
 const keySetMaxAgeMs = 60 * 60 * 1000;
 
-/** The youngest cached set a token naming an unknown key reads again: a stranger's `kid` cannot make the app fetch per request. */
-const unknownKeyRefetchAfterMs = 30 * 1000;
+/**
+ * How long the last read answers every caller, an unknown key's included: a stranger's `kid` cannot make the app fetch
+ * per request, and a failed read is not tried again before then.
+ */
+const lastReadAnswersMs = 30 * 1000;
 
 const keySetSchema = z.object({ keys: z.array(z.unknown()).max(100) });
 
@@ -22,13 +25,13 @@ const rsaSigningKeySchema = z.object({
   use: z.literal('sig').optional(),
 });
 
-/** Key sets per connection and address, in this process. */
-const keySets = new Map<string, { keySet: JSONWebKeySet; fetchedAt: number }>();
+/** The last key set read per connection and address, in this process, while in flight too: concurrent callers share it. */
+const keySetReads = new Map<string, { read: Promise<JSONWebKeySet>; startedAt: number; failed: boolean }>();
 
 const keySetUnavailable = (reason: string, connectionId: string) =>
   new AppError(400, 'outbound_request_failed', 'warn', { meta: { reason, connectionId } });
 
-const fetchKeySet = async (cacheKey: string, connection: LtiConnection) => {
+const fetchKeySet = async (connection: LtiConnection): Promise<JSONWebKeySet> => {
   const response = await guardedFetch(connection.config.jwksUri, { headers: { Accept: 'application/json' } });
   if (response.status !== 200) throw keySetUnavailable('key_set_status', connection.id);
   let body: unknown;
@@ -39,19 +42,29 @@ const fetchKeySet = async (cacheKey: string, connection: LtiConnection) => {
   }
   const parsed = keySetSchema.safeParse(body);
   if (!parsed.success) throw keySetUnavailable('key_set_members', connection.id);
-  const keySet: JSONWebKeySet = { keys: parsed.data.keys.flatMap((key) => rsaSigningKeySchema.safeParse(key).data ?? []) };
-  keySets.set(cacheKey, { keySet, fetchedAt: Date.now() });
-  return keySet;
+  return { keys: parsed.data.keys.flatMap((key) => rsaSigningKeySchema.safeParse(key).data ?? []) };
 };
 
-/** The connection's key set: cached, read again when old, or once on a key it does not hold. */
+const readKeySet = (cacheKey: string, connection: LtiConnection) => {
+  const entry = { read: fetchKeySet(connection), startedAt: Date.now(), failed: false };
+  entry.read.catch(() => {
+    entry.failed = true;
+  });
+  keySetReads.set(cacheKey, entry);
+  return entry.read;
+};
+
+/** The connection's key set: the last read while it answers, a good one until old unless it misses the key, else a new read. */
 const keySetFor = async (connection: LtiConnection, kid: string | undefined) => {
   const cacheKey = `${connection.id} ${connection.config.jwksUri}`;
-  const cached = keySets.get(cacheKey);
-  const age = cached ? Date.now() - cached.fetchedAt : Number.POSITIVE_INFINITY;
-  if (!cached || age > keySetMaxAgeMs) return fetchKeySet(cacheKey, connection);
-  const knowsKey = !kid || cached.keySet.keys.some((key) => key.kid === kid);
-  return knowsKey || age < unknownKeyRefetchAfterMs ? cached.keySet : fetchKeySet(cacheKey, connection);
+  const last = keySetReads.get(cacheKey);
+  const age = last ? Date.now() - last.startedAt : Number.POSITIVE_INFINITY;
+  if (last && age < lastReadAnswersMs) return last.read;
+  if (last && !last.failed && age < keySetMaxAgeMs) {
+    const keySet = await last.read;
+    if (!kid || keySet.keys.some((key) => key.kid === kid)) return keySet;
+  }
+  return readKeySet(cacheKey, connection);
 };
 
 /**

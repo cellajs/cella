@@ -48,17 +48,17 @@ describe('answerStorageMessage', () => {
     expect(send(storage, get('b'))?.message).toMatchObject({ error: { code: 'key_not_found' } });
   });
 
-  it('holds at least 500 keys and 4096 bytes, counted as key plus value length', () => {
+  it('holds at least 4096 bytes, counted as key plus value length', () => {
     const storage: PlatformStorage = new Map();
-    for (let index = 0; index < 500; index++) expect(send(storage, put(`k${index}`, 'v'))?.message).not.toHaveProperty('error');
     expect(send(storage, put('large', 'x'.repeat(4096 - 'large'.length)), 'https://other.example.com')?.message).not.toHaveProperty('error');
-    expect(storageCapacity.keys).toBeGreaterThanOrEqual(500);
-    expect(storageCapacity.bytes).toBeGreaterThanOrEqual(4096);
   });
 
   it('answers storage_exhaustion beyond the limits and drops no other key', () => {
     const storage: PlatformStorage = new Map();
-    for (let index = 0; index < storageCapacity.keys; index++) send(storage, put(`k${index}`, 'v'));
+    // The draft's minimum is 500 keys: each of them is accepted, and the first key past the capacity is refused.
+    for (let index = 0; index < Math.max(500, storageCapacity.keys); index++) {
+      expect(send(storage, put(`k${index}`, 'v'))?.message).not.toHaveProperty('error');
+    }
     expect(send(storage, put('one-more', 'v'))?.message).toMatchObject({ error: { code: 'storage_exhaustion' } });
     expect(send(storage, get('k0'))?.message).toMatchObject({ value: 'v' });
 

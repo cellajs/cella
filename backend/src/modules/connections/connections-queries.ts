@@ -229,16 +229,12 @@ export const findActiveLtiConnections = async (ctx: DbContext, { issuer, clientI
 };
 
 /**
- * Adds an LTI deployment to a connection unless it holds it already, in one statement: concurrent launches of two new
- * deployments keep both.
+ * Records the LTI deployment of a connection whose platform named none at registration, in one statement: of two
+ * concurrent first launches, the first to write it decides.
  */
-export const addLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
-  const deploymentIds = sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb)`;
+export const recordFirstLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
   await ctx.var.db
     .update(connectionsTable)
-    .set({
-      config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', ${deploymentIds} || jsonb_build_array(${deploymentId}::text))`,
-      ...updateStamps(by),
-    })
-    .where(and(eq(connectionsTable.id, id), sql`not (${deploymentIds} @> jsonb_build_array(${deploymentId}::text))`));
+    .set({ config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', jsonb_build_array(${deploymentId}::text))`, ...updateStamps(by) })
+    .where(and(eq(connectionsTable.id, id), sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb) = '[]'::jsonb`));
 };

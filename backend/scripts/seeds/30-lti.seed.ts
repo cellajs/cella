@@ -1,19 +1,17 @@
 import { and, asc, eq } from 'drizzle-orm';
 import pc from 'picocolors';
-import { appConfig, isStrategyEnabled } from 'shared';
+import { appConfig, hierarchy, isStrategyEnabled } from 'shared';
 import { getSeedDb } from '#/db/db';
-import { updateStamps } from '#/db/utils/stamps';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { issueHandoffToken } from '#/modules/auth/core';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { ltiIssuerUrl, ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
-import { insertLtiResourceLink, updateLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
+import { approveLtiInstallation, insertLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import { registerLtiToolOp } from '#/modules/lti-platform/operations/register-lti-tool';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { checkMark, durationSuffix } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
 import type { SeedScript } from '../types';
@@ -51,7 +49,11 @@ export const ltiSeed = async () => {
     .from(membershipsTable)
     .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.channelId))
     .where(
-      and(eq(membershipsTable.userId, defaultAdminUser.id), eq(membershipsTable.channelType, 'organization'), eq(membershipsTable.role, 'admin')),
+      and(
+        eq(membershipsTable.userId, defaultAdminUser.id),
+        eq(membershipsTable.channelType, 'organization'),
+        eq(membershipsTable.role, hierarchy.getMostPrivilegedRole('organization')),
+      ),
     )
     .orderBy(asc(membershipsTable.displayOrder))
     .limit(2);
@@ -69,15 +71,9 @@ export const ltiSeed = async () => {
   const [installationId] = connection.config.deploymentIds;
 
   const { tenantId } = platform.organization;
-  const stamps = updateStamps(createdBy);
-  await db.transaction(async (tx) => {
-    const txCtx = { var: { db: tx } };
-    await updateServiceAccount(txCtx, { id: installationId, tenantId, values: { status: 'active', ...stamps } });
-    await updateLtiInstallation(txCtx, {
-      serviceAccountId: installationId,
-      values: { releasedFields: ['name'], approvedAt: stamps.updatedAt, approvedBy: stamps.updatedBy, ...stamps },
-    });
-  });
+  await db.transaction((tx) =>
+    approveLtiInstallation({ var: { db: tx } }, { id: installationId, tenantId, releasedFields: ['name'], by: createdBy }),
+  );
 
   await insertLtiResourceLink(dbCtx, {
     values: {

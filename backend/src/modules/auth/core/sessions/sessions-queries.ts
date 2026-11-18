@@ -93,8 +93,8 @@ export const insertSession = async (ctx: DbContext, { values }: { values: Insert
 };
 
 interface UpdateSessionsRevokedOpts {
-  /** Which of the user's sessions: optionally only these ids or this kind. */
-  match: { userId: string; ids?: string[]; kind?: SessionKind };
+  /** Which sessions: the user's, optionally only these ids or this kind; or every one that came through a connection. */
+  match: { userId: string; ids?: string[]; kind?: SessionKind } | { connectionId: string };
   revokedBy: ActorId | null;
   revocationReason: SessionRevocationReason;
 }
@@ -104,11 +104,14 @@ interface UpdateSessionsRevokedOpts {
  * @returns The stamped sessions, secret stripped.
  */
 export const updateSessionsRevoked = async (ctx: DbContext, { match, revokedBy, revocationReason }: UpdateSessionsRevokedOpts) => {
-  const matched = and(
-    eq(sessionsTable.userId, match.userId),
-    match.ids ? inArray(sessionsTable.id, match.ids) : undefined,
-    match.kind ? eq(sessionsTable.kind, match.kind) : undefined,
-  );
+  const matched =
+    'connectionId' in match
+      ? eq(sessionsTable.connectionId, match.connectionId)
+      : and(
+          eq(sessionsTable.userId, match.userId),
+          match.ids ? inArray(sessionsTable.id, match.ids) : undefined,
+          match.kind ? eq(sessionsTable.kind, match.kind) : undefined,
+        );
 
   const now = getIsoDate();
   return ctx.var.db

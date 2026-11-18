@@ -98,7 +98,7 @@ export const organizationConnectionRoutes = createXRoutes(['connections', 'cella
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI connection',
     description:
-      'Removes an LTI connection: its platform launches the app no more. Identities and sessions that came through it keep their rows; members stay members.',
+      'Removes an LTI connection: its platform launches the app no more, and every session its launches started ends. Identities that came through it keep their rows; members stay members.',
     request: { params: organizationConnectionParamSchema },
     responses: { 204: { description: 'Connection removed' } },
   }),

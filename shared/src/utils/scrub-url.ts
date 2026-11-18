@@ -19,6 +19,8 @@ const sensitiveQueryKeys = [
   'id_token',
   'id_token_hint',
   'refresh_token',
+  'login_hint',
+  'lti_message_hint',
   'code_verifier',
   'client_secret',
   'sig',

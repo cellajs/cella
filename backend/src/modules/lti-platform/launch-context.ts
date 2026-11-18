@@ -1,4 +1,4 @@
-import { type ChannelEntityType, hierarchy } from 'shared';
+import type { ChannelEntityType, EntityActionType } from 'shared';
 import { lisContextRoles, lisContextTypes } from '#/lib/lti-vocabulary';
 
 /**
@@ -9,8 +9,9 @@ import { lisContextRoles, lisContextTypes } from '#/lib/lti-vocabulary';
 export const ltiContextTypes = (_channelType: ChannelEntityType): string[] | null => [lisContextTypes.group];
 
 /**
- * The LTI roles a launch sends for the person's role in the context channel, as full URIs (`lisContextRoles`). The app
- * fills this pinned file. The default: a role the hierarchy marks as elevated sends Instructor, any other Learner.
+ * The LTI roles a launch sends for what the person may do in the context channel (`can`, the permission engine with
+ * their access at launch), as full URIs (`lisContextRoles`). The app fills this pinned file. The default: whoever may
+ * update the channel is an Instructor, whoever may only read it a Learner.
  */
-export const ltiRolesFor = (channelType: ChannelEntityType, role: string): string[] =>
-  hierarchy.elevatedGrants.has(`${channelType}:${role}`) ? [lisContextRoles.instructor] : [lisContextRoles.learner];
+export const ltiRolesFor = (_channelType: ChannelEntityType, can: (action: EntityActionType) => boolean): string[] =>
+  can('update') ? [lisContextRoles.instructor] : can('read') ? [lisContextRoles.learner] : [];

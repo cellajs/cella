@@ -25,14 +25,13 @@ export const oauthClientsTable = snakeCase.table(
     secretHash: varchar({ length: maxLength.field }),
     redirectUris: jsonb().$type<string[]>().notNull().default([]),
     logoUri: varchar({ length: maxLength.url }),
-    /** The one tenant that may install this client; null for a client every tenant may install. */
+    /** The tenant an LTI registration is private to, gone with it; null for every other client. */
     tenantId: varchar({ length: tenantIdLength }).references(() => tenantsTable.id, { onDelete: 'cascade' }),
-    /** The client's key set, which signs its assertions; stored as registered, fetched only when a key is needed. */
+    /** The LTI tool's key set: the token endpoint reads it once installed LTI tools get API access. */
     jwksUri: varchar({ length: maxLength.url }),
     /** Where an LTI launch starts: the LTI tool's login initiation address. */
     initiateLoginUri: varchar({ length: maxLength.url }),
-    /** The LTI tool's default launch address. */
-    targetLinkUri: varchar({ length: maxLength.url }),
+    /** The LTI tool's configuration as the platform recorded it, its launch addresses included. */
     ltiToolConfig: jsonb().$type<LtiToolConfig>(),
     ...auditColumns(),
   },
@@ -40,7 +39,7 @@ export const oauthClientsTable = snakeCase.table(
     // An LTI registration holds every address a launch needs, and no other client holds LTI addresses.
     check(
       'oauth_clients_lti_check',
-      sql`(${table.ltiToolConfig} IS NULL) = (${table.initiateLoginUri} IS NULL) AND (${table.ltiToolConfig} IS NULL) = (${table.targetLinkUri} IS NULL) AND (${table.ltiToolConfig} IS NULL OR ${table.jwksUri} IS NOT NULL)`,
+      sql`(${table.ltiToolConfig} IS NULL) = (${table.initiateLoginUri} IS NULL) AND (${table.ltiToolConfig} IS NULL OR ${table.jwksUri} IS NOT NULL)`,
     ),
   ],
 );

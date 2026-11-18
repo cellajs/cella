@@ -43,9 +43,11 @@ describe('isPublicIp', () => {
     expect(isPublicIp('203.0.113.7')).toBe(true);
     expect(isPublicIp('::ffff:203.0.113.7')).toBe(true);
     expect(isPublicIp('2001:db8::1')).toBe(true);
+    expect(isPublicIp('64:ff9b::203.0.113.7')).toBe(true);
+    expect(isPublicIp('2002:cb00:7107::1')).toBe(true);
   });
 
-  it('rejects loopback, private, link-local, carrier NAT and unique-local ranges', () => {
+  it('rejects loopback, private, link-local, carrier NAT, reserved and unique-local ranges, and the forms that carry them', () => {
     for (const ip of [
       '127.0.0.1',
       '::ffff:127.0.0.1',
@@ -60,6 +62,16 @@ describe('isPublicIp', () => {
       'fc00::1',
       'fd12::1',
       'fe80::1',
+      '198.18.0.1',
+      '224.0.0.1',
+      '240.0.0.1',
+      '255.255.255.255',
+      '::10.0.0.1',
+      '64:ff9b::10.0.0.1',
+      '64:ff9b::a9fe:a9fe',
+      '2002:a00:1::1',
+      'fec0::1',
+      'ff02::1',
     ]) {
       expect(isPublicIp(ip), ip).toBe(false);
     }

@@ -384,6 +384,7 @@ export const zLtiInstallation = z.object({
   name: z.string(),
   logoUri: z.string().nullable(),
   domain: z.string(),
+  launchOrigins: z.array(z.string()),
   description: z.string().nullable(),
   claims: z.array(z.string()),
   requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
@@ -906,7 +907,7 @@ export const zConnection = z.object({
       registrationClientUri: z.string().max(2048).optional(),
       productFamilyCode: z.string().max(255),
       version: z.string().max(255),
-      deploymentIds: z.array(z.string().max(255)).max(100),
+      deploymentIds: z.array(z.string().max(255)).max(1),
     }),
     z.object({
       idpEntityIds: z.array(z.string().min(1).max(255)).optional(),

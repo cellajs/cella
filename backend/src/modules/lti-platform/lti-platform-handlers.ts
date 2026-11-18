@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { toClientError } from '#/lib/error';
+import { AppError } from '#/core/error';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
 import { ltiLaunchRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
 import { approveLtiInstallationOp, rejectLtiInstallationOp } from '#/modules/lti-platform/operations/decide-lti-installation';
@@ -64,16 +64,13 @@ export const ltiResourceLinkHandlers = resourceLinks;
 
 const launches = new OpenAPIHono<Env>();
 
-// A refused record answers a page too: the frame shows the outcome either way. The form may post to the LTI tool's
-// login and, after its redirect, to the issuer on the app's origin.
+// A refused record answers a page too: the frame shows the outcome either way.
 launches.openapi(ltiLaunchRoutes.initiateLtiLaunchLogin, async (ctx) => {
   try {
-    const { action, fields } = await initiateLtiLoginOp(ctx.req.valid('query').token);
-    return autoPostPage(ctx, { action, fields, formOrigins: ["'self'", new URL(action).origin] });
+    return autoPostPage(ctx, await initiateLtiLoginOp(ctx.req.valid('query').token));
   } catch (err) {
-    const refusal = toClientError(err, { path: ctx.req.path, method: ctx.req.method }, { exposeServerMessage: false });
-    if (refusal.status !== 401) throw err;
-    return launchRefusalPage(ctx, refusal.title, 401);
+    if (!(err instanceof AppError) || err.status !== 401) throw err;
+    return launchRefusalPage(ctx, err);
   }
 });
 

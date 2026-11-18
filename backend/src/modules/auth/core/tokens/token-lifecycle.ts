@@ -15,7 +15,6 @@ import {
   type HandoffTokenKind,
   type HeldLinkKind,
   type LinkTokenKind,
-  type MinterNamedTokenKind,
   tokenPolicies,
 } from '#/modules/auth/core/tokens/token-policies';
 import type { InsertTokenModel } from '#/modules/auth/core/tokens/tokens-db';
@@ -381,13 +380,16 @@ export const spendCookieToken = async (
 };
 
 /**
- * A kind whose policy names the minter takes the user's id; any other takes none. An `lti-launch` record names its
- * resource link, an `lti-nonce` its connection.
+ * `createdBy` is the user who minted the token, on whose word a spend acts; an `lti-nonce` has none. An `lti-launch`
+ * record names its resource link, an `lti-nonce` its connection.
  */
-type IssueHandoffTokenOpts = { tenantId: string; ltiResourceLinkId?: string; connectionId?: string } & (
-  | { kind: MinterNamedTokenKind; createdBy: string }
-  | { kind: Exclude<HandoffTokenKind, MinterNamedTokenKind>; createdBy?: undefined }
-);
+interface IssueHandoffTokenOpts {
+  kind: HandoffTokenKind;
+  tenantId: string;
+  createdBy?: string;
+  ltiResourceLinkId?: string;
+  connectionId?: string;
+}
 
 /**
  * Issues a handoff token. It replaces no earlier one: a tenant may hand links to several platforms at once.

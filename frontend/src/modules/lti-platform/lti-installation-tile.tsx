@@ -51,16 +51,16 @@ const statusLabels = { pending: 'c:waiting_for_approval', active: 'c:active', di
 
 const approveDialogId = (installation: LtiInstallation) => `approve-lti-tool-${installation.id}`;
 
-/** Personal fields as a reader sees them; none reads as the identifier a launch always carries. */
+/** Personal fields as a reader sees them. */
 function FieldList({ fields }: { fields: PersonalField[] }) {
   const { t } = useTranslation();
-  if (!fields.length) return t('c:identifier_only');
+  if (!fields.length) return t('c:no_personal_fields');
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
 const approveSchema = zApproveLtiInstallationBody;
 
-/** The fields the LTI tool asked for, as choices with none chosen: what an approval releases is the admin's act. */
+/** Where the LTI tool's launches go, and the fields it asked for as choices with none chosen: what an approval releases is the admin's act. */
 function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: approve, isPending } = useApproveLtiInstallationMutation();
@@ -75,6 +75,15 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="group-label text-xs">{t('c:launch_origins')}</span>
+          <ul className="text-sm break-all">
+            {installation.launchOrigins.map((origin) => (
+              <li key={origin}>{origin}</li>
+            ))}
+          </ul>
+          <p className="text-muted-foreground text-sm">{t('c:launch_origins.text')}</p>
+        </div>
         {installation.requestedFields.length > 0 && (
           <FormField
             control={form.control}
@@ -218,7 +227,7 @@ export function LtiInstallationTile({ installation, organization, resourceLinks 
       icon={<BlocksIcon />}
       title={installation.name}
       status={{ tone: statusTones[installation.status], label: t(statusLabels[installation.status]) }}
-      meta={installation.domain}
+      meta={installation.launchOrigins.map((origin) => new URL(origin).host).join(', ')}
       lead={!isPending && <InstallationTabs installation={installation} organization={organization} links={resourceLinks} />}
       details={
         <>
@@ -227,6 +236,10 @@ export function LtiInstallationTile({ installation, organization, resourceLinks 
               {installation.description}
             </ExpandableTileDetail>
           )}
+          <ExpandableTileDetail label={t('c:launch_origins')} wide>
+            {installation.launchOrigins.join(', ')}
+          </ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:lti_tool_domain')}>{installation.domain}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:asks_for')}>
             <FieldList fields={installation.requestedFields} />
           </ExpandableTileDetail>

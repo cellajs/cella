@@ -99,7 +99,10 @@ export const ltiInstallationSchema = z
     clientId: z.string().describe("The `client_id` of the LTI tool's registration"),
     name: z.string(),
     logoUri: z.string().nullable(),
-    domain: z.string().describe("The LTI tool's domain, where its launches go"),
+    domain: z.string().describe('The domain the LTI tool names itself by: a label it picks'),
+    launchOrigins: z
+      .array(z.string())
+      .describe("The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"),
     description: z.string().nullable(),
     claims: z.array(z.string()).describe('The claims the LTI tool asked for that the platform can release'),
     requestedFields: z.array(z.enum(ltiReleasableFields)).describe('The personal fields those claims carry: what an approval may release'),

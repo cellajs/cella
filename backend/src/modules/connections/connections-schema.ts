@@ -18,9 +18,6 @@ const ssoConnectionConfigSchema = z.object({
 
 const platformAddressSchema = z.string().max(maxLength.url);
 
-/** LTI deployments one connection keeps; a platform makes one per place the app is installed. */
-export const maxLtiDeployments = 100;
-
 /** An LTI connection's protocol part: the platform's endpoints from its configuration, and its LTI deployments. */
 const ltiConnectionConfigSchema = z.object({
   authorizationEndpoint: platformAddressSchema.describe("The platform's OIDC authorization endpoint, where a launch's login goes"),
@@ -34,8 +31,8 @@ const ltiConnectionConfigSchema = z.object({
   version: z.string().max(maxLength.field).describe("The platform's version"),
   deploymentIds: z
     .array(z.string().max(maxLength.field))
-    .max(maxLtiDeployments)
-    .describe('The LTI deployments of the app at the platform; empty until the platform names one'),
+    .max(1)
+    .describe('The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either'),
 });
 
 export type LtiConnectionConfig = z.infer<typeof ltiConnectionConfigSchema>;

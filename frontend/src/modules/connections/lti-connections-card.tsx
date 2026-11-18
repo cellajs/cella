@@ -17,8 +17,8 @@ import { Button } from '~/modules/ui/button';
 import type { QueryOrgContext } from '~/query/types';
 import { clockTime, dateShort } from '~/utils/date-short';
 
-/** One LMS the app is registered at; deleting it ends the launches from there. */
-function LmsConnectionTile({ connection, path }: { connection: Connection; path: QueryOrgContext }) {
+/** One LTI platform the app is registered at; deleting it ends the launches from there. */
+function LtiConnectionTile({ connection, path }: { connection: Connection; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: remove } = useDeleteLtiConnectionMutation();
   const platform = 'productFamilyCode' in connection.config ? connection.config.productFamilyCode : null;
@@ -26,8 +26,8 @@ function LmsConnectionTile({ connection, path }: { connection: Connection; path:
   // Deleting ends every launch from that platform: the click asks first
   const openDeleteConfirm = (event: MouseEvent<HTMLButtonElement>) =>
     openConfirm(event.currentTarget, {
-      id: `delete-lms-connection-${connection.id}`,
-      title: <NamedText i18nKey="c:confirm.delete_lms_connection" name={connection.name} />,
+      id: `delete-lti-connection-${connection.id}`,
+      title: <NamedText i18nKey="c:confirm.delete_lti_connection" name={connection.name} />,
       resource: 'c:connection',
       onConfirm: () => remove({ path: { ...path, connectionId: connection.id } }),
     });
@@ -61,8 +61,8 @@ function LmsConnectionTile({ connection, path }: { connection: Connection; path:
   );
 }
 
-/** The LMSs that launch the app into this organization, and the registration link that connects one more. */
-export function LmsConnectionsCard({ organization }: { organization: EnrichedOrganization }) {
+/** The LTI platforms that launch the app into this organization, and the registration link that connects one more. */
+export function LtiConnectionsCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const connections = useSuspenseQuery(ltiConnectionsQueryOptions(path)).data.results;
@@ -77,7 +77,7 @@ export function LmsConnectionsCard({ organization }: { organization: EnrichedOrg
   };
 
   return (
-    <ToolCard label="c:lms_connections" description={t('c:lms_connections.text')}>
+    <ToolCard label="c:lti_connections" description={t('c:lti_connections.text')}>
       <div className="flex flex-col gap-2">
         <Button variant="secondary" className="max-sm:w-full sm:self-start" loading={isPending} onClick={onCreateLink}>
           <LinkIcon />
@@ -93,7 +93,7 @@ export function LmsConnectionsCard({ organization }: { organization: EnrichedOrg
       {connections.length > 0 && (
         <Accordion value={openTile} onValueChange={setOpenTile} className="mt-6 flex flex-col gap-2">
           {connections.map((connection) => (
-            <LmsConnectionTile key={connection.id} connection={connection} path={path} />
+            <LtiConnectionTile key={connection.id} connection={connection} path={path} />
           ))}
         </Accordion>
       )}

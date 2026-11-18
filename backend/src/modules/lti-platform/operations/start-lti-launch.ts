@@ -2,22 +2,51 @@ import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { issueHandoffToken, readHandoffToken } from '#/modules/auth/core';
-import { launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { findLtiLaunchTarget } from '#/modules/lti-platform/lti-platform-queries';
-import { getValidLtiResourceLink } from '#/modules/lti-platform/operations/manage-lti-resource-links';
+import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
+import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
+import { accessFrom } from '#/permissions/access';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
+type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | 'channelType' | 'channelId'>;
+
 /**
- * Starts a launch of a resource link, for a caller who may read its channel now: a one-use launch record names the
- * person, the tenant and the resource link. The answer is the login initiation page that hands the record to the LTI
- * tool.
- * @throws AppError 409 `lti_installation_not_active` while the installation waits for an approval or is disabled, and
- *   what `getValidLtiResourceLink` throws.
+ * Who may launch a resource link: a person who may read its channel through their own memberships, read now. A system
+ * admin is nobody special here: the ID token carries the person's own access, as a token does. Starting a launch and
+ * the launch endpoint decide alike.
+ * @returns The channel and the person's access, which the launch's roles are decided with.
+ * @throws AppError 404 when the person may not read the channel.
+ */
+export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
+  const { memberships } = await readMemberships(personId);
+  const launcherCtx = {
+    var: {
+      db: baseDb,
+      tenantId: link.tenantId,
+      organizationId: link.organizationId,
+      actor: { id: personId, bindings: memberships, scopes: null },
+      isSystemAdmin: false,
+    },
+  };
+  const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
+  return { channel: entity, access: accessFrom(launcherCtx) };
+};
+
+/**
+ * Starts a launch of a resource link, for a caller who may launch it (`readAsLauncher`): a one-use launch record names
+ * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
+ * LTI tool.
+ * @throws AppError 404 `not_found` for no such link or a caller who may not launch it, 409 `lti_installation_not_active`
+ *   while the installation waits for an approval or is disabled.
  */
 export async function startLtiLaunchOp(ctx: UserContext, id: string) {
-  const { tenantId } = ctx.var;
-  const { link } = await getValidLtiResourceLink(ctx, id, 'read');
+  const { tenantId, organizationId } = ctx.var;
+  const link = await findLtiResourceLink(ctx, { id, organizationId });
+  if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
+  await readAsLauncher(ctx.var.user.id, link);
   const target = await findLtiLaunchTarget(ctx, { resourceLinkId: link.id });
   if (!target?.installation.approvedAt || target.account.status !== 'active') {
     throw new AppError(409, 'lti_installation_not_active', 'warn', { meta: { installationId: link.installationId } });
@@ -61,6 +90,8 @@ export async function initiateLtiLoginOp(rawToken: string) {
   action.searchParams.set('lti_storage_target', storageTarget);
   return {
     action: action.href,
+    // The LTI tool's login sends the browser on to the issuer, on the app's origin, through any of its own.
+    formOrigins: ["'self'", ...launchOrigins(client)],
     fields: {
       iss: appConfig.oauthUrl,
       login_hint: record.id,

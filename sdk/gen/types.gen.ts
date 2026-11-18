@@ -490,9 +490,13 @@ export type LtiInstallation = {
   name: string;
   logoUri: string | null;
   /**
-   * The LTI tool's domain, where its launches go
+   * The domain the LTI tool names itself by: a label it picks
    */
   domain: string;
+  /**
+   * The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts
+   */
+  launchOrigins: Array<string>;
   description: string | null;
   /**
    * The claims the LTI tool asked for that the platform can release
@@ -1060,7 +1064,7 @@ export type Connection = {
          */
         version: string;
         /**
-         * The LTI deployments of the app at the platform; empty until the platform names one
+         * The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either
          */
         deploymentIds: Array<string>;
       }
@@ -3762,7 +3766,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, an anonymous launch, a launch without roles, or a test user.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.
    */
   403: unknown;
   /**

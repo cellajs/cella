@@ -1017,7 +1017,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.
+ * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.
  *
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· _auth · cella_
  *
@@ -1693,7 +1693,7 @@ export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Every page here may be framed by the connection's platform alone.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.
  *
  * **GET /auth/lti/login** ·· [initiateLtiLogin](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/login) ·· _auth · cella_
  *
@@ -1719,7 +1719,7 @@ export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch by form post
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Every page here may be framed by the connection's platform alone. A cross-site form post by design: the CSRF check leaves it out.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
  *
  * **POST /auth/lti/login** ·· [initiateLtiLoginByPost](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/login) ·· _auth · cella_
  *
@@ -3998,7 +3998,7 @@ export const createLtiRegistrationLink = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI connection
  *
- * Removes an LTI connection: its platform launches the app no more. Identities and sessions that came through it keep their rows; members stay members.
+ * Removes an LTI connection: its platform launches the app no more, and every session its launches started ends. Identities that came through it keep their rows; members stay members.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}** ·· [deleteLtiConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}) ·· _connections · cella_
  *

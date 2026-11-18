@@ -95,7 +95,7 @@ interface ActiveItem {
 export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
-  // An account that installs an app or an LTI tool takes no API key: the LTI tools card shows an installation
+  // An installation's account holds no key; an LTI tool's shows in the LTI tools card.
   const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results.filter((account) => !account.oauthClientId);
   const keyLists = useSuspenseQueries({ queries: accounts.map((account) => apiKeysQueryOptions(path, account.id)) });
   const addButtonRef = useRef<HTMLButtonElement>(null);

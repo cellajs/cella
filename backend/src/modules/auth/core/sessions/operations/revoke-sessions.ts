@@ -65,3 +65,17 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
 
   return ended;
 };
+
+/**
+ * Ends every live session that came through the connection, whoever's, as an administrator's act (`admin_revoke`): the
+ * sessions an LTI connection's launches started go with it. The people's other sessions and OAuth sessions stay. The
+ * stamps commit inside the caller's transaction; the close happens at the call, as in {@link revokeSessions}.
+ */
+export const revokeConnectionSessions = async (ctx: DbContext, { connectionId, by }: { connectionId: string; by: ActorId }) => {
+  const ended = await updateSessionsRevoked(ctx, { match: { connectionId }, revokedBy: by, revocationReason: 'admin_revoke' });
+
+  const idsByUser = new Map<string, string[]>();
+  for (const { userId, id } of ended) idsByUser.set(userId, [...(idsByUser.get(userId) ?? []), id]);
+  for (const [userId, sessionIds] of idsByUser) closeSessions(userId, sessionIds, 'admin_revoke');
+  log.info('Sessions revoked', { connectionId, reason: 'admin_revoke', count: ended.length });
+};

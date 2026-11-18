@@ -3,7 +3,15 @@ import type { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
-import { approveLtiInstallation, createLtiRegistrationLink, createLtiResourceLink, getMe, startLtiLaunch, startLtiToolRegistration } from 'sdk';
+import {
+  approveLtiInstallation,
+  createLtiRegistrationLink,
+  createLtiResourceLink,
+  deleteLtiConnection,
+  getMe,
+  startLtiLaunch,
+  startLtiToolRegistration,
+} from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
@@ -222,7 +230,18 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_launch_invalid',
       },
       { name: 'no sub', run: async () => (await launch(connected, { sub: undefined })).response, status: 403, type: 'lti_launch_anonymous' },
-      { name: 'no roles', run: async () => (await launch(connected, { [ltiClaims.roles]: [] })).response, status: 403, type: 'lti_launch_no_roles' },
+      {
+        name: 'no roles claim',
+        run: async () => (await launch(connected, { [ltiClaims.roles]: undefined })).response,
+        status: 403,
+        type: 'lti_launch_no_roles',
+      },
+      {
+        name: 'a deployment the connection does not hold',
+        run: async () => (await launch(connected, { [ltiClaims.deploymentId]: 'deployment-2' })).response,
+        status: 403,
+        type: 'lti_deployment_unknown',
+      },
       {
         name: 'the test user role',
         run: async () => (await launch(connected, { [ltiClaims.roles]: [lisContextRoles.learner, ltiTestUserRole] })).response,
@@ -276,16 +295,18 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const replay = await finish({ id_token: valid.idToken, state: valid.started.state, storage_value: valid.started.value });
     await expectRefusalPage(replay, 401, 'lti-nonce_not_found');
 
-    // A platform that offers no platform storage is refused at the login, on a page only its own origin may frame.
+    // A platform that offers no platform storage is refused at the login.
     const noStorage = await fetchApp(
       `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
     );
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
-    expect(noStorage.headers.get('Content-Security-Policy')).toContain(`frame-ancestors ${connected.issuer}`);
+
+    // An empty roles list is a launch without a role: the person arrives with the least privileged role.
+    expect((await launch(connected, { [ltiClaims.roles]: [] })).response.status).toBe(303);
   });
 
   // The embedded cookie is partitioned per parent site; a sibling frame there holds it too.
-  it('reads the embedded session only for a marked request, never the normal one for it, and refuses its cross-site writes and step-ups', async () => {
+  it('reads the embedded session only for a marked request, never the normal one for it, refuses its cross-site writes and what a guest may not do, and ends it with its connection', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const launched = await launch(connected);
     const embedded = embeddedCookieOf(launched.response).pair;
@@ -308,11 +329,43 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(crossSite.status).toBe(403);
     expect((await crossSite.json()).type).toBe('embedded_session_cross_site');
 
-    // Fresh from the launch, the embedded session still stands stepped up for nothing: no account-security route.
-    const stepUp = await fetchApp('/me', { method: 'DELETE', headers: { Cookie: embedded, ...embeddedHeader, 'Sec-Fetch-Site': 'same-origin' } });
-    expect(stepUp.status).toBe(403);
-    expect((await stepUp.json()).type).toBe('step_up_required');
+    // An account a launch made has no proven address: the gate refuses it what it refuses a guest, such as a tenant of its own.
+    const tenant = await fetchApp('/tenants', {
+      method: 'POST',
+      headers: { Cookie: embedded, ...embeddedHeader, 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    expect(tenant.status).toBe(403);
+    expect((await tenant.json()).type).toBe('anonymous_session_restricted');
     expect((await me(embedded, embeddedHeader)).id).toBe(embeddedUser.id);
+
+    // Deleting the connection ends the sessions its launches started.
+    const deleted = await call(deleteLtiConnection, {
+      path: { tenantId: connected.org.tenantId, organizationId: connected.org.id, connectionId: connected.connection.id },
+      headers: { ...defaultHeaders, Cookie: member.sessionCookie },
+    });
+    expect(deleted.response.status).toBe(204);
+    expect((await fetchApp('/me', { headers: { Cookie: embedded, ...embeddedHeader } })).status).toBe(401);
+  });
+
+  it('signs out of the session a request asks for and leaves the other', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const embedded = embeddedCookieOf((await launch(connected)).response).pair;
+    const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    const both = `${embedded}; ${member.sessionCookie}`;
+    const meStatus = async (headers: Record<string, string> = {}) => (await fetchApp('/me', { headers: { Cookie: both, ...headers } })).status;
+    const signOut = (headers: Record<string, string> = {}) =>
+      fetchApp('/auth/sign-out', {
+        method: 'POST',
+        headers: { Cookie: both, Origin: appConfig.frontendUrl, 'Sec-Fetch-Site': 'same-origin', ...headers },
+      });
+
+    expect((await signOut()).status).toBe(204);
+    expect(await meStatus()).toBe(401);
+    expect(await meStatus(embeddedHeader)).toBe(200);
+
+    expect((await signOut(embeddedHeader)).status).toBe(204);
+    expect(await meStatus(embeddedHeader)).toBe(401);
   });
 
   // D6: an address across institutions is no proof of the account behind it.

@@ -1,13 +1,12 @@
 import { and, eq } from 'drizzle-orm';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import { approveLtiInstallation, createLtiResourceLink, startLtiLaunch, startLtiToolRegistration } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { ltiClaims, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisContextTypes, ltiClaims, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
-import { ltiContextTypes, ltiRolesFor } from '#/modules/lti-platform/launch-context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
@@ -160,8 +159,8 @@ describe('LTI launch', async () => {
       [ltiClaims.deploymentId]: tool.installationId,
       [ltiClaims.targetLinkUri]: login.fields.target_link_uri,
       [ltiClaims.resourceLink]: { id: resourceLinkId, title: 'Peer review' },
-      [ltiClaims.roles]: ltiRolesFor('organization', adminRole),
-      [ltiClaims.context]: { id: org.org.id, type: ltiContextTypes('organization') },
+      [ltiClaims.roles]: [lisContextRoles.instructor],
+      [ltiClaims.context]: { id: org.org.id, type: [lisContextTypes.group] },
       [ltiClaims.custom]: { round: '1' },
       [ltiClaims.toolPlatform]: { guid: org.org.tenantId },
     });
@@ -243,7 +242,11 @@ describe('LTI launch', async () => {
     expect(refused.response.status).toBe(403);
     expect(await db.select().from(tokensTable).where(eq(tokensTable.kind, 'lti-launch'))).toHaveLength(0);
 
+    // A member who may only read the context launches as a Learner.
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+    const learner = await authorize((await startLaunch(org, resourceLinkId, member.sessionCookie)).login.fields, tool.redirectUri);
+    expect(decodeJwt(learner.fields.id_token)[ltiClaims.roles]).toEqual([lisContextRoles.learner]);
+
     const { login } = await startLaunch(org, resourceLinkId, member.sessionCookie);
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, member.id), eq(membershipsTable.channelId, org.org.id)));
     const launch = await authorize(login.fields, tool.redirectUri);

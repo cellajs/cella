@@ -8,23 +8,23 @@ LTI lets one app, the platform, open another, the LTI tool, in a frame on its pa
 
 ## Two roles
 
-Your app is a **platform** when it hosts other apps: an admin installs an LTI tool, approves it and places it as a tab of a channel. Turn it on with `has.ltiPlatform`.
+Your app is a **platform** when it hosts other apps: an admin installs an LTI tool, approves it and places it as a tab of a channel. Turn it on with `has.ltiPlatform`, which lets the app frame any HTTPS origin.
 
 Your app is an **LTI tool** when a learning platform, such as Canvas or another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
 
-An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. The two apps fetch each other's addresses server to server. Outside development, each needs a public HTTPS address.
+An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. As an LTI tool, the app fetches the platform's configuration and keys server to server. As a platform, it fetches nothing and stores the addresses the LTI tool registers. Outside development, each needs a public HTTPS address.
 
 ## Registration
 
 One pasted address connects two apps, by LTI Dynamic Registration, whichever side your app is on. Connections and installations belong to the organization's tenant, and only someone who may update the organization manages them. Adding or approving one asks for a recent second factor.
 
-As an LTI tool, an admin creates a registration link under LMS connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
+As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
 ## Approval
 
-An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. A launch always carries an identifier for the person, unique to the platform, whatever the admin releases.
+An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. A launch always carries the person's id, one per person and the same for every LTI tool, their role, their language and the channel's name, whatever the admin releases.
 
 Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
@@ -48,7 +48,7 @@ An app whose course is a channel below the organization names that channel type 
 
 A person who arrives for the first time gets an account without a proven email address. An email the platform releases never links them to an existing account.
 
-As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channels are LTI contexts and which LTI role each of its roles sends. The template sends every channel as a group, and a role that may manage the channel as Instructor, any other as Learner.
+As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channels are LTI contexts and which LTI roles a person's permissions there send. The template sends every channel as a group. Whoever may update the context's channel goes as Instructor, whoever may only read it as Learner, as the permission engine decides with the person's access at launch.
 
 ## Embedded pages
 
@@ -64,16 +64,19 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A course not set up yet:** a student who arrives before any instructor is asked to have an instructor open it first.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again.
-- **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to.
+- **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
+- **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 
 ## Not built
 
 - The roster, grade and deep linking services. An LTI tool reads course data through the platform's own API.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
+- Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
+- Canvas as a platform, which the app refuses: its configuration address is not under its issuer, and its sign-in host is not the host that frames the page.
 
 ## Try it locally
 
 Development turns both roles on, and `pnpm seed` connects two seeded organizations. The first organization the seeded admin manages is the platform: it shows a tab named after the second, which is registered there as an LTI tool, approved with the name released. Open that tab to land in the second organization inside the frame, as a new person carrying your name.
 
-To walk the registration by hand, create a registration link under LMS connections in one organization, paste it under LTI tools in another, approve the LTI tool and add its tab.
+To walk the registration by hand, create a registration link under LTI connections in one organization, paste it under LTI tools in another, approve the LTI tool and add its tab.

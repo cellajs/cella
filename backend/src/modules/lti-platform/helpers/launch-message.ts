@@ -16,6 +16,20 @@ const resourceLinkMessage = (config: LtiToolConfig) => config.messages.find(({ t
 export const launchTargetLinkUri = ({ ltiToolConfig }: LaunchClient) =>
   resourceLinkMessage(ltiToolConfig)?.target_link_uri ?? ltiToolConfig.target_link_uri;
 
+/**
+ * The distinct origins an LTI tool's launches go to: its login initiation, redirect and target addresses. An admin
+ * approves them, and a launch page posts to them alone.
+ */
+export const launchOrigins = ({
+  initiateLoginUri,
+  redirectUris,
+  ltiToolConfig,
+}: LaunchClient & { initiateLoginUri: string; redirectUris: string[] }) => {
+  const targets = ltiToolConfig.messages.flatMap(({ target_link_uri }) => target_link_uri ?? []);
+  const addresses = [initiateLoginUri, ...redirectUris, ltiToolConfig.target_link_uri, ...targets];
+  return [...new Set(addresses.map((address) => new URL(address).origin))];
+};
+
 /** The `custom` claim: the LTI tool's custom parameters, its resource link message's over them, the resource link's over both. */
 export const launchCustom = ({ ltiToolConfig }: LaunchClient, resourceLinkCustom: Record<string, string>): Record<string, string> => ({
   ...ltiToolConfig.custom_parameters,

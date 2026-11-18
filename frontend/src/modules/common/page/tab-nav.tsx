@@ -4,6 +4,7 @@ import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import {
+  type DataTab,
   getSlotDescriptors,
   isPlacementHidden,
   type PlacementDescriptor,
@@ -27,12 +28,9 @@ export type PageTab = TabLabel & {
   activeOptions?: LinkComponentProps['activeOptions'];
 };
 
-/** A tab that data adds to a surface, such as an LTI resource link: its id is the `$tool` param, its caption its own text. */
-export type LinkedTab = { id: string; text: string };
-
 /** What a surface's tabs resolve with: the placement inputs, and the tabs data adds after the declared ones. */
 export interface NavTabOptions extends ResolvePlacementOptions {
-  linkedTabs?: readonly LinkedTab[];
+  dataTabs?: readonly DataTab[];
 }
 
 // Cast: generated FileRoutesById is a closed interface without index signature
@@ -106,14 +104,14 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   return [...routeCandidates, ...registryCandidates];
 }
 
-/** The linked tabs of a surface, through its `$tool` host child; none without one. */
-function getLinkedTabs(parentRouteId: string, linkedTabs: readonly LinkedTab[]): PageTab[] {
+/** The data tabs of a surface, through its `$tool` host child; none without one. */
+function getDataTabs(parentRouteId: string, dataTabs: readonly DataTab[]): PageTab[] {
   const parentRoute: AnyRoute | undefined = getRoutesById()[parentRouteId];
   const hostChild = parentRoute && getChildRoutes(parentRoute).find((route) => route.path === '$tool');
   if (!hostChild) return [];
-  return linkedTabs.map(({ id, text }) => ({
+  return dataTabs.map(({ id, title }) => ({
     id,
-    text,
+    text: title,
     path: hostChild.fullPath as PageTab['path'],
     // Cast: preserve the surface's own params (tenant/org), set only the host's `$tool` id
     params: ((prev: Record<string, string>) => ({ ...prev, tool: id })) as PageTab['params'],
@@ -122,15 +120,15 @@ function getLinkedTabs(parentRouteId: string, linkedTabs: readonly LinkedTab[]):
 
 /**
  * {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0,
- * lower first), then the linked tabs in their own order.
+ * lower first), then the data tabs in their own order.
  */
-function resolveNavTabs(parentRouteId: string, { linkedTabs = [], ...options }: NavTabOptions = {}): PageTab[] {
+function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: NavTabOptions = {}): PageTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
 
   const resolved = resolvePlacementList(slot, getNavTabCandidates(parentRouteId), options);
   const declared: PageTab[] = resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
-  return [...declared, ...getLinkedTabs(parentRouteId, linkedTabs)];
+  return [...declared, ...getDataTabs(parentRouteId, dataTabs)];
 }
 
 /**
@@ -159,13 +157,13 @@ export const defaultNavTabPath = (parentRouteId: string, options?: NavTabOptions
  * `surfaces` or the channel arrangement hides ({@link isPlacementHidden}), and a tab whose `requires` the caller's `grants`
  * lack, to the landing tab, or to the layout's own path when no tab is left. Without `grants` (the memberships could not
  * be read) it leaves `requires` to the server, and it never reads `visibleTo`; {@link useNavTabRedirect} covers changes
- * while on a tab.
+ * while on a tab. It waits on no data: a data tab passes to the `$tool` route, and the landing tab is a declared one.
  * @throws A replacing redirect that keeps params and hash. It keeps a bare parent's search and drops a hidden tab's own sort and filters.
  */
 export function guardNavTabs(
   matches: readonly { routeId: string; fullPath: string; params: unknown }[],
   parentRouteId: string,
-  options: Pick<NavTabOptions, 'slotConfig' | 'grants' | 'linkedTabs'> = {},
+  options: Pick<NavTabOptions, 'slotConfig' | 'grants'> = {},
 ): void {
   const deepest = matches[matches.length - 1];
   if (!deepest) return;

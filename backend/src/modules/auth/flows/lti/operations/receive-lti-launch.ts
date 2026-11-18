@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { decodeLaunchState, ltiStorageKey } from '#/modules/auth/flows/lti/helpers/launch-state';
-import type { PageFrame, StorageExchange } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
+import type { StorageExchange } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import type { ltiLaunchFormSchema } from '#/modules/auth/flows/lti/lti-schema';
 import { isLtiConnection } from '#/modules/connections/connections-db';
 import { findConnectionById } from '#/modules/connections/connections-queries';
@@ -17,14 +17,12 @@ const dbCtx = { var: { db: baseDb } };
  * @throws AppError 401 `lti_platform_unknown` for a state of no active LTI connection, 401 `lti_launch_invalid` when
  *   the platform posted an error or no ID token.
  */
-export async function receiveLtiLaunchOp(form: z.infer<typeof ltiLaunchFormSchema>, frame: PageFrame): Promise<StorageExchange> {
+export async function receiveLtiLaunchOp(form: z.infer<typeof ltiLaunchFormSchema>): Promise<StorageExchange> {
   const state = decodeLaunchState(form.state);
   const connection = state && (await findConnectionById(dbCtx, { id: state.connection }));
   if (!state || !connection || !isLtiConnection(connection) || connection.status !== 'active') {
     throw new AppError(401, 'lti_platform_unknown', 'warn', { meta: { issuer: null } });
   }
-  const origin = new URL(connection.config.authorizationEndpoint).origin;
-  frame.ancestor = origin;
 
   if (form.error || !form.id_token || !form.state) {
     log.warn('LTI launch refused by the platform', { connectionId: connection.id, error: form.error ?? null });
@@ -34,7 +32,7 @@ export async function receiveLtiLaunchOp(form: z.infer<typeof ltiLaunchFormSchem
   return {
     subject: 'lti.get_data',
     target: state.target,
-    origin,
+    origin: new URL(connection.config.authorizationEndpoint).origin,
     key: ltiStorageKey(state.nonce),
     fields: { id_token: form.id_token, state: form.state },
   };

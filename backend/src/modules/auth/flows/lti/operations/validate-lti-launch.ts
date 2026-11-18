@@ -10,7 +10,6 @@ import type { LaunchState } from '#/modules/auth/flows/lti/helpers/launch-state'
 import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-key-set';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { findActiveLtiConnections } from '#/modules/connections/connections-queries';
-import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 
 const dbCtx = { var: { db: baseDb } };
 
@@ -31,7 +30,7 @@ const ltiLaunchSchema = z.object({
   family_name: profileClaim,
   email: profileClaim,
   [ltiClaims.deploymentId]: ltiIdSchema,
-  [ltiClaims.roles]: z.array(z.string().max(maxLength.url)).min(1).max(100),
+  [ltiClaims.roles]: z.array(z.string().max(maxLength.url)).max(100),
   [ltiClaims.context]: z
     .object({
       id: ltiIdSchema,
@@ -101,13 +100,14 @@ const launchRules: LaunchRule[] = [
   },
   { rule: 'message_type', holds: ({ claims }) => claims[ltiClaims.messageType] === 'LtiResourceLinkRequest' },
   { rule: 'version', holds: ({ claims }) => claims[ltiClaims.version] === '1.3.0' },
-  // A new LTI deployment of a registered platform is taken on: the registration is the trust anchor.
+  // A connection whose platform named no deployment at registration takes on the first one a launch names.
   {
     rule: 'deployment_id',
     holds: ({ claims, connection: { config } }) => {
       const deploymentId = ltiIdSchema.safeParse(claims[ltiClaims.deploymentId]).data;
-      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length < maxLtiDeployments);
+      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length === 0);
     },
+    refusal: { status: 403, type: 'lti_deployment_unknown' },
   },
   {
     rule: 'target_link_uri',
@@ -122,7 +122,8 @@ const launchRules: LaunchRule[] = [
   },
   { rule: 'context', holds: ({ claims }) => ltiLaunchSchema.shape[ltiClaims.context].safeParse(claims[ltiClaims.context]).success },
   { rule: 'sub', holds: ({ claims }) => ltiIdSchema.safeParse(claims.sub).success, refusal: { status: 403, type: 'lti_launch_anonymous' } },
-  { rule: 'roles', holds: ({ claims }) => rolesOf(claims).length > 0, refusal: { status: 403, type: 'lti_launch_no_roles' } },
+  // An empty list is a launch without a role (LTI Core 1.3, section 5.3.7): the app-owned mapping answers it.
+  { rule: 'roles', holds: ({ claims }) => Array.isArray(claims[ltiClaims.roles]), refusal: { status: 403, type: 'lti_launch_no_roles' } },
   { rule: 'test_user', holds: ({ claims }) => !rolesOf(claims).includes(ltiTestUserRole), refusal: { status: 403, type: 'lti_launch_test_user' } },
 ];
 
@@ -154,9 +155,9 @@ export const findLaunchConnection = async (token: string) => {
 /**
  * Checks a launch against every rule (`launchRules`) and spends its nonce.
  * @returns The claims the launch acts on.
- * @throws AppError 401 `lti_launch_invalid` naming the failed rule in `meta.rule`, 403 `lti_launch_anonymous`,
- *   `lti_launch_no_roles` or `lti_launch_test_user`, 401 `lti-nonce_not_found` or `lti-nonce_expired`, and what reading
- *   the platform's key set throws.
+ * @throws AppError 401 `lti_launch_invalid` naming the failed rule in `meta.rule`, 403 `lti_deployment_unknown`,
+ *   `lti_launch_anonymous`, `lti_launch_no_roles` or `lti_launch_test_user`, 401 `lti-nonce_not_found` or
+ *   `lti-nonce_expired`, and what reading the platform's key set throws.
  */
 export const validateLtiLaunch = async (facts: Omit<LaunchFacts, 'nowSeconds'>): Promise<LtiLaunch> => {
   const checked = { ...facts, nowSeconds: Math.floor(Date.now() / 1000) };

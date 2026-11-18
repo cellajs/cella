@@ -1,5 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
+import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { requestedFields } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiInstallations, type LtiInstallationRecord } from '#/modules/lti-platform/lti-platform-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -11,6 +12,7 @@ export const toLtiInstallation = ({ account, installation, client }: LtiInstalla
   name: client.name,
   logoUri: client.logoUri,
   domain: client.ltiToolConfig.domain,
+  launchOrigins: launchOrigins(client),
   description: client.ltiToolConfig.description ?? null,
   claims: client.ltiToolConfig.claims,
   requestedFields: requestedFields(client.ltiToolConfig.claims),

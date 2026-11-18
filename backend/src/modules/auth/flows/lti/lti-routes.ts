@@ -8,7 +8,7 @@ import { locationSchema } from '#/schemas';
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
 
 const loginDescription =
-  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Every page here may be framed by the connection's platform alone.";
+  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.";
 
 const loginResponses = {
   200: { description: 'Login page\n\nA page that stores the launch value in platform storage and moves on to the platform.' },
@@ -85,7 +85,10 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       303: { description: 'Launched\n\nTo the embedded page of the channel, with the embedded session set.', headers: locationSchema },
       400: { description: "Launch refused\n\nThe platform's key set could not be read, or a field is longer than a launch carries." },
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
-      403: { description: 'Launch refused\n\nA page: not same-origin, an anonymous launch, a launch without roles, or a test user.' },
+      403: {
+        description:
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.',
+      },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Course not set up\n\nA page: an instructor opens the app from this course first.' },
     },
