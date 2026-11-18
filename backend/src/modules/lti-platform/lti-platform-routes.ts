@@ -1,21 +1,24 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { mockLtiInstallationResponse, mockLtiMemberResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
   initiateLtiLoginQuerySchema,
   listLtiInstallationsQuerySchema,
+  listLtiMembersQuerySchema,
   listLtiResourceLinksQuerySchema,
   ltiInstallationParamSchema,
   ltiInstallationSchema,
   ltiLaunchStartSchema,
+  ltiMemberSchema,
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
   ltiToolRegistrationStartSchema,
   startLtiToolRegistrationBodySchema,
+  updateLtiInstallationBodySchema,
   updateLtiResourceLinkBodySchema,
 } from '#/modules/lti-platform/lti-platform-schema';
 import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
@@ -60,9 +63,21 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Approve LTI installation',
     description:
-      'Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.',
+      'Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.',
     request: { params: ltiInstallationParamSchema, body: jsonBody(approveLtiInstallationBodySchema) },
     responses: { 200: json('Approved installation', ltiInstallationSchema), ...errors(409) },
+  }),
+  updateLtiInstallation: xRoute({
+    method: 'patch',
+    path: '/{ltiInstallationId}',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Update LTI installation',
+    description:
+      "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.",
+    request: { params: ltiInstallationParamSchema, body: jsonBody(updateLtiInstallationBodySchema) },
+    responses: { 200: json('Updated installation', ltiInstallationSchema), ...errors(409) },
   }),
   rejectLtiInstallation: xRoute({
     method: 'post',
@@ -160,6 +175,24 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
     responses: {
       200: { description: 'Login initiation\n\nA page that posts the login initiation to the LTI tool as it loads.' },
       401: { description: 'Launch record refused\n\nA page with one line of text: the record was used before, never existed or expired.' },
+    },
+  }),
+});
+
+/** The routes an installed LTI tool calls with a token of its own, for the channels it is placed in. */
+export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], {
+  listLtiMembers: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [ltiToolGuard, tenantGuard, orgGuard],
+    xScope: 'user:read',
+    summary: 'Get LTI members',
+    description:
+      "The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.",
+    request: { params: tenantOrgParamSchema, query: listLtiMembersQuerySchema },
+    responses: {
+      200: json('LTI members', paginationSchema(ltiMemberSchema), { results: [mockLtiMemberResponse()], totalSize: 1 }),
     },
   }),
 });

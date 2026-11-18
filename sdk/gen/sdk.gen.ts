@@ -250,6 +250,9 @@ import type {
   ListLtiInstallationsData,
   ListLtiInstallationsErrors,
   ListLtiInstallationsResponses,
+  ListLtiMembersData,
+  ListLtiMembersErrors,
+  ListLtiMembersResponses,
   ListLtiResourceLinksData,
   ListLtiResourceLinksErrors,
   ListLtiResourceLinksResponses,
@@ -407,6 +410,9 @@ import type {
   UpdateConnectionData,
   UpdateConnectionErrors,
   UpdateConnectionResponses,
+  UpdateLtiInstallationData,
+  UpdateLtiInstallationErrors,
+  UpdateLtiInstallationResponses,
   UpdateLtiResourceLinkData,
   UpdateLtiResourceLinkErrors,
   UpdateLtiResourceLinkResponses,
@@ -504,6 +510,7 @@ import {
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
   zListLtiInstallationsResponse,
+  zListLtiMembersResponse,
   zListLtiResourceLinksResponse,
   zListMembersResponse,
   zListMyInvitationsResponse,
@@ -547,6 +554,7 @@ import {
   zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
   zUpdateConnectionResponse,
+  zUpdateLtiInstallationResponse,
   zUpdateLtiResourceLinkResponse,
   zUpdateMembershipResponse,
   zUpdateMeResponse,
@@ -2117,7 +2125,7 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
 /**
  * Approve LTI installation
  *
- * Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.
+ * Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve** ·· [approveLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve) ·· _lti-platform · cella_
  *
@@ -2126,6 +2134,7 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.ltiInstallationId - `string`
  * @param {enum[]} options.body.releasedFields - `enum[]`
+ * @param {enum[]=} options.body.grantedScopes - `enum[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
@@ -2135,6 +2144,34 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zApproveLtiInstallationResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update LTI installation
+ *
+ * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [updateLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
+ *
+ * @param {updateLtiInstallationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiInstallationId - `string`
+ * @param {enum[]=} options.body.grantedScopes - `enum[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
+ */
+export const updateLtiInstallation = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateLtiInstallationData, ThrowOnError>,
+): RequestResult<UpdateLtiInstallationResponses, UpdateLtiInstallationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateLtiInstallationResponses, UpdateLtiInstallationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateLtiInstallationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2296,6 +2333,34 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zStartLtiLaunchResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch',
+    ...options,
+  });
+
+/**
+ * Get LTI members
+ *
+ * The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members) ·· _lti-platform · cella_
+ *
+ * @param {listLtiMembersData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiMembers = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiMembersData, ThrowOnError>,
+): RequestResult<ListLtiMembersResponses, ListLtiMembersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiMembersResponses, ListLtiMembersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiMembersResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members',
     ...options,
   });
 

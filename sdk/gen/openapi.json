@@ -48,6 +48,10 @@
             "name": "Actor",
             "description": "Works with a signed-in session, a secret API key or an access token. The request acts as the user or service account behind it."
           },
+          "ltiToolGuard": {
+            "name": "LTI tool",
+            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation, within the scopes an admin granted."
+          },
           "orgGuard": {
             "name": "Organization",
             "description": "Requires membership in this organization or in a channel inside it. System admins also pass."
@@ -417,7 +421,7 @@
     },
     {
       "name": "lti-platform",
-      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry. A resource link places an installation in a channel; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame.",
+      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel and binds it there; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a channel it is placed in.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -533,7 +537,7 @@
       },
       "oauth2": {
         "type": "oauth2",
-        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret. Each route lists the scope it needs; a `write` scope covers `read`.",
+        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret, and installed LTI tools with an assertion signed by the key they registered. Each route lists the scope it needs; a `write` scope covers `read`.",
         "flows": {
           "authorizationCode": {
             "authorizationUrl": "http://localhost:3000/oauth/auth",
@@ -543,7 +547,8 @@
               "organization:read": "Read organizations",
               "organization:write": "Create, update and delete organizations",
               "attachment:read": "Read attachments",
-              "attachment:write": "Create, update and delete attachments"
+              "attachment:write": "Create, update and delete attachments",
+              "user:read": "Read users"
             }
           },
           "clientCredentials": {
@@ -552,7 +557,8 @@
               "organization:read": "Read organizations",
               "organization:write": "Create, update and delete organizations",
               "attachment:read": "Read attachments",
-              "attachment:write": "Create, update and delete attachments"
+              "attachment:write": "Create, update and delete attachments",
+              "user:read": "Read users"
             }
           }
         }
@@ -2413,6 +2419,22 @@
               "enum": ["name", "email", "picture"]
             }
           },
+          "requestedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+            },
+            "description": "The access scopes the LTI tool asked for in its registration, of those the platform knows: what an admin may grant"
+          },
+          "grantedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+            },
+            "description": "The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in"
+          },
           "status": {
             "type": "string",
             "enum": ["pending", "active", "disabled"],
@@ -2541,6 +2563,8 @@
           "claims",
           "requestedFields",
           "releasedFields",
+          "requestedScopes",
+          "grantedScopes",
           "status",
           "approvedAt",
           "createdAt",
@@ -2548,7 +2572,7 @@
           "createdBy",
           "updatedBy"
         ],
-        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.",
+        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.",
         "example": {
           "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
           "clientId": "cee45ffc-5154-4244-971c-f20f8bf45639",
@@ -2560,6 +2584,8 @@
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
           "releasedFields": ["name"],
+          "requestedScopes": ["user:read"],
+          "grantedScopes": ["user:read"],
           "status": "active",
           "approvedAt": "2024-09-19T11:48:50.276Z",
           "createdAt": "2024-09-19T11:48:50.276Z",
@@ -2798,7 +2824,7 @@
           "resource": "http://localhost:3000/api/tenants/m5jfjs",
           "resource_name": "Cella DEVELOPMENT API",
           "authorization_servers": ["http://localhost:3000/oauth"],
-          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"],
           "bearer_methods_supported": ["header"],
           "resource_documentation": "http://localhost:3000/docs"
         },
@@ -3866,7 +3892,7 @@
             "type": ["array", "null"],
             "items": {
               "type": "string",
-              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
             }
           },
           "expiresAt": {
@@ -10588,6 +10614,8 @@
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
                       "releasedFields": ["name"],
+                      "requestedScopes": ["user:read"],
+                      "grantedScopes": ["user:read"],
                       "status": "active",
                       "approvedAt": "2024-09-19T11:48:50.276Z",
                       "createdAt": "2024-09-19T11:48:50.276Z",
@@ -10662,7 +10690,7 @@
         "operationId": "approveLtiInstallation",
         "tags": ["lti-platform", "cella"],
         "summary": "Approve LTI installation",
-        "description": "Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.",
+        "description": "Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -10711,7 +10739,16 @@
                       "enum": ["name", "email", "picture"]
                     },
                     "maxItems": 3,
-                    "description": "The personal fields a launch may carry, each one the LTI tool asked for; empty releases none"
+                    "description": "The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none"
+                  },
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
                   }
                 },
                 "required": ["releasedFields"]
@@ -10722,6 +10759,126 @@
         "responses": {
           "200": {
             "description": "Approved installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LtiInstallation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateLtiInstallation",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Update LTI installation",
+        "description": "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
+                  }
+                }
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated installation",
             "content": {
               "application/json": {
                 "schema": {
@@ -11398,6 +11555,190 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-members": {
+      "get": {
+        "security": [
+          {
+            "oauth2": ["user:read"]
+          }
+        ],
+        "operationId": "listLtiMembers",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get LTI members",
+        "description": "The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["ltiToolGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["organization"]
+            },
+            "required": true,
+            "name": "channelType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["id", "id asc", "id desc"],
+              "default": "id asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "id asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI members",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "cc519e50-2f08-4700-9038-495ec36f7a4d",
+                      "roles": ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
+                      "name": "Charlotte Batz"
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The person: the id a launch sends as `sub`"
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Their LTI roles in the channel, as full URIs: the roles a launch there would send them"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Their name, when the installation releases it"
+                          },
+                          "email": {
+                            "type": "string",
+                            "description": "Their proven email address, when the installation releases it and they have one"
+                          },
+                          "picture": {
+                            "type": "string",
+                            "description": "The address of their picture, when the installation releases it and they have one"
+                          }
+                        },
+                        "required": ["id", "roles"]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17153,10 +17494,10 @@
                         "type": ["array", "null"],
                         "items": {
                           "type": "string",
-                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
                         },
                         "minItems": 1,
-                        "maxItems": 4
+                        "maxItems": 5
                       },
                       "expiresAt": {
                         "type": "string",
@@ -17806,10 +18147,10 @@
                     "type": ["array", "null"],
                     "items": {
                       "type": "string",
-                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
                     },
                     "minItems": 1,
-                    "maxItems": 4
+                    "maxItems": 5
                   },
                   "expiresAt": {
                     "type": "string",

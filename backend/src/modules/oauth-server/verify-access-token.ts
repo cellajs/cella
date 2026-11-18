@@ -17,10 +17,14 @@ interface VerifiedToken {
   clientId: string;
 }
 
-/** A person's token names the grant it was issued under, a service account's the API key it was minted with. */
+/**
+ * A person's token names the grant it was issued under, a service account's the API key it was minted with, and an
+ * installed LTI tool's its installation, which is its actor; its `clientId` is the LTI tool's registration.
+ */
 export type VerifiedAccessToken =
   | (VerifiedToken & { kind: 'user'; grantId: string; authStrategy: AuthStrategy | null; connectionId: string | null })
-  | (VerifiedToken & { kind: 'service'; keyId: string });
+  | (VerifiedToken & { kind: 'service'; keyId: string })
+  | (VerifiedToken & { kind: 'installation' });
 
 /** A method the enum does not know (an app renamed one) reads as null, which a tenant sign-in policy refuses. */
 const authStrategyClaimSchema = z.enum(authStrategiesEnum).nullable().catch(null);
@@ -36,7 +40,7 @@ export function bearerJwtFrom(ctx: Context<Env>): string | null {
 /**
  * Verifies an access token this server issued, locally against the keystore (no self-HTTP, no DB row per token) and binds it
  * to the route's tenant and organization: the audience must be one of this route's resources (RFC 8707). The token
- * must name the grant or API key it rests on, which the guard then puts to the grant policy.
+ * must name the grant, API key or LTI installation it rests on, which the guard then reads.
  */
 export async function verifyAccessToken(jwt: string, route: { tenantId: string; organizationId?: string }): Promise<VerifiedAccessToken> {
   const audiences = [resourceUri({ face: 'api', tenantId: route.tenantId })];
@@ -51,6 +55,7 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
         tenant_id: string;
         gid: string;
         key_id: string;
+        installation_id: string;
         auth_strategy: string | null;
         connection_id: string | null;
       }> & { scope?: string; client_id?: string };
@@ -67,6 +72,7 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
         };
       }
       if (claims.actor_kind === 'service' && claims.key_id) return { ...token, kind: 'service', keyId: claims.key_id };
+      if (claims.actor_kind === 'service' && claims.installation_id) return { ...token, actorId: claims.installation_id, kind: 'installation' };
     }
     throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
   } catch (error) {

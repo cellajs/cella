@@ -18,6 +18,12 @@ export const ltiClaims = {
   custom: 'https://purl.imsglobal.org/spec/lti/claim/custom',
 } as const;
 
+/**
+ * The name of the claim with which a platform on this template tells a launched LTI tool where its API is. It lies
+ * under the platform's issuer: the LTI tool builds it from the issuer it holds, and no other platform's claim shares it.
+ */
+export const ltiApiClaim = (issuer: string) => `${issuer}/lti/claim/api`;
+
 /** The LIS context types an LTI context may carry (LTI Core 1.3, appendix A.1). */
 export const lisContextTypes = {
   courseTemplate: 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate',

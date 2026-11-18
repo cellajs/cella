@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { lisContextRoles } from '#/lib/lti-vocabulary';
 import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import { mockActorRef } from '#/schemas/entity-base-mocks';
 
@@ -15,6 +17,8 @@ export const mockLtiInstallationResponse = (key = 'ltiInstallation:default') => 
       claims: ['iss', 'sub', 'name', 'email'],
       requestedFields: ['name' as const, 'email' as const],
       releasedFields: ['name' as const],
+      requestedScopes: ['user:read' as const],
+      grantedScopes: ['user:read' as const],
       status: 'active' as const,
       approvedAt: createdAt,
       createdAt,
@@ -40,3 +44,11 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
   });
   return { ...resourceLink, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
 };
+
+/** A member row of an installation that releases the name alone. */
+export const mockLtiMemberResponse = (key = 'ltiMember:default') =>
+  withFakerSeed(key, () => ({
+    id: mockUuid(),
+    roles: [lisContextRoles.learner],
+    name: faker.person.fullName(),
+  }));

@@ -68,7 +68,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads no people; an unscoped one reads them as its actor does. A membership change reaches every check within seconds.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads people only with `user:read`; an unscoped one reads them as its actor does. A membership change reaches every check within seconds.
 
 ## The policy consulted
 

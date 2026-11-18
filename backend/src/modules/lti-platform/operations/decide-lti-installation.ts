@@ -1,10 +1,17 @@
+import type { AccessScope } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { requestedFields } from '#/modules/lti-platform/helpers/platform-offer';
 import type { LtiReleasableField } from '#/modules/lti-platform/lti-installations-db';
-import { approveLtiInstallation, deleteTenantLtiRegistration, lockLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
+import {
+  approveLtiInstallation,
+  deleteTenantLtiRegistration,
+  type LtiInstallationRecord,
+  lockLtiInstallation,
+  updateLtiInstallationScopes,
+} from '#/modules/lti-platform/lti-platform-queries';
 import { toLtiInstallation } from '#/modules/lti-platform/operations/get-lti-installations';
 import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
 import { countActiveServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
@@ -23,13 +30,28 @@ const lockPendingInstallation = async (txCtx: DbContext, { id, tenantId }: { id:
 };
 
 /**
- * Approves a pending installation: its service account becomes active and its launches may carry the released
- * personal fields. An approval only narrows: it releases no field whose claims the LTI tool did not ask for. Who may
- * decide is who may manage the installation's service account (`getManagedServiceAccount`).
- * @throws AppError 400 `lti_field_not_requested`, 403 when the tenant's service account quota is spent, and what
- *   `getManagedServiceAccount` and `lockPendingInstallation` throw.
+ * Refuses a grant of a scope the LTI tool did not ask for in its registration.
+ * @throws AppError 400 `lti_scope_not_requested` naming the first such scope.
  */
-export async function approveLtiInstallationOp(ctx: UserContext, id: string, { releasedFields }: { releasedFields: LtiReleasableField[] }) {
+const assertScopesRequested = ({ client }: Pick<LtiInstallationRecord, 'client'>, grantedScopes: AccessScope[]) => {
+  const unrequested = grantedScopes.find((scope) => !client.requestedScopes?.includes(scope));
+  if (unrequested) throw new AppError(400, 'lti_scope_not_requested', 'warn', { meta: { scope: unrequested } });
+};
+
+interface LtiInstallationDecision {
+  releasedFields: LtiReleasableField[];
+  grantedScopes?: AccessScope[];
+}
+
+/**
+ * Approves a pending installation: its service account becomes active, its launches may carry the released personal
+ * fields and its own tokens the granted scopes. An approval only narrows: it releases no field whose claims the LTI
+ * tool did not ask for, and grants no scope it did not ask for. Who may decide is who may manage the installation's
+ * service account (`getManagedServiceAccount`).
+ * @throws AppError 400 `lti_field_not_requested` or `lti_scope_not_requested`, 403 when the tenant's service account
+ *   quota is spent, and what `getManagedServiceAccount` and `lockPendingInstallation` throw.
+ */
+export async function approveLtiInstallationOp(ctx: UserContext, id: string, { releasedFields, grantedScopes = [] }: LtiInstallationDecision) {
   const { tenantId } = ctx.var;
   await getManagedServiceAccount(ctx, id);
 
@@ -39,15 +61,44 @@ export async function approveLtiInstallationOp(ctx: UserContext, id: string, { r
     const requested = requestedFields(found.client.ltiToolConfig.claims);
     const unrequested = releasedFields.find((field) => !requested.includes(field));
     if (unrequested) throw new AppError(400, 'lti_field_not_requested', 'warn', { meta: { field: unrequested } });
+    assertScopesRequested(found, grantedScopes);
     assertTenantQuota(ctx, 'serviceAccount', await countActiveServiceAccounts(txCtx, { tenantId }));
 
-    const { stamps, decision } = await approveLtiInstallation(txCtx, { id, tenantId, releasedFields, by: ctx.var.actor.id });
+    const { stamps, decision } = await approveLtiInstallation(txCtx, { id, tenantId, releasedFields, grantedScopes, by: ctx.var.actor.id });
     return { ...found, account: { ...found.account, status: 'active' as const, ...stamps }, installation: { ...found.installation, ...decision } };
   });
   invalidateCache.serviceAccount(approved.account);
 
-  log.info('LTI installation approved', { installationId: id, tenantId, releasedFields });
+  log.info('LTI installation approved', { installationId: id, tenantId, releasedFields, grantedScopes });
   return withActorRef(ctx, toLtiInstallation(approved));
+}
+
+/**
+ * Changes the access scopes an approved installation's own tokens may carry, each one the LTI tool asked for; the same
+ * scopes write nothing. A token minted before rests on the scopes it carries: one that loses a scope is refused at its
+ * next request, by the guard. Who may change them is who may approve.
+ * @throws AppError 400 `lti_scope_not_requested`, 404 `not_found` for no LTI installation of the tenant, 409
+ *   `lti_installation_not_approved` while it waits for an approval, and what `getManagedServiceAccount` throws.
+ */
+export async function updateLtiInstallationOp(ctx: UserContext, id: string, { grantedScopes }: { grantedScopes?: AccessScope[] }) {
+  const { tenantId } = ctx.var;
+  await getManagedServiceAccount(ctx, id);
+
+  const updated = await ctx.var.db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const found = await lockLtiInstallation(txCtx, { id, tenantId });
+    if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
+    if (!found.installation.approvedAt) throw new AppError(409, 'lti_installation_not_approved', 'warn', { meta: { installationId: id } });
+    if (!grantedScopes) return found;
+    assertScopesRequested(found, grantedScopes);
+    const [stored, granted] = [new Set(found.installation.grantedScopes), new Set(grantedScopes)];
+    if (granted.size === stored.size && grantedScopes.every((scope) => stored.has(scope))) return found;
+    const written = await updateLtiInstallationScopes(txCtx, { id, grantedScopes, by: ctx.var.actor.id });
+    return { ...found, installation: { ...found.installation, ...written } };
+  });
+
+  log.info('LTI installation updated', { installationId: id, tenantId, grantedScopes: updated.installation.grantedScopes });
+  return withActorRef(ctx, toLtiInstallation(updated));
 }
 
 /**

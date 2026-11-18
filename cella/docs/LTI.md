@@ -12,7 +12,7 @@ Your app is a **platform** when it hosts other apps: an admin installs an LTI to
 
 Your app is an **LTI tool** when a learning platform, such as Canvas or another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
 
-An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. As an LTI tool, the app fetches the platform's configuration and keys server to server. As a platform, it fetches nothing and stores the addresses the LTI tool registers. Outside development, each needs a public HTTPS address.
+An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. As an LTI tool, the app fetches the platform's configuration and keys server to server. As a platform, it stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. Outside development, each needs a public HTTPS address.
 
 ## Registration
 
@@ -26,7 +26,9 @@ As a platform, an admin pastes the address an LTI tool's admin handed over under
 
 An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
-Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
+An LTI tool may also ask for access scopes of the app's API, such as `user:read`. The admin grants which of them the LTI tool's own tokens carry, none by default, and may change the grant later, which asks the second factor too.
+
+Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
 ## A launch
 
@@ -39,6 +41,14 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 5. The LTI tool starts an embedded session and shows the course's embedded page in the frame.
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the course is refused at their next click.
+
+## API access
+
+An installed LTI tool reads the app's API as itself, within the scopes the admin granted. It asks the OAuth worker for a token with an assertion signed by a key of the set it registered. The token is for the tenant's API and acts as the installation.
+
+Placing an LTI tool in a channel gives its installation the channel's least privileged role there; removing its last tab takes the role away. With `user:read`, its token lists the people of a channel it is placed in, as far as that role sees them: each person's id, their LTI roles there and only the personal fields the admin released.
+
+Every launch names the API in a claim under the issuer's address: the tenant's API, the tenant, the organization, the channel and the address of its member list. The claim's members are documented in [lti-platform-schema.ts](../../backend/src/modules/lti-platform/lti-platform-schema.ts).
 
 ## Courses and roles
 
@@ -63,13 +73,15 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A platform without platform storage:** the launch stops and asks the person to contact the platform's administrator.
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A course not set up yet:** a student who arrives before any instructor is asked to have an instructor open it first.
-- **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again.
+- **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
+- **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 
 ## Not built
 
-- The roster, grade and deep linking services. An LTI tool reads course data through the platform's own API.
+- The roster, grade and deep linking services. An LTI tool reads course members through the platform's own API.
+- Tokens that act for a person: an installed LTI tool acts only as itself.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.

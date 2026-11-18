@@ -1,16 +1,17 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
-import { ltiClaims } from '#/lib/lti-vocabulary';
+import { ltiApiClaim, ltiClaims } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
-import { launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { launchApiClaim, launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
-import { ltiContextTypes, ltiRolesFor } from '#/modules/lti-platform/launch-context';
+import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { readAsLauncher } from '#/modules/lti-platform/operations/start-lti-launch';
 import { findServedUserById } from '#/modules/user/user-queries';
@@ -116,9 +117,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
 
   const context = await findContextChannel(resourceLink.channelType, channel);
   // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
-  const roles = context
-    ? ltiRolesFor(context.channelType, (action) => checkAccess(access, action, buildSubjectFromEntity(context.channelType, context.channel)).allowed)
-    : [];
+  const roles = context ? ltiRolesIn(access, context.channelType, context.channel) : [];
   const custom = launchCustom(client, resourceLink.custom);
 
   return {
@@ -140,6 +139,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     ...(Object.keys(custom).length && { [ltiClaims.custom]: custom }),
     [ltiClaims.launchPresentation]: { document_target: 'iframe', locale: person.languageCode },
     [ltiClaims.toolPlatform]: { guid: resourceLink.tenantId, name: appConfig.name, product_family_code: appConfig.slug, version: env.RELEASE_SHA },
+    [ltiApiClaim(appConfig.oauthUrl)]: launchApiClaim(resourceLink),
   };
 };
 

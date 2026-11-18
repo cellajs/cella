@@ -32,8 +32,11 @@ export function parseResource(uri: string): ResourceRef | null {
   return null;
 }
 
-/** Every read scope of the catalog: what an MCP client asks for first, so its first consent grants no write. */
-const readScopes = accessScopes.all.filter((scope) => scope.endsWith(':read'));
+/**
+ * The read scope of every entity type an MCP tool may act on: what an MCP client asks for first, so its first consent
+ * grants no write. A tool's entity is never people (`XTool.entity`), and no consent asks for `user:read` that no tool reads.
+ */
+const readScopes = accessScopes.all.filter((scope) => scope.endsWith(':read') && scope !== 'user:read');
 
 /** The read scopes, space-separated, as the MCP face's 401 challenge names them. */
 export const mcpInitialScope = readScopes.join(' ');

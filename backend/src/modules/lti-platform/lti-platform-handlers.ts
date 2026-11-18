@@ -2,9 +2,14 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
-import { ltiLaunchRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
-import { approveLtiInstallationOp, rejectLtiInstallationOp } from '#/modules/lti-platform/operations/decide-lti-installation';
+import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
+import {
+  approveLtiInstallationOp,
+  rejectLtiInstallationOp,
+  updateLtiInstallationOp,
+} from '#/modules/lti-platform/operations/decide-lti-installation';
 import { getLtiInstallationsOp } from '#/modules/lti-platform/operations/get-lti-installations';
+import { getLtiMembersOp } from '#/modules/lti-platform/operations/get-lti-members';
 import {
   createLtiResourceLinkOp,
   deleteLtiResourceLinkOp,
@@ -27,6 +32,10 @@ app.openapi(ltiPlatformRoutes.listLtiInstallations, async (ctx) => {
 
 app.openapi(ltiPlatformRoutes.approveLtiInstallation, async (ctx) => {
   return ctx.json(await approveLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId, ctx.req.valid('json')), 200);
+});
+
+app.openapi(ltiPlatformRoutes.updateLtiInstallation, async (ctx) => {
+  return ctx.json(await updateLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(ltiPlatformRoutes.rejectLtiInstallation, async (ctx) => {
@@ -76,3 +85,12 @@ launches.openapi(ltiLaunchRoutes.initiateLtiLaunchLogin, async (ctx) => {
 });
 
 export const ltiLaunchHandlers = launches;
+
+const members = new OpenAPIHono<Env>();
+
+members.openapi(ltiMemberRoutes.listLtiMembers, async (ctx) => {
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getLtiMembersOp(ctx, query, page)), 200);
+});
+
+export const ltiMemberHandlers = members;

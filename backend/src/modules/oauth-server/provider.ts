@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
-import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
+import { type AccessScope, accessScopes, appConfig, type EntityType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { amrOf, authStrategiesEnum, cookieSecrets, stepUpProofs } from '#/modules/auth/core';
-import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
+import { appClientProperties, clientKindOf, DrizzleAdapter, ltiInstallationOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -35,24 +35,43 @@ const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessS
 
 /**
  * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
- * stays within the key it authenticated with (`write` covers `read`, as on the API); other clients may ask for all.
+ * stays within the key it authenticated with (`write` covers `read`, as on the API); an installed LTI tool's stays
+ * within what an admin granted; other clients may ask for all.
  */
 function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
-  if (clientKindOf(client) !== 'service') return accessScopes.all;
+  const kind = clientKindOf(client);
+  if (kind === 'lti') return ltiInstallationOf(client)?.granted_scopes ?? [];
+  if (kind !== 'service') return accessScopes.all;
   const key = presentedKeys.get(ctx);
   // No recorded key means client authentication did not run for this request: grant nothing.
   if (!key) return [];
   return accessScopes.all.filter((scope) => {
-    const [type, verb] = scope.split(':') as [AccessScopedEntityType, 'read' | 'write'];
+    const [type, verb] = scope.split(':') as [EntityType, 'read' | 'write'];
     return accessScopes.allows(key.scopes, type, verb === 'read' ? 'read' : 'update');
   });
 }
 
 /**
- * Claims this server adds to every access token; the guard reads them to build the actor, and asks the grant policy
- * about the grant (`gid`) or API key (`key_id`) the token rests on. A person's token also says how they signed in, in
- * the app's words (`auth_strategy`, `connection_id`, which a tenant's sign-in policy reads) and in the standard ones
- * (`amr` per RFC 8176, `auth_time` as the moment the proof the consent rested on was made).
+ * Refuses an installed LTI tool's token request beyond what it may get: a resource other than its own tenant's API, or
+ * a scope an admin did not grant, unknown ones included. Other clients' unknown scopes are dropped as the provider does.
+ */
+function assertLtiTokenRequest(ctx: KoaContextWithOIDC, client: object, resource: { face: string; tenantId: string }) {
+  const installation = ltiInstallationOf(client);
+  if (!installation) return;
+  if (resource.face !== 'api' || resource.tenantId !== installation.tenant_id) throw new errors.InvalidTarget();
+  const granted = new Set<string>(installation.granted_scopes);
+  const refused = String(ctx.oidc.params?.scope ?? '')
+    .split(' ')
+    .find((scope) => scope && !granted.has(scope));
+  if (refused) throw new errors.InvalidScope('requested scope is not granted', refused);
+}
+
+/**
+ * Claims this server adds to every access token; the guard reads them to build the actor, and reads what the token
+ * rests on: the grant (`gid`) through the grant policy, the API key (`key_id`) or the LTI installation
+ * (`installation_id`). A person's token also says how they signed in, in the app's words (`auth_strategy`,
+ * `connection_id`, which a tenant's sign-in policy reads) and in the standard ones (`amr` per RFC 8176, `auth_time` as
+ * the moment the proof the consent rested on was made).
  */
 export type IssuedTokenClaims =
   | {
@@ -64,7 +83,8 @@ export type IssuedTokenClaims =
       amr: string[];
       auth_time?: number;
     }
-  | { actor_kind: 'service'; tenant_id: string; key_id: string };
+  | { actor_kind: 'service'; tenant_id: string; key_id: string }
+  | { actor_kind: 'service'; tenant_id: string; installation_id: string };
 
 /** The `amr` values of a grant's stamped sign-in; empty for a method or proof this app no longer knows. */
 const amrOfStamp = (authStrategy: string | null, proof: string | null) => {
@@ -117,19 +137,26 @@ async function allowClientMetadataFetch(ctx: KoaContextWithOIDC | undefined): Pr
 }
 
 /**
- * Asked about every client resolved from a metadata document, fetched or cached. A client's kind is the table the
- * adapter read it from, so a document that claims one is refused as a document, with the provider's own error.
+ * Asked about every client resolved from a metadata document, fetched or cached. A client's kind and installation are
+ * what the adapter read: a document that claims either is refused as a document, with the provider's own error.
  */
 function allowClient(_ctx: KoaContextWithOIDC, client: object): boolean {
-  if ('client_kind' in client) throw new errors.InvalidClientMetadata('client_id metadata document must not set client_kind');
+  const claimed = appClientProperties.find((property) => property in client);
+  if (claimed) throw new errors.InvalidClientMetadata(`client_id metadata document must not set ${claimed}`);
+  // A client that signs its own assertions would make the provider fetch the key set its document names, outside the
+  // guarded fetch: a document client authenticates with nothing.
+  if ('tokenEndpointAuthMethod' in client && client.tokenEndpointAuthMethod !== 'none') {
+    throw new errors.InvalidClientMetadata('client_id metadata document must use token_endpoint_auth_method none');
+  }
   return true;
 }
 
 /**
  * The authorization server: `node-oidc-provider` fed the app's keystore and store. Grant types: authorization code +
- * PKCE, refresh, client credentials (service accounts only). Client auth: none (CIMD public clients) and
- * client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
- * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
+ * PKCE, refresh, client credentials (service accounts and installed LTI tools only). Client auth: none (CIMD public
+ * clients), client_secret_basic (registered apps; service accounts with their secret keys) and private_key_jwt (an
+ * installed LTI tool with a key of the set it registered). Client registration by Client ID Metadata Document; no
+ * dynamic registration, no dev interactions, no logout endpoint.
  */
 export async function createProvider(): Promise<Provider> {
   const jwks = await loadSigningJwks();
@@ -138,9 +165,11 @@ export async function createProvider(): Promise<Provider> {
     adapter: DrizzleAdapter,
     jwks,
     cookies: { keys: cookieSecrets, long: { signed: true }, short: { signed: true } },
-    clientAuthMethods: ['none', 'client_secret_basic'],
-    // Keeps the adapter's `client_kind` on its clients; `allowClient` refuses a metadata document that sets one.
-    extraClientMetadata: { properties: ['client_kind'] },
+    clientAuthMethods: ['none', 'client_secret_basic', 'private_key_jwt'],
+    // The one algorithm an LTI tool signs with (LTI Security Framework 1.0, section 6.1).
+    enabledJWA: { clientAuthSigningAlgValues: ['RS256'] },
+    // Keeps the adapter's own metadata on its clients; `allowClient` refuses a metadata document that sets any.
+    extraClientMetadata: { properties: [...appClientProperties] },
     responseTypes: ['code'],
     // The entity scopes only; `openid` stays out: this server issues no ID tokens.
     scopes: [...accessScopes.all],
@@ -172,6 +201,7 @@ export async function createProvider(): Promise<Provider> {
           if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
+          assertLtiTokenRequest(ctx, client, resource);
           const scope = grantableScopes(ctx, client).join(' ');
           // The audience is the resource as the guards spell it, whatever case its origin and tenant id were sent in.
           return { scope, audience: resourceUri(resource), accessTokenFormat: 'jwt', accessTokenTTL: hour };
@@ -217,6 +247,9 @@ export async function createProvider(): Promise<Provider> {
           ...(signIn.authTime && { auth_time: Math.floor(Date.parse(signIn.authTime) / 1000) }),
         } satisfies IssuedTokenClaims;
       }
+      // An installed LTI tool acts as its installation, which `getResourceServerInfo` kept to its own tenant.
+      const installation = ltiInstallationOf(ctx.oidc.client ?? {});
+      if (installation) return { actor_kind: 'service', tenant_id: resource.tenantId, installation_id: installation.id } satisfies IssuedTokenClaims;
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.
       const key = presentedKeys.get(ctx);
       if (!key) throw new errors.UnauthorizedClient('client_credentials is for service accounts and their API keys');

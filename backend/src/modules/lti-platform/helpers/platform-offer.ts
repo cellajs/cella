@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import { env } from '#/env';
 import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
 import { type LtiReleasableField, ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
@@ -29,7 +29,7 @@ export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.va
 /**
  * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1), with the key set and the token
  * endpoint of the authorization server. The platform signs with RS256 keys only and takes LTI tools that authenticate
- * with them.
+ * with them. An installed LTI tool may ask for the API's access scopes: an admin grants them to its own tokens.
  */
 export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: string; tokenEndpoint: string }) => ({
   issuer: appConfig.oauthUrl,
@@ -39,8 +39,8 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
   token_endpoint: tokenEndpoint,
   token_endpoint_auth_methods_supported: ['private_key_jwt'],
   token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-  // The spec requires `openid`. The platform serves no LTI service and offers no service scope beside it.
-  scopes_supported: ['openid'],
+  // The spec requires `openid`. The platform serves no LTI service: beside it are the API's own scopes.
+  scopes_supported: ['openid', ...accessScopes.all],
   response_types_supported: ['id_token'],
   subject_types_supported: ['public'],
   id_token_signing_alg_values_supported: ['RS256'],
@@ -56,7 +56,7 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
 export const requestedFields = (claims: readonly string[]): LtiReleasableField[] =>
   ltiReleasableFields.filter((field) => ltiFieldClaims[field].some((claim) => claims.includes(claim)));
 
-/** What a launch can tell about the person, from the user as the API serves it: the address only once proven. */
+/** What a launch and a member row can tell about the person, from the user as the API serves it: the address only once proven. */
 interface PersonalValues {
   name: string;
   givenName: string | null;
@@ -87,3 +87,21 @@ export const releasedClaims = (released: readonly LtiReleasableField[], asked: r
   }
   return claims;
 };
+
+const fieldValues = {
+  name: (person) => person.name,
+  email: (person) => person.email,
+  picture: (person) => person.thumbnailUrl,
+} satisfies Record<LtiReleasableField, (person: Pick<PersonalValues, 'name' | 'email' | 'thumbnailUrl'>) => string | null>;
+
+/** The released fields of a member row, each under its field's name, where the person has a value. None when nothing is released. */
+export const releasedFieldValues = (
+  released: readonly LtiReleasableField[],
+  person: Pick<PersonalValues, 'name' | 'email' | 'thumbnailUrl'>,
+): Partial<Record<LtiReleasableField, string>> =>
+  Object.fromEntries(
+    released.flatMap((field) => {
+      const value = fieldValues[field](person);
+      return value ? [[field, value]] : [];
+    }),
+  );

@@ -6,6 +6,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import { searchFilter } from '#/utils/sql';
 
@@ -86,6 +87,20 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
     .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId)))
     .returning();
   return account;
+}
+
+/**
+ * The account row, locked until the caller's transaction ends: writes to one account's bindings run one after the
+ * other. Undefined when no such account exists.
+ */
+export async function lockServiceAccount(ctx: DbContext, { id }: { id: string }) {
+  const [account] = await ctx.var.db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, id)).for('update');
+  return account;
+}
+
+/** Replaces the account's role bindings; call it on a row the transaction locked (`lockServiceAccount`). */
+export async function updateServiceAccountBindings(ctx: DbContext, { id, bindings }: { id: string; bindings: RoleBinding[] }) {
+  await ctx.var.db.update(serviceAccountsTable).set({ bindings }).where(eq(serviceAccountsTable.id, id));
 }
 
 /** Accounts are disabled, never deleted; only active ones count against the quota. */

@@ -57,7 +57,7 @@ export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
     description:
-      'Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret. Each route lists the scope it needs; a `write` scope covers `read`.',
+      'Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret, and installed LTI tools with an assertion signed by the key they registered. Each route lists the scope it needs; a `write` scope covers `read`.',
     flows: {
       authorizationCode: {
         authorizationUrl: `${appConfig.oauthUrl}/auth`,

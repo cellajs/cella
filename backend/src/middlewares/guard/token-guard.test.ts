@@ -73,6 +73,8 @@ describe('tokenGuard', () => {
     const error = await runExpectingError(ctx);
     expect(error.status).toBe(401);
     expect(mcpInitialScope).not.toMatch(/:write|:delete/);
+    // No MCP tool reads people: a client steered to `user:read` would ask every person to consent for nothing.
+    expect(mcpInitialScope.split(' ')).not.toContain('user:read');
     expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
   });
 

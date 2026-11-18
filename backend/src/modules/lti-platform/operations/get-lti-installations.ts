@@ -19,6 +19,8 @@ export const toLtiInstallation = ({ account, installation, client }: LtiInstalla
   claims: client.ltiToolConfig.claims,
   requestedFields: requestedFields(client.ltiToolConfig.claims),
   releasedFields: installation.releasedFields,
+  requestedScopes: client.requestedScopes ?? [],
+  grantedScopes: installation.grantedScopes,
   status: account.status,
   approvedAt: installation.approvedAt,
   createdAt: installation.createdAt,

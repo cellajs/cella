@@ -1,5 +1,5 @@
 import { and, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
-import { hierarchy } from 'shared';
+import { type AccessScope, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
@@ -45,6 +45,12 @@ export async function findLtiInstallations(ctx: DbContext, { tenantId, order }: 
   return installationJoin(ctx)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)))
     .orderBy(...orderBy);
+}
+
+/** The installation of an LTI registration, by the registration's `client_id`; undefined for any other client. */
+export async function findLtiInstallationByClient(ctx: DbContext, { clientId }: { clientId: string }) {
+  const [found] = await installationJoin(ctx).where(and(eq(oauthClientsTable.id, clientId), isNotNull(ltiToolConfig)));
+  return found;
 }
 
 /** One installation of the tenant with its registration; undefined when the tenant has no such installation. */
@@ -100,20 +106,40 @@ interface ApproveLtiInstallationOpts {
   id: string;
   tenantId: string;
   releasedFields: LtiReleasableField[];
+  grantedScopes: AccessScope[];
   by: ActorId;
 }
 
 /**
  * Approves an installation inside the caller's transaction: its service account turns active and its side row records
- * the released fields and the approval, both stamped by `by`.
+ * the released fields, the granted scopes and the approval, both stamped by `by`.
  * @returns What the two rows were set to.
  */
-export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, by }: ApproveLtiInstallationOpts) {
+export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, grantedScopes, by }: ApproveLtiInstallationOpts) {
   const stamps = updateStamps(by);
-  const decision = { releasedFields: [...new Set(releasedFields)], approvedAt: stamps.updatedAt, approvedBy: stamps.updatedBy, ...stamps };
+  const decision = {
+    releasedFields: [...new Set(releasedFields)],
+    grantedScopes: [...new Set(grantedScopes)],
+    approvedAt: stamps.updatedAt,
+    approvedBy: stamps.updatedBy,
+    ...stamps,
+  };
   await updateServiceAccount(ctx, { id, tenantId, values: { status: 'active', ...stamps } });
   await ctx.var.db.update(ltiInstallationsTable).set(decision).where(eq(ltiInstallationsTable.serviceAccountId, id));
   return { stamps, decision };
+}
+
+/**
+ * Replaces the access scopes an installation's tokens may carry, stamped by `by`.
+ * @returns What the side row was set to.
+ */
+export async function updateLtiInstallationScopes(
+  ctx: DbContext,
+  { id, grantedScopes, by }: { id: string; grantedScopes: AccessScope[]; by: ActorId },
+) {
+  const values = { grantedScopes: [...new Set(grantedScopes)], ...updateStamps(by) };
+  await ctx.var.db.update(ltiInstallationsTable).set(values).where(eq(ltiInstallationsTable.serviceAccountId, id));
+  return values;
 }
 
 /** Deletes a registration private to the tenant. The service account that installs it and its side row cascade. */
@@ -149,6 +175,14 @@ export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.id, id), eq(ltiResourceLinksTable.organizationId, organizationId)));
   return found;
+}
+
+/** How many resource links place the installation in the channel. */
+export async function countLtiPlacements(ctx: DbContext, { installationId, channelId }: { installationId: string; channelId: string }) {
+  return ctx.var.db.$count(
+    ltiResourceLinksTable,
+    and(eq(ltiResourceLinksTable.installationId, installationId), eq(ltiResourceLinksTable.channelId, channelId)),
+  );
 }
 
 export async function insertLtiResourceLink(ctx: DbContext, { values }: { values: typeof ltiResourceLinksTable.$inferInsert }) {

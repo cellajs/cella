@@ -72,7 +72,7 @@ export const ltiSeed = async () => {
 
   const { tenantId } = platform.organization;
   await db.transaction((tx) =>
-    approveLtiInstallation({ var: { db: tx } }, { id: installationId, tenantId, releasedFields: ['name'], by: createdBy }),
+    approveLtiInstallation({ var: { db: tx } }, { id: installationId, tenantId, releasedFields: ['name'], grantedScopes: [], by: createdBy }),
   );
 
   await insertLtiResourceLink(dbCtx, {

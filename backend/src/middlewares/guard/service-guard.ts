@@ -39,7 +39,7 @@ export const challengeRefusal = async (ctx: Context<Env>, ref: ResourceRef, chec
 };
 
 /** A service account acts with its stored bindings, masked by the scopes of the key or token; no machine proof is system admin. */
-const setServiceActor = (ctx: Context<Env>, account: ServiceAccountModel, scopes: Actor['scopes']) => {
+export const setServiceActor = (ctx: Context<Env>, account: ServiceAccountModel, scopes: Actor['scopes']) => {
   ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes });
   ctx.set('isSystemAdmin', false);
   ctx.set('db', baseDb);
@@ -49,10 +49,11 @@ const setServiceActor = (ctx: Context<Env>, account: ServiceAccountModel, scopes
  * A token from the app's own authorization server: verified locally, bound to this route's tenant, it runs as
  * the user who consented (masked by the token's scopes) or as the service account behind a `client_credentials`
  * grant, and only while the grant policy holds the grant or API key it names. Tokens and keys never carry system
- * admin: that stays with a session and its IP allow-list.
+ * admin: that stays with a session and its IP allow-list. An installed LTI tool's token is for `ltiToolGuard` alone.
  */
 export const setActorFromToken = async (ctx: Context<Env>, jwt: string, scope: { tenantId: string; organizationId?: string }): Promise<void> => {
   const token = await verifyAccessToken(jwt, scope);
+  if (token.kind === 'installation') throw unauthorized('lti_installation_token');
 
   if (token.kind === 'user') {
     const { user, bindingsVersion } = await resolveUserToken(token);

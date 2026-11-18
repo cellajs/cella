@@ -1,33 +1,105 @@
+import { z } from '@hono/zod-openapi';
 import { and, eq, isNull, type SQL } from 'drizzle-orm';
-import { type Adapter, type AdapterPayload, errors } from 'oidc-provider';
+import { decodeProtectedHeader, type JSONWebKeySet } from 'jose';
+import Provider, { type Adapter, type AdapterPayload, errors } from 'oidc-provider';
+import { accessScopes, isSwitchOn } from 'shared';
 import { isUuid } from 'shared/utils/entity-id';
+import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { readLtiKeySet } from '#/lib/lti-key-set';
+import { findLtiInstallationByClient } from '#/modules/lti-platform/lti-platform-queries';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate, isoDateIn } from '#/utils/iso-date';
+import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
-/** Client metadata as the provider reads it; `client_kind` names the table the adapter read the client from. */
-type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
+/** What an installed LTI tool's token rests on: its installation, the installation's tenant and the scopes an admin granted. */
+const ltiInstallationMetadataSchema = z.object({ id: z.string(), tenant_id: z.string(), granted_scopes: z.array(z.enum(accessScopes.all)) });
+
+type LtiInstallationMetadata = z.infer<typeof ltiInstallationMetadataSchema>;
 
 /**
- * Where a client comes from: `registered` (an `oauth_clients` row) or `service` (a service account) as the adapter
- * read it, else `unregistered`: a client identified by its metadata document, which the provider marks and which never
- * sets a kind itself (`allowClient` in `provider.ts` refuses a document that does). The secret check, the scope cap and
- * the consent page read the kind here and nowhere else.
+ * Client metadata as the provider reads it; `client_kind` names the table the adapter read the client from, and an LTI
+ * registration's client carries its installation.
+ */
+type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' | 'lti'; lti_installation?: LtiInstallationMetadata };
+
+/** The client metadata the adapter adds: a client metadata document that sets one is refused (`allowClient` in `provider.ts`). */
+export const appClientProperties = ['client_kind', 'lti_installation'] as const;
+
+/**
+ * Where a client comes from: `registered` (an `oauth_clients` row), `service` (a service account) or `lti` (an approved
+ * LTI installation's registration at the token endpoint) as the adapter read it, else `unregistered`: a client
+ * identified by its metadata document, which the provider marks. The secret check, the scope cap and the consent page
+ * read the kind here and nowhere else.
  */
 export function clientKindOf(client: object): AppClientMetadata['client_kind'] | 'unregistered' {
   if ('clientIdMetadataDocument' in client) return 'unregistered';
   const kind = 'client_kind' in client ? client.client_kind : undefined;
-  return kind === 'registered' || kind === 'service' ? kind : 'unregistered';
+  return kind === 'registered' || kind === 'service' || kind === 'lti' ? kind : 'unregistered';
+}
+
+/** The installation an LTI client acts as; null for every other client. */
+export function ltiInstallationOf(client: object): LtiInstallationMetadata | null {
+  if (clientKindOf(client) !== 'lti' || !('lti_installation' in client)) return null;
+  return ltiInstallationMetadataSchema.safeParse(client.lti_installation).data ?? null;
+}
+
+/** The signed assertion a client authenticates a token request with, else undefined: the one request an LTI registration is a client in. */
+function tokenRequestAssertion(): string | undefined {
+  const oidc = Provider.ctx?.oidc;
+  const assertion = oidc?.route === 'token' ? oidc.params?.client_assertion : undefined;
+  return typeof assertion === 'string' ? assertion : undefined;
+}
+
+/** The `kid` an assertion names; undefined for none or a value that is no JWT, which client authentication refuses. */
+function kidOf(assertion: string): string | undefined {
+  try {
+    return decodeProtectedHeader(assertion).kid;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * An approved, active LTI installation's registration as a `client_credentials` client, which authenticates with
+ * `private_key_jwt`. The provider never fetches an address the LTI tool supplied: the platform reads the key set it
+ * registered through the guarded fetch and hands the keys over inline. An unreadable set leaves no key, and client
+ * authentication fails.
+ */
+async function findLtiTokenClient(id: string, assertion: string): Promise<AppClientMetadata | undefined> {
+  if (!isSwitchOn({ feature: 'ltiPlatform' })) return undefined;
+  const found = await findLtiInstallationByClient({ var: { db: baseDb } }, { clientId: id });
+  if (!found?.installation.approvedAt || found.account.status !== 'active' || !found.client.jwksUri) return undefined;
+
+  const owner = { id, jwksUri: found.client.jwksUri, meta: { clientId: id } };
+  const jwks: JSONWebKeySet = await readLtiKeySet(owner, kidOf(assertion)).catch((err) => {
+    if (!(err instanceof AppError)) throw err;
+    log.info('LTI key set unreadable at the token endpoint', { clientId: id, reason: err.meta?.reason });
+    return { keys: [] };
+  });
+  return {
+    client_id: id,
+    client_name: found.client.name,
+    token_endpoint_auth_method: 'private_key_jwt',
+    token_endpoint_auth_signing_alg: 'RS256',
+    grant_types: ['client_credentials'],
+    response_types: [],
+    redirect_uris: [],
+    jwks,
+    client_kind: 'lti',
+    lti_installation: { id: found.account.id, tenant_id: found.account.tenantId, granted_scopes: found.installation.grantedScopes },
+  };
 }
 
 /** Read at every lookup, so a disabled account or a changed redirect URI counts at once in every process. */
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {
-  // An LTI tool's registration holds no secret: read here, it would pass as a public client with a code flow.
+  // An LTI tool's registration holds no secret: read here, it would pass as a public client with a code flow. It is a
+  // client only at the token endpoint, below.
   const [app] = await baseDb
     .select()
     .from(oauthClientsTable)
@@ -47,13 +119,18 @@ async function findClient(id: string): Promise<AppClientMetadata | undefined> {
       client_kind: 'registered',
     };
   }
+  const assertion = tokenRequestAssertion();
+  const lti = assertion ? await findLtiTokenClient(id, assertion) : undefined;
+  if (lti) return lti;
+
   // A service account is its own client_credentials client; its secret keys are the client secrets (compared by hash).
-  // Its id is a UUID: any other id (a metadata document URL) would make the uuid column refuse the query.
+  // An installation takes no key. Its id is a UUID: any other id (a metadata document URL) would make the uuid column
+  // refuse the query.
   if (!isUuid(id)) return undefined;
   const [account] = await baseDb
     .select()
     .from(serviceAccountsTable)
-    .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.status, 'active')))
+    .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.status, 'active'), isNull(serviceAccountsTable.oauthClientId)))
     .limit(1);
   if (!account) return undefined;
   return {
@@ -77,7 +154,7 @@ const hashedModels = new Set(['AuthorizationCode', 'RefreshToken']);
 
 /**
  * `node-oidc-provider`'s adapter over `oidc_payloads`: one row per model instance keyed by (type, id). The `Client`
- * model reads the app's own tables (`oauth_clients`, active `service_accounts`).
+ * model reads the app's own tables (`oauth_clients`, active `service_accounts`, LTI installations).
  */
 export class DrizzleAdapter implements Adapter {
   private readonly hashed: boolean;
@@ -107,6 +184,13 @@ export class DrizzleAdapter implements Adapter {
       uid: payload.uid ?? null,
       expiresAt,
     };
+    // A client assertion is seen once. Two concurrent requests can both pass the provider's lookup before its save: only
+    // the one whose insert lands authenticates.
+    if (this.name === 'ReplayDetection') {
+      const [stored] = await baseDb.insert(oidcPayloadsTable).values(row).onConflictDoNothing().returning({ id: oidcPayloadsTable.id });
+      if (!stored) throw new errors.InvalidClientAuth('client assertion tokens must only be used once');
+      return;
+    }
     // A save over an existing row leaves `consumedAt` alone: what was spent stays spent.
     await baseDb
       .insert(oidcPayloadsTable)

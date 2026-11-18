@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { accessScopes } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
@@ -91,12 +92,20 @@ export const ltiToolRegistrationStartSchema = z.object({
   expiresAt: z.string().describe('When the token stops working, unless the LTI tool registered before'),
 });
 
+const grantedScopesSchema = z
+  .array(z.enum(accessScopes.all))
+  .max(accessScopes.all.length)
+  .describe("The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none");
+
 export const approveLtiInstallationBodySchema = z.object({
   releasedFields: z
     .array(z.enum(ltiReleasableFields))
     .max(ltiReleasableFields.length)
-    .describe('The personal fields a launch may carry, each one the LTI tool asked for; empty releases none'),
+    .describe('The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none'),
+  grantedScopes: grantedScopesSchema.optional(),
 });
+
+export const updateLtiInstallationBodySchema = z.object({ grantedScopes: grantedScopesSchema.optional() });
 
 /** The path of one LTI installation in its organization. */
 export const ltiInstallationParamSchema = tenantOrgParamSchema.extend({ ltiInstallationId: validIdSchema });
@@ -115,6 +124,12 @@ export const ltiInstallationSchema = z
     claims: z.array(z.string()).describe('The claims the LTI tool asked for that the platform can release'),
     requestedFields: z.array(z.enum(ltiReleasableFields)).describe('The personal fields those claims carry: what an approval may release'),
     releasedFields: z.array(z.enum(ltiReleasableFields)),
+    requestedScopes: z
+      .array(z.enum(accessScopes.all))
+      .describe('The access scopes the LTI tool asked for in its registration, of those the platform knows: what an admin may grant'),
+    grantedScopes: z
+      .array(z.enum(accessScopes.all))
+      .describe("The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in"),
     status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves or rejects it'),
     approvedAt: z.string().nullable(),
     createdAt: z.string(),
@@ -123,7 +138,7 @@ export const ltiInstallationSchema = z
   })
   .openapi('LtiInstallation', {
     description:
-      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.',
+      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.',
     example: mockLtiInstallationResponse(),
     'x-tags': schemaTags('data', 'lti-platform', 'cella'),
   });
@@ -173,6 +188,30 @@ export const ltiResourceLinkSchema = z
 export const ltiLaunchStartSchema = z.object({
   url: z.string().describe('The login initiation page to load in the frame; it holds a one-use launch record'),
   expiresAt: z.string().describe('When the launch record stops working, unless the launch used it before'),
+});
+
+/** A channel's people as an installed LTI tool reads them, by id alone: an order by name or address would tell what is not released. */
+export const listLtiMembersQuerySchema = pageQuerySchema.extend({ ...channelRefSchema.shape, orderBy: orderByQuerySchema(['id'], 'id asc') });
+
+export const ltiMemberSchema = z.object({
+  id: z.string().describe('The person: the id a launch sends as `sub`'),
+  roles: z.array(z.string()).describe('Their LTI roles in the channel, as full URIs: the roles a launch there would send them'),
+  name: z.string().optional().describe('Their name, when the installation releases it'),
+  email: z.string().optional().describe('Their proven email address, when the installation releases it and they have one'),
+  picture: z.string().optional().describe('The address of their picture, when the installation releases it and they have one'),
+});
+
+/**
+ * The claim a launch adds, under a name built from the issuer (`ltiApiClaim`), to say where the platform's API is: an
+ * installed LTI tool reads the members of the placement's channel there with a token of its own.
+ */
+export const ltiApiClaimSchema = z.object({
+  api_url: z.string().describe("The tenant's API: the `resource` a token request names, and the start of every route address"),
+  tenant_id: z.string(),
+  organization_id: z.string(),
+  channel_type: channelEntityTypeSchema.describe('The entity type of the channel the launch was placed in'),
+  channel_id: z.string(),
+  members_url: z.string().describe("The first page of the channel's members for the installation's token (`listLtiMembers`)"),
 });
 
 export const initiateLtiLoginQuerySchema = z.object({ token: z.string().max(maxLength.url).describe('The launch record a launch start answered') });
