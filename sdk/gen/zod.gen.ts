@@ -325,6 +325,7 @@ export const zStreamChange = z.object({
   organizationId: z.string(),
   tenantId: z.string(),
   channelId: z.string().nullable(),
+  path: z.string(),
   rows: z.array(
     z.object({
       subjectId: z.string(),

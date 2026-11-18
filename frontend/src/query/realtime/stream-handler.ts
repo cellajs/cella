@@ -60,12 +60,13 @@ function removeRows(change: StreamChange, subjectIds: string[]): void {
 
 /** Hands an announced range to the fetch prioritizer, which fetches it on the tier of its scope. */
 function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
-  const { productType, organizationId, tenantId, channelId, spreadWindow, propagation, rangeKey } = change;
+  const { productType, organizationId, tenantId, channelId, path, spreadWindow, propagation, rangeKey } = change;
   enqueueRange({
     productType,
     organizationId,
     tenantId,
     channelId,
+    path,
     ...range,
     hasCreates: change.action === 'create',
     spreadWindow,

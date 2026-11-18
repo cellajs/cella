@@ -138,6 +138,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
         organizationId,
         tenantId,
         channelId: null,
+        path: organizationId,
         afterSeq: clientCursor,
         untilSeq: frontier,
         hasCreates: false,

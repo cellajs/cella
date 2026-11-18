@@ -35,9 +35,9 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
+  const path = hierarchy.computeProductPath(entityType, asRecord(event)) ?? event.organizationId;
 
-  const named = rows.map(({ rowData, seq, stx, actorId }) => ({ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId } }));
-  const entries = named.map(({ entry }) => entry);
+  const entries = rows.map(({ rowData, seq, stx, actorId }) => ({ subjectId: rowData.id, seq: seq ?? null, stx, actorId }));
   const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
@@ -56,6 +56,7 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
     organizationId: event.organizationId,
     tenantId: event.tenantId,
     channelId,
+    path,
     rows: overflowed ? [] : entries,
     overflow: overflowed ? overflowOf(event.action, entries) : null,
     spreadWindow: computeSpreadWindow(event.organizationId),
@@ -68,20 +69,20 @@ export function buildStreamChange(event: StreamProductEvent, rows: ActivityRow[]
  * rows for them, so this change is itself the removal instruction, in the tiers of `buildStreamChange`.
  * @param event - The update the rows moved in.
  * @param rows - The moved rows its receivers lost, each with `movedFrom`, its permission fields where it was.
- * @returns One frame of the rows, under their old home channel (unseen grouping) when they share one, else under none.
+ * @returns One frame of the rows, under their old path and home channel (unseen grouping) when they share one, else
+ * under the organization and no channel.
  */
 export function buildMoveOut(event: StreamProductEvent, rows: ActivityRow[]): StreamChange {
   const base = buildStreamChange(event, rows);
-  const homes = new Set(
-    rows.map(({ movedFrom }) => {
-      const oldPath = movedFrom ? hierarchy.computeProductPath(event.entityType, movedFrom) : null;
-      return oldPath ? pathHomeId(oldPath) : event.organizationId;
-    }),
-  );
+  const oldPaths = [
+    ...new Set(rows.map(({ movedFrom }) => (movedFrom && hierarchy.computeProductPath(event.entityType, movedFrom)) || event.organizationId)),
+  ];
+  const oldPath = oldPaths.length === 1 ? oldPaths[0] : undefined;
   return {
     ...base,
     action: 'moveOut',
-    channelId: homes.size === 1 ? [...homes][0] : null,
+    path: oldPath ?? event.organizationId,
+    channelId: oldPath ? pathHomeId(oldPath) : null,
     // The removal is the payload: no tab takes it for its own echo, and there is no range to fetch.
     rows: base.rows.map((entry) => ({ ...entry, stx: null, actorId: null })),
     overflow: base.overflow && { ...base.overflow, afterSeq: null, untilSeq: null },

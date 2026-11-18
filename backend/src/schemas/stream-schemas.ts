@@ -56,6 +56,11 @@ export const streamChangeSchema = z
     organizationId: z.string(),
     tenantId: z.string(),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
+    path: z
+      .string()
+      .describe(
+        "The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share",
+      ),
     rows: z
       .array(streamChangeRowSchema)
       .describe(

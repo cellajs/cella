@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import type { StreamChange } from 'sdk';
-import type { ProductEntityType } from 'shared';
+import { type ProductEntityType, pathSegments } from 'shared';
 import { hashSpread } from 'shared/utils/spread-hash';
 import { isRateLimited } from '~/lib/api';
 import { msUntilBudget } from '~/lib/reported-budgets';
@@ -14,7 +14,6 @@ import { propagateEmbeddings } from '~/query/realtime/propagation';
 import { publishSyncedRows } from '~/query/realtime/sync-events';
 import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-import { resolveChannelPath } from '~/query/realtime/view-declaration';
 import { getRouter } from '~/routes/-router-instance';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
@@ -30,6 +29,8 @@ interface DirtyEntry {
   organizationId: string;
   tenantId: string | null;
   channelId: string | null;
+  /** The product path of the announced rows, organization first: the stream frame's `path`. */
+  path: string;
   afterSeq: number;
   untilSeq: number;
   dueAt: number;
@@ -42,7 +43,7 @@ interface DirtyEntry {
 
 type EnqueueInput = Pick<
   DirtyEntry,
-  'productType' | 'organizationId' | 'tenantId' | 'channelId' | 'afterSeq' | 'untilSeq' | 'hasCreates' | 'rangeKey'
+  'productType' | 'organizationId' | 'tenantId' | 'channelId' | 'path' | 'afterSeq' | 'untilSeq' | 'hasCreates' | 'rangeKey'
 > & {
   spreadWindow?: number | null;
   propagation?: StreamChange['propagation'];
@@ -77,7 +78,7 @@ export function enqueueCatchupRange(input: EnqueueInput): void {
 }
 
 function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
-  const { productType, organizationId, tenantId, channelId, afterSeq, untilSeq, hasCreates, propagation } = input;
+  const { productType, organizationId, tenantId, channelId, path, afterSeq, untilSeq, hasCreates, propagation } = input;
   if (!hasEntityQueryKeys(productType)) return;
 
   const caughtUp = syncStore.getState().getScopeSeq(organizationId, channelId, productType);
@@ -94,6 +95,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
     organizationId,
     tenantId,
     channelId,
+    path,
     afterSeq: anchoredAfter,
     untilSeq,
     dueAt,
@@ -107,6 +109,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   if (existing) {
     mergeRange(existing, entry);
     if (entry.rangeKey) existing.rangeKey = entry.rangeKey;
+    existing.path = entry.path;
     // More news never postpones.
     existing.dueAt = Math.min(existing.dueAt, dueAt);
   } else {
@@ -216,29 +219,17 @@ async function flushDue(): Promise<void> {
   armTimer();
 }
 
-/** Common channel covering due views for one narrowed range fetch; org-level, unresolved, or root-divergent paths widen to the whole organization. */
+/** The deepest channel every due path lies under, for one narrowed range fetch; undefined when only the organization covers them all. */
 function coveringChannelId(entries: DirtyEntry[]): string | undefined {
-  const ids = new Set<string>();
-  for (const entry of entries) {
-    if (!entry.channelId || entry.channelId === entry.organizationId) return undefined;
-    ids.add(entry.channelId);
-  }
-  if (ids.size === 1) return [...ids][0];
-
-  const paths: string[][] = [];
-  for (const id of ids) {
-    const path = resolveChannelPath(id);
-    if (!path) return undefined;
-    paths.push(path.split('/'));
-  }
-  let common = paths[0];
-  for (const segments of paths.slice(1)) {
+  let common = pathSegments(entries[0].path);
+  for (const { path } of entries.slice(1)) {
+    const segments = pathSegments(path);
     let i = 0;
-    while (i < common.length && i < segments.length && common[i] === segments[i]) i++;
+    while (i < common.length && common[i] === segments[i]) i++;
     common = common.slice(0, i);
   }
-  // A single root segment is the org id, so no narrowing; otherwise the deepest common segment is the covering channel id.
-  return common.length > 1 ? common[common.length - 1] : undefined;
+  // The first segment is the organization, whose read is the unnarrowed one.
+  return common.length > 1 ? common.at(-1) : undefined;
 }
 
 /** Flush one covering group: fetch the merged range once, then settle every entry from it. */

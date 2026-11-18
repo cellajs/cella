@@ -120,6 +120,7 @@ const changeFrame = (organizationId: string): StreamChange => ({
   organizationId,
   tenantId: 'tenant-1',
   channelId: null,
+  path: organizationId,
   rows: [],
   overflow: null,
   spreadWindow: null,

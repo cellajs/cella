@@ -44,6 +44,7 @@ const change = (overrides: Partial<StreamChange> = {}): StreamChange => ({
   organizationId: 'org-1',
   tenantId: 'tenant-1',
   channelId: null,
+  path: 'org-1',
   rows: [row(7)],
   overflow: null,
   spreadWindow: null,

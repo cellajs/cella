@@ -383,6 +383,10 @@ export type StreamChange = {
    */
   channelId: string | null;
   /**
+   * The rows' product path: the IDs of their channels, organization first, joined by `/`. A client narrows the range fetch to the deepest channel the paths it waits on share
+   */
+  path: string;
+  /**
    * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
    */
   rows: Array<{
