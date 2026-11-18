@@ -18,11 +18,15 @@ export function homeChannelIdSql(productType: ProductEntityType, table: AnyPgTab
   return sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`;
 }
 
-/** A product row's home channel, the row-side twin of `homeChannelIdSql`: deepest non-null ancestor, else the organization. */
+/**
+ * A product row's home channel, the row-side twin of `homeChannelIdSql`: its deepest non-null ancestor.
+ * @throws Error when no ancestor id is set, which a row with its `organizationId` never reaches.
+ */
 export function homeChannelOf(
   productType: ProductEntityType,
   row: Record<string, unknown> & { organizationId: string },
-): { id: string; type: ChannelEntityType } {
+): { channelId: string; channelType: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(productType, row);
-  return deepest ? { id: deepest.id, type: deepest.type } : { id: row.organizationId, type: 'organization' };
+  if (!deepest) throw new Error(`homeChannelOf: ${productType} row carries no ancestor id`);
+  return { channelId: deepest.id, channelType: deepest.type };
 }
