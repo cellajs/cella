@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { BuildingIcon, ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -13,6 +14,7 @@ import { askForHelp } from '~/modules/common/error-helpers';
 import { collapseMotion } from '~/modules/common/motion-presets';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import { isNetworkError } from '~/query/offline/network-retry';
 import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
 import { getErrorInfo } from '~/utils/get-error-info';
@@ -69,6 +71,18 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
 
   // Reset before a route change so the error state is not retained
   useEffect(() => router.subscribe('onBeforeRouteMount', () => resetErrorBoundary?.()), [router, resetErrorBoundary]);
+
+  // A page that failed for want of a connection loads again once the app is back online; only the change retries, so a
+  // request that fails while online does not loop.
+  const unreachable = !!knownError && isNetworkError(knownError);
+  useEffect(() => {
+    if (!unreachable) return;
+    return onlineManager.subscribe((online) => {
+      if (!online) return;
+      resetErrorBoundary?.();
+      void router.invalidate();
+    });
+  }, [unreachable, router, resetErrorBoundary]);
 
   // No boundary reset: the reload can wait on a worker handover, and a reset would rerun the failed route meanwhile
   const handleReload = () => void reloadApp();

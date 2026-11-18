@@ -5,7 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { appConfig, type YjsDocScope } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
 import { yjsCloseCodes, yjsFragmentName, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
-import { buildYjsSeed, descriptionOf, type YjsSeed } from 'shared/utils/yjs-seed';
+import { buildYjsSeed, descriptionOf, rebaseSeedEdits, type YjsSeed } from 'shared/utils/yjs-seed';
 import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -14,7 +14,7 @@ import { useLatestRef } from '~/hooks/use-latest-ref';
 import type { TKey } from '~/lib/i18n-locales';
 import { patchCollaborativeDescription } from '~/modules/common/blocknote/description-updater';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
-import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
+import { forgetParked, parkUnsaveable, showUnsaveableNotice } from '~/modules/common/blocknote/unsaveable-notices';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
 import {
   type AppliedRows,
@@ -29,7 +29,7 @@ import {
 import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore } from '~/modules/user/user-store';
-import { getLocalUserDb, type UnsaveableReason, type YDocKey, type YDocRecord } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord, type YDocKey, type YDocRecord } from '~/query/local-user-db';
 import { createRowsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 
@@ -130,6 +130,10 @@ export interface YjsConnection {
   generation: string | null;
   /** The cached description the document is seeded from while offline with no stored copy; undefined never seeds. */
   offlineSeed?: { description: string | null };
+  /** The description the document's offline seed was built from: its edits since then are what a rebase carries. */
+  seedBase?: YDocRecord['seed'];
+  /** Set by a rebuild of a seeded document with unsynced edits: once the fresh document synced, they go into it as blocks. */
+  pendingRebase?: PendingRebase;
   /** Set by a rebuild that parked edits the caches show: once the fresh document synced, its description replaces them. */
   restoreDescription?: boolean;
   /** True from a local edit until the server saved every edit; the connection outlives its grace period, and an end parks the edits. */
@@ -138,6 +142,13 @@ export interface YjsConnection {
   unsubscribeOnline?: () => void;
   /** Stops the watches of the token query and of the signed-in user. */
   unsubscribeToken?: () => void;
+}
+
+/** The edits of a seeded document a rebuild replaced, parked with no notice until the rebase answers. */
+interface PendingRebase {
+  base: string | null;
+  state: Uint8Array;
+  parked: Promise<UnsaveableYDocRecord | null>;
 }
 
 /** Each entity's connection, by its id; changed outside React render only. */
@@ -220,6 +231,7 @@ function setReady(conn: YjsConnection) {
   if (conn.ready) return;
   conn.ready = true;
   patchSession(conn, { ready: true });
+  if (conn.pendingRebase) rebase(conn, conn.pendingRebase);
   if (!conn.restoreDescription) return;
   conn.restoreDescription = false;
   restoreDescription(conn);
@@ -461,6 +473,7 @@ function seedOffline(conn: YjsConnection) {
   }
   Y.applyUpdate(conn.yDoc, seed.state, seedOrigin);
   conn.generation = seed.generation;
+  conn.seedBase = { description: offlineSeed.description };
   setReady(conn);
   startStoring(conn, conn.unsynced);
   postTabMessage({ kind: 'hello', key: yDocKeyString(conn.scope), generation: seed.generation, vector: Y.encodeStateVector(conn.yDoc) });
@@ -489,6 +502,7 @@ function applyStored(conn: YjsConnection, stored: LoadedYDoc) {
     storageOrigin,
   );
   conn.generation = record.generation;
+  if (record.seed) conn.seedBase = record.seed;
   conn.applied.upTo = Math.max(conn.applied.upTo, stored.appliedUpTo);
   conn.stored = true;
   setReady(conn);
@@ -515,7 +529,7 @@ function markStored(conn: YjsConnection) {
 function startStoring(conn: YjsConnection, unsynced: boolean) {
   if (!conn.stored || conn.writer || conn.generation === null || conn.stopped) return;
   if (!conn.ready && !conn.provider.synced) return;
-  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => handleWriterChange(conn, writer) });
+  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => handleWriterChange(conn, writer), seed: conn.seedBase });
   if (!writer) return;
   conn.writer = writer;
   writer.start(conn.yDoc, conn.generation, unsynced);
@@ -761,14 +775,24 @@ function unbindProvider(conn: YjsConnection) {
  * synced, also with no editor left, and a connection no editor holds then goes.
  */
 function rebuildConnection(conn: YjsConnection) {
-  const { stored, unsynced } = conn;
-  parkUnsaveable(conn, conn.scope, 'replaced');
+  const { stored, unsynced, seedBase } = conn;
+  // Parked either way: a tab closed before the fresh document synced offers them at its next boot.
+  const parked = parkUnsaveable(conn, conn.scope, 'replaced', { notice: !seedBase });
+  const pendingRebase = unsynced && seedBase ? { base: seedBase.description, state: Y.encodeStateAsUpdate(conn.yDoc), parked } : undefined;
   setUnsynced(conn, false);
   if (conn.refCount === 0 && !conn.graceTimer && !unsynced) return destroyConnection(conn);
   unbindProvider(conn);
   // A stored document stays stored: the fresh one is written whole once it synced, over the dropped generation's.
   // The server holds another generation: a seed of the same description would only be rebuilt again.
-  Object.assign(conn, openDoc(conn.scope), { generation: null, wsDeadline: undefined, stored, offlineSeed: undefined, restoreDescription: unsynced });
+  Object.assign(conn, openDoc(conn.scope), {
+    generation: null,
+    wsDeadline: undefined,
+    stored,
+    offlineSeed: undefined,
+    seedBase: undefined,
+    pendingRebase,
+    restoreDescription: unsynced,
+  });
   patchSession(conn, { ready: false, transport: 'none', rebuilds: sessionOf(conn).rebuilds + 1 });
   bindProvider(conn);
   startConnection(conn);
@@ -779,6 +803,27 @@ function rebuildConnection(conn: YjsConnection) {
       reapConnection(conn);
     }, gracePeriodMs);
   }
+}
+
+/**
+ * Carries a rebuilt seed's edits into the fresh document, a local edit that syncs as any other. Once they are in it the
+ * quiet park goes; edits that conflict with the server's own changes stay parked and their notice shows.
+ */
+function rebase(conn: YjsConnection, { base, state, parked }: PendingRebase) {
+  conn.pendingRebase = undefined;
+  const local = new Y.Doc();
+  let merged = false;
+  try {
+    Y.applyUpdate(local, state);
+    merged = rebaseSeedEdits(base, local, conn.yDoc);
+  } catch (error) {
+    console.warn(`[yjs] The offline edits of ${conn.scope.entityId} did not convert to blocks`, error);
+  } finally {
+    local.destroy();
+  }
+  void parked
+    .then((record) => (merged ? forgetParked(record) : record && showUnsaveableNotice(record)))
+    .catch((error) => console.error('[yjs] Settling parked offline edits failed:', error));
 }
 
 /** Puts the synced document's description in the caches, over parked edits they showed. */

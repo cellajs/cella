@@ -21,8 +21,18 @@ const failedResponseError = async (response: Response) => {
   return error;
 };
 
-/** A request without a response by then starts the connectivity probe, or fails when offline: a link that drops packets leaves requests waiting. */
-const responseWaitMs = 8000;
+/**
+ * A request without a response by then starts the connectivity probe: a link that drops packets leaves requests
+ * waiting. A slow answer that starts a probe of a reachable API costs one HEAD.
+ */
+const responseWaitMs = 3000;
+
+/**
+ * The wait of a request sent while the app is offline, which then fails: on a link that drops packets it would hang
+ * until `readLimitMs`, and a boot that reads what it never cached waits on each read in turn. An answer by then still
+ * counts, and brings the app back online.
+ */
+const offlineResponseWaitMs = 1000;
 
 /**
  * A read without a response by then fails as unreachable, whatever the probe found: the API answers while this request's
@@ -46,7 +56,9 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   const request = new Request(input, { ...init, credentials: 'include' });
   request.headers.set('x-client-version', String(currentSchemaVersion));
   const unreachable = new AbortController();
-  const slowResponse = setTimeout(() => (onlineManager.isOnline() ? void reportNetworkFailure() : abortUnreachable(unreachable)), responseWaitMs);
+  const slowResponse = onlineManager.isOnline()
+    ? setTimeout(() => (onlineManager.isOnline() ? void reportNetworkFailure() : abortUnreachable(unreachable)), responseWaitMs)
+    : setTimeout(() => abortUnreachable(unreachable), offlineResponseWaitMs);
   const noResponse = ['GET', 'HEAD'].includes(request.method) ? setTimeout(() => abortUnreachable(unreachable), readLimitMs) : undefined;
   waitingRequests.add(unreachable);
   let response: Response;

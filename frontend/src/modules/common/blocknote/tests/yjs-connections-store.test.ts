@@ -156,6 +156,12 @@ vi.mock('~/modules/common/blocknote/description-updater', () => ({
   patchCollaborativeDescription: (_entityType: string, entity: { id: string }, description: string) =>
     patchedDescriptions.push([entity.id, description]),
 }));
+/** The notice for parked edits; its BlockNote clipboard helpers need more of `shared` than this suite mocks. */
+const shownNotices = vi.fn();
+vi.mock('~/modules/common/blocknote/unsaveable-notices', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/modules/common/blocknote/unsaveable-notices')>()),
+  showUnsaveableNotice: shownNotices,
+}));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/modules/common/blocknote/yjs-store')>();
@@ -173,7 +179,7 @@ const { userStore } = await import('~/modules/user/user-store');
 const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
 const { createYDocWriter, flushYjsStore } = await import('~/modules/common/blocknote/yjs-store');
 const { findConnection, resumeConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
-const { buildYjsSeed } = await import('shared/utils/yjs-seed');
+const { buildYjsSeed, descriptionOf } = await import('shared/utils/yjs-seed');
 const { yjsFragmentName } = await import('shared/utils/yjs-protocol');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -655,6 +661,82 @@ describe('yjs connection with the store: offline seed', () => {
     await goOnline(false);
     expect(state()?.ready).toBe(false);
     expect(conn().generation).toBeNull();
+  });
+
+  describe('rebase onto a server document of another generation', () => {
+    const blockText = (doc: Y.Doc, index: number) => {
+      const group = doc.getXmlFragment(yjsFragmentName).get(0) as Y.XmlElement;
+      return ((group.get(index) as Y.XmlElement).get(0) as Y.XmlElement).get(0) as Y.XmlText;
+    };
+    const twoBlocks = (first: string, second: string) =>
+      JSON.stringify(
+        [first, second].map((text, i) => ({
+          id: `b${i}`,
+          type: 'paragraph',
+          props: {},
+          content: [{ type: 'text', text, styles: {} }],
+          children: [],
+        })),
+      );
+    const textsOf = (doc: Y.Doc) =>
+      (JSON.parse(descriptionOf(doc)) as { content: { text: string }[] }[]).map((b) => b.content.map(({ text }) => text).join(''));
+
+    /** A task edited online since the server seeded it: its document's generation is the original text's, its row holds the edit. */
+    const editedOnServer = (entityId: string, change?: (doc: Y.Doc) => void) => {
+      const server = new Y.Doc();
+      Y.applyUpdate(server, seedOf(entityId, twoBlocks('Original', 'Second')).state);
+      const edited = blockText(server, 0);
+      edited.delete(0, edited.length);
+      edited.insert(0, 'Edited');
+      const cached = descriptionOf(server);
+      change?.(server);
+      return { server, cached };
+    };
+
+    /** Offline: seed from the cached row and edit the second block; online: the relay announces its generation, then syncs the fresh document. */
+    async function editOfflineThenSync(entityId: string, cached: string, server: Y.Doc) {
+      online = false;
+      const { provider, state, conn } = await mountOffline(entityId, cached);
+      await vi.waitFor(() => expect(state()?.ready).toBe(true));
+      await act(async () => blockText(provider.doc, 1).insert(6, ' offline'));
+      await settled();
+      expect(await db.yDocs.get(keyPath(entityId))).toMatchObject({ seed: { description: cached }, unsynced: 1 });
+
+      await goOnline(true);
+      await announce(provider, 'gen-server');
+      const fresh = providers.at(-1)!;
+      expect(fresh).not.toBe(provider);
+      await act(async () => Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(server), fresh));
+      await handshake(fresh, 'gen-server');
+      await settled();
+      return { fresh, state, conn };
+    }
+
+    it('saves offline edits to a task edited online since its document was seeded, with no notice: a reload kept parking them', async () => {
+      const entityId = 'rebase-1';
+      const { server, cached } = editedOnServer(entityId);
+      shownNotices.mockClear();
+
+      const { fresh, state } = await editOfflineThenSync(entityId, cached, server);
+
+      expect(textsOf(fresh.doc)).toEqual(['Edited', 'Second offline']);
+      expect(state()?.unsynced).toBe(true);
+      await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(0));
+      expect(shownNotices).not.toHaveBeenCalled();
+      expect(patchedDescriptions.findLast(([id]) => id === entityId)?.[1]).toBe(descriptionOf(fresh.doc));
+    });
+
+    it('must not write over a block someone changed while this device was offline: those edits park with their notice', async () => {
+      const entityId = 'rebase-2';
+      const { server, cached } = editedOnServer(entityId, (doc) => blockText(doc, 1).insert(0, 'Colleague: '));
+      shownNotices.mockClear();
+
+      const { fresh } = await editOfflineThenSync(entityId, cached, server);
+
+      expect(textsOf(fresh.doc)).toEqual(['Edited', 'Colleague: Second']);
+      await vi.waitFor(() => expect(shownNotices).toHaveBeenCalledWith(expect.objectContaining({ entityId, reason: 'replaced' })));
+      expect(await db.unsaveableYDocs.count()).toBe(1);
+    });
   });
 
   it('must not seed ahead of a slow stored copy: the seed waits for the load, which then opens the stored edits', async () => {

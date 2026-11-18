@@ -6,7 +6,11 @@ import { waitFor } from '~/utils/wait-for';
 const healthUrl = `${appConfig.backendUrl}/health`;
 const probeTimeoutMs = 5000;
 
-/** Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects. */
+/**
+ * Re-probe a failed attempt before declaring offline. A mobile PWA's network radio sleeps while it is backgrounded, and the
+ * first fetches after resume fail at once until it reconnects. An attempt that timed out is not repeated: a link that
+ * drops packets answers the next one no sooner, and each repeat kept the app waiting another five seconds.
+ */
 const probeRetries = 2;
 const probeRetryDelayMs = 750;
 
@@ -19,13 +23,14 @@ let reachableAt = 0;
 let recheckTimer: ReturnType<typeof setTimeout> | null = null;
 let recheckCount = 0;
 
-async function isReachable(): Promise<boolean> {
+/** Whether `/health` answers within `timeoutMs`; reports nothing to the onlineManager. */
+export async function isReachable(timeoutMs = probeTimeoutMs): Promise<boolean> {
   try {
     const response = await fetch(healthUrl, {
       method: 'HEAD',
       // no-store bypasses the browser cache so the request reaches the network; a CDN-cached 204 still proves the path to the edge works.
       cache: 'no-store',
-      signal: AbortSignal.timeout(probeTimeoutMs),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     return response.ok;
   } catch {
@@ -44,8 +49,10 @@ export async function reportNetworkFailure(): Promise<void> {
   const startedAt = Date.now();
   try {
     for (let attempt = 0; attempt <= probeRetries; attempt++) {
+      const attemptedAt = Date.now();
       if (await isReachable()) return;
-      if (attempt < probeRetries) await waitFor(probeRetryDelayMs);
+      if (attempt === probeRetries || Date.now() - attemptedAt >= probeTimeoutMs) break;
+      await waitFor(probeRetryDelayMs);
     }
     if (reachableAt < startedAt) onlineManager.setOnline(false);
   } finally {

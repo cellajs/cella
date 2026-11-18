@@ -4,6 +4,7 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { checkForUpdate, reloadApp } from '~/utils/app-update';
 
@@ -15,6 +16,7 @@ export function ReloadPrompt() {
   const { t } = useTranslation();
   // True once a new version is installed and waits to take over
   const [waiting, setWaiting] = useState(false);
+  const isOnline = useOnlineManager();
 
   useEffect(() => {
     // The dev server serves no worker (main.tsx unregisters leftovers); a build without the PWA has none.
@@ -57,9 +59,10 @@ export function ReloadPrompt() {
   useEffect(() => {
     if (!waiting) return;
 
-    // In development, auto-reload on SW update (skip prompt during offline:watch)
+    // In development, auto-reload on SW update (skip prompt during offline:watch). Offline the reload stays on this
+    // release and would find the worker waiting again: it waits for the connection.
     if (appConfig.mode === 'development') {
-      void reloadApp();
+      if (isOnline) void reloadApp();
       return;
     }
 
@@ -90,7 +93,7 @@ export function ReloadPrompt() {
 
     // Reruns re-add under the same id, which updates the open toast in place
     showPrompt(false);
-  }, [waiting, t]);
+  }, [waiting, t, isOnline]);
 
   return null;
 }
