@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4d773160-ca7f-4394-8147-3b56fbc8699e",
+  "prevIds": [
+    "1e03a25f-8b47-4ba6-87eb-6c53bc20bd0e"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "context_id"
+      ],
+      "writes": [
+        "s|colprop|public.notifications.context_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public",
+        "n|col|public.notifications.context_id"
+      ],
+      "sqlHash": "e3e7fe6676d62f0c"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notifications\",\"context_id\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

@@ -5354,7 +5354,7 @@ export type ListNotificationsResponses = {
       kind: 'mention' | 'comment' | 'reply';
       productType: 'attachment';
       subjectId: string;
-      contextId: string | null;
+      contextId: string;
       channelId: string;
       channelType: 'organization';
       organizationId: string;

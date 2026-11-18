@@ -2261,7 +2261,7 @@ export const zListNotificationsResponse = z.object({
       kind: z.enum(['mention', 'comment', 'reply']),
       productType: z.enum(['attachment']),
       subjectId: z.uuid(),
-      contextId: z.uuid().nullable(),
+      contextId: z.uuid(),
       channelId: z.uuid(),
       channelType: z.enum(['organization']),
       organizationId: z.uuid(),

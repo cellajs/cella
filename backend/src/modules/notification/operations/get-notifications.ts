@@ -39,7 +39,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
   const [actors, channels, contextNames] = await Promise.all([
     findUsersMinimal(ctx, { userIds: rows.map((row) => row.actorId).filter((id): id is string => id !== null) }),
     findChannelLabels(ctx, { channelIds: [...readableRows.map((row) => row.channelId), ...rows.map((row) => row.organizationId)] }),
-    findContextNames(readableRows.map((row) => ({ ...row, id: row.contextId ?? row.subjectId }))),
+    findContextNames(readableRows.map((row) => ({ ...row, id: row.contextId }))),
   ]);
 
   const items: NotificationResponse[] = rows.map((row) => {
@@ -62,7 +62,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
       channelThumbnailUrl: channel?.thumbnailUrl ?? null,
       organizationName: organization?.name ?? '',
       organizationThumbnailUrl: organization?.thumbnailUrl ?? null,
-      subjectName: contextNames.get(row.contextId ?? row.subjectId) ?? '',
+      subjectName: contextNames.get(row.contextId) ?? '',
       readAt: row.readAt,
     };
   });

@@ -119,7 +119,7 @@ async function fanOutRow(
   const allowed = await filterByReadAccess(entityType, row, home.channelId, [...candidates.values()]);
   if (allowed.length === 0) return [];
 
-  const contextId = resolveContextId ? resolveContextId(row) : row.id;
+  const contextId = resolveContextId?.(row) ?? row.id;
   const place = { tenantId, organizationId, ...home, productType: entityType, subjectId: row.id };
   const told = await insertNotificationsIgnoringDuplicates(dbCtx, {
     rows: allowed.map<NotificationInsert>((recipient) => ({ ...recipient, ...place, contextId, activityId, actorId })),
@@ -133,7 +133,7 @@ async function fanOutRow(
 
   if (isPushSendConfigured()) {
     const primaryKind = told.some((recipient) => recipient.kind === 'mention') ? 'mention' : told[0].kind;
-    const url = buildNotificationLink(appConfig.frontendUrl, { ...place, contextId: contextId ?? undefined });
+    const url = buildNotificationLink(appConfig.frontendUrl, { ...place, contextId });
     await sendNotificationPush(
       told.map((recipient) => recipient.userId),
       { t: 'notif', activityId, channelId: home.channelId, kind: primaryKind, url },

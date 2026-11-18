@@ -12459,7 +12459,7 @@
                             "format": "uuid"
                           },
                           "contextId": {
-                            "type": ["string", "null"],
+                            "type": "string",
                             "format": "uuid"
                           },
                           "channelId": {
