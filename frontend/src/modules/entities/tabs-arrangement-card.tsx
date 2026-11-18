@@ -1,6 +1,7 @@
 import { LockIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -157,6 +158,8 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
         hideEndMarker
         enableVirtualization={false}
       />
+      {/* The tabs of LTI resource links are data, not placements: they keep no place in the stored order */}
+      {appConfig.has.ltiPlatform && <p className="text-muted-foreground mt-3 text-sm">{t('c:lti_tabs_order.text')}</p>}
     </ToolCard>
   );
 }

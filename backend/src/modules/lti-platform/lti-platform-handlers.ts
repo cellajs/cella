@@ -66,7 +66,7 @@ const launches = new OpenAPIHono<Env>();
 
 // A refused record answers a page too: the frame shows the outcome either way. The form may post to the LTI tool's
 // login and, after its redirect, to the issuer on the app's origin.
-launches.openapi(ltiLaunchRoutes.initiateLtiLogin, async (ctx) => {
+launches.openapi(ltiLaunchRoutes.initiateLtiLaunchLogin, async (ctx) => {
   try {
     const { action, fields } = await initiateLtiLoginOp(ctx.req.valid('query').token);
     return autoPostPage(ctx, { action, fields, formOrigins: ["'self'", new URL(action).origin] });

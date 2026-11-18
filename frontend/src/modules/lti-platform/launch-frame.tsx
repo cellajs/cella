@@ -7,6 +7,7 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import { answerStorageMessage, type PlatformStorage } from '~/modules/lti-platform/platform-storage';
 import { type ResourceLinkChannel, useStartLtiLaunchMutation } from '~/modules/lti-platform/query';
 import { Button } from '~/modules/ui/button';
+import { getErrorInfo } from '~/utils/get-error-info';
 
 interface LtiLaunchFrameProps {
   channel: ResourceLinkChannel;
@@ -20,13 +21,17 @@ interface LtiLaunchFrameProps {
 export function LtiLaunchFrame({ channel, resourceLink }: LtiLaunchFrameProps) {
   const { t } = useTranslation();
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const { mutate, data: launch, isError } = useStartLtiLaunchMutation();
+  const { mutate, data: launch, error } = useStartLtiLaunchMutation();
+  // The resource link the last launch started for: StrictMode's simulated remount keeps it and starts no second launch
+  const startedForRef = useRef<string | null>(null);
 
   const start = () =>
     mutate({ path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), ltiResourceLinkId: resourceLink.id } });
 
   // A launch record is spent once: every mount starts its own launch.
   useEffect(() => {
+    if (startedForRef.current === resourceLink.id) return;
+    startedForRef.current = resourceLink.id;
     start();
   }, [resourceLink.id]);
 
@@ -42,9 +47,11 @@ export function LtiLaunchFrame({ channel, resourceLink }: LtiLaunchFrameProps) {
     return () => window.removeEventListener('message', onMessage);
   }, [launch]);
 
-  if (isError) {
+  if (error) {
     return (
       <ContentPlaceholder title="c:lti_launch_failed" titleOptions={{ name: resourceLink.title }}>
+        {/* Why the platform refused, such as an LTI tool an admin disabled */}
+        <p className="text-muted-foreground mb-4 max-w-md text-sm">{getErrorInfo({ error }).message}</p>
         <Button variant="outline" onClick={start}>
           {t('c:try_again')}
         </Button>

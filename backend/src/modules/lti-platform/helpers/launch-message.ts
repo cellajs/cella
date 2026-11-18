@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
 
-/** The page that posts a launch's login initiation to the LTI tool, served by the API (`initiateLtiLogin`). */
+/** The page that posts a launch's login initiation to the LTI tool, served by the API (`initiateLtiLaunchLogin`). */
 export const loginInitiationUrl = `${appConfig.backendUrl}/lti-launches/~initiate-login`;
 
 /** The parts of an LTI registration a launch reads. */

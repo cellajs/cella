@@ -45,7 +45,7 @@ A registered app shows its registered name and logo. A client known by its metad
 
 A client that registers only through dynamic client registration (RFC 7591) cannot connect. It needs a Client ID Metadata Document or a registered app.
 
-An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started. Its row in `oauth_clients` is private to that tenant and is no client of the provider: no authorization request or consent names it.
+An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant and is no client of the provider: no authorization request or consent names it.
 
 A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
 

@@ -11372,7 +11372,7 @@
     "/lti-launches:initiate-login": {
       "get": {
         "security": [],
-        "operationId": "initiateLtiLogin",
+        "operationId": "initiateLtiLaunchLogin",
         "tags": ["lti-platform", "cella"],
         "summary": "Initiate LTI login",
         "description": "The page a launch frame loads: it posts the login initiation (1EdTech Security Framework, section 5.1.1.1) to the LTI tool's login address, with hints that refer to the launch record. Loading it leaves the record for the launch endpoint, which spends it.",

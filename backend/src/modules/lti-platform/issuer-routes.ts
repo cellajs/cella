@@ -1,44 +1,17 @@
 import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
-import { appConfig, servicePaths } from 'shared';
+import { servicePaths } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
-import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { ltiToolRegistrationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
-import { ltiClaimsSupported, ltiIssuerPaths, ltiIssuerUrl, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
+import { ltiIssuerPaths, ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
 import { authorizeLtiLaunchOp } from '#/modules/lti-platform/operations/authorize-lti-launch';
 import { registerLtiToolOp } from '#/modules/lti-platform/operations/register-lti-tool';
 import { runWithLogContext } from '#/utils/logger';
-
-/**
- * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1). The key set and the token endpoint
- * are the provider's own; the platform signs with RS256 keys only and takes LTI tools that authenticate with them.
- */
-const platformConfiguration = (provider: Provider) => ({
-  issuer: appConfig.oauthUrl,
-  authorization_endpoint: ltiIssuerUrl('authorization'),
-  registration_endpoint: ltiIssuerUrl('registration'),
-  jwks_uri: provider.urlFor('jwks'),
-  token_endpoint: provider.urlFor('token'),
-  token_endpoint_auth_methods_supported: ['private_key_jwt'],
-  token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-  // The spec requires `openid`; the platform serves no LTI service, so no service scope follows it.
-  scopes_supported: ['openid'],
-  response_types_supported: ['id_token'],
-  subject_types_supported: ['public'],
-  id_token_signing_alg_values_supported: ['RS256'],
-  claims_supported: ltiClaimsSupported,
-  [ltiPlatformConfigurationMember]: {
-    product_family_code: appConfig.slug,
-    version: env.RELEASE_SHA,
-    messages_supported: ltiMessageTypes.map((type) => ({ type })),
-  },
-});
 
 /** A registration error in the shape OpenID Connect Dynamic Client Registration gives it (section 3.3). */
 const registrationError = (ctx: Context<Env>, status: 400 | 401, error: string, description?: string) => {
@@ -65,7 +38,9 @@ export function createLtiIssuerApp(provider: Provider): Hono<Env> {
   app.use(configSwitchGate({ feature: 'ltiPlatform' }));
   app.use(dynamicBodyLimit);
 
-  app.get(`${servicePaths.oauth}${ltiIssuerPaths.configuration}`, (ctx) => ctx.json(platformConfiguration(provider)));
+  app.get(`${servicePaths.oauth}${ltiIssuerPaths.configuration}`, (ctx) =>
+    ctx.json(ltiPlatformConfiguration({ jwksUri: provider.urlFor('jwks'), tokenEndpoint: provider.urlFor('token') })),
+  );
 
   app.post(`${servicePaths.oauth}${ltiIssuerPaths.registration}`, ltiToolRegistrationLimiter, async (ctx) => {
     const registrationToken = bearerToken(ctx.req.header('Authorization'));

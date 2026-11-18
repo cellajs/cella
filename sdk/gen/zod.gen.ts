@@ -2046,7 +2046,7 @@ export const zStartLtiLaunchResponse = z.object({
   expiresAt: z.string(),
 });
 
-export const zInitiateLtiLogin2Query = z.object({
+export const zInitiateLtiLaunchLoginQuery = z.object({
   token: z.string().max(2048),
 });
 

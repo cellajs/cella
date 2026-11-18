@@ -355,7 +355,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await plan([lisContextRoles.learner])).toMatchObject({ channel: { id: org.id } });
   });
 
-  // Commit 5 builds on this: one app is the platform in one tenant and the LTI tool in another, and launches itself.
+  // One app is the platform in one tenant and the LTI tool in another, and launches itself, as the development seed does.
   it('launches itself: a placement in one tenant opens the other tenant as an embedded session of a new account', async () => {
     const oauth: TestOauthServer = await startTestOauthServer();
     try {

@@ -5,54 +5,67 @@ caughtBy: compiler
 generate: true
 ---
 
-# Connections and tokens take an LTI kind
+# LTI 1.3: an app as platform and as LTI tool
 
-An app adds `'lti-registration'`, `'lti-tool-registration'`, `'lti-launch'` and `'lti-nonce'` to `tokenKinds`,
-`ltiPlatform: false` to `has` and `ltiFrameAncestors: [] as string[]` in its `config.default.ts`, adopts the pinned
-`launch-context.ts` and `lti-context-channel.ts`, adds `embeddedChannelRouteConfig` to its pinned `routes-config.tsx`,
-and runs `pnpm generate`. Code of its own that reads `connection.federation` handles null, a map keyed by `BaseAuthStrategies` adds `lti`, a switch over a service
-account's `status` handles `pending`, and a call that passes a `TokenKind` to `readBoundToken`, `findLiveBoundToken` or
-`spendCookieToken` passes an `AddressedTokenKind`.
+An app adds the four LTI token kinds to `tokenKinds`, `ltiPlatform: false` to `has` and `ltiFrameAncestors: [] as
+string[]` in its `config.default.ts`, adopts the pinned `launch-context.ts`, `lti-context-channel.ts` and
+`routes-config.tsx` entries, and runs `pnpm generate`. Code of its own that reads `connection.federation` handles null,
+a map keyed by `BaseAuthStrategies` adds `lti`, a switch over a service account's `status` handles `pending`, and a call
+that passes a `TokenKind` to `readBoundToken`, `findLiveBoundToken` or `spendCookieToken` passes an
+`AddressedTokenKind`. Both roles stay off until a mode turns them on. The concepts are in
+[LTI](../../docs/LTI.md).
 
 ## What & why
 
-The app registers as an LTI tool at a platform by a one-use link. `connections` takes kind `lti` with `issuer` and
-`clientId`, and `federation` becomes nullable. A token row carries `email` or `tenantId`, exactly one: the
-registration link carries the tenant. `enabledAuthStrategies` may name `lti`, refused at config load without `services.oauth`.
+**Registration as an LTI tool.** An organization admin creates a one-use registration link under LMS connections in
+organization settings and pastes it into a platform's Dynamic Registration. `connections` takes kind `lti` with
+`issuer` and `clientId`, and `federation` becomes nullable. A token row carries `email` or `tenantId`, exactly one: the
+registration link carries the tenant. `enabledAuthStrategies` may name `lti`, refused at config load without
+`services.oauth`.
 
-As an LTI platform (`has.ltiPlatform`, refused at config load without `services.oauth`), the app takes an LTI tool's
-registration with a one-use token. The registration is an `oauth_clients` row with LTI columns, private to a tenant,
-which the provider and the grant policy never read. Its installation is a service account, `pending` until an admin
-approves it, with a row in the new `lti_installations` table.
+**Registration as a platform** (`has.ltiPlatform`, refused at config load without `services.oauth`). An admin pastes an
+LTI tool's registration address under LTI tools in organization settings, and the registration runs in a dialog that
+closes on the LTI tool's close message. The registration is an `oauth_clients` row with LTI columns, private to a
+tenant, which the provider and the grant policy never read. Its installation is a service account, `pending` until an
+admin approves it and chooses the personal fields its launches carry, with a row in the new `lti_installations` table.
+An installation takes no API key and shows only in the LTI tools card: the API keys card leaves accounts with an
+`oauthClientId` out.
 
-A resource link places an approved installation in a channel (the new `lti_resource_links` table) and shows as a tab of
-that channel. A launch is a one-use `lti-launch` token, which names its resource link in the new `tokens` column
-`lti_resource_link_id`. Which channels are LTI contexts and which LTI roles an app role sends are the app's call, in the
-pinned `backend/src/modules/lti-platform/launch-context.ts`. The frontend CSP allows HTTPS frames while
-`has.ltiPlatform` is on.
+**Launch from the platform.** A resource link places an approved installation in a channel (the new
+`lti_resource_links` table) and shows as a tab of that channel, after its declared tabs in the order the links were
+created; the arrangement in `toolsConfig` never lists them. A launch is a one-use `lti-launch` token, which names its
+resource link in the new `tokens` column `lti_resource_link_id`. Which channels are LTI contexts and which LTI role
+each app role sends are the app's call, in the pinned `backend/src/modules/lti-platform/launch-context.ts`. The
+frontend CSP allows HTTPS frames while `has.ltiPlatform` is on.
 
-As an LTI tool, the app receives a launch: the login initiation and the launch post (both left out of the CSRF check),
-a state proof through platform storage, and a finish route that checks the ID token, finds or creates the person by an
-identity of the new kind `lti` (the platform's issuer as `provider`, its `sub` as `subject`) and starts an embedded
-session. That session has the sign-in method `lti` and lives in its own cookie, `SameSite=None; Partitioned`; a request
-reads it only when it carries the `X-Embedded-Session: 1` header or the `embeddedSession=1` query marker, and its writes
-need `Sec-Fetch-Site: same-origin`. A launch's nonce is a one-use `lti-nonce` token naming its connection. Which channel
-an LTI context becomes, how that channel is created and how LTI roles map to its roles are the app's call, in the pinned
+**Launch into the LTI tool.** The login initiation and the launch post are left out of the CSRF check. The state is
+proven through platform storage, and a finish route checks the ID token, finds or creates the person by an identity of
+the new kind `lti` (the platform's issuer as `provider`, its `sub` as `subject`) and starts an embedded session. That
+session has the sign-in method `lti` and lives in its own cookie, `SameSite=None; Partitioned`. A request reads it only
+when it carries the `X-Embedded-Session: 1` header or the `embeddedSession=1` query marker, and its writes need
+`Sec-Fetch-Site: same-origin`. A launch's nonce is a one-use `lti-nonce` token naming its connection. Which channel an
+LTI context becomes, how that channel is created and how LTI roles map to its roles are the app's call, in the pinned
 `backend/src/modules/auth/flows/lti/lti-context-channel.ts`; the new `lti_contexts` table records each context and its
 channel.
 
-The launch ends on an embedded page under `/embed/`: a layout without app chrome that never sends anyone to sign in.
+**Embedded pages.** The launch ends under `/embed/`: a layout without app chrome that never sends anyone to sign in.
 `embeddedChannelRouteConfig` in the pinned `frontend/src/routes-config.tsx` names the embedded page per channel type,
 and a type without one opens its organization's. An embedded document keeps its own user, databases, leader tab and
 messages apart from the app's other documents on its origin. Only a document under `/embed/` may be framed, by the
-origins `ltiFrameAncestors` lists per mode (none by default), and it sends no `X-Frame-Options`. The LTI vocabulary
-(claims, LIS roles, configuration members) moved to `backend/src/lib/lti-vocabulary.ts`.
+origins `ltiFrameAncestors` lists per mode, and it sends no `X-Frame-Options`. The LTI vocabulary (claims, LIS roles,
+configuration members) moved to `backend/src/lib/lti-vocabulary.ts`.
+
+**Development.** The template's development mode turns both roles on, with its own origin as the frame ancestor, and
+the config builder moves a localhost frame ancestor with the dev port offset. `pnpm seed` (the `lti` seed, never in
+production) registers the second organization the seed admin administers as an LTI tool at the first, through the
+registration operations with the platform answering in-process, approves it with the name released and places it as a
+tab.
 
 ## Blast radius
 
 Every app: the template code names the new token kinds, and the schema changes need a migration. No lens or
 `clientCacheVersion` change. An app that never reads connections, tokens or service accounts itself has only the config
-lines and the migration to do.
+lines, the pinned files and the migration to do.
 
 ## Run
 
@@ -84,7 +97,11 @@ No script: manual.
    `routes/embed/$tenantId.$organizationSlug/organization.tsx` does for the organization.
 9. Optional: a channel layout of the app's own shows resource link tabs once it has a `$tool` child route rendering
    `SlotTabHost`, and its `beforeLoad` passes `linkedTabs` from `loadLtiResourceLinkTabs` to `guardNavTabs`, as the
-   organization layout does.
+   organization layout does. Its settings place tabs through the LTI resource link routes with that channel's type and
+   id, as the LTI tools card does for the organization.
+10. Optional: an app whose `config.development.ts` is its own turns on `has.ltiPlatform`, adds `'lti'` to
+    `enabledAuthStrategies` and lists its development origin in `ltiFrameAncestors`, as the template's does; `pnpm seed`
+    then seeds the connected pair.
 
 ## Verify
 

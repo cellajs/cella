@@ -1,4 +1,5 @@
 import type {
+  BaseAuthStrategies,
   FederationConfig,
   MatrixConfig,
   NavigationConfig,
@@ -246,7 +247,7 @@ export const config = {
   // Authentication
 
   /** No `sso` until the app declares a federation. */
-  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as readonly BaseAuthStrategies[],
   enabledOAuthProviders: ['github'] as const,
   /**
    * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while

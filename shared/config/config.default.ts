@@ -1,4 +1,5 @@
 import type {
+  BaseAuthStrategies,
   FederationConfig,
   MatrixConfig,
   NavigationConfig,
@@ -251,7 +252,8 @@ export const config = {
 
   // Authentication
 
-  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as const,
+  // Typed as a list: a mode may name a method the default leaves off, as development names `lti`.
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as readonly BaseAuthStrategies[],
   enabledOAuthProviders: ['github'] as const,
   /**
    * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while

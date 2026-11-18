@@ -1,4 +1,6 @@
 import { appConfig } from 'shared';
+import { env } from '#/env';
+import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
 import { type LtiReleasableField, ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 
 /** The platform's own LTI routes, as paths under the issuer; the OAuth worker serves them beside the provider. */
@@ -23,6 +25,32 @@ const ltiFieldClaims = {
 
 /** Every claim a launch can carry about the person: the issuer and subject always, the others once released. */
 export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.values(ltiFieldClaims).flat()];
+
+/**
+ * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1), with the key set and the token
+ * endpoint of the authorization server. The platform signs with RS256 keys only and takes LTI tools that authenticate
+ * with them.
+ */
+export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: string; tokenEndpoint: string }) => ({
+  issuer: appConfig.oauthUrl,
+  authorization_endpoint: ltiIssuerUrl('authorization'),
+  registration_endpoint: ltiIssuerUrl('registration'),
+  jwks_uri: jwksUri,
+  token_endpoint: tokenEndpoint,
+  token_endpoint_auth_methods_supported: ['private_key_jwt'],
+  token_endpoint_auth_signing_alg_values_supported: ['RS256'],
+  // The spec requires `openid`. The platform serves no LTI service and offers no service scope beside it.
+  scopes_supported: ['openid'],
+  response_types_supported: ['id_token'],
+  subject_types_supported: ['public'],
+  id_token_signing_alg_values_supported: ['RS256'],
+  claims_supported: ltiClaimsSupported,
+  [ltiPlatformConfigurationMember]: {
+    product_family_code: appConfig.slug,
+    version: env.RELEASE_SHA,
+    messages_supported: ltiMessageTypes.map((type) => ({ type })),
+  },
+});
 
 /** The personal fields whose claims an LTI tool asked for: the most an approval may release. */
 export const requestedFields = (claims: readonly string[]): LtiReleasableField[] =>

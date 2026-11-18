@@ -7,13 +7,15 @@ import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
 import { i18n } from '#/lib/i18n';
 
+/** Any HTTPS page, plain HTTP ones too in development and test: who may frame a page that holds nothing but text. */
+export const anyFrameAncestor = appConfig.mode === 'development' || appConfig.mode === 'test' ? 'https: http:' : 'https:';
+
 /** Where the launch page posts the launch and the stored value, same-origin. */
 const ltiFinishUrl = () => `${appConfig.backendAuthUrl}/lti/finish`;
 
 /**
  * Who may frame a page of a launch: the origin of the connection's authorization endpoint once the connection is known,
- * and nobody before. A step sets it as soon as it found the connection: its refusal page then shows in the platform's
- * frame.
+ * and nobody before. A step sets it as soon as it found the connection. A refusal page, text alone, shows in any frame.
  */
 export interface PageFrame {
   ancestor: string | null;
@@ -104,10 +106,13 @@ export const storagePage = (ctx: Context<Env>, frame: PageFrame, exchange: Stora
   );
 };
 
-/** A refused launch step: the error's translated title and text, framed by the platform when it is known. */
+/**
+ * A refused launch step: the error's translated title and text. A platform the app no longer knows, such as one whose
+ * connection an admin deleted, still frames it: the page holds no script, form or session.
+ */
 export const refusalPage = (ctx: Context<Env>, frame: PageFrame, err: unknown) => {
   const refusal = toClientError(err, { path: ctx.req.path, method: ctx.req.method }, { exposeServerMessage: false });
-  pageHeaders(ctx, frame, "'none'");
+  pageHeaders(ctx, { ancestor: frame.ancestor ?? anyFrameAncestor }, "'none'");
   const status: ContentfulStatusCode = refusal.status;
   return ctx.html(
     html`<!DOCTYPE html>

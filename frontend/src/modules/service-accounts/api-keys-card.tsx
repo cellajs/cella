@@ -95,7 +95,8 @@ interface ActiveItem {
 export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
-  const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results;
+  // An account that installs an app or an LTI tool takes no API key: the LTI tools card shows an installation
+  const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results.filter((account) => !account.oauthClientId);
   const keyLists = useSuspenseQueries({ queries: accounts.map((account) => apiKeysQueryOptions(path, account.id)) });
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // Plaintext by key id, in component state only: it never enters the query cache, which persists.

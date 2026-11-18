@@ -147,7 +147,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
 
 /** The login initiation page a launch frame loads, outside any session: the launch record in its address is the proof. */
 export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
-  initiateLtiLogin: xRoute({
+  initiateLtiLaunchLogin: xRoute({
     method: 'get',
     path: '/~initiate-login',
     xEnabledBy: { feature: 'ltiPlatform' },

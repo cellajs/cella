@@ -4947,7 +4947,7 @@ export type StartLtiLaunchResponses = {
 
 export type StartLtiLaunchResponse = StartLtiLaunchResponses[keyof StartLtiLaunchResponses];
 
-export type InitiateLtiLogin2Data = {
+export type InitiateLtiLaunchLoginData = {
   body?: never;
   path?: never;
   query: {
@@ -4959,7 +4959,7 @@ export type InitiateLtiLogin2Data = {
   url: '/lti-launches:initiate-login';
 };
 
-export type InitiateLtiLogin2Errors = {
+export type InitiateLtiLaunchLoginErrors = {
   /**
    * Bad request
    */
@@ -4980,9 +4980,9 @@ export type InitiateLtiLogin2Errors = {
   429: TooManyRequestsError;
 };
 
-export type InitiateLtiLogin2Error = InitiateLtiLogin2Errors[keyof InitiateLtiLogin2Errors];
+export type InitiateLtiLaunchLoginError = InitiateLtiLaunchLoginErrors[keyof InitiateLtiLaunchLoginErrors];
 
-export type InitiateLtiLogin2Responses = {
+export type InitiateLtiLaunchLoginResponses = {
   /**
    * Login initiation
    *

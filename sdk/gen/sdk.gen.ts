@@ -206,9 +206,9 @@ import type {
   HandleMcpData,
   HandleMcpErrors,
   HandleMcpResponses,
-  InitiateLtiLogin2Data,
-  InitiateLtiLogin2Errors,
-  InitiateLtiLogin2Responses,
+  InitiateLtiLaunchLoginData,
+  InitiateLtiLaunchLoginErrors,
+  InitiateLtiLaunchLoginResponses,
   InitiateLtiLoginByPostData,
   InitiateLtiLoginByPostErrors,
   InitiateLtiLoginByPostResponses,
@@ -2302,16 +2302,16 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
  *
  * The page a launch frame loads: it posts the login initiation (1EdTech Security Framework, section 5.1.1.1) to the LTI tool's login address, with hints that refer to the launch record. Loading it leaves the record for the launch endpoint, which spends it.
  *
- * **GET /lti-launches:initiate-login** ·· [initiateLtiLogin2](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/lti-launches:initiate-login) ·· _lti-platform · cella_
+ * **GET /lti-launches:initiate-login** ·· [initiateLtiLaunchLogin](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/lti-launches:initiate-login) ·· _lti-platform · cella_
  *
- * @param {initiateLtiLogin2Data} options
+ * @param {initiateLtiLaunchLoginData} options
  * @param {string} options.query.token - `string`
  * @returns Possible status codes: 200, 400, 401, 404, 429
  */
-export const initiateLtiLogin2 = <ThrowOnError extends boolean = true>(
-  options: Options<InitiateLtiLogin2Data, ThrowOnError>,
-): RequestResult<InitiateLtiLogin2Responses, InitiateLtiLogin2Errors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<InitiateLtiLogin2Responses, InitiateLtiLogin2Errors, ThrowOnError, 'data'>({
+export const initiateLtiLaunchLogin = <ThrowOnError extends boolean = true>(
+  options: Options<InitiateLtiLaunchLoginData, ThrowOnError>,
+): RequestResult<InitiateLtiLaunchLoginResponses, InitiateLtiLaunchLoginErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<InitiateLtiLaunchLoginResponses, InitiateLtiLaunchLoginErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/lti-launches:initiate-login',
     ...options,

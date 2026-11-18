@@ -14,6 +14,8 @@ A service account is tenant-scoped and holds role bindings like a member does. "
 
 A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column.
 
+An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)).
+
 ## Proving who you are
 
 Every caller gets the same OpenAPI contract and SDK. Routes open to machines take an API key or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
