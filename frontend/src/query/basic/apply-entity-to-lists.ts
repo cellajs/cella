@@ -7,15 +7,6 @@ import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
 
-/** Deepest non-null ancestor, or the org for org-homed rows. Matches `hierarchy.resolveDeepestAncestorId`, so cache placement and stream routing cannot disagree. */
-export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
-  const entityRecord = asRecord(entity);
-  const home = hierarchy.resolveDeepestAncestorId(entityType, entityRecord);
-  if (home) return home;
-  const organizationId = entityRecord.organizationId;
-  return typeof organizationId === 'string' ? organizationId : null;
-}
-
 /** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
 export const matchesCanonicalHome = (queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean =>
   queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
@@ -63,7 +54,7 @@ export function spliceEntitiesIntoListCaches(
   const { entityType, organizationId = null } = first;
   const keys = getEntityQueryKeys(entityType);
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  const homed = entities.map((entity) => ({ entity, homeChannelId: resolveHomeChannelId(entityType, entity) }));
+  const homed = entities.map((entity) => ({ entity, homeChannelId: hierarchy.resolveDeepestAncestorId(entityType, entity) }));
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
     result.sawFilteredList ||= queryKey.slice(2).some(isFilterSegment);

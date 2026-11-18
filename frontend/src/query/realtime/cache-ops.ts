@@ -2,7 +2,7 @@ import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { isRateLimited } from '~/lib/api';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
-import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
+import { spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, removeDetailQueriesOnceUnobserved, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { isFilterSegment } from '~/query/basic/create-query-keys';
 import {
@@ -126,7 +126,7 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (!sawFilteredList) {
     for (const row of live) {
-      const homeChannelId = resolveHomeChannelId(entityType, route(row));
+      const homeChannelId = hierarchy.resolveDeepestAncestorId(entityType, route(row));
       if (!homeChannelId || seen.has(row.id) || spliced.has(row.id)) continue;
       console.warn(
         `[CacheOps] New ${entityType} row ${row.id} reached no list cache: ` +
