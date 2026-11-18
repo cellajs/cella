@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { onlineManager, useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowLeftIcon, FingerprintPatternIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect } from 'react';
@@ -10,6 +10,7 @@ import { type AuthAlternative, AuthAlternatives } from '~/modules/auth/auth-alte
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { useOAuthAlternatives } from '~/modules/auth/oauth-strategy';
 import { usePasskeySignIn } from '~/modules/auth/passkey-strategy';
+import { resolvePostAuthRedirect } from '~/modules/auth/post-auth-redirect';
 import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
 import { ServerUnavailableAlert } from '~/modules/auth/server-unavailable-alert';
 import { useSsoAlternatives } from '~/modules/auth/sso-strategy';
@@ -24,7 +25,9 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { meQueryOptions } from '~/modules/me/query';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore, useUserStore } from '~/modules/user/user-store';
+import { isNetworkError } from '~/query/offline/network-retry';
+import { queryClient } from '~/query/query-client';
 
 // Warn after this delay that the backend is slow to answer.
 const healthSlowMs = 5000;
@@ -33,7 +36,7 @@ export function AuthenticatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
+  const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
   const lastUser = useUserStore((state) => state.lastUser);
   const { step, setStep, signedIn, inviteOtherAccount, setInviteOtherAccount } = useAuthStore(
@@ -66,6 +69,21 @@ export function AuthenticatePage() {
   // With sign-up closed the email step only signs in, and the other ways in say so.
   const alternativesStep = step === 'checkEmail' && !appConfig.has.selfRegistration ? 'signIn' : step;
   const oauth = useOAuthAlternatives(alternativesStep);
+
+  // Opened offline, the guard could not ask whether the browser holds a session: back online it asks, and leaves as the
+  // guard would. The first request after a reconnect can fail with the network still changing; a 401 is an answer.
+  useEffect(() => {
+    if (tokenId) return;
+    return onlineManager.subscribe((online) => {
+      if (!online || userStore.getState().user) return;
+      queryClient
+        .query({ ...meQueryOptions(), staleTime: 'static', retry: (count, error) => count < 3 && isNetworkError(error), retryDelay: 1000 })
+        .then(
+          () => navigate({ to: resolvePostAuthRedirect(redirect), replace: true }),
+          () => {},
+        );
+    });
+  }, [tokenId, redirect]);
 
   useEffect(() => {
     // The link-sent and waitlist steps stay until the visitor leaves them.

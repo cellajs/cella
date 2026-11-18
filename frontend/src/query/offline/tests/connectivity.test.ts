@@ -57,6 +57,20 @@ describe('connectivity', () => {
     expect(onlineManager.isOnline()).toBe(false);
   });
 
+  it('goes offline after one probe that timed out: a link that drops packets kept the app waiting three probes long', async () => {
+    vi.mocked(fetch).mockImplementation(
+      () => new Promise((_resolve, reject) => setTimeout(() => reject(new DOMException('The operation timed out.', 'TimeoutError')), 5000)),
+    );
+    const { onlineManager, reportNetworkFailure } = await load();
+    onlineManager.setOnline(true);
+
+    const probing = reportNetworkFailure();
+    await vi.advanceTimersByTimeAsync(5000);
+    await probing;
+    expect(onlineManager.isOnline()).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
   // The re-check loop ends an outage on its own: one over within the alert's delay never shows it, and a dismissed alert leaves the loop running.
   it('re-checks until the API answers however long the outage lasts, pauses in a hidden tab and re-checks at once on resume', async () => {
     vi.mocked(fetch).mockRejectedValue(unreachable);

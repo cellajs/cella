@@ -1,3 +1,5 @@
+import { isReachable } from '~/query/offline/connectivity';
+
 // A hard reload follows when the waiting worker has not taken control by then
 const activateTimeout = 5000;
 // One check per 30s: a failing page refuses many responses at once, and the frontend can roll out after its API
@@ -6,10 +8,18 @@ let lastUpdateCheck = 0;
 
 const getRegistration = async () => ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistration().catch(() => undefined) : undefined);
 
+const takeoverProbeMs = 2000;
+
+/**
+ * Whether a waiting release may take over now. A release that raised `clientCacheVersion` drops the stored queries on its
+ * first boot, and offline nothing fills them again: the reload stays on this release until the API answers.
+ */
+const mayTakeOver = async () => navigator.onLine && (await isReachable(takeoverProbeMs));
+
 /** Reloads the page, handing control to a waiting service worker first: a plain reload stays on the old worker's release. */
 export async function reloadApp() {
   const waiting = (await getRegistration())?.waiting;
-  if (!waiting) {
+  if (!waiting || !(await mayTakeOver())) {
     window.location.reload();
     return;
   }
@@ -25,7 +35,7 @@ export async function reloadOntoWaitingWorker() {
   const [navigation] = performance.getEntriesByType('navigation');
   if (!(navigation instanceof PerformanceNavigationTiming) || navigation.type !== 'reload') return false;
   const waiting = (await getRegistration())?.waiting;
-  if (!waiting) return false;
+  if (!waiting || !(await mayTakeOver())) return false;
 
   // No reload without the takeover: a worker that stays waiting would otherwise repeat this on every boot.
   const tookOver = await new Promise<boolean>((resolve) => {

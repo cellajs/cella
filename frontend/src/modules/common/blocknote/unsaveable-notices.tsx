@@ -29,12 +29,19 @@ type ParkSource = Pick<YjsConnection, 'yDoc' | 'writer' | 'unsynced' | 'generati
  * Takes a document out of sync for good: unsynced edits are parked through its writer and offered in a notice to copy,
  * and a clean document's stored copy is deleted with no notice. The document is read before this returns, so the caller
  * may destroy it right after. Without a writer, or when parking fails, the notice holds the state in memory.
+ * @param notice - False parks with no notice: the caller shows it, or deletes the parked edits once they were saved after all.
+ * @returns The parked edits, with the row id Discard deletes; null for a clean document.
  */
-export function parkUnsaveable(source: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
+export function parkUnsaveable(
+  source: ParkSource,
+  scope: YjsDocScope,
+  reason: UnsaveableReason,
+  { notice = true }: { notice?: boolean } = {},
+): Promise<UnsaveableYDocRecord | null> {
   const { writer, yDoc } = source;
   if (!source.unsynced) {
     writer?.drop().catch((error) => console.error('[yjs] Deleting a stored document failed:', error));
-    return;
+    return Promise.resolve(null);
   }
   const { entityType, entityId, tenantId, organizationId } = scope;
   const record: UnsaveableYDocRecord = {
@@ -47,24 +54,28 @@ export function parkUnsaveable(source: ParkSource, scope: YjsDocScope, reason: U
     state: Y.encodeStateAsUpdate(yDoc),
     at: Date.now(),
   };
-  showNoticeOnceParked(record, writer ? writer.park(reason, yDoc) : null).catch((error) =>
-    console.error('[yjs] Showing the notice for unsaveable edits failed:', error),
-  );
+  const parked = parkedRecord(record, writer ? writer.park(reason, yDoc) : null);
+  if (notice) parked.then(showUnsaveableNotice).catch((error) => console.error('[yjs] Showing the notice for unsaveable edits failed:', error));
+  return parked;
 }
 
-async function showNoticeOnceParked(record: UnsaveableYDocRecord, parked: Promise<void> | null) {
-  let shown = record;
-  if (parked) {
-    try {
-      await parked;
-      // The writer just added the document's newest parked row; Discard deletes that one.
-      const db = getLocalUserDb();
-      shown = (await db?.unsaveableYDocs.where('[entityType+entityId]').equals([record.entityType, record.entityId]).last()) ?? record;
-    } catch (error) {
-      console.error('[yjs] Parking unsaveable edits failed, so the notice holds them:', error);
-    }
+async function parkedRecord(record: UnsaveableYDocRecord, parked: Promise<void> | null): Promise<UnsaveableYDocRecord> {
+  if (!parked) return record;
+  try {
+    await parked;
+    // The writer just added the document's newest parked row; Discard deletes that one.
+    const db = getLocalUserDb();
+    return (await db?.unsaveableYDocs.where('[entityType+entityId]').equals([record.entityType, record.entityId]).last()) ?? record;
+  } catch (error) {
+    console.error('[yjs] Parking unsaveable edits failed, so the notice holds them:', error);
+    return record;
   }
-  await showUnsaveableNotice(shown);
+}
+
+/** Deletes parked edits that reached the server after all, with no notice. */
+export async function forgetParked(record: UnsaveableYDocRecord | null): Promise<void> {
+  if (record?.id === undefined) return;
+  await getLocalUserDb()?.unsaveableYDocs.delete(record.id);
 }
 
 /**

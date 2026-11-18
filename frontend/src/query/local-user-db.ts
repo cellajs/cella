@@ -43,6 +43,8 @@ export type YDocKey = Pick<YjsDocKey, 'entityType' | 'entityId'>;
 export interface YDocRecord extends YjsDocScope {
   /** The document's generation as the relay announced it; another one means the server reseeded the document. */
   generation: string;
+  /** The description an offline seed started the document from: a server document of another generation takes its edits as blocks. */
+  seed?: { description: string | null };
   /** 1 while a `local` row is left: an edit no server answer has proven saved. */
   unsynced: 0 | 1;
   /** Base plus update rows, for the byte budget. */

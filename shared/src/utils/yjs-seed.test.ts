@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { z } from 'zod';
 import { yjsFragmentName } from './yjs-protocol.ts';
-import { buildYjsSeed } from './yjs-seed.ts';
+import { buildYjsSeed, descriptionOf, mergeBlocks, rebaseSeedEdits } from './yjs-seed.ts';
 
 const task = { entityType: 'attachment', entityId: '01a1d1af-fc16-7b55-a2ea-9ce5ed130841' } as const;
 const otherTask = { ...task, entityId: '01a1d1af-fc16-7b55-a2ea-9ce5ed130842' };
@@ -74,5 +74,85 @@ describe('buildYjsSeed', () => {
     expect(() => buildYjsSeed(task, JSON.stringify([{ id: 'x', type: 'no-such-block', props: {}, content: [], children: [] }]))).toThrow();
     expect(() => buildYjsSeed(task, '{"not":"an array"}')).toThrow();
     expect(() => buildYjsSeed(task, 'not json')).toThrow();
+  });
+});
+
+describe('mergeBlocks', () => {
+  const block = (id: string, text = id) => ({ id, text });
+  const ids = (blocks: { id: string; text: string }[] | null) => blocks?.map(({ id, text }) => (text === id ? id : `${id}:${text}`)) ?? null;
+  const a = block('a');
+  const b = block('b');
+  const c = block('c');
+
+  it.each([
+    ['local unchanged: the server stays', [a, b], [a, b], [a, block('b', 'B')], ['a', 'b:B']],
+    ['server unchanged: local wins whole, a reorder included', [a, b, c], [c, a, block('b', 'B')], [a, b, c], ['c', 'a', 'b:B']],
+    ['each side changed another block', [a, b], [block('a', 'A'), b], [a, block('b', 'B')], ['a:A', 'b:B']],
+    ['both changed one block alike', [a, b], [block('a', 'A'), b], [block('a', 'A'), block('b', 'B')], ['a:A', 'b:B']],
+    ['both changed one block otherwise: conflict', [a, b], [block('a', 'A'), b], [block('a', 'X'), b], null],
+    ['local removed a block the server left', [a, b, c], [a, c], [a, b, block('c', 'C')], ['a', 'c:C']],
+    ['local removed a block the server changed: conflict', [a, b], [a], [a, block('b', 'B')], null],
+    ['local changed a block the server removed: conflict', [a, b], [a, block('b', 'B')], [a], null],
+    ['local added a block: after its nearest kept neighbour', [a, b], [a, block('n'), b], [block('z'), a, block('b', 'B')], ['z', 'a', 'n', 'b:B']],
+    ['local added a first block: at the start', [a, b], [block('n'), a, b], [a, block('b', 'B')], ['n', 'a', 'b:B']],
+    ['local reordered while the server changed: conflict', [a, b], [b, a], [a, block('b', 'B')], null],
+  ])('%s', (_case, base, local, server, expected) => {
+    expect(ids(mergeBlocks(base, local, server))).toEqual(expected);
+  });
+});
+
+describe('rebaseSeedEdits', () => {
+  const textsOf = (doc: Y.Doc) =>
+    (JSON.parse(descriptionOf(doc)) as { content: { text: string }[] }[]).map((block) => block.content.map(({ text }) => text).join(''));
+
+  /** A device seeds offline from the text it cached, edits a block, and the server document is another generation. */
+  const offlineEdit = (cached: string, edit: (doc: Y.Doc) => void) => {
+    const local = docOf(buildYjsSeed(task, cached).state);
+    edit(local);
+    return local;
+  };
+  const appendTo = (index: number, text: string) => (doc: Y.Doc) => {
+    const group = doc.getXmlFragment(yjsFragmentName).get(0) as Y.XmlElement;
+    const paragraphElement = (group.get(index) as Y.XmlElement).get(0) as Y.XmlElement;
+    const yText = paragraphElement.get(0) as Y.XmlText;
+    yText.insert(yText.length, text);
+  };
+
+  it('saves an offline edit when the server document was seeded from an older text, as every edited task is', () => {
+    // The server seeded 'Original' and was edited to 'Edited' since; the device cached 'Edited' and seeded that.
+    const server = docOf(buildYjsSeed(task, description('Original', 'Second')).state);
+    server.transact(() => {
+      const group = server.getXmlFragment(yjsFragmentName).get(0) as Y.XmlElement;
+      const yText = ((group.get(0) as Y.XmlElement).get(0) as Y.XmlElement).get(0) as Y.XmlText;
+      yText.delete(0, yText.length);
+      yText.insert(0, 'Edited');
+    });
+    const cached = descriptionOf(server);
+    const local = offlineEdit(cached, appendTo(1, ' offline'));
+
+    expect(buildYjsSeed(task, cached).generation).not.toBe(buildYjsSeed(task, description('Original', 'Second')).generation);
+    expect(rebaseSeedEdits(cached, local, server)).toBe(true);
+    expect(textsOf(server)).toEqual(['Edited', 'Second offline']);
+  });
+
+  it('keeps a colleague edit to another block made while the device was offline', () => {
+    const cached = description('First', 'Second');
+    const server = docOf(buildYjsSeed(otherTask, cached).state);
+    appendTo(0, ' colleague')(server);
+    const local = offlineEdit(cached, appendTo(1, ' offline'));
+
+    expect(rebaseSeedEdits(cached, local, server)).toBe(true);
+    expect(textsOf(server)).toEqual(['First colleague', 'Second offline']);
+  });
+
+  it('must not write over a block the server changed too: it refuses and leaves the server document as it was', () => {
+    const cached = description('First', 'Second');
+    const server = docOf(buildYjsSeed(otherTask, cached).state);
+    appendTo(1, ' colleague')(server);
+    const before = Y.encodeStateVector(server);
+    const local = offlineEdit(cached, appendTo(1, ' offline'));
+
+    expect(rebaseSeedEdits(cached, local, server)).toBe(false);
+    expect(Buffer.from(Y.encodeStateVector(server)).equals(Buffer.from(before))).toBe(true);
   });
 });

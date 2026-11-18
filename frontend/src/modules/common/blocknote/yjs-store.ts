@@ -94,6 +94,8 @@ interface YDocWriterOptions {
   applied?: AppliedRows;
   /** Runs when `pending` or `failed` changed. */
   onChange?: () => void;
+  /** The text of the offline seed the document started from, stored with its record. */
+  seed?: YDocRecord['seed'];
 }
 
 type DocKeyPath = [ProductEntityType, string];
@@ -441,6 +443,7 @@ class StoreWriter implements YDocWriter {
         const updateBytes = unsynced ? state.byteLength : 0;
         await db.yDocs.put({
           ...scope,
+          ...(this.options.seed && { seed: this.options.seed }),
           generation,
           unsynced: unsynced ? 1 : 0,
           bytes: state.byteLength + updateBytes,

@@ -92,3 +92,73 @@ export function buildYjsSeed({ entityType, entityId }: Pick<YjsDocKey, 'entityTy
 
 /** The description a document holds, as the entity stores it: its blocks as JSON. Throws when the document does not convert. */
 export const descriptionOf = (doc: Y.Doc): string => JSON.stringify(yDocToBlocks(editor(), doc, yjsFragmentName));
+
+const sameBlock = (a: unknown, b: unknown) => (a === undefined || b === undefined ? a === b : JSON.stringify(a) === JSON.stringify(b));
+const sameBlocks = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((block, i) => sameBlock(block, b[i]));
+
+/**
+ * Merges top-level blocks three ways by id: each block `local` changed, added or removed since `base` goes into `server`,
+ * the rest of `server` stays. A nested block counts as part of its top-level block. A block added locally goes after the
+ * nearest block before it that the result holds.
+ * @returns The merged blocks; `server` itself when `local` changed nothing. Null when the server changed a block `local`
+ * changed too, or when `local` reordered blocks and the server changed anything.
+ */
+export function mergeBlocks<T extends { id?: string }>(base: T[], local: T[], server: T[]): T[] | null {
+  if (sameBlocks(local, base)) return server;
+  if (sameBlocks(server, base)) return local;
+
+  const byId = (blocks: T[]) => new Map(blocks.map((block) => [block.id, block]));
+  const baseById = byId(base);
+  const localById = byId(local);
+  const serverById = byId(server);
+  const sharedOrder = (blocks: T[], other: Map<string | undefined, T>) => blocks.flatMap(({ id }) => (other.has(id) ? [id] : []));
+  if (sharedOrder(local, baseById).join('\n') !== sharedOrder(base, localById).join('\n')) return null;
+
+  const merged = [...server];
+  const indexOf = (id: string | undefined) => merged.findIndex((block) => block.id === id);
+  for (const [id, before] of baseById) {
+    const after = localById.get(id);
+    if (sameBlock(after, before)) continue;
+    const theirs = serverById.get(id);
+    if (!sameBlock(theirs, before) && !sameBlock(theirs, after)) return null;
+    const at = indexOf(id);
+    if (at < 0) continue;
+    if (after) merged[at] = after;
+    else merged.splice(at, 1);
+  }
+  for (const [position, block] of local.entries()) {
+    if (baseById.has(block.id)) continue;
+    const theirs = serverById.get(block.id);
+    if (theirs) {
+      if (!sameBlock(theirs, block)) return null;
+      continue;
+    }
+    const anchor = local
+      .slice(0, position)
+      .reverse()
+      .find((earlier) => indexOf(earlier.id) >= 0);
+    merged.splice(anchor ? indexOf(anchor.id) + 1 : 0, 0, block);
+  }
+  return merged;
+}
+
+/**
+ * Carries the edits an offline document made on its seed into `target`, the server's document of another generation.
+ * The two share no Yjs history: the edits go as blocks ({@link mergeBlocks}), in one transaction with no origin, a local
+ * edit of `target`. `description` is the text the seed was built from.
+ * @returns False when the edits conflict with what the server changed; `target` is untouched then.
+ */
+export function rebaseSeedEdits(description: string | null, local: Y.Doc, target: Y.Doc): boolean {
+  const blocksOf = (doc: Y.Doc) => yDocToBlocks(editor(), doc, yjsFragmentName);
+  const baseDoc = new Y.Doc();
+  try {
+    Y.applyUpdate(baseDoc, encodeSeed(parseDescription(description), 1));
+    const server = blocksOf(target);
+    const merged = mergeBlocks(blocksOf(baseDoc), blocksOf(local), server);
+    if (!merged) return false;
+    if (merged !== server) target.transact(() => blocksToYXmlFragment(editor(), merged, target.getXmlFragment(yjsFragmentName)));
+    return true;
+  } finally {
+    baseDoc.destroy();
+  }
+}
