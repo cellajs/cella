@@ -23,29 +23,27 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { formResolver } from '~/utils/form-resolver';
+import { formResolver, formValuesOf } from '~/utils/form-resolver';
 import { soleTimeZone } from '~/utils/time-zones';
 
 // welcomeText belongs to the details form
-const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
-  languageCodes: z.array(z.enum(appConfig.languageCodes)).min(1),
-  websiteUrl: z.string().max(2048).startsWith('https://').nullish(),
-});
+const formSchema = zUpdateOrganizationBody
+  .pick({
+    thumbnailUrl: true,
+    name: true,
+    shortName: true,
+    slug: true,
+    notificationEmail: true,
+    defaultLanguageCode: true,
+    regionCode: true,
+    timeZone: true,
+  })
+  .extend({
+    languageCodes: z.array(z.enum(appConfig.languageCodes)).min(1),
+    websiteUrl: z.string().max(2048).startsWith('https://').nullish(),
+  });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const toFormValues = (organization: Organization): FormValues => ({
-  thumbnailUrl: organization.thumbnailUrl,
-  name: organization.name,
-  shortName: organization.shortName,
-  slug: organization.slug,
-  notificationEmail: organization.notificationEmail,
-  websiteUrl: organization.websiteUrl,
-  languageCodes: organization.languageCodes,
-  defaultLanguageCode: organization.defaultLanguageCode,
-  regionCode: organization.regionCode,
-  timeZone: organization.timeZone,
-});
 
 interface UpdateOrganizationFormProps {
   organization: Organization;
@@ -58,7 +56,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const languagesId = useId();
 
-  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(organization) };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: formValuesOf(formSchema, organization) };
 
   const formContainerId = 'update-organization';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
@@ -78,7 +76,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) sheeter.getState().remove(formContainerId);
-          form.reset(toFormValues(updatedOrganization));
+          form.reset(formValuesOf(formSchema, updatedOrganization));
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
         },
