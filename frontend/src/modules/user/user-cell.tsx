@@ -30,7 +30,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly, ema
   if (readOnly) {
     return (
       <div className={cn('flex items-center gap-2', className)} {...compactTooltip}>
-        <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+        <EntityAvatar entity={user} className="size-8" />
         <span className={cn('min-w-0 text-start', compactable && compactUserNameClass)}>
           <span className="block truncate">
             <HighlightText text={user.name || '-'} />
@@ -51,7 +51,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly, ema
       {...compactTooltip}
       onClick={() => openUserSheet(user.id)}
     >
-      <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+      <EntityAvatar entity={user} className="size-8" />
       <span className={cn('min-w-0 text-start', compactable && compactUserNameClass)}>
         <CellLabel className="block">
           <HighlightText text={user.name || '-'} />

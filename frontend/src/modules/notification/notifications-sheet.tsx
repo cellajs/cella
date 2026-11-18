@@ -101,11 +101,11 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
   const content = (
     <>
       <span className={cn('relative shrink-0', notification.readAt && 'opacity-70')}>
-        <EntityAvatar type="user" className="size-8" id={actor?.id ?? 'unknown'} name={actor?.name ?? ''} url={actor?.thumbnailUrl ?? null} />
+        <EntityAvatar entity={actor ?? { id: 'unknown', entityType: 'user' }} className="size-8" />
         {mark && (
           <EntityAvatar
             aria-hidden={hasChannel}
-            {...mark}
+            entity={{ entityType: mark.type, id: mark.id, name: mark.name, thumbnailUrl: mark.url }}
             className={cn('absolute -right-1 -bottom-1 size-4 rounded-sm ring-2', notification.readAt ? 'ring-card' : 'ring-accent')}
           />
         )}

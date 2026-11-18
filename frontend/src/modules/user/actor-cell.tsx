@@ -29,7 +29,7 @@ export function ActorCell({ actor, tabIndex, compactable, className }: ActorCell
 
   return (
     <span className={cn('flex items-center gap-2', className)}>
-      <EntityAvatar className="size-8" id={actor.id} name={actor.name} icon={BotIcon} />
+      <EntityAvatar className="size-8" entity={actor} icon={BotIcon} />
       <span className="truncate">{actor.name}</span>
       <Badge variant="outline" className="shrink-0">
         {t('c:service_account')}

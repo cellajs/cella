@@ -24,10 +24,7 @@ function MemberAvatar({ member, className }: MemberAvatarProps) {
         className="focus-effect cursor-pointer rounded-full focus-visible:ring-offset-1"
       >
         <EntityAvatar
-          type="user"
-          id={member.id}
-          name={member.name}
-          url={member.thumbnailUrl}
+          entity={{ ...member, entityType: 'user' }}
           className={cn('more-contrast:border-black/85 size-7 border-2 border-black/25 text-xs', className)}
         />
       </button>

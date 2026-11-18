@@ -12,8 +12,9 @@ import {
   resolvePlacementList,
   type Slot,
 } from '~/lib/placements';
+import type { AvatarEntity } from '~/modules/common/entity-avatar';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
-import { type TabLabel, type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
+import { type TabLabel, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
 import { useScrollResetOnNavigate } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
 import { getHasNavigated } from '~/utils/nav-transition';
@@ -196,7 +197,7 @@ interface PageTabNavProps extends ResolvePlacementOptions {
   /** Derives the tabs from this route's children (`staticData.navTab`) and its tabs slot. */
   parentRouteId?: string;
   title?: string;
-  avatar?: TabNavAvatar;
+  avatar?: AvatarEntity;
   /** Marks the first tab active as well, for a location that matches none of the tabs. */
   fallbackToFirst?: boolean;
   /** The active tab, in place of the links' own match. A link never matches a search holding a list: the URL reads it back as text. */

@@ -1,15 +1,12 @@
 import type { ComponentProps, ReactNode } from 'react';
 import type { EntityType } from 'shared';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { type AvatarEntity, EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Chip, type Removable } from '~/modules/ui/chip';
 import { cn } from '~/utils/cn';
 
 type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
-  type: EntityType;
-  id?: string;
-  name: string;
-  url?: string | null;
+  entity: AvatarEntity & { entityType: EntityType; name: string };
   /** Shown in place of the image or initials. */
   icon?: IconComponent;
   size?: 'default' | 'lg';
@@ -18,22 +15,18 @@ type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
 } & Removable;
 
 /** An entity as a chip that starts with its avatar. */
-export function EntityChip({ type, id, name, url, icon, size, className, children, ...props }: EntityChipProps) {
-  const isUser = type === 'user';
+export function EntityChip({ entity, icon, size, className, children, ...props }: EntityChipProps) {
+  const isUser = entity.entityType === 'user';
 
   return (
     <Chip
       start={
-        <EntityAvatar
-          aria-hidden
-          {...{ type, id, name, url, icon }}
-          className={cn(size === 'lg' ? 'size-8' : 'size-6', !isUser && 'rounded-r-none')}
-        />
+        <EntityAvatar aria-hidden entity={entity} icon={icon} className={cn(size === 'lg' ? 'size-8' : 'size-6', !isUser && 'rounded-r-none')} />
       }
       className={cn(size === 'lg' && 'h-8', !isUser && 'rounded-md', className)}
       {...props}
     >
-      {children ?? name}
+      {children ?? entity.name}
     </Chip>
   );
 }

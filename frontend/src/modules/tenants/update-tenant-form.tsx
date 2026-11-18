@@ -18,18 +18,11 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { formResolver } from '~/utils/form-resolver';
+import { formResolver, formValuesOf } from '~/utils/form-resolver';
 
 const formSchema = zUpdateTenantBody.pick({ name: true, kind: true, status: true, authStrategies: true });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const toFormValues = (tenant: Tenant): FormValues => ({
-  name: tenant.name,
-  kind: tenant.kind,
-  status: tenant.status,
-  authStrategies: tenant.authStrategies,
-});
 
 export const statusOptions = ['active', 'suspended', 'deleted'] as const;
 
@@ -52,7 +45,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
       : []),
   ];
 
-  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: toFormValues(tenant) };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: formValuesOf(formSchema, tenant) };
 
   // The sheet is `update-tenant`; this form is its General section, which carries the unsaved badge.
   const sheetId = 'update-tenant';
@@ -67,7 +60,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; s
       {
         onSuccess: (updatedTenant) => {
           if (isSheet) sheeter.getState().remove(sheetId);
-          form.reset(toFormValues(updatedTenant));
+          form.reset(formValuesOf(formSchema, updatedTenant));
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
         },
       },
