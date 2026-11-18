@@ -1,14 +1,17 @@
+import { appConfig } from 'shared';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { orgGuard, stepUpFactorGuard, sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
+import { mockConnectionResponse, mockLtiConnectionResponse } from '#/modules/connections/connections-mocks';
 import {
   connectionParamSchema,
   connectionSchema,
   createConnectionBodySchema,
+  ltiRegistrationLinkSchema,
+  organizationConnectionParamSchema,
   updateConnectionBodySchema,
 } from '#/modules/connections/connections-schema';
-import { pageQuerySchema, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
+import { pageQuerySchema, paginationSchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
 
 export const connectionRoutes = createXRoutes(['connections', 'cella'], {
   listConnections: xRoute({
@@ -55,5 +58,48 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     description: 'Removes a connection. Identities and sessions that came through it keep their rows; members stay members.',
     request: { params: connectionParamSchema },
     responses: { 204: { description: 'Connection removed' }, ...errors(404) },
+  }),
+});
+
+/** An organization's LTI connections, for a user who may update the organization. */
+export const organizationConnectionRoutes = createXRoutes(['connections', 'cella'], {
+  listLtiConnections: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get LTI connections',
+    description: "The LTI platforms the app is registered at for the organization's tenant. Requires permission to update the organization.",
+    request: { params: tenantOrgParamSchema, query: pageQuerySchema },
+    responses: { 200: json('LTI connections', paginationSchema(connectionSchema), { results: [mockLtiConnectionResponse()], totalSize: 1 }) },
+  }),
+  createLtiRegistrationLink: xRoute({
+    method: 'post',
+    path: '/~create-lti-registration-link',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Create LTI registration link',
+    description:
+      "A one-use link to paste into an LTI platform's Dynamic Registration. Whoever opens it first registers the platform's connection for the organization's tenant, so it is answered once and only its hash is stored. Requires permission to update the organization.",
+    request: { params: tenantOrgParamSchema },
+    responses: {
+      200: json('Registration link', ltiRegistrationLinkSchema, {
+        url: `${appConfig.backendAuthUrl}/lti/register?link=V1StGXR8_Z5jdHi6B-myTV1StGXR8_Z5jdHi6B-my`,
+        expiresAt: '2026-11-18T13:00:00.000Z',
+      }),
+    },
+  }),
+  deleteLtiConnection: xRoute({
+    method: 'delete',
+    path: '/{connectionId}',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Delete LTI connection',
+    description:
+      'Removes an LTI connection: its platform launches the app no more. Identities and sessions that came through it keep their rows; members stay members.',
+    request: { params: organizationConnectionParamSchema },
+    responses: { 204: { description: 'Connection removed' } },
   }),
 });

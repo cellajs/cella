@@ -1,14 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { check, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { maxLength } from '#/db/utils/constraints';
+import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { authStrategiesEnum } from '#/modules/auth/core/strategies';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -36,7 +37,10 @@ export const tokensTable = snakeCase.table(
     secretHash: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
     kind: varchar({ enum: appConfig.tokenKinds }).notNull(),
-    email: varchar({ length: maxLength.field }).notNull(),
+    /** The address the token was issued to; null on a handoff token, which goes to another system. */
+    email: varchar({ length: maxLength.field }),
+    /** For a handoff token: the tenant it acts for, such as the one whose connection a registration link stores. */
+    tenantId: varchar({ length: tenantIdLength }).references(() => tenantsTable.id, { onDelete: 'cascade' }),
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
@@ -72,6 +76,8 @@ export const tokensTable = snakeCase.table(
     index('tokens_followed_invitation_id_idx').on(table.followedInvitationId).where(sql`${table.followedInvitationId} is not null`),
     // One live step-up code per session: of two concurrent requests that both cleared the session's code, the later insert is refused.
     uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.kind} = 'step-up'`),
+    // A token is issued to an address or for a tenant, never both: reads type the one their kind carries as present.
+    check('tokens_subject_check', sql`(${table.email} IS NULL) <> (${table.tenantId} IS NULL)`),
   ],
 );
 

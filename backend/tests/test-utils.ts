@@ -6,7 +6,7 @@ import { getAdminDb } from '#/db/db';
 import { resetMockEnforcers } from '#/mocks/mock-unique';
 import { overrideConfig } from './fixtures';
 
-type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
+type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso' | 'lti';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = { enabledAuthStrategies?: AuthStrategy[]; enabledOAuthProviders?: OAuthProvider[]; selfRegistration?: boolean };

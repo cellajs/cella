@@ -7,7 +7,9 @@ type SameSite = 'lax' | 'strict';
  * The lifecycle rules of one token kind. A `link` token travels in an emailed URL: redeeming it (`redeemToken`) swaps
  * its lifetime for the single-use window and binds it to the browser with a single-use cookie. A `cookie` token lives
  * only in a cookie of its own name and is never redeemable as a link. A `code` token is a short number in a mail,
- * entered in the session it was issued for: it is found by that session, never by its value.
+ * entered in the session it was issued for: it is found by that session, never by its value. A `handoff` token is a
+ * URL a person hands to another system, an LTI registration link pasted into a platform: it names no address, no
+ * cookie binds it, and the first request that presents it spends it (`spendHandoffToken`).
  */
 export type TokenPolicy =
   | {
@@ -25,7 +27,13 @@ export type TokenPolicy =
       ttl: TimeSpan;
       sameSite: SameSite;
     }
-  | { carrier: 'code'; ttl: TimeSpan };
+  | { carrier: 'code'; ttl: TimeSpan }
+  | {
+      carrier: 'handoff';
+      ttl: TimeSpan;
+      /** Whether its row names the user who minted it (`createdBy`), on whose word a spend acts. */
+      namesMinter: boolean;
+    };
 
 /**
  * One policy per token kind; an app that adds a token kind to `appConfig.tokenKinds` must add its policy here, its
@@ -36,6 +44,7 @@ export type TokenPolicy =
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
  *   site started, reads them. The others are Strict.
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
+ * - `lti-registration` lives as long as the platform's own registration token usually does.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },
@@ -44,6 +53,7 @@ export const tokenPolicies = {
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict' },
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax' },
   'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm') },
+  'lti-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h'), namesMinter: true },
 } as const satisfies Record<TokenKind, TokenPolicy>;
 
 type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {
@@ -70,6 +80,17 @@ export type CookieTokenKind = TokenKindCarriedBy<'cookie'>;
 
 /** Token kinds carried by an emailed code. */
 export type CodeTokenKind = TokenKindCarriedBy<'code'>;
+
+/** Token kinds handed to another system. */
+export type HandoffTokenKind = TokenKindCarriedBy<'handoff'>;
+
+/** Handoff kinds whose row names the user who minted it. */
+export type MinterNamedTokenKind = {
+  [T in HandoffTokenKind]: (typeof tokenPolicies)[T] extends { namesMinter: true } ? T : never;
+}[HandoffTokenKind];
+
+/** Token kinds issued to a person's address: every kind but a handoff. */
+export type AddressedTokenKind = Exclude<TokenKind, HandoffTokenKind>;
 
 const isLinkTokenKind = (kind: TokenKind): kind is LinkTokenKind => tokenPolicies[kind].carrier === 'link';
 

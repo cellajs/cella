@@ -7,7 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { issueToken, issueTokens, readBoundToken, redeemToken, spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
-import { isTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
+import { type AddressedTokenKind, isTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { authCookie, cookieChange, createTestOrganization, createTestUser, setCookiePair } from '../../../../../tests/helpers';
@@ -17,6 +17,7 @@ import { clearDatabase } from '../../../../../tests/test-utils';
 const ctx = { var: { db } };
 
 const isLinkKind = (name: string): name is LinkTokenKind => isTokenKind(name) && tokenPolicies[name].carrier === 'link';
+const isAddressedKind = (name: string): name is AddressedTokenKind => isTokenKind(name) && tokenPolicies[name].carrier !== 'handoff';
 
 /**
  * One route per lifecycle step, so each call runs with a real request's cookies; a refusal answers its status, type and
@@ -30,18 +31,18 @@ const app = new Hono<Env>()
   })
   .get('/read/:kind', async (ctx) => {
     const kind = ctx.req.param('kind');
-    if (!isTokenKind(kind)) return ctx.body(null, 404);
+    if (!isAddressedKind(kind)) return ctx.body(null, 404);
     return ctx.json(await readBoundToken(ctx, kind));
   })
   .post('/spend/:kind', async (ctx) => {
     const kind = ctx.req.param('kind');
-    if (!isTokenKind(kind)) return ctx.body(null, 404);
+    if (!isAddressedKind(kind)) return ctx.body(null, 404);
     return ctx.json({ spent: await spendCookieToken(ctx, kind) });
   })
   // A completion that spends inside its transaction and fails after it: the spend rolls back with the rest.
   .post('/spend-then-fail/:kind', async (ctx) => {
     const kind = ctx.req.param('kind');
-    if (!isTokenKind(kind)) return ctx.body(null, 404);
+    if (!isAddressedKind(kind)) return ctx.body(null, 404);
     const outcome = await db
       .transaction(async (tx) => {
         await spendCookieToken(ctx, kind, { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });

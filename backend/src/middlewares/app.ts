@@ -19,6 +19,13 @@ export const app = new OpenAPIHono<Env>();
 // Ambient log context in AsyncLocalStorage, first in the chain so every downstream log carries request ids
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
 
+// A page that names its own `frame-ancestors` (an LTI platform frames it) sends no X-Frame-Options, which would refuse
+// the frame in a browser that reads it alone. Mounted ahead of secureHeaders, so it runs after the header is set.
+app.use('*', async (ctx, next) => {
+  await next();
+  if (ctx.res.headers.get('Content-Security-Policy')?.includes('frame-ancestors')) ctx.res.headers.delete('X-Frame-Options');
+});
+
 app.use(
   '*',
   secureHeaders({

@@ -10,6 +10,7 @@ const strategyNames: Record<Extract<ConfigSwitch, { strategy: string }>['strateg
   totp: 'c:totp',
   oauth: 'c:docs.strategy_oauth',
   sso: 'c:docs.strategy_sso',
+  lti: 'c:docs.strategy_lti',
 };
 
 /** Spelled as the services' own names; an app's service shows its config key. */

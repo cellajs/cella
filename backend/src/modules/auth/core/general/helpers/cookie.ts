@@ -44,7 +44,7 @@ const laxCookies = new Set<CookieName>(['oauth-state', 'device-id', 'magic-reque
 const isLaxCookie = (name: CookieName) => {
   if (!isTokenKind(name)) return laxCookies.has(name);
   const policy: TokenPolicy = tokenPolicies[name];
-  return policy.carrier !== 'code' && policy.sameSite === 'lax';
+  return (policy.carrier === 'link' || policy.carrier === 'cookie') && policy.sameSite === 'lax';
 };
 
 const versionedCookieName = (name: CookieName) => `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;

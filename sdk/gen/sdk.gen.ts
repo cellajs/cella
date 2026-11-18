@@ -65,6 +65,9 @@ import type {
   CreateDemoData,
   CreateDemoErrors,
   CreateDemoResponses,
+  CreateLtiRegistrationLinkData,
+  CreateLtiRegistrationLinkErrors,
+  CreateLtiRegistrationLinkResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -95,6 +98,9 @@ import type {
   DeleteInvitationData,
   DeleteInvitationErrors,
   DeleteInvitationResponses,
+  DeleteLtiConnectionData,
+  DeleteLtiConnectionErrors,
+  DeleteLtiConnectionResponses,
   DeleteMeData,
   DeleteMeErrors,
   DeleteMeResponses,
@@ -210,6 +216,9 @@ import type {
   ListInvitationsData,
   ListInvitationsErrors,
   ListInvitationsResponses,
+  ListLtiConnectionsData,
+  ListLtiConnectionsErrors,
+  ListLtiConnectionsResponses,
   ListMembersData,
   ListMembersErrors,
   ListMembersResponses,
@@ -271,6 +280,9 @@ import type {
   RedeemLinkTokenData,
   RedeemLinkTokenErrors,
   RedeemLinkTokenResponses,
+  RegisterLtiPlatformData,
+  RegisterLtiPlatformErrors,
+  RegisterLtiPlatformResponses,
   RemovePushSubscriptionData,
   RemovePushSubscriptionErrors,
   RemovePushSubscriptionResponses,
@@ -392,6 +404,7 @@ import {
   zCreateApiKeyResponse,
   zCreateConnectionResponse,
   zCreateDemoResponse,
+  zCreateLtiRegistrationLinkResponse,
   zCreatePasskeyResponse,
   zCreatePushSubscriptionResponse,
   zCreateRequestResponse,
@@ -401,6 +414,7 @@ import {
   zDeleteConnectedAppResponse,
   zDeleteConnectionResponse,
   zDeleteInvitationResponse,
+  zDeleteLtiConnectionResponse,
   zDeleteMeResponse,
   zDeletePasskeyResponse,
   zDeleteTotpResponse,
@@ -436,6 +450,7 @@ import {
   zListConnectedAppsResponse,
   zListConnectionsResponse,
   zListInvitationsResponse,
+  zListLtiConnectionsResponse,
   zListMembersResponse,
   zListMyInvitationsResponse,
   zListMyMembershipsResponse,
@@ -1592,6 +1607,28 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zSendSsoRecoveryLinkResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/send-sso-recovery-link',
+    ...options,
+  });
+
+/**
+ * Register at an LTI platform
+ *
+ * The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Spends the one-use link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. Any LTI platform may frame the page, which holds no session.
+ *
+ * **GET /auth/lti/register** ·· [registerLtiPlatform](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/register) ·· _auth · cella_
+ *
+ * @param {registerLtiPlatformData} options
+ * @param {string} options.query.link - `string`
+ * @param {string} options.query.openid_configuration - `string`
+ * @param {string=} options.query.registration_token - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 409, 429
+ */
+export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
+  options: Options<RegisterLtiPlatformData, ThrowOnError>,
+): RequestResult<RegisterLtiPlatformResponses, RegisterLtiPlatformErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<RegisterLtiPlatformResponses, RegisterLtiPlatformErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/lti/register',
     ...options,
   });
 
@@ -3483,6 +3520,76 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get LTI connections
+ *
+ * The LTI platforms the app is registered at for the organization's tenant. Requires permission to update the organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/connections** ·· [listLtiConnections](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/organizations/{organizationId}/connections) ·· _connections · cella_
+ *
+ * @param {listLtiConnectionsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiConnections = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiConnectionsData, ThrowOnError>,
+): RequestResult<ListLtiConnectionsResponses, ListLtiConnectionsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiConnectionsResponses, ListLtiConnectionsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiConnectionsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/connections',
+    ...options,
+  });
+
+/**
+ * Create LTI registration link
+ *
+ * A one-use link to paste into an LTI platform's Dynamic Registration. Whoever opens it first registers the platform's connection for the organization's tenant, so it is answered once and only its hash is stored. Requires permission to update the organization.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link** ·· [createLtiRegistrationLink](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/POST/tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link) ·· _connections · cella_
+ *
+ * @param {createLtiRegistrationLinkData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createLtiRegistrationLink = <ThrowOnError extends boolean = true>(
+  options: Options<CreateLtiRegistrationLinkData, ThrowOnError>,
+): RequestResult<CreateLtiRegistrationLinkResponses, CreateLtiRegistrationLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateLtiRegistrationLinkResponses, CreateLtiRegistrationLinkErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateLtiRegistrationLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link',
+    ...options,
+  });
+
+/**
+ * Delete LTI connection
+ *
+ * Removes an LTI connection: its platform launches the app no more. Identities and sessions that came through it keep their rows; members stay members.
+ *
+ * **DELETE /tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}** ·· [deleteLtiConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}) ·· _connections · cella_
+ *
+ * @param {deleteLtiConnectionData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.connectionId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deleteLtiConnection = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteLtiConnectionData, ThrowOnError>,
+): RequestResult<DeleteLtiConnectionResponses, DeleteLtiConnectionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteLtiConnectionResponses, DeleteLtiConnectionErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeleteLtiConnectionResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}',
+    ...options,
   });
 
 /**

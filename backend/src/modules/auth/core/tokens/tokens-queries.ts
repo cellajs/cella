@@ -1,17 +1,28 @@
 import { and, countDistinct, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
-import type { TokenKind } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type CodeTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
+import {
+  type AddressedTokenKind,
+  type CodeTokenKind,
+  type HandoffTokenKind,
+  type LinkTokenKind,
+  tokenPolicies,
+} from '#/modules/auth/core/tokens/token-policies';
 import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/core/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
 export type { PendingSignUp } from '#/modules/auth/core/tokens/tokens-db';
 
-/** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
-export type TokenRecord = Omit<UnsafeTokenModel, 'secretHash' | 'singleUseToken'>;
+/**
+ * A token row of an addressed kind without its secrets: the hashes of the raw value and of the single-use value stay
+ * in this module.
+ */
+export type TokenRecord = Omit<UnsafeTokenModel, 'secretHash' | 'singleUseToken' | 'email'> & { email: string };
 
-const { secretHash: _secretHash, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
+const { secretHash: _secretHash, singleUseToken: _singleUseToken, email, ...columns } = getColumns(tokensTable);
+
+// Every read through these columns names an addressed kind, which `issueTokens` always gives an address.
+const tokenColumns = { ...columns, email: sql<string>`${email}` };
 
 interface FindInvitationTokenOpts {
   id: string;
@@ -83,8 +94,9 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: { id: stri
 };
 
 /** What decides which earlier tokens a new one replaces. */
-type ReplacingToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'invitationId' | 'pendingSignUp' | 'sessionId'>>;
+type ReplacingToken = { kind: AddressedTokenKind; email: string } & Partial<
+  Pick<InsertTokenModel, 'userId' | 'identityId' | 'invitationId' | 'pendingSignUp' | 'sessionId'>
+>;
 
 /**
  * Per token kind, the subject whose earlier tokens of that kind a new one deletes, so only the newest one for it works;
@@ -112,7 +124,7 @@ const replacementSubjects = {
   'step-up': (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
   // Every sign-in holds its own second-factor challenge.
   'confirm-mfa': () => undefined,
-} satisfies Record<TokenKind, (token: ReplacingToken) => SQL | undefined>;
+} satisfies Record<AddressedTokenKind, (token: ReplacingToken) => SQL | undefined>;
 
 const replacedBy = (token: ReplacingToken): SQL | undefined => {
   const subject = replacementSubjects[token.kind](token);
@@ -179,13 +191,13 @@ export const updateTokenSpent = async (ctx: DbContext, { id }: { id: string }) =
  * Names the row a browser's cookie of `kind` binds it to, by the hash of the cookie's value: after a link's redemption
  * the cookie holds its single-use value, a cookie-carried token's cookie holds the token itself.
  */
-const boundTo = (kind: TokenKind, cookie: string) => {
+const boundTo = (kind: AddressedTokenKind, cookie: string) => {
   const hashedColumn = tokenPolicies[kind].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secretHash;
   return and(eq(tokensTable.kind, kind), eq(hashedColumn, hashToken(cookie)));
 };
 
 interface BoundTokenOpts {
-  kind: TokenKind;
+  kind: AddressedTokenKind;
   /** The value of the browser's cookie of `kind`. */
   cookie: string;
 }
@@ -242,4 +254,30 @@ export const findTokenBySingleUse = async (ctx: DbContext, { id, cookie }: FindT
     .where(and(eq(tokensTable.id, id), eq(tokensTable.singleUseToken, hashToken(cookie))))
     .limit(1);
   return token;
+};
+
+/** Stores a handoff token. It has no address, and it is never read back through {@link TokenRecord}. */
+export const insertHandoffToken = async (
+  ctx: DbContext,
+  { values }: { values: Omit<InsertTokenModel, 'email'> & { kind: HandoffTokenKind; tenantId: string } },
+) => {
+  await ctx.var.db.insert(tokensTable).values(values);
+};
+
+/**
+ * Deletes the handoff token a raw value names, expired or not: of two concurrent requests, exactly one gets the row.
+ * Undefined when none matches. A handoff row holds no address: `tokens_subject_check` holds its tenant present.
+ */
+export const deleteHandoffToken = async (ctx: DbContext, { kind, rawToken }: { kind: HandoffTokenKind; rawToken: string }) => {
+  const [spent] = await ctx.var.db
+    .delete(tokensTable)
+    .where(and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind)))
+    .returning({
+      id: tokensTable.id,
+      kind: tokensTable.kind,
+      tenantId: sql<string>`${tokensTable.tenantId}`,
+      createdBy: tokensTable.createdBy,
+      expiresAt: tokensTable.expiresAt,
+    });
+  return spent;
 };

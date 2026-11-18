@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import type { Context } from 'hono';
-import { appConfig, type TokenKind } from 'shared';
+import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -9,21 +9,26 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/c
 import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { findLiveSession } from '#/modules/auth/core/sessions/sessions-queries';
 import {
+  type AddressedTokenKind,
   type CodeTokenKind,
   type CookieTokenKind,
+  type HandoffTokenKind,
   type HeldLinkKind,
   type LinkTokenKind,
+  type MinterNamedTokenKind,
   tokenPolicies,
 } from '#/modules/auth/core/tokens/token-policies';
 import type { InsertTokenModel } from '#/modules/auth/core/tokens/tokens-db';
 import {
   deleteBoundToken,
+  deleteHandoffToken,
   deleteReplacedTokens,
   deleteSessionCodeToken,
   deleteUnredeemedLinkToken,
   findBoundToken,
   findLinkToken,
   findTokenBySingleUse,
+  insertHandoffToken,
   insertTokens,
   type TokenRecord,
   updateTokenRedeemed,
@@ -48,8 +53,9 @@ const newHashedCode = () => {
 };
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
-export type NewToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secretHash' | 'singleUseToken' | 'expiresAt' | 'redeemedAt' | 'createdAt'>>;
+export type NewToken = { kind: AddressedTokenKind; email: string } & Partial<
+  Omit<InsertTokenModel, 'kind' | 'email' | 'tenantId' | 'secretHash' | 'singleUseToken' | 'expiresAt' | 'redeemedAt' | 'createdAt'>
+>;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its kind's `ttl`. Each first
@@ -284,7 +290,7 @@ export const isMagicLinkRequestedHere = (ctx: Context<Env>, tokenId: string) => 
 export const forgetMagicLinkRequest = (ctx: Context<Env>) => deleteAuthCookie(ctx, 'magic-requested');
 
 /** The token this browser's cookie of `kind` binds it to, whatever its state; undefined without one. */
-const findCookieBoundToken = async (ctx: Context<Env>, kind: TokenKind) => {
+const findCookieBoundToken = async (ctx: Context<Env>, kind: AddressedTokenKind) => {
   const cookie = getAuthCookie(ctx, kind);
   return cookie ? findBoundToken(dbCtx, { kind, cookie }) : undefined;
 };
@@ -296,7 +302,7 @@ const findCookieBoundToken = async (ctx: Context<Env>, kind: TokenKind) => {
  * @throws AppError 401 `<kind>_not_found` without a cookie or for a value that names no row, 401 `<kind>_expired` once
  *   expired: one shape for a link and a cookie-carried kind alike.
  */
-export const readBoundToken = async (ctx: Context<Env>, kind: TokenKind): Promise<TokenRecord> => {
+export const readBoundToken = async (ctx: Context<Env>, kind: AddressedTokenKind): Promise<TokenRecord> => {
   const token = await findCookieBoundToken(ctx, kind);
   if (!token) throw new AppError(401, `${kind}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
@@ -305,7 +311,7 @@ export const readBoundToken = async (ctx: Context<Env>, kind: TokenKind): Promis
 };
 
 /** {@link readBoundToken} for a flow that goes on without the token: null when this browser binds no live one. */
-export const findLiveBoundToken = async (ctx: Context<Env>, kind: TokenKind): Promise<TokenRecord | null> => {
+export const findLiveBoundToken = async (ctx: Context<Env>, kind: AddressedTokenKind): Promise<TokenRecord | null> => {
   const token = await findCookieBoundToken(ctx, kind);
   return token && !isExpiredDate(token.expiresAt) ? token : null;
 };
@@ -359,7 +365,7 @@ type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-com
  */
 export const spendCookieToken = async (
   ctx: Context<Env>,
-  kind: TokenKind,
+  kind: AddressedTokenKind,
   opts: SpendCookieTokenOpts = { deleteCookie: 'now' },
 ): Promise<TokenRecord | null> => {
   const spendCtx = opts.deleteCookie === 'after-commit' ? (opts.txCtx ?? dbCtx) : dbCtx;
@@ -370,5 +376,33 @@ export const spendCookieToken = async (
   const spent = await deleteBoundToken(spendCtx, { kind, cookie });
   if (!spent || isExpiredDate(spent.expiresAt)) return null;
   if (spent.sessionId && !(await findLiveSession(spendCtx, { id: spent.sessionId }))) return null;
+  return spent;
+};
+
+/** A kind whose policy names the minter takes the user's id; any other takes none. */
+type IssueHandoffTokenOpts =
+  | { kind: MinterNamedTokenKind; tenantId: string; createdBy: string }
+  | { kind: Exclude<HandoffTokenKind, MinterNamedTokenKind>; tenantId: string; createdBy?: undefined };
+
+/**
+ * Issues a handoff token. It replaces no earlier one: a tenant may hand links to several platforms at once.
+ * @returns The raw value, which exists only here and in the URL handed over, and when it expires.
+ */
+export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy }: IssueHandoffTokenOpts) => {
+  const { raw, hash } = newHashedToken();
+  const expiresAt = isoDateIn(tokenPolicies[kind].ttl);
+  await insertHandoffToken(ctx, { values: { kind, tenantId, createdBy, secretHash: hash, expiresAt } });
+  return { rawToken: raw, expiresAt };
+};
+
+/**
+ * Spends the handoff token a raw value names. The row goes in one statement: of two requests presenting it, exactly
+ * one gets it. A refused expired one goes too.
+ * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, or spent), 401 `<kind>_expired`.
+ */
+export const spendHandoffToken = async ({ kind, rawToken }: { kind: HandoffTokenKind; rawToken: string }) => {
+  const spent = await deleteHandoffToken(dbCtx, { kind, rawToken });
+  if (!spent) throw new AppError(401, `${kind}_not_found`, 'warn');
+  if (isExpiredDate(spent.expiresAt)) throw new AppError(401, `${kind}_expired`, 'warn', { meta: { tokenId: spent.id } });
   return spent;
 };

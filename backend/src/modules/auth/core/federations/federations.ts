@@ -13,7 +13,7 @@ export interface Federation extends FederationConfig {
 }
 
 /** Whether the key names a federation of `appConfig.federations`; `isFederationConfigured` says whether this deployment holds its client. */
-export const isFederationKey = (key: string): key is FederationKey => Object.hasOwn(appConfig.federations, key);
+export const isFederationKey = (key: string | null): key is FederationKey => key !== null && Object.hasOwn(appConfig.federations, key);
 
 /** The client id and secret of a federation, from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. */
 const clientOf = (key: FederationKey) => {

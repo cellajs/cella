@@ -1,7 +1,14 @@
 import { isIPv4, isIPv6 } from 'node:net';
 
-/** Strips the IPv4-mapped IPv6 prefix, so 192.168.0.1 and ::ffff:192.168.0.1 read as one address. */
-const unmapIPv4 = (ip: string): string => (ip.startsWith('::ffff:') ? ip.slice(7) : ip);
+/** Strips the IPv4-mapped IPv6 prefix, so 192.168.0.1, ::ffff:192.168.0.1 and ::ffff:c0a8:1 read as one address. */
+const unmapIPv4 = (ip: string): string => {
+  if (!ip.toLowerCase().startsWith('::ffff:')) return ip;
+  const mapped = ip.slice(7);
+  const hex = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(mapped);
+  if (!hex) return mapped;
+  const [high, low] = [Number.parseInt(hex[1], 16), Number.parseInt(hex[2], 16)];
+  return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
+};
 
 /**
  * Privacy-preserving subnet: IPv4 to /24, IPv6 to /48, `null` for invalid input. The canonical output

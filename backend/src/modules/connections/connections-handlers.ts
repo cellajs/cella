@@ -1,9 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { connectionRoutes } from '#/modules/connections/connections-routes';
+import { createLtiRegistrationLinkOp } from '#/modules/auth/flows/lti/operations/create-lti-registration-link';
+import { connectionRoutes, organizationConnectionRoutes } from '#/modules/connections/connections-routes';
 import { createConnectionOp } from '#/modules/connections/operations/create-connection';
 import { deleteConnectionOp } from '#/modules/connections/operations/delete-connection';
+import { deleteLtiConnectionOp } from '#/modules/connections/operations/delete-lti-connection';
 import { getConnectionsOp } from '#/modules/connections/operations/get-connections';
+import { getLtiConnectionsOp } from '#/modules/connections/operations/get-lti-connections';
 import { updateConnectionOp } from '#/modules/connections/operations/update-connection';
 import { readListPage, windowOf } from '#/utils/list-page';
 
@@ -26,3 +29,19 @@ app.openapi(connectionRoutes.deleteConnection, async (ctx) => {
 });
 
 export const connectionHandlers = app;
+
+const organizationApp = new OpenAPIHono<Env>();
+
+organizationApp.openapi(organizationConnectionRoutes.listLtiConnections, async (ctx) => {
+  const connections = await getLtiConnectionsOp(ctx);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(connections, page)), 200);
+});
+
+organizationApp.openapi(organizationConnectionRoutes.createLtiRegistrationLink, async (ctx) => ctx.json(await createLtiRegistrationLinkOp(ctx), 200));
+
+organizationApp.openapi(organizationConnectionRoutes.deleteLtiConnection, async (ctx) => {
+  await deleteLtiConnectionOp(ctx, ctx.req.valid('param').connectionId);
+  return ctx.body(null, 204);
+});
+
+export const organizationConnectionHandlers = organizationApp;

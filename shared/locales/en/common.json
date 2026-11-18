@@ -237,6 +237,7 @@
   "docs.scope.text_other": "An API key or access token needs these scopes. A write scope also covers read.",
   "docs.search.text": "Search the documentation and API reference.",
   "docs.show_details": "Show details",
+  "docs.strategy_lti": "LTI",
   "docs.strategy_oauth": "OAuth",
   "docs.strategy_sso": "SSO",
   "docs.success_response": "Success response",

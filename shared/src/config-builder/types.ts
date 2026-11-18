@@ -21,7 +21,7 @@ export type DeepPartial<T> = T extends object
   : WidenScalars<T>;
 
 export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | 'test';
-export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
+export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso' | 'lti';
 
 /**
  * An identity federation institutions sign in through (the `sso` method): public metadata only. The key it sits

@@ -893,27 +893,64 @@ export type Tenant = {
 };
 
 /**
- * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization (`sso`), or an LTI platform the app registered at, which launches it (`lti`). An SSO connection's id is the public key of the tenant's SSO entry page. System admins manage SSO connections per tenant, `pending` until the institution activated the service at the federation; organization admins register LTI connections.
  */
 export type Connection = {
   id: string;
   tenantId: string;
-  kind: 'sso';
-  federation: string;
+  kind: 'sso' | 'lti';
+  federation: string | null;
+  issuer: string | null;
+  clientId: string | null;
   claimValues: Array<string>;
   name: string;
   status: 'pending' | 'active' | 'disabled';
   jitProvisioning: boolean;
-  config: {
-    /**
-     * The institution's IdP entity ids, passed as login_hint
-     */
-    idpEntityIds?: Array<string>;
-    /**
-     * The institution's logo, for the entry page
-     */
-    logoUrl?: string;
-  };
+  config:
+    | {
+        /**
+         * The platform's OIDC authorization endpoint, where a launch's login goes
+         */
+        authorizationEndpoint: string;
+        /**
+         * The platform's token endpoint, for its services
+         */
+        tokenEndpoint: string;
+        /**
+         * The audience of a token request at the platform, when it names one apart from its token endpoint
+         */
+        authorizationServer?: string;
+        /**
+         * The platform's key set, which signs its launches
+         */
+        jwksUri: string;
+        /**
+         * The platform's address of this registration, when it gave one
+         */
+        registrationClientUri?: string;
+        /**
+         * The platform's product, such as `canvas` or `moodle`
+         */
+        productFamilyCode: string;
+        /**
+         * The platform's version
+         */
+        version: string;
+        /**
+         * The LTI deployments of the app at the platform; empty until the platform names one
+         */
+        deploymentIds: Array<string>;
+      }
+    | {
+        /**
+         * The institution's IdP entity ids, passed as login_hint
+         */
+        idpEntityIds?: Array<string>;
+        /**
+         * The institution's logo, for the entry page
+         */
+        logoUrl?: string;
+      };
   createdAt: string;
   createdBy:
     | {
@@ -3319,6 +3356,62 @@ export type SendSsoRecoveryLinkResponses = {
 };
 
 export type SendSsoRecoveryLinkResponse = SendSsoRecoveryLinkResponses[keyof SendSsoRecoveryLinkResponses];
+
+export type RegisterLtiPlatformData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * The one-use registration link an organization admin created
+     */
+    link: string;
+    /**
+     * The address of the platform's OpenID configuration
+     */
+    openid_configuration: string;
+    /**
+     * The platform's token for the registration request
+     */
+    registration_token?: string;
+  };
+  url: '/auth/lti/register';
+};
+
+export type RegisterLtiPlatformErrors = {
+  /**
+   * Registration refused
+   *
+   * The same page, naming why the platform or its configuration was refused.
+   */
+  400: unknown;
+  /**
+   * Registration link refused
+   *
+   * The same page: the link was used before, never existed or expired.
+   */
+  401: unknown;
+  /**
+   * Already registered
+   *
+   * The same page: the platform registered this client id before.
+   */
+  409: unknown;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RegisterLtiPlatformError = RegisterLtiPlatformErrors[keyof RegisterLtiPlatformErrors];
+
+export type RegisterLtiPlatformResponses = {
+  /**
+   * Registered
+   *
+   * A page with one line of text that sends the platform the close message.
+   */
+  200: unknown;
+};
 
 export type GetStepUpData = {
   body?: never;
@@ -7748,6 +7841,171 @@ export type UpdateConnectionResponses = {
 };
 
 export type UpdateConnectionResponse = UpdateConnectionResponses[keyof UpdateConnectionResponses];
+
+export type ListLtiConnectionsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections';
+};
+
+export type ListLtiConnectionsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiConnectionsError = ListLtiConnectionsErrors[keyof ListLtiConnectionsErrors];
+
+export type ListLtiConnectionsResponses = {
+  /**
+   * LTI connections
+   */
+  200: {
+    results: Array<Connection>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiConnectionsResponse = ListLtiConnectionsResponses[keyof ListLtiConnectionsResponses];
+
+export type CreateLtiRegistrationLinkData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link';
+};
+
+export type CreateLtiRegistrationLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateLtiRegistrationLinkError = CreateLtiRegistrationLinkErrors[keyof CreateLtiRegistrationLinkErrors];
+
+export type CreateLtiRegistrationLinkResponses = {
+  /**
+   * Registration link
+   */
+  200: {
+    /**
+     * The link to paste into the LTI platform's Dynamic Registration
+     */
+    url: string;
+    /**
+     * When the link stops working, unless a platform opened it before
+     */
+    expiresAt: string;
+  };
+};
+
+export type CreateLtiRegistrationLinkResponse = CreateLtiRegistrationLinkResponses[keyof CreateLtiRegistrationLinkResponses];
+
+export type DeleteLtiConnectionData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    connectionId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}';
+};
+
+export type DeleteLtiConnectionErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteLtiConnectionError = DeleteLtiConnectionErrors[keyof DeleteLtiConnectionErrors];
+
+export type DeleteLtiConnectionResponses = {
+  /**
+   * Connection removed
+   */
+  204: void;
+};
+
+export type DeleteLtiConnectionResponse = DeleteLtiConnectionResponses[keyof DeleteLtiConnectionResponses];
 
 export type ListUsersData = {
   body?: never;

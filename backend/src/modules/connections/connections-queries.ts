@@ -1,15 +1,25 @@
 import { and, arrayOverlaps, eq, inArray, ne } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
+import { type ConnectionKind, type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { pick } from '#/utils/pick';
 
+interface FindConnectionsByTenantOpts {
+  tenantId: string;
+  /** Narrows to one kind; every kind when left out. */
+  kind?: ConnectionKind;
+}
+
 /** The tenant's connections, oldest first. */
-export const findConnectionsByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) =>
-  ctx.var.db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, tenantId)).orderBy(connectionsTable.createdAt);
+export const findConnectionsByTenant = async (ctx: DbContext, { tenantId, kind }: FindConnectionsByTenantOpts) =>
+  ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.tenantId, tenantId), kind ? eq(connectionsTable.kind, kind) : undefined))
+    .orderBy(connectionsTable.createdAt);
 
 interface FindConnectionByIdOpts {
   id: string;
@@ -82,7 +92,7 @@ export const findConnectionsClaiming = async (ctx: DbContext, { federation, clai
       ),
     );
 
-/** Inserts a connection; the unique tenant-and-kind index refuses a second SSO connection of a tenant. */
+/** Inserts a connection; the unique indexes refuse a second SSO connection of a tenant and a second LTI registration of one client. */
 export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ConnectionModel> => {
   const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning();
   return row;
@@ -104,11 +114,18 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
   return row;
 };
 
+interface DeleteConnectionOpts {
+  id: string;
+  tenantId: string;
+  /** Deletes only a connection of this kind; any kind when left out. */
+  kind?: ConnectionKind;
+}
+
 /** Deletes one tenant's connection; the deleted row, or undefined when the tenant holds no such connection. */
-export const deleteConnection = async (ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) => {
+export const deleteConnection = async (ctx: DbContext, { id, tenantId, kind }: DeleteConnectionOpts) => {
   const [row] = await ctx.var.db
     .delete(connectionsTable)
-    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId), kind ? eq(connectionsTable.kind, kind) : undefined))
     .returning();
   return row;
 };

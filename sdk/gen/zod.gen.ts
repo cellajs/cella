@@ -779,21 +779,35 @@ export const zTenant = z.object({
 });
 
 /**
- * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization (`sso`), or an LTI platform the app registered at, which launches it (`lti`). An SSO connection's id is the public key of the tenant's SSO entry page. System admins manage SSO connections per tenant, `pending` until the institution activated the service at the federation; organization admins register LTI connections.
  */
 export const zConnection = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
-  kind: z.enum(['sso']),
-  federation: z.string().max(255),
+  kind: z.enum(['sso', 'lti']),
+  federation: z.string().max(255).nullable(),
+  issuer: z.string().max(255).nullable(),
+  clientId: z.string().max(255).nullable(),
   claimValues: z.array(z.string()),
   name: z.string().max(255),
   status: z.enum(['pending', 'active', 'disabled']),
   jitProvisioning: z.boolean(),
-  config: z.object({
-    idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
-    logoUrl: z.url().max(255).optional(),
-  }),
+  config: z.union([
+    z.object({
+      authorizationEndpoint: z.string().max(2048),
+      tokenEndpoint: z.string().max(2048),
+      authorizationServer: z.string().max(2048).optional(),
+      jwksUri: z.string().max(2048),
+      registrationClientUri: z.string().max(2048).optional(),
+      productFamilyCode: z.string().max(255),
+      version: z.string().max(255),
+      deploymentIds: z.array(z.string().max(255)).max(100),
+    }),
+    z.object({
+      idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
+      logoUrl: z.url().max(255).optional(),
+    }),
+  ]),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -1533,6 +1547,12 @@ export const zSsoCallbackQuery = z.object({
  */
 export const zSendSsoRecoveryLinkResponse = z.object({
   email: z.string(),
+});
+
+export const zRegisterLtiPlatformQuery = z.object({
+  link: z.string().max(255),
+  openid_configuration: z.string().max(2048),
+  registration_token: z.string().max(2048).optional(),
 });
 
 export const zGetStepUpQuery = z.object({
@@ -3160,6 +3180,50 @@ export const zUpdateConnectionPath = z.object({
  * Updated connection
  */
 export const zUpdateConnectionResponse = zConnection;
+
+export const zListLtiConnectionsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiConnectionsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * LTI connections
+ */
+export const zListLtiConnectionsResponse = z.object({
+  results: z.array(zConnection),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zCreateLtiRegistrationLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Registration link
+ */
+export const zCreateLtiRegistrationLinkResponse = z.object({
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+export const zDeleteLtiConnectionPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  connectionId: z.string().max(50),
+});
+
+/**
+ * Connection removed
+ */
+export const zDeleteLtiConnectionResponse = z.void();
 
 export const zListUsersQuery = z.object({
   pageToken: z.string().max(2048).optional(),
