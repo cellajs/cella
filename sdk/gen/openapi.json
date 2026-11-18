@@ -225,6 +225,33 @@
               "duration": 60
             }
           },
+          "ltiToolRegistrationLimiter": {
+            "name": "LTI tool registrations",
+            "description": "Registration requests for each IP address, refused or not.",
+            "policy": {
+              "mode": "limit",
+              "points": 20,
+              "duration": 3600
+            }
+          },
+          "ltiLoginLimiter": {
+            "name": "LTI logins",
+            "description": "Login initiations for each IP address, refused or not.",
+            "policy": {
+              "mode": "limit",
+              "points": 600,
+              "duration": 60
+            }
+          },
+          "ltiLaunchLimiter": {
+            "name": "LTI launches",
+            "description": "Launch steps for each IP address, refused or not.",
+            "policy": {
+              "mode": "limit",
+              "points": 600,
+              "duration": 60
+            }
+          },
           "serviceBurstLimiter": {
             "name": "Request burst",
             "description": "Requests for each user or service account using an API key or access token.",
@@ -372,7 +399,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -385,6 +412,12 @@
     {
       "name": "links",
       "description": "Share links: `/{code}` names a channel by the code it was given at creation, and `/{code}/t42` a numbered product in it. The routes serve the preview a module declares for it, which unfurls in chats and sends a browser on into the app.",
+      "x-parent": "cella",
+      "x-kind": "module"
+    },
+    {
+      "name": "lti-platform",
+      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry. A resource link places an installation in a channel; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -468,7 +501,7 @@
     },
     {
       "name": "connections",
-      "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
+      "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO federation (SURFconext first), and the LTI platforms the app is registered at. System admins create SSO connections per tenant; a connection's id is the public entry key of the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts. Organization admins register LTI connections with a one-use link.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1830,7 +1863,7 @@
                 },
                 "authStrategy": {
                   "type": "string",
-                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "lti", "surfconext"]
                 },
                 "connectionId": {
                   "type": ["string", "null"],
@@ -2326,6 +2359,407 @@
           "message": "Session replaced"
         },
         "x-tags": ["stream", "entities", "cella"]
+      },
+      "LtiInstallation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The installation: its service account, and the `deployment_id` the LTI tool knows it by"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The `client_id` of the LTI tool's registration"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logoUri": {
+            "type": ["string", "null"]
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain the LTI tool names itself by: a label it picks"
+          },
+          "launchOrigins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The claims the LTI tool asked for that the platform can release"
+          },
+          "requestedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["name", "email", "picture"]
+            },
+            "description": "The personal fields those claims carry: what an approval may release"
+          },
+          "releasedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["name", "email", "picture"]
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "disabled"],
+            "description": "`pending` until an admin approves or rejects it"
+          },
+          "approvedAt": {
+            "type": ["string", "null"]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "createdBy": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedBy": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "clientId",
+          "name",
+          "logoUri",
+          "domain",
+          "launchOrigins",
+          "description",
+          "claims",
+          "requestedFields",
+          "releasedFields",
+          "status",
+          "approvedAt",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "updatedBy"
+        ],
+        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.",
+        "example": {
+          "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
+          "clientId": "cee45ffc-5154-4244-971c-f20f8bf45639",
+          "name": "Peer review",
+          "logoUri": "https://peer-review.example.com/logo.svg",
+          "domain": "peer-review.example.com",
+          "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+          "description": "Students review the drafts of their peers.",
+          "claims": ["iss", "sub", "name", "email"],
+          "requestedFields": ["name", "email"],
+          "releasedFields": ["name"],
+          "status": "active",
+          "approvedAt": "2024-09-19T11:48:50.276Z",
+          "createdAt": "2024-09-19T11:48:50.276Z",
+          "updatedAt": "2024-09-19T11:48:50.276Z",
+          "createdBy": {
+            "id": "ce229c02-b161-4c2b-bf86-b66142e95bb4",
+            "kind": "user",
+            "name": "Dustin Emard",
+            "slug": "dustin_emard",
+            "thumbnailUrl": null
+          },
+          "updatedBy": {
+            "id": "ee40522f-6820-457b-a8a5-80c36642b35a",
+            "kind": "user",
+            "name": "Suzanne Murray",
+            "slug": "suzanne_murray20",
+            "thumbnailUrl": null
+          }
+        },
+        "x-tags": ["data", "lti-platform", "cella"],
+        "x-aep-resource": {
+          "type": "cella/lti-installation",
+          "singular": "lti-installation",
+          "plural": "lti-installations",
+          "parents": ["organization"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}"]
+        }
+      },
+      "LtiResourceLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The resource link, and the `resource_link.id` its launches carry"
+          },
+          "channelType": {
+            "type": "string",
+            "enum": ["organization"]
+          },
+          "channelId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string",
+            "description": "The LTI installation it launches"
+          },
+          "title": {
+            "type": "string"
+          },
+          "custom": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "createdBy": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedBy": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["id", "channelType", "channelId", "installationId", "title", "custom", "createdAt", "updatedAt", "createdBy", "updatedBy"],
+        "description": "An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.",
+        "example": {
+          "id": "3e3a0b8f-0277-4a58-b194-e7f5a5dc9874",
+          "channelType": "organization",
+          "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
+          "installationId": "dbef6b7f-dc6b-4993-9015-b38ac110424f",
+          "title": "Peer review",
+          "custom": {
+            "round": "1"
+          },
+          "createdAt": "2024-08-27T02:21:39.937Z",
+          "updatedAt": "2024-08-27T02:21:39.937Z",
+          "createdBy": {
+            "id": "b3ec3031-a517-4c97-80ba-1208a88f331d",
+            "kind": "user",
+            "name": "Leif Stoltenberg",
+            "slug": "leif_stoltenberg72",
+            "thumbnailUrl": null
+          },
+          "updatedBy": {
+            "id": "4eb99027-62c6-4091-9afb-2725f1c62f44",
+            "kind": "user",
+            "name": "Lois Gulgowski",
+            "slug": "lois.gulgowski3",
+            "thumbnailUrl": null
+          }
+        },
+        "x-tags": ["data", "lti-platform", "cella"],
+        "x-aep-resource": {
+          "type": "cella/lti-resource-link",
+          "singular": "lti-resource-link",
+          "plural": "lti-resource-links",
+          "parents": ["organization"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}"]
+        }
       },
       "ProtectedResourceMetadata": {
         "type": "object",
@@ -3203,7 +3637,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "disabled"]
+            "enum": ["pending", "active", "disabled"]
           },
           "bindings": {
             "type": "array",
@@ -3617,7 +4051,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "lti", "surfconext"]
             }
           },
           "createdAt": {
@@ -3829,10 +4263,18 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["sso"]
+            "enum": ["sso", "lti"]
           },
           "federation": {
-            "type": "string",
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "issuer": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "clientId": {
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "claimValues": {
@@ -3853,24 +4295,78 @@
             "type": "boolean"
           },
           "config": {
-            "type": "object",
-            "properties": {
-              "idpEntityIds": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 255
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "authorizationEndpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The platform's OIDC authorization endpoint, where a launch's login goes"
+                  },
+                  "tokenEndpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The platform's token endpoint, for its services"
+                  },
+                  "authorizationServer": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The audience of a token request at the platform, when it names one apart from its token endpoint"
+                  },
+                  "jwksUri": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The platform's key set, which signs its launches"
+                  },
+                  "registrationClientUri": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The platform's address of this registration, when it gave one"
+                  },
+                  "productFamilyCode": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The platform's product, such as `canvas` or `moodle`"
+                  },
+                  "version": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The platform's version"
+                  },
+                  "deploymentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "maxItems": 1,
+                    "description": "The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either"
+                  }
                 },
-                "description": "The institution's IdP entity ids, passed as login_hint"
+                "required": ["authorizationEndpoint", "tokenEndpoint", "jwksUri", "productFamilyCode", "version", "deploymentIds"]
               },
-              "logoUrl": {
-                "type": "string",
-                "maxLength": 255,
-                "format": "uri",
-                "description": "The institution's logo, for the entry page"
+              {
+                "type": "object",
+                "properties": {
+                  "idpEntityIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "description": "The institution's IdP entity ids, passed as login_hint"
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "format": "uri",
+                    "description": "The institution's logo, for the entry page"
+                  }
+                }
               }
-            }
+            ]
           },
           "createdAt": {
             "type": "string"
@@ -3986,6 +4482,8 @@
           "tenantId",
           "kind",
           "federation",
+          "issuer",
+          "clientId",
           "claimValues",
           "name",
           "status",
@@ -3996,12 +4494,14 @@
           "updatedAt",
           "updatedBy"
         ],
-        "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+        "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization (`sso`), or an LTI platform the app registered at, which launches it (`lti`). An SSO connection's id is the public key of the tenant's SSO entry page. System admins manage SSO connections per tenant, `pending` until the institution activated the service at the federation; organization admins register LTI connections.",
         "example": {
           "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
           "tenantId": "gc9llm",
           "kind": "sso",
           "federation": "surfconext",
+          "issuer": null,
+          "clientId": null,
           "claimValues": ["uu.nl"],
           "name": "Utrecht University",
           "status": "active",
@@ -6419,7 +6919,7 @@
         "operationId": "signOut",
         "tags": ["auth", "cella"],
         "summary": "Sign out",
-        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. An anonymous session takes its account along, with an organization only that account manages.",
+        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
         "x-guard": ["publicGuard"],
         "responses": {
           "204": {
@@ -6607,7 +7107,7 @@
                           },
                           "authStrategy": {
                             "type": "string",
-                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "lti", "surfconext"]
                           },
                           "connectionId": {
                             "type": ["string", "null"],
@@ -8582,6 +9082,398 @@
         }
       }
     },
+    "/auth/lti/register": {
+      "get": {
+        "security": [],
+        "operationId": "registerLtiPlatform",
+        "tags": ["auth", "cella"],
+        "summary": "Register at an LTI platform",
+        "description": "The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Spends the one-use link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. Any LTI platform may frame the page, which holds no session.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The one-use registration link an organization admin created"
+            },
+            "required": true,
+            "description": "The one-use registration link an organization admin created",
+            "name": "link",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The address of the platform's OpenID configuration"
+            },
+            "required": true,
+            "description": "The address of the platform's OpenID configuration",
+            "name": "openid_configuration",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The platform's token for the registration request"
+            },
+            "required": false,
+            "description": "The platform's token for the registration request",
+            "name": "registration_token",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registered\n\nA page with one line of text that sends the platform the close message."
+          },
+          "400": {
+            "description": "Registration refused\n\nThe same page, naming why the platform or its configuration was refused."
+          },
+          "401": {
+            "description": "Registration link refused\n\nThe same page: the link was used before, never existed or expired."
+          },
+          "409": {
+            "description": "Already registered\n\nThe same page: the platform registered this client id before."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/lti/login": {
+      "get": {
+        "security": [],
+        "operationId": "initiateLtiLogin",
+        "tags": ["auth", "cella"],
+        "summary": "Start an LTI launch",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLoginLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The platform's issuer"
+            },
+            "required": false,
+            "description": "The platform's issuer",
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 4096,
+              "description": "The platform's hint of who launches, echoed in the authentication request"
+            },
+            "required": false,
+            "description": "The platform's hint of who launches, echoed in the authentication request",
+            "name": "login_hint",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Where the platform means the launch to land"
+            },
+            "required": false,
+            "description": "Where the platform means the launch to land",
+            "name": "target_link_uri",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 4096,
+              "description": "The platform's hint of what it launches, echoed in the authentication request"
+            },
+            "required": false,
+            "description": "The platform's hint of what it launches, echoed in the authentication request",
+            "name": "lti_message_hint",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The LTI deployment the launch comes from"
+            },
+            "required": false,
+            "description": "The LTI deployment the launch comes from",
+            "name": "lti_deployment_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The client id the platform gave the app; needed when the issuer holds several"
+            },
+            "required": false,
+            "description": "The client id the platform gave the app; needed when the issuer holds several",
+            "name": "client_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The frame that answers platform storage messages"
+            },
+            "required": false,
+            "description": "The frame that answers platform storage messages",
+            "name": "lti_storage_target",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login page\n\nA page that stores the launch value in platform storage and moves on to the platform."
+          },
+          "400": {
+            "description": "Login refused\n\nA page naming why: the platform offers no platform storage."
+          },
+          "401": {
+            "description": "Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [],
+        "operationId": "initiateLtiLoginByPost",
+        "tags": ["auth", "cella"],
+        "summary": "Start an LTI launch by form post",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLoginLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "iss": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The platform's issuer"
+                  },
+                  "login_hint": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "description": "The platform's hint of who launches, echoed in the authentication request"
+                  },
+                  "target_link_uri": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "Where the platform means the launch to land"
+                  },
+                  "lti_message_hint": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "description": "The platform's hint of what it launches, echoed in the authentication request"
+                  },
+                  "lti_deployment_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The LTI deployment the launch comes from"
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The client id the platform gave the app; needed when the issuer holds several"
+                  },
+                  "lti_storage_target": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The frame that answers platform storage messages"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login page\n\nA page that stores the launch value in platform storage and moves on to the platform."
+          },
+          "400": {
+            "description": "Login refused\n\nA page naming why: the platform offers no platform storage."
+          },
+          "401": {
+            "description": "Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing."
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/lti/launch": {
+      "post": {
+        "security": [],
+        "operationId": "receiveLtiLaunch",
+        "tags": ["auth", "cella"],
+        "summary": "Receive an LTI launch",
+        "description": "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_token": {
+                    "type": "string",
+                    "maxLength": 32768,
+                    "description": "The signed launch"
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The state the login sent"
+                  },
+                  "error": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "The platform's refusal, in place of an ID token"
+                  },
+                  "error_description": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Launch page\n\nA page that reads the launch value from platform storage and posts it on, same-origin."
+          },
+          "400": {
+            "description": "Launch refused\n\nA field is longer than a launch carries."
+          },
+          "401": {
+            "description": "Launch refused\n\nA page: the state names no active LTI connection, or the platform posted an error."
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/lti/finish": {
+      "post": {
+        "security": [],
+        "operationId": "finishLtiLaunch",
+        "tags": ["auth", "cella"],
+        "summary": "Finish an LTI launch",
+        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Finds or creates the person by the platform's issuer and user id, maps the launch's context to a channel, applies the mapped role, starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_token": {
+                    "type": "string",
+                    "maxLength": 32768
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "storage_value": {
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "303": {
+            "description": "Launched\n\nTo the embedded page of the channel, with the embedded session set.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "description": "Launch refused\n\nThe platform's key set could not be read, or a field is longer than a launch carries."
+          },
+          "401": {
+            "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
+          },
+          "403": {
+            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user."
+          },
+          "404": {
+            "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
+          },
+          "409": {
+            "description": "Course not set up\n\nA page: an instructor opens the app from this course first."
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/step-up": {
       "get": {
         "security": [
@@ -9481,6 +10373,1072 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations:start-registration": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "startLtiToolRegistration",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Start LTI tool registration",
+        "description": "Starts an LTI tool's Dynamic Registration: answers the LTI tool's registration address with the platform's configuration address and a one-use registration token added, to open in a frame or a new tab. The LTI tool registers itself with the token; its registration is private to the organization's tenant and waits for an admin's approval. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "registrationUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The LTI tool's registration address, which its Dynamic Registration instructions give"
+                  }
+                },
+                "required": ["registrationUrl"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration address",
+            "content": {
+              "application/json": {
+                "example": {
+                  "url": "https://peer-review.example.com/lti/register?openid_configuration=https%3A%2F%2Fapp.example.com%2Foauth%2Flti%2Fopenid-configuration&registration_token=example-registration-token",
+                  "expiresAt": "2026-11-18T13:00:00.000Z"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "The address to open: the LTI tool's registration address with the platform's configuration and a one-use token"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "description": "When the token stops working, unless the LTI tool registered before"
+                    }
+                  },
+                  "required": ["url", "expiresAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiInstallations",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get LTI installations",
+        "description": "The LTI tools installed in the organization's tenant, pending, approved or disabled, each with its registration. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI installations",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
+                      "clientId": "cee45ffc-5154-4244-971c-f20f8bf45639",
+                      "name": "Peer review",
+                      "logoUri": "https://peer-review.example.com/logo.svg",
+                      "domain": "peer-review.example.com",
+                      "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+                      "description": "Students review the drafts of their peers.",
+                      "claims": ["iss", "sub", "name", "email"],
+                      "requestedFields": ["name", "email"],
+                      "releasedFields": ["name"],
+                      "status": "active",
+                      "approvedAt": "2024-09-19T11:48:50.276Z",
+                      "createdAt": "2024-09-19T11:48:50.276Z",
+                      "updatedAt": "2024-09-19T11:48:50.276Z",
+                      "createdBy": {
+                        "id": "ce229c02-b161-4c2b-bf86-b66142e95bb4",
+                        "kind": "user",
+                        "name": "Dustin Emard",
+                        "slug": "dustin_emard",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": {
+                        "id": "ee40522f-6820-457b-a8a5-80c36642b35a",
+                        "kind": "user",
+                        "name": "Suzanne Murray",
+                        "slug": "suzanne_murray20",
+                        "thumbnailUrl": null
+                      }
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LtiInstallation"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "approveLtiInstallation",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Approve LTI installation",
+        "description": "Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "releasedFields": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["name", "email", "picture"]
+                    },
+                    "maxItems": 3,
+                    "description": "The personal fields a launch may carry, each one the LTI tool asked for; empty releases none"
+                  }
+                },
+                "required": ["releasedFields"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approved installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LtiInstallation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "rejectLtiInstallation",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Reject LTI installation",
+        "description": "Rejects a pending LTI tool. It never acted: its installation and its registration are deleted.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Installation rejected"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiResourceLinks",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get LTI resource links",
+        "description": "The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["organization"]
+            },
+            "required": true,
+            "name": "channelType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI resource links",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "3e3a0b8f-0277-4a58-b194-e7f5a5dc9874",
+                      "channelType": "organization",
+                      "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
+                      "installationId": "dbef6b7f-dc6b-4993-9015-b38ac110424f",
+                      "title": "Peer review",
+                      "custom": {
+                        "round": "1"
+                      },
+                      "createdAt": "2024-08-27T02:21:39.937Z",
+                      "updatedAt": "2024-08-27T02:21:39.937Z",
+                      "createdBy": {
+                        "id": "b3ec3031-a517-4c97-80ba-1208a88f331d",
+                        "kind": "user",
+                        "name": "Leif Stoltenberg",
+                        "slug": "leif_stoltenberg72",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": {
+                        "id": "4eb99027-62c6-4091-9afb-2725f1c62f44",
+                        "kind": "user",
+                        "name": "Lois Gulgowski",
+                        "slug": "lois.gulgowski3",
+                        "thumbnailUrl": null
+                      }
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LtiResourceLink"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createLtiResourceLink",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Create LTI resource link",
+        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "channelType": {
+                    "type": "string",
+                    "enum": ["organization"]
+                  },
+                  "installationId": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "An approved LTI installation of the tenant"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
+                  },
+                  "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "maxProperties": 50,
+                    "description": "Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters"
+                  }
+                },
+                "required": ["channelId", "channelType", "installationId", "title"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "LTI resource link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LtiResourceLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateLtiResourceLink",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Update LTI resource link",
+        "description": "Renames a resource link or replaces its custom values. Requires permission to update its channel.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiResourceLinkId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
+                  },
+                  "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "maxProperties": 50,
+                    "description": "Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters"
+                  }
+                }
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
+                  },
+                  "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "maxProperties": 50,
+                    "description": "Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "LTI resource link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LtiResourceLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteLtiResourceLink",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Delete LTI resource link",
+        "description": "Removes a resource link and its launches that have not reached the LTI tool. Requires permission to update its channel.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiResourceLinkId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource link deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "startLtiLaunch",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Start LTI launch",
+        "description": "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel. Requires permission to read its channel and an active installation.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiResourceLinkId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Launch started",
+            "content": {
+              "application/json": {
+                "example": {
+                  "url": "http://localhost:3000/api/lti-launches/~initiate-login?token=example-launch-token",
+                  "expiresAt": "2026-11-18T13:05:00.000Z"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "The login initiation page to load in the frame; it holds a one-use launch record"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "description": "When the launch record stops working, unless the launch used it before"
+                    }
+                  },
+                  "required": ["url", "expiresAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/lti-launches:initiate-login": {
+      "get": {
+        "security": [],
+        "operationId": "initiateLtiLaunchLogin",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Initiate LTI login",
+        "description": "The page a launch frame loads: it posts the login initiation (1EdTech Security Framework, section 5.1.1.1) to the LTI tool's login address, with hints that refer to the launch record. Loading it leaves the record for the launch endpoint, which spends it.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The launch record a launch start answered"
+            },
+            "required": true,
+            "description": "The launch record a launch start answered",
+            "name": "token",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login initiation\n\nA page that posts the login initiation to the LTI tool as it loads."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "description": "Launch record refused\n\nA page with one line of text: the record was used before, never existed or expired."
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -15535,7 +17493,7 @@
         "operationId": "updateServiceAccount",
         "tags": ["service-accounts", "cella"],
         "summary": "Update service account",
-        "description": "Renames, disables or re-enables a service account. Accounts are never deleted.",
+        "description": "Renames, disables or re-enables a service account. An account that acted is disabled, never deleted. A pending LTI tool installation changes status only by its approval or rejection.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -15628,6 +17586,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -15796,7 +17757,7 @@
         "operationId": "createApiKey",
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
-        "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
+        "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window. An account that installs an app or an LTI tool takes no key: it acts through its registration.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -15949,6 +17910,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -16993,9 +18957,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "lti", "surfconext"]
                     },
-                    "maxItems": 9
+                    "maxItems": 10
                   },
                   "restrictions": {
                     "type": "object",
@@ -17074,9 +19038,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "surfconext"]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "anonymous", "lti", "surfconext"]
                     },
-                    "maxItems": 9
+                    "maxItems": 10
                   },
                   "restrictions": {
                     "type": "object",
@@ -17370,6 +19334,8 @@
                       "tenantId": "gc9llm",
                       "kind": "sso",
                       "federation": "surfconext",
+                      "issuer": null,
+                      "clientId": null,
                       "claimValues": ["uu.nl"],
                       "name": "Utrecht University",
                       "status": "active",
@@ -17735,7 +19701,7 @@
         "operationId": "deleteConnection",
         "tags": ["connections", "cella"],
         "summary": "Delete connection",
-        "description": "Removes a connection. Identities and sessions that came through it keep their rows; members stay members.",
+        "description": "Removes a connection and ends every session that came through it. Identities that came through it keep their rows; members stay members.",
         "x-enabled-by": {
           "strategy": "sso"
         },
@@ -17749,6 +19715,306 @@
             },
             "required": true,
             "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "connectionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Connection removed"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/connections": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiConnections",
+        "tags": ["connections", "cella"],
+        "summary": "Get LTI connections",
+        "description": "The LTI platforms the app is registered at for the organization's tenant. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI connections",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "593cd5f4-195e-4a51-8837-aff168d8d5bb",
+                      "tenantId": "dt5qq0",
+                      "kind": "lti",
+                      "federation": null,
+                      "issuer": "https://canvas.instructure.com",
+                      "clientId": "10000000000123",
+                      "claimValues": [],
+                      "name": "canvas.instructure.com",
+                      "status": "active",
+                      "jitProvisioning": true,
+                      "config": {
+                        "authorizationEndpoint": "https://sso.canvaslms.com/api/lti/authorize_redirect",
+                        "tokenEndpoint": "https://sso.canvaslms.com/login/oauth2/token",
+                        "authorizationServer": "https://sso.canvaslms.com/login/oauth2/token",
+                        "jwksUri": "https://sso.canvaslms.com/api/lti/security/jwks",
+                        "productFamilyCode": "canvas",
+                        "version": "cloud",
+                        "deploymentIds": ["123:8865aa05b4b79b64a91a86042e43af5ea8ae79eb"]
+                      },
+                      "createdBy": {
+                        "id": "9b32477d-37c7-49ca-930b-f7513e85223b",
+                        "kind": "user",
+                        "name": "Emiliano Herman",
+                        "slug": "emiliano.herman20",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": null,
+                      "createdAt": "2024-11-15T00:10:41.629Z",
+                      "updatedAt": "2024-11-25T17:43:39.303Z"
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Connection"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createLtiRegistrationLink",
+        "tags": ["connections", "cella"],
+        "summary": "Create LTI registration link",
+        "description": "A one-use link to paste into an LTI platform's Dynamic Registration. Whoever opens it first registers the platform's connection for the organization's tenant, so it is answered once and only its hash is stored. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registration link",
+            "content": {
+              "application/json": {
+                "example": {
+                  "url": "http://localhost:3000/api/auth/lti/register?link=example-registration-link",
+                  "expiresAt": "2026-11-18T13:00:00.000Z"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "The link to paste into the LTI platform's Dynamic Registration"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "description": "When the link stops working, unless a platform opened it before"
+                    }
+                  },
+                  "required": ["url", "expiresAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteLtiConnection",
+        "tags": ["connections", "cella"],
+        "summary": "Delete LTI connection",
+        "description": "Removes an LTI connection: its platform launches the app no more, and every session its launches started ends. Identities that came through it keep their rows; members stay members.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
             "in": "path"
           },
           {

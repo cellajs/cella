@@ -16,14 +16,15 @@ type UpdateConnectionInput = z.infer<typeof updateConnectionBodySchema>;
  */
 export async function updateConnectionOp(ctx: UserContext, id: string, input: UpdateConnectionInput) {
   const existing = await findConnectionById(ctx, { id, tenantId: ctx.var.tenantId });
-  if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
+  // These routes manage SSO connections; an LTI connection is its organization admins' to manage.
+  if (existing?.kind !== 'sso' || !existing.federation) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
 
   const { name, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
 
   if (claimValues) await assertClaimValuesFree(ctx, { federation: existing.federation, claimValues, excludeId: existing.id });
 
   const config =
-    idpEntityIds || logoUrl ? { ...existing.config, ...(idpEntityIds ? { idpEntityIds } : {}), ...(logoUrl ? { logoUrl } : {}) } : undefined;
+    idpEntityIds || logoUrl ? { idpEntityIds: idpEntityIds ?? existing.config.idpEntityIds, logoUrl: logoUrl ?? existing.config.logoUrl } : undefined;
 
   const updated = await updateConnection(ctx, {
     id: existing.id,

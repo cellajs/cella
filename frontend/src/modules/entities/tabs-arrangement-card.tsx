@@ -5,7 +5,7 @@ import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
-import { arrangePlacements } from '~/lib/placements';
+import { arrangePlacements, getChannelTabSources } from '~/lib/placements';
 import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
@@ -157,6 +157,11 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
         hideEndMarker
         enableVirtualization={false}
       />
+      {getChannelTabSources().map(({ arrangementNote }) => (
+        <p key={arrangementNote} className="text-muted-foreground mt-3 text-sm">
+          {t(arrangementNote)}
+        </p>
+      ))}
     </ToolCard>
   );
 }

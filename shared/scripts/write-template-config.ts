@@ -41,7 +41,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
   { path: 'clientCacheVersion', value: '1' },
   {
     path: 'enabledAuthStrategies',
-    value: "['passkey', 'oauth', 'totp', 'magic'] as const",
+    value: "['passkey', 'oauth', 'totp', 'magic'] as readonly BaseAuthStrategies[]",
     comment: 'No `sso` until the app declares a federation.',
   },
   {

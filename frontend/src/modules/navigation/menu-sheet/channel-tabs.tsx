@@ -17,7 +17,7 @@ export function MenuSheetChannelTabs({ channel, className }: { channel: UserMenu
   return (
     <nav aria-label={channel.name} className={className}>
       <ul className="flex flex-col gap-0.5">
-        {tabs.map(({ id, label, path, params }) => (
+        {tabs.map(({ id, path, params, ...caption }) => (
           <li key={id}>
             <Link
               to={path}
@@ -31,7 +31,7 @@ export function MenuSheetChannelTabs({ channel, className }: { channel: UserMenu
                 'data-[active=true]:bg-accent data-[active=true]:text-foreground data-[active=true]:font-medium',
               )}
             >
-              {t(label)}
+              {'text' in caption ? caption.text : t(caption.label)}
             </Link>
           </li>
         ))}

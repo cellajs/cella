@@ -142,7 +142,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                   {t('c:claim_values')}: {connection.claimValues.join(', ')}
                 </span>
                 <span className="break-all">
-                  {t('c:idp_entity_ids')}: {(connection.config.idpEntityIds ?? []).join(', ')}
+                  {t('c:idp_entity_ids')}: {('idpEntityIds' in connection.config ? (connection.config.idpEntityIds ?? []) : []).join(', ')}
                 </span>
               </div>
               <div className="flex items-start gap-3">

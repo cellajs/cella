@@ -1,4 +1,4 @@
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -57,9 +57,10 @@ export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'],
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update service account',
-    description: 'Renames, disables or re-enables a service account. Accounts are never deleted.',
+    description:
+      'Renames, disables or re-enables a service account. An account that acted is disabled, never deleted. A pending LTI tool installation changes status only by its approval or rejection.',
     request: { params: serviceAccountParamSchema, body: jsonBody(updateServiceAccountBodySchema) },
-    responses: { 200: json('Service account was updated', serviceAccountSchema) },
+    responses: { 200: json('Service account was updated', serviceAccountSchema), ...errors(409) },
   }),
   listApiKeys: xRoute({
     method: 'get',
@@ -77,9 +78,9 @@ export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create API key',
     description:
-      'Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.',
+      'Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window. An account that installs an app or an LTI tool takes no key: it acts through its registration.',
     request: { params: serviceAccountParamSchema, body: jsonBody(createApiKeyBodySchema) },
-    responses: { 201: json('API key was issued', createdApiKeySchema, mockCreatedApiKeyResponse()) },
+    responses: { 201: json('API key was issued', createdApiKeySchema, mockCreatedApiKeyResponse()), ...errors(409) },
   }),
   revokeApiKey: xRoute({
     method: 'post',

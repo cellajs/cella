@@ -2,6 +2,7 @@
 import type { ListNotificationsResponse } from 'sdk';
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 import type { ConfigMode } from 'shared';
+import { servicePaths } from 'shared/config-builder/service-paths';
 import type { NotificationPushPayload } from 'shared/push-payload';
 import { shareLinkPath } from 'shared/share-link';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
@@ -13,14 +14,16 @@ declare const __BACKEND_URL__: string;
 declare const __FRONTEND_URL__: string;
 declare const __APP_MODE__: ConfigMode;
 
-// Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network,
-// text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell, and share links,
-// which the server redirects to their preview.
-const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
+// Leaves to the network every navigation the app shell must not answer: each service's path (an OAuth or LTI step, a
+// download), well-known documents, text artifacts (llms.txt, docs/page/*.md, /static/*.json), share links, which the
+// server redirects to their preview, and embedded pages: the shell the worker holds carries the framing policy of
+// every other page, which keeps them out of an LTI platform's frame.
 const navigationDenylist = [
   /\.(?:txt|md|json)$/i,
   new RegExp(shareLinkPath),
-  ...(apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : []),
+  /^\/embed\//,
+  /^\/\.well-known\//,
+  ...Object.values(servicePaths).map((path) => new RegExp(`^${escapeRegExp(path)}/`)),
 ];
 
 /** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
@@ -109,10 +112,10 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(focusOrOpenApp(url));
 });
 
-/** An open tab navigates to the subject; otherwise a new window opens on it. */
+/** An open tab navigates to the subject; otherwise a new window opens on it. An embedded page in a frame is no tab. */
 async function focusOrOpenApp(url: string): Promise<void> {
   const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  const existing = clientList[0];
+  const existing = clientList.find((client) => client.frameType === 'top-level');
   if (!existing) {
     await self.clients.openWindow(url);
     return;

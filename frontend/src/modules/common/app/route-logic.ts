@@ -27,8 +27,11 @@ export async function appLayoutBeforeLoad({ location, cause }: { location: Parse
     }
   }
   await requireSession(location);
-  if (cause !== 'enter') return;
+  if (cause === 'enter') await startSignedInApp();
+}
 
+/** What a signed-in layout runs on entry: the restored cache and memberships, then the stream. The embedded layout runs it too. */
+export async function startSignedInApp(): Promise<void> {
   // Catchup needs the rehydrated cursor and the restored cache: a list not restored yet counts as uncached, its gap skipped for good.
   await localUserStorageReady();
   // Catchup declares a view per organization of the cached memberships, so a fresh profile reads them first; the loader reports a failure.

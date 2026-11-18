@@ -258,7 +258,7 @@ export const zMeAuthData = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -373,6 +373,112 @@ export const zStreamSignal = z.object({
 export const zStreamError = z.object({
   code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
   message: z.string(),
+});
+
+/**
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.
+ */
+export const zLtiInstallation = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  name: z.string(),
+  logoUri: z.string().nullable(),
+  domain: z.string(),
+  launchOrigins: z.array(z.string()),
+  description: z.string().nullable(),
+  claims: z.array(z.string()),
+  requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
+  releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
+  status: z.enum(['pending', 'active', 'disabled']),
+  approvedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+});
+
+/**
+ * An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.
+ */
+export const zLtiResourceLink = z.object({
+  id: z.string(),
+  channelType: z.enum(['organization']),
+  channelId: z.string(),
+  installationId: z.string(),
+  title: z.string(),
+  custom: z.record(z.string(), z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
 });
 
 /**
@@ -618,7 +724,7 @@ export const zServiceAccount = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  status: z.enum(['active', 'disabled']),
+  status: z.enum(['pending', 'active', 'disabled']),
   bindings: z.array(
     z.object({
       channelType: z.enum(['organization']),
@@ -728,7 +834,7 @@ export const zTenant = z.object({
     }),
     allowUnregisteredClients: z.boolean(),
   }),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext'])),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -779,21 +885,35 @@ export const zTenant = z.object({
 });
 
 /**
- * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization (`sso`), or an LTI platform the app registered at, which launches it (`lti`). An SSO connection's id is the public key of the tenant's SSO entry page. System admins manage SSO connections per tenant, `pending` until the institution activated the service at the federation; organization admins register LTI connections.
  */
 export const zConnection = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
-  kind: z.enum(['sso']),
-  federation: z.string().max(255),
+  kind: z.enum(['sso', 'lti']),
+  federation: z.string().max(255).nullable(),
+  issuer: z.string().max(255).nullable(),
+  clientId: z.string().max(255).nullable(),
   claimValues: z.array(z.string()),
   name: z.string().max(255),
   status: z.enum(['pending', 'active', 'disabled']),
   jitProvisioning: z.boolean(),
-  config: z.object({
-    idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
-    logoUrl: z.url().max(255).optional(),
-  }),
+  config: z.union([
+    z.object({
+      authorizationEndpoint: z.string().max(2048),
+      tokenEndpoint: z.string().max(2048),
+      authorizationServer: z.string().max(2048).optional(),
+      jwksUri: z.string().max(2048),
+      registrationClientUri: z.string().max(2048).optional(),
+      productFamilyCode: z.string().max(255),
+      version: z.string().max(255),
+      deploymentIds: z.array(z.string().max(255)).max(1),
+    }),
+    z.object({
+      idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
+      logoUrl: z.url().max(255).optional(),
+    }),
+  ]),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -1237,7 +1357,7 @@ export const zRevokeMySessionsResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -1535,6 +1655,45 @@ export const zSendSsoRecoveryLinkResponse = z.object({
   email: z.string(),
 });
 
+export const zRegisterLtiPlatformQuery = z.object({
+  link: z.string().max(255),
+  openid_configuration: z.string().max(2048),
+  registration_token: z.string().max(2048).optional(),
+});
+
+export const zInitiateLtiLoginQuery = z.object({
+  iss: z.string().max(255).optional(),
+  login_hint: z.string().max(4096).optional(),
+  target_link_uri: z.string().max(2048).optional(),
+  lti_message_hint: z.string().max(4096).optional(),
+  lti_deployment_id: z.string().max(255).optional(),
+  client_id: z.string().max(255).optional(),
+  lti_storage_target: z.string().max(255).optional(),
+});
+
+export const zInitiateLtiLoginByPostBody = z.object({
+  iss: z.string().max(255).optional(),
+  login_hint: z.string().max(4096).optional(),
+  target_link_uri: z.string().max(2048).optional(),
+  lti_message_hint: z.string().max(4096).optional(),
+  lti_deployment_id: z.string().max(255).optional(),
+  client_id: z.string().max(255).optional(),
+  lti_storage_target: z.string().max(255).optional(),
+});
+
+export const zReceiveLtiLaunchBody = z.object({
+  id_token: z.string().max(32768).optional(),
+  state: z.string().max(2048).optional(),
+  error: z.string().max(255).optional(),
+  error_description: z.string().max(2048).optional(),
+});
+
+export const zFinishLtiLaunchBody = z.object({
+  id_token: z.string().max(32768).optional(),
+  state: z.string().max(2048).optional(),
+  storage_value: z.string().max(255).optional(),
+});
+
 export const zGetStepUpQuery = z.object({
   tier: z.enum(['factor', 'account', 'enroll']).optional().default('account'),
 });
@@ -1733,6 +1892,165 @@ export const zPreviewProductLinkPath = z.object({
     .string()
     .max(11)
     .regex(/^[a-z][1-9][0-9]*$/),
+});
+
+export const zStartLtiToolRegistrationBody = z.object({
+  registrationUrl: z.string().max(2048),
+});
+
+export const zStartLtiToolRegistrationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Registration address
+ */
+export const zStartLtiToolRegistrationResponse = z.object({
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+export const zListLtiInstallationsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiInstallationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
+});
+
+/**
+ * LTI installations
+ */
+export const zListLtiInstallationsResponse = z.object({
+  results: z.array(zLtiInstallation),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zApproveLtiInstallationBody = z.object({
+  releasedFields: z.array(z.enum(['name', 'email', 'picture'])).max(3),
+});
+
+export const zApproveLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Approved installation
+ */
+export const zApproveLtiInstallationResponse = zLtiInstallation;
+
+export const zRejectLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Installation rejected
+ */
+export const zRejectLtiInstallationResponse = z.void();
+
+export const zListLtiResourceLinksPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiResourceLinksQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * LTI resource links
+ */
+export const zListLtiResourceLinksResponse = z.object({
+  results: z.array(zLtiResourceLink),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zCreateLtiResourceLinkBody = z.object({
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  installationId: z.string().max(50),
+  title: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
+  custom: z.record(z.string(), z.string().max(255)).optional(),
+});
+
+export const zCreateLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * LTI resource link
+ */
+export const zCreateLtiResourceLinkResponse = zLtiResourceLink;
+
+export const zDeleteLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * Resource link deleted
+ */
+export const zDeleteLtiResourceLinkResponse = z.void();
+
+export const zUpdateLtiResourceLinkBody = z.object({
+  title: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
+    .optional(),
+  custom: z.record(z.string(), z.string().max(255)).optional(),
+});
+
+export const zUpdateLtiResourceLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * LTI resource link
+ */
+export const zUpdateLtiResourceLinkResponse = zLtiResourceLink;
+
+export const zStartLtiLaunchPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiResourceLinkId: z.string().max(50),
+});
+
+/**
+ * Launch started
+ */
+export const zStartLtiLaunchResponse = z.object({
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+export const zInitiateLtiLaunchLoginQuery = z.object({
+  token: z.string().max(2048),
 });
 
 export const zGetMcpProtectedResourceMetadataPath = z.object({
@@ -3027,8 +3345,8 @@ export const zUpdateTenantBody = z.object({
   kind: z.enum(['live', 'test', 'demo']).optional(),
   status: z.enum(['active', 'suspended', 'deleted']).optional(),
   authStrategies: z
-    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'surfconext']))
-    .max(9)
+    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'anonymous', 'lti', 'surfconext']))
+    .max(10)
     .optional(),
   restrictions: z
     .object({
@@ -3160,6 +3478,50 @@ export const zUpdateConnectionPath = z.object({
  * Updated connection
  */
 export const zUpdateConnectionResponse = zConnection;
+
+export const zListLtiConnectionsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiConnectionsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * LTI connections
+ */
+export const zListLtiConnectionsResponse = z.object({
+  results: z.array(zConnection),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zCreateLtiRegistrationLinkPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Registration link
+ */
+export const zCreateLtiRegistrationLinkResponse = z.object({
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+export const zDeleteLtiConnectionPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  connectionId: z.string().max(50),
+});
+
+/**
+ * Connection removed
+ */
+export const zDeleteLtiConnectionResponse = z.void();
 
 export const zListUsersQuery = z.object({
   pageToken: z.string().max(2048).optional(),

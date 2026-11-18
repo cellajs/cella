@@ -1,0 +1,2102 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c1e6b883-70d0-462b-9cf6-d07aecc07f08",
+  "prevIds": [
+    "4d773160-ca7f-4394-8147-3b56fbc8699e"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|tbl|public.lti_contexts",
+        "n|tbl|public.lti_contexts",
+        "e|tbl|public.lti_contexts",
+        "n|rel|public.lti_contexts",
+        "n|type|public.lti_contexts",
+        "n|rel|public.lti_contexts_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|tbl|public.lti_installations",
+        "n|tbl|public.lti_installations",
+        "e|tbl|public.lti_installations",
+        "n|rel|public.lti_installations",
+        "n|type|public.lti_installations",
+        "n|rel|public.lti_installations_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|tbl|public.lti_resource_links",
+        "n|tbl|public.lti_resource_links",
+        "e|tbl|public.lti_resource_links",
+        "n|rel|public.lti_resource_links",
+        "n|type|public.lti_resource_links",
+        "n|rel|public.lti_resource_links_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "tenant_id"
+      ],
+      "writes": [
+        "s|col|public.tokens.tenant_id",
+        "n|col|public.tokens.tenant_id",
+        "e|col|public.tokens.tenant_id"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "lti_resource_link_id"
+      ],
+      "writes": [
+        "s|col|public.tokens.lti_resource_link_id",
+        "n|col|public.tokens.lti_resource_link_id",
+        "e|col|public.tokens.lti_resource_link_id"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "issuer"
+      ],
+      "writes": [
+        "s|col|public.connections.issuer",
+        "n|col|public.connections.issuer",
+        "e|col|public.connections.issuer"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "client_id"
+      ],
+      "writes": [
+        "s|col|public.connections.client_id",
+        "n|col|public.connections.client_id",
+        "e|col|public.connections.client_id"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "tenant_id"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.tenant_id",
+        "n|col|public.oauth_clients.tenant_id",
+        "e|col|public.oauth_clients.tenant_id"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "jwks_uri"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.jwks_uri",
+        "n|col|public.oauth_clients.jwks_uri",
+        "e|col|public.oauth_clients.jwks_uri"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "initiate_login_uri"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.initiate_login_uri",
+        "n|col|public.oauth_clients.initiate_login_uri",
+        "e|col|public.oauth_clients.initiate_login_uri"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "lti_tool_config"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.lti_tool_config",
+        "n|col|public.oauth_clients.lti_tool_config",
+        "e|col|public.oauth_clients.lti_tool_config"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "email"
+      ],
+      "writes": [
+        "s|colprop|public.tokens.email.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.email"
+      ],
+      "sqlHash": "6990c9364f6457ba"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "federation"
+      ],
+      "writes": [
+        "s|colprop|public.connections.federation.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.federation"
+      ],
+      "sqlHash": "ed8d2d2c7c566c41"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "connections",
+        "connections_tenant_id_kind_idx"
+      ],
+      "writes": [
+        "s|idx|public.connections_tenant_id_kind_idx",
+        "n|idx|public.connections_tenant_id_kind_idx",
+        "e|idx|public.connections_tenant_id_kind_idx",
+        "n|rel|public.connections_tenant_id_kind_idx"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.tenant_id",
+        "n|col|public.connections.kind"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.connections.kind.tenant_id"
+      ],
+      "sqlHash": "06716b1010df99c6"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_connection_id_context_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|idx|public.lti_contexts_connection_id_context_id_idx",
+        "e|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|rel|public.lti_contexts_connection_id_context_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id",
+        "n|col|public.lti_contexts.context_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_channel_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_channel_id_idx",
+        "n|idx|public.lti_contexts_channel_id_idx",
+        "e|idx|public.lti_contexts_channel_id_idx",
+        "n|rel|public.lti_contexts_channel_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.channel_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "connections",
+        "connections_issuer_client_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.connections_issuer_client_id_idx",
+        "n|idx|public.connections_issuer_client_id_idx",
+        "e|idx|public.connections_issuer_client_id_idx",
+        "n|rel|public.connections_issuer_client_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.issuer",
+        "n|col|public.connections.client_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_resource_links",
+        "lti_resource_links_channel_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_resource_links_channel_id_idx",
+        "n|idx|public.lti_resource_links_channel_id_idx",
+        "e|idx|public.lti_resource_links_channel_id_idx",
+        "n|rel|public.lti_resource_links_channel_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.channel_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_resource_links",
+        "lti_resource_links_installation_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_resource_links_installation_id_idx",
+        "n|idx|public.lti_resource_links_installation_id_idx",
+        "e|idx|public.lti_resource_links_installation_id_idx",
+        "n|rel|public.lti_resource_links_installation_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.installation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tokens"
+      ],
+      "writes": [
+        "s|fk|public.tokens.tokens_tenant_id_tenants_id_fkey",
+        "n|fk|public.tokens.tokens_tenant_id_tenants_id_fkey",
+        "e|fk|public.tokens.tokens_tenant_id_tenants_id_fkey",
+        "n|con|public.tokens.tokens_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tokens.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tokens"
+      ],
+      "writes": [
+        "s|fk|public.tokens.tokens_lti_resource_link_id_lti_resource_links_id_fkey",
+        "n|fk|public.tokens.tokens_lti_resource_link_id_lti_resource_links_id_fkey",
+        "e|fk|public.tokens.tokens_lti_resource_link_id_lti_resource_links_id_fkey",
+        "n|con|public.tokens.tokens_lti_resource_link_id_lti_resource_links_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|col|public.tokens.lti_resource_link_id",
+        "n|col|public.lti_resource_links.id",
+        "e|uniqueness|public.lti_resource_links.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.lti_contexts.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id",
+        "n|col|public.connections.id",
+        "e|uniqueness|public.connections.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_created_by_actors_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_contexts.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_contexts.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey",
+        "n|con|public.lti_contexts.lti_contexts_GWuG77TCefJB_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.lti_contexts.tenant_id",
+        "n|col|public.lti_contexts.organization_id",
+        "n|col|public.organizations.tenant_id",
+        "n|col|public.organizations.id",
+        "e|uniqueness|public.organizations.id.tenant_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey",
+        "n|con|public.lti_installations.lti_installations_service_account_id_service_accounts_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.lti_installations.service_account_id",
+        "n|col|public.service_accounts.id",
+        "e|uniqueness|public.service_accounts.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_approved_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_approved_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.approved_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_created_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_installations"
+      ],
+      "writes": [
+        "s|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "n|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "e|fk|public.lti_installations.lti_installations_updated_by_actors_id_fkey",
+        "n|con|public.lti_installations.lti_installations_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_installations.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|fk|public.lti_resource_links.lti_resource_links_tenant_id_tenants_id_fkey",
+        "n|fk|public.lti_resource_links.lti_resource_links_tenant_id_tenants_id_fkey",
+        "e|fk|public.lti_resource_links.lti_resource_links_tenant_id_tenants_id_fkey",
+        "n|con|public.lti_resource_links.lti_resource_links_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|fk|public.lti_resource_links.lti_resource_links_installation_id_service_accounts_id_fkey",
+        "n|fk|public.lti_resource_links.lti_resource_links_installation_id_service_accounts_id_fkey",
+        "e|fk|public.lti_resource_links.lti_resource_links_installation_id_service_accounts_id_fkey",
+        "n|con|public.lti_resource_links.lti_resource_links_installation_id_service_accounts_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.installation_id",
+        "n|col|public.service_accounts.id",
+        "e|uniqueness|public.service_accounts.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|fk|public.lti_resource_links.lti_resource_links_created_by_actors_id_fkey",
+        "n|fk|public.lti_resource_links.lti_resource_links_created_by_actors_id_fkey",
+        "e|fk|public.lti_resource_links.lti_resource_links_created_by_actors_id_fkey",
+        "n|con|public.lti_resource_links.lti_resource_links_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|fk|public.lti_resource_links.lti_resource_links_updated_by_actors_id_fkey",
+        "n|fk|public.lti_resource_links.lti_resource_links_updated_by_actors_id_fkey",
+        "e|fk|public.lti_resource_links.lti_resource_links_updated_by_actors_id_fkey",
+        "n|con|public.lti_resource_links.lti_resource_links_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_resource_links"
+      ],
+      "writes": [
+        "s|fk|public.lti_resource_links.lti_resource_links_jzaKxRic30uH_fkey",
+        "n|fk|public.lti_resource_links.lti_resource_links_jzaKxRic30uH_fkey",
+        "e|fk|public.lti_resource_links.lti_resource_links_jzaKxRic30uH_fkey",
+        "n|con|public.lti_resource_links.lti_resource_links_jzaKxRic30uH_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.tenant_id",
+        "n|col|public.lti_resource_links.organization_id",
+        "n|col|public.organizations.tenant_id",
+        "n|col|public.organizations.id",
+        "e|uniqueness|public.organizations.id.tenant_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "oauth_clients"
+      ],
+      "writes": [
+        "s|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "n|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "e|fk|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey",
+        "n|con|public.oauth_clients.oauth_clients_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.oauth_clients.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "tokens"
+      ],
+      "writes": [
+        "s|ck|public.tokens.tokens_subject_check",
+        "n|ck|public.tokens.tokens_subject_check",
+        "e|ck|public.tokens.tokens_subject_check",
+        "n|con|public.tokens.tokens_subject_check"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.email",
+        "n|col|public.tokens.tenant_id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "connections"
+      ],
+      "writes": [
+        "s|ck|public.connections.connections_kind_check",
+        "n|ck|public.connections.connections_kind_check",
+        "e|ck|public.connections.connections_kind_check",
+        "n|con|public.connections.connections_kind_check"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.kind",
+        "n|col|public.connections.federation",
+        "n|col|public.connections.issuer",
+        "n|col|public.connections.client_id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "oauth_clients"
+      ],
+      "writes": [
+        "s|ck|public.oauth_clients.oauth_clients_lti_check",
+        "n|ck|public.oauth_clients.oauth_clients_lti_check",
+        "e|ck|public.oauth_clients.oauth_clients_lti_check",
+        "n|con|public.oauth_clients.oauth_clients_lti_check"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|col|public.oauth_clients.lti_tool_config",
+        "n|col|public.oauth_clients.initiate_login_uri",
+        "n|col|public.oauth_clients.jwks_uri"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "lti_contexts",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "lti_installations",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "lti_resource_links",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "lti_resource_link_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "organization_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "connection_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "context_id",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "label",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "title",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "types",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": "'{}'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "channel_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "issuer",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "client_id",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "service_account_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "released_fields",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "approved_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "approved_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "organization_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "channel_type",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "channel_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "installation_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "title",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "custom",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'{}'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "created_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "jwks_uri",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "initiate_login_uri",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "lti_tool_config",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_connection_id_context_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "connection_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "context_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_channel_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "channel_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "connections_issuer_client_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "issuer",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "client_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_channel_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "channel_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_installation_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "installation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_lti_resource_link_id_lti_resource_links_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "lti_resource_link_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "lti_resource_links",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_connection_id_connections_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "connection_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "connections",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_GWuG77TCefJB_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organizations",
+        "columnsTo": [
+          "tenant_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_service_account_id_service_accounts_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "service_account_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "service_accounts",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_approved_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "approved_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_installation_id_service_accounts_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "installation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "service_accounts",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_jzaKxRic30uH_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organizations",
+        "columnsTo": [
+          "tenant_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "oauth_clients_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "lti_installations_pkey",
+        "columns": [
+          "service_account_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_subject_check",
+        "value": "(\"email\" IS NULL) <> (\"tenant_id\" IS NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "connections_kind_check",
+        "value": "(\"kind\" = 'sso' AND \"federation\" IS NOT NULL) OR (\"kind\" = 'lti' AND \"issuer\" IS NOT NULL AND \"client_id\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "oauth_clients_lti_check",
+        "value": "(\"lti_tool_config\" IS NULL) = (\"initiate_login_uri\" IS NULL) AND (\"lti_tool_config\" IS NULL OR \"jwks_uri\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tokens\",\"email\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"connections\",\"federation\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"connections_tenant_id_kind_idx\"]",
+      "set": {
+        "where": "\"kind\" = 'sso'"
+      }
+    }
+  ]
+}

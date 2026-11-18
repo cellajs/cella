@@ -6,7 +6,16 @@ import { test } from '../../config/config.test.ts';
 import { tunnel } from '../../config/config.tunnel.ts';
 import { resolveDevPortOffset, shiftLocalPort } from './dev-port-offset.ts';
 import { authPath, servicePaths } from './service-paths.ts';
-import type { AppServiceConfig, CompanyConfig, ConfigMode, DeepPartial, FederationConfig, S3Config, WidenScalars } from './types.ts';
+import type {
+  AppServiceConfig,
+  BaseAuthStrategies,
+  CompanyConfig,
+  ConfigMode,
+  DeepPartial,
+  FederationConfig,
+  S3Config,
+  WidenScalars,
+} from './types.ts';
 import { mergeDeep, typedEntries } from './utils.ts';
 
 /** The default config as readers see it: a literal `true` or `1` of the file is its base type here. */
@@ -55,11 +64,26 @@ const mode = rawMode as ConfigMode;
 // MCP takes access tokens only, and the app's authorization server (`services.oauth`) issues them. Checked for every
 // mode, so a combination only production has fails in development and in CI too.
 for (const [name, overrides] of typedEntries(configModes)) {
-  const { mcp, oauth } = mergeDeep(structuredClone(defaultConfig), overrides).services;
+  const { services, enabledAuthStrategies, has } = mergeDeep(structuredClone(defaultConfig), overrides);
+  const { mcp, oauth } = services;
   if (mcp.enabled && !oauth.enabled) {
     throw new Error(
       `Invalid config: services.mcp is enabled in ${name} mode while services.oauth is off. MCP calls carry an access token ` +
         'that only the authorization server issues: enable services.oauth in that mode, or turn services.mcp off.',
+    );
+  }
+  // An LTI platform verifies the app by the key set it registered, and the authorization server's is the only one.
+  if (enabledAuthStrategies.some((strategy: BaseAuthStrategies) => strategy === 'lti') && !oauth.enabled) {
+    throw new Error(
+      `Invalid config: the lti sign-in method is enabled in ${name} mode while services.oauth is off. An LTI platform ` +
+        "checks the app's signatures against the authorization server's key set: enable services.oauth in that mode, or remove lti.",
+    );
+  }
+  // As an LTI platform the app is an issuer: its configuration, registration and launch are the authorization server's.
+  if (has.ltiPlatform && !oauth.enabled) {
+    throw new Error(
+      `Invalid config: has.ltiPlatform is on in ${name} mode while services.oauth is off. The LTI platform's issuer is the ` +
+        'authorization server, which serves its configuration, registration and launch: enable services.oauth in that mode, or turn has.ltiPlatform off.',
     );
   }
 }
@@ -92,6 +116,12 @@ const shiftServicePorts = (frontendBy: number, othersBy: number) => {
   }
 };
 
+/** Moves the localhost origin by `by`, and with it a frame ancestor that names it: the app launching itself in development. */
+const shiftLocalOrigins = (by: number) => {
+  merged.origin = shiftLocalPort(merged.origin, by);
+  merged.ltiFrameAncestors = merged.ltiFrameAncestors.map((ancestor) => shiftLocalPort(ancestor, by));
+};
+
 // A second app runs its stack beside the first. A person switches apps by the frontend port's last digit, and the
 // services keep ten ports each, so the seven of one app never reach the next.
 if (isLocal) {
@@ -99,7 +129,7 @@ if (isLocal) {
   if (!Number.isInteger(index) || index < 0 || index > 9)
     throw new Error(`Invalid config devAppIndex "${index}": must be a whole number from 0 to 9.`);
   shiftServicePorts(index, index * 10);
-  merged.origin = shiftLocalPort(merged.origin, index);
+  shiftLocalOrigins(index);
 }
 
 // A second checkout of the app runs its stack beside the first: the service ports and the localhost origin move
@@ -108,7 +138,7 @@ const devPortOffset = mode === 'development' || mode === 'tunnel' ? resolveDevPo
 const configuredHost = new URL(merged.origin).host;
 if (devPortOffset) {
   shiftServicePorts(devPortOffset, devPortOffset);
-  merged.origin = shiftLocalPort(merged.origin, devPortOffset);
+  shiftLocalOrigins(devPortOffset);
 }
 const shiftedHost = new URL(merged.origin).host;
 

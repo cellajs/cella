@@ -27,6 +27,8 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
       privateCDNUrl: 'https://cella-private.s3.nl-ams.scw.cloud',
     },
     retention: { backupDays: 7 },
+    has: { ltiPlatform: false },
+    ltiFrameAncestors: [],
     ...overrides,
   };
 }

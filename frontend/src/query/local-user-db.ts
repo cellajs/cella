@@ -1,6 +1,7 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie, type EntityTable } from 'dexie';
-import { appConfig, type ProductEntityType, type YjsDocKey, type YjsDocScope } from 'shared';
+import type { ProductEntityType, YjsDocKey, YjsDocScope } from 'shared';
+import { sharedNamePrefix } from '~/lib/embedded-context';
 import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
 
 type DehydratedQuery = DehydratedState['queries'][number];
@@ -80,7 +81,7 @@ export interface UnsaveableYDocRecord extends YjsDocScope {
 }
 
 /** A user's database name; with no id, the prefix every per-user database of this app shares. */
-const dbName = (userId: string) => `${appConfig.slug}:${userId}`;
+const dbName = (userId: string) => `${sharedNamePrefix}:${userId}`;
 
 let currentDb: LocalUserDatabase | null = null;
 let localUserId: string | null = null;

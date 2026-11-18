@@ -4,10 +4,12 @@ import { zStreamChange, zStreamError, zStreamSignal } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
 import { streamPingMs } from 'shared/sync-pace';
+import { embeddedSessionParam } from 'shared/utils/embedded-session';
 import type { z } from 'zod';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
+import { isEmbedded } from '~/lib/embedded-context';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
@@ -31,7 +33,8 @@ import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 import { settleWithin } from '~/utils/wait-for';
 
 const streamName = 'Stream';
-const streamUrl = `${appConfig.backendUrl}/me/stream`;
+/** An EventSource sets no header: an embedded page asks for its session by the query marker. */
+const streamUrl = `${appConfig.backendUrl}/me/stream${isEmbedded ? `?${embeddedSessionParam}=1` : ''}`;
 const maxFailures = 3;
 const circuitCooldownMs = 60_000;
 const initialBackoffMs = 5_000;

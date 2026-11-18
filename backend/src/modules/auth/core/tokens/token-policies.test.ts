@@ -32,8 +32,8 @@ describe('token policies', () => {
 
     for (const kind of appConfig.tokenKinds) {
       const policy: TokenPolicy = tokenPolicies[kind];
-      // A code travels in a mail only: no cookie carries it.
-      if (policy.carrier === 'code') continue;
+      // A code travels in a mail only and a handoff in a URL: no cookie carries either.
+      if (policy.carrier === 'code' || policy.carrier === 'handoff') continue;
       const response = await app.request(`/${kind}`);
       const expected = policy.sameSite === 'lax' ? 'SameSite=Lax' : 'SameSite=Strict';
       expect(setCookieOf(response, kind).line, kind).toContain(expected);

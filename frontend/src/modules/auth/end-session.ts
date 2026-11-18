@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import { safeRedirectPath } from 'shared/utils/safe-redirect-path';
 import { ApiError } from '~/lib/api';
 import { boundaryOf } from '~/lib/boundary';
+import { isEmbedded } from '~/lib/embedded-context';
 import { settleOrReport } from '~/lib/tracing';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import type { MeUser } from '~/modules/me/types';
@@ -28,8 +29,8 @@ interface Ending {
   load: string | null;
 }
 
-/** Whether the page on screen needs an account. */
-const onAppPage = () => boundaryOf(getRouter().state.matches.map((match) => match.staticData)) === 'app';
+/** Whether the page on screen needs an account and may leave for one. An embedded page loads again in its frame, which tells how to sign in there. */
+const onAppPage = () => !isEmbedded && boundaryOf(getRouter().state.matches.map((match) => match.staticData)) === 'app';
 
 const endings: Record<SessionEnd, (user: MeUser | null, redirect?: string) => Ending> = {
   'sign-out': (_user, redirect) => ({ forget: 'both', deleteDatabase: true, load: safeRedirectPath(redirect) ?? appConfig.aboutUrl }),

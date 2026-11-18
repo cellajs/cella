@@ -27,7 +27,12 @@ export function clientKindOf(client: object): AppClientMetadata['client_kind'] |
 
 /** Read at every lookup, so a disabled account or a changed redirect URI counts at once in every process. */
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {
-  const [app] = await baseDb.select().from(oauthClientsTable).where(eq(oauthClientsTable.id, id)).limit(1);
+  // An LTI tool's registration holds no secret: read here, it would pass as a public client with a code flow.
+  const [app] = await baseDb
+    .select()
+    .from(oauthClientsTable)
+    .where(and(eq(oauthClientsTable.id, id), isNull(oauthClientsTable.ltiToolConfig)))
+    .limit(1);
   if (app) {
     return {
       client_id: app.id,

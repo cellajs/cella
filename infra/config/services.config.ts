@@ -139,7 +139,7 @@ export const appServices = defineServices({
     // singleVM runs the Caddy container on the host machine, since a non-Node runtime cannot fold in-process; its LB pool follows the host's switch.
     placement: 'host',
     instanceType: 'DEV1-S',
-    env: { FRONTEND_CSP: '${FRONTEND_CSP}', ORIGIN_HOST: '${ORIGIN_HOST}' },
+    env: { FRONTEND_CSP: '${FRONTEND_CSP}', FRONTEND_EMBED_CSP: '${FRONTEND_EMBED_CSP}', ORIGIN_HOST: '${ORIGIN_HOST}' },
   },
 });
 

@@ -5,11 +5,13 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { compressResponse } from '#/middlewares/compress';
 import { loggerMiddleware } from '#/middlewares/logger';
+import { asksForEmbeddedSession } from '#/modules/auth/core';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
@@ -18,6 +20,13 @@ export const app = new OpenAPIHono<Env>();
 
 // Ambient log context in AsyncLocalStorage, first in the chain so every downstream log carries request ids
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
+
+// A page that names its own `frame-ancestors` (an LTI platform frames it) sends no X-Frame-Options, which would refuse
+// the frame in a browser that reads it alone. Mounted ahead of secureHeaders, so it runs after the header is set.
+app.use('*', async (ctx, next) => {
+  await next();
+  if (ctx.res.headers.get('Content-Security-Policy')?.includes('frame-ancestors')) ctx.res.headers.delete('X-Frame-Options');
+});
 
 app.use(
   '*',
@@ -48,15 +57,27 @@ app.use('*', (ctx, next) => {
 
 app.use('*', loggerMiddleware);
 
+// A request on the embedded session changes state only when the browser marks it same-origin. Another frame on the
+// platform's page holds the same partitioned cookie, and the browser marks its requests cross-site.
+const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+app.use('*', async (ctx, next) => {
+  const crossSiteWrite = !safeMethods.has(ctx.req.method) && ctx.req.header('Sec-Fetch-Site') !== 'same-origin';
+  if (crossSiteWrite && asksForEmbeddedSession(ctx)) throw new AppError(403, 'embedded_session_cross_site', 'warn');
+  await next();
+});
+
 // No CORS middleware: the API is same-origin under /api, so other origins get no grant and the browser blocks them.
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
 // request that carries an API key (the service guard rejects browser origins itself) or an access token skips it: a
 // page on another origin cannot add either header without that grant. So does a mail provider's one-click unsubscribe
-// (RFC 8058): a form post with no Origin, authorized by the token in its URL alone.
+// (RFC 8058): a form post with no Origin, authorized by the token in its URL alone. So do an LTI platform's login
+// initiation and launch, cross-site form posts by design: a one-use nonce and the state in platform storage hold them.
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
 const isOneClickUnsubscribe = (ctx: Context<Env>) => ctx.req.method === 'POST' && ctx.req.path.endsWith('/notifications/unsubscribe');
+const ltiProtocolPosts = new Set(['/auth/lti/login', '/auth/lti/launch']);
+const isLtiProtocolPost = (ctx: Context<Env>) => ctx.req.method === 'POST' && ltiProtocolPosts.has(ctx.req.path);
 const carriesMachineProof = (ctx: Context<Env>) => hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) !== null;
-app.use('*', (ctx, next) => (carriesMachineProof(ctx) || isOneClickUnsubscribe(ctx) ? next() : csrfMiddleware(ctx, next)));
+app.use('*', (ctx, next) => (carriesMachineProof(ctx) || isOneClickUnsubscribe(ctx) || isLtiProtocolPost(ctx) ? next() : csrfMiddleware(ctx, next)));
 
 app.use('*', clientVersionMiddleware);
 

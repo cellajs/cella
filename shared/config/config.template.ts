@@ -1,4 +1,5 @@
 import type {
+  BaseAuthStrategies,
   FederationConfig,
   MatrixConfig,
   NavigationConfig,
@@ -228,6 +229,7 @@ export const config = {
     uploads: false,
     chatSupport: false,
     demos: false,
+    ltiPlatform: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
@@ -245,8 +247,14 @@ export const config = {
   // Authentication
 
   /** No `sso` until the app declares a federation. */
-  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as readonly BaseAuthStrategies[],
   enabledOAuthProviders: ['github'] as const,
+  /**
+   * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while
+   * `enabledAuthStrategies` names `lti`: the frontend's CSP for those documents lists them in `frame-ancestors`. Empty
+   * lets no page frame them.
+   */
+  ltiFrameAncestors: [] as string[],
   /**
    * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities provider
    * slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is
@@ -255,7 +263,18 @@ export const config = {
    * a worked example.
    */
   federations: {} as Record<string, FederationConfig>,
-  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
+  tokenKinds: [
+    'oauth-verification',
+    'invitation',
+    'confirm-mfa',
+    'magic',
+    'oauth-connect',
+    'step-up',
+    'lti-registration',
+    'lti-tool-registration',
+    'lti-launch',
+    'lti-nonce',
+  ] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

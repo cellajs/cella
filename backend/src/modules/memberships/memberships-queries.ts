@@ -3,7 +3,9 @@ import { and, count, eq, exists, inArray, lte, or, type SQL, sql } from 'drizzle
 import { alias } from 'drizzle-orm/pg-core';
 import type { Access, ChannelEntityType, EntityRole } from 'shared';
 import type { ActorBinding, DbContext, OrgContext } from '#/core/context';
+import type { UserId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -105,6 +107,14 @@ export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userI
     .select(membershipBaseSelect)
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
+
+/** Sets a membership's role, written by `by`; for a server flow that already read the row, outside any organization scope. */
+export const updateMembershipRole = async (ctx: DbContext, { id, role, by }: { id: string; role: EntityRole; by: UserId }) => {
+  await ctx.var.db
+    .update(membershipsTable)
+    .set({ role, ...updateStamps(by) })
+    .where(eq(membershipsTable.id, id));
+};
 
 /** Deletes memberships by id, only those of the request's organization; an organization membership takes its user's memberships below it along. */
 export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: { ids: string[] }) => {

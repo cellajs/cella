@@ -65,7 +65,7 @@ export const channelRelationIndexes = (tableName: string, table: Record<string, 
 type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
 
 /**
- * Sub-organization channel columns shared by the membership tables, from hierarchy config: one
+ * Sub-organization channel columns shared by the membership tables and LTI resource links, from hierarchy config: one
  * nullable `<channel>Id` per sub-organization channel type, cascade-deleting with its channel row.
  * Fresh builders per call, so the two membership tables never share instances; empty for an
  * organization-only hierarchy.

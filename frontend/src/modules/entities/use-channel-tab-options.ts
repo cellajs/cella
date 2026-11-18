@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import type { ActorRef } from 'sdk';
 import type { EntityActionType, EntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import type { PlacementGrant, ResolvePlacementOptions } from '~/lib/placements';
+import { getChannelTabSources, type PlacementGrant } from '~/lib/placements';
+import type { NavTabOptions } from '~/modules/common/page/tab-nav';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { type CanRow, canAccess, currentAccess, useCan } from '~/modules/entities/use-can';
@@ -29,14 +30,34 @@ export async function loadChannelTabGrants(channel: CanRow): Promise<PlacementGr
 /** A channel as its tabs gate on it; a list row may come without its writer or its stored arrangement. */
 type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?: ToolsConfig };
 
-/** What a channel's page tabs resolve with, on its page bar and in the menu alike: the update grant, the context roles held over it, its stored arrangement. */
-export function useChannelTabOptions(channel: TabsChannel): ResolvePlacementOptions {
+/**
+ * The tabs every registered source adds to a channel, each with its source, in source order; `isPending` while one
+ * loads, and `failed`, the first source's query that errored.
+ */
+export function useChannelDataTabs(channel: EnrichedChannel) {
+  return useQueries({
+    queries: getChannelTabSources().map((source) => source.query(channel)),
+    combine: (results) => ({
+      tabs: results.flatMap((result, index) => (result.data?.results ?? []).map((tab) => ({ tab, source: getChannelTabSources()[index] }))),
+      isPending: results.some((result) => result.isPending),
+      failed: results.find((result) => result.isError),
+    }),
+  });
+}
+
+/**
+ * What a channel's page tabs resolve with, on its page bar and in the menu alike: its grants, the context roles held over
+ * it, its stored arrangement and the tabs data adds.
+ */
+export function useChannelTabOptions(channel: TabsChannel): NavTabOptions {
   const can = useCan({ ignoreArchive: true });
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const { tabs } = useChannelDataTabs(channel);
 
   return {
     grants: channelTabGrants(can, channel),
     pairs: heldContextRoles(channel, myMemberships?.results ?? []),
     slotConfig: channel.toolsConfig?.[`${channel.entityType}.tabs`],
+    dataTabs: tabs.map(({ tab }) => tab),
   };
 }

@@ -1,15 +1,33 @@
-import { and, arrayOverlaps, eq, inArray, ne } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
+import type { UserId } from '#/db/utils/ids';
+import { updateStamps } from '#/db/utils/stamps';
+import {
+  type ConnectionKind,
+  type ConnectionModel,
+  connectionsTable,
+  type InsertConnectionModel,
+  isLtiConnection,
+} from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { pick } from '#/utils/pick';
 
+interface FindConnectionsByTenantOpts {
+  tenantId: string;
+  /** Narrows to one kind; every kind when left out. */
+  kind?: ConnectionKind;
+}
+
 /** The tenant's connections, oldest first. */
-export const findConnectionsByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) =>
-  ctx.var.db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, tenantId)).orderBy(connectionsTable.createdAt);
+export const findConnectionsByTenant = async (ctx: DbContext, { tenantId, kind }: FindConnectionsByTenantOpts) =>
+  ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.tenantId, tenantId), kind ? eq(connectionsTable.kind, kind) : undefined))
+    .orderBy(connectionsTable.createdAt);
 
 interface FindConnectionByIdOpts {
   id: string;
@@ -82,7 +100,7 @@ export const findConnectionsClaiming = async (ctx: DbContext, { federation, clai
       ),
     );
 
-/** Inserts a connection; the unique tenant-and-kind index refuses a second SSO connection of a tenant. */
+/** Inserts a connection; the unique indexes refuse a second SSO connection of a tenant and a second LTI registration of one client. */
 export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ConnectionModel> => {
   const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning();
   return row;
@@ -178,4 +196,48 @@ export const findAddressGovernance = async (ctx: DbContext, { email }: { email: 
     .where(eq(emailsTable.email, email))
     .limit(1);
   return row;
+};
+
+interface FindActiveLtiConnectionsOpts {
+  issuer: string;
+  /** Narrows to the connections of these client ids; every connection of the issuer when left out. */
+  clientIds?: string[];
+}
+
+/** The active LTI connections of a platform's issuer, whichever tenant holds them: what a launch is checked against. */
+export const findActiveLtiConnections = async (ctx: DbContext, { issuer, clientIds }: FindActiveLtiConnectionsOpts) => {
+  const rows = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(
+      and(
+        eq(connectionsTable.kind, 'lti'),
+        eq(connectionsTable.status, 'active'),
+        eq(connectionsTable.issuer, issuer),
+        clientIds === undefined ? undefined : inArray(connectionsTable.clientId, clientIds),
+      ),
+    )
+    .limit(2);
+  return rows.filter(isLtiConnection);
+};
+
+/**
+ * Records the LTI deployment of a connection whose platform named none at registration. Of two concurrent first
+ * launches the first to write decides: the other's update waits for that commit and then matches no row.
+ * @returns Whether the connection holds `deploymentId` afterwards: false when another launch recorded a different one.
+ */
+export const recordFirstLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
+  const deploymentIds = sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb)`;
+  const recorded = await ctx.var.db
+    .update(connectionsTable)
+    .set({ config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', jsonb_build_array(${deploymentId}::text))`, ...updateStamps(by) })
+    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} = '[]'::jsonb`))
+    .returning({ id: connectionsTable.id });
+  if (recorded.length) return true;
+
+  const holding = await ctx.var.db
+    .select({ id: connectionsTable.id })
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} @> jsonb_build_array(${deploymentId}::text)`));
+  return holding.length > 0;
 };

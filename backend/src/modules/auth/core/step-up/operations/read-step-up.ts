@@ -33,6 +33,8 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
   });
   if (!row) return { steppedUp: false, methods: [], factor: null, proof: null, provenAt: null };
 
+  // An LTI launch is the platform's word, no proof of presence here: an embedded session steps up with nothing.
+  const signedInRecently = row.signedInRecently && session.authStrategy !== 'lti';
   const canEnroll = factorMethods.some((method) => isStrategyEnabled(method));
   const effectiveTier = tier === 'factor' && !canEnroll ? 'account' : tier;
 
@@ -50,13 +52,13 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
         provenAt: steppedUp ? row.steppedUpAt : null,
       };
     }
-    const provenAt = row.stampedVia ? row.steppedUpAt : row.signedInRecently ? row.createdAt : null;
+    const provenAt = row.stampedVia ? row.steppedUpAt : signedInRecently ? row.createdAt : null;
     return { steppedUp: provenAt !== null, methods: row.hasProvenEmail ? ['email'] : [], factor: null, proof: row.stampedVia, provenAt };
   }
 
   // Only a factor the user holds counts: an emailed code stands in for one only while setting up a new factor.
   const stampedWith = factors.find((method) => method === row.stampedVia);
-  const signedInWith = row.signedInRecently ? factors.find((method) => method === session.authStrategy) : undefined;
+  const signedInWith = signedInRecently ? factors.find((method) => method === session.authStrategy) : undefined;
   const factor = stampedWith ?? signedInWith ?? null;
 
   // With MFA off the mailbox signs the account in, so it may also replace a lost factor without weakening anything.

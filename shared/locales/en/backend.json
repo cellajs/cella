@@ -123,5 +123,7 @@
   "email.tenant_removed.title": "{{appName}} removed the tenant {{name}}",
   "email.unsubscribe": "Unsubscribe",
   "email.waitlist_request.text": "Thanks for joining the waitlist for {{appName}}. We'll notify you as soon as it's your turn.",
-  "email.waitlist_request.title": "You're on the waitlist!"
+  "email.waitlist_request.title": "You're on the waitlist!",
+  "lti.registered": "{{appName}} is registered with this platform. You can close this window.",
+  "lti.storage_unanswered": "The platform did not answer for this launch. Open the link in the course again."
 }

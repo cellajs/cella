@@ -179,6 +179,34 @@ export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFe
   description: 'Fetches for each IP address.',
 });
 
+/** LTI tool registrations per IP at the issuer: each one presents a registration token, and a tool registers once. */
+export const ltiToolRegistrationLimiter = rateLimiter('limit', 'ltiToolRegistration', ['ip'], {
+  limits: { points: 20, duration: 60 * 60 },
+  name: 'LTI tool registrations',
+  description: 'Registration requests for each IP address, refused or not.',
+});
+
+/**
+ * LTI logins per IP: each one stores a one-use nonce. The ceiling sits well above a course: a class behind one school
+ * address launches at once.
+ */
+export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
+  limits: { points: 600, duration: 60 },
+  name: 'LTI logins',
+  description: 'Login initiations for each IP address, refused or not.',
+});
+
+/**
+ * LTI launch steps per IP, two per launch in either role: as LTI tool a launch post and its finish, which checks a
+ * signature and may fetch the platform's key set; as platform the login initiation page and the launch endpoint, which
+ * spends a launch record and signs an ID token.
+ */
+export const ltiLaunchLimiter = rateLimiter('limit', 'ltiLaunch', ['ip'], {
+  limits: { points: 600, duration: 60 },
+  name: 'LTI launches',
+  description: 'Launch steps for each IP address, refused or not.',
+});
+
 /**
  * Per-second ceiling for API keys and access tokens, run by `serviceGuard` for every machine caller: a runaway
  * integration hits this long before the hourly points budget.

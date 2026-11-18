@@ -26,6 +26,7 @@ const prefix = secure ? ('host' as const) : undefined;
 export type CookieName =
   | TokenKind
   | 'session'
+  | 'embedded-session'
   | 'session-step-up'
   | 'device-id'
   | 'totp-challenge'
@@ -44,7 +45,7 @@ const laxCookies = new Set<CookieName>(['oauth-state', 'device-id', 'magic-reque
 const isLaxCookie = (name: CookieName) => {
   if (!isTokenKind(name)) return laxCookies.has(name);
   const policy: TokenPolicy = tokenPolicies[name];
-  return policy.carrier !== 'code' && policy.sameSite === 'lax';
+  return (policy.carrier === 'link' || policy.carrier === 'cookie') && policy.sameSite === 'lax';
 };
 
 const versionedCookieName = (name: CookieName) => `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
@@ -83,18 +84,21 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
   return macMatches ? content : undefined;
 };
 
-/** Sets a signed auth cookie; SameSite per `isLaxCookie`. */
+/**
+ * The attributes a cookie is set and deleted with. The embedded session lives in another site's frame. SameSite None
+ * lets the frame send it; Partitioned (CHIPS) keeps it per top-level site, only where a launch set it. Both need
+ * Secure, which a browser also grants plain `http://localhost` in development.
+ */
+const cookieAttributes = (name: CookieName) => {
+  if (name === 'embedded-session') return { secure: true, sameSite: 'none', partitioned: true } as const;
+  return { secure, sameSite: isLaxCookie(name) ? 'lax' : 'strict' } as const;
+};
+
+/** Sets a signed auth cookie, with the attributes `cookieAttributes` gives its name. */
 export const setAuthCookie = (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   // A lifetime measured from a stored expiry has milliseconds; the cookie and its seal both take whole seconds.
   const maxAge = Math.floor(timeSpan.seconds());
-  const options = {
-    secure,
-    path: '/',
-    prefix,
-    httpOnly: true,
-    sameSite: isLaxCookie(name) ? 'lax' : 'strict',
-    maxAge,
-  } satisfies CookieOptions;
+  const options = { path: '/', prefix, httpOnly: true, maxAge, ...cookieAttributes(name) } satisfies CookieOptions;
   setCookie(ctx, versionedCookieName(name), sealAuthCookie(name, content, maxAge), options);
 };
 
@@ -105,4 +109,5 @@ export const getAuthCookie = (ctx: Context, name: CookieName) => {
 };
 
 /** Deletes an auth cookie: the attributes must mirror the set ones (prefix implies Path=/, Secure, no Domain), or the browser keeps it. */
-export const deleteAuthCookie = (ctx: Context, name: CookieName) => deleteCookie(ctx, versionedCookieName(name), { path: '/', secure, prefix });
+export const deleteAuthCookie = (ctx: Context, name: CookieName) =>
+  deleteCookie(ctx, versionedCookieName(name), { path: '/', prefix, ...cookieAttributes(name) });

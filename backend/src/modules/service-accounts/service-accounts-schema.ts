@@ -84,7 +84,10 @@ export const createServiceAccountBodySchema = z.object({
   key: apiKeyInputSchema.optional(),
 });
 
-export const updateServiceAccountBodySchema = z.object({ name: validNameSchema.optional(), status: z.enum(serviceAccountStatuses).optional() });
+export const updateServiceAccountBodySchema = z.object({
+  name: validNameSchema.optional(),
+  status: z.enum(serviceAccountStatuses).exclude(['pending']).optional(),
+});
 
 export const createServiceAccountResponseSchema = z.object({ serviceAccount: serviceAccountSchema, apiKey: createdApiKeySchema.optional() });
 

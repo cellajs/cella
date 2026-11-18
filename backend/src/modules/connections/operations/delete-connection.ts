@@ -1,16 +1,26 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { deleteConnection } from '#/modules/connections/connections-queries';
+import { revokeConnectionSessions } from '#/modules/auth/core';
+import type { ConnectionKind } from '#/modules/connections/connections-db';
+import { deleteConnection, findConnectionById } from '#/modules/connections/connections-queries';
 import { log } from '#/utils/logger';
 
 /**
- * Removes a tenant's connection. Identities and sessions that came through it keep their rows with the reference
- * cleared; the members stay members.
- * @throws AppError 404 `not_found`.
+ * Removes a tenant's connection and ends every session that came through it, in one transaction. Identities that came
+ * through it keep their rows with the reference cleared; the members stay members.
+ * @throws AppError 404 `not_found`, also for a connection of another kind than `kind`.
  */
-export async function deleteConnectionOp(ctx: UserContext, id: string) {
-  const deleted = await deleteConnection(ctx, { id, tenantId: ctx.var.tenantId });
-  if (!deleted) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
+export async function deleteConnectionOp(ctx: UserContext, { id, kind }: { id: string; kind?: ConnectionKind }) {
+  const { tenantId } = ctx.var;
+  await ctx.var.db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const connection = await findConnectionById(txCtx, { id, tenantId });
+    if (!connection || (kind && connection.kind !== kind)) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
 
-  log.info('Connection deleted', { connectionId: id, tenantId: ctx.var.tenantId });
+    // Before the delete, which clears the sessions' `connectionId`.
+    await revokeConnectionSessions(txCtx, { connectionId: id, by: ctx.var.user.id });
+    await deleteConnection(txCtx, { id, tenantId });
+  });
+
+  log.info('Connection deleted', { connectionId: id, tenantId });
 }

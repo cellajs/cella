@@ -13,6 +13,7 @@ interface InsertAnonymousUserOpts {
   name: string;
   slug: string;
   givenName?: string;
+  familyName?: string;
   userFlags?: Partial<UserFlags>;
 }
 
@@ -21,9 +22,9 @@ interface InsertAnonymousUserOpts {
  * in but the anonymous session minted for it ({@link startAnonymousSession}), it binds no invitation, and the API serves
  * it with `email: null` and `isAnonymous`. It goes with the last tenant that held it, or with the orphan sweep.
  */
-export const insertAnonymousUser = async (ctx: DbContext, { id, name, slug, givenName, userFlags }: InsertAnonymousUserOpts) => {
+export const insertAnonymousUser = async (ctx: DbContext, { id, name, slug, givenName, familyName, userFlags }: InsertAnonymousUserOpts) => {
   const [user] = await insertUsers(ctx, {
-    users: [{ id, name, givenName, slug, email: `${id}@${anonymousAddressDomain}`, userFlags }],
+    users: [{ id, name, givenName, familyName, slug, email: `${id}@${anonymousAddressDomain}`, userFlags }],
   });
   return user;
 };

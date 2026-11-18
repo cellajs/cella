@@ -61,6 +61,18 @@ export async function installApp(org: OrgPath, adminCookie: string, clientId: st
   return installationId;
 }
 
+/** A page's text with the HTML escapes of its attribute values undone. */
+export const decodeHtml = (value: string) =>
+  value.replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
+
+/** The hidden fields and the address of an auto-posting page. */
+export const parseForm = (page: string) => {
+  const fields = Object.fromEntries(
+    [...page.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)].map(([, name, value]) => [name, decodeHtml(value)]),
+  );
+  return { action: decodeHtml(/<form method="post" action="([^"]*)"/.exec(page)?.[1] ?? ''), fields };
+};
+
 export interface TestOauthServer {
   provider: Provider;
   /** `http://127.0.0.1:<port>/oauth`: the mounted prefix, as the reverse proxy would present it. */

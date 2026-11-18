@@ -21,7 +21,7 @@ export type DeepPartial<T> = T extends object
   : WidenScalars<T>;
 
 export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | 'test';
-export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
+export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso' | 'lti';
 
 /**
  * An identity federation institutions sign in through (the `sso` method): public metadata only. The key it sits
@@ -93,6 +93,8 @@ export interface HasFlagsConfig {
   chatSupport: boolean;
   /** Visitors can take a demo (`createDemo`): a throwaway account with a `demo` tenant, signed in by a `demo` session. */
   demos: boolean;
+  /** The app as an LTI platform: organization admins install LTI tools that register by Dynamic Registration. Needs `services.oauth`. */
+  ltiPlatform: boolean;
 }
 
 /**
@@ -417,6 +419,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
+  ltiFrameAncestors: string[];
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;

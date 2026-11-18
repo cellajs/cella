@@ -1,4 +1,5 @@
 import type {
+  BaseAuthStrategies,
   FederationConfig,
   MatrixConfig,
   NavigationConfig,
@@ -234,6 +235,7 @@ export const config = {
     uploads: true,
     chatSupport: false,
     demos: false,
+    ltiPlatform: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
@@ -246,12 +248,19 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 50,
+  clientCacheVersion: 51,
 
   // Authentication
 
-  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as const,
+  // Typed as a list: a mode may name a method the default leaves off, as development names `lti`.
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as readonly BaseAuthStrategies[],
   enabledOAuthProviders: ['github'] as const,
+  /**
+   * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while
+   * `enabledAuthStrategies` names `lti`: the frontend's CSP for those documents lists them in `frame-ancestors`. Empty
+   * lets no page frame them.
+   */
+  ltiFrameAncestors: [] as string[],
   /**
    * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities
    * provider slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a
@@ -273,7 +282,18 @@ export const config = {
       mfaAcr: ['https://refeds.org/profile/mfa'],
     },
   } satisfies Record<string, FederationConfig>,
-  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
+  tokenKinds: [
+    'oauth-verification',
+    'invitation',
+    'confirm-mfa',
+    'magic',
+    'oauth-connect',
+    'step-up',
+    'lti-registration',
+    'lti-tool-registration',
+    'lti-launch',
+    'lti-nonce',
+  ] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

@@ -9,7 +9,7 @@ import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-devi
 import { type NewDevice, notifySignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
 import { setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
-import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { findSession, type SessionCookieName } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import type { SessionKind } from '#/modules/auth/core/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/core/sessions/sessions-queries';
@@ -132,32 +132,53 @@ export const createSession = async (
   return { sessionId, sessionToken, stepUpCookie: stepUp?.raw, timeSpan, newDevice };
 };
 
+interface StartSessionOpts {
+  strategy: AuthStrategy;
+  kind: SessionKind;
+  extras: SessionExtras;
+  cookie: SessionCookieName;
+}
+
 /**
- * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session the
- * request presents ends, another account's too; a provider callback arrives cross-site without the Strict cookie.
+ * Stores a session, sets it in `cookie` and sends the sign-in notices. The session the request presents in that
+ * cookie ends, another account's too; the other session cookie stays as it is.
  */
-export const setUserSession = async (
-  ctx: Context<Env>,
-  user: UserModel,
-  strategy: AuthStrategy,
-  kind: SessionKind = 'regular',
-  extras: SessionExtras = {},
-): Promise<void> => {
+const startSession = async (ctx: Context<Env>, user: UserModel, { strategy, kind, extras, cookie }: StartSessionOpts) => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));
 
   if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
   const context = await collectSignInContext(ctx);
-  const presented = await findSession(ctx);
+  const presented = await findSession(ctx, cookie);
   const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, kind, extras);
   if (presented) {
     await revokeSessions(dbCtx, { userId: presented.session.userId, sessionIds: [presented.session.id], reason: 'replaced', by: null });
   }
 
-  setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+  setAuthCookie(ctx, cookie, sessionToken, timeSpan);
   if (stepUpCookie) setAuthCookie(ctx, 'session-step-up', stepUpCookie, stepUpWindow);
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
 
   log.info('User signed in', { strategy });
 };
+
+/**
+ * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session the
+ * request presents ends, another account's too; a provider callback arrives cross-site without the Strict cookie.
+ */
+export const setUserSession = (
+  ctx: Context<Env>,
+  user: UserModel,
+  strategy: AuthStrategy,
+  kind: SessionKind = 'regular',
+  extras: SessionExtras = {},
+) => startSession(ctx, user, { strategy, kind, extras, cookie: 'session' });
+
+/**
+ * Signs the user in on the embedded session of this frame after an LTI launch, with the connection recorded. It starts
+ * stepped up for nothing and no MFA challenge: the launch is the proof, and a request reads the session only when it
+ * asks for it (`sessionCookieOf`).
+ */
+export const setEmbeddedSession = (ctx: Context<Env>, user: UserModel, { connectionId }: { connectionId: string }) =>
+  startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId }, cookie: 'embedded-session' });

@@ -18,8 +18,9 @@ export type SessionKind = (typeof sessionKinds)[number];
 
 /**
  * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`
- * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. A system
- * administrator's act: `admin_revoke`, for a person locked out or compromised. The server's housekeeping during a
+ * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. An
+ * administrator's act: `admin_revoke`, by a system administrator for a person locked out or compromised, or by an
+ * organization admin deleting the LTI connection a session came through. The server's housekeeping during a
  * sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same browser: a sign-in, or
  * the mfa session that enabling MFA mints.
  */
@@ -49,7 +50,7 @@ export const sessionsTable = snakeCase.table(
     browser: varchar({ length: maxLength.field }),
     /** The method that started the sign-in. A second factor never replaces it: an MFA completion stamps `steppedUpVia`. */
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
-    /** The connection (an institution's trust) an SSO sign-in came through; null for every other method. */
+    /** The connection (an institution's trust) an SSO sign-in or an LTI launch came through; null for every other method. */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),

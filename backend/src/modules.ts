@@ -9,6 +9,7 @@ import '#/modules/attachment/attachment-module';
 import '#/modules/auth/auth-module';
 import '#/modules/entities/entities-module';
 import '#/modules/links/links-module';
+import '#/modules/lti-platform/lti-platform-module';
 import '#/modules/mcp/mcp-module';
 import '#/modules/me/me-module';
 import '#/modules/oauth-server/oauth-server-module';

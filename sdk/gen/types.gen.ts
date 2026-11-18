@@ -304,7 +304,7 @@ export type MeAuthData = {
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;
     browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext';
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
@@ -473,6 +473,133 @@ export type StreamSignal = {
 export type StreamError = {
   code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
   message: string;
+};
+
+/**
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.
+ */
+export type LtiInstallation = {
+  /**
+   * The installation: its service account, and the `deployment_id` the LTI tool knows it by
+   */
+  id: string;
+  /**
+   * The `client_id` of the LTI tool's registration
+   */
+  clientId: string;
+  name: string;
+  logoUri: string | null;
+  /**
+   * The domain the LTI tool names itself by: a label it picks
+   */
+  domain: string;
+  /**
+   * The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts
+   */
+  launchOrigins: Array<string>;
+  description: string | null;
+  /**
+   * The claims the LTI tool asked for that the platform can release
+   */
+  claims: Array<string>;
+  /**
+   * The personal fields those claims carry: what an approval may release
+   */
+  requestedFields: Array<'name' | 'email' | 'picture'>;
+  releasedFields: Array<'name' | 'email' | 'picture'>;
+  /**
+   * `pending` until an admin approves or rejects it
+   */
+  status: 'pending' | 'active' | 'disabled';
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+};
+
+/**
+ * An LTI tool placed in a channel: a tab that launches the LTI tool in a frame. Its id is the LTI resource link id. It goes with its channel and its installation.
+ */
+export type LtiResourceLink = {
+  /**
+   * The resource link, and the `resource_link.id` its launches carry
+   */
+  id: string;
+  channelType: 'organization';
+  channelId: string;
+  /**
+   * The LTI installation it launches
+   */
+  installationId: string;
+  title: string;
+  custom: {
+    [key: string]: string;
+  };
+  createdAt: string;
+  updatedAt: string | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
 };
 
 /**
@@ -725,7 +852,7 @@ export type ServiceAccount = {
   id: string;
   tenantId: string;
   name: string;
-  status: 'active' | 'disabled';
+  status: 'pending' | 'active' | 'disabled';
   bindings: Array<{
     channelType: 'organization';
     channelId: string;
@@ -845,7 +972,7 @@ export type Tenant = {
      */
     allowUnregisteredClients: boolean;
   };
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext'>;
   createdAt: string;
   createdBy:
     | {
@@ -893,27 +1020,64 @@ export type Tenant = {
 };
 
 /**
- * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization (`sso`), or an LTI platform the app registered at, which launches it (`lti`). An SSO connection's id is the public key of the tenant's SSO entry page. System admins manage SSO connections per tenant, `pending` until the institution activated the service at the federation; organization admins register LTI connections.
  */
 export type Connection = {
   id: string;
   tenantId: string;
-  kind: 'sso';
-  federation: string;
+  kind: 'sso' | 'lti';
+  federation: string | null;
+  issuer: string | null;
+  clientId: string | null;
   claimValues: Array<string>;
   name: string;
   status: 'pending' | 'active' | 'disabled';
   jitProvisioning: boolean;
-  config: {
-    /**
-     * The institution's IdP entity ids, passed as login_hint
-     */
-    idpEntityIds?: Array<string>;
-    /**
-     * The institution's logo, for the entry page
-     */
-    logoUrl?: string;
-  };
+  config:
+    | {
+        /**
+         * The platform's OIDC authorization endpoint, where a launch's login goes
+         */
+        authorizationEndpoint: string;
+        /**
+         * The platform's token endpoint, for its services
+         */
+        tokenEndpoint: string;
+        /**
+         * The audience of a token request at the platform, when it names one apart from its token endpoint
+         */
+        authorizationServer?: string;
+        /**
+         * The platform's key set, which signs its launches
+         */
+        jwksUri: string;
+        /**
+         * The platform's address of this registration, when it gave one
+         */
+        registrationClientUri?: string;
+        /**
+         * The platform's product, such as `canvas` or `moodle`
+         */
+        productFamilyCode: string;
+        /**
+         * The platform's version
+         */
+        version: string;
+        /**
+         * The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either
+         */
+        deploymentIds: Array<string>;
+      }
+    | {
+        /**
+         * The institution's IdP entity ids, passed as login_hint
+         */
+        idpEntityIds?: Array<string>;
+        /**
+         * The institution's logo, for the entry page
+         */
+        logoUrl?: string;
+      };
   createdAt: string;
   createdBy:
     | {
@@ -2198,7 +2362,7 @@ export type RevokeMySessionsResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext';
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
@@ -3320,6 +3484,319 @@ export type SendSsoRecoveryLinkResponses = {
 
 export type SendSsoRecoveryLinkResponse = SendSsoRecoveryLinkResponses[keyof SendSsoRecoveryLinkResponses];
 
+export type RegisterLtiPlatformData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * The one-use registration link an organization admin created
+     */
+    link: string;
+    /**
+     * The address of the platform's OpenID configuration
+     */
+    openid_configuration: string;
+    /**
+     * The platform's token for the registration request
+     */
+    registration_token?: string;
+  };
+  url: '/auth/lti/register';
+};
+
+export type RegisterLtiPlatformErrors = {
+  /**
+   * Registration refused
+   *
+   * The same page, naming why the platform or its configuration was refused.
+   */
+  400: unknown;
+  /**
+   * Registration link refused
+   *
+   * The same page: the link was used before, never existed or expired.
+   */
+  401: unknown;
+  /**
+   * Already registered
+   *
+   * The same page: the platform registered this client id before.
+   */
+  409: unknown;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RegisterLtiPlatformError = RegisterLtiPlatformErrors[keyof RegisterLtiPlatformErrors];
+
+export type RegisterLtiPlatformResponses = {
+  /**
+   * Registered
+   *
+   * A page with one line of text that sends the platform the close message.
+   */
+  200: unknown;
+};
+
+export type InitiateLtiLoginData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * The platform's issuer
+     */
+    iss?: string;
+    /**
+     * The platform's hint of who launches, echoed in the authentication request
+     */
+    login_hint?: string;
+    /**
+     * Where the platform means the launch to land
+     */
+    target_link_uri?: string;
+    /**
+     * The platform's hint of what it launches, echoed in the authentication request
+     */
+    lti_message_hint?: string;
+    /**
+     * The LTI deployment the launch comes from
+     */
+    lti_deployment_id?: string;
+    /**
+     * The client id the platform gave the app; needed when the issuer holds several
+     */
+    client_id?: string;
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
+  url: '/auth/lti/login';
+};
+
+export type InitiateLtiLoginErrors = {
+  /**
+   * Login refused
+   *
+   * A page naming why: the platform offers no platform storage.
+   */
+  400: unknown;
+  /**
+   * Platform unknown
+   *
+   * A page: no active LTI connection matches the issuer and client id, or the login hint is missing.
+   */
+  401: unknown;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLoginError = InitiateLtiLoginErrors[keyof InitiateLtiLoginErrors];
+
+export type InitiateLtiLoginResponses = {
+  /**
+   * Login page
+   *
+   * A page that stores the launch value in platform storage and moves on to the platform.
+   */
+  200: unknown;
+};
+
+export type InitiateLtiLoginByPostData = {
+  body: {
+    /**
+     * The platform's issuer
+     */
+    iss?: string;
+    /**
+     * The platform's hint of who launches, echoed in the authentication request
+     */
+    login_hint?: string;
+    /**
+     * Where the platform means the launch to land
+     */
+    target_link_uri?: string;
+    /**
+     * The platform's hint of what it launches, echoed in the authentication request
+     */
+    lti_message_hint?: string;
+    /**
+     * The LTI deployment the launch comes from
+     */
+    lti_deployment_id?: string;
+    /**
+     * The client id the platform gave the app; needed when the issuer holds several
+     */
+    client_id?: string;
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/login';
+};
+
+export type InitiateLtiLoginByPostErrors = {
+  /**
+   * Login refused
+   *
+   * A page naming why: the platform offers no platform storage.
+   */
+  400: unknown;
+  /**
+   * Platform unknown
+   *
+   * A page: no active LTI connection matches the issuer and client id, or the login hint is missing.
+   */
+  401: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLoginByPostError = InitiateLtiLoginByPostErrors[keyof InitiateLtiLoginByPostErrors];
+
+export type InitiateLtiLoginByPostResponses = {
+  /**
+   * Login page
+   *
+   * A page that stores the launch value in platform storage and moves on to the platform.
+   */
+  200: unknown;
+};
+
+export type ReceiveLtiLaunchData = {
+  body: {
+    /**
+     * The signed launch
+     */
+    id_token?: string;
+    /**
+     * The state the login sent
+     */
+    state?: string;
+    /**
+     * The platform's refusal, in place of an ID token
+     */
+    error?: string;
+    error_description?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/launch';
+};
+
+export type ReceiveLtiLaunchErrors = {
+  /**
+   * Launch refused
+   *
+   * A field is longer than a launch carries.
+   */
+  400: unknown;
+  /**
+   * Launch refused
+   *
+   * A page: the state names no active LTI connection, or the platform posted an error.
+   */
+  401: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ReceiveLtiLaunchError = ReceiveLtiLaunchErrors[keyof ReceiveLtiLaunchErrors];
+
+export type ReceiveLtiLaunchResponses = {
+  /**
+   * Launch page
+   *
+   * A page that reads the launch value from platform storage and posts it on, same-origin.
+   */
+  200: unknown;
+};
+
+export type FinishLtiLaunchData = {
+  body: {
+    id_token?: string;
+    state?: string;
+    storage_value?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti/finish';
+};
+
+export type FinishLtiLaunchErrors = {
+  /**
+   * Launch refused
+   *
+   * The platform's key set could not be read, or a field is longer than a launch carries.
+   */
+  400: unknown;
+  /**
+   * Launch not valid
+   *
+   * A page naming the check the launch failed, or the platform it names is not connected.
+   */
+  401: unknown;
+  /**
+   * Launch refused
+   *
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.
+   */
+  403: unknown;
+  /**
+   * Organization gone
+   *
+   * A page: the connection's tenant holds no organization.
+   */
+  404: unknown;
+  /**
+   * Course not set up
+   *
+   * A page: an instructor opens the app from this course first.
+   */
+  409: unknown;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type FinishLtiLaunchError = FinishLtiLaunchErrors[keyof FinishLtiLaunchErrors];
+
 export type GetStepUpData = {
   body?: never;
   path?: never;
@@ -3923,6 +4400,605 @@ export type PreviewProductLinkError = PreviewProductLinkErrors[keyof PreviewProd
 export type PreviewProductLinkResponses = {
   /**
    * Success
+   */
+  200: unknown;
+};
+
+export type StartLtiToolRegistrationData = {
+  body: {
+    /**
+     * The LTI tool's registration address, which its Dynamic Registration instructions give
+     */
+    registrationUrl: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:start-registration';
+};
+
+export type StartLtiToolRegistrationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartLtiToolRegistrationError = StartLtiToolRegistrationErrors[keyof StartLtiToolRegistrationErrors];
+
+export type StartLtiToolRegistrationResponses = {
+  /**
+   * Registration address
+   */
+  200: {
+    /**
+     * The address to open: the LTI tool's registration address with the platform's configuration and a one-use token
+     */
+    url: string;
+    /**
+     * When the token stops working, unless the LTI tool registered before
+     */
+    expiresAt: string;
+  };
+};
+
+export type StartLtiToolRegistrationResponse = StartLtiToolRegistrationResponses[keyof StartLtiToolRegistrationResponses];
+
+export type ListLtiInstallationsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations';
+};
+
+export type ListLtiInstallationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiInstallationsError = ListLtiInstallationsErrors[keyof ListLtiInstallationsErrors];
+
+export type ListLtiInstallationsResponses = {
+  /**
+   * LTI installations
+   */
+  200: {
+    results: Array<LtiInstallation>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiInstallationsResponse = ListLtiInstallationsResponses[keyof ListLtiInstallationsResponses];
+
+export type ApproveLtiInstallationData = {
+  body: {
+    /**
+     * The personal fields a launch may carry, each one the LTI tool asked for; empty releases none
+     */
+    releasedFields: Array<'name' | 'email' | 'picture'>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve';
+};
+
+export type ApproveLtiInstallationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ApproveLtiInstallationError = ApproveLtiInstallationErrors[keyof ApproveLtiInstallationErrors];
+
+export type ApproveLtiInstallationResponses = {
+  /**
+   * Approved installation
+   */
+  200: LtiInstallation;
+};
+
+export type ApproveLtiInstallationResponse = ApproveLtiInstallationResponses[keyof ApproveLtiInstallationResponses];
+
+export type RejectLtiInstallationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject';
+};
+
+export type RejectLtiInstallationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RejectLtiInstallationError = RejectLtiInstallationErrors[keyof RejectLtiInstallationErrors];
+
+export type RejectLtiInstallationResponses = {
+  /**
+   * Installation rejected
+   */
+  204: void;
+};
+
+export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
+
+export type ListLtiResourceLinksData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links';
+};
+
+export type ListLtiResourceLinksErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiResourceLinksError = ListLtiResourceLinksErrors[keyof ListLtiResourceLinksErrors];
+
+export type ListLtiResourceLinksResponses = {
+  /**
+   * LTI resource links
+   */
+  200: {
+    results: Array<LtiResourceLink>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiResourceLinksResponse = ListLtiResourceLinksResponses[keyof ListLtiResourceLinksResponses];
+
+export type CreateLtiResourceLinkData = {
+  body: {
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * An approved LTI installation of the tenant
+     */
+    installationId: string;
+    title: string;
+    /**
+     * Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters
+     */
+    custom?: {
+      [key: string]: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links';
+};
+
+export type CreateLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateLtiResourceLinkError = CreateLtiResourceLinkErrors[keyof CreateLtiResourceLinkErrors];
+
+export type CreateLtiResourceLinkResponses = {
+  /**
+   * LTI resource link
+   */
+  201: LtiResourceLink;
+};
+
+export type CreateLtiResourceLinkResponse = CreateLtiResourceLinkResponses[keyof CreateLtiResourceLinkResponses];
+
+export type DeleteLtiResourceLinkData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}';
+};
+
+export type DeleteLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteLtiResourceLinkError = DeleteLtiResourceLinkErrors[keyof DeleteLtiResourceLinkErrors];
+
+export type DeleteLtiResourceLinkResponses = {
+  /**
+   * Resource link deleted
+   */
+  204: void;
+};
+
+export type DeleteLtiResourceLinkResponse = DeleteLtiResourceLinkResponses[keyof DeleteLtiResourceLinkResponses];
+
+export type UpdateLtiResourceLinkData = {
+  body: {
+    title?: string;
+    /**
+     * Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters
+     */
+    custom?: {
+      [key: string]: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}';
+};
+
+export type UpdateLtiResourceLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateLtiResourceLinkError = UpdateLtiResourceLinkErrors[keyof UpdateLtiResourceLinkErrors];
+
+export type UpdateLtiResourceLinkResponses = {
+  /**
+   * LTI resource link
+   */
+  200: LtiResourceLink;
+};
+
+export type UpdateLtiResourceLinkResponse = UpdateLtiResourceLinkResponses[keyof UpdateLtiResourceLinkResponses];
+
+export type StartLtiLaunchData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiResourceLinkId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch';
+};
+
+export type StartLtiLaunchErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartLtiLaunchError = StartLtiLaunchErrors[keyof StartLtiLaunchErrors];
+
+export type StartLtiLaunchResponses = {
+  /**
+   * Launch started
+   */
+  200: {
+    /**
+     * The login initiation page to load in the frame; it holds a one-use launch record
+     */
+    url: string;
+    /**
+     * When the launch record stops working, unless the launch used it before
+     */
+    expiresAt: string;
+  };
+};
+
+export type StartLtiLaunchResponse = StartLtiLaunchResponses[keyof StartLtiLaunchResponses];
+
+export type InitiateLtiLaunchLoginData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * The launch record a launch start answered
+     */
+    token: string;
+  };
+  url: '/lti-launches:initiate-login';
+};
+
+export type InitiateLtiLaunchLoginErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Launch record refused
+   *
+   * A page with one line of text: the record was used before, never existed or expired.
+   */
+  401: unknown;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InitiateLtiLaunchLoginError = InitiateLtiLaunchLoginErrors[keyof InitiateLtiLaunchLoginErrors];
+
+export type InitiateLtiLaunchLoginResponses = {
+  /**
+   * Login initiation
+   *
+   * A page that posts the login initiation to the LTI tool as it loads.
    */
   200: unknown;
 };
@@ -6720,6 +7796,10 @@ export type UpdateServiceAccountErrors = {
    */
   404: NotFoundError;
   /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
    * Payload too large
    */
   413: PayloadTooLargeError;
@@ -6846,6 +7926,10 @@ export type CreateApiKeyErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
   /**
    * Payload too large
    */
@@ -7379,7 +8463,7 @@ export type UpdateTenantData = {
      */
     kind?: 'live' | 'test' | 'demo';
     status?: 'active' | 'suspended' | 'deleted';
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'surfconext'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */
@@ -7748,6 +8832,171 @@ export type UpdateConnectionResponses = {
 };
 
 export type UpdateConnectionResponse = UpdateConnectionResponses[keyof UpdateConnectionResponses];
+
+export type ListLtiConnectionsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections';
+};
+
+export type ListLtiConnectionsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiConnectionsError = ListLtiConnectionsErrors[keyof ListLtiConnectionsErrors];
+
+export type ListLtiConnectionsResponses = {
+  /**
+   * LTI connections
+   */
+  200: {
+    results: Array<Connection>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiConnectionsResponse = ListLtiConnectionsResponses[keyof ListLtiConnectionsResponses];
+
+export type CreateLtiRegistrationLinkData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections:create-lti-registration-link';
+};
+
+export type CreateLtiRegistrationLinkErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateLtiRegistrationLinkError = CreateLtiRegistrationLinkErrors[keyof CreateLtiRegistrationLinkErrors];
+
+export type CreateLtiRegistrationLinkResponses = {
+  /**
+   * Registration link
+   */
+  200: {
+    /**
+     * The link to paste into the LTI platform's Dynamic Registration
+     */
+    url: string;
+    /**
+     * When the link stops working, unless a platform opened it before
+     */
+    expiresAt: string;
+  };
+};
+
+export type CreateLtiRegistrationLinkResponse = CreateLtiRegistrationLinkResponses[keyof CreateLtiRegistrationLinkResponses];
+
+export type DeleteLtiConnectionData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    connectionId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/connections/{connectionId}';
+};
+
+export type DeleteLtiConnectionErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteLtiConnectionError = DeleteLtiConnectionErrors[keyof DeleteLtiConnectionErrors];
+
+export type DeleteLtiConnectionResponses = {
+  /**
+   * Connection removed
+   */
+  204: void;
+};
+
+export type DeleteLtiConnectionResponse = DeleteLtiConnectionResponses[keyof DeleteLtiConnectionResponses];
 
 export type ListUsersData = {
   body?: never;

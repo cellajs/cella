@@ -7,6 +7,7 @@ import type { FallbackProps } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
 import type { BoundaryType } from '~/lib/boundary';
+import { isEmbedded } from '~/lib/embedded-context';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
@@ -46,7 +47,8 @@ const errorDetailRows = (error: ApiError) =>
 /**
  * `boundary` names the layout still standing around the notice, and so what the notice brings itself: root (none:
  * the overlay hosts and the footer), public (the public layout: the footer), auth (the auth layout: the footer, and
- * glass secondary actions on its gradient), app (the app layout: nothing).
+ * glass secondary actions on its gradient), app (the app layout: nothing). On an embedded page it offers no way out
+ * of the frame: no home and no footer, whose links lead to the app's other pages.
  * Without an `error`, the route's `error` and `severity` search params name it.
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
@@ -155,10 +157,12 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               )}
               {children || (
                 <>
-                  <Button onClick={handleGoToHome} variant={secondaryVariant}>
-                    <HouseIcon />
-                    {t('c:home')}
-                  </Button>
+                  {!isEmbedded && (
+                    <Button onClick={handleGoToHome} variant={secondaryVariant}>
+                      <HouseIcon />
+                      {t('c:home')}
+                    </Button>
+                  )}
                   {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
                       <RefreshCwIcon />
@@ -175,7 +179,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               )}
             </CardFooter>
           </Card>
-          {boundary !== 'app' && <AppFooter className="mt-10 items-center" />}
+          {boundary !== 'app' && !isEmbedded && <AppFooter className="mt-10 items-center" />}
         </div>
       </div>
     </>

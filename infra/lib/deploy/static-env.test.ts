@@ -20,7 +20,12 @@ function render(singleVM: boolean, role: string) {
       release: 'abc',
       agentDir: '/etc/cella',
       lbInternalAddress: '10.0.0.200',
-      suppliers: { APP_ORIGIN: ({ serviceUrl }) => serviceUrl('frontend'), FRONTEND_CSP: () => 'csp', ORIGIN_HOST: () => 'bucket' },
+      suppliers: {
+        APP_ORIGIN: ({ serviceUrl }) => serviceUrl('frontend'),
+        FRONTEND_CSP: () => 'csp',
+        FRONTEND_EMBED_CSP: () => 'csp',
+        ORIGIN_HOST: () => 'bucket',
+      },
       context: { config, naming, region, mode: 'production', serviceUrl: (slug) => `https://${slug}.example` },
     }),
   );

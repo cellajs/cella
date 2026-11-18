@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPublicIp, toRateLimitIp } from '#/utils/ip-subnet';
+import { isPublicDestination, toRateLimitIp } from '#/utils/ip-subnet';
 
 describe('toRateLimitIp', () => {
   it('keeps IPv4 addresses as the full host', () => {
@@ -38,14 +38,16 @@ describe('toRateLimitIp', () => {
   });
 });
 
-describe('isPublicIp', () => {
+describe('isPublicDestination', () => {
   it('accepts routable IPv4 and IPv6 addresses, mapped or not', () => {
-    expect(isPublicIp('203.0.113.7')).toBe(true);
-    expect(isPublicIp('::ffff:203.0.113.7')).toBe(true);
-    expect(isPublicIp('2001:db8::1')).toBe(true);
+    expect(isPublicDestination('1.1.1.1')).toBe(true);
+    expect(isPublicDestination('::ffff:1.1.1.1')).toBe(true);
+    expect(isPublicDestination('2606:4700:4700::1111')).toBe(true);
+    expect(isPublicDestination('64:ff9b::1.1.1.1')).toBe(true);
+    expect(isPublicDestination('2002:101:101::1')).toBe(true);
   });
 
-  it('rejects loopback, private, link-local, carrier NAT and unique-local ranges', () => {
+  it('rejects loopback, private, link-local, carrier NAT, documentation, reserved and unique-local ranges, and the forms that carry them', () => {
     for (const ip of [
       '127.0.0.1',
       '::ffff:127.0.0.1',
@@ -60,20 +62,38 @@ describe('isPublicIp', () => {
       'fc00::1',
       'fd12::1',
       'fe80::1',
+      '198.18.0.1',
+      '224.0.0.1',
+      '240.0.0.1',
+      '255.255.255.255',
+      '::10.0.0.1',
+      '64:ff9b::10.0.0.1',
+      '64:ff9b::a9fe:a9fe',
+      '2002:a00:1::1',
+      'fec0::1',
+      'ff02::1',
+      '192.0.2.1',
+      '198.51.100.1',
+      '203.0.113.7',
+      '::ffff:203.0.113.7',
+      '2001:db8::1',
+      '::ffff:0:10.0.0.1',
+      '64:ff9b:1::a00:1',
+      '64:ff9b:1:ffff::808:808',
     ]) {
-      expect(isPublicIp(ip), ip).toBe(false);
+      expect(isPublicDestination(ip), ip).toBe(false);
     }
   });
 
   it('rejects the public neighbours of those ranges only when they are private', () => {
-    expect(isPublicIp('172.15.0.1')).toBe(true);
-    expect(isPublicIp('172.32.0.1')).toBe(true);
-    expect(isPublicIp('100.63.0.1')).toBe(true);
-    expect(isPublicIp('100.128.0.1')).toBe(true);
+    expect(isPublicDestination('172.15.0.1')).toBe(true);
+    expect(isPublicDestination('172.32.0.1')).toBe(true);
+    expect(isPublicDestination('100.63.0.1')).toBe(true);
+    expect(isPublicDestination('100.128.0.1')).toBe(true);
   });
 
   it('treats invalid input as not public', () => {
-    expect(isPublicIp('')).toBe(false);
-    expect(isPublicIp('not-an-ip')).toBe(false);
+    expect(isPublicDestination('')).toBe(false);
+    expect(isPublicDestination('not-an-ip')).toBe(false);
   });
 });

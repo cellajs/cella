@@ -3,8 +3,8 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
-import type { TKey } from '~/lib/i18n-locales';
 import {
+  type DataTab,
   getSlotDescriptors,
   isPlacementHidden,
   type PlacementDescriptor,
@@ -28,8 +28,10 @@ export type PageTab = TabLabel & {
   activeOptions?: LinkComponentProps['activeOptions'];
 };
 
-/** A tab a route or a tool declares, captioned by its placement's key. */
-type DeclaredTab = Extract<PageTab, { label: TKey }>;
+/** What a surface's tabs resolve with: the placement inputs, and the tabs data adds after the declared ones. */
+export interface NavTabOptions extends ResolvePlacementOptions {
+  dataTabs?: readonly DataTab[];
+}
 
 // Cast: generated FileRoutesById is a closed interface without index signature
 const getRoutesById = () => getRouter().routesById as unknown as Record<string, AnyRoute>;
@@ -102,24 +104,38 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   return [...routeCandidates, ...registryCandidates];
 }
 
-/** {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0, lower first). */
-function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): DeclaredTab[] {
+/** The data tabs of a surface, through its `$tool` host child; none without one. */
+function getDataTabs(parentRouteId: string, dataTabs: readonly DataTab[]): PageTab[] {
+  const parentRoute: AnyRoute | undefined = getRoutesById()[parentRouteId];
+  const hostChild = parentRoute && getChildRoutes(parentRoute).find((route) => route.path === '$tool');
+  if (!hostChild) return [];
+  return dataTabs.map(({ id, title }) => ({
+    id,
+    text: title,
+    path: hostChild.fullPath as PageTab['path'],
+    // Cast: preserve the surface's own params (tenant/org), set only the host's `$tool` id
+    params: ((prev: Record<string, string>) => ({ ...prev, tool: id })) as PageTab['params'],
+  }));
+}
+
+/**
+ * {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0,
+ * lower first), then the data tabs in their own order.
+ */
+function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: NavTabOptions = {}): PageTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
 
   const resolved = resolvePlacementList(slot, getNavTabCandidates(parentRouteId), options);
-  return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
+  const declared: PageTab[] = resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
+  return [...declared, ...getDataTabs(parentRouteId, dataTabs)];
 }
 
 /**
  * A channel's page tabs, gated and ordered as its page bar shows them, linked with `channelParams` so they work from any
  * page: route tabs take the channel's params as they are, registry tabs add their `$tool`.
  */
-export function resolveChannelTabs(
-  entityType: ChannelEntityType,
-  channelParams: Record<string, string>,
-  options: ResolvePlacementOptions = {},
-): DeclaredTab[] {
+export function resolveChannelTabs(entityType: ChannelEntityType, channelParams: Record<string, string>, options: NavTabOptions = {}): PageTab[] {
   const routeId = getTabsRouteId(`${entityType}.tabs`);
   if (!routeId) return [];
 
@@ -133,7 +149,7 @@ export function resolveChannelTabs(
  * First visible tab path under a parent route: the default-tab redirect target for layout routes.
  * @public
  */
-export const defaultNavTabPath = (parentRouteId: string, options?: ResolvePlacementOptions): string | undefined =>
+export const defaultNavTabPath = (parentRouteId: string, options?: NavTabOptions): string | undefined =>
   resolveNavTabs(parentRouteId, options)[0]?.path;
 
 /**
@@ -141,13 +157,13 @@ export const defaultNavTabPath = (parentRouteId: string, options?: ResolvePlacem
  * `surfaces` or the channel arrangement hides ({@link isPlacementHidden}), and a tab whose `requires` the caller's `grants`
  * lack, to the landing tab, or to the layout's own path when no tab is left. Without `grants` (the memberships could not
  * be read) it leaves `requires` to the server, and it never reads `visibleTo`; {@link useNavTabRedirect} covers changes
- * while on a tab.
+ * while on a tab. It waits on no data: a data tab passes to the `$tool` route, and the landing tab is a declared one.
  * @throws A replacing redirect that keeps params and hash. It keeps a bare parent's search and drops a hidden tab's own sort and filters.
  */
 export function guardNavTabs(
   matches: readonly { routeId: string; fullPath: string; params: unknown }[],
   parentRouteId: string,
-  options: Pick<ResolvePlacementOptions, 'slotConfig' | 'grants'> = {},
+  options: Pick<NavTabOptions, 'slotConfig' | 'grants'> = {},
 ): void {
   const deepest = matches[matches.length - 1];
   if (!deepest) return;
@@ -179,7 +195,7 @@ export function guardNavTabs(
  * hides, judged on the arrangement layers as in {@link guardNavTabs}. {@link PageTabNav} runs it for route-derived bars.
  * @public
  */
-export function useNavTabRedirect(parentRouteId: string, options: ResolvePlacementOptions = {}): void {
+export function useNavTabRedirect(parentRouteId: string, options: NavTabOptions = {}): void {
   const navigate = useNavigate();
   // Primitives only: the leaf match object is new on every navigation
   const leafPath = useRouterState({ select: (state) => state.matches.at(-1)?.fullPath });
@@ -197,7 +213,7 @@ export function useNavTabRedirect(parentRouteId: string, options: ResolvePlaceme
   }, [navigate, targetId]);
 }
 
-interface PageTabNavProps extends ResolvePlacementOptions {
+interface PageTabNavProps extends NavTabOptions {
   /** Takes precedence over parentRouteId. */
   tabs?: PageTab[];
   /** Derives the tabs from this route's children (`staticData.navTab`) and its tabs slot. */
