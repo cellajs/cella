@@ -1920,6 +1920,7 @@ export const zListLtiInstallationsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
 });
 
 /**
@@ -1968,6 +1969,7 @@ export const zListLtiResourceLinksQuery = z.object({
   skip: z.int().gte(0).optional().default(0),
   channelId: z.string().max(50),
   channelType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
 });
 
 /**

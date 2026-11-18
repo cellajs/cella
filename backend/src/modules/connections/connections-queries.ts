@@ -122,18 +122,11 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
   return row;
 };
 
-interface DeleteConnectionOpts {
-  id: string;
-  tenantId: string;
-  /** Deletes only a connection of this kind; any kind when left out. */
-  kind?: ConnectionKind;
-}
-
 /** Deletes one tenant's connection; the deleted row, or undefined when the tenant holds no such connection. */
-export const deleteConnection = async (ctx: DbContext, { id, tenantId, kind }: DeleteConnectionOpts) => {
+export const deleteConnection = async (ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) => {
   const [row] = await ctx.var.db
     .delete(connectionsTable)
-    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId), kind ? eq(connectionsTable.kind, kind) : undefined))
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
     .returning();
   return row;
 };
@@ -229,12 +222,22 @@ export const findActiveLtiConnections = async (ctx: DbContext, { issuer, clientI
 };
 
 /**
- * Records the LTI deployment of a connection whose platform named none at registration, in one statement: of two
- * concurrent first launches, the first to write it decides.
+ * Records the LTI deployment of a connection whose platform named none at registration. Of two concurrent first
+ * launches the first to write decides: the other's update waits for that commit and then matches no row.
+ * @returns Whether the connection holds `deploymentId` afterwards: false when another launch recorded a different one.
  */
 export const recordFirstLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
-  await ctx.var.db
+  const deploymentIds = sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb)`;
+  const recorded = await ctx.var.db
     .update(connectionsTable)
     .set({ config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', jsonb_build_array(${deploymentId}::text))`, ...updateStamps(by) })
-    .where(and(eq(connectionsTable.id, id), sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb) = '[]'::jsonb`));
+    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} = '[]'::jsonb`))
+    .returning({ id: connectionsTable.id });
+  if (recorded.length) return true;
+
+  const holding = await ctx.var.db
+    .select({ id: connectionsTable.id })
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} @> jsonb_build_array(${deploymentId}::text)`));
+  return holding.length > 0;
 };

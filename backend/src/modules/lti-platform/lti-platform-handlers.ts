@@ -20,8 +20,9 @@ const app = new OpenAPIHono<Env>();
 app.openapi(ltiPlatformRoutes.startLtiToolRegistration, async (ctx) => ctx.json(await startLtiToolRegistrationOp(ctx, ctx.req.valid('json')), 200));
 
 app.openapi(ltiPlatformRoutes.listLtiInstallations, async (ctx) => {
-  const installations = await getLtiInstallationsOp(ctx);
-  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(installations, page)), 200);
+  const query = ctx.req.valid('query');
+  const installations = await getLtiInstallationsOp(ctx, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(installations, page)), 200);
 });
 
 app.openapi(ltiPlatformRoutes.approveLtiInstallation, async (ctx) => {

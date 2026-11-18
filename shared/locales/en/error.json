@@ -135,7 +135,7 @@
   "lti_context_not_set_up": "Course not set up yet",
   "lti_context_not_set_up.text": "This course has no place in the app yet. Ask an instructor of the course to open it first.",
   "lti_deployment_unknown": "Deployment not connected",
-  "lti_deployment_unknown.text": "The platform launched from a deployment this connection does not hold. Ask an organization admin to register the app for it.",
+  "lti_deployment_unknown.text": "The platform launched from a deployment this connection does not hold. Ask the app's admin.",
   "lti_field_not_requested": "Field not asked for",
   "lti_field_not_requested.text": "The LTI tool did not ask for this personal field, so it cannot be released to it.",
   "lti_installation_not_active": "LTI tool not active",

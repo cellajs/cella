@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -11,6 +12,7 @@ import {
   insertLtiResourceLink,
   updateLtiResourceLink,
 } from '#/modules/lti-platform/lti-platform-queries';
+import type { listLtiResourceLinksQuerySchema } from '#/modules/lti-platform/lti-platform-schema';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -42,9 +44,9 @@ async function getUpdatableLtiResourceLink(ctx: UserContext, id: string) {
 }
 
 /** The resource links placed in a channel, for a caller who may read it. */
-export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId }: { channelType: ChannelEntityType; channelId: string }) {
+export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiResourceLinksQuerySchema>) {
   await getValidChannel(ctx, channelId, channelType, 'read');
-  const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId });
+  const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
   return withActorRefs(ctx, links.map(toLtiResourceLink));
 }
 

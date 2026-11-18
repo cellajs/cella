@@ -79,7 +79,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
   type Platform = Awaited<ReturnType<typeof fakePlatform>>;
 
   /** A tenant's active connection to `platform`, as a registration stores it. */
-  async function connect(platform: Platform) {
+  async function connect(platform: Platform, deploymentIds = ['deployment-1']) {
     const org = await createTestOrganization();
     const issuer = `https://${platform.name}.example.com`;
     const [connection] = await db
@@ -97,7 +97,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
           jwksUri: platform.jwksUri,
           productFamilyCode: 'test',
           version: '1',
-          deploymentIds: ['deployment-1'],
+          deploymentIds,
         },
       })
       .returning();
@@ -303,6 +303,27 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     // An empty roles list is a launch without a role: the person arrives with the least privileged role.
     expect((await launch(connected, { [ltiClaims.roles]: [] })).response.status).toBe(303);
+  });
+
+  // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.
+  it('records the deployment of the first launch to a connection that holds none, and refuses a concurrent first launch from another', async () => {
+    const connected = await connect(await fakePlatform('platform-a'), []);
+    const deploymentIds = ['deployment-1', 'deployment-2'];
+    const posts = await Promise.all(
+      deploymentIds.map(async (deploymentId) => {
+        const started = await login(connected);
+        const idToken = await sign({ ...launchClaims(connected, started.nonce), [ltiClaims.deploymentId]: deploymentId }, connected.platform);
+        return { id_token: idToken, state: started.state, storage_value: started.value };
+      }),
+    );
+    const responses = await Promise.all(posts.map((post) => finish(post)));
+
+    const winner = responses.findIndex((response) => response.status === 303);
+    expect(winner).not.toBe(-1);
+    await expectRefusalPage(responses[1 - winner], 403, 'lti_deployment_unknown');
+    const [row] = await db.select().from(connectionsTable).where(eq(connectionsTable.id, connected.connection.id));
+    expect(isLtiConnection(row) && row.config.deploymentIds).toEqual([deploymentIds[winner]]);
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'))).toHaveLength(1);
   });
 
   // The embedded cookie is partitioned per parent site; a sibling frame there holds it too.

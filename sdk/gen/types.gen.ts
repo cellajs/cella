@@ -4489,6 +4489,10 @@ export type ListLtiInstallationsData = {
      * Results to pass over after the page token's position, or from the start without a token.
      */
     skip?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations';
 };
@@ -4669,6 +4673,10 @@ export type ListLtiResourceLinksData = {
     skip?: number;
     channelId: string;
     channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links';
 };

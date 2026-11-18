@@ -6,7 +6,15 @@ import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import { serviceAccountStatuses } from '#/modules/service-accounts/service-accounts-db';
-import { channelEntityTypeSchema, channelRefSchema, pageQuerySchema, tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
+import {
+  channelEntityTypeSchema,
+  channelRefSchema,
+  orderByQuerySchema,
+  pageQuerySchema,
+  tenantOrgParamSchema,
+  validIdSchema,
+  validNameSchema,
+} from '#/schemas';
 import { boundedRecord } from '#/schemas/common-schemas';
 import { auditShape } from '#/schemas/entity-base';
 
@@ -123,7 +131,13 @@ export const ltiInstallationSchema = z
 /** The path of one resource link in its organization. */
 export const ltiResourceLinkParamSchema = tenantOrgParamSchema.extend({ ltiResourceLinkId: validIdSchema });
 
-export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend(channelRefSchema.shape);
+export const listLtiInstallationsQuerySchema = pageQuerySchema.extend({ orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc') });
+
+/** Oldest first by default: the order the channel's tabs show. */
+export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
+  ...channelRefSchema.shape,
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
+});
 
 const resourceLinkCustomSchema = customParametersSchema.describe(
   "Custom values its launches send in the `custom` claim, each a string, over the LTI tool's own custom parameters",

@@ -4,7 +4,7 @@ import https from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
-import { isPublicIp } from '#/utils/ip-subnet';
+import { isPublicDestination } from '#/utils/ip-subnet';
 
 /** A platform's configuration or registration answer is a few kilobytes. */
 const maxResponseBytes = 256 * 1024;
@@ -146,7 +146,7 @@ export const guardedFetch = async (url: string, init: GuardedFetchInit = {}): Pr
   const parsed = new URL(url);
 
   const addresses = await addressesOf(parsed, resolve);
-  const allowed = (address: string) => isPublicIp(address) || (allowsLocalHosts() && isLoopback(address));
+  const allowed = (address: string) => isPublicDestination(address) || (allowsLocalHosts() && isLoopback(address));
   if (!addresses.length || !addresses.every(({ address }) => allowed(address))) throw refused('address');
 
   const signal = AbortSignal.timeout(timeoutMs);

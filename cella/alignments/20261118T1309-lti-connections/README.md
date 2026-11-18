@@ -90,16 +90,17 @@ No script: manual.
    in a locale of its own.
 6. Run `pnpm generate`: it adds the columns, the `lti_installations`, `lti_resource_links` and `lti_contexts` tables,
    check constraints, indexes and grants, and needs no hints or hand-written SQL.
-7. Fix what the typecheck reports in app-owned code. `guardNavTabs`, `resolveChannelTabs` and a tabs menu read
-   `NavTabOptions`, whose tabs may carry `text` in place of `label`.
+7. Fix what the typecheck reports in app-owned code. `resolveChannelTabs` answers `PageTab`s, and a tab that data
+   defines carries `text` in place of `label`, as the menu's channel tabs show.
 8. Add `embeddedChannelRouteConfig` to the pinned `frontend/src/routes-config.tsx`, as the template has it. An app
    whose LTI context is a channel below the organization adds an entry for that type and a route under
    `frontend/src/routes/embed/` that loads the channel in its `beforeLoad` and renders its content without chrome, as
    `routes/embed/$tenantId.$organizationSlug/organization.tsx` does for the organization.
 9. Optional: a channel layout of the app's own shows resource link tabs once it has a `$tool` child route rendering
-   `SlotTabHost`, and its `beforeLoad` passes `linkedTabs` from `loadLtiResourceLinkTabs` to `guardNavTabs`, as the
-   organization layout does. Its settings place tabs through the LTI resource link routes with that channel's type and
-   id, as the LTI tools card does for the organization.
+   `SlotTabHost` and its page bar takes `useChannelTabOptions(channel)`, as the organization page does: the hook adds
+   the tabs of every module's `channelTabs` source, and `guardNavTabs` needs nothing for them. Its settings place tabs
+   through the LTI resource link routes with that channel's type and id, as the LTI tools card does for the
+   organization.
 10. Optional: an app whose `config.development.ts` is its own turns on `has.ltiPlatform`, adds `'lti'` to
     `enabledAuthStrategies` and lists its development origin in `ltiFrameAncestors`, as the template's does; `pnpm seed`
     then seeds the connected pair.

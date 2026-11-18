@@ -7,7 +7,7 @@ afterEach(() => Reflect.set(appConfig, 'mode', testMode));
 
 const ipv4 = (address: string): ResolvedAddress => ({ address, family: 4 });
 const ipv6 = (address: string): ResolvedAddress => ({ address, family: 6 });
-const publicAddress = ipv4('203.0.113.10');
+const publicAddress = ipv4('1.1.1.1');
 
 interface Case {
   name: string;

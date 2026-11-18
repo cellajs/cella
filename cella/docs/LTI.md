@@ -24,7 +24,7 @@ As a platform, an admin pastes the address an LTI tool's admin handed over under
 
 ## Approval
 
-An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. A launch always carries the person's id, one per person and the same for every LTI tool, their role, their language and the channel's name, whatever the admin releases.
+An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
 Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 

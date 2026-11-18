@@ -116,9 +116,10 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
  * creates the person, applies the mapped role and records the context, and the LTI deployment of a connection that
  * held none, all in one transaction. Then it starts the embedded session: no MFA challenge, the launch is the proof.
  * @returns The embedded page of the channel to redirect to.
- * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 409
- *   `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel at once, and
- *   what `findLaunchConnection` and `validateLtiLaunch` throw.
+ * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
+ *   `lti_deployment_unknown` when another first launch recorded a different deployment, 409 `lti_context_not_set_up`,
+ *   409 `write_conflict` when another launch created the context's channel at once, and what `findLaunchConnection`
+ *   and `validateLtiLaunch` throw.
  */
 export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>): Promise<string> {
   if (ctx.req.header('Sec-Fetch-Site') !== 'same-origin') throw new AppError(403, 'lti_launch_cross_site', 'warn');
@@ -169,7 +170,10 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     }
 
     await applyLtiRole(txCtx, { userId, channel, role: ltiContextRole({ ltiRoles, connection }) });
-    if (!connection.config.deploymentIds.length) await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId });
+    // Validation let any deployment through to a connection that held none: another first launch may have recorded one since.
+    if (!connection.config.deploymentIds.length && !(await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId }))) {
+      throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });
+    }
     return { userId, channel };
   });
   invalidateCache.user(userId);

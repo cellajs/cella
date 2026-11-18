@@ -8,6 +8,7 @@ import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
   initiateLtiLoginQuerySchema,
+  listLtiInstallationsQuerySchema,
   listLtiResourceLinksQuerySchema,
   ltiInstallationParamSchema,
   ltiInstallationSchema,
@@ -18,7 +19,7 @@ import {
   startLtiToolRegistrationBodySchema,
   updateLtiResourceLinkBodySchema,
 } from '#/modules/lti-platform/lti-platform-schema';
-import { pageQuerySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /** An organization's LTI tools, for a user who may update the organization; every decision asks a recent step-up. */
 export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
@@ -47,7 +48,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     summary: 'Get LTI installations',
     description:
       "The LTI tools installed in the organization's tenant, pending, approved or disabled, each with its registration. Requires permission to update the organization.",
-    request: { params: tenantOrgParamSchema, query: pageQuerySchema },
+    request: { params: tenantOrgParamSchema, query: listLtiInstallationsQuerySchema },
     responses: {
       200: json('LTI installations', paginationSchema(ltiInstallationSchema), { results: [mockLtiInstallationResponse()], totalSize: 1 }),
     },
@@ -85,7 +86,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI resource links',
-    description: 'The LTI tools placed in a channel, in the order their tabs show. Requires permission to read the channel.',
+    description: 'The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.',
     request: { params: tenantOrgParamSchema, query: listLtiResourceLinksQuerySchema },
     responses: {
       200: json('LTI resource links', paginationSchema(ltiResourceLinkSchema), { results: [mockLtiResourceLinkResponse()], totalSize: 1 }),

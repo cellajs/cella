@@ -24,7 +24,7 @@ app.openapi(connectionRoutes.updateConnection, async (ctx) => {
 });
 
 app.openapi(connectionRoutes.deleteConnection, async (ctx) => {
-  await deleteConnectionOp(ctx, ctx.req.valid('param').connectionId);
+  await deleteConnectionOp(ctx, { id: ctx.req.valid('param').connectionId });
   return ctx.body(null, 204);
 });
 

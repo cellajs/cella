@@ -8,8 +8,8 @@ import type { LtiConnection } from '#/modules/connections/connections-db';
 const keySetMaxAgeMs = 60 * 60 * 1000;
 
 /**
- * How long the last read answers every caller, an unknown key's included: a stranger's `kid` cannot make the app fetch
- * per request, and a failed read is not tried again before then.
+ * How long the last read answers a key the last good set lacks: a stranger's `kid` cannot make the app fetch per
+ * request, and a failed read is not tried again before then.
  */
 const lastReadAnswersMs = 30 * 1000;
 
@@ -25,8 +25,11 @@ const rsaSigningKeySchema = z.object({
   use: z.literal('sig').optional(),
 });
 
-/** The last key set read per connection and address, in this process, while in flight too: concurrent callers share it. */
-const keySetReads = new Map<string, { read: Promise<JSONWebKeySet>; startedAt: number; failed: boolean }>();
+/** A connection's last set read whole, and its last read, in flight or settled, which concurrent callers share. */
+type KeySetState = { good?: { keySet: JSONWebKeySet; readAt: number }; read?: { promise: Promise<JSONWebKeySet>; startedAt: number } };
+
+/** Per connection and address, in this process. */
+const keySets = new Map<string, KeySetState>();
 
 const keySetUnavailable = (reason: string, connectionId: string) =>
   new AppError(400, 'outbound_request_failed', 'warn', { meta: { reason, connectionId } });
@@ -45,26 +48,25 @@ const fetchKeySet = async (connection: LtiConnection): Promise<JSONWebKeySet> =>
   return { keys: parsed.data.keys.flatMap((key) => rsaSigningKeySchema.safeParse(key).data ?? []) };
 };
 
-const readKeySet = (cacheKey: string, connection: LtiConnection) => {
-  const entry = { read: fetchKeySet(connection), startedAt: Date.now(), failed: false };
-  entry.read.catch(() => {
-    entry.failed = true;
-  });
-  keySetReads.set(cacheKey, entry);
-  return entry.read;
-};
-
-/** The connection's key set: the last read while it answers, a good one until old unless it misses the key, else a new read. */
+/**
+ * The connection's key set: the last good one while it holds the key and is not old, else the last read while it
+ * answers, else a new read. A read in flight or failed never replaces a good set.
+ */
 const keySetFor = async (connection: LtiConnection, kid: string | undefined) => {
   const cacheKey = `${connection.id} ${connection.config.jwksUri}`;
-  const last = keySetReads.get(cacheKey);
-  const age = last ? Date.now() - last.startedAt : Number.POSITIVE_INFINITY;
-  if (last && age < lastReadAnswersMs) return last.read;
-  if (last && !last.failed && age < keySetMaxAgeMs) {
-    const keySet = await last.read;
-    if (!kid || keySet.keys.some((key) => key.kid === kid)) return keySet;
-  }
-  return readKeySet(cacheKey, connection);
+  const state = keySets.get(cacheKey) ?? {};
+  keySets.set(cacheKey, state);
+  const { good, read } = state;
+  const now = Date.now();
+  if (good && now - good.readAt < keySetMaxAgeMs && (!kid || good.keySet.keys.some((key) => key.kid === kid))) return good.keySet;
+  if (read && now - read.startedAt < lastReadAnswersMs) return read.promise;
+
+  const promise = fetchKeySet(connection).then((keySet) => {
+    state.good = { keySet, readAt: now };
+    return keySet;
+  });
+  state.read = { promise, startedAt: now };
+  return promise;
 };
 
 /**

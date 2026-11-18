@@ -2101,6 +2101,7 @@ export const startLtiToolRegistration = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.pageToken - `string` (optional)
  * @param {integer=} options.query.maxPageSize - `integer` (optional)
  * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listLtiInstallations = <ThrowOnError extends boolean = true>(
@@ -2167,7 +2168,7 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI resource links
  *
- * The LTI tools placed in a channel, in the order their tabs show. Requires permission to read the channel.
+ * The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [listLtiResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *
@@ -2179,6 +2180,7 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string} options.query.channelId - `string`
  * @param {enum} options.query.channelType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listLtiResourceLinks = <ThrowOnError extends boolean = true>(
@@ -3897,7 +3899,7 @@ export const createConnection = <ThrowOnError extends boolean = true>(
 /**
  * Delete connection
  *
- * Removes a connection. Identities and sessions that came through it keep their rows; members stay members.
+ * Removes a connection and ends every session that came through it. Identities that came through it keep their rows; members stay members.
  *
  * **DELETE /tenants/{tenantId}/connections/{connectionId}** ·· [deleteConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/connections/{connectionId}) ·· _connections · cella_
  *

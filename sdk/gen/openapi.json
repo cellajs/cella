@@ -10555,6 +10555,19 @@
             "description": "Results to pass over after the page token's position, or from the start without a token.",
             "name": "skip",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
           }
         ],
         "responses": {
@@ -10824,7 +10837,7 @@
         "operationId": "listLtiResourceLinks",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI resource links",
-        "description": "The LTI tools placed in a channel, in the order their tabs show. Requires permission to read the channel.",
+        "description": "The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -10899,6 +10912,19 @@
             },
             "required": true,
             "name": "channelType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           }
         ],
@@ -19675,7 +19701,7 @@
         "operationId": "deleteConnection",
         "tags": ["connections", "cella"],
         "summary": "Delete connection",
-        "description": "Removes a connection. Identities and sessions that came through it keep their rows; members stay members.",
+        "description": "Removes a connection and ends every session that came through it. Identities that came through it keep their rows; members stay members.",
         "x-enabled-by": {
           "strategy": "sso"
         },

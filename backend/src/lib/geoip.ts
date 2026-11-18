@@ -6,7 +6,7 @@ import { type AsnResponse, type CountryResponse, type Response as MmdbResponse, 
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
-import { isPublicIp } from '#/utils/ip-subnet';
+import { isPublicPeer } from '#/utils/ip-subnet';
 import { log } from '#/utils/logger';
 
 type GeoipKind = 'country' | 'asn';
@@ -69,7 +69,7 @@ const loadReader = async <T extends MmdbResponse>(db: GeoipDatabase<T>): Promise
  */
 export const lookupTargetIp = (ip: string | null | undefined, { mode, sampleIp }: { mode: string; sampleIp: string }): string | null => {
   if (!ip) return null;
-  if (mode === 'development' && sampleIp && !isPublicIp(ip)) return sampleIp;
+  if (mode === 'development' && sampleIp && !isPublicPeer(ip)) return sampleIp;
   return ip;
 };
 

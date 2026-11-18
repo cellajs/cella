@@ -10,7 +10,7 @@ import { appErrorHandler } from '#/lib/error';
 import { healthApp } from '#/lib/health';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { yjsInternalHandlers } from '#/modules/yjs/yjs-internal-handlers';
-import { isPublicIp } from '#/utils/ip-subnet';
+import { isPublicPeer } from '#/utils/ip-subnet';
 import { log } from '#/utils/logger';
 
 type FetchHandler = (request: Request) => Response | Promise<Response>;
@@ -39,7 +39,7 @@ export function serveApi(
  */
 function internalSourceRefusal(remoteAddress: string | undefined): string | undefined {
   if (!remoteAddress) return 'no peer address';
-  return isPublicIp(remoteAddress) ? 'public address' : undefined;
+  return isPublicPeer(remoteAddress) ? 'public address' : undefined;
 }
 
 /**

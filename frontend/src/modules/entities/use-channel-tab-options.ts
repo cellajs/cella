@@ -30,13 +30,17 @@ export async function loadChannelTabGrants(channel: CanRow): Promise<PlacementGr
 /** A channel as its tabs gate on it; a list row may come without its writer or its stored arrangement. */
 type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?: ToolsConfig };
 
-/** The tabs every registered source adds to a channel, each with its source, in source order; `isPending` while one loads. */
+/**
+ * The tabs every registered source adds to a channel, each with its source, in source order; `isPending` while one
+ * loads, and `failed`, the first source's query that errored.
+ */
 export function useChannelDataTabs(channel: EnrichedChannel) {
   return useQueries({
     queries: getChannelTabSources().map((source) => source.query(channel)),
     combine: (results) => ({
       tabs: results.flatMap((result, index) => (result.data?.results ?? []).map((tab) => ({ tab, source: getChannelTabSources()[index] }))),
       isPending: results.some((result) => result.isPending),
+      failed: results.find((result) => result.isError),
     }),
   });
 }

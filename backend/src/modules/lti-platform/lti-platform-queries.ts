@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
 import { hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
@@ -9,6 +9,8 @@ import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { insertServiceAccount, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import type { OrderDirection } from '#/schemas/common-schemas';
+import { getOrderColumns } from '#/utils/order-column';
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -32,11 +34,17 @@ const installationJoin = (ctx: DbContext) =>
 /** An installation as the platform reads it: the service account, its LTI side row and the registration. */
 export type LtiInstallationRecord = Awaited<ReturnType<typeof findLtiInstallations>>[number];
 
-/** The tenant's LTI installations, newest first. */
-export async function findLtiInstallations(ctx: DbContext, { tenantId }: { tenantId: string }) {
+/** The tenant's LTI installations, in `order` of creation. */
+export async function findLtiInstallations(ctx: DbContext, { tenantId, order }: { tenantId: string; order: OrderDirection }) {
+  const orderBy = getOrderColumns({
+    sort: 'createdAt',
+    order,
+    columns: { createdAt: ltiInstallationsTable.createdAt },
+    tieBreaker: ltiInstallationsTable.serviceAccountId,
+  });
   return installationJoin(ctx)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)))
-    .orderBy(desc(ltiInstallationsTable.createdAt), desc(ltiInstallationsTable.serviceAccountId));
+    .orderBy(...orderBy);
 }
 
 /** One installation of the tenant with its registration; undefined when the tenant has no such installation. */
@@ -113,13 +121,25 @@ export async function deleteTenantLtiRegistration(ctx: DbContext, { id, tenantId
   await ctx.var.db.delete(oauthClientsTable).where(and(eq(oauthClientsTable.id, id), eq(oauthClientsTable.tenantId, tenantId)));
 }
 
-/** The resource links placed in one channel of the tenant, oldest first: the order their tabs show in. */
-export async function findLtiResourceLinks(ctx: DbContext, { tenantId, channelId }: { tenantId: string; channelId: string }) {
+interface FindLtiResourceLinksOpts {
+  tenantId: string;
+  channelId: string;
+  order: OrderDirection;
+}
+
+/** The resource links placed in one channel of the tenant, in `order` of creation. */
+export async function findLtiResourceLinks(ctx: DbContext, { tenantId, channelId, order }: FindLtiResourceLinksOpts) {
+  const orderBy = getOrderColumns({
+    sort: 'createdAt',
+    order,
+    columns: { createdAt: ltiResourceLinksTable.createdAt },
+    tieBreaker: ltiResourceLinksTable.id,
+  });
   return ctx.var.db
     .select()
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
-    .orderBy(ltiResourceLinksTable.createdAt, ltiResourceLinksTable.id);
+    .orderBy(...orderBy);
 }
 
 /** One resource link of the organization; undefined when it has none of that id. */

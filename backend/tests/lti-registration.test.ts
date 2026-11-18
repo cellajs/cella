@@ -56,7 +56,7 @@ const fakePlatform = (configuration = platformConfiguration()) => {
     }
     return new Response(null, { status: 404 });
   };
-  return { options: { transport, resolve: async () => [{ address: '203.0.113.10', family: 4 }] }, registrations, clientId };
+  return { options: { transport, resolve: async () => [{ address: '1.1.1.1', family: 4 }] }, registrations, clientId };
 };
 
 describe('LTI registration', async () => {

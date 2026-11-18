@@ -55,7 +55,8 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete connection',
-    description: 'Removes a connection. Identities and sessions that came through it keep their rows; members stay members.',
+    description:
+      'Removes a connection and ends every session that came through it. Identities that came through it keep their rows; members stay members.',
     request: { params: connectionParamSchema },
     responses: { 204: { description: 'Connection removed' }, ...errors(404) },
   }),

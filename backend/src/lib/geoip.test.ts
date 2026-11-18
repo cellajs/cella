@@ -118,7 +118,7 @@ describe('lookupTargetIp', () => {
     expect(lookupTargetIp('127.0.0.1', sample)).toBe('8.8.8.8');
     expect(lookupTargetIp('::ffff:192.168.1.20', sample)).toBe('8.8.8.8');
     expect(lookupTargetIp('::1', sample)).toBe('8.8.8.8');
-    expect(lookupTargetIp('203.0.113.7', sample)).toBe('203.0.113.7');
+    expect(lookupTargetIp('1.1.1.1', sample)).toBe('1.1.1.1');
     expect(lookupTargetIp('127.0.0.1', { ...sample, mode: 'production' })).toBe('127.0.0.1');
     expect(lookupTargetIp('127.0.0.1', { ...sample, sampleIp: '' })).toBe('127.0.0.1');
   });

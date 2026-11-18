@@ -22,6 +22,7 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
   const { t } = useTranslation();
   const { mutate: remove } = useDeleteLtiConnectionMutation();
   const platform = 'productFamilyCode' in connection.config ? connection.config.productFamilyCode : null;
+  const deploymentId = 'deploymentIds' in connection.config ? connection.config.deploymentIds[0] : undefined;
 
   // Deleting ends every launch from that platform: the click asks first
   const openDeleteConfirm = (event: MouseEvent<HTMLButtonElement>) =>
@@ -48,6 +49,9 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
             <span className="break-all">{connection.issuer}</span>
           </ExpandableTileDetail>
           {platform && <ExpandableTileDetail label={t('c:platform')}>{platform}</ExpandableTileDetail>}
+          <ExpandableTileDetail label={t('c:lti_deployment')} wide>
+            {deploymentId ? <span className="break-all">{deploymentId}</span> : t('c:lti_deployment_none')}
+          </ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:connected')}>{dateShort(connection.createdAt)}</ExpandableTileDetail>
         </>
       }
