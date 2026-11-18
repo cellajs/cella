@@ -19,9 +19,9 @@ import {
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
 import { findExistingUserIds } from '#/modules/user/user-queries';
+import { toMinimalBase, type UserMinimalBase } from '#/schemas/minimal-base';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
@@ -301,7 +301,7 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
     .from(usersTable)
     .where(inArray(usersTable.id, [...new Set(userIds)]));
 
-  return new Map(rows.map((row) => [row.id, { ...toUserMinimalBase(row), givenName: row.givenName }]));
+  return new Map(rows.map((row) => [row.id, { ...toMinimalBase('user', row), givenName: row.givenName }]));
 }
 
 /** Stamps the rows whose instant mail went out, so the digest does not repeat them. */

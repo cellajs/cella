@@ -4,7 +4,6 @@ import { appConfig, type UserFlags } from 'shared';
 import type { UserId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { userMinimalColumnKeys } from '#/modules/user/helpers/user-minimal';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
@@ -55,9 +54,3 @@ const userBaseSelect = pick(getColumns(usersTable), Object.keys(userBaseSchema.s
 
 /** Limited to userBaseSelect columns plus lastSeenAt, for cross-tenant user endpoints and member lists; needs {@link userActorJoin}. */
 export const memberSelect = { ...userBaseSelect, email: provenEmail, lastSeenAt: actorsTable.lastSeenAt };
-
-/**
- * The minimal user columns, for createdBy/updatedBy; entityType is added as a SQL literal in joins.
- * @public
- */
-export const userMinimalBaseSelect = pick(getColumns(usersTable), userMinimalColumnKeys);

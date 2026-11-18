@@ -12,10 +12,9 @@ import type { memberListQuerySchema } from '#/modules/memberships/memberships-sc
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpers/select';
-import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
+import { minimalBaseColumns, toMinimalBase, type UserMinimalBase } from '#/schemas/minimal-base';
 import { getOrderColumns } from '#/utils/order-column';
-import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
 interface CountMembershipsByChannelOpts {
@@ -217,10 +216,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
   const rankedMembers = db
     .select({
       channelId: membershipsTable.channelId,
-      id: usersTable.id,
-      name: usersTable.name,
-      slug: usersTable.slug,
-      thumbnailUrl: usersTable.thumbnailUrl,
+      ...minimalBaseColumns(usersTable),
       rowNumber,
     })
     .from(membershipsTable)
@@ -229,7 +225,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
     .as('ranked_members');
 
   const rows = await db
-    .select(pick(rankedMembers, ['channelId', 'id', 'name', 'slug', 'thumbnailUrl']))
+    .select({ channelId: rankedMembers.channelId, ...minimalBaseColumns(rankedMembers) })
     .from(rankedMembers)
     .where(lte(rankedMembers.rowNumber, limit))
     .orderBy(rankedMembers.channelId, rankedMembers.rowNumber);
@@ -237,7 +233,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
   // Group per channel, preserving the createdAt order from the window function
   for (const { channelId, ...user } of rows) {
     const list = previews.get(channelId) ?? [];
-    list.push({ ...user, entityType: 'user' });
+    list.push(toMinimalBase('user', user));
     previews.set(channelId, list);
   }
 
