@@ -55,7 +55,7 @@ describe('last organization admin', async () => {
     await expectLastAdmin(
       await call(batchDeleteMembers, {
         path: { tenantId: org.tenantId, organizationId: org.id },
-        query: { entityId: org.id, entityType: 'organization' },
+        query: { channelId: org.id, channelType: 'organization' },
         body: { ids: [admin.id] },
         headers: headers(admin),
       }),
@@ -66,7 +66,7 @@ describe('last organization admin', async () => {
   it('must not leave an organization without an admin via its only admin leaving', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
 
-    await expectLastAdmin(await call(leaveMembership, { body: { entityId: org.id, entityType: 'organization' }, headers: headers(admin) }));
+    await expectLastAdmin(await call(leaveMembership, { body: { channelId: org.id, channelType: 'organization' }, headers: headers(admin) }));
     expect(await membershipOf(admin.id)).toBeDefined();
   });
 

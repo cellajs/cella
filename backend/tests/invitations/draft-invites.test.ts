@@ -279,7 +279,7 @@ describe.skipIf(!hierarchy.canDraft('organization'))('Draft context invite defer
 
     const { data } = await call(listInvitations, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
+      query: { channelId: organization.id, channelType: 'organization' },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     const listed = (data as { results: { id: string; email: string }[] }).results;

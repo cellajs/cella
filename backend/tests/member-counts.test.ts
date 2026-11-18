@@ -63,7 +63,7 @@ describe('member counts (include=counts)', async () => {
   it('counts the rows a member authored in the channel', async () => {
     const { data, error } = await call(listMembers, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-      query: { entityId: tenant.organization.id, entityType: 'organization', include: 'counts' },
+      query: { channelId: tenant.organization.id, channelType: 'organization', include: 'counts' },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 

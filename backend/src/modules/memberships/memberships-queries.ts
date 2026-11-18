@@ -34,15 +34,15 @@ export const countMembershipsByChannel = async (ctx: DbContext, { channelType, c
 
 interface FindInviteeAccountsOpts {
   emails: string[];
-  entityType: ChannelEntityType;
-  entityId: string;
+  channelType: ChannelEntityType;
+  channelId: string;
 }
 
 /**
  * The accounts behind invited addresses, one row per address an account holds: its primary address, its membership
  * of the channel (with the role) and whether it is a member of the organization. Addresses no account holds have no row.
  */
-export const findInviteeAccounts = async (ctx: OrgContext, { emails, entityType, entityId }: FindInviteeAccountsOpts) => {
+export const findInviteeAccounts = async (ctx: OrgContext, { emails, channelType, channelId }: FindInviteeAccountsOpts) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
 
@@ -59,7 +59,7 @@ export const findInviteeAccounts = async (ctx: OrgContext, { emails, entityType,
     .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
     .leftJoin(
       membershipsTable,
-      and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.channelType, entityType), eq(membershipsTable.channelId, entityId)),
+      and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.channelType, channelType), eq(membershipsTable.channelId, channelId)),
     )
     .leftJoin(
       orgMemberships,
@@ -120,8 +120,8 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: { id: st
 
 interface FindMembersPaginatedOpts extends Pick<z.infer<typeof memberListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
-  entityId: string;
-  entityType: ChannelEntityType;
+  channelId: string;
+  channelType: ChannelEntityType;
   q?: string;
   offset: number;
   limit: number;
@@ -136,14 +136,14 @@ interface FindMembersPaginatedOpts extends Pick<z.infer<typeof memberListQuerySc
 /** A page of a channel's members, each user with its membership, and the total. */
 export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
+  const { organizationId, channelId, channelType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
 
   const search = searchFilter([usersTable.name, usersTable.email], q);
 
   const membersFilters: SQL[] = [
     eq(membershipsTable.organizationId, organizationId),
-    eq(membershipsTable.channelId, entityId),
-    eq(membershipsTable.channelType, entityType),
+    eq(membershipsTable.channelId, channelId),
+    eq(membershipsTable.channelType, channelType),
   ];
 
   if (role) membersFilters.push(eq(membershipsTable.role, role));
@@ -160,7 +160,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       lastSeenAt: lastSeenOrder,
       role: membershipsTable.role,
       // Latest live product row by the member in the viewed channel
-      lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
+      lastPostedAt: lastPostedAtOrder(channelType, channelId, organizationId),
     },
     tieBreaker: usersTable.id,
   });
@@ -170,7 +170,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       ...memberSelect,
       membership: membershipBaseSelect,
       // Per-member insight counts on the page rows only; the total below stays free of the subqueries
-      ...(includeCounts && { counts: memberCountsSelect(entityType, entityId, organizationId) }),
+      ...(includeCounts && { counts: memberCountsSelect(channelType, channelId, organizationId) }),
       ...(includeMfa && { mfaRequired: usersTable.mfaRequired }),
     })
     .from(usersTable)

@@ -35,7 +35,7 @@ describe('Invitation mail caps', async () => {
   const invite = (organization: Organization, inviter: Inviter, emails: string[]) =>
     call(inviteMembers, {
       ...scope(organization, inviter),
-      query: { entityId: organization.id, entityType: 'organization' },
+      query: { channelId: organization.id, channelType: 'organization' },
       body: { emails, role: memberRole },
     });
 

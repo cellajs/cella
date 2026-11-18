@@ -182,7 +182,7 @@ describe('Cross-organization API isolation', async () => {
       attempt: (as) =>
         call(listMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-          query: { entityId: orgB.id, entityType: 'organization' },
+          query: { channelId: orgB.id, channelType: 'organization' },
           headers: headers(as),
         }),
     },
@@ -191,7 +191,7 @@ describe('Cross-organization API isolation', async () => {
       attempt: (as) =>
         call(listInvitations, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-          query: { entityId: orgB.id, entityType: 'organization' },
+          query: { channelId: orgB.id, channelType: 'organization' },
           headers: headers(as),
         }),
     },
@@ -210,7 +210,7 @@ describe('Cross-organization API isolation', async () => {
       attempt: (as) =>
         call(batchDeleteMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-          query: { entityId: orgB.id, entityType: 'organization' },
+          query: { channelId: orgB.id, channelType: 'organization' },
           body: { ids: [userB.id] },
           headers: headers(as),
         }),
@@ -221,7 +221,7 @@ describe('Cross-organization API isolation', async () => {
       attempt: (as) =>
         call(inviteMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-          query: { entityId: orgB.id, entityType: 'organization' },
+          query: { channelId: orgB.id, channelType: 'organization' },
           body: { emails: [invitedByAttacker], role: memberRole },
           headers: headers(as),
         }),

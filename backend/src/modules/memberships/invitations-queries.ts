@@ -231,7 +231,7 @@ export const bindInvitationsByEmail = async (ctx: DbContext, { email, userId }: 
 
 interface FindInvitationsPaginatedOpts extends Pick<z.infer<typeof invitationListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
-  entityId: string;
+  channelId: string;
   offset: number;
   limit: number;
 }
@@ -242,12 +242,12 @@ interface FindInvitationsPaginatedOpts extends Pick<z.infer<typeof invitationLis
  */
 export const findInvitationsPaginated = async (ctx: DbContext, opts: FindInvitationsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { organizationId, entityId, sort, order, offset, limit } = opts;
+  const { organizationId, channelId, sort, order, offset, limit } = opts;
 
   const table = invitationsTable;
   const orderBy = getOrderColumns({ sort, order, columns: { createdAt: table.createdAt }, tieBreaker: table.id });
 
-  const where = and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), ne(table.status, 'declined'));
+  const where = and(eq(table.channelId, channelId), eq(table.organizationId, organizationId), ne(table.status, 'declined'));
 
   const itemsQuery = db
     .select(pick(table, ['id', 'role', 'email', 'status', 'createdAt', 'mailedAt', 'createdBy']))

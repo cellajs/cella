@@ -42,7 +42,7 @@ describe('The MFA setting of other users', async () => {
   const readMembers = async (as: Session, include: string | null = 'mfa') => {
     const { data, response } = await call(listMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization', ...(include && { include }) },
+      query: { channelId: organization.id, channelType: 'organization', ...(include && { include }) },
       headers: headers(as),
     });
     expect(response.status).toBe(200);

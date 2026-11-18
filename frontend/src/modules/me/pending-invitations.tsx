@@ -22,14 +22,11 @@ function InvitationRow({ item: { entity, invitation, organizationName } }: { ite
   const { mutate, isPending, variables } = useHandleInvitationMutation();
 
   // An accept opens the channel joined, through the link that resolves its route
-  const open = () =>
-    navigate({
-      to: '/n',
-      search: { tenantId: entity.tenantId, organizationId: invitation.organizationId, channelId: entity.id, channelType: entity.entityType },
-    });
+  const { tenantId, organizationId, channelId, channelType } = invitation;
+  const open = () => navigate({ to: '/n', search: { tenantId, organizationId, channelId, channelType } });
   const values = {
     inviterName: invitation.createdBy.name,
-    entityName: entity.name,
+    channelName: entity.name,
     organizationName,
     role: t(`c:${invitation.role}`),
   };

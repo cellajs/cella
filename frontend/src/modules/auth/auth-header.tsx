@@ -26,7 +26,7 @@ export function AuthHeader({ title, image, description, children }: AuthHeaderPr
 }
 
 export function InvitationAvatar({ invitation }: { invitation: TokenInvitation }) {
-  return <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-14" />;
+  return <EntityAvatar type={invitation.channelType} name={invitation.channelName} className="size-14" />;
 }
 
 interface AuthEmailButtonProps {

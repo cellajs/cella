@@ -32,7 +32,7 @@ export function AcceptInvitationStep({ tokenData, user }: { tokenData: TokenData
   // Accepted: open the channel joined, through the link that resolves its route
   const open = () => {
     if (!invitation) return leave();
-    const { tenantId, organizationId, channelId, entityType: channelType } = invitation;
+    const { tenantId, organizationId, channelId, channelType } = invitation;
     navigate({ to: '/n', search: { tenantId, organizationId, channelId, channelType }, replace: true });
   };
 
@@ -74,6 +74,7 @@ export function AcceptInvitationStep({ tokenData, user }: { tokenData: TokenData
           invitation &&
           t(invitation.organizationName ? 'c:invite_accept_as_account_in_organization.text' : 'c:invite_accept_as_account.text', {
             ...invitation,
+            inviterName: tokenData.inviterName,
             role: t(`c:${invitation.role}`),
           })
         }

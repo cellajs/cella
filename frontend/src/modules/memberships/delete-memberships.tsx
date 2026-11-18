@@ -15,7 +15,7 @@ export function DeleteMemberships({ members, channel, ...props }: DeleteMembersh
   const toVariables = (items: Member[]) => ({
     path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) },
     body: { ids: items.map(({ id }) => id) },
-    query: { entityId: channel.id, entityType: channel.entityType },
+    query: { channelId: channel.id, channelType: channel.entityType },
     members: items,
   });
 

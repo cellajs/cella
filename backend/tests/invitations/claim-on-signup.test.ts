@@ -30,7 +30,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const { response } = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: { emails: [invitedEmail], role: memberRole },
-      query: { entityId: organization.id, entityType: 'organization' as const },
+      query: { channelId: organization.id, channelType: 'organization' as const },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     expect(response.status).toBe(200);

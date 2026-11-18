@@ -1,8 +1,9 @@
-import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
+import { appConfig } from 'shared';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/core';
+import type { InvitationModel } from '#/modules/memberships/invitations-db';
 import { findAccountNamesAndLanguages } from '#/modules/memberships/memberships-queries';
 import { log } from '#/utils/logger';
 import { displayNameFromEmail } from '#/utils/slug';
@@ -21,7 +22,7 @@ interface InvitationMailOpts {
   /** The inviter: named in the mail, and replies reach them. Without one the mail comes from the system. */
   sender?: { name: string; email?: string };
   /** The invited channel and role; a system invitation names none. */
-  channel?: { type: ChannelEntityType; id: string; tenantId: string; organizationId: string; name: string; role: EntityRole };
+  channel?: Pick<InvitationModel, 'channelType' | 'channelId' | 'tenantId' | 'organizationId' | 'role'> & { name: string };
   /** Whose default language an address without an account reads; a mail about a channel below it names it. */
   organization?: { defaultLanguageCode: string; name: string } | null;
   /** Addresses invited: a pending invitation each. */
@@ -67,11 +68,10 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
     return sent;
   }
 
-  const organizationName = channel.type === 'organization' ? undefined : organization?.name;
+  const organizationName = channel.channelType === 'organization' ? undefined : organization?.name;
   const statics = { ...senderProps, entityName: channel.name, organizationName, role: channel.role };
   const home = `${appConfig.frontendUrl}${appConfig.defaultRedirectPath}`;
-  const { id: channelId, type: channelType, tenantId, organizationId } = channel;
-  const page = buildNotificationLink(appConfig.frontendUrl, { tenantId, organizationId, channelId, channelType });
+  const page = buildNotificationLink(appConfig.frontendUrl, channel);
   const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...accountHolder(address), memberInviteLink: home }]));
   const addedRecipients = added.map((address) => ({ ...accountHolder(address), entityLink: page }));
 

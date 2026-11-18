@@ -220,7 +220,7 @@ describe('Resend an invitation', async () => {
     // Inviting the address again reminds it: the plan still reads the row the answer has not committed.
     const reminder = call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
+      query: { channelId: organization.id, channelType: 'organization' },
       body: { emails: [invitedEmail], role: memberRole },
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
     });

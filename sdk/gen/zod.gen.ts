@@ -1161,14 +1161,13 @@ export const zGetTokenDataResponse = z.object({
   inviterName: z.string().optional(),
   invitation: z
     .object({
-      entityType: z.enum(['organization']),
+      channelType: z.enum(['organization']),
       tenantId: z.string(),
       organizationId: z.string(),
       channelId: z.string(),
-      entityName: z.string(),
+      channelName: z.string(),
       organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
-      inviterName: z.string(),
     })
     .optional(),
 });
@@ -1864,8 +1863,8 @@ export const zDeclineInvitationPath = z.object({
 export const zDeclineInvitationResponse = zChannelBase;
 
 export const zLeaveMembershipBody = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -1954,8 +1953,8 @@ export const zInviteMembersPath = z.object({
 });
 
 export const zInviteMembersQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -1990,8 +1989,8 @@ export const zCheckMemberInvitePath = z.object({
 });
 
 export const zCheckMemberInviteQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -2013,8 +2012,8 @@ export const zBatchDeleteMembersPath = z.object({
 });
 
 export const zBatchDeleteMembersQuery = z.object({
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 /**
@@ -2103,8 +2102,8 @@ export const zListMembersQuery = z.object({
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
   orderBy: z
     .enum([
       'id',
@@ -2184,8 +2183,8 @@ export const zListInvitationsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
-  entityId: z.string().max(50),
-  entityType: z.enum(['organization']),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
 });
 

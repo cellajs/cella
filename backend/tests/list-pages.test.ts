@@ -53,7 +53,7 @@ describe('List pages', async () => {
       { maxPageSize: 1, skip: 0 },
       { maxPageSize: 1, skip: 2 },
     ]) {
-      const query = { entityId: organization.id, entityType: 'organization' as const, ...page };
+      const query = { channelId: organization.id, channelType: 'organization' as const, ...page };
       const { data } = await call(listInvitations, { path, query, headers });
       expect(data as Page).toMatchObject({ results: [expect.anything()], totalSize: 3 });
     }
