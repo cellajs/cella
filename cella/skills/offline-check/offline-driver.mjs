@@ -15,7 +15,8 @@ if (!ORG_PATH) throw new Error('ORG_PATH=<tenantId>/<orgSlug>: an organization t
 const [TENANT] = ORG_PATH.split('/');
 const ATTACHMENTS = `/${ORG_PATH}/organization/attachments`;
 // Pages a reload checks, each opened online first; an app adds its own (a board) after the template's.
-const PAGES = (process.env.PAGES ?? `/home,${ATTACHMENTS},/account`).split(',');
+// The cold and nouser checks reopen the last: never /account, whose security data a cold boot never holds.
+const PAGES = (process.env.PAGES ?? `/home,/account,${ATTACHMENTS}`).split(',');
 const ALL = ['reload', 'detect', 'cold', 'nouser', 'auth', 'description'];
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : ALL;
 
