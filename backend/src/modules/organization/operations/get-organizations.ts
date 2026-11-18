@@ -9,7 +9,7 @@ import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-
 import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
 import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import { listedTenantKinds } from '#/modules/tenants/tenant-restrictions';
-import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
+import type { UserMinimalBase } from '#/schemas/minimal-base';
 import type { PageWindow } from '#/utils/list-page';
 
 /**

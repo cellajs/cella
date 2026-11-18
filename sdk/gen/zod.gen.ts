@@ -2260,7 +2260,7 @@ export const zListNotificationsResponse = z.object({
       kind: z.enum(['mention', 'comment', 'reply']),
       productType: z.enum(['attachment']),
       subjectId: z.uuid(),
-      contextId: z.uuid().nullable(),
+      contextId: z.uuid(),
       channelId: z.uuid(),
       channelType: z.enum(['organization']),
       organizationId: z.uuid(),
@@ -2273,10 +2273,24 @@ export const zListNotificationsResponse = z.object({
           }),
         )
         .nullable(),
-      channelName: z.string(),
-      channelThumbnailUrl: z.string().nullable(),
-      organizationName: z.string(),
-      organizationThumbnailUrl: z.string().nullable(),
+      channel: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
+      organization: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          slug: z.string(),
+          thumbnailUrl: z.string().nullable(),
+          entityType: z.enum(['organization']),
+        })
+        .nullable(),
       subjectName: z.string(),
     }),
   ),
