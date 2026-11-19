@@ -579,7 +579,7 @@ export type LtiResourceLink = {
     [key: string]: string;
   };
   /**
-   * Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id
+   * Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id
    */
   enabled: boolean;
   createdAt: string;
@@ -4820,20 +4820,9 @@ export type ListLtiInstallationTabsResponses = {
       channelId: string;
       channelName: string;
       /**
-       * Whether the tab is on: only a tab that is on lets the LTI tool read its course
+       * Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel
        */
       enabled: boolean;
-      /**
-       * The course the tab launches as; null when none is
-       */
-      context: {
-        channelType: 'organization';
-        channelId: string;
-        /**
-         * Null for a course above the channel that the caller may not read
-         */
-        name: string | null;
-      } | null;
       /**
        * Whether the caller may remove it: they may update its channel
        */
@@ -5152,24 +5141,13 @@ export type ListLtiTabsResponses = {
        */
       status: 'pending' | 'active' | 'disabled';
       /**
-       * Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as
+       * Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may
+       * Why the caller may not place it in the channel or switch its tab on; null when they may
        */
-      refusal: 'lti_installation_disabled' | 'channel_archived' | 'lti_context_update_required' | null;
-      /**
-       * The course a tab in the channel launches as; null when none is
-       */
-      context: {
-        channelType: 'organization';
-        channelId: string;
-        /**
-         * Null for a course above the channel that the caller may not read
-         */
-        name: string | null;
-      } | null;
+      refusal: 'lti_installation_disabled' | null;
       /**
        * The tab once placed, on or off; null for an LTI tool never placed in the channel
        */
@@ -5390,7 +5368,7 @@ export type UpdateLtiResourceLinkData = {
       [key: string]: string;
     };
     /**
-     * Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on
+     * Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs
      */
     enabled?: boolean;
   };
@@ -5517,7 +5495,7 @@ export type ListLtiMembersData = {
   };
   query?: {
     /**
-     * Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`
+     * Lists only the members with this LTI role there: a full URI, or a core context role by its short name, such as `Learner`
      */
     role?: string;
     /**
@@ -5571,7 +5549,7 @@ export type ListLtiMembersResponses = {
      */
     id: string;
     /**
-     * The course, as a launch's context claim names it: the channel's id, slug and name
+     * The LTI context, as a launch's context claim names it: the channel's id, slug and name
      */
     context: {
       id: string;
@@ -5584,7 +5562,7 @@ export type ListLtiMembersResponses = {
        */
       user_id: string;
       /**
-       * Their LTI roles in the course, as full URIs: the roles a launch there would send them
+       * Their LTI context roles there, as full URIs: the context roles a launch there would send them
        */
       roles: Array<string>;
       /**

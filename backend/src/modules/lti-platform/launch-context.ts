@@ -3,8 +3,9 @@ import { lisContextRoles, lisContextTypes, lisInstitutionRoles } from '#/lib/lti
 
 /**
  * Whether a channel type is an LTI context, and of which LIS context types (`lisContextTypes`); null for a channel type
- * that is none. A launch names the resource link's own channel as its context when it is one, else its nearest ancestor
- * that is, else no context. The app fills this pinned file. The default: every channel is a context, a group.
+ * that is none. A launch names the resource link's own channel as its context when it is one, else no context, and
+ * only a context's channel holds LTI tabs, the organization excepted. The app fills this pinned file. The default:
+ * every channel is a context, a group.
  */
 export const ltiContextTypes = (_channelType: ChannelEntityType): string[] | null => [lisContextTypes.group];
 

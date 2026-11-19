@@ -1,20 +1,20 @@
-import { hierarchy } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
 
 /**
- * The course a placement is in: its own channel when that is an LTI context, else its nearest ancestor that is, read
- * from the placement's channel id columns; null when none is (`ltiContextTypes`). A launch names it as its context, and
- * the installation reads its people.
+ * The LTI context a resource link launches as: its own channel, with the LIS context types `ltiContextTypes` gives its
+ * type; null when that type is no context. A launch names it, and the installation reads its people.
  */
-export const placementContext = (placement: Pick<LtiResourceLinkModel, 'channelType' | 'channelId'> & Record<string, unknown>) => {
-  const types = ltiContextTypes(placement.channelType);
-  if (types) return { channelType: placement.channelType, channelId: placement.channelId, types };
-  for (const ancestor of hierarchy.resolveNonNullAncestors(placement.channelType, placement)) {
-    const ancestorTypes = ltiContextTypes(ancestor.type);
-    if (ancestorTypes) return { channelType: ancestor.type, channelId: ancestor.id, types: ancestorTypes };
-  }
-  return null;
+export const linkContext = ({ channelType, channelId }: Pick<LtiResourceLinkModel, 'channelType' | 'channelId'>) => {
+  const types = ltiContextTypes(channelType);
+  return types && { channelType, channelId, types };
 };
 
-export type PlacementContext = NonNullable<ReturnType<typeof placementContext>>;
+export type LinkContext = NonNullable<ReturnType<typeof linkContext>>;
+
+/**
+ * Whether a channel type holds LTI tabs: a type the app makes an LTI context, and the organization, whose tabs launch
+ * without a context when it is none.
+ */
+export const holdsLtiTabs = (channelType: ChannelEntityType) => channelType === 'organization' || !!ltiContextTypes(channelType);

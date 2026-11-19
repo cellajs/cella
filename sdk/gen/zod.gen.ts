@@ -2032,13 +2032,6 @@ export const zListLtiInstallationTabsResponse = z.object({
       channelId: z.string(),
       channelName: z.string(),
       enabled: z.boolean(),
-      context: z
-        .object({
-          channelType: z.enum(['organization']),
-          channelId: z.string(),
-          name: z.string().nullable(),
-        })
-        .nullable(),
       deletable: z.boolean(),
     }),
   ),
@@ -2131,14 +2124,7 @@ export const zListLtiTabsResponse = z.object({
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
-      refusal: z.enum(['lti_installation_disabled', 'channel_archived', 'lti_context_update_required']).nullable(),
-      context: z
-        .object({
-          channelType: z.enum(['organization']),
-          channelId: z.string(),
-          name: z.string().nullable(),
-        })
-        .nullable(),
+      refusal: z.enum(['lti_installation_disabled']).nullable(),
       resourceLink: z
         .object({
           id: z.string(),

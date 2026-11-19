@@ -47,7 +47,7 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
   return { ...resourceLink, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
 };
 
-/** A page of a course's members for an installation that releases the name alone. */
+/** A page of an LTI context's members for an installation that releases the name alone. */
 export const mockLtiMembershipContainerResponse = (key = 'ltiMembershipContainer:default') =>
   withFakerSeed(key, () => {
     const organizationId = mockUuid();

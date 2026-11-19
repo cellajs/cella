@@ -1,0 +1,4 @@
+-- Hand-written, beside the generated migration: tabs in a channel type that `ltiContextTypes` makes no context, other
+-- than the organization, stop launching and stay listed nowhere. Switch them off so the LTI tools card shows them off,
+-- with your own channel types in the list. The statement keeps every resource link and its id, nothing is deleted.
+-- UPDATE "lti_resource_links" SET "enabled" = false WHERE "channel_type" IN ('courseSection');--> statement-breakpoint

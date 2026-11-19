@@ -42,14 +42,14 @@ export const launchCustom = ({ ltiToolConfig }: LaunchClient, resourceLinkCustom
 });
 
 /**
- * The address of a course's members for an installed LTI tool's token (`listLtiMembers`). It holds no query: an NRPS
+ * The address of an LTI context's members for an installed LTI tool's token (`listLtiMembers`). It holds no query: an NRPS
  * reader appends its own params.
  */
-export const ltiMembershipsUrl = ({ tenantId, organizationId }: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: ChannelRef) =>
-  `${resourceUri({ face: 'api', tenantId })}/organizations/${organizationId}/lti-members/${course.channelType}/${course.channelId}`;
+export const ltiMembershipsUrl = ({ tenantId, organizationId }: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, context: ChannelRef) =>
+  `${resourceUri({ face: 'api', tenantId })}/organizations/${organizationId}/lti-members/${context.channelType}/${context.channelId}`;
 
-/** The NRPS claim (`ltiClaims.namesRoleService`) of a launch of a placement in `course`, the launch's context. */
-export const launchNamesRoleService = (placement: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: ChannelRef) => ({
-  context_memberships_url: ltiMembershipsUrl(placement, course),
+/** The NRPS claim (`ltiClaims.namesRoleService`) of a launch of a resource link in `context`, its own channel. */
+export const launchNamesRoleService = (link: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, context: ChannelRef) => ({
+  context_memberships_url: ltiMembershipsUrl(link, context),
   service_versions: [ltiNrps.version],
 });

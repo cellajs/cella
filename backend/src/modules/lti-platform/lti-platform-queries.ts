@@ -1,5 +1,5 @@
 import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
-import { type Access, type AccessScope, appConfig, hierarchy } from 'shared';
+import { type Access, type AccessScope, hierarchy } from 'shared';
 import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
@@ -15,7 +15,6 @@ import { usersTable } from '#/modules/user/user-db';
 import { readableMembershipsWhere } from '#/permissions/visible-people';
 import type { ChannelRef, OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
-import { pick } from '#/utils/pick';
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -194,34 +193,6 @@ export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.id, id), eq(ltiResourceLinksTable.organizationId, organizationId)));
   return found;
-}
-
-/** What `placementContext` reads of a resource link: its channel and the channel id columns above it. */
-const placementSelect = pick(getColumns(ltiResourceLinksTable), [
-  'channelType',
-  'channelId',
-  ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
-]);
-
-interface FindLtiPlacementsOpts {
-  installationId: string;
-  organizationId: string;
-  course: ChannelRef;
-}
-
-/** The channels of every tab that is on and places the installation in the organization, in the course or below it. */
-export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId, course }: FindLtiPlacementsOpts) {
-  return ctx.var.db
-    .select(placementSelect)
-    .from(ltiResourceLinksTable)
-    .where(
-      and(
-        eq(ltiResourceLinksTable.installationId, installationId),
-        eq(ltiResourceLinksTable.organizationId, organizationId),
-        eq(ltiResourceLinksTable.enabled, true),
-        eq(getColumns(ltiResourceLinksTable)[appConfig.entityIdColumnKeys[course.channelType]], course.channelId),
-      ),
-    );
 }
 
 interface FindLtiMembersOpts extends ChannelRef {

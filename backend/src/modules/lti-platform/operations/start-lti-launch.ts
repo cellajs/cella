@@ -4,6 +4,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { issueHandoffToken, readHandoffToken } from '#/modules/auth/core';
+import { holdsLtiTabs } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
@@ -39,7 +40,8 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
  * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
  * LTI tool.
  * @throws AppError 404 `not_found` for no such link or a caller who may not launch it, 409 `lti_tab_switched_off` for a
- *   tab switched off, 409 `lti_installation_not_active` while the installation waits for an approval or is disabled.
+ *   tab switched off, 409 `lti_channel_type_not_allowed` for a tab in a channel type that holds none, 409
+ *   `lti_installation_not_active` while the installation waits for an approval or is disabled.
  */
 export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   const { tenantId, organizationId } = ctx.var;
@@ -47,6 +49,7 @@ export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
   await readAsLauncher(ctx.var.user.id, link);
   if (!link.enabled) throw new AppError(409, 'lti_tab_switched_off', 'warn', { meta: { resourceLinkId: link.id } });
+  if (!holdsLtiTabs(link.channelType)) throw new AppError(409, 'lti_channel_type_not_allowed', 'warn', { entityType: link.channelType });
   const target = await findLtiLaunchTarget(ctx, { resourceLinkId: link.id });
   if (!target?.installation.approvedAt || target.account.status !== 'active') {
     throw new AppError(409, 'lti_installation_not_active', 'warn', { meta: { installationId: link.installationId } });

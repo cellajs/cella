@@ -193,7 +193,7 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
                 {name}
                 <LtiTabOrigin row={row.lti} />
               </span>
-              <LtiTabRefusal row={row.lti} channel={entity} />
+              <LtiTabRefusal row={row.lti} />
             </>
           );
         }

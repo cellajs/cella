@@ -50,7 +50,7 @@
           },
           "ltiToolGuard": {
             "name": "LTI tool",
-            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the courses it is placed in or below, within the scopes an admin granted."
+            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the channels where it has a tab that is on, within the scopes an admin granted."
           },
           "orgGuard": {
             "name": "Organization",
@@ -430,7 +430,7 @@
     },
     {
       "name": "lti-platform",
-      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel as a tab, which binds it there while it is on; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a course it is placed in or below, by Names and Role Provisioning Services 2.0.",
+      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel as a tab, which binds it there while it is on; a launch of it signs the person's ID token at the issuer, with the channel as its LTI context, and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a channel where it has a tab that is on, by Names and Role Provisioning Services 2.0.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2657,7 +2657,7 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id"
+            "description": "Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id"
           },
           "createdAt": {
             "type": "string"
@@ -11082,7 +11082,7 @@
         "operationId": "listLtiInstallationTabs",
         "tags": ["lti-platform", "cella"],
         "summary": "Get tabs of LTI installation",
-        "description": "Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, the course it launches as and whether the caller may remove it. The LTI tool reads the people of the courses of its tabs that are on. Requires permission to update the organization.",
+        "description": "Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, and whether the caller may remove it. The LTI tool reads the people of the channels of its tabs that are on. Requires permission to update the organization.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11177,11 +11177,6 @@
                       "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
                       "channelName": "Biology department",
                       "enabled": true,
-                      "context": {
-                        "channelType": "organization",
-                        "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
-                        "name": "Biology department"
-                      },
                       "deletable": true
                     }
                   ],
@@ -11211,32 +11206,14 @@
                           },
                           "enabled": {
                             "type": "boolean",
-                            "description": "Whether the tab is on: only a tab that is on lets the LTI tool read its course"
-                          },
-                          "context": {
-                            "type": ["object", "null"],
-                            "properties": {
-                              "channelType": {
-                                "type": "string",
-                                "enum": ["organization"]
-                              },
-                              "channelId": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": ["string", "null"],
-                                "description": "Null for a course above the channel that the caller may not read"
-                              }
-                            },
-                            "required": ["channelType", "channelId", "name"],
-                            "description": "The course the tab launches as; null when none is"
+                            "description": "Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel"
                           },
                           "deletable": {
                             "type": "boolean",
                             "description": "Whether the caller may remove it: they may update its channel"
                           }
                         },
-                        "required": ["id", "channelType", "channelId", "channelName", "enabled", "context", "deletable"]
+                        "required": ["id", "channelType", "channelId", "channelName", "enabled", "deletable"]
                       }
                     },
                     "nextPageToken": {
@@ -11651,7 +11628,7 @@
         "operationId": "listLtiTabs",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI tabs",
-        "description": "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
+        "description": "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether a tab there lets it read who is in the channel, why the caller may not place it or switch it on, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11757,11 +11734,6 @@
                       "status": "active",
                       "readsMembers": true,
                       "refusal": null,
-                      "context": {
-                        "channelType": "organization",
-                        "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
-                        "name": "Biology department"
-                      },
                       "resourceLink": {
                         "id": "3e3a0b8f-0277-4a58-b194-e7f5a5dc9874",
                         "title": "Peer review",
@@ -11804,30 +11776,12 @@
                           },
                           "readsMembers": {
                             "type": "boolean",
-                            "description": "Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as"
+                            "description": "Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context"
                           },
                           "refusal": {
                             "type": ["string", "null"],
-                            "enum": ["lti_installation_disabled", "channel_archived", "lti_context_update_required", null],
-                            "description": "Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may"
-                          },
-                          "context": {
-                            "type": ["object", "null"],
-                            "properties": {
-                              "channelType": {
-                                "type": "string",
-                                "enum": ["organization"]
-                              },
-                              "channelId": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": ["string", "null"],
-                                "description": "Null for a course above the channel that the caller may not read"
-                              }
-                            },
-                            "required": ["channelType", "channelId", "name"],
-                            "description": "The course a tab in the channel launches as; null when none is"
+                            "enum": ["lti_installation_disabled", null],
+                            "description": "Why the caller may not place it in the channel or switch its tab on; null when they may"
                           },
                           "resourceLink": {
                             "type": ["object", "null"],
@@ -11846,7 +11800,7 @@
                             "description": "The tab once placed, on or off; null for an LTI tool never placed in the channel"
                           }
                         },
-                        "required": ["id", "name", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "context", "resourceLink"]
+                        "required": ["id", "name", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "resourceLink"]
                       }
                     },
                     "nextPageToken": {
@@ -12070,7 +12024,7 @@
         "operationId": "createLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Create LTI resource link",
-        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it; a channel holds one tab of an installation. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
+        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it as that channel; a channel holds one tab of an installation, and a channel type the app makes no LTI context holds none, the organization excepted. Requires permission to update the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -12185,7 +12139,7 @@
         "operationId": "updateLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Update LTI resource link",
-        "description": "Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching also takes the course it launches as when that is a channel above, and switching on an active LTI tool.",
+        "description": "Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching on also takes an active LTI tool.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -12244,7 +12198,7 @@
                   },
                   "enabled": {
                     "type": "boolean",
-                    "description": "Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on"
+                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs"
                   }
                 }
               }
@@ -12270,7 +12224,7 @@
                   },
                   "enabled": {
                     "type": "boolean",
-                    "description": "Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on"
+                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs"
                   }
                 }
               }
@@ -12323,7 +12277,7 @@
         "operationId": "deleteLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Delete LTI resource link",
-        "description": "Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires the rights switching it takes: permission to update its channel, and the course it launches as when that is a channel above.",
+        "description": "Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -12482,7 +12436,7 @@
         "operationId": "listLtiMembers",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI members",
-        "description": "The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. `limit` is a hint, at least 25. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as, or a channel type the app does not have, answers 403, as for an installation placed nowhere",
+        "description": "The members of a channel where an installed LTI tool has a tab that is on, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. The channel is the LTI context a launch of that tab names, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles there from their membership there, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. `limit` is a hint, at least 25. A resource link's members (`rlid`) and the differences link are not served. A channel where it has no tab that is on, a channel above or below one, or a channel type the app does not have, answers 403, as for an installation placed nowhere",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -12529,10 +12483,10 @@
             "schema": {
               "type": "string",
               "maxLength": 2048,
-              "description": "Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`"
+              "description": "Lists only the members with this LTI role there: a full URI, or a core context role by its short name, such as `Learner`"
             },
             "required": false,
-            "description": "Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`",
+            "description": "Lists only the members with this LTI role there: a full URI, or a core context role by its short name, such as `Learner`",
             "name": "role",
             "in": "query"
           },
@@ -12575,7 +12529,7 @@
             "description": "LTI members",
             "headers": {
               "Link": {
-                "description": "The next page as `<address>; rel=\"next\"`, while the course lists more",
+                "description": "The next page as `<address>; rel=\"next\"`, while the channel lists more",
                 "schema": {
                   "type": "string"
                 }
@@ -12620,7 +12574,7 @@
                         }
                       },
                       "required": ["id", "label", "title"],
-                      "description": "The course, as a launch's context claim names it: the channel's id, slug and name"
+                      "description": "The LTI context, as a launch's context claim names it: the channel's id, slug and name"
                     },
                     "members": {
                       "type": "array",
@@ -12636,7 +12590,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "Their LTI roles in the course, as full URIs: the roles a launch there would send them"
+                            "description": "Their LTI context roles there, as full URIs: the context roles a launch there would send them"
                           },
                           "status": {
                             "type": "string",

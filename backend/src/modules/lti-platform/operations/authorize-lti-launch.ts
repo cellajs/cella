@@ -6,8 +6,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
 import { ltiClaims, ltiNrps } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
-import { resolveEntity } from '#/modules/entities/entities-queries';
-import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
+import { holdsLtiTabs, linkContext } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiInstitutionRolesIn, ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
@@ -83,6 +82,7 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
   const { account, installation, resourceLink } = target;
   if (!installation.approvedAt || account.status !== 'active') throw new LaunchError('unauthorized_client', 'the installation is not active');
   if (!resourceLink.enabled) throw new LaunchError('access_denied', 'the tab is switched off');
+  if (!holdsLtiTabs(resourceLink.channelType)) throw new LaunchError('access_denied', 'the channel type holds no tabs');
 
   const person = await findServedUserById(dbCtx, { id: personId });
   const launcher =
@@ -97,21 +97,18 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
 
 /**
  * The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. The
- * NRPS claim goes only with a course, to an LTI tool an admin granted the access scope the NRPS scope stands for.
+ * context is the resource link's own channel when it is one (`linkContext`). The NRPS claim goes only with a context,
+ * to an LTI tool an admin granted the access scope the NRPS scope stands for.
  */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
   const { person, memberships, channel } = await assertLaunchAllowed({ personId, target });
 
-  const placed = placementContext(resourceLink);
-  const contextChannel =
-    placed &&
-    (placed.channelId === channel.id ? channel : await resolveEntity(dbCtx, { entityType: placed.channelType, identifier: placed.channelId }));
-  const context = placed && contextChannel ? { ...placed, channel: contextChannel } : null;
+  const context = linkContext(resourceLink);
   // Context roles from the person's membership in the context alone, institution roles from theirs in the organization.
   const membershipIn = (channelId: string) => memberships.find((membership) => membership.channelId === channelId);
   const roles = [
-    ...(context ? ltiRolesIn(personId, membershipIn(context.channelId), context.channelType, context.channel) : []),
+    ...(context ? ltiRolesIn(personId, membershipIn(channel.id), context.channelType, channel) : []),
     ...ltiInstitutionRolesIn(personId, membershipIn(resourceLink.organizationId), resourceLink.organizationId),
   ];
   const custom = launchCustom(client, resourceLink.custom);
@@ -131,7 +128,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     [ltiClaims.resourceLink]: { id: resourceLink.id, title: resourceLink.title },
     [ltiClaims.roles]: roles,
     ...(context && {
-      [ltiClaims.context]: { id: context.channel.id, label: context.channel.slug, title: context.channel.name, type: context.types },
+      [ltiClaims.context]: { id: channel.id, label: channel.slug, title: channel.name, type: context.types },
     }),
     ...(Object.keys(custom).length && { [ltiClaims.custom]: custom }),
     [ltiClaims.launchPresentation]: { document_target: 'iframe', locale: person.languageCode },

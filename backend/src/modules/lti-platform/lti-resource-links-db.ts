@@ -33,7 +33,7 @@ export const ltiResourceLinksTable = snakeCase.table(
     title: varchar({ length: maxLength.field }).notNull(),
     /** Sent in the launch's `custom` claim over the LTI tool's own custom parameters; every value a string. */
     custom: jsonb().$type<Record<string, string>>().notNull().default({}),
-    /** A tab switched off keeps its row and id: it shows nowhere, launches nothing and gives the installation no course. */
+    /** A tab switched off keeps its row and id: it shows nowhere, launches nothing and lets the installation read no one. */
     enabled: boolean().notNull().default(true),
     ...auditColumns(),
   },

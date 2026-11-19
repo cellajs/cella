@@ -574,7 +574,7 @@ describe('LTI installation API access', async () => {
   });
 
   describe("a channel's tabs of LTI tools", () => {
-    // Contract: a channel's Tabs card shows whose people a tab lets an LTI tool read, why one cannot be placed and what
+    // Contract: a channel's Tabs card shows whether a tab lets an LTI tool read its people, why one cannot be placed and what
     // tells two of one name apart, the LTI tools card every channel where it has a tab, a channel holds one tab of an
     // LTI tool, and a disabled one is placed nowhere and listed only where it has a tab.
     it('lists the LTI tabs of a channel and those of an LTI tool, and refuses a second tab and a disabled LTI tool', async () => {
@@ -593,8 +593,7 @@ describe('LTI installation API access', async () => {
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
       const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
-      const context = { ...channel, name: org.org.name };
-      const tab = { name: 'Peer review', launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String), context };
+      const tab = { name: 'Peer review', launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String) };
       const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true });
       expect((tabs.data as { results: unknown[] }).results).toEqual([
         { ...tab, id: reader.installationId, status: 'active', readsMembers: true, refusal: null, resourceLink: placed(reader.resourceLinkId) },
@@ -614,7 +613,7 @@ describe('LTI installation API access', async () => {
       const path = { ...org.path, ltiInstallationId: reader.installationId };
       const installationTabs = await call(listLtiInstallationTabs, { path, headers: org.headers });
       expect((installationTabs.data as { results: unknown[] }).results).toEqual([
-        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, context, deletable: true },
+        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, deletable: true },
       ]);
 
       const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };

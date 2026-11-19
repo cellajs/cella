@@ -165,9 +165,8 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
 }
 
 /**
- * Every tab of the LTI tool, linked to its channel, the ones switched off marked off, with the course whose people a tab
- * that is on lets it read where that is another channel. Whoever may update a tab's channel removes it for good here,
- * after a confirmation; channels switch their tabs on and off in their own Tabs card.
+ * Every tab of the LTI tool, linked to its channel, the ones switched off marked off. Whoever may update a tab's channel
+ * removes it for good here, after a confirmation; channels switch their tabs on and off in their own Tabs card.
  */
 function InstallationTabs({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
@@ -189,22 +188,14 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
       <span className="group-label text-xs">{t('c:tabs')}</span>
       {tabs.map((tab) => {
         const route: EntityRoute = getChannelPageRoute({ ...path, channelType: tab.channelType, channelId: tab.channelId });
-        const course = tab.enabled && tab.context && tab.context.channelId !== tab.channelId ? tab.context : null;
         return (
           <div key={tab.id} className="flex min-h-10 items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
-            <div className="flex min-w-0 grow flex-col">
-              <div className="flex min-w-0 items-baseline gap-2">
-                <Link {...route} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
-                  {tab.channelName}
-                </Link>
-                <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
-                {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
-              </div>
-              {course && (
-                <span className="text-muted-foreground text-xs">
-                  <NamedText i18nKey="c:lti_tab_reads.text" name={course.name ?? ''} />
-                </span>
-              )}
+            <div className="flex min-w-0 grow items-baseline gap-2">
+              <Link {...route} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
+                {tab.channelName}
+              </Link>
+              <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
+              {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
             </div>
             {tab.deletable && (
               <Button
