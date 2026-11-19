@@ -22,6 +22,7 @@ import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
+import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
@@ -30,6 +31,7 @@ import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/
 import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
+import { holdConnection } from '#/modules/connections/connections-queries';
 import { ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
@@ -569,45 +571,102 @@ describe('LTI member import from a platform built on the template', async () => 
     expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject)).toEqual(['lms-returning']);
   });
 
+  type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+  /** Runs `work` in a transaction that stays open until `release`, and the backend that holds its locks. */
+  async function openTransaction(work: (tx: Tx) => Promise<unknown>) {
+    let end = () => {};
+    const ended = new Promise<void>((resolve) => {
+      end = resolve;
+    });
+    let holding: (pid: number) => void = () => {};
+    const held = new Promise<number>((resolve) => {
+      holding = resolve;
+    });
+    const done = db.transaction(async (tx) => {
+      await work(tx);
+      const { rows } = await tx.execute<{ pid: number }>(sql`select pg_backend_pid() as pid`);
+      holding(rows[0].pid);
+      await ended;
+    });
+    onTestFinished(async () => {
+      end();
+      await done.catch(() => undefined);
+    });
+    const pid = await Promise.race([held, done.then(() => 0)]);
+    const release = async () => {
+      end();
+      await done;
+    };
+    return { pid, release };
+  }
+
+  /** Waits until the backend `pid` blocks one other, such as a delete of the connection it holds. */
+  const blockingOne = (pid: number) =>
+    vi.waitFor(async () => {
+      const { rows } = await db.execute<{ waiting: number }>(
+        sql`select count(*)::int as waiting from pg_stat_activity where ${pid} = any(pg_blocking_pids(pid))`,
+      );
+      expect(rows[0].waiting).toBe(1);
+    });
+
   // A delete while an import makes the connection's account would find no account to disable and leave it active,
   // unless it waits for the import's lock on the connection.
   it('disables the account an import makes while its connection is deleted', async () => {
     const side = await connectToFakePlatform();
     const { connection } = side;
     if (!isLtiConnection(connection)) throw new Error('no LTI connection');
-    let release = () => {};
-    const released = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    let holding: (pid: number) => void = () => {};
-    const made = new Promise<number>((resolve) => {
-      holding = resolve;
-    });
-    const importing = db.transaction(async (tx) => {
-      await connectionServiceAccountId({ var: { db: tx } }, connection);
-      const { rows } = await tx.execute<{ pid: number }>(sql`select pg_backend_pid() as pid`);
-      holding(rows[0].pid);
-      await released;
-    });
-    onTestFinished(async () => {
-      release();
-      await importing.catch(() => undefined);
-    });
-    const pid = await made;
+    const importing = await openTransaction((tx) => connectionServiceAccountId({ var: { db: tx } }, connection));
 
     const deleting = call(deleteLtiConnection, { path: { ...side.path, connectionId: connection.id }, headers: side.headers });
-    await vi.waitFor(async () => {
-      const { rows } = await db.execute<{ waiting: number }>(
-        sql`select count(*)::int as waiting from pg_stat_activity where ${pid} = any(pg_blocking_pids(pid))`,
-      );
-      expect(rows[0].waiting).toBe(1);
-    });
-    release();
-    await importing;
+    await blockingOne(importing.pid);
+    await importing.release();
 
     expect((await deleting).response.status).toBe(204);
     const [account] = await db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.connectionId, connection.id));
     expect(account.status).toBe('disabled');
+  });
+
+  // Attack: deleting a connection cuts off everyone who came through it. A session made while the delete waits for an
+  // import's write is either refused or revoked with the rest, never left live without its connection.
+  it('leaves no live session of a connection deleted while an import writes a person', async () => {
+    const side = await connectToFakePlatform();
+    const importing = await openTransaction((tx) => holdConnection({ var: { db: tx } }, { id: side.connection.id }));
+    const deleting = call(deleteLtiConnection, { path: { ...side.path, connectionId: side.connection.id }, headers: side.headers });
+    await blockingOne(importing.pid);
+
+    const session = {
+      secretHash: nanoid(),
+      userId: side.admin.id,
+      deviceType: 'desktop' as const,
+      authStrategy: 'lti' as const,
+      connectionId: side.connection.id,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    };
+    let settled = false;
+    const inserting = db
+      .insert(sessionsTable)
+      .values(session)
+      .returning({ id: sessionsTable.id })
+      .catch(() => [])
+      .finally(() => {
+        settled = true;
+      });
+    // The insert goes through beside the waiting delete, or waits behind it.
+    await vi.waitFor(async () => {
+      if (settled) return;
+      const { rows } = await db.execute<{ blocked: number }>(
+        sql`select count(*)::int as blocked from pg_stat_activity where datname = current_database() and cardinality(pg_blocking_pids(pid)) > 0`,
+      );
+      expect(rows[0].blocked).toBe(2);
+    });
+    await importing.release();
+
+    expect((await deleting).response.status).toBe(204);
+    for (const { id } of await inserting) {
+      const [row] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id));
+      expect(row.revokedAt).not.toBeNull();
+    }
   });
 
   // Attack: a course list tells which platforms an organization trusts and how its imports ran; it is for whoever may update the organization.

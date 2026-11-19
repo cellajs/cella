@@ -108,8 +108,8 @@ export const insertConnection = async (ctx: DbContext, { values }: { values: Ins
 
 /**
  * Locks a connection's row until the caller's transaction ends, leaving rows that reference it free to be written:
- * what hangs off one connection, and its delete, run one transaction after the other.
- * @returns False when no such connection exists, also once a delete that held the lock committed.
+ * what hangs off one connection is made one transaction after the other, and a delete waits for it.
+ * @returns False when no such connection exists, also once a delete committed.
  */
 export const lockConnection = async (ctx: DbContext, { id }: { id: string }) => {
   const rows = await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('no key update');
@@ -124,6 +124,21 @@ export const lockConnection = async (ctx: DbContext, { id }: { id: string }) => 
 export const holdConnection = async (ctx: DbContext, { id }: { id: string }) => {
   const rows = await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('key share');
   return rows.length > 0;
+};
+
+/**
+ * A tenant's connection by id, its row locked for its delete until the caller's transaction ends. The lock waits for
+ * every write that references the row, a session's or an identity's included; each one after it waits for the
+ * transaction and then finds the row gone.
+ * @returns Undefined when the tenant holds no such connection.
+ */
+export const lockConnectionForDelete = async (ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) => {
+  const [row] = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
+    .for('update');
+  return row;
 };
 
 interface UpdateConnectionOpts {
