@@ -14,7 +14,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * again, the app refused an address the platform names, the platform refused the scope, the token or the member list,
  * the import failed and is tried again or was tried for the last time, the platform listed more people than an import
  * reads, the tenant's member limit left people out, or the connection, the tenant or the channel is not active. Or
- * that no import ran: it waits until its connection's hourly budget of courses frees up.
+ * that no import ran: it waits until its connection's hourly budget of courses and people frees up.
  */
 export const ltiImportIssues = [
   'waiting',

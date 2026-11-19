@@ -39,6 +39,7 @@ import {
   importLtiMembersOp,
   ltiMemberImportQueue,
   maxCoursesPerHour,
+  maxPeoplePerHour,
   requestLtiMemberImport,
 } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
@@ -489,8 +490,9 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'too_many_members' });
   });
 
-  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them an hour.
-  // The course says its import waits, unless the last import was refused in a way that lasts.
+  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them, and
+  // `maxPeoplePerHour` people, an hour. The course says its import waits, unless the last import was refused in a way
+  // that lasts.
   it('queues no import of a connection whose imports within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
     const imported = await Promise.all(
@@ -502,6 +504,17 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await db.update(ltiContextsTable).set({ importRanAt: getIsoDate() }).where(inArray(ltiContextsTable.id, ids));
 
     send.mockClear();
+    await requestLtiMemberImport(side.context, side.admin.id);
+    expect(send).not.toHaveBeenCalled();
+    expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
+
+    // Fewer courses than the bound, which read as many people as an hour allows, wait too.
+    await db
+      .update(ltiContextsTable)
+      .set({ importRanAt: null })
+      .where(inArray(ltiContextsTable.id, ids.slice(1)));
+    await db.update(ltiContextsTable).set({ importReadCount: maxPeoplePerHour }).where(eq(ltiContextsTable.id, ids[0]));
+    await db.update(ltiContextsTable).set({ importIssue: null }).where(eq(ltiContextsTable.id, side.context.id));
     await requestLtiMemberImport(side.context, side.admin.id);
     expect(send).not.toHaveBeenCalled();
     expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });

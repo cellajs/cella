@@ -5,9 +5,9 @@ import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
-import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
+import { type LtiMember, maxMembers, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { countLtiImportsSince, findLtiContextById, recordLtiImport, recordLtiImportWaiting } from '#/modules/auth/flows/lti/lti-contexts-queries';
+import { findLtiContextById, recordLtiImport, recordLtiImportWaiting, sumLtiImportsSince } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
@@ -32,12 +32,24 @@ const importRetryLimit = 5;
 /** The longest one import runs: the job store then fails it and aborts its signal. */
 const importBudgetSeconds = 120;
 
-/** The most courses of one connection imported within an hour, however many courses its platform names. */
-export const maxCoursesPerHour = 30;
+/**
+ * The most courses of one connection imported within an hour, however many its platform names. A class whose 60 teams
+ * each switch on a tab of their own imports 61 contexts with its course: two such classes fit in an hour.
+ */
+export const maxCoursesPerHour = 150;
 
-/** Whether the connection's imports within the last hour reached `maxCoursesPerHour`. */
-const connectionImportsSpent = async (connectionId: string) =>
-  (await countLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) })) >= maxCoursesPerHour;
+/**
+ * The most people the imports of one connection read within an hour, counted as their courses' last imports read them.
+ * Five imports of the longest list one import reads, or some thirty courses of 300: a platform's reach stays near what
+ * 30 usual courses an hour read, however it spreads its people over courses.
+ */
+export const maxPeoplePerHour = 5 * maxMembers;
+
+/** Whether the connection's imports within the last hour reached `maxCoursesPerHour` or `maxPeoplePerHour`. */
+const connectionImportsSpent = async (connectionId: string) => {
+  const { courses, people } = await sumLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) });
+  return courses >= maxCoursesPerHour || people >= maxPeoplePerHour;
+};
 
 /** Whether an import of the context ran within `importPeriod`. */
 const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && importRanAt > isoDateAgo(importPeriod);
@@ -165,7 +177,7 @@ export const ltiMemberImportQueue = {
 /**
  * Queues a member import of a context after a launch by its Instructor or Administrator `by`, when the context holds
  * a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
- * (`maxCoursesPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
+ * (`maxCoursesPerHour`, `maxPeoplePerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
  * store that refuses the job, or a failed write, is logged.
  */
 export const requestLtiMemberImport = async (context: LtiContextModel, by: UserId) => {

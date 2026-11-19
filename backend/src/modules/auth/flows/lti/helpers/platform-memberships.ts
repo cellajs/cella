@@ -21,7 +21,7 @@ const membersPageSize = 50;
 export const maxMembersPages = 40;
 
 /** The most people one import reads: a platform may answer a page with more members than it asked for. */
-const maxMembers = maxMembersPages * membersPageSize;
+export const maxMembers = maxMembersPages * membersPageSize;
 
 /** How long a client assertion is good for: one token request. */
 const assertionLifetimeSeconds = 60;

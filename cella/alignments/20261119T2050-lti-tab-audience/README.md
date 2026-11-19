@@ -3,7 +3,7 @@ breaking: true
 clientCacheBump: false
 caughtBy: compiler
 generate: true
-grep: readAsLauncher, lti_resource_links, lti_installations, approveLtiInstallation, updateLtiInstallationScopes, placementContext, findLtiPlacements, lti_context_update_required, add_lti_tab_above, ltiRolesFor, ltiInstitutionRolesFor, ltiRolesIn, ltiContextChannelType, ltiContextRole, createLtiContextChannel, LtiContextChannelFacts, planLtiContextChannel, lti_context_not_set_up, lti_launch_no_roles
+grep: countLtiImportsSince, maxCoursesPerHour, readAsLauncher, lti_resource_links, lti_installations, approveLtiInstallation, updateLtiInstallationScopes, placementContext, findLtiPlacements, lti_context_update_required, add_lti_tab_above, ltiRolesFor, ltiInstitutionRolesFor, ltiRolesIn, ltiContextChannelType, ltiContextRole, createLtiContextChannel, LtiContextChannelFacts, planLtiContextChannel, lti_context_not_set_up, lti_launch_no_roles
 ---
 
 # LTI tabs and audiences

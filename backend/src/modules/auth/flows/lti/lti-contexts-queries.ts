@@ -65,9 +65,14 @@ export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values:
   return row;
 };
 
-/** How many courses of a connection a member import read since `since`. */
-export const countLtiImportsSince = (ctx: DbContext, { connectionId, since }: { connectionId: string; since: string }) =>
-  ctx.var.db.$count(ltiContextsTable, and(eq(ltiContextsTable.connectionId, connectionId), gt(ltiContextsTable.importRanAt, since)));
+/** How many courses of a connection a member import read since `since`, and how many people their last imports read. */
+export const sumLtiImportsSince = async (ctx: DbContext, { connectionId, since }: { connectionId: string; since: string }) => {
+  const [sums] = await ctx.var.db
+    .select({ courses: count(), people: sql<number>`coalesce(sum(${ltiContextsTable.importReadCount}), 0)::int` })
+    .from(ltiContextsTable)
+    .where(and(eq(ltiContextsTable.connectionId, connectionId), gt(ltiContextsTable.importRanAt, since)));
+  return sums;
+};
 
 interface RecordLtiImportOpts {
   id: string;

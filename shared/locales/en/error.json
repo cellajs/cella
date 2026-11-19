@@ -185,7 +185,7 @@
   "lti_registration_refused": "Registration refused by the platform",
   "lti_registration_refused.text": "The platform did not accept the registration of {{appName}}, or answered it in a form {{appName}} cannot read. Ask the platform's administrator, then register again with a new registration link.",
   "lti_rlid_unsupported": "Tab members not supported",
-  "lti_rlid_unsupported.text": "Reading the members of one tab (rlid) is not supported: read the course's members without it.",
+  "lti_rlid_unsupported.text": "Reading the members of one tab (rlid) is not supported: read the members of its context without it.",
   "lti_scope_not_grantable": "Scope not grantable",
   "lti_scope_not_grantable.text": "The LTI tool did not ask for this access scope, or the API of {{appName}} offers it to no LTI tool, so it cannot be granted.",
   "lti_storage_missing": "Platform storage not offered",
