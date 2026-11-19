@@ -96,7 +96,9 @@ const heldConnection = (tenantId: string, issuerOf: string, clientId: string) =>
 
 /** Runs a refusal page's one script against a frame's parent, and its button when `click` is set; returns the messages posted. */
 const runPageScript = (page: string, { click = false } = {}) => {
-  const script = /<script>([\s\S]*?)<\/script>/.exec(page)?.[1] ?? '';
+  const [open, close] = ['<script>', '</script>'];
+  const start = page.indexOf(open);
+  const script = start < 0 ? '' : page.slice(start + open.length, page.indexOf(close, start));
   const posted: unknown[] = [];
   const listeners: Record<string, () => void> = {};
   const window = { parent: { postMessage: (message: unknown) => posted.push(message) }, opener: null };
