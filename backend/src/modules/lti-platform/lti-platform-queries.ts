@@ -1,5 +1,5 @@
-import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
-import { type Access, type AccessScope, hierarchy } from 'shared';
+import { and, asc, eq, getColumns, gt, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { type Access, type AccessScope, type ChannelEntityType, hierarchy } from 'shared';
 import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
@@ -121,19 +121,24 @@ interface ApproveLtiInstallationOpts {
   tenantId: string;
   releasedFields: LtiReleasableField[];
   grantedScopes: AccessScope[];
+  channelTypes: ChannelEntityType[];
   by: ActorId;
 }
 
 /**
  * Approves an installation inside the caller's transaction: its service account turns active and its side row records
- * the released fields, the granted scopes and the approval, both stamped by `by`.
+ * the released fields, the granted scopes, the allowed channel types and the approval, both stamped by `by`.
  * @returns What the two rows were set to.
  */
-export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, grantedScopes, by }: ApproveLtiInstallationOpts) {
+export async function approveLtiInstallation(
+  ctx: DbContext,
+  { id, tenantId, releasedFields, grantedScopes, channelTypes, by }: ApproveLtiInstallationOpts,
+) {
   const stamps = updateStamps(by);
   const decision = {
     releasedFields: [...new Set(releasedFields)],
     grantedScopes: [...new Set(grantedScopes)],
+    channelTypes: [...new Set(channelTypes)],
     approvedAt: stamps.updatedAt,
     approvedBy: stamps.updatedBy,
     ...stamps,
@@ -144,15 +149,33 @@ export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, rel
 }
 
 /**
- * Replaces the access scopes an installation's tokens may carry, stamped by `by`.
+ * Replaces the access scopes an installation's tokens may carry, or the channel types it may get a tab in, stamped by
+ * `by`. Its tabs that are on in a type taken away are switched off, keeping their ids.
  * @returns What the side row was set to.
  */
-export async function updateLtiInstallationScopes(
+export async function updateLtiInstallationGrant(
   ctx: DbContext,
-  { id, grantedScopes, by }: { id: string; grantedScopes: AccessScope[]; by: ActorId },
+  { id, grantedScopes, channelTypes, by }: { id: string; grantedScopes?: AccessScope[]; channelTypes?: ChannelEntityType[]; by: ActorId },
 ) {
-  const values = { grantedScopes: [...new Set(grantedScopes)], ...updateStamps(by) };
+  const stamps = updateStamps(by);
+  const values = {
+    ...(grantedScopes && { grantedScopes: [...new Set(grantedScopes)] }),
+    ...(channelTypes && { channelTypes: [...new Set(channelTypes)] }),
+    ...stamps,
+  };
   await ctx.var.db.update(ltiInstallationsTable).set(values).where(eq(ltiInstallationsTable.serviceAccountId, id));
+  if (channelTypes) {
+    await ctx.var.db
+      .update(ltiResourceLinksTable)
+      .set({ enabled: false, ...stamps })
+      .where(
+        and(
+          eq(ltiResourceLinksTable.installationId, id),
+          eq(ltiResourceLinksTable.enabled, true),
+          channelTypes.length ? notInArray(ltiResourceLinksTable.channelType, channelTypes) : undefined,
+        ),
+      );
+  }
   return values;
 }
 

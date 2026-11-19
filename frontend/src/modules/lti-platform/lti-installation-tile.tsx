@@ -43,6 +43,11 @@ type PersonalField = LtiInstallation['requestedFields'][number];
 
 type AccessScope = LtiInstallation['requestedScopes'][number];
 
+type TabChannelType = LtiInstallation['channelTypes'][number];
+
+/** The channel types an admin may allow an LTI tool a tab in: those that hold LTI tabs in this app. */
+const tabChannelTypes = zApproveLtiInstallationBody.shape.channelTypes.unwrap().element.options;
+
 const fieldLabels = { name: 'c:name', email: 'c:email', picture: 'c:profile_picture' } as const satisfies Record<PersonalField, string>;
 
 const statusTones = { pending: 'warning', active: 'info', disabled: 'muted' } as const satisfies Record<LtiInstallation['status'], TileTone>;
@@ -68,20 +73,21 @@ const ltiScopeLabel = (t: TFunction, scope: AccessScope) => (scope === 'user:rea
 const approveSchema = zApproveLtiInstallationBody;
 
 /**
- * Where the LTI tool's launches go and whose keys act as it, and the fields and access scopes it asked for as choices
- * with none chosen: what an approval trusts, releases and grants is the admin's act.
+ * Where the LTI tool's launches go and whose keys act as it, and as choices with none chosen the fields and access
+ * scopes it asked for and the channel types it may get a tab in: what an approval trusts, releases and grants is the
+ * admin's act.
  */
 function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: approve, isPending } = useApproveLtiInstallationMutation();
   const form = useForm<z.infer<typeof approveSchema>>({
     resolver: formResolver(approveSchema),
-    defaultValues: { releasedFields: [], grantedScopes: [] },
+    defaultValues: { releasedFields: [], grantedScopes: [], channelTypes: [] },
   });
 
-  const onSubmit = ({ releasedFields, grantedScopes }: z.infer<typeof approveSchema>) =>
+  const onSubmit = ({ releasedFields, grantedScopes, channelTypes }: z.infer<typeof approveSchema>) =>
     approve(
-      { path: { ...path, ltiInstallationId: installation.id }, body: { releasedFields, grantedScopes } },
+      { path: { ...path, ltiInstallationId: installation.id }, body: { releasedFields, grantedScopes, channelTypes } },
       { onSuccess: () => dialoger.getState().remove(approveDialogId(installation)) },
     );
 
@@ -154,6 +160,31 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
             <p className="text-muted-foreground text-sm">{t('c:api_access.text')}</p>
           </div>
         )}
+        <div className="flex flex-col gap-2">
+          <FormField
+            control={form.control}
+            name="channelTypes"
+            render={({ field }) => (
+              <FormItem name="channelTypes">
+                <FormLabel>{t('c:lti_tab_channel_types')}</FormLabel>
+                <CheckboxGroup value={field.value ?? []} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-3">
+                  {tabChannelTypes.map((channelType) => (
+                    <FieldLabel key={channelType} card>
+                      <Field.Item render={<FieldLayout orientation="horizontal" />}>
+                        <Checkbox value={channelType} />
+                        <FieldContent>
+                          <FieldTitle>{t(`c:${channelType}`)}</FieldTitle>
+                        </FieldContent>
+                      </Field.Item>
+                    </FieldLabel>
+                  ))}
+                </CheckboxGroup>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <p className="text-muted-foreground text-sm">{t('c:lti_tab_channel_types.text')}</p>
+        </div>
         <FormActions>
           <SubmitButton icon={<CheckIcon />} loading={isPending}>
             {t('c:approve')}
@@ -219,16 +250,19 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
   );
 }
 
-/** One access scope of an approved LTI tool, granted or not; its button's name says which scope it changes. */
-function ApiAccessScope({
-  scope,
+/** One grant of an approved LTI tool, given or not; its button's name says what it changes. */
+function GrantRow({
+  label,
   granted,
   disabled,
+  grantLabel,
   onChange,
 }: {
-  scope: AccessScope;
+  label: string;
   granted: boolean;
   disabled: boolean;
+  /** The button's label while it is not given, such as `c:grant`. */
+  grantLabel: 'c:grant' | 'c:allow';
   onChange: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   const { t } = useTranslation();
@@ -238,11 +272,11 @@ function ApiAccessScope({
     <div className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
       {granted && <CheckIcon className="text-success size-4 shrink-0" />}
       <span id={labelId} className={granted ? 'min-w-0 grow' : 'text-muted-foreground min-w-0 grow pl-6'}>
-        {ltiScopeLabel(t, scope)}
+        {label}
       </span>
       <Button variant={granted ? 'ghost' : 'secondary'} size="sm" disabled={disabled} aria-labelledby={`${actionId} ${labelId}`} onClick={onChange}>
         {!granted && <KeyRoundIcon />}
-        <span id={actionId}>{t(granted ? 'c:withdraw' : 'c:grant')}</span>
+        <span id={actionId}>{t(granted ? 'c:withdraw' : grantLabel)}</span>
       </Button>
     </div>
   );
@@ -272,9 +306,43 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
       {installation.requestedScopes.map((scope) => {
         const granted = installation.grantedScopes.includes(scope);
         const onChange = (event: MouseEvent<HTMLButtonElement>) => (granted ? openWithdrawConfirm(event, scope) : grant(scope));
-        return <ApiAccessScope key={scope} scope={scope} granted={granted} disabled={isPending} onChange={onChange} />;
+        return (
+          <GrantRow key={scope} label={ltiScopeLabel(t, scope)} granted={granted} grantLabel="c:grant" disabled={isPending} onChange={onChange} />
+        );
       })}
       <p className="text-muted-foreground text-sm">{t('c:api_access.text')}</p>
+    </div>
+  );
+}
+
+/** The channel types an approved LTI tool may get a tab in, each allowed or not; withdrawing one asks first. */
+function InstallationChannelTypes({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
+  const { t } = useTranslation();
+  const { mutate, isPending } = useUpdateLtiInstallationMutation();
+
+  const update = (channelTypes: TabChannelType[]) => mutate({ path: { ...path, ltiInstallationId: installation.id }, body: { channelTypes } });
+
+  const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) =>
+    openConfirm(event.currentTarget, {
+      id: `withdraw-lti-channel-type-${installation.id}-${channelType}`,
+      title: <NamedText i18nKey="c:confirm.withdraw_lti_channel_type" name={installation.name} values={{ resource: t(`c:${channelType}`) }} />,
+      label: 'c:withdraw',
+      icon: XIcon,
+      onConfirm: () => update(installation.channelTypes.filter((allowed) => allowed !== channelType)),
+    });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="group-label text-xs">{t('c:lti_tab_channel_types')}</span>
+      {tabChannelTypes.map((channelType) => {
+        const allowed = installation.channelTypes.includes(channelType);
+        const onChange = (event: MouseEvent<HTMLButtonElement>) =>
+          allowed ? openWithdrawConfirm(event, channelType) : update([...installation.channelTypes, channelType]);
+        return (
+          <GrantRow key={channelType} label={t(`c:${channelType}`)} granted={allowed} grantLabel="c:allow" disabled={isPending} onChange={onChange} />
+        );
+      })}
+      <p className="text-muted-foreground text-sm">{t('c:lti_tab_channel_types.text')}</p>
     </div>
   );
 }
@@ -389,6 +457,7 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
         !isPending && (
           <>
             <InstallationTabs installation={installation} path={path} />
+            <InstallationChannelTypes installation={installation} path={path} />
             {installation.requestedScopes.length > 0 && <InstallationApiAccess installation={installation} path={path} />}
           </>
         )

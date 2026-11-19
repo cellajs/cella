@@ -136,6 +136,8 @@ describe('LTI installation API access', async () => {
     scope?: string;
     /** What the approval releases and grants; null leaves the installation pending. */
     approval?: { releasedFields: ('name' | 'email')[]; grantedScopes: AccessScope[] } | null;
+    /** The channel types the approval allows it a tab in. */
+    allowed?: 'organization'[];
     placed?: boolean;
   }
 
@@ -157,13 +159,22 @@ describe('LTI installation API access', async () => {
   /** Registers the fake LTI tool in the organization's tenant, approves it and places it in the organization. */
   async function installLtiTool(
     org: Org,
-    { scope = ltiNrps.scope, approval = { releasedFields: [], grantedScopes: ['user:read'] }, placed = true }: InstallOptions = {},
+    {
+      scope = ltiNrps.scope,
+      approval = { releasedFields: [], grantedScopes: ['user:read'] },
+      allowed = ['organization'],
+      placed = true,
+    }: InstallOptions = {},
   ) {
     const response = await register(org, ltiToolRegistration(jwksUri, scope));
     const registered = (await response.json()) as { client_id: string; [ltiToolConfigurationMember]: { deployment_id: string } };
     const installationId = registered[ltiToolConfigurationMember].deployment_id;
     if (approval)
-      await call(approveLtiInstallation, { path: { ...org.path, ltiInstallationId: installationId }, body: approval, headers: org.headers });
+      await call(approveLtiInstallation, {
+        path: { ...org.path, ltiInstallationId: installationId },
+        body: { ...approval, channelTypes: allowed },
+        headers: org.headers,
+      });
     const ltiTool = { org, clientId: registered.client_id, installationId, resourceLinkId: '' };
     if (placed) ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
     return ltiTool;
@@ -618,6 +629,38 @@ describe('LTI installation API access', async () => {
 
       const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body: again, headers: org.headers }), 409, 'resource_already_exists');
+    });
+
+    // Attack: an LTI tool gets a tab only in a channel type an admin allowed it in, at approval or later, and taking the
+    // type away switches its tabs there off, which stops its token reading members and which no channel undoes.
+    it('places an LTI tool only in a channel type an admin allowed, and switches its tabs off when the type is taken away', async () => {
+      const org = await orgWithAdmin();
+      const ltiTool = await installLtiTool(org, { allowed: [], placed: false });
+      const channel = { channelType: 'organization' as const, channelId: org.org.id };
+      const tabs = async () =>
+        ((await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers })).data as { results: unknown[] }).results;
+      expect(await tabs()).toEqual([]);
+      const body = { ...channel, installationId: ltiTool.installationId, title: 'Peer review' };
+      await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers: org.headers }), 409, 'lti_channel_type_not_allowed');
+
+      const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
+      const allow = (channelTypes: 'organization'[]) => call(updateLtiInstallation, { path, body: { channelTypes }, headers: org.headers });
+      expect((await allow(['organization'])).data).toMatchObject({ channelTypes: ['organization'] });
+      ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
+      const token = await tokenOf(ltiTool);
+      expect((await readMembers(org, token)).response.status).toBe(200);
+
+      expect((await allow([])).data).toMatchObject({ channelTypes: [] });
+      await expectRefusal(await readMembers(org, token), 403, 'forbidden');
+      expect(await tabs()).toEqual([
+        expect.objectContaining({
+          id: ltiTool.installationId,
+          refusal: 'lti_channel_type_not_allowed',
+          resourceLink: expect.objectContaining({ enabled: false }),
+        }),
+      ]);
+      const switchOn = { path: { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId }, body: { enabled: true }, headers: org.headers };
+      await expectRefusal(await call(updateLtiResourceLink, switchOn), 409, 'lti_channel_type_not_allowed');
     });
 
     // Contract: an LTI tool keys what it stores by the resource link id, which switching a tab off and on keeps.

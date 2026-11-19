@@ -20,6 +20,7 @@ export const mockLtiInstallationResponse = (key = 'ltiInstallation:default') => 
       releasedFields: ['name' as const],
       requestedScopes: ['user:read' as const],
       grantedScopes: ['user:read' as const],
+      channelTypes: ['organization' as const],
       status: 'active' as const,
       approvedAt: createdAt,
       createdAt,

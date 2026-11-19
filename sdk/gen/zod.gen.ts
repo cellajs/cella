@@ -376,7 +376,7 @@ export const zStreamError = z.object({
 });
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.
  */
 export const zLtiInstallation = z.object({
   id: z.string(),
@@ -392,6 +392,7 @@ export const zLtiInstallation = z.object({
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
   requestedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
   grantedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
+  channelTypes: z.array(z.enum(['organization'])),
   status: z.enum(['pending', 'active', 'disabled']),
   approvedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -2047,6 +2048,10 @@ export const zApproveLtiInstallationBody = z.object({
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
     .max(5)
     .optional(),
+  channelTypes: z
+    .array(z.enum(['organization']))
+    .max(1)
+    .optional(),
 });
 
 export const zApproveLtiInstallationPath = z.object({
@@ -2075,6 +2080,10 @@ export const zUpdateLtiInstallationBody = z.object({
   grantedScopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
     .max(5)
+    .optional(),
+  channelTypes: z
+    .array(z.enum(['organization']))
+    .max(1)
     .optional(),
 });
 
@@ -2126,7 +2135,7 @@ export const zListLtiTabsResponse = z.object({
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
-      refusal: z.enum(['lti_installation_disabled']).nullable(),
+      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed']).nullable(),
       resourceLink: z
         .object({
           id: z.string(),

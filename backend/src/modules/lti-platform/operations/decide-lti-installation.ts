@@ -1,4 +1,4 @@
-import type { AccessScope } from 'shared';
+import type { AccessScope, ChannelEntityType } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -10,7 +10,7 @@ import {
   deleteTenantLtiRegistration,
   type LtiInstallationRecord,
   lockLtiInstallation,
-  updateLtiInstallationScopes,
+  updateLtiInstallationGrant,
 } from '#/modules/lti-platform/lti-platform-queries';
 import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 import { toLtiInstallation } from '#/modules/lti-platform/operations/get-lti-installations';
@@ -43,17 +43,22 @@ const assertScopesGrantable = ({ client }: Pick<LtiInstallationRecord, 'client'>
 interface LtiInstallationDecision {
   releasedFields: LtiReleasableField[];
   grantedScopes?: AccessScope[];
+  channelTypes?: ChannelEntityType[];
 }
 
 /**
  * Approves a pending installation: its service account becomes active, its launches may carry the released personal
- * fields and its own tokens the granted scopes. An approval only narrows: it releases no field whose claims the LTI
+ * fields, its own tokens the granted scopes, and channels of the allowed types switch its tab on. An approval only narrows: it releases no field whose claims the LTI
  * tool did not ask for, and grants no scope it did not ask for. Who may decide is who may manage the installation's
  * service account (`getManagedServiceAccount`).
  * @throws AppError 400 `lti_field_not_requested` or `lti_scope_not_grantable`, 403 when the tenant's service account
  *   quota is spent, and what `getManagedServiceAccount` and `lockPendingInstallation` throw.
  */
-export async function approveLtiInstallationOp(ctx: UserContext, id: string, { releasedFields, grantedScopes = [] }: LtiInstallationDecision) {
+export async function approveLtiInstallationOp(
+  ctx: UserContext,
+  id: string,
+  { releasedFields, grantedScopes = [], channelTypes = [] }: LtiInstallationDecision,
+) {
   const { tenantId } = ctx.var;
   await getManagedServiceAccount(ctx, id);
 
@@ -66,23 +71,37 @@ export async function approveLtiInstallationOp(ctx: UserContext, id: string, { r
     assertScopesGrantable(found, grantedScopes);
     assertTenantQuota(ctx, 'serviceAccount', await countActiveServiceAccounts(txCtx, { tenantId }));
 
-    const { stamps, decision } = await approveLtiInstallation(txCtx, { id, tenantId, releasedFields, grantedScopes, by: ctx.var.actor.id });
+    const { stamps, decision } = await approveLtiInstallation(txCtx, {
+      id,
+      tenantId,
+      releasedFields,
+      grantedScopes,
+      channelTypes,
+      by: ctx.var.actor.id,
+    });
     return { ...found, account: { ...found.account, status: 'active' as const, ...stamps }, installation: { ...found.installation, ...decision } };
   });
   invalidateCache.serviceAccount(approved.account);
 
-  log.info('LTI installation approved', { installationId: id, tenantId, releasedFields, grantedScopes });
+  log.info('LTI installation approved', { installationId: id, tenantId, releasedFields, grantedScopes, channelTypes });
   return withActorRef(ctx, toLtiInstallation(approved));
 }
 
+/** Whether two lists hold the same values, whatever their order. */
+const sameValues = <T>(left: T[], right: T[]) => {
+  const [a, b] = [new Set(left), new Set(right)];
+  return a.size === b.size && [...a].every((value) => b.has(value));
+};
+
 /**
- * Changes the access scopes an approved installation's own tokens may carry, each one the LTI tool asked for; the same
- * scopes write nothing. A token minted before rests on the scopes it carries: one that loses a scope is refused at its
- * next request, by the guard. Who may change them is who may approve.
+ * Changes the access scopes an approved installation's own tokens may carry, each one the LTI tool asked for, or the
+ * channel types it may get a tab in; what is already stored writes nothing. A token minted before rests on the scopes
+ * it carries: one that loses a scope is refused at its next request, by the guard. Its tabs that are on in a channel
+ * type taken away are switched off. Who may change them is who may approve.
  * @throws AppError 400 `lti_scope_not_grantable`, 404 `not_found` for no LTI installation of the tenant, 409
  *   `lti_installation_not_approved` while it waits for an approval, and what `getManagedServiceAccount` throws.
  */
-export async function updateLtiInstallationOp(ctx: UserContext, id: string, { grantedScopes }: { grantedScopes?: AccessScope[] }) {
+export async function updateLtiInstallationOp(ctx: UserContext, id: string, changes: Omit<LtiInstallationDecision, 'releasedFields'>) {
   const { tenantId } = ctx.var;
   await getManagedServiceAccount(ctx, id);
 
@@ -91,15 +110,18 @@ export async function updateLtiInstallationOp(ctx: UserContext, id: string, { gr
     const found = await lockLtiInstallation(txCtx, { id, tenantId });
     if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
     if (!found.installation.approvedAt) throw new AppError(409, 'lti_installation_not_approved', 'warn', { meta: { installationId: id } });
-    if (!grantedScopes) return found;
-    assertScopesGrantable(found, grantedScopes);
-    const [stored, granted] = [new Set(found.installation.grantedScopes), new Set(grantedScopes)];
-    if (granted.size === stored.size && grantedScopes.every((scope) => stored.has(scope))) return found;
-    const written = await updateLtiInstallationScopes(txCtx, { id, grantedScopes, by: ctx.var.actor.id });
+    if (changes.grantedScopes) assertScopesGrantable(found, changes.grantedScopes);
+    const grantedScopes =
+      changes.grantedScopes && !sameValues(changes.grantedScopes, found.installation.grantedScopes) ? changes.grantedScopes : undefined;
+    const channelTypes =
+      changes.channelTypes && !sameValues(changes.channelTypes, found.installation.channelTypes) ? changes.channelTypes : undefined;
+    if (!grantedScopes && !channelTypes) return found;
+    const written = await updateLtiInstallationGrant(txCtx, { id, grantedScopes, channelTypes, by: ctx.var.actor.id });
     return { ...found, installation: { ...found.installation, ...written } };
   });
 
-  log.info('LTI installation updated', { installationId: id, tenantId, grantedScopes: updated.installation.grantedScopes });
+  const { grantedScopes, channelTypes } = updated.installation;
+  log.info('LTI installation updated', { installationId: id, tenantId, grantedScopes, channelTypes });
   return withActorRef(ctx, toLtiInstallation(updated));
 }
 

@@ -293,7 +293,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       const [installationId] = connection.config.deploymentIds;
       await call(approveLtiInstallation, {
         path: { ...platformSide.path, ltiInstallationId: installationId },
-        body: { releasedFields: ['name'], grantedScopes },
+        body: { releasedFields: ['name'], grantedScopes, channelTypes: ['organization'] },
         headers: platformSide.headers,
       });
       const placed = await call(createLtiResourceLink, {

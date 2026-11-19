@@ -204,20 +204,23 @@ export const useSetLtiInstallationStatusMutation = () =>
   });
 
 /**
- * Replaces the access scopes an approved installation's own tokens may carry; asks the step-up an approval asks. The
- * list is read again after, so a change another admin made meanwhile shows too.
+ * Replaces the access scopes an approved installation's own tokens may carry, or the channel types it may get a tab in;
+ * asks the step-up an approval asks. The lists are read again after: they show a change another admin made meanwhile,
+ * and the tabs a type taken away switched off.
  */
 export const useUpdateLtiInstallationMutation = () =>
   useMutation<UpdateLtiInstallationResponse, ApiError, MutationData<UpdateLtiInstallationData>>({
     mutationKey: ltiPlatformKeys.update,
     mutationFn: ({ path, body }) => withStepUp(() => updateLtiInstallation({ path, body })),
-    onSuccess: (updated, { path }) => {
+    onSuccess: (updated, { path, body }) => {
       setCachedInstallation(path, updated.id, () => updated);
-      toaster.success(t('c:success.update_resource', { resource: t('c:api_access') }));
+      toaster.success(t('c:success.update_resource', { resource: t(body.channelTypes ? 'c:lti_tab_channel_types' : 'c:api_access') }));
     },
     onSettled: (_data, _error, { path }) => {
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installations(path) });
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, path.ltiInstallationId) });
     },
   });
 

@@ -90,7 +90,7 @@ describe('LTI launch', async () => {
     if (releasedFields) {
       await call(approveLtiInstallation, {
         path: { ...org.path, ltiInstallationId: installationId },
-        body: { releasedFields },
+        body: { releasedFields, channelTypes: ['organization'] },
         headers: org.headers,
       });
     }

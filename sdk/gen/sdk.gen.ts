@@ -2220,7 +2220,7 @@ export const listLtiInstallationTabs = <ThrowOnError extends boolean = true>(
 /**
  * Approve LTI installation
  *
- * Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.
+ * Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Channels of the types allowed here may switch its tab on; none is allowed by default. Disable it later as a service account.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve** ·· [approveLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve) ·· _lti-platform · cella_
  *
@@ -2230,6 +2230,7 @@ export const listLtiInstallationTabs = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.ltiInstallationId - `string`
  * @param {enum[]} options.body.releasedFields - `enum[]`
  * @param {enum[]=} options.body.grantedScopes - `enum[]` (optional)
+ * @param {enum[]=} options.body.channelTypes - `enum[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
@@ -2272,7 +2273,7 @@ export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Update LTI installation
  *
- * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.
+ * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs that are on in a channel type taken away are switched off, keeping their ids. Requires permission to update the organization.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [updateLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
  *
@@ -2281,6 +2282,7 @@ export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.ltiInstallationId - `string`
  * @param {enum[]=} options.body.grantedScopes - `enum[]` (optional)
+ * @param {enum[]=} options.body.channelTypes - `enum[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateLtiInstallation = <ThrowOnError extends boolean = true>(

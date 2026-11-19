@@ -102,7 +102,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Approve LTI installation',
     description:
-      'Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.',
+      'Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Channels of the types allowed here may switch its tab on; none is allowed by default. Disable it later as a service account.',
     request: { params: ltiInstallationParamSchema, body: jsonBody(approveLtiInstallationBodySchema) },
     responses: { 200: json('Approved installation', ltiInstallationSchema), ...errors(409) },
   }),
@@ -114,7 +114,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update LTI installation',
     description:
-      "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.",
+      "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs that are on in a channel type taken away are switched off, keeping their ids. Requires permission to update the organization.",
     request: { params: ltiInstallationParamSchema, body: jsonBody(updateLtiInstallationBodySchema) },
     responses: { 200: json('Updated installation', ltiInstallationSchema), ...errors(409) },
   }),

@@ -782,7 +782,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
       const [installationId] = connection.config.deploymentIds;
       await call(approveLtiInstallation, {
         path: { ...platformSide.path, ltiInstallationId: installationId },
-        body: { releasedFields: ['name'] },
+        body: { releasedFields: ['name'], channelTypes: ['organization'] },
         headers: platformSide.headers,
       });
       const placed = await call(createLtiResourceLink, {

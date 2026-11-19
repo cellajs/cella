@@ -476,7 +476,7 @@ export type StreamError = {
 };
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.
  */
 export type LtiInstallation = {
   /**
@@ -519,6 +519,10 @@ export type LtiInstallation = {
    * The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in
    */
   grantedScopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+  /**
+   * The channel types an admin allowed it a tab in: only there a channel switches its tab on
+   */
+  channelTypes: Array<'organization'>;
   /**
    * `pending` until an admin approves or rejects it
    */
@@ -4859,6 +4863,10 @@ export type ApproveLtiInstallationData = {
      * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
      */
     grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+    /**
+     * The channel types it may get a tab in, of those that hold LTI tabs: a type the app makes an LTI context, and the organization; empty or left out allows none
+     */
+    channelTypes?: Array<'organization'>;
   };
   path: {
     tenantId: string;
@@ -4966,6 +4974,10 @@ export type UpdateLtiInstallationData = {
      * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
      */
     grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+    /**
+     * Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids
+     */
+    channelTypes?: Array<'organization'>;
   };
   path: {
     tenantId: string;
@@ -5153,9 +5165,9 @@ export type ListLtiTabsResponses = {
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on; null when they may
+       * Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, else one an admin did not allow in its type; null when they may
        */
-      refusal: 'lti_installation_disabled' | null;
+      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | null;
       /**
        * The tab once placed, on or off; null for an LTI tool never placed in the channel
        */

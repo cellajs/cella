@@ -2,11 +2,29 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "900c8ffe-b3a7-4c5b-81be-777782283b2e",
+  "id": "bc750f66-290b-47e0-b8ce-a60f8e5d2c87",
   "prevIds": [
     "d85373d6-9117-4a6c-81e5-f2a4242f490c"
   ],
   "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_installations",
+        "channel_types"
+      ],
+      "writes": [
+        "s|col|public.lti_installations.channel_types",
+        "n|col|public.lti_installations.channel_types",
+        "e|col|public.lti_installations.channel_types"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public"
+      ]
+    },
     {
       "statementType": "add_column",
       "statementTarget": [
@@ -27,6 +45,22 @@
     }
   ],
   "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "channel_types",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
     {
       "op": "create",
       "row": {

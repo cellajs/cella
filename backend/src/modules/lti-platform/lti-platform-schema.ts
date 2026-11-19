@@ -5,6 +5,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { ltiTabChannelTypes } from '#/modules/lti-platform/helpers/context-channel';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import { ltiAudiences } from '#/modules/lti-platform/lti-resource-links-db';
@@ -101,15 +102,28 @@ const grantedScopesSchema = z
   .max(accessScopes.all.length)
   .describe("The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none");
 
+const channelTypesSchema = z
+  .array(z.enum(ltiTabChannelTypes))
+  .max(ltiTabChannelTypes.length)
+  .describe(
+    'The channel types it may get a tab in, of those that hold LTI tabs: a type the app makes an LTI context, and the organization; empty or left out allows none',
+  );
+
 export const approveLtiInstallationBodySchema = z.object({
   releasedFields: z
     .array(z.enum(ltiReleasableFields))
     .max(ltiReleasableFields.length)
     .describe('The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none'),
   grantedScopes: grantedScopesSchema.optional(),
+  channelTypes: channelTypesSchema.optional(),
 });
 
-export const updateLtiInstallationBodySchema = z.object({ grantedScopes: grantedScopesSchema.optional() });
+export const updateLtiInstallationBodySchema = z.object({
+  grantedScopes: grantedScopesSchema.optional(),
+  channelTypes: channelTypesSchema
+    .optional()
+    .describe('Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids'),
+});
 
 /** The path of one LTI installation in its organization. */
 export const ltiInstallationParamSchema = tenantOrgParamSchema.extend({ ltiInstallationId: validIdSchema });
@@ -137,6 +151,9 @@ export const ltiInstallationSchema = z
     grantedScopes: z
       .array(z.enum(accessScopes.all))
       .describe("The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in"),
+    channelTypes: z
+      .array(z.enum(ltiTabChannelTypes))
+      .describe('The channel types an admin allowed it a tab in: only there a channel switches its tab on'),
     status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves or rejects it'),
     approvedAt: z.string().nullable(),
     createdAt: z.string(),
@@ -145,7 +162,7 @@ export const ltiInstallationSchema = z
   })
   .openapi('LtiInstallation', {
     description:
-      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.',
+      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.',
     example: mockLtiInstallationResponse(),
     'x-tags': schemaTags('data', 'lti-platform', 'cella'),
   });
@@ -162,7 +179,7 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
 });
 
 /** Why a caller may not place an LTI tool in a channel, or switch its tab on there: the error a write would answer. */
-export const ltiTabRefusals = ['lti_installation_disabled'] as const;
+export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed'] as const;
 
 const ltiAudienceSchema = z
   .enum(ltiAudiences)
@@ -175,7 +192,10 @@ export const listLtiTabsQuerySchema = pageQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** An approved LTI tool as a tab of one channel, placed or not; a disabled one only where it has a tab. */
+/**
+ * An approved LTI tool as a tab of one channel, placed or not, where an admin allowed it in the channel's type; a
+ * disabled one, or one not allowed there, only where it has a tab.
+ */
 export const ltiTabSchema = z.object({
   id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
   name: z.string(),
@@ -189,7 +209,12 @@ export const ltiTabSchema = z.object({
   readsMembers: z
     .boolean()
     .describe('Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context'),
-  refusal: z.enum(ltiTabRefusals).nullable().describe('Why the caller may not place it in the channel or switch its tab on; null when they may'),
+  refusal: z
+    .enum(ltiTabRefusals)
+    .nullable()
+    .describe(
+      'Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, else one an admin did not allow in its type; null when they may',
+    ),
   resourceLink: z
     .object({ id: z.string(), title: z.string(), enabled: z.boolean(), audience: ltiAudienceSchema })
     .nullable()
