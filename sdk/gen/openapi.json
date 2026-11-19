@@ -249,7 +249,7 @@
           },
           "ltiKeySetLimiter": {
             "name": "LTI key sets",
-            "description": "Key set reads for each IP address, answered or not.",
+            "description": "Key set reads for each IP address and connection, answered or not.",
             "policy": {
               "mode": "limit",
               "points": 120,
@@ -4065,10 +4065,14 @@
                   "apiKey": {
                     "type": "integer",
                     "minimum": 0
+                  },
+                  "ltiConnection": {
+                    "type": "integer",
+                    "minimum": 0
                   }
                 },
-                "required": ["user", "organization", "attachment", "serviceAccount", "apiKey"],
-                "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
+                "required": ["user", "organization", "attachment", "serviceAccount", "apiKey", "ltiConnection"],
+                "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
               },
               "rateLimits": {
                 "type": "object",
@@ -4261,7 +4265,8 @@
               "organization": 1,
               "attachment": 100,
               "serviceAccount": 20,
-              "apiKey": 100
+              "apiKey": 100,
+              "ltiConnection": 3
             },
             "rateLimits": {
               "apiPointsPerHour": 1000,
@@ -9185,6 +9190,9 @@
           "401": {
             "description": "Registration link refused\n\nThe same page: the link was used before, never existed or expired."
           },
+          "403": {
+            "description": "Connection limit reached\n\nThe same page: the tenant holds as many LTI connections as its quota allows."
+          },
           "409": {
             "description": "Already registered\n\nThe same page: the platform registered this client id before."
           },
@@ -10069,6 +10077,7 @@
                           "importIssue": {
                             "type": ["string", "null"],
                             "enum": [
+                              "waiting",
                               "register_again",
                               "address_refused",
                               "scope_not_granted",
@@ -19477,7 +19486,8 @@
                           "organization": 1,
                           "attachment": 100,
                           "serviceAccount": 20,
-                          "apiKey": 100
+                          "apiKey": 100,
+                          "ltiConnection": 3
                         },
                         "rateLimits": {
                           "apiPointsPerHour": 1000,
@@ -19517,7 +19527,8 @@
                           "organization": 1,
                           "attachment": 100,
                           "serviceAccount": 20,
-                          "apiKey": 100
+                          "apiKey": 100,
+                          "ltiConnection": 3
                         },
                         "rateLimits": {
                           "apiPointsPerHour": 1000,
@@ -19727,9 +19738,13 @@
                           "apiKey": {
                             "type": ["integer", "null"],
                             "minimum": 0
+                          },
+                          "ltiConnection": {
+                            "type": ["integer", "null"],
+                            "minimum": 0
                           }
                         },
-                        "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
+                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
                       },
                       "rateLimits": {
                         "type": ["object", "null"],
@@ -19808,9 +19823,13 @@
                           "apiKey": {
                             "type": ["integer", "null"],
                             "minimum": 0
+                          },
+                          "ltiConnection": {
+                            "type": ["integer", "null"],
+                            "minimum": 0
                           }
                         },
-                        "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
+                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
                       },
                       "rateLimits": {
                         "type": ["object", "null"],
@@ -19904,7 +19923,8 @@
                       "organization": 1,
                       "attachment": 100,
                       "serviceAccount": 20,
-                      "apiKey": 100
+                      "apiKey": 100,
+                      "ltiConnection": 3
                     },
                     "rateLimits": {
                       "apiPointsPerHour": 1000,
@@ -19954,7 +19974,8 @@
                       "organization": 1,
                       "attachment": 100,
                       "serviceAccount": 20,
-                      "apiKey": 100
+                      "apiKey": 100,
+                      "ltiConnection": 3
                     },
                     "rateLimits": {
                       "apiPointsPerHour": 1000,

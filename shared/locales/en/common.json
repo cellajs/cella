@@ -538,6 +538,7 @@
   "lti_import.scope_not_granted": "The platform has not granted reading members.",
   "lti_import.token_refused": "The platform refused to give a token.",
   "lti_import.too_many_members": "The course has more people than one import reads.",
+  "lti_import.waiting": "Waiting: this connection read as many courses as it may in an hour, and a teacher's next launch after that imports this one.",
   "lti_launch_failed": "{{name}} could not be opened.",
   "lti_launch_loading": "Opening {{name}}...",
   "lti_registration_frame.text": "The LTI tool registers itself here, and this window closes once it is done.",

@@ -1695,7 +1695,7 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.link - `string`
  * @param {string} options.query.openid_configuration - `string`
  * @param {string=} options.query.registration_token - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 429
  */
 export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
   options: Options<RegisterLtiPlatformData, ThrowOnError>,

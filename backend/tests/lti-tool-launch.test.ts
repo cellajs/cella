@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { and, eq, sql } from 'drizzle-orm';
-import { exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
+import { decodeJwt, exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
@@ -22,6 +22,7 @@ import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
+import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
@@ -106,9 +107,12 @@ describe('LTI launch at the app as an LTI tool', async () => {
   ) {
     const org = existing ?? (await createTestOrganization());
     const issuer = `https://${platform.name}.example.com`;
+    const id = generateId();
     const [connection] = await db
       .insert(connectionsTable)
       .values({
+        id,
+        privateJwk: await mintConnectionKey(id),
         tenantId: org.tenantId,
         kind: 'lti',
         issuer,
@@ -414,9 +418,9 @@ describe('LTI launch at the app as an LTI tool', async () => {
   });
 
   // The platform names where its course's members are, and the connection's token goes there: an address the guarded
-  // fetch takes, on any host, as Canvas names one apart from its issuer. A learner's launch without the claim keeps what
-  // an earlier one kept; a teacher's clears it, so a grant withdrawn on the platform queues no more imports.
-  it("keeps the membership address a launch names, asks for a member import after a teacher's launch, and clears it after one without", async () => {
+  // fetch takes, on any host, as Canvas names one apart from its issuer. A launch without the claim keeps what an
+  // earlier one kept: Moodle names it on some launch paths only.
+  it("keeps the membership address a launch names, also through a launch without it, and asks for a member import after a teacher's launch", async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const membershipsUrl = 'https://school.example.net/api/lti/courses/c1/names_and_roles';
     const teacher = (claim?: Record<string, unknown>) => ({ [ltiClaims.roles]: [lisContextRoles.instructor], [ltiClaims.namesRoleService]: claim });
@@ -453,8 +457,8 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await launch(connected);
     expect(await kept()).toMatchObject({ membershipsUrl });
     await launch(connected, teacher());
-    expect(await kept()).toMatchObject({ membershipsUrl: null });
-    expect(send).not.toHaveBeenCalled();
+    expect(await kept()).toMatchObject({ membershipsUrl });
+    expect(send).toHaveBeenCalledTimes(1);
 
     // NRPS's prose names one version where its example lists them: a single string reads as a list of one.
     await launch(connected, teacher({ context_memberships_url: membershipsUrl, service_versions: '2.0' }));
@@ -573,7 +577,8 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const first = await connect(platform);
     const admin = await createFactorOrgUser(call, first.org.tenantId, first.org.id, `lti-${nanoid(8)}`, adminRole);
     const teacher = { sub: 'lms-teacher', [ltiClaims.roles]: [lisContextRoles.instructor] };
-    await launch(first, teacher);
+    const membershipsUrl = 'https://platform-a.example.com/api/lti/courses/course-1/names_and_roles';
+    await launch(first, { ...teacher, [ltiClaims.namesRoleService]: { context_memberships_url: membershipsUrl, service_versions: ['2.0'] } });
     await launch(first, { sub: 'lms-student' });
     const courses = () => db.select().from(ltiContextsTable).where(eq(ltiContextsTable.tenantId, first.org.tenantId));
     const [course] = await courses();
@@ -584,13 +589,50 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const path = { tenantId: first.org.tenantId, organizationId: first.org.id, connectionId: first.connection.id };
     const deleted = await call(deleteLtiConnection, { path, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } });
     expect(deleted.response.status).toBe(204);
-    expect(await courses()).toEqual([expect.objectContaining({ id: course.id, connectionId: null })]);
+    expect(await courses()).toEqual([expect.objectContaining({ id: course.id, connectionId: null, membershipsUrl })]);
 
     const second = await connect(platform, ['deployment-1'], { org: first.org, clientId: 'platform-a-client-again' });
     expect((await launch(second, teacher)).response.status).toBe(303);
-    expect(await courses()).toEqual([expect.objectContaining({ id: course.id, connectionId: second.connection.id, channelId: course.channelId })]);
+    // The takeover's launch named no member list: the old connection's address goes with it.
+    expect(await courses()).toEqual([
+      expect.objectContaining({ id: course.id, connectionId: second.connection.id, channelId: course.channelId, membershipsUrl: null }),
+    ]);
     expect(await accounts()).toEqual(people);
     for (const userId of people) expect(await orgMembershipOf(userId, first.org.id)).toBeDefined();
+  });
+
+  // Attack: two active connections of one tenant and issuer, such as two schools on one hosted platform. A launch through
+  // one finds the course the other holds, and leaves its connection and its membership address alone: an import signs
+  // as the connection that named the address and sends its token there alone.
+  it("keeps a course's connection and membership address through another active connection's launches", async () => {
+    const platform = await fakePlatform('platform-a');
+    const first = await connect(platform);
+    const second = await connect(platform, ['deployment-1'], { org: first.org, clientId: 'platform-a-second-school' });
+    const claim = (school: string) => ({
+      context_memberships_url: `https://${school}.example.net/api/lti/courses/course-1/names_and_roles`,
+      service_versions: ['2.0'],
+    });
+    const teacher = { [ltiClaims.roles]: [lisContextRoles.instructor] };
+    const courses = () => db.select().from(ltiContextsTable).where(eq(ltiContextsTable.tenantId, first.org.tenantId));
+
+    await launch(first, { ...teacher, [ltiClaims.namesRoleService]: claim('first') });
+    const [course] = await courses();
+    for (const changes of [{ [ltiClaims.namesRoleService]: claim('second') }, { ...teacher, [ltiClaims.namesRoleService]: claim('second') }]) {
+      expect((await launch(second, changes)).response.status).toBe(303);
+      expect(await courses()).toEqual([
+        expect.objectContaining({ id: course.id, connectionId: first.connection.id, membershipsUrl: claim('first').context_memberships_url }),
+      ]);
+    }
+
+    const requests: { url: URL; body?: string }[] = [];
+    const recording: GuardedTransport = async ({ url, body }) => {
+      requests.push({ url, body });
+      return new Response(null, { status: 500 });
+    };
+    await importLtiMembersOp(course.id, { transport: recording, resolve: async () => [{ address: '127.0.0.1', family: 4 }] }).catch(() => undefined);
+    expect(requests.map(({ url }) => url.href)).toEqual([first.connection.config.tokenEndpoint]);
+    expect(new URLSearchParams(requests[0].body).get('client_assertion')).toBeTruthy();
+    expect(decodeJwt(new URLSearchParams(requests[0].body).get('client_assertion') ?? '')).toMatchObject({ iss: first.clientId });
   });
 
   // D6: an address across institutions is no proof of the account behind it.

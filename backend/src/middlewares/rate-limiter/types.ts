@@ -5,8 +5,11 @@ import type { ErrorKey } from '#/core/error';
 import type { XMiddlewareHandler } from '#/core/openapi-extensions';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
-/** Who a limiter counts: a signed-in user or service account (`actorId`), both set by the guards. */
-export type RateLimitIdentifier = 'ip' | 'email' | 'actorId' | 'tenantId';
+/**
+ * Who a limiter counts: a signed-in user or service account (`actorId`), both set by the guards, or the connection a
+ * path names (`connectionId`).
+ */
+export type RateLimitIdentifier = 'ip' | 'email' | 'actorId' | 'tenantId' | 'connectionId';
 /** One key segment: an identifier, or a chain where the first available one wins. An unresolved chain rejects. */
 export type RateLimitKeyPart = RateLimitIdentifier | RateLimitIdentifier[];
 export type Identifiers = Record<RateLimitIdentifier, string | null>;

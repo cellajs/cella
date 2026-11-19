@@ -2,12 +2,12 @@ import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
-import type { ServiceAccountId } from '#/db/utils/ids';
+import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
 import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { countLtiImportsSince, findLtiContextById, recordLtiImport } from '#/modules/auth/flows/lti/lti-contexts-queries';
+import { countLtiImportsSince, findLtiContextById, recordLtiImport, recordLtiImportWaiting } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
@@ -71,7 +71,12 @@ const importPerson = async (ctx: DbContext, { connection, channel, organization,
 interface ImportLtiMembersOpts extends ReadLtiMembersOptions {
   /** False while the job tries a failed import again: the context records that it will. True by default. */
   lastAttempt?: boolean;
+  /** True while the job tries a failed import again, which the connection's hourly budget counted when it first ran. */
+  retry?: boolean;
 }
+
+/** The refusals after which the platform names the member list again before an import reads it: a withdrawn grant. */
+const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_refused']);
 
 /**
  * Imports the people a platform lists for an LTI context into the context's channel, as the connection's service
@@ -79,11 +84,13 @@ interface ImportLtiMembersOpts extends ReadLtiMembersOptions {
  * did not list as active. Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
- * an error and unrecorded. An aborted `signal` ends it before the next page or person.
- * @throws What fails after the connection's service account is known, such as a failed read, an abort or a role the
- *   app's mapping does not take: recorded as `retrying` or, on the last attempt, `failed`.
+ * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
+ * connection's hourly budget is spent reads nothing and records that it waits. A refusal of the scope or the member
+ * list forgets the membership address, which the next launch that names it stores again.
+ * @throws What fails after the connection's service account is known, such as a failed read or an abort: recorded as
+ *   `retrying` or, on the last attempt, `failed`.
  */
-export async function importLtiMembersOp(contextId: string, { lastAttempt = true, ...options }: ImportLtiMembersOpts = {}) {
+export async function importLtiMembersOp(contextId: string, { lastAttempt = true, retry = false, ...options }: ImportLtiMembersOpts = {}) {
   const context = await findLtiContextById(dbCtx, { id: contextId });
   const connection = context?.connectionId && (await findConnectionById(dbCtx, { id: context.connectionId }));
   if (!context?.membershipsUrl || !connection || !isLtiConnection(connection)) return;
@@ -100,9 +107,12 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     ]);
     // Joining an archived channel is a create inside it, which an archive refuses.
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
+    if (!retry && (await connectionImportsSpent(connection.id))) return recordLtiImportWaiting(dbCtx, { id: context.id, by });
 
     const read = await readLtiMembers(connection, context.membershipsUrl, options);
-    if ('refusal' in read) return record(0, read.refusal);
+    if ('refusal' in read) {
+      return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
+    }
 
     const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
     let issue: LtiImportIssue | null = read.issue;
@@ -127,8 +137,9 @@ const importJobSchema = z.object({ contextId: z.uuid() });
  * The member import's queue (`cella/docs/JOBS.md`): it reads a platform's member list, outside the database. One job per
  * context waits and one runs at a time. Imports of one connection, its group, run one after the other, and those of
  * different connections beside each other: one platform holds up its own imports alone. Each runs within
- * `importBudgetSeconds`. A job that waited behind another finds that import within `importPeriod`, or the connection's
- * hour spent, and ends, while a retry goes on. A failed import is retried with growing delays, and never ends the grant.
+ * `importBudgetSeconds`. A job that waited behind another finds that import within `importPeriod` and ends, or the
+ * connection's hour spent and records that it waits, while a retry goes on. A failed import is retried with growing
+ * delays, and never ends the grant.
  */
 export const ltiMemberImportQueue = {
   name: 'lti.import-members',
@@ -143,22 +154,23 @@ export const ltiMemberImportQueue = {
     for (const job of jobs) {
       const data = importJobSchema.safeParse(job.data).data;
       const context = data && (await findLtiContextById(dbCtx, { id: data.contextId }));
-      if (!context?.connectionId) continue;
-      if (job.retryCount === 0 && (importedLately(context) || (await connectionImportsSpent(context.connectionId)))) continue;
-      await importLtiMembersOp(context.id, { lastAttempt: job.retryCount >= importRetryLimit, signal: job.signal });
+      if (!context?.connectionId || (job.retryCount === 0 && importedLately(context))) continue;
+      await importLtiMembersOp(context.id, { lastAttempt: job.retryCount >= importRetryLimit, retry: job.retryCount > 0, signal: job.signal });
     }
   },
 } satisfies BackendQueue;
 
 /**
- * Queues a member import of a context after a launch by its Instructor or Administrator, when the context holds a
- * membership address, no import ran for it within `importPeriod` and its connection's hour is not spent
- * (`maxCoursesPerHour`). The launch never waits for it: a job store that refuses the job is logged.
+ * Queues a member import of a context after a launch by its Instructor or Administrator `by`, when the context holds
+ * a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
+ * (`maxCoursesPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
+ * store that refuses the job, or a failed write, is logged.
  */
-export const requestLtiMemberImport = async (context: LtiContextModel) => {
+export const requestLtiMemberImport = async (context: LtiContextModel, by: UserId) => {
   const { connectionId } = context;
-  if (!context.membershipsUrl || !connectionId || importedLately(context) || (await connectionImportsSpent(connectionId))) return;
+  if (!context.membershipsUrl || !connectionId || importedLately(context)) return;
   try {
+    if (await connectionImportsSpent(connectionId)) return await recordLtiImportWaiting(dbCtx, { id: context.id, by });
     const boss = await getPgBoss('producer');
     await boss.send(ltiMemberImportQueue.name, { contextId: context.id }, { singletonKey: context.id, group: { id: connectionId } });
   } catch (err) {

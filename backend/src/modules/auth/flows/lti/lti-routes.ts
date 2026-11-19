@@ -40,6 +40,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       200: { description: 'Registered\n\nA page with one line of text that sends the platform the close message.' },
       400: { description: 'Registration refused\n\nThe same page, naming why the platform or its configuration was refused.' },
       401: { description: 'Registration link refused\n\nThe same page: the link was used before, never existed or expired.' },
+      403: { description: 'Connection limit reached\n\nThe same page: the tenant holds as many LTI connections as its quota allows.' },
       409: { description: 'Already registered\n\nThe same page: the platform registered this client id before.' },
     },
   }),

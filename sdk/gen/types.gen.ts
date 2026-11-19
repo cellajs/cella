@@ -961,7 +961,7 @@ export type Tenant = {
   expiresAt: string | null;
   restrictions: {
     /**
-     * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
+     * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
      */
     quotas: {
       user: number;
@@ -969,6 +969,7 @@ export type Tenant = {
       attachment: number;
       serviceAccount: number;
       apiKey: number;
+      ltiConnection: number;
     };
     rateLimits: {
       /**
@@ -3531,6 +3532,12 @@ export type RegisterLtiPlatformErrors = {
    */
   401: unknown;
   /**
+   * Connection limit reached
+   *
+   * The same page: the tenant holds as many LTI connections as its quota allows.
+   */
+  403: unknown;
+  /**
    * Already registered
    *
    * The same page: the platform registered this client id before.
@@ -4152,6 +4159,7 @@ export type ListLtiContextsResponses = {
        * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
        */
       importIssue:
+        | 'waiting'
         | 'register_again'
         | 'address_refused'
         | 'scope_not_granted'
@@ -8833,7 +8841,7 @@ export type UpdateTenantData = {
      */
     restrictions?: {
       /**
-       * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
+       * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
        */
       quotas?: {
         user?: number | null;
@@ -8841,6 +8849,7 @@ export type UpdateTenantData = {
         attachment?: number | null;
         serviceAccount?: number | null;
         apiKey?: number | null;
+        ltiConnection?: number | null;
       } | null;
       rateLimits?: {
         /**

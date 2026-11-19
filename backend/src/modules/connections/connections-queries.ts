@@ -109,6 +109,10 @@ export const findConnectionsClaiming = async (ctx: DbContext, { federation, clai
       ),
     );
 
+/** How many LTI connections a tenant holds, pending ones included. */
+export const countLtiConnections = (ctx: DbContext, { tenantId }: { tenantId: string }) =>
+  ctx.var.db.$count(connectionsTable, and(eq(connectionsTable.tenantId, tenantId), eq(connectionsTable.kind, 'lti')));
+
 /** Inserts a connection; the unique indexes refuse a second SSO connection of a tenant and a second LTI registration of one client. */
 export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ServedConnection> => {
   const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning(servedColumns);

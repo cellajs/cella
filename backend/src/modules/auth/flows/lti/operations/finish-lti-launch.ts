@@ -108,8 +108,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
       : { channel: organization };
   const deploymentId = launch[ltiClaims.deploymentId];
   const teaches = ltiRoles.some((role) => contextSetUpRoles.has(role));
-  // A teacher's launch without a member list clears the one stored: a grant withdrawn on the platform queues no import.
-  const membershipsUrl = launchMembershipsUrl(claims) ?? (teaches ? null : undefined);
+  const membershipsUrl = launchMembershipsUrl(claims);
   const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
   const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {
@@ -163,7 +162,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     return { userId, channel, contextRow };
   });
   invalidateCache.user(userId);
-  if (contextRow && teaches) void requestLtiMemberImport(contextRow);
+  if (contextRow && teaches) void requestLtiMemberImport(contextRow, userId);
 
   const user = await findUserById(dbCtx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });

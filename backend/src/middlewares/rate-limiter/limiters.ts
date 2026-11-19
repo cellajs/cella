@@ -196,11 +196,14 @@ export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
   description: 'Login initiations for each IP address, refused or not.',
 });
 
-/** Reads of an LTI connection's key set per IP: a platform reads it to check a token request, and keeps it a while. */
-export const ltiKeySetLimiter = rateLimiter('limit', 'ltiKeySet', ['ip'], {
+/**
+ * Reads of an LTI connection's key set per IP and connection: a platform reads it to check a token request, and keeps
+ * it a while. An app that is its own platform reads every installation's key set from one address.
+ */
+export const ltiKeySetLimiter = rateLimiter('limit', 'ltiKeySet', ['ip', 'connectionId'], {
   limits: { points: 120, duration: 60 },
   name: 'LTI key sets',
-  description: 'Key set reads for each IP address, answered or not.',
+  description: 'Key set reads for each IP address and connection, answered or not.',
 });
 
 /**

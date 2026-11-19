@@ -30,6 +30,7 @@ import { clockTime, dateShort } from '~/utils/date-short';
 type LtiContext = ListLtiContextsResponse['results'][number];
 
 const importIssues = {
+  waiting: 'c:lti_import.waiting',
   register_again: 'c:lti_import.register_again',
   address_refused: 'c:lti_import.address_refused',
   scope_not_granted: 'c:lti_import.scope_not_granted',
@@ -48,6 +49,7 @@ function ImportState({ context }: { context: LtiContext }) {
   const { membershipsUrl, importRanAt, importReadCount, importIssue } = context;
 
   if (!membershipsUrl) return <p className="text-muted-foreground">{t('c:lti_import.no_memberships')}</p>;
+  if (importIssue === 'waiting') return <p className="text-muted-foreground">{t(importIssues.waiting)}</p>;
   if (!importRanAt) return <p className="text-muted-foreground">{t('c:lti_import.not_run')}</p>;
   if (!importIssue) return <p>{t('c:lti_import.read', { count: importReadCount ?? 0, time: dateRelative(importRanAt) })}</p>;
   return (

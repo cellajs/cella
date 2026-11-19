@@ -6,13 +6,13 @@ import type { Restrictions } from '#/modules/tenants/tenants-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import { applyMergePatch, type MergePatch } from '#/utils/merge-patch';
 
-/** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
-const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
+/** Quotas beside the entity quotas: machine actors, their keys and LTI connections; one place to extend for a new kind. */
+const otherQuotaKeys = ['serviceAccount', 'apiKey', 'ltiConnection'] as const;
 
-type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
+type QuotaKey = EntityType | (typeof otherQuotaKeys)[number];
 
-/** Every key a tenant quota can name: the entity types, then the machine keys. */
-export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
+/** Every key a tenant quota can name: the entity types, then the others. */
+export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...otherQuotaKeys];
 
 /** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, 0 for a quota it does not list. */
 export const defaultRestrictions = (): Restrictions => {

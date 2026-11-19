@@ -24,7 +24,7 @@ const rateLimitsSchema = z.object({
 
 const quotasSchema = z
   .object(recordFromKeys(quotaKeys, () => countSchema))
-  .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)');
+  .describe('Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)');
 
 const restrictionsSchema = z.object({
   quotas: quotasSchema,

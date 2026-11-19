@@ -132,6 +132,8 @@
   "local_file_not_found": "File not found. This file was stored locally on a specific browser and therefore is not accessible by other browsers or devices.",
   "lti_configuration_invalid": "Platform configuration not valid",
   "lti_configuration_invalid.text": "The app did not register: the platform's configuration is incomplete, or is not served from its own address.",
+  "lti_connection_limit": "LTI connection limit reached",
+  "lti_connection_limit.text": "This organization holds as many LTI connections as the app allows: delete one before you register another.",
   "lti_context_not_set_up": "Course not set up yet",
   "lti_context_not_set_up.text": "This course has no place in the app yet. Ask an instructor of the course to open it first.",
   "lti_context_update_required": "No access to the course",

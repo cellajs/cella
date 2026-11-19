@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
@@ -178,6 +179,45 @@ describe('LTI registration', async () => {
       type: 'lti_platform_unsupported',
     });
     expect(platform.registrations).toHaveLength(0);
+  });
+
+  // Attack: a tenant that adds connections without end holds every slot of the member import. Past its quota, a link is
+  // refused, and so is a registration through a link minted before.
+  it("refuses a registration link and a registration past the tenant's quota of LTI connections", async () => {
+    const { org, user, link } = await mintLink();
+    const quota = appConfig.defaultRestrictions.quotas.ltiConnection ?? 0;
+    const config = {
+      authorizationEndpoint: `${issuer}/a`,
+      tokenEndpoint: `${issuer}/t`,
+      jwksUri: `${issuer}/k`,
+      productFamilyCode: 'x',
+      version: '1',
+      deploymentIds: [],
+    };
+    await db.insert(connectionsTable).values(
+      Array.from({ length: quota }, (_, index) => ({
+        tenantId: org.tenantId,
+        kind: 'lti' as const,
+        issuer: `https://held-${index}.example.edu`,
+        clientId: `held-${index}`,
+        name: `held-${index}`,
+        status: 'active' as const,
+        config,
+      })),
+    );
+
+    const platform = fakePlatform();
+    await expect(registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, platform.options)).rejects.toMatchObject({
+      type: 'lti_connection_limit',
+    });
+    expect(platform.registrations).toHaveLength(0);
+    expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, org.tenantId))).toHaveLength(quota);
+    const path = { tenantId: org.tenantId, organizationId: org.id };
+    await expectRefusal(
+      await call(createLtiRegistrationLink, { path, headers: { ...defaultHeaders, Cookie: user.sessionCookie } }),
+      403,
+      'lti_connection_limit',
+    );
   });
 
   it('refuses a member creating a registration link', async () => {

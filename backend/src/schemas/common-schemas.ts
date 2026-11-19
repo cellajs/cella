@@ -80,7 +80,6 @@ export const userIdParamSchema = z.object({ userId: validIdSchema });
 /** A channel entity by type and id. */
 export const channelRefSchema = z.object({ channelId: validIdSchema, channelType: channelEntityTypeSchema });
 
-/** A channel by its type and id. */
 export type ChannelRef = z.infer<typeof channelRefSchema>;
 
 /**

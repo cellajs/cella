@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -17,6 +18,10 @@ import {
 } from '#/modules/auth/flows/lti/lti-schema';
 import { deleteConnection, insertConnection, updateConnection } from '#/modules/connections/connections-queries';
 import type { LtiConnectionConfig } from '#/modules/connections/connections-schema';
+import { assertLtiConnectionRoom } from '#/modules/connections/operations/assert-lti-connection-room';
+import { lockTenantQuota } from '#/modules/tenants/quota-lock';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { findTenant } from '#/modules/tenants/tenants-queries';
 import { log } from '#/utils/logger';
 
 /** The registration runs before any tenant context exists, and connections sit outside RLS. */
@@ -84,12 +89,13 @@ const registerAtPlatform = async ({ configuration, connectionId, registrationTok
  * Registers the app as an LTI tool at a platform by Dynamic Registration, from the frame the platform opened the
  * registration link in. The link is spent first, so any outcome takes a new one. Then the platform's configuration
  * is read and checked, and the connection is stored `pending` with a key pair of its own (`mintConnectionKey`), for
- * the link's tenant and written by the admin who created the link. Its key set answers from then on: a platform such
+ * the link's tenant and written by the admin who created the link, while the tenant holds fewer than its quota of LTI
+ * connections (`assertLtiConnectionRoom`). Its key set answers from then on: a platform such
  * as Brightspace reads it while it handles the registration. The app registers with that key set, and the connection
  * turns active with the client id the platform gave; a refused registration deletes it.
  * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400 `lti_configuration_invalid`,
- *   `lti_platform_unsupported` or `lti_registration_refused`, what `guardedFetch` throws, and 409 when the platform
- *   already registered this client id.
+ *   `lti_platform_unsupported` or `lti_registration_refused`, 403 `lti_connection_limit`, what `guardedFetch` throws,
+ *   and 409 when the platform already registered this client id.
  */
 export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQuerySchema>, options: PlatformFetchOptions = {}) => {
   const link = await spendHandoffToken({ kind: 'lti-registration', rawToken: query.link });
@@ -106,23 +112,33 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
     version: platform.version,
     deploymentIds: [],
   };
-  await insertConnection(dbCtx, {
-    values: {
-      id,
-      tenantId: link.tenantId,
-      kind: 'lti',
-      issuer: configuration.issuer,
-      name: new URL(configuration.issuer).host,
-      status: 'pending',
-      config,
-      privateJwk: await mintConnectionKey(id),
-      createdBy: link.createdBy,
-    },
+  const privateJwk = await mintConnectionKey(id);
+  await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const tenant = await findTenant(txCtx, { where: eq(tenantsTable.id, link.tenantId) });
+    // The link goes with its tenant: a tenant deleted since the link was spent leaves no link.
+    if (!tenant) throw new AppError(401, 'lti-registration_not_found', 'warn');
+    await lockTenantQuota(txCtx, { tenantId: tenant.id, key: 'ltiConnection' });
+    await assertLtiConnectionRoom(txCtx, tenant);
+    await insertConnection(txCtx, {
+      values: {
+        id,
+        tenantId: link.tenantId,
+        kind: 'lti',
+        issuer: configuration.issuer,
+        name: new URL(configuration.issuer).host,
+        status: 'pending',
+        config,
+        privateJwk,
+        createdBy: link.createdBy,
+      },
+    });
   });
 
   try {
     const registration = await registerAtPlatform({ configuration, connectionId: id, registrationToken: query.registration_token }, options);
-    const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id;
+    // Canvas names the deployment beside the client id, others inside the LTI tool configuration.
+    const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id ?? registration.deployment_id;
     const connection = await updateConnection(dbCtx, {
       id,
       tenantId: link.tenantId,

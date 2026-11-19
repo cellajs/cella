@@ -12,6 +12,7 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findIdentityBySubject, lockIdentityKey, updateIdentity } from '#/modules/user/identities-queries';
+import { log } from '#/utils/logger';
 
 /** A person's organization membership, when they hold a seat. */
 type Seat = Pick<MembershipModel, 'id' | 'role'>;
@@ -55,12 +56,14 @@ export const admitLtiPerson = async (
 
 /**
  * The role the app-owned `ltiContextRole` maps a person to in a channel of `channelType`. An answer that is no role of
- * that type, such as a course role's name for the organization, gives its least privileged role.
+ * that type, such as a course role's name for the organization, gives its least privileged role and a warning.
  */
 export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFacts, 'channelType'>): MembershipModel['role'] => {
   const role = ltiContextRole({ ...facts, channelType });
   const roles: readonly string[] = hierarchy.getRoles(channelType);
-  return roles.includes(role) ? role : hierarchy.getLeastPrivilegedRole(channelType);
+  if (roles.includes(role)) return role;
+  log.warn('LTI role mapping answered no role of the channel type', { channelType, role, connectionId: facts.connection.id });
+  return hierarchy.getLeastPrivilegedRole(channelType);
 };
 
 /** The organization role a person gets for `role`: the highest at or below it that may not update the organization. */

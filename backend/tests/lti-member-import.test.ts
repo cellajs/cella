@@ -55,7 +55,15 @@ import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
-import { canvasMember, canvasMemberPage, canvasPlatform, moodleMemberPage, moodlePlatform, type PlatformFixture } from './lti-platform-fixtures';
+import {
+  canvasMember,
+  canvasMemberPage,
+  canvasPlatform,
+  moodleMember,
+  moodleMemberPage,
+  moodlePlatform,
+  type PlatformFixture,
+} from './lti-platform-fixtures';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -398,7 +406,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     });
 
     // Normal state: an admin who granted nothing names no members in a launch, and one who withdraws the grant later
-    // leaves the import without a token; either way the LTI tool's tenant stays as it was.
+    // leaves the import without a token, which forgets the address; either way the LTI tool's tenant stays as it was.
     it('stores no membership address without a grant, records a grant withdrawn since, and makes no account', async () => {
       const ungranted = await connectThroughRegistration({ grantedScopes: [] });
       await launch(ungranted, ungranted.platformSide.admin.sessionCookie);
@@ -415,7 +423,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       const before = await toolSideState(connected);
 
       await importLtiMembersOp(context.id, platformOptions);
-      expect(await contextRow(context.id)).toMatchObject({ importReadCount: 0, importIssue: 'scope_not_granted' });
+      expect(await contextRow(context.id)).toMatchObject({ importReadCount: 0, importIssue: 'scope_not_granted', membershipsUrl: null });
       expect(await toolSideState(connected)).toEqual(before);
     });
   });
@@ -482,7 +490,8 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   });
 
   // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them an hour.
-  it('queues no import of a connection whose imports within the hour reached their bound', async () => {
+  // The course says its import waits.
+  it('queues no import of a connection whose imports within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
     const imported = await Promise.all(
       Array.from({ length: maxCoursesPerHour }, (_, index) =>
@@ -493,8 +502,15 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await db.update(ltiContextsTable).set({ importRanAt: getIsoDate() }).where(inArray(ltiContextsTable.id, ids));
 
     send.mockClear();
-    await requestLtiMemberImport(side.context);
+    await requestLtiMemberImport(side.context, side.admin.id);
     expect(send).not.toHaveBeenCalled();
+    expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
+
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+    await importLtiMembersOp(side.context.id, api.options);
+    expect(api.requests).toEqual([]);
+    await importLtiMembersOp(side.context.id, { ...api.options, retry: true });
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
   });
 
   // Contract: NRPS 2.0 as the spec's example answers it (section 2.1, its trailing comma dropped) and as Canvas does,
@@ -574,12 +590,17 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: null });
   });
 
-  // Contract: a Canvas on its own host, as its code answers. Its bare-host `authorization_server` is the assertion's
-  // audience as given, and its member list's `Link` header names its other pages beside the next.
-  it('reads a course of a Canvas by its own answers: a bare-host audience and its pagination', async () => {
+  // Contract: Instructure's hosted Canvas, as its code answers. Its registration names the deployment beside the client
+  // id; its bare-host `authorization_server` is the assertion's audience as given; members are on the school's domain,
+  // and its member list's `Link` header names its other pages beside the next.
+  it('reads a course of a hosted Canvas by its own answers: its deployment, a bare-host audience and its pagination', async () => {
     const side = await orgWithAdmin();
-    const canvas = canvasPlatform('canvas.school.edu', '10000000000001');
+    const canvas = canvasPlatform('school.instructure.com', '10000000000001');
     const connection = await registerAt(side, canvas);
+    expect(connection).toMatchObject({
+      issuer: 'https://canvas.instructure.com',
+      config: { deploymentIds: ['1:abc123def456'], registrationClientUri: canvas.registration.registration_client_uri },
+    });
     const context = await addCourse(side, connection, canvas.membershipsUrl('1'));
     const second = `${canvas.membershipsUrl('1')}?page=2&per_page=50`;
     const api = fakePlatformApi((url) =>
@@ -590,77 +611,90 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
     await importLtiMembersOp(context.id, api.options);
     const [token] = api.requests.filter(({ params }) => params);
-    expect(token.url.href).toBe(canvas.configuration.token_endpoint);
-    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: 'canvas.school.edu' });
+    expect(token.url.href).toBe('https://sso.canvaslms.com/login/oauth2/token');
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: 'sso.canvaslms.com' });
     expect(api.memberReads().map(({ url }) => url.href)).toEqual([`${canvas.membershipsUrl('1')}?limit=50`, second]);
     expect(await contextRow(context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
   });
 
   // Contract: a Moodle site as its code answers. Without `authorization_server` the assertion names the token endpoint;
-  // the next page comes in a `Link` header, absolute as Moodle writes it or relative as RFC 8288 lets a platform write
-  // it; and roles hold institution and system roles beside the context role, which reach the app's mapping as they come.
-  it.each([{ relative: false }, { relative: true }])(
-    'reads a course of a Moodle site by its own answers, a relative next link $relative',
-    async ({ relative }) => {
-      const side = await orgWithAdmin();
-      const moodle = moodlePlatform('moodle.school.edu', 'moodle-client');
-      const connection = await registerAt(side, moodle);
-      const context = await addCourse(side, connection, moodle.membershipsUrl('2'));
-      const teacherRoles = [
-        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
-        lisContextRoles.instructor,
-        'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
-      ];
-      const teacher = {
-        status: 'Active',
-        user_id: '2',
-        name: 'Admin User',
-        given_name: 'Admin',
-        family_name: 'User',
-        email: '',
-        roles: teacherRoles,
-      };
-      const student = {
-        status: 'Active',
-        user_id: '3',
-        name: 'Sam Student',
-        given_name: 'Sam',
-        family_name: 'Student',
-        email: '',
-        roles: [lisContextRoles.learner],
-      };
-      const api = fakePlatformApi((url) =>
-        url.searchParams.get('from') === '50' ? moodleMemberPage(url, [student]) : moodleMemberPage(url, [teacher], { from: 50, relative }),
-      );
-      vi.mocked(ltiContextRole).mockClear();
+  // the next page comes in a `Link` header; and roles hold institution and system roles beside the context role, which
+  // reach the app's mapping as they come.
+  it('reads a course of a Moodle site by its own answers', async () => {
+    const side = await orgWithAdmin();
+    const moodle = moodlePlatform('moodle.school.edu', 'moodle-client');
+    const connection = await registerAt(side, moodle);
+    const context = await addCourse(side, connection, moodle.membershipsUrl('2'));
+    const teacherRoles = [
+      'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
+      lisContextRoles.instructor,
+      'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
+    ];
+    const api = fakePlatformApi((url) =>
+      url.searchParams.get('from') === '50'
+        ? moodleMemberPage(url, [moodleMember('3', 'Sam Student', [lisContextRoles.learner])])
+        : moodleMemberPage(url, [moodleMember('2', 'Admin User', teacherRoles)], 50),
+    );
+    vi.mocked(ltiContextRole).mockClear();
 
-      await importLtiMembersOp(context.id, api.options);
-      const [token] = api.requests.filter(({ params }) => params);
-      expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({
-        iss: 'moodle-client',
-        aud: moodle.configuration.token_endpoint,
-      });
-      expect(api.memberReads().map(({ url }) => url.href)).toEqual([
-        `${moodle.membershipsUrl('2')}?limit=50`,
-        `${moodle.membershipsUrl('2')}?limit=50&from=50`,
-      ]);
-      expect(vi.mocked(ltiContextRole).mock.calls.map(([{ ltiRoles }]) => ltiRoles)).toContainEqual(teacherRoles);
-      expect(await contextRow(context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
-    },
-  );
+    await importLtiMembersOp(context.id, api.options);
+    const [token] = api.requests.filter(({ params }) => params);
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: 'moodle-client', aud: moodle.configuration.token_endpoint });
+    expect(api.memberReads().map(({ url }) => url.href)).toEqual([
+      `${moodle.membershipsUrl('2')}?limit=50`,
+      `${moodle.membershipsUrl('2')}?limit=50&from=50`,
+    ]);
+    expect(vi.mocked(ltiContextRole).mock.calls.map(([{ ltiRoles }]) => ltiRoles)).toContainEqual(teacherRoles);
+    expect(await contextRow(context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
+  });
+
+  // NRPS takes a `Link` header as RFC 8288 writes it: a next page named relative to the page resolves against it.
+  it('follows a relative next link, resolved against the page', async () => {
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi((url) =>
+      url.searchParams.get('page') === '2'
+        ? { members: [{ user_id: 'lms-second', roles: [lisContextRoles.learner] }] }
+        : { members: [{ user_id: 'lms-first', roles: [lisContextRoles.learner] }], next: '?page=2' },
+    );
+
+    await importLtiMembersOp(side.context.id, api.options);
+    expect(api.memberReads().map(({ url }) => url.href)).toEqual([
+      `${side.context.membershipsUrl}?limit=50`,
+      `${side.context.membershipsUrl}?page=2`,
+    ]);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
+  });
+
+  // OAuth: a token the platform no longer takes answers 401; the import asks for one new token and reads the page again.
+  it('asks for a new token once when a member read answers 401, and reads on with it', async () => {
+    const side = await connectToFakePlatform();
+    let refused = false;
+    const api = fakePlatformApi(() => {
+      if (refused) return { members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] };
+      refused = true;
+      return new Response(null, { status: 401 });
+    });
+
+    await importLtiMembersOp(side.context.id, api.options);
+    const tokenRequests = api.requests.filter(({ params }) => params);
+    expect(tokenRequests).toHaveLength(2);
+    expect(api.memberReads().map(({ authorization }) => authorization)).toEqual([`Bearer ${side.clientId}:1`, `Bearer ${side.clientId}:2`]);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+  });
 
   // Contract: Sakai answers a token without the roster scope with a 400. A client error is the platform's refusal and is
-  // not tried again; a throttle is tried again.
+  // not tried again: the address goes until a launch names it again. A throttle is tried again and keeps it.
   it.each([
-    { status: 400, issue: 'members_refused' },
-    { status: 429, issue: 'retrying' },
-  ])('records a member list answered with $status as $issue', async ({ status, issue }) => {
+    { status: 400, issue: 'members_refused', kept: false },
+    { status: 429, issue: 'retrying', kept: true },
+  ])('records a member list answered with $status as $issue', async ({ status, issue, kept }) => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi(() => Response.json({ error: 'Scope roster not in access token' }, { status }));
 
     await importLtiMembersOp(side.context.id, { ...api.options, lastAttempt: false }).catch(() => undefined);
     expect(api.memberReads()).toHaveLength(1);
-    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 0, importIssue: issue });
+    const membershipsUrl = kept ? side.context.membershipsUrl : null;
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 0, importIssue: issue, membershipsUrl });
   });
 
   // Attack: the installation's token goes wherever a next link points. Only a page at the launch's membership address

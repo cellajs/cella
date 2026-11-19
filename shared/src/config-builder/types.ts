@@ -372,13 +372,13 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   /** Product types numbered per home channel, each with the lowercase letter its share links carry: `/{code}/a7`. */
   numberedProducts: { readonly [K in T['productEntityTypes'][number] & string]?: string };
   defaultRestrictions: {
-    /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
-    quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
+    /** Hard caps per tenant on entity types, machine actors and their keys, and LTI connections; 0 = unlimited. */
+    quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey' | 'ltiConnection', number>>;
     /** API points per hour per actor; invitation mails per day the tenant sends, new and resent alike. 0 lifts either. */
     rateLimits: { apiPointsPerHour: number; invitationEmailsPerDay: number };
   };
   selfServiceTenantsPerUser: number;
-  tenantKinds: Record<TenantKind, TenantKindConfig<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey'>>;
+  tenantKinds: Record<TenantKind, TenantKindConfig<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey' | 'ltiConnection'>>;
   demo: DemoConfig;
   retention: RetentionConfig;
 

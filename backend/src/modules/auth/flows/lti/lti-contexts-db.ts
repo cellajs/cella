@@ -13,9 +13,11 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * Why the last member import of a context stopped short, in fixed words: the connection holds no key and must register
  * again, the app refused an address the platform names, the platform refused the scope, the token or the member list,
  * the import failed and is tried again or was tried for the last time, the platform listed more people than an import
- * reads, the tenant's member limit left people out, or the connection, the tenant or the channel is not active.
+ * reads, the tenant's member limit left people out, or the connection, the tenant or the channel is not active. Or
+ * that no import ran: it waits until its connection's hourly budget of courses frees up.
  */
 export const ltiImportIssues = [
+  'waiting',
   'register_again',
   'address_refused',
   'scope_not_granted',

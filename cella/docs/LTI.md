@@ -22,9 +22,13 @@ As an LTI tool, an admin creates a registration link under LTI connections in or
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
-A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day.
+A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
 
-Registering the same platform again in a tenant, after its connection was deleted, takes over that connection's courses: their channels and their people. A person is known to a tenant by the platform's issuer and their id there. The same person coming through the same platform into two tenants has an account in each: a platform registered in one tenant reaches the accounts made through that tenant alone.
+A course belongs to the connection that launched it first. Two connections of one tenant to the same platform, such as two schools on one hosted platform, both open the course, and its member list stays with its own connection.
+
+Registering the same platform again takes a course over only once the old connection is deleted: the next launch through the new one keeps the course's channel and people. Until then the old connection keeps the course. The platform's existing links still point at the old registration, as a Moodle activity keeps its tool type and client id: re-point them there. A course whose connection is gone shows on no card until a launch takes it over.
+
+A person is known to a tenant by the platform's issuer and their id there. The same person coming through the same platform into two tenants has an account in each: a platform registered in one tenant reaches the accounts made through that tenant alone.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
@@ -82,7 +86,9 @@ As a platform, your app says in [launch-context.ts](../../backend/src/modules/lt
 
 As an LTI tool, your app also reads who is in a course by NRPS, before any of them launched. It asks for the NRPS scope when it registers. A platform that grants nothing still launches it.
 
-The import starts when an Instructor or Administrator of the course launches and the launch carried the NRPS claim; such a launch without the claim forgets the member list. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course and for a limited number of courses per connection an hour, and the launch never waits for it. No button starts one: the next such launch after that while does.
+The import starts when an Instructor or Administrator of the course launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
+
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course and for a limited number of courses per connection an hour, and the launch never waits for it. A course past that number says its import waits. No button starts one: the next such launch after that while does.
 
 Imports of one connection run one after the other, and those of different connections beside each other, each within a time budget: a platform that answers slowly holds up its own imports alone.
 
@@ -96,7 +102,7 @@ Before it signs or fetches anything, the app holds to these rules:
 - A token is kept per connection and sent to that connection's membership addresses alone.
 - Every request goes through the guarded fetch, which reaches public HTTPS addresses only.
 
-So members are read from any platform that registers the app by Dynamic Registration and serves NRPS. That is tested against a platform on the template, and against answers built from the code of Canvas and Moodle. Canvas's code serves its configuration on its issuer's host and names its authorization server as a bare host, which the app takes as the audience as given; no live Canvas, Moodle, Sakai or Brightspace was tried.
+So members are read from any platform that registers the app by Dynamic Registration and serves NRPS. That is tested end to end against a platform on the template. The registration and the reader are tested against answers shaped like the code of hosted Canvas and Moodle, which no live Canvas, Moodle, Sakai or Brightspace confirmed. No launch from Canvas has been tried, and members are read only after a launch: nothing from Canvas is confirmed end to end.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
 
@@ -113,6 +119,7 @@ Under LTI connections, each connection lists its courses, the channel each maps 
 - A list longer than one import reads.
 - The member limit.
 - A connection, organization or course that is not active.
+- A connection that read as many courses as it may in an hour: the import waits.
 
 ## Embedded pages
 
@@ -135,6 +142,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its courses under LTI connections ask to register the app at the platform again before members are read.
+- **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so.
 
 ## Not built
 

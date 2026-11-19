@@ -831,6 +831,7 @@ export const zTenant = z.object({
       attachment: z.int().gte(0),
       serviceAccount: z.int().gte(0),
       apiKey: z.int().gte(0),
+      ltiConnection: z.int().gte(0),
     }),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
@@ -1815,6 +1816,7 @@ export const zListLtiContextsResponse = z.object({
       importReadCount: z.int().nullable(),
       importIssue: z
         .enum([
+          'waiting',
           'register_again',
           'address_refused',
           'scope_not_granted',
@@ -3490,6 +3492,7 @@ export const zUpdateTenantBody = z.object({
           attachment: z.int().gte(0).nullish(),
           serviceAccount: z.int().gte(0).nullish(),
           apiKey: z.int().gte(0).nullish(),
+          ltiConnection: z.int().gte(0).nullish(),
         })
         .nullish(),
       rateLimits: z

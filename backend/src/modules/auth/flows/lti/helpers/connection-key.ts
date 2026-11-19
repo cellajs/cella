@@ -22,13 +22,16 @@ export const mintConnectionKey = async (connectionId: string) => {
 
 type KeyHolder = Pick<ConnectionModel, 'id' | 'privateJwk'>;
 
-/** The private JWK a connection holds; null for none, or one that does not decrypt for its row. */
+/**
+ * The private JWK a connection holds; null for none, or one that does not decrypt for its row. A key that does not
+ * decrypt is logged as an error, once per read: a changed encryption key in the configuration also causes it.
+ */
 const privateJwkOf = ({ id, privateJwk }: KeyHolder): JWK | null => {
   if (!privateJwk) return null;
   try {
     return JSON.parse(decryptData(privateJwk, encryptionPurpose(id)));
-  } catch {
-    log.warn('LTI connection key does not decrypt', { connectionId: id });
+  } catch (err) {
+    log.error('LTI connection key does not decrypt', { connectionId: id, err });
     return null;
   }
 };

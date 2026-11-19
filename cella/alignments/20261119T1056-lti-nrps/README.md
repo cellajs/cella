@@ -3,7 +3,7 @@ breaking: true
 clientCacheBump: true
 caughtBy: compiler
 generate: true
-grep: ltiApiClaim, launchApiClaim, ltiApiClaimSchema, ltiImportScope, launchPlatformApi, PlatformApi, LtiMemberRow, platform-api, api_url, members_url, apiUrl, membersUrl, lti/claim/api, nextPageToken, lti_import.no_api, ltiRegistrationRequest, currentSigningKey, connections_kind_check, oauthUrl}/jwks, findLtiMembersPage, mockLtiMemberResponse, ltiMemberSchema, findLtiPlacements, getLtiMembersOp, planLtiContextChannel, readLtiMembers, LtiRoleFacts, ltiContextRole, findLtiContext, findIdentityBySubject, lockIdentityKey, isUnder, PlatformFetchOptions, parseJson, lti_contexts_connection_id_context_id_idx, identities_kind_provider_subject_idx
+grep: requestLtiMemberImport, upsertLtiContext, defaultRestrictions, RateLimitIdentifier, ltiApiClaim, launchApiClaim, ltiApiClaimSchema, ltiImportScope, launchPlatformApi, PlatformApi, LtiMemberRow, platform-api, api_url, members_url, apiUrl, membersUrl, lti/claim/api, nextPageToken, lti_import.no_api, ltiRegistrationRequest, currentSigningKey, connections_kind_check, oauthUrl}/jwks, findLtiMembersPage, mockLtiMemberResponse, ltiMemberSchema, findLtiPlacements, getLtiMembersOp, planLtiContextChannel, readLtiMembers, LtiRoleFacts, ltiContextRole, findLtiContext, findIdentityBySubject, lockIdentityKey, isUnder, PlatformFetchOptions, parseJson, lti_contexts_connection_id_context_id_idx, identities_kind_provider_subject_idx
 ---
 
 # LTI course members by NRPS
@@ -36,17 +36,20 @@ No script: manual.
 ## Manual steps
 
 1. Run `pnpm generate --hints "$(cat cella/alignments/20261119T1056-lti-nrps/hints.json)"` and put each statement of `data.sql` where its comment says: the migration adds `lti_contexts.issuer` and `memberships_url`, `connections.private_jwk` and `identities.tenant_id`, drops `lti_contexts.api_url` and `members_url`, keeps a context whose connection is deleted, and replaces `connections_kind_check` so a `pending` LTI connection holds no client id.
-2. After the deploy, a course's next launch that names a membership address stores it, and a teacher's launch that names none clears it.
-3. Import `PlatformFetchOptions` and `parseJson` from `auth/flows/lti/helpers/platform-fetch.ts`; `isUnder` is private to `register-lti-platform.ts`.
-4. Where app code reads `listLtiMembers`, pass `channelType` and `channelId` in the path and read `members`, `user_id` and the `Link` header in place of `results`, `id` and `nextPageToken`.
-5. In the app's `lti-context-channel.ts`, `ltiContextRole` reads `channelType` from `LtiRoleFacts` and answers a role of that channel type; any other answer becomes its least privileged role.
-6. Make `ltiContextRole` answer every role a platform lists: `ltiRoles` are full URIs, short context role names arrive mapped, and institution and system roles arrive as sent, as Moodle sends them.
-7. Where app code finds, locks or inserts an identity of kind `lti`, pass its `tenantId` (`findIdentityBySubject`, `lockIdentityKey`, `insertIdentity`); find a context by tenant, issuer and context id (`findLtiContext`).
-8. Where an app edited the template's LTI tests to mock its own `lti-context-channel.ts` or `launch-context.ts`, drop those mocks: the tests mock both with the template's answers from `backend/tests/lti-template-answers.ts`.
-9. Where an app sets its own `clientCacheVersion`, raise it; where it sets its own `retention`, add `pendingLtiConnectionDays`.
-10. As an LTI tool, ask each connected platform's admin to register the app again with a new registration link, then delete the old connection: its courses keep their channels and members, and say they must register again until then.
-11. Registering again is the whole upgrade path for a connection made before this, since no app runs it in production; re-seed a database that holds such connections.
-12. Where app code calls `ltiRegistrationRequest()`, pass the connection's id; where it signs for a platform with `currentSigningKey`, sign with `connectionSigningKey` of the connection.
+2. Keep the step of `data.sql` that deletes duplicate course rows before the unique index: of two connections of one tenant and issuer that both launched a course, the oldest row and its channel stay, and the other channel stays without its row.
+3. After the deploy, a course's next launch that names a membership address stores it; a launch that names none keeps it, and a refusal of the scope or the member list clears it.
+4. An LTI identity whose connection was deleted before the upgrade gets no tenant: its person gets a new account at their next launch.
+5. Import `PlatformFetchOptions` and `parseJson` from `auth/flows/lti/helpers/platform-fetch.ts`; `isUnder` is private to `register-lti-platform.ts`.
+6. Where app code reads `listLtiMembers`, pass `channelType` and `channelId` in the path and read `members`, `user_id` and the `Link` header in place of `results`, `id` and `nextPageToken`.
+7. In the app's `lti-context-channel.ts`, `ltiContextRole` reads `channelType` from `LtiRoleFacts` and answers a role of that channel type; any other answer becomes its least privileged role.
+8. Make `ltiContextRole` answer every role a platform lists: `ltiRoles` are full URIs, short context role names arrive mapped, and institution and system roles arrive as sent, as Moodle sends them.
+9. Where app code finds, locks or inserts an identity of kind `lti`, pass its `tenantId` (`findIdentityBySubject`, `lockIdentityKey`, `insertIdentity`); find a context by tenant, issuer and context id (`findLtiContext`).
+10. Where an app edited the template's LTI tests to mock its own `lti-context-channel.ts` or `launch-context.ts`, drop those mocks: the tests mock both with the template's answers from `backend/tests/lti-template-answers.ts`.
+11. Where an app sets its own `clientCacheVersion`, raise it; where it sets its own `retention`, add `pendingLtiConnectionDays`; add `ltiConnection: 3` to its `defaultRestrictions.quotas`: without it a tenant's LTI connections have no cap.
+12. Where app code calls `requestLtiMemberImport`, pass the launching user; where it writes a course row with `upsertLtiContext`, a row held by another live connection keeps its connection and membership address.
+13. As an LTI tool, have each connected platform's admin register the app again with a new registration link and re-point the platform's existing links at the new registration, then delete the old connection: the next launch through the new one takes its courses over with their channels and members. Until the delete, the old connection keeps them and they say it must register again.
+14. Step 13 is the whole upgrade path for a connection made before this, since no app runs one in production; re-seed a database that holds such connections.
+15. Where app code calls `ltiRegistrationRequest()`, pass the connection's id; where it signs for a platform with `currentSigningKey`, sign with `connectionSigningKey` of the connection.
 
 ## Verify
 

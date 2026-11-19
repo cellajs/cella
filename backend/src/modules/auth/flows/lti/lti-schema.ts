@@ -46,11 +46,17 @@ export const ltiPlatformConfigurationSchema = z.object({
 
 export type LtiPlatformConfiguration = z.infer<typeof ltiPlatformConfigurationSchema>;
 
-/** The platform's answer to a registration: the client id it gave the app, and its LTI deployment when it made one. */
+const deploymentIdSchema = z.string().min(1).max(maxLength.field).optional();
+
+/**
+ * The platform's answer to a registration: the client id it gave the app, and its LTI deployment when it made one, in
+ * the LTI tool configuration or, as Canvas names it, beside the client id.
+ */
 export const ltiRegistrationResponseSchema = z.object({
   client_id: z.string().min(1).max(maxLength.field),
   registration_client_uri: platformUrlSchema.optional(),
-  [ltiToolConfigurationMember]: z.object({ deployment_id: z.string().min(1).max(maxLength.field).optional() }).optional(),
+  deployment_id: deploymentIdSchema,
+  [ltiToolConfigurationMember]: z.object({ deployment_id: deploymentIdSchema }).optional(),
 });
 
 /** An opaque value a platform hands over, such as a login or message hint; Canvas's message hint is a signed token. */
