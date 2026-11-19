@@ -145,7 +145,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived course:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
-- **A tab switched off:** it leaves the bar, a launch started before is refused, and someone on it lands on the channel's first tab.
+- **A tab switched off or removed:** it leaves the bar, a launch started before is refused, and someone on it lands on the channel's first tab. When the channel shows them no tab of its own, they see its page header alone.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the course under LTI connections says why, and the members imported before stay.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.

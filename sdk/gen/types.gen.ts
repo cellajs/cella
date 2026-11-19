@@ -5103,7 +5103,7 @@ export type ListLtiTabsResponses = {
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, an archived course above, or one the caller may not update; null when they may. A course refusal also keeps a tab from being switched off
+       * Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may
        */
       refusal: 'lti_installation_disabled' | 'channel_archived' | 'lti_context_update_required' | null;
       /**

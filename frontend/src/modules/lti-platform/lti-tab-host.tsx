@@ -11,15 +11,16 @@ import { Button } from '~/modules/ui/button';
 
 /**
  * The LTI tool's tab `tabId` names in a channel, in a launch frame; else why the channel's tabs could not be read. A tab
- * no longer there or switched off sends the person to the channel's layout, which opens its landing tab.
+ * the list read on mount does not hold, gone or switched off, sends the person to the channel's layout and its landing tab.
  */
 export function LtiTabHost({ channel, tabId }: { channel: EnrichedChannel; tabId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const layoutPath = useRouterState({ select: (state) => state.matches.at(-2)?.fullPath });
-  const { tabs, query } = useLtiTabs(channel);
+  const { tabs, query } = useLtiTabs(channel, { fresh: true });
   const tab = tabs.find(({ id }) => id === tabId);
-  const gone = query.isSuccess && !tab;
+  // Judged on a list read since the host mounted: a cached one may predate a tab someone just shared a link to
+  const gone = query.isFetchedAfterMount && !query.isFetching && !tab;
 
   useEffect(() => {
     // Cast: a match's fullPath is a plain string; link paths are the loose LinkComponentProps
@@ -38,5 +39,5 @@ export function LtiTabHost({ channel, tabId }: { channel: EnrichedChannel; tabId
       </ErrorNotice>
     );
   }
-  return query.isPending ? <PageSpinner /> : null;
+  return gone ? null : <PageSpinner />;
 }

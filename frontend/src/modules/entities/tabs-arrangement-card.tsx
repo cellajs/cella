@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { arrangePlacements, dataTabOrder } from '~/lib/placements';
+import { arrangePlacements, dataTabOrder, keepUnshownIds } from '~/lib/placements';
 import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
@@ -36,18 +36,6 @@ interface TabRow {
 /** An LTI tool never placed in the channel: its row lists after the others and takes no place in the stored order. */
 const isUnplaced = (row: TabRow) => !!row.lti && !row.lti.tab.resourceLink;
 
-/** `arranged` with the stored ids it leaves out back at their places: what a card keeps of tabs it could not read. */
-const keepUnshown = (stored: readonly string[], arranged: readonly string[]) => {
-  const result = [...arranged];
-  let after = -1;
-  for (const id of stored) {
-    const at = result.indexOf(id);
-    if (at >= 0) after = at;
-    else result.splice(++after, 0, id);
-  }
-  return result;
-};
-
 // Content stays on the row's first line, so nothing shifts while a description unfolds
 const firstLineCellClass = tw('grid grid-rows-(--rdg-row-height) content-start justify-center');
 
@@ -67,7 +55,8 @@ interface TabsArrangementCardProps {
 export function TabsArrangementCard(props: TabsArrangementCardProps) {
   // A layout without a `$tool` route shows no LTI tab, so its card places none
   const placesLtiTabs = appConfig.has.ltiPlatform && hostsDataTabs(props.parentRouteId);
-  return placesLtiTabs ? <LtiTabsArrangement {...props} /> : <TabsArrangement {...props} lti={{ rows: [], read: true }} />;
+  // Without LTI rows the card cannot tell a stored LTI tab id from a stale one: a write keeps them all
+  return placesLtiTabs ? <LtiTabsArrangement {...props} /> : <TabsArrangement {...props} lti={{ rows: [], read: false }} />;
 }
 
 function LtiTabsArrangement(props: TabsArrangementCardProps) {
@@ -131,7 +120,7 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
   // The ids a write stores: never an LTI tool's that is not placed, unless `placing` it now
   const orderOf = (ids: string[], placing?: string) => {
     const stored = ids.filter((id) => id === placing || !rows.some((row) => row.id === id && isUnplaced(row)));
-    return lti.read ? stored : keepUnshown(slotConfig?.order ?? [], stored);
+    return lti.read ? stored : keepUnshownIds(slotConfig?.order ?? [], stored);
   };
 
   const toggleHidden = (id: string, visible: boolean) => {

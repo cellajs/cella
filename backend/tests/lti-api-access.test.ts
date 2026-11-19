@@ -10,6 +10,7 @@ import {
   getOrganization,
   listLtiInstallationTabs,
   listLtiMembers,
+  listLtiResourceLinks,
   listLtiTabs,
   startLtiLaunch,
   startLtiToolRegistration,
@@ -616,7 +617,8 @@ describe('LTI installation API access', async () => {
     });
 
     // Contract: an LTI tool keys what it stores by the resource link id, which switching a tab off and on keeps.
-    // Attack: a tab switched off opens nothing and lets the LTI tool read no one, for a token minted while it was on too.
+    // Attack: a tab switched off opens nothing, lets the LTI tool read no one, for a token minted while it was on too, and
+    // is listed to none of the channel's readers.
     it('keeps the resource link of a tab switched off and on, and refuses its launch and its members while it is off', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
@@ -626,6 +628,9 @@ describe('LTI installation API access', async () => {
 
       expect((await switchTab(false)).data).toMatchObject({ id: ltiTool.resourceLinkId, enabled: false });
       await expectRefusal(await readMembers(org, token), 403, 'forbidden');
+      const barQuery = { channelType: 'organization' as const, channelId: org.org.id };
+      const bar = await call(listLtiResourceLinks, { path: org.path, query: barQuery, headers: org.headers });
+      expect((bar.data as { results: unknown[] }).results).toEqual([]);
       const launch = await call(startLtiLaunch, { path: linkPath, headers: org.headers });
       await expectRefusal(launch, 409, 'lti_tab_switched_off');
 
@@ -633,8 +638,8 @@ describe('LTI installation API access', async () => {
       expect((await readMembers(org, token)).response.status).toBe(200);
     });
 
-    // Attack: only who may update the channel places a tab, switches it, sees what it may place there, or lists where an
-    // LTI tool has tabs. A tab lets the LTI tool read the course's people.
+    // Attack: only who may update the channel places a tab, switches or removes it, sees what it may place there, or lists
+    // where an LTI tool has tabs. A tab lets the LTI tool read the course's people.
     it('refuses a member who may not update the channel', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
@@ -647,6 +652,7 @@ describe('LTI installation API access', async () => {
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers }), 403, 'forbidden');
       const linkPath = { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId };
       await expectRefusal(await call(updateLtiResourceLink, { path: linkPath, body: { enabled: false }, headers }), 403, 'forbidden');
+      await expectRefusal(await call(deleteLtiResourceLink, { path: linkPath, headers }), 403, 'forbidden');
       const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
       await expectRefusal(await call(listLtiInstallationTabs, { path, headers }), 403, 'forbidden');
     });

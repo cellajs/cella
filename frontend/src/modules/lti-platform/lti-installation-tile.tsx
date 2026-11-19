@@ -193,7 +193,11 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
                 <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
                 {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
               </div>
-              {course && <span className="text-muted-foreground text-xs">{t('c:lti_tab_reads.text', { name: course.name ?? '' })}</span>}
+              {course && (
+                <span className="text-muted-foreground text-xs">
+                  <NamedText i18nKey="c:lti_tab_reads.text" name={course.name ?? ''} />
+                </span>
+              )}
             </div>
             {tab.deletable && (
               <Button

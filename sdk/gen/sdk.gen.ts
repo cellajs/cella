@@ -2324,7 +2324,7 @@ export const listLtiTabs = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI resource links
  *
- * The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.
+ * The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [listLtiResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *
@@ -2383,7 +2383,7 @@ export const createLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI resource link
  *
- * Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.
+ * Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires the rights switching it takes: permission to update its channel, and the course it launches as when that is a channel above.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [deleteLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
  *

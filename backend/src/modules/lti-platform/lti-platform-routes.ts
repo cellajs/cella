@@ -170,7 +170,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI resource links',
     description:
-      "The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.",
+      "The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.",
     request: { params: tenantOrgParamSchema, query: listLtiResourceLinksQuerySchema },
     responses: {
       200: json('LTI resource links', paginationSchema(ltiResourceLinkSchema), { results: [mockLtiResourceLinkResponse()], totalSize: 1 }),
@@ -208,7 +208,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI resource link',
     description:
-      'Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.',
+      'Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires the rights switching it takes: permission to update its channel, and the course it launches as when that is a channel above.',
     request: { params: ltiResourceLinkParamSchema },
     responses: { 204: { description: 'Resource link deleted' } },
   }),

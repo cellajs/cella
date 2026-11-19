@@ -148,6 +148,21 @@ export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot:
 /** What arranging reads of a placement: its id, its default order, the gates and whether a channel can hide it. */
 type Arrangeable = Pick<PlacementDescriptor, 'id' | 'requires' | 'visibleTo' | 'locked'> & { order: number };
 
+/**
+ * `arranged` with the `stored` ids it leaves out put back, such as tabs a card could not read: each after the stored id
+ * before it, and never ahead of an unshown id stored before it. They keep their stored order; a leading one goes first.
+ */
+export function keepUnshownIds(stored: readonly string[], arranged: readonly string[]): string[] {
+  const result = [...arranged];
+  let after = -1;
+  for (const id of stored) {
+    const at = result.indexOf(id);
+    if (at >= 0) after = Math.max(after, at);
+    else result.splice(++after, 0, id);
+  }
+  return result;
+}
+
 /** Ids in `order` first, in that sequence, and the rest after them in declared `order`. */
 function orderByIds<T extends Arrangeable>(items: T[], order: readonly string[]): T[] {
   const rank = new Map<string, number>();

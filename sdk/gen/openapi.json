@@ -11731,7 +11731,7 @@
                           "refusal": {
                             "type": ["string", "null"],
                             "enum": ["lti_installation_disabled", "channel_archived", "lti_context_update_required", null],
-                            "description": "Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, an archived course above, or one the caller may not update; null when they may. A course refusal also keeps a tab from being switched off"
+                            "description": "Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may"
                           },
                           "context": {
                             "type": ["object", "null"],
@@ -11814,7 +11814,7 @@
         "operationId": "listLtiResourceLinks",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI resource links",
-        "description": "The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.",
+        "description": "The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -12245,7 +12245,7 @@
         "operationId": "deleteLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Delete LTI resource link",
-        "description": "Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.",
+        "description": "Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires the rights switching it takes: permission to update its channel, and the course it launches as when that is a channel above.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },

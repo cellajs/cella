@@ -102,11 +102,11 @@ async function assertCoursePlaceable(ctx: UserContext, channelType: ChannelEntit
   throw new AppError(403, 'lti_context_update_required', 'warn', { entityType: course.channelType });
 }
 
-/** The resource links placed in a channel, on or off, for a caller who may read it. */
+/** The tabs switched on in a channel, for a caller who may read it. Those switched off go to whoever may switch them (`getLtiTabsOp`). */
 export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiResourceLinksQuerySchema>) {
   await getValidChannel(ctx, channelId, channelType, 'read');
   const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
-  return withActorRefs(ctx, links.map(toLtiResourceLink));
+  return withActorRefs(ctx, links.filter((link) => link.enabled).map(toLtiResourceLink));
 }
 
 /**
@@ -124,7 +124,9 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
     .filter(({ installation }) => installation.approvedAt)
     .map(({ account, installation, client }) => {
       const link = links.find(({ installationId }) => installationId === account.id);
-      const refusal: (typeof ltiTabRefusals)[number] | null = account.status !== 'active' ? 'lti_installation_disabled' : courseRefusal(course);
+      // A course refusal first: it keeps the caller from switching either way, a disabled LTI tool only from switching on
+      const refusal: (typeof ltiTabRefusals)[number] | null =
+        courseRefusal(course) ?? (account.status !== 'active' ? 'lti_installation_disabled' : null);
       return {
         id: account.id,
         name: client.name,
@@ -249,9 +251,15 @@ export async function updateLtiResourceLinkOp(
   return withActorRef(ctx, toLtiResourceLink(updated ?? link));
 }
 
-/** Removes a resource link with its live launch records, for a caller who may update its channel. */
+/**
+ * Removes a tab for good, its resource link with its live launch records, for a caller who may switch it: update on its
+ * channel and on the course it launches as.
+ * @throws AppError 403 `channel_archived` or `lti_context_update_required` for that course, and what
+ *   `getUpdatableLtiResourceLink` throws.
+ */
 export async function deleteLtiResourceLinkOp(ctx: UserContext, id: string) {
-  const { link } = await getUpdatableLtiResourceLink(ctx, id);
+  const { link, channel } = await getUpdatableLtiResourceLink(ctx, id);
+  await assertCoursePlaceable(ctx, link.channelType, channel);
   await deleteLtiResourceLink(ctx, { id: link.id });
   log.info('LTI resource link deleted', { resourceLinkId: link.id, installationId: link.installationId });
 }
