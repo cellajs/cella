@@ -91,7 +91,7 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
       if (err instanceof AppError && err.status === 404) return null;
       throw err;
     }));
-  if (!person || !launcher) throw new LaunchError('access_denied', 'the person may not read the placement');
+  if (!person || !launcher) throw new LaunchError('access_denied', 'the person may not open the tab');
   return { person, ...launcher };
 };
 

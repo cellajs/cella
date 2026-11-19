@@ -2351,7 +2351,7 @@ export const listLtiTabs = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI resource links
  *
- * The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.
+ * The tabs of LTI tools switched on in a channel that open for the caller, by default in the order they follow until the channel's own tab order names them. A tab for its members opens for whoever holds a membership in the channel, and one for its editors for whoever may update it; a launch decides alike. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [listLtiResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *
@@ -2391,6 +2391,7 @@ export const listLtiResourceLinks = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.installationId - `string`
  * @param {string} options.body.title - `string`
  * @param {object=} options.body.custom - `object` (optional)
+ * @param {enum=} options.body.audience - `enum` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const createLtiResourceLink = <ThrowOnError extends boolean = true>(
@@ -2433,7 +2434,7 @@ export const deleteLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Update LTI resource link
  *
- * Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching on also takes an active LTI tool.
+ * Renames a resource link, replaces its custom values, changes whom its tab opens for, or switches it on or off, keeping its id. Requires permission to update its channel; switching on also takes an active LTI tool.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [updateLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
  *
@@ -2443,6 +2444,7 @@ export const deleteLtiResourceLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.ltiResourceLinkId - `string`
  * @param {string=} options.body.title - `string` (optional)
  * @param {object=} options.body.custom - `object` (optional)
+ * @param {enum=} options.body.audience - `enum` (optional)
  * @param {boolean=} options.body.enabled - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
@@ -2463,7 +2465,7 @@ export const updateLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Start LTI launch
  *
- * Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel. Requires permission to read its channel and an active installation.
+ * Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel, a place in the tab's audience, which a 404 refuses as a tab that does not exist, and an active installation.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch** ·· [startLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch) ·· _lti-platform · cella_
  *

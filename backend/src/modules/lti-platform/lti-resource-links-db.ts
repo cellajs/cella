@@ -10,6 +10,14 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
+ * Whom a tab opens for: `members`, the people holding a membership in its own channel, exactly the people the LTI tool
+ * reads there; `editors`, whoever may update the channel, as the permission engine decides.
+ */
+export const ltiAudiences = ['members', 'editors'] as const;
+
+export type LtiAudience = (typeof ltiAudiences)[number];
+
+/**
  * An LTI tool placed in a channel: a resource link, whose id is the LTI `resource_link.id`, and the channel's one tab
  * of that LTI tool. It goes with its channel (the organization foreign key and the channel id columns below it) and
  * with its installation. A tenant table read through queries, outside RLS like memberships: the organization scope of
@@ -35,6 +43,7 @@ export const ltiResourceLinksTable = snakeCase.table(
     custom: jsonb().$type<Record<string, string>>().notNull().default({}),
     /** A tab switched off keeps its row and id: it shows nowhere, launches nothing and lets the installation read no one. */
     enabled: boolean().notNull().default(true),
+    audience: varchar({ enum: ltiAudiences }).notNull().default('members'),
     ...auditColumns(),
   },
   (table) => [

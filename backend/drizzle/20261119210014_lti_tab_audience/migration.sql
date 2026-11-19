@@ -1,0 +1,1 @@
+ALTER TABLE "lti_resource_links" ADD COLUMN "audience" varchar DEFAULT 'members' NOT NULL;

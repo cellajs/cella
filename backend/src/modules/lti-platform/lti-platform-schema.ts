@@ -7,6 +7,7 @@ import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { ltiAudiences } from '#/modules/lti-platform/lti-resource-links-db';
 import { serviceAccountStatuses } from '#/modules/service-accounts/service-accounts-db';
 import {
   channelEntityTypeSchema,
@@ -163,6 +164,12 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
 /** Why a caller may not place an LTI tool in a channel, or switch its tab on there: the error a write would answer. */
 export const ltiTabRefusals = ['lti_installation_disabled'] as const;
 
+const ltiAudienceSchema = z
+  .enum(ltiAudiences)
+  .describe(
+    'Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads',
+  );
+
 export const listLtiTabsQuerySchema = pageQuerySchema.extend({
   ...channelRefSchema.shape,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
@@ -184,7 +191,7 @@ export const ltiTabSchema = z.object({
     .describe('Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context'),
   refusal: z.enum(ltiTabRefusals).nullable().describe('Why the caller may not place it in the channel or switch its tab on; null when they may'),
   resourceLink: z
-    .object({ id: z.string(), title: z.string(), enabled: z.boolean() })
+    .object({ id: z.string(), title: z.string(), enabled: z.boolean(), audience: ltiAudienceSchema })
     .nullable()
     .describe('The tab once placed, on or off; null for an LTI tool never placed in the channel'),
 });
@@ -200,6 +207,7 @@ export const ltiInstallationTabSchema = z.object({
   channelId: z.string(),
   channelName: z.string(),
   enabled: z.boolean().describe('Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel'),
+  audience: ltiAudienceSchema,
   deletable: z.boolean().describe('Whether the caller may remove it: they may update its channel'),
 });
 
@@ -211,11 +219,13 @@ export const createLtiResourceLinkBodySchema = channelRefSchema.extend({
   installationId: validIdSchema.describe('An approved LTI installation of the tenant'),
   title: validNameSchema,
   custom: resourceLinkCustomSchema.optional(),
+  audience: ltiAudienceSchema.optional().describe('Whom the tab opens for; `members` when left out'),
 });
 
 export const updateLtiResourceLinkBodySchema = z.object({
   title: validNameSchema.optional(),
   custom: resourceLinkCustomSchema.optional(),
+  audience: ltiAudienceSchema.optional(),
   enabled: z
     .boolean()
     .optional()
@@ -231,6 +241,7 @@ export const ltiResourceLinkSchema = z
     title: z.string(),
     custom: z.record(z.string(), z.string()),
     enabled: z.boolean().describe('Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id'),
+    audience: ltiAudienceSchema,
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
     ...auditShape,

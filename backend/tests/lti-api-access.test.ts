@@ -594,7 +594,7 @@ describe('LTI installation API access', async () => {
 
       const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
       const tab = { name: 'Peer review', launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String) };
-      const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true });
+      const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true, audience: 'members' });
       expect((tabs.data as { results: unknown[] }).results).toEqual([
         { ...tab, id: reader.installationId, status: 'active', readsMembers: true, refusal: null, resourceLink: placed(reader.resourceLinkId) },
         { ...tab, id: silent.installationId, status: 'active', readsMembers: false, refusal: null, resourceLink: null },
@@ -613,7 +613,7 @@ describe('LTI installation API access', async () => {
       const path = { ...org.path, ltiInstallationId: reader.installationId };
       const installationTabs = await call(listLtiInstallationTabs, { path, headers: org.headers });
       expect((installationTabs.data as { results: unknown[] }).results).toEqual([
-        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, deletable: true },
+        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, audience: 'members', deletable: true },
       ]);
 
       const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };

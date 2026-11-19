@@ -128,7 +128,7 @@ const setCachedResourceLink = (tenantId: string, channelId: string, linkId: stri
     if (!oldData) return oldData;
     const results = oldData.results.map((tab) => {
       if (link ? tab.id !== link.installationId : tab.resourceLink?.id !== linkId) return tab;
-      return { ...tab, resourceLink: link && { id: link.id, title: link.title, enabled: link.enabled } };
+      return { ...tab, resourceLink: link && { id: link.id, title: link.title, enabled: link.enabled, audience: link.audience } };
     });
     return { ...oldData, results };
   });
@@ -229,7 +229,7 @@ export const useCreateLtiResourceLinkMutation = () =>
     onSuccess: (link, { path }) => setCachedResourceLink(path.tenantId, link.channelId, link.id, link),
   });
 
-/** Switches a tab on or off, or renames it; the resource link and its id stay. */
+/** Switches a tab on or off, changes whom it opens for or renames it; the resource link and its id stay. */
 export const useUpdateLtiResourceLinkMutation = () =>
   useMutation<UpdateLtiResourceLinkResponse, ApiError, MutationData<UpdateLtiResourceLinkData>>({
     mutationKey: ltiPlatformKeys.updateResourceLink,

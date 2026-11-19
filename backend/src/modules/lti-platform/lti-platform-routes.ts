@@ -86,6 +86,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
             channelId: mockLtiResourceLinkResponse().channelId,
             channelName: 'Biology department',
             enabled: true,
+            audience: 'members',
             deletable: true,
           },
         ],
@@ -164,7 +165,7 @@ export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
             status: 'active',
             readsMembers: true,
             refusal: null,
-            resourceLink: { id: mockLtiResourceLinkResponse().id, title: 'Peer review', enabled: true },
+            resourceLink: { id: mockLtiResourceLinkResponse().id, title: 'Peer review', enabled: true, audience: 'members' },
           },
         ],
         totalSize: 1,
@@ -182,7 +183,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI resource links',
     description:
-      "The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.",
+      "The tabs of LTI tools switched on in a channel that open for the caller, by default in the order they follow until the channel's own tab order names them. A tab for its members opens for whoever holds a membership in the channel, and one for its editors for whoever may update it; a launch decides alike. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.",
     request: { params: tenantOrgParamSchema, query: listLtiResourceLinksQuerySchema },
     responses: {
       200: json('LTI resource links', paginationSchema(ltiResourceLinkSchema), { results: [mockLtiResourceLinkResponse()], totalSize: 1 }),
@@ -208,7 +209,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update LTI resource link',
     description:
-      'Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching on also takes an active LTI tool.',
+      'Renames a resource link, replaces its custom values, changes whom its tab opens for, or switches it on or off, keeping its id. Requires permission to update its channel; switching on also takes an active LTI tool.',
     request: { params: ltiResourceLinkParamSchema, body: jsonBody(updateLtiResourceLinkBodySchema) },
     responses: { 200: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
@@ -232,7 +233,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Start LTI launch',
     description:
-      "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel. Requires permission to read its channel and an active installation.",
+      "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel, a place in the tab's audience, which a 404 refuses as a tab that does not exist, and an active installation.",
     request: { params: ltiResourceLinkParamSchema },
     responses: {
       200: json('Launch started', ltiLaunchStartSchema, {

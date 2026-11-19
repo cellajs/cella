@@ -40,6 +40,7 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
       title: 'Peer review',
       custom: { round: '1' },
       enabled: true,
+      audience: 'members' as const,
       createdAt,
       updatedAt: createdAt,
     };

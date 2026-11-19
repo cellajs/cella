@@ -6,19 +6,20 @@ import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { issueHandoffToken, readHandoffToken } from '#/modules/auth/core';
 import { holdsLtiTabs } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
-type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | 'channelType' | 'channelId'>;
+type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | 'channelType' | 'channelId' | 'audience'>;
 
 /**
- * Who may launch a resource link: a person who may read its channel through their own memberships, read now. A system
- * admin is nobody special here: the ID token carries the person's own access, as a token does. Starting a launch and
- * the launch endpoint decide alike.
+ * Who may launch a resource link: a person who may read its channel through their own memberships, read now, and whom
+ * its audience takes in (`opensFor`). A system admin is nobody special here: the ID token carries the person's own
+ * access, as a token does. Starting a launch and the launch endpoint decide alike, as the tab list does.
  * @returns The channel, and the person's memberships, which the launch's roles are decided with.
- * @throws AppError 404 when the person may not read the channel.
+ * @throws AppError 404 when the person may not read the channel, or is outside the tab's audience.
  */
 export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
   const { memberships } = await readMemberships(personId);
@@ -32,6 +33,8 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
     },
   };
   const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
+  if (!opensFor(link.audience, { personId, memberships }, link.channelType, entity))
+    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
   return { channel: entity, memberships };
 };
 

@@ -445,6 +445,7 @@ export const zLtiResourceLink = z.object({
   title: z.string(),
   custom: z.record(z.string(), z.string()),
   enabled: z.boolean(),
+  audience: z.enum(['members', 'editors']),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   createdBy: z
@@ -2032,6 +2033,7 @@ export const zListLtiInstallationTabsResponse = z.object({
       channelId: z.string(),
       channelName: z.string(),
       enabled: z.boolean(),
+      audience: z.enum(['members', 'editors']),
       deletable: z.boolean(),
     }),
   ),
@@ -2130,6 +2132,7 @@ export const zListLtiTabsResponse = z.object({
           id: z.string(),
           title: z.string(),
           enabled: z.boolean(),
+          audience: z.enum(['members', 'editors']),
         })
         .nullable(),
     }),
@@ -2171,6 +2174,7 @@ export const zCreateLtiResourceLinkBody = z.object({
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  audience: z.enum(['members', 'editors']).optional(),
 });
 
 export const zCreateLtiResourceLinkPath = z.object({
@@ -2202,6 +2206,7 @@ export const zUpdateLtiResourceLinkBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  audience: z.enum(['members', 'editors']).optional(),
   enabled: z.boolean().optional(),
 });
 

@@ -242,7 +242,10 @@ export async function updateLtiResourceLink(
   {
     id,
     values,
-  }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'updatedAt' | 'updatedBy'>> },
+  }: {
+    id: string;
+    values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'audience' | 'updatedAt' | 'updatedBy'>>;
+  },
 ) {
   const [updated] = await ctx.var.db.update(ltiResourceLinksTable).set(values).where(eq(ltiResourceLinksTable.id, id)).returning();
   return updated;

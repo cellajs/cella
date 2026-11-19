@@ -582,6 +582,10 @@ export type LtiResourceLink = {
    * Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id
    */
   enabled: boolean;
+  /**
+   * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+   */
+  audience: 'members' | 'editors';
   createdAt: string;
   updatedAt: string | null;
   createdBy:
@@ -4824,6 +4828,10 @@ export type ListLtiInstallationTabsResponses = {
        */
       enabled: boolean;
       /**
+       * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+       */
+      audience: 'members' | 'editors';
+      /**
        * Whether the caller may remove it: they may update its channel
        */
       deletable: boolean;
@@ -5155,6 +5163,10 @@ export type ListLtiTabsResponses = {
         id: string;
         title: string;
         enabled: boolean;
+        /**
+         * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+         */
+        audience: 'members' | 'editors';
       } | null;
     }>;
     /**
@@ -5258,6 +5270,10 @@ export type CreateLtiResourceLinkData = {
     custom?: {
       [key: string]: string;
     };
+    /**
+     * Whom the tab opens for; `members` when left out
+     */
+    audience?: 'members' | 'editors';
   };
   path: {
     tenantId: string;
@@ -5367,6 +5383,10 @@ export type UpdateLtiResourceLinkData = {
     custom?: {
       [key: string]: string;
     };
+    /**
+     * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+     */
+    audience?: 'members' | 'editors';
     /**
      * Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs
      */

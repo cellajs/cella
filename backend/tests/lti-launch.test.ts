@@ -1,7 +1,14 @@
 import { and, eq } from 'drizzle-orm';
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
-import { approveLtiInstallation, createLtiResourceLink, startLtiLaunch, startLtiToolRegistration } from 'sdk';
+import {
+  approveLtiInstallation,
+  createLtiResourceLink,
+  listLtiResourceLinks,
+  startLtiLaunch,
+  startLtiToolRegistration,
+  updateLtiResourceLink,
+} from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -10,7 +17,7 @@ import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { createTestOrganization, expectRefusal } from './helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal } from './helpers';
 import { parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -260,5 +267,39 @@ describe('LTI launch', async () => {
     const launch = await authorize(login.fields, tool.redirectUri);
     expect(launch.fields).toMatchObject({ error: 'access_denied' });
     expect(launch.fields).not.toHaveProperty('id_token');
+  });
+
+  // Attack: a tab opens for its audience alone, and its list, its start and its launch decide alike. A tab for its
+  // members is not for a system admin who reads the channel without a membership, and a tab for its editors is not for a
+  // member who may only read it, also for a launch the member started before: each is refused as a tab that does not exist.
+  it('lists, starts and launches a tab for its audience alone', async () => {
+    const org = await orgWithAdmin();
+    const tool = await installTool(org, 'peer-review.example.com');
+    const resourceLinkId = await placeTool(org, tool);
+    const linkPath = { ...org.path, ltiResourceLinkId: resourceLinkId };
+    const listed = async (headers: Record<string, string>) => {
+      const query = { channelType: 'organization' as const, channelId: org.org.id };
+      return ((await call(listLtiResourceLinks, { path: org.path, query, headers })).data as { results: { id: string }[] }).results.map(
+        ({ id }) => id,
+      );
+    };
+
+    const systemAdmin = await createSystemAdminUser(`lti-${nanoid(8)}@test.com`);
+    const asSystemAdmin = { ...defaultHeaders, Cookie: await createTestSession(systemAdmin) };
+    expect(await listed(asSystemAdmin)).toEqual([]);
+    await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asSystemAdmin }), 404, 'not_found');
+
+    const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+    const asMember = { ...defaultHeaders, Cookie: member.sessionCookie };
+    expect(await listed(asMember)).toEqual([resourceLinkId]);
+    const { login } = await startLaunch(org, resourceLinkId, member.sessionCookie);
+    const changed = await call(updateLtiResourceLink, { path: linkPath, body: { audience: 'editors' }, headers: org.headers });
+    expect(changed.data).toMatchObject({ id: resourceLinkId, audience: 'editors' });
+
+    expect((await authorize(login.fields, tool.redirectUri)).fields).toMatchObject({ error: 'access_denied' });
+    expect(await listed(asMember)).toEqual([]);
+    await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asMember }), 404, 'not_found');
+    expect(await listed(org.headers)).toEqual([resourceLinkId]);
+    expect((await authorize((await startLaunch(org, resourceLinkId)).login.fields, tool.redirectUri)).fields).toHaveProperty('id_token');
   });
 });

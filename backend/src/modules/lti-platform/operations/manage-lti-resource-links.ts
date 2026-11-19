@@ -9,6 +9,7 @@ import { resolveEntities } from '#/modules/entities/entities-queries';
 import { holdsLtiTabs, linkContext } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
+import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import {
   deleteLtiResourceLink,
   findLtiInstallation,
@@ -24,7 +25,7 @@ import type {
   listLtiTabsQuerySchema,
   ltiTabRefusals,
 } from '#/modules/lti-platform/lti-platform-schema';
-import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
+import type { LtiAudience, LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { partitionByPermission } from '#/permissions/split-by-permission';
@@ -39,6 +40,7 @@ const toLtiResourceLink = (link: LtiResourceLinkModel) => ({
   title: link.title,
   custom: link.custom,
   enabled: link.enabled,
+  audience: link.audience,
   createdAt: link.createdAt,
   updatedAt: link.updatedAt,
   createdBy: link.createdBy,
@@ -66,14 +68,17 @@ const assertHoldsLtiTabs = (channelType: ChannelEntityType) => {
 };
 
 /**
- * The tabs switched on in a channel, for a caller who may read it; none in a channel type that holds no tabs. Those
- * switched off go to whoever may switch them (`getLtiTabsOp`).
+ * The tabs switched on in a channel that open for the caller (`opensFor`), as a launch decides it, for a caller who may
+ * read the channel; none in a channel type that holds no tabs. Those switched off go to whoever may switch them
+ * (`getLtiTabsOp`).
  */
 export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiResourceLinksQuerySchema>) {
-  await getValidChannel(ctx, channelId, channelType, 'read');
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
   if (!holdsLtiTabs(channelType)) return [];
+  const opener = { personId: ctx.var.user.id, memberships: ctx.var.memberships };
   const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
-  return withActorRefs(ctx, links.filter((link) => link.enabled).map(toLtiResourceLink));
+  const opened = links.filter((link) => link.enabled && opensFor(link.audience, opener, channelType, entity));
+  return withActorRefs(ctx, opened.map(toLtiResourceLink));
 }
 
 /**
@@ -101,7 +106,7 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
         status: account.status,
         readsMembers: isContext && installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),
         refusal,
-        resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled } : null,
+        resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled, audience: link.audience } : null,
       },
     ];
   });
@@ -133,10 +138,10 @@ export async function getLtiInstallationTabsOp(
     for (const id of (await partitionByPermission(ctx, 'update', channelType, ids)).allowedIds) deletable.add(id);
   }
   // A link whose channel went between the two reads is left out: a channel takes its links along.
-  return links.flatMap(({ id, channelType, channelId, enabled }) => {
+  return links.flatMap(({ id, channelType, channelId, enabled, audience }) => {
     const channelName = names.get(channelId);
     if (channelName === undefined) return [];
-    return [{ id, channelType, channelId, channelName, enabled, deletable: deletable.has(channelId) }];
+    return [{ id, channelType, channelId, channelName, enabled, audience, deletable: deletable.has(channelId) }];
   });
 }
 
@@ -146,6 +151,7 @@ interface CreateLtiResourceLinkInput {
   installationId: string;
   title: string;
   custom?: Record<string, string>;
+  audience?: LtiAudience;
 }
 
 /**
@@ -159,7 +165,7 @@ interface CreateLtiResourceLinkInput {
  */
 export async function createLtiResourceLinkOp(
   ctx: UserContext,
-  { channelType, channelId, installationId, title, custom = {} }: CreateLtiResourceLinkInput,
+  { channelType, channelId, installationId, title, custom = {}, audience = 'members' }: CreateLtiResourceLinkInput,
 ) {
   const { tenantId } = ctx.var;
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
@@ -178,6 +184,7 @@ export async function createLtiResourceLinkOp(
       installationId: found.account.id,
       title,
       custom,
+      audience,
       createdBy: ctx.var.actor.id,
     },
   });
@@ -186,15 +193,15 @@ export async function createLtiResourceLinkOp(
 }
 
 /**
- * Renames a resource link, replaces its custom values or switches its tab on or off, for a caller who may update its
- * channel. Switching on takes a channel type that holds tabs and an active installation.
+ * Renames a resource link, replaces its custom values, changes whom its tab opens for or switches it on or off, for a
+ * caller who may update its channel. Switching on takes a channel type that holds tabs and an active installation.
  * @throws AppError 409 `lti_channel_type_not_allowed` or `lti_installation_disabled` for switching on, and what
  *   `getUpdatableLtiResourceLink` throws.
  */
 export async function updateLtiResourceLinkOp(
   ctx: UserContext,
   id: string,
-  changes: { title?: string; custom?: Record<string, string>; enabled?: boolean },
+  changes: { title?: string; custom?: Record<string, string>; enabled?: boolean; audience?: LtiAudience },
 ) {
   const link = await getUpdatableLtiResourceLink(ctx, id);
   if (changes.enabled && !link.enabled) {
