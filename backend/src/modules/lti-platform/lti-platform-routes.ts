@@ -78,7 +78,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get placeable LTI installations',
     description:
-      "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there, which takes the right to update that course when it is a channel above. Requires permission to update the channel.",
+      "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there: the LTI tool is active, and the caller may update that course when it is a channel above. Requires permission to update the channel.",
     request: { params: tenantOrgParamSchema, query: listPlaceableLtiInstallationsQuerySchema },
     responses: {
       200: json('Placeable LTI installations', paginationSchema(placeableLtiInstallationSchema), {
@@ -87,6 +87,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
             id: mockLtiInstallationResponse().id,
             name: 'Peer review',
             readsMembers: true,
+            status: 'active',
             placeable: true,
             context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
           },

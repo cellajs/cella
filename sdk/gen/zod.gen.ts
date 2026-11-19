@@ -2030,6 +2030,7 @@ export const zListPlaceableLtiInstallationsResponse = z.object({
       id: z.string(),
       name: z.string(),
       readsMembers: z.boolean(),
+      status: z.enum(['pending', 'active', 'disabled']),
       placeable: z.boolean(),
       context: z
         .object({

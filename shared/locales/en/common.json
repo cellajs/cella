@@ -546,6 +546,7 @@
   "lti_registration_frame.text": "The LTI tool registers itself here, and this window closes once it is done.",
   "lti_scope_user_read": "Read who is in the courses where it has a tab, with the shared personal fields",
   "lti_tab_course_required.text": "Only someone who may update the course this channel is in can add it.",
+  "lti_tab_tool_disabled.text": "An admin disabled this LTI tool: its tab cannot be added or opened until it is enabled again.",
   "lti_tool": "LTI tool",
   "lti_tool_domain": "Domain it names itself by",
   "lti_tool_tabs.text": "Each channel turns its tab of the LTI tool on and off under Tabs in its settings.",

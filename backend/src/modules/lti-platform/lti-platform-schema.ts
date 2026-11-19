@@ -172,9 +172,14 @@ export const placeableLtiInstallationSchema = z.object({
   readsMembers: z
     .boolean()
     .describe('Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as'),
+  status: z
+    .enum(serviceAccountStatuses)
+    .describe('`active`, or `disabled` while an admin has stopped it: it cannot be placed then, and its tabs refuse every launch'),
   placeable: z
     .boolean()
-    .describe('Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it'),
+    .describe(
+      'Whether the caller may place it in the channel: it is active, and they may update the course a tab there launches as when that is a channel above it',
+    ),
   context: z
     .object({
       channelType: channelEntityTypeSchema,

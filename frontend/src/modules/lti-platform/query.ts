@@ -158,6 +158,7 @@ export const useSetLtiInstallationStatusMutation = () =>
     mutationFn: ({ path, body }) => withStepUp(() => updateServiceAccount({ path, body })),
     onSuccess: ({ id, status, updatedAt }, { path }) => {
       setCachedInstallation(path, id, (installation) => ({ ...installation, status, updatedAt }));
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.placeable(path.tenantId) });
     },
   });
 

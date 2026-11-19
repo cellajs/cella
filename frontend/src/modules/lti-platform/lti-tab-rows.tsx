@@ -42,11 +42,16 @@ export function useLtiTabRows(channel: EnrichedChannel): LtiTabRow[] {
   return [...placed, ...rows.filter((row) => !row.link)];
 }
 
-/** Why the caller may not place the row's tab, while it is not placed. */
+/** Why the row's tab cannot be placed: a disabled LTI tool, placed or not, or a course above the caller may not update. */
 export function LtiTabRefusal({ row }: { row: LtiTabRow }) {
   const { t } = useTranslation();
-  if (row.link || row.installation.placeable) return null;
-  return <span className="text-muted-foreground text-xs leading-tight">{t('c:lti_tab_course_required.text')}</span>;
+  const disabled = row.installation.status === 'disabled';
+  if (!disabled && (row.link || row.installation.placeable)) return null;
+  return (
+    <span className="text-muted-foreground text-xs leading-tight">
+      {t(disabled ? 'c:lti_tab_tool_disabled.text' : 'c:lti_tab_course_required.text')}
+    </span>
+  );
 }
 
 interface LtiTabSwitchProps {

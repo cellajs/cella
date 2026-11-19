@@ -11065,7 +11065,7 @@
         "operationId": "listPlaceableLtiInstallations",
         "tags": ["lti-platform", "cella"],
         "summary": "Get placeable LTI installations",
-        "description": "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there, which takes the right to update that course when it is a channel above. Requires permission to update the channel.",
+        "description": "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there: the LTI tool is active, and the caller may update that course when it is a channel above. Requires permission to update the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11167,6 +11167,7 @@
                       "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
                       "name": "Peer review",
                       "readsMembers": true,
+                      "status": "active",
                       "placeable": true,
                       "context": {
                         "channelType": "organization",
@@ -11196,9 +11197,14 @@
                             "type": "boolean",
                             "description": "Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as"
                           },
+                          "status": {
+                            "type": "string",
+                            "enum": ["pending", "active", "disabled"],
+                            "description": "`active`, or `disabled` while an admin has stopped it: it cannot be placed then, and its tabs refuse every launch"
+                          },
                           "placeable": {
                             "type": "boolean",
-                            "description": "Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it"
+                            "description": "Whether the caller may place it in the channel: it is active, and they may update the course a tab there launches as when that is a channel above it"
                           },
                           "context": {
                             "type": ["object", "null"],
@@ -11219,7 +11225,7 @@
                             "description": "The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is"
                           }
                         },
-                        "required": ["id", "name", "readsMembers", "placeable", "context"]
+                        "required": ["id", "name", "readsMembers", "status", "placeable", "context"]
                       }
                     },
                     "nextPageToken": {

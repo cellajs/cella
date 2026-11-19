@@ -570,20 +570,29 @@ describe('LTI installation API access', async () => {
 
   describe("a channel's tabs of LTI tools", () => {
     // Contract: a channel's Tabs card shows whose people placing a tab lets an LTI tool read, the LTI tools card every
-    // channel where it reads them, and a channel holds one tab of an LTI tool.
+    // channel where it reads them, a channel holds one tab of an LTI tool, and a disabled one is placed nowhere.
     it('lists the approved LTI tools a channel may place, where an LTI tool has its tabs, and refuses a second tab', async () => {
       const org = await orgWithAdmin();
       const reader = await installLtiTool(org);
       const silent = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] }, placed: false });
+      const disabled = await installLtiTool(org, { placed: false });
+      await call(updateServiceAccount, {
+        path: { ...org.path, serviceAccountId: disabled.installationId },
+        body: { status: 'disabled' },
+        headers: org.headers,
+      });
       await installLtiTool(org, { approval: null, placed: false });
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
       const placeable = await call(listPlaceableLtiInstallations, { path: org.path, query: channel, headers: org.headers });
       const context = { ...channel, name: org.org.name };
       expect((placeable.data as { results: unknown[] }).results).toEqual([
-        { id: reader.installationId, name: 'Peer review', readsMembers: true, placeable: true, context },
-        { id: silent.installationId, name: 'Peer review', readsMembers: false, placeable: true, context },
+        { id: reader.installationId, name: 'Peer review', readsMembers: true, status: 'active', placeable: true, context },
+        { id: silent.installationId, name: 'Peer review', readsMembers: false, status: 'active', placeable: true, context },
+        { id: disabled.installationId, name: 'Peer review', readsMembers: true, status: 'disabled', placeable: false, context },
       ]);
+      const body = { ...channel, installationId: disabled.installationId, title: 'Peer review' };
+      await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers: org.headers }), 409, 'lti_installation_disabled');
 
       const path = { ...org.path, ltiInstallationId: reader.installationId };
       const tabs = await call(listLtiInstallationResourceLinks, { path, headers: org.headers });

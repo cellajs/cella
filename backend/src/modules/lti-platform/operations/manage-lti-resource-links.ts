@@ -54,26 +54,31 @@ async function getUpdatableLtiResourceLink(ctx: UserContext, id: string) {
   return link;
 }
 
-/** The refusals of `getValidChannel` that answer "no" to a question about the caller's access; anything else is thrown. */
-const refusedAsNull = (error: unknown) => {
-  if (error instanceof AppError && ['forbidden', 'not_found', 'channel_archived'].includes(error.type)) return null;
+/** A refusal of `getValidChannel` that answers a question about the caller's access; anything else is thrown. */
+const accessRefusal = (error: unknown) => {
+  if (error instanceof AppError && ['forbidden', 'not_found', 'channel_archived'].includes(error.type)) return error;
   throw error;
 };
 
 /**
  * The course a tab in `channel` launches as (`placementContext`), for a caller who may update the channel: the channel
- * itself, or a channel above it with its name where the caller reads it. `mayUpdate` says whether the caller may update
- * it, which adding the tab takes. Null when the tab launches as no course.
+ * itself, or a channel above it with its name where the caller reads it. `refusal` is why the caller may not update a
+ * course above, which adding the tab takes; null when they may. Null when the tab launches as no course.
  */
 async function launchCourse(ctx: UserContext, channelType: ChannelEntityType, channel: MembershipEntity) {
   const course = placementContext({ channelType, channelId: channel.id, ...channelIdColumnsOf(channel) });
   if (!course) return null;
-  if (course.channelId === channel.id) return { channelType, channelId: channel.id, name: channel.name, mayUpdate: true };
-  const valid = (action: 'read' | 'update') =>
-    getValidChannel(ctx, course.channelId, course.channelType, action).then(({ entity }) => entity, refusedAsNull);
-  const updatable = await valid('update');
-  const readable = updatable ?? (await valid('read'));
-  return { channelType: course.channelType, channelId: course.channelId, name: readable?.name ?? null, mayUpdate: !!updatable };
+  if (course.channelId === channel.id) return { channelType, channelId: channel.id, name: channel.name, refusal: null };
+  const updated = await getValidChannel(ctx, course.channelId, course.channelType, 'update').then(({ entity }) => entity, accessRefusal);
+  const readable =
+    updated instanceof AppError
+      ? await getValidChannel(ctx, course.channelId, course.channelType, 'read').then(
+          ({ entity }) => entity,
+          () => null,
+        )
+      : updated;
+  const refusal = updated instanceof AppError ? updated : null;
+  return { channelType: course.channelType, channelId: course.channelId, name: readable?.name ?? null, refusal };
 }
 
 /** The resource links placed in a channel, for a caller who may read it. */
@@ -85,7 +90,8 @@ export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, cha
 
 /**
  * The approved LTI installations of the tenant, as a channel's tabs offer them to a caller who may update it: whether
- * each reads course members, whether the caller may place it there and the course a tab there launches as.
+ * each reads course members, whether it is disabled, whether the caller may place it there and the course a tab there
+ * launches as.
  */
 export async function getPlaceableLtiInstallationsOp(
   ctx: UserContext,
@@ -100,7 +106,8 @@ export async function getPlaceableLtiInstallationsOp(
       id: account.id,
       name: client.name,
       readsMembers: installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),
-      placeable: course?.mayUpdate ?? true,
+      status: account.status,
+      placeable: account.status === 'active' && !course?.refusal,
       context: course && { channelType: course.channelType, channelId: course.channelId, name: course.name },
     }));
 }
@@ -148,9 +155,10 @@ interface CreateLtiResourceLinkInput {
  * Places an approved LTI installation of the tenant in a channel, for a caller who may update the channel and the
  * course it launches as (`launchCourse`). Its own token then reads the people of that course (`ltiToolGuard`). A channel
  * holds one tab of an installation.
- * @throws AppError 403 `lti_context_update_required` for a caller who may not update a course above the channel, 404
- *   `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_approved` for one that waits for an
- *   approval, 409 `resource_already_exists` for one placed in the channel before, and what `getValidChannel` throws.
+ * @throws AppError 403 `lti_context_update_required` for a caller who may not update a course above the channel and
+ *   403 `channel_archived` for an archived one, 404 `not_found` for no LTI installation of the tenant, 409
+ *   `lti_installation_not_approved` for one that waits for an approval, 409 `lti_installation_disabled` for a disabled
+ *   one, 409 `resource_already_exists` for one placed in the channel before, and what `getValidChannel` throws.
  */
 export async function createLtiResourceLinkOp(
   ctx: UserContext,
@@ -159,10 +167,12 @@ export async function createLtiResourceLinkOp(
   const { tenantId } = ctx.var;
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
   const course = await launchCourse(ctx, channelType, entity);
-  if (course && !course.mayUpdate) throw new AppError(403, 'lti_context_update_required', 'warn', { entityType: course.channelType });
+  if (course?.refusal?.type === 'channel_archived') throw course.refusal;
+  if (course?.refusal) throw new AppError(403, 'lti_context_update_required', 'warn', { entityType: course.channelType });
   const found = await findLtiInstallation(ctx, { id: installationId, tenantId });
   if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
   if (!found.installation.approvedAt) throw new AppError(409, 'lti_installation_not_approved', 'warn', { meta: { installationId } });
+  if (found.account.status !== 'active') throw new AppError(409, 'lti_installation_disabled', 'warn', { meta: { installationId } });
 
   const link = await insertLtiResourceLink(ctx, {
     values: {

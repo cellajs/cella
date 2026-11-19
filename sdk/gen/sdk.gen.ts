@@ -2189,7 +2189,7 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
 /**
  * Get placeable LTI installations
  *
- * The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there, which takes the right to update that course when it is a channel above. Requires permission to update the channel.
+ * The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there: the LTI tool is active, and the caller may update that course when it is a channel above. Requires permission to update the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable** ·· [listPlaceableLtiInstallations](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable) ·· _lti-platform · cella_
  *

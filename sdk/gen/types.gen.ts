@@ -4819,7 +4819,11 @@ export type ListPlaceableLtiInstallationsResponses = {
        */
       readsMembers: boolean;
       /**
-       * Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it
+       * `active`, or `disabled` while an admin has stopped it: it cannot be placed then, and its tabs refuse every launch
+       */
+      status: 'pending' | 'active' | 'disabled';
+      /**
+       * Whether the caller may place it in the channel: it is active, and they may update the course a tab there launches as when that is a channel above it
        */
       placeable: boolean;
       /**

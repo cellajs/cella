@@ -48,7 +48,7 @@ Rejecting a waiting LTI tool deletes its registration. Disabling an approved one
 
 A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant among the channel's own tabs. Whoever may update the channel switches an LTI tool's tab on or off and drags it among the others, and the tab bar follows that one order. A channel holds one tab of an LTI tool, named after it.
 
-Switching a tab on takes the right to update the channel and, when the tab launches as a course above it, that course. Someone without it sees the row off, with the reason. When the LTI tool may read course members, the card asks first, naming the course whose people it will read and saying when that course is the one above. Switching the tab off removes it.
+Switching a tab on takes the right to update the channel and, when the tab launches as a course above it, that course. Someone without it sees the row off, with the reason, and so does everyone while an admin has disabled the LTI tool. When the LTI tool may read course members, the card asks first, naming the course whose people it will read and saying when that course is the one above. Switching the tab off removes it.
 
 Under LTI tools in organization settings, each LTI tool lists the channels where it has a tab, each a link. An admin sees there every course whose people the LTI tool reads, and removes a tab from any channel they may update.
 
