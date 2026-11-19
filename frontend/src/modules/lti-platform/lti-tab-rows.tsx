@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, PencilIcon, UsersIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, PencilIcon, UsersIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ListLtiTabsResponse, LtiResourceLink } from 'sdk';
 import { zLtiResourceLink } from 'sdk/zod.gen';
 import { ltiTabId } from 'shared/tools-config';
-import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
+import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { NamedText } from '~/modules/common/named-text';
@@ -16,6 +16,7 @@ import { LtiToolOrigin, sharesNameAmong } from '~/modules/lti-platform/lti-tool-
 import { ltiTabsQueryOptions, useCreateLtiResourceLinkMutation, useUpdateLtiResourceLinkMutation } from '~/modules/lti-platform/query';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
+import { cn } from '~/utils/cn';
 
 type LtiTab = ListLtiTabsResponse['results'][number];
 
@@ -73,14 +74,18 @@ interface LtiAudienceChoiceProps {
   onChoose: (audience: LtiAudience) => void;
 }
 
-/** Whom a tab opens for, as dropdowner items: its channel's members, or those who may change the channel. */
+/**
+ * Whom a tab opens for, as dropdowner items: its channel's members, or those who may change the channel. A label wraps
+ * where a confirmation's width cuts it.
+ */
 function LtiAudienceChoice({ channel, current, onChoose }: LtiAudienceChoiceProps) {
   const { t } = useTranslation();
   const resource = t(`c:${channel.entityType}`);
   return zLtiResourceLink.shape.audience.options.map((audience) => (
-    <DropdownSelectItem key={audience} icon={audienceIcons[audience]} selected={audience === current} onSelect={() => onChoose(audience)}>
-      {t(`c:lti_audience.${audience}`, { resource })}
-    </DropdownSelectItem>
+    <DropdownActionItem key={audience} icon={audienceIcons[audience]} selected={audience === current} onSelect={() => onChoose(audience)}>
+      <span className="min-w-0 grow text-left">{t(`c:lti_audience.${audience}`, { resource })}</span>
+      <CheckIcon className={cn('text-success size-4 shrink-0', audience !== current && 'invisible')} />
+    </DropdownActionItem>
   ));
 }
 
