@@ -116,6 +116,16 @@ export const lockConnection = async (ctx: DbContext, { id }: { id: string }) => 
   return rows.length > 0;
 };
 
+/**
+ * Holds a connection's row against its delete until the caller's transaction ends, and against nothing else: a delete
+ * waits for the write under way, and none follows it.
+ * @returns False when no such connection exists, also once a delete committed.
+ */
+export const holdConnection = async (ctx: DbContext, { id }: { id: string }) => {
+  const rows = await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('key share');
+  return rows.length > 0;
+};
+
 interface UpdateConnectionOpts {
   id: string;
   tenantId: string;

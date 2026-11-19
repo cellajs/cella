@@ -12,7 +12,7 @@ import { findLtiContextById, recordLtiImport } from '#/modules/auth/flows/lti/lt
 import { admitLtiPerson, applyLtiRole } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
-import { findConnectionById } from '#/modules/connections/connections-queries';
+import { findConnectionById, holdConnection } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
@@ -27,7 +27,7 @@ const dbCtx = { var: { db: baseDb } };
 /** How long after an import of a context neither a teacher's launch nor a queued job starts another. */
 const importPeriod = new TimeSpan(10, 'm');
 
-/** How often the job tries a failed read again, from a minute up to an hour apart. */
+/** How often the job tries a failed import again, from a minute up to an hour apart. */
 const importRetryLimit = 5;
 
 /** Whether an import of the context ran within `importPeriod`. */
@@ -44,20 +44,23 @@ interface ImportTarget {
 }
 
 /**
- * Writes one listed person under the lock a launch of them takes: their account (`admitLtiPerson`), and their role.
- * @returns False when the person needs a seat and the tenant's member limit leaves none; nothing is written then.
+ * Writes one listed person under the lock a launch of them takes: their account (`admitLtiPerson`), and their role. It
+ * holds the connection's row (`holdConnection`): a delete of the connection waits for it.
+ * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, and
+ *   `connection_gone` once the connection was deleted; nothing is written for either.
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMemberRow) => {
+  if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
   const { id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
-  if (!admitted) return false;
+  if (!admitted) return 'member_limit';
   const role = ltiContextRole({ ltiRoles: person.roles, connection });
   await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
-  return true;
+  return 'imported';
 };
 
 interface ImportLtiMembersOpts extends PlatformFetchOptions {
-  /** False while the job tries a failed read again: the context records that it will. True by default. */
+  /** False while the job tries a failed import again: the context records that it will. True by default. */
   lastAttempt?: boolean;
 }
 
@@ -66,9 +69,10 @@ interface ImportLtiMembersOpts extends PlatformFetchOptions {
  * connection's service account, and records how it ran on the context. It adds and updates, never removes, and
  * touches no one the platform did not list. Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
- * or a channel that is archived or gone, ends it at once, and a deleted connection ends it unrecorded.
+ * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
+ * an error and unrecorded: its context rows went with it.
  * @throws What fails after the connection's service account is known, such as a failed read or a role the app's mapping
- *   does not take: recorded as `read_retrying` or, on the last attempt, `read_failed`.
+ *   does not take: recorded as `retrying` or, on the last attempt, `failed`.
  */
 export async function importLtiMembersOp(contextId: string, { lastAttempt = true, ...options }: ImportLtiMembersOpts = {}) {
   const context = await findLtiContextById(dbCtx, { id: contextId });
@@ -94,12 +98,14 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
     let issue: LtiImportIssue | null = read.issue;
     for (const person of read.people) {
-      if (!(await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person)))) issue = 'member_limit';
+      const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
+      if (outcome === 'connection_gone') return;
+      if (outcome === 'member_limit') issue = 'member_limit';
     }
     await record(read.people.length, issue);
     log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });
   } catch (error) {
-    await record(0, lastAttempt ? 'read_failed' : 'read_retrying');
+    await record(0, lastAttempt ? 'failed' : 'retrying');
     throw error;
   }
 }
@@ -110,7 +116,7 @@ const importJobSchema = z.object({ contextId: z.uuid() });
 /**
  * The member import's queue (`cella/docs/JOBS.md`): it reads a platform's API, outside the database. One job per
  * context waits and one runs at a time. A job that waited behind another finds that import within `importPeriod` and
- * ends, while a retry goes on. A failed read is retried with growing delays, and never ends the grant.
+ * ends, while a retry goes on. A failed import is retried with growing delays, and never ends the grant.
  */
 export const ltiMemberImportQueue = {
   name: 'lti.import-members',

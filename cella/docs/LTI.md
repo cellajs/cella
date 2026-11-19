@@ -90,7 +90,7 @@ Under LTI connections, each connection lists its courses, the channel each maps 
 
 - An address the platform names that the app refuses.
 - A scope the platform did not grant, or a refused token or member list.
-- A failed read, while the import tries again and once it gave up.
+- A failed import, while it tries again and once it gave up.
 - A list longer than one import reads.
 - The member limit.
 - A connection, organization or course that is not active.

@@ -2,8 +2,11 @@ import { eq } from 'drizzle-orm';
 import { deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
+import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -79,6 +82,32 @@ describe('Invitation mail caps', async () => {
     await endRateLimitWindows('invitationMailAddress');
     await expectRefusal(await invite(organization, first, [a]), 429, 'invitation_limit_reached');
     expect(mailsTo(a)).toHaveLength(1);
+  });
+
+  // An invitation the member limit refuses mails nothing and gives its share of the day back, a draft's held one too,
+  // or anyone who may invite into a full draft organization spends the tenant's day for its admins.
+  it('must not spend the day on invitations the member limit refuses, held ones included', async () => {
+    const { organization, first } = await tenantWithAdmins('refused-draft');
+    const restrictions = defaultRestrictions();
+    const limit = async (user: number) => {
+      const quotas = { ...restrictions.quotas, user };
+      const rateLimits = { ...restrictions.rateLimits, invitationEmailsPerDay: 3 };
+      await db
+        .update(tenantsTable)
+        .set({ restrictions: { ...restrictions, quotas, rateLimits } })
+        .where(eq(tenantsTable.id, organization.tenantId));
+      invalidateCache.tenant(organization.tenantId);
+    };
+    await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, organization.id));
+    await limit(await countTakenSeats({ var: { db } }, { organizationId: organization.id }));
+
+    for (const name of ['a', 'b', 'c']) {
+      await expectRefusal(await invite(organization, first, [`refused-draft-${name}@security-test.com`]), 403, 'restrict_by_org');
+    }
+    await limit(0);
+    const held = await invite(organization, first, ['refused-draft-d@security-test.com']);
+    expect(held.response.status).toBe(200);
+    expect(held.data).toMatchObject({ held: true });
   });
 
   it.each([

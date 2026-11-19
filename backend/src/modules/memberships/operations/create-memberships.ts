@@ -106,10 +106,7 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
   });
   // Refused seats or a failed write send no mail: what the take reserved goes back.
   const { createdMemberships, inserted } = await writing.catch(async (error: unknown) => {
-    await refundInvitationMails(
-      ctx,
-      taken.emails.filter((email) => !taken.heldBack.has(email)),
-    );
+    await refundInvitationMails(ctx, taken);
     throw error;
   });
   for (const { userId } of adds) invalidateCache.user(userId);

@@ -69,9 +69,10 @@ const pageExchange = (page: string): { key: string; value?: string; next?: strin
   JSON.parse(decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'));
 
 type MemberRow = { id: string; roles: string[]; name?: string; given_name?: string; family_name?: string };
+type MembersPage = { results: MemberRow[]; nextPageToken?: string };
 
 /** A platform built on the template, answered in-process: a token named after the assertion's client, and the pages `page` answers. */
-function fakePlatformApi(page: (url: URL) => { results: MemberRow[]; nextPageToken?: string }, tokenError?: string) {
+function fakePlatformApi(page: (url: URL) => MembersPage | Promise<MembersPage>, tokenError?: string) {
   const requests: { url: URL; authorization?: string }[] = [];
   let minted = 0;
   const transport: GuardedTransport = async ({ url, headers, body }) => {
@@ -82,7 +83,7 @@ function fakePlatformApi(page: (url: URL) => { results: MemberRow[]; nextPageTok
       const clientId = decodeJwt(new URLSearchParams(body).get('client_assertion') ?? '').sub;
       return Response.json({ access_token: `${clientId}:${minted}`, token_type: 'Bearer', expires_in: 3600 });
     }
-    return Response.json(page(url));
+    return Response.json(await page(url));
   };
   const memberReads = () => requests.filter(({ url }) => url.pathname.endsWith('/lti-members'));
   return { options: { transport, resolve: loopback }, requests, memberReads };
@@ -542,6 +543,30 @@ describe('LTI member import from a platform built on the template', async () => 
     const path = { ...side.path, serviceAccountId: account.id };
     await expectRefusal(await call(updateServiceAccount, { path, body: { status: 'active' }, headers: side.headers }), 404, 'not_found');
     await expectRefusal(await call(createApiKey, { path, body: { name: 'key', scopes: null }, headers: side.headers }), 404, 'not_found');
+  });
+
+  // A connection deleted while its import reads the platform takes the import with it: no one is written after the
+  // delete, not as the disabled account and not against a connection that is gone, and the job ends without a retry.
+  it('writes no one once its connection is deleted during the read, and ends without an error', async () => {
+    const side = await connectToFakePlatform();
+    const elsewhere = await orgWithAdmin();
+    await db
+      .insert(identitiesTable)
+      .values({ userId: elsewhere.admin.id, kind: 'lti', provider: side.issuer, subject: 'lms-returning', email: null });
+    const api = fakePlatformApi(async () => {
+      const deleted = await call(deleteLtiConnection, { path: { ...side.path, connectionId: side.connection.id }, headers: side.headers });
+      expect(deleted.response.status).toBe(204);
+      return {
+        results: [
+          { id: 'lms-returning', roles: [lisContextRoles.learner] },
+          { id: 'lms-new', roles: [lisContextRoles.learner] },
+        ],
+      };
+    });
+
+    await expect(importLtiMembersOp(side.context.id, api.options)).resolves.toBeUndefined();
+    expect(await orgMembershipOf(elsewhere.admin.id, side.org.id)).toBeUndefined();
+    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject)).toEqual(['lms-returning']);
   });
 
   // A delete while an import makes the connection's account would find no account to disable and leave it active,

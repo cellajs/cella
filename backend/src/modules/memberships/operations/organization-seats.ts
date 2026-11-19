@@ -11,11 +11,8 @@ interface CountTakenSeatsOpts {
 
 /** The seats of the tenant's member limit an organization holds: its members and the seats its invitations hold. */
 export const countTakenSeats = async (ctx: DbContext, { organizationId, exceptEmails }: CountTakenSeatsOpts) => {
-  const [members, pending] = await Promise.all([
-    countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organizationId }),
-    countInvitationSeats(ctx, { organizationId, exceptEmails }),
-  ]);
-  return members + pending;
+  const members = await countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organizationId });
+  return members + (await countInvitationSeats(ctx, { organizationId, exceptEmails }));
 };
 
 interface HasFreeSeatsOpts extends CountTakenSeatsOpts {
