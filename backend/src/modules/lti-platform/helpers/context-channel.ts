@@ -12,8 +12,6 @@ export const linkContext = ({ channelType, channelId }: Pick<LtiResourceLinkMode
   return types && { channelType, channelId, types };
 };
 
-export type LinkContext = NonNullable<ReturnType<typeof linkContext>>;
-
 /**
  * Whether a channel type holds LTI tabs: a type the app makes an LTI context, and the organization, whose tabs launch
  * without a context when it is none.

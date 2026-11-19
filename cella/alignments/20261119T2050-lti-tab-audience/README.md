@@ -1,6 +1,6 @@
 ---
 breaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: compiler
 generate: true
 grep: countLtiImportsSince, maxCoursesPerHour, readAsLauncher, lti_resource_links, lti_installations, approveLtiInstallation, updateLtiInstallationScopes, placementContext, findLtiPlacements, lti_context_update_required, add_lti_tab_above, ltiRolesFor, ltiInstitutionRolesFor, ltiRolesIn, ltiContextChannelType, ltiContextRole, createLtiContextChannel, LtiContextChannelFacts, planLtiContextChannel, lti_context_not_set_up, lti_launch_no_roles
@@ -21,22 +21,16 @@ for, `members` or `editors`, which its list, its start and its launch check alik
 
 ## What & why
 
-Two runs of one app inside another showed a platform's organization tab admitting everyone into the LTI tool's
-organization. A launch without a course now admits nobody new (`signInKnownLtiMember`), a context's type list decides
-whether it counts, and an app maps a course and a group to different channel types. A platform sent Instructor to
-every organization admin, also where they were a student: a context role now comes from the membership there. A
-tab below a course opened the course's board for everyone in the course: a tab now opens its own channel, for its
-members unless it is set for its editors, so the people a launch admits are the people the LTI tool reads. A
-project's owner placed an LTI tool that read its people: an admin now chooses where each LTI tool may get a tab.
+Two runs of one app inside another showed where the rules went wrong: an organization tab admitted everyone into the
+LTI tool's organization, an organization admin went as Instructor where they were a student, and a tab below a course
+admitted the whole course. A launch without a course now admits nobody new, a role comes from the membership in the
+context, a tab opens its own channel for its audience, and an admin chooses where each LTI tool may get a tab.
 
 ## Blast radius
 
-Every app that is an LTI tool: its `lti-context-channel.ts` stops compiling until the constant is a function. A launch
-without a course no longer adds a member. As a platform, a person with power from above and no membership in the
-context gets no context role, every launch carries institution roles, and an app whose tabs sit below a context
-decides what those tabs become. Existing tabs open for their channel's members: whoever reads a channel without a
-membership loses its LTI tabs. An LTI tool may get tabs in the channel types it has tabs in today, and an approved
-one without tabs nowhere until an admin allows a type.
+Every LTI tool app: `lti-context-channel.ts` stops compiling, and a launch without a course admits nobody. Every
+platform app: `launch-context.ts` needs `ltiInstitutionRolesFor`, inherited power makes no Instructor, tabs below a
+context need a decision, existing tabs open for members only. One migration; `clientCacheVersion` rises.
 
 ## Run
 
@@ -55,6 +49,9 @@ No script: manual.
 9. Where app code calls `placementContext` or `findLtiPlacements`, call `linkContext` with the resource link: there is no walk to a channel above. Drop app code that reads `context` of a listed LTI tab or of an installation's tab, the error type `lti_context_update_required` and the texts `confirm.add_lti_tab_above`, `lti_tab_context_*` and `lti_tab_reads.text`.
 10. Where app code or seeds approve an LTI tool (`approveLtiInstallation`, the query or the route), pass `channelTypes`; `updateLtiInstallationScopes` is `updateLtiInstallationGrant`, which also takes `channelTypes` and switches off the tabs in a type taken away.
 11. Where app code calls `ltiRolesIn`, pass the person's id and their membership row in the channel in place of an access; `readAsLauncher` answers the person's `memberships` in place of `access`.
+12. Where app code calls `countLtiImportsSince`, call `sumLtiImportsSince`, which also answers the people the imports read; a connection imports at most `maxCoursesPerHour` (150) courses and `maxPeoplePerHour` people an hour.
+13. Where the app's `appError.json` overrides `lti_context_not_set_up` or `lti_launch_no_roles`, check its text against the new meaning, and add `lti_launch_no_context` and `lti_channel_type_not_allowed` where it translates errors.
+14. Where the app sets its own `clientCacheVersion`, raise it.
 
 ## Verify
 
