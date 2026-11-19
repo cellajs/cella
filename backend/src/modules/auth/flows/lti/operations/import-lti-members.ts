@@ -55,15 +55,17 @@ interface ImportTarget {
 /**
  * Writes one listed person under the lock a launch of them takes: their account (`admitLtiPerson`), and their role. It
  * holds the connection's row (`holdConnection`): a delete of the connection waits for it.
- * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, and
- *   `connection_gone` once the connection was deleted; nothing is written for either.
+ * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, `no_role` when the
+ *   app's `ltiContextRole` maps them to none, and `connection_gone` once the connection was deleted; nothing is written
+ *   for any of them.
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
+  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
+  if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
-  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
   await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
   return 'imported';
 };

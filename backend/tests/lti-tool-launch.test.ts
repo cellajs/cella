@@ -20,7 +20,7 @@ import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'v
 import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
@@ -272,6 +272,19 @@ describe('LTI launch at the app as an LTI tool', async () => {
         status: 403,
         type: 'lti_deployment_unknown',
       },
+      // The template maps no role for a launch without a context role: an empty list, or institution roles alone.
+      {
+        name: 'no context role',
+        run: async () => (await launch(connected, { [ltiClaims.roles]: [lisInstitutionRoles.administrator] })).response,
+        status: 403,
+        type: 'lti_launch_no_roles',
+      },
+      {
+        name: 'an empty roles list',
+        run: async () => (await launch(connected, { [ltiClaims.roles]: [] })).response,
+        status: 403,
+        type: 'lti_launch_no_roles',
+      },
       {
         name: 'the test user role',
         run: async () => (await launch(connected, { [ltiClaims.roles]: [lisContextRoles.learner, ltiTestUserRole] })).response,
@@ -330,9 +343,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
       `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
     );
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
-
-    // An empty roles list is a launch without a role: the person arrives with the least privileged role.
-    expect((await launch(connected, { [ltiClaims.roles]: [] })).response.status).toBe(303);
   });
 
   // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.
@@ -507,6 +517,31 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await orgMembershipOf(member.id, connected.org.id)).toMatchObject({ role: adminRole });
   });
 
+  // Attack: a launch without a course, such as a platform's navigation outside one, is no way into the organization. It
+  // signs in only a person a launch in a context or an import made a member here, and writes no membership, role or
+  // seat. A context of no LIS type, such as Canvas's account and user navigation, is one without a course.
+  it('signs in only a known member from a launch without a course, and writes nothing', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const memberships = () => db.select().from(membershipsTable).where(eq(membershipsTable.organizationId, connected.org.id));
+    const outsideCourse = [{ [ltiClaims.context]: undefined }, { [ltiClaims.context]: { id: 'account-1', type: ['Account'] } }];
+    const admin = { [ltiClaims.roles]: [lisInstitutionRoles.administrator] };
+
+    for (const changes of outsideCourse)
+      await expectRefusalPage((await launch(connected, { sub: 'lms-stranger', ...admin, ...changes })).response, 403, 'lti_launch_no_context');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'))).toHaveLength(0);
+
+    expect((await launch(connected, { sub: 'lms-known' })).response.status).toBe(303);
+    const before = await memberships();
+    const courses = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+    for (const changes of outsideCourse) {
+      const launched = await launch(connected, { sub: 'lms-known', ...admin, ...changes });
+      expect(launched.response.status).toBe(303);
+      expect(launched.response.headers.get('Location')).toContain(`channelId=${connected.org.id}`);
+    }
+    expect(await memberships()).toEqual(before);
+    expect(await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id))).toEqual(courses);
+  });
+
   // Attack: an invitation and a launch that both count the last seat free pass the limit together, unless one lock orders them.
   it('lets in one of an invitation and a launch racing for the last seat', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
@@ -669,11 +704,16 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
     const plan = (ltiRoles: string[]) =>
-      planLtiContextChannel(ctx, { connection: { ...ltiConnection, issuer: ltiConnection.issuer ?? '' }, context, ltiRoles });
+      planLtiContextChannel(ctx, {
+        connection: { ...ltiConnection, issuer: ltiConnection.issuer ?? '' },
+        context,
+        channelType: 'organization',
+        ltiRoles,
+      });
 
     await expect(plan([lisContextRoles.learner])).rejects.toMatchObject({ status: 409, type: 'lti_context_not_set_up' });
-    expect(await plan([lisContextRoles.instructor])).toEqual({ create: context });
-    expect(await plan([lisContextRoles.administrator])).toEqual({ create: context });
+    expect(await plan([lisContextRoles.instructor])).toEqual({ create: context, channelType: 'organization' });
+    expect(await plan([lisContextRoles.administrator])).toEqual({ create: context, channelType: 'organization' });
 
     // Once a launch recorded the channel it created, everyone of the context lands there.
     const instructor = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
@@ -694,7 +734,12 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     // A new registration of the platform in the tenant finds the course's channel: an Instructor's launch creates none.
     const again = { id: generateId(), tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
-    const replanned = await planLtiContextChannel(ctx, { connection: again, context, ltiRoles: [lisContextRoles.instructor] });
+    const replanned = await planLtiContextChannel(ctx, {
+      connection: again,
+      context,
+      channelType: 'organization',
+      ltiRoles: [lisContextRoles.instructor],
+    });
     expect(replanned).toMatchObject({ channel: { id: org.id } });
   });
 

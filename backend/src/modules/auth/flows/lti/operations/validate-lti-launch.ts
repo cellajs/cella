@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
-import { lisRoleUri, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextTypeUri, lisRoleUri, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import type { LaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
 import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-key-set';
@@ -34,7 +34,11 @@ const ltiLaunchSchema = z.object({
       id: ltiIdSchema,
       label: profileClaim,
       title: profileClaim,
-      type: z.array(z.string().max(maxLength.field)).max(20).optional(),
+      type: z
+        .array(z.string().max(maxLength.field))
+        .max(20)
+        .transform((types) => types.map(lisContextTypeUri))
+        .optional(),
     })
     .optional(),
 });

@@ -1827,7 +1827,7 @@ export const getLtiKeySet = <ThrowOnError extends boolean = true>(
 /**
  * Finish an LTI launch
  *
- * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Finds or creates the person by the platform's issuer and user id, maps the launch's context to a channel, applies the mapped role, starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
+ * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with a context of no course or group type, signs in only a person known here as a member of the organization, and changes nothing. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
  *
  * **POST /auth/lti/finish** ·· [finishLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/finish) ·· _auth · cella_
  *

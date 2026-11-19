@@ -3855,7 +3855,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim or without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -3865,9 +3865,9 @@ export type FinishLtiLaunchErrors = {
    */
   404: unknown;
   /**
-   * Course not set up
+   * Not set up yet
    *
-   * A page: an instructor opens the app from this course first.
+   * A page: someone who can change the course on the platform opens the app from it first.
    */
   409: unknown;
   /**
