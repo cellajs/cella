@@ -1,30 +1,42 @@
 import type { AccessScope } from 'shared';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
+import { ltiNrps } from '#/lib/lti-vocabulary';
 import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { mockLtiInstallationResponse, mockLtiMemberResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
+import {
+  mockLtiInstallationResponse,
+  mockLtiMembershipContainerResponse,
+  mockLtiResourceLinkResponse,
+} from '#/modules/lti-platform/lti-platform-mocks';
 import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
   initiateLtiLoginQuerySchema,
   listLtiInstallationsQuerySchema,
+  listLtiInstallationTabsQuerySchema,
   listLtiMembersQuerySchema,
   listLtiResourceLinksQuerySchema,
+  listLtiTabsQuerySchema,
   ltiInstallationParamSchema,
   ltiInstallationSchema,
+  ltiInstallationTabSchema,
   ltiLaunchStartSchema,
-  ltiMemberSchema,
+  ltiMembershipContainerSchema,
+  ltiMembershipsParamSchema,
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
+  ltiTabSchema,
   ltiToolRegistrationStartSchema,
+  minLtiMembersPage,
   startLtiToolRegistrationBodySchema,
   updateLtiInstallationBodySchema,
   updateLtiResourceLinkBodySchema,
 } from '#/modules/lti-platform/lti-platform-schema';
 import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
-/** An organization's LTI tools, for a user who may update the organization; every decision asks a recent step-up. */
+/** An organization's LTI tools and where each has tabs, for a user who may update the organization; every decision asks a recent step-up. */
 export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
   startLtiToolRegistration: xRoute({
     method: 'post',
@@ -54,6 +66,32 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: tenantOrgParamSchema, query: listLtiInstallationsQuerySchema },
     responses: {
       200: json('LTI installations', paginationSchema(ltiInstallationSchema), { results: [mockLtiInstallationResponse()], totalSize: 1 }),
+    },
+  }),
+  listLtiInstallationTabs: xRoute({
+    method: 'get',
+    path: '/{ltiInstallationId}/tabs',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get tabs of LTI installation',
+    description:
+      'Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, the course it launches as and whether the caller may remove it. The LTI tool reads the people of the courses of its tabs that are on. Requires permission to update the organization.',
+    request: { params: ltiInstallationParamSchema, query: listLtiInstallationTabsQuerySchema },
+    responses: {
+      200: json('Tabs of the installation', paginationSchema(ltiInstallationTabSchema), {
+        results: [
+          {
+            id: mockLtiResourceLinkResponse().id,
+            channelType: 'organization',
+            channelId: mockLtiResourceLinkResponse().channelId,
+            channelName: 'Biology department',
+            enabled: true,
+            context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
+            deletable: true,
+          },
+        ],
+        totalSize: 1,
+      }),
     },
   }),
   approveLtiInstallation: xRoute({
@@ -93,6 +131,36 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
   }),
 });
 
+/** A channel's tabs of LTI tools, for a user who may update the channel. */
+export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
+  listLtiTabs: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get LTI tabs',
+    description:
+      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
+    request: { params: tenantOrgParamSchema, query: listLtiTabsQuerySchema },
+    responses: {
+      200: json('LTI tabs', paginationSchema(ltiTabSchema), {
+        results: [
+          {
+            id: mockLtiInstallationResponse().id,
+            name: 'Peer review',
+            status: 'active',
+            readsMembers: true,
+            refusal: null,
+            context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
+            resourceLink: { id: mockLtiResourceLinkResponse().id, title: 'Peer review', enabled: true },
+          },
+        ],
+        totalSize: 1,
+      }),
+    },
+  }),
+});
+
 /** An organization's resource links: LTI tools placed in its channels, and the launches they start. */
 export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
   listLtiResourceLinks: xRoute({
@@ -101,7 +169,8 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI resource links',
-    description: 'The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.',
+    description:
+      "The tabs of LTI tools switched on in a channel, by default in the order they follow until the channel's own tab order names them. Tabs switched off are listed for whoever may switch them, in the channel's LTI tabs. Requires permission to read the channel.",
     request: { params: tenantOrgParamSchema, query: listLtiResourceLinksQuerySchema },
     responses: {
       200: json('LTI resource links', paginationSchema(ltiResourceLinkSchema), { results: [mockLtiResourceLinkResponse()], totalSize: 1 }),
@@ -115,7 +184,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create LTI resource link',
     description:
-      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
+      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it; a channel holds one tab of an installation. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
     request: { params: tenantOrgParamSchema, body: jsonBody(createLtiResourceLinkBodySchema) },
     responses: { 201: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
@@ -126,9 +195,10 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update LTI resource link',
-    description: 'Renames a resource link or replaces its custom values. Requires permission to update its channel.',
+    description:
+      'Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching also takes the course it launches as when that is a channel above, and switching on an active LTI tool.',
     request: { params: ltiResourceLinkParamSchema, body: jsonBody(updateLtiResourceLinkBodySchema) },
-    responses: { 200: json('LTI resource link', ltiResourceLinkSchema) },
+    responses: { 200: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
   deleteLtiResourceLink: xRoute({
     method: 'delete',
@@ -137,7 +207,8 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI resource link',
-    description: 'Removes a resource link and its launches that have not reached the LTI tool. Requires permission to update its channel.',
+    description:
+      'Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires the rights switching it takes: permission to update its channel, and the course it launches as when that is a channel above.',
     request: { params: ltiResourceLinkParamSchema },
     responses: { 204: { description: 'Resource link deleted' } },
   }),
@@ -181,22 +252,28 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
 });
 
 /**
- * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the courses it is placed in or
- * below. `ltiToolScopes` reads the scopes of this list alone.
+ * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the course in their path. Each
+ * keeps the shape of the LTI service it serves. `ltiToolScopes` reads the scopes of this list alone.
  */
 const ltiToolRouteDrafts = {
   listLtiMembers: xRoute({
     method: 'get',
-    path: '/',
+    path: '/{channelType}/{channelId}',
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [ltiToolGuard, tenantGuard, orgGuard],
     xScope: 'user:read',
+    // A token carries `user:read`, which an LTI tool asks for by its NRPS name alone.
+    security: [{ oauth2: [ltiNrps.scope] }],
     summary: 'Get LTI members',
-    description:
-      "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
-    request: { params: tenantOrgParamSchema, query: listLtiMembersQuerySchema },
+    description: `The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as \`sub\`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a \`Link\` header continues to the next page. \`limit\` is a hint, at least ${minLtiMembersPage}. A resource link's members (\`rlid\`) and the differences link are not served. A course none of its placements launches as, or a channel type the app does not have, answers 403, as for an installation placed nowhere`,
+
+    request: { params: ltiMembershipsParamSchema, query: listLtiMembersQuerySchema },
     responses: {
-      200: json('LTI members', paginationSchema(ltiMemberSchema), { results: [mockLtiMemberResponse()], totalSize: 1 }),
+      200: {
+        description: 'LTI members',
+        headers: { Link: { description: 'The next page as `<address>; rel="next"`, while the course lists more', schema: { type: 'string' } } },
+        content: { [ltiNrps.mediaType]: { schema: ltiMembershipContainerSchema, example: mockLtiMembershipContainerResponse() } },
+      },
     },
   }),
 };
@@ -204,7 +281,12 @@ const ltiToolRouteDrafts = {
 export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], ltiToolRouteDrafts);
 
 /**
- * The access scopes the routes for installed LTI tools declare (`xScope`): the only ones a registration records, the
- * platform's configuration advertises and an admin grants.
+ * The access scopes the routes for installed LTI tools declare (`xScope`), each standing for an LTI service scope
+ * (`ltiServiceScope`): the only ones a registration records, the platform's configuration offers by their service
+ * names and an admin grants.
  */
 export const ltiToolScopes: AccessScope[] = [...new Set(Object.values(ltiToolRouteDrafts).map((route) => route.xScope))];
+
+// A route scope without a service name could be neither asked for nor granted: the module refuses to load.
+const unnamed = ltiToolScopes.find((scope) => !ltiServiceScope(scope));
+if (unnamed) throw new Error(`[lti] The scope ${unnamed} of a route for installed LTI tools has no LTI service scope in lti-service-scopes.ts.`);

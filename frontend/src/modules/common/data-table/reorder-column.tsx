@@ -18,6 +18,8 @@ interface ReorderColumnOptions<TRow> {
   getPosition?: (rowIdx: number) => ReorderPosition;
   /** A tree's outdent (-1) and indent (1), returning the new place or null. */
   onShift?: (rowIdx: number, direction: -1 | 1) => ReorderPosition | null;
+  /** Whether a row shows its grip; one without keeps its place. Every row by default. */
+  hasGrip?: (row: TRow) => boolean;
   cellClass?: string;
 }
 
@@ -29,6 +31,7 @@ export const reorderColumn = <TRow,>({
   rowCount,
   getPosition,
   onShift,
+  hasGrip,
   cellClass,
 }: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> => ({
   key: 'reorder',
@@ -40,6 +43,7 @@ export const reorderColumn = <TRow,>({
   rowDragHandle: true,
   renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
   renderCell: ({ row, rowIdx, tabIndex }) => {
+    if (hasGrip && !hasGrip(row)) return null;
     const { index, total } = getPosition?.(rowIdx) ?? { index: rowIdx, total: rowCount };
     return (
       <ReorderCell

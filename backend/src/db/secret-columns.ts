@@ -9,6 +9,7 @@
  */
 export const secretColumns = {
   api_keys: ['hash'],
+  connections: ['privateJwk'],
   oauth_clients: ['secretHash'],
   passkey_challenges: ['challengeHash'],
   sessions: ['secretHash', 'steppedUpSecretHash'],

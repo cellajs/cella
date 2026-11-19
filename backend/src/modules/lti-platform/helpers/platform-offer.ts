@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
+import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { type LtiReleasableField, ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 
@@ -30,7 +31,7 @@ export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.va
 /**
  * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1), with the key set and the token
  * endpoint of the authorization server. The platform signs with RS256 keys only and takes LTI tools that authenticate
- * with them. An installed LTI tool may ask for the access scopes its routes read: an admin grants them to its own tokens.
+ * with them. An installed LTI tool may ask for the scope of each LTI service it offers: an admin grants it to its own tokens.
  */
 export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: string; tokenEndpoint: string }) => ({
   issuer: appConfig.oauthUrl,
@@ -42,8 +43,8 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
   authorization_server: appConfig.oauthUrl,
   token_endpoint_auth_methods_supported: ['private_key_jwt'],
   token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-  // The spec requires `openid`. The platform serves no LTI service: beside it are the API's scopes an installation can hold.
-  scopes_supported: ['openid', ...ltiToolScopes],
+  // The spec requires `openid`.
+  scopes_supported: ['openid', ...ltiToolScopes.flatMap((scope) => ltiServiceScope(scope) ?? [])],
   response_types_supported: ['id_token'],
   subject_types_supported: ['public'],
   id_token_signing_alg_values_supported: ['RS256'],

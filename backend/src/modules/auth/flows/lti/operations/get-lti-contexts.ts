@@ -22,7 +22,7 @@ export async function getLtiContextsOp(ctx: UserContext, { connectionId, orderBy
     label: context.label,
     title: context.title,
     channel,
-    apiUrl: context.apiUrl,
+    membershipsUrl: context.membershipsUrl,
     importRanAt: context.importRanAt,
     importReadCount: context.importReadCount,
     importIssue: context.importIssue,

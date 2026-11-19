@@ -444,6 +444,7 @@ export const zLtiResourceLink = z.object({
   installationId: z.string(),
   title: z.string(),
   custom: z.record(z.string(), z.string()),
+  enabled: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   createdBy: z
@@ -831,6 +832,7 @@ export const zTenant = z.object({
       attachment: z.int().gte(0),
       serviceAccount: z.int().gte(0),
       apiKey: z.int().gte(0),
+      ltiConnection: z.int().gte(0),
     }),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
@@ -1692,6 +1694,26 @@ export const zReceiveLtiLaunchBody = z.object({
   error_description: z.string().max(2048).optional(),
 });
 
+export const zGetLtiKeySetPath = z.object({
+  connectionId: z.uuid(),
+});
+
+/**
+ * Key set
+ */
+export const zGetLtiKeySetResponse = z.object({
+  keys: z.array(
+    z.object({
+      kty: z.enum(['RSA']),
+      n: z.string(),
+      e: z.string(),
+      kid: z.string(),
+      alg: z.enum(['RS256']),
+      use: z.enum(['sig']),
+    }),
+  ),
+});
+
 export const zFinishLtiLaunchBody = z.object({
   id_token: z.string().max(32768).optional(),
   state: z.string().max(2048).optional(),
@@ -1785,16 +1807,18 @@ export const zListLtiContextsResponse = z.object({
   results: z.array(
     z.object({
       id: z.string(),
-      connectionId: z.string(),
+      connectionId: z.string().nullable(),
       contextId: z.string(),
       label: z.string().nullable(),
       title: z.string().nullable(),
       channel: zChannelBase,
-      apiUrl: z.string().nullable(),
+      membershipsUrl: z.string().nullable(),
       importRanAt: z.string().nullable(),
       importReadCount: z.int().nullable(),
       importIssue: z
         .enum([
+          'waiting',
+          'register_again',
           'address_refused',
           'scope_not_granted',
           'token_refused',
@@ -1984,6 +2008,44 @@ export const zListLtiInstallationsResponse = z.object({
   totalSize: z.int().gte(0),
 });
 
+export const zListLtiInstallationTabsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+export const zListLtiInstallationTabsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * Tabs of the installation
+ */
+export const zListLtiInstallationTabsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      channelType: z.enum(['organization']),
+      channelId: z.string(),
+      channelName: z.string(),
+      enabled: z.boolean(),
+      context: z
+        .object({
+          channelType: z.enum(['organization']),
+          channelId: z.string(),
+          name: z.string().nullable(),
+        })
+        .nullable(),
+      deletable: z.boolean(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
 export const zApproveLtiInstallationBody = z.object({
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])).max(3),
   grantedScopes: z
@@ -2031,6 +2093,51 @@ export const zRejectLtiInstallationPath = z.object({
  * Installation rejected
  */
 export const zRejectLtiInstallationResponse = z.void();
+
+export const zListLtiTabsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiTabsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * LTI tabs
+ */
+export const zListLtiTabsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      status: z.enum(['pending', 'active', 'disabled']),
+      readsMembers: z.boolean(),
+      refusal: z.enum(['lti_installation_disabled', 'channel_archived', 'lti_context_update_required']).nullable(),
+      context: z
+        .object({
+          channelType: z.enum(['organization']),
+          channelId: z.string(),
+          name: z.string().nullable(),
+        })
+        .nullable(),
+      resourceLink: z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          enabled: z.boolean(),
+        })
+        .nullable(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
 
 export const zListLtiResourceLinksPath = z.object({
   tenantId: z.string().max(50),
@@ -2096,6 +2203,7 @@ export const zUpdateLtiResourceLinkBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  enabled: z.boolean().optional(),
 });
 
 export const zUpdateLtiResourceLinkPath = z.object({
@@ -2126,25 +2234,32 @@ export const zStartLtiLaunchResponse = z.object({
 export const zListLtiMembersPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 export const zListLtiMembersQuery = z.object({
-  pageToken: z.string().max(2048).optional(),
-  maxPageSize: z.int().gte(0).optional(),
-  skip: z.int().gte(0).optional().default(0),
-  channelId: z.string().max(50),
-  channelType: z.enum(['organization']),
-  orderBy: z.enum(['id', 'id asc', 'id desc']).optional().default('id asc'),
+  role: z.string().max(2048).optional(),
+  limit: z.int().gte(0).optional(),
+  after: z.uuid().optional(),
+  rlid: z.string().max(255).optional(),
 });
 
 /**
  * LTI members
  */
 export const zListLtiMembersResponse = z.object({
-  results: z.array(
+  id: z.string(),
+  context: z.object({
+    id: z.string(),
+    label: z.string(),
+    title: z.string(),
+  }),
+  members: z.array(
     z.object({
-      id: z.string(),
+      user_id: z.string(),
       roles: z.array(z.string()),
+      status: z.enum(['Active']),
       name: z.string().optional(),
       given_name: z.string().optional(),
       family_name: z.string().optional(),
@@ -2152,8 +2267,6 @@ export const zListLtiMembersResponse = z.object({
       picture: z.string().optional(),
     }),
   ),
-  nextPageToken: z.string().optional(),
-  totalSize: z.int().gte(0),
 });
 
 export const zInitiateLtiLaunchLoginQuery = z.object({
@@ -3464,6 +3577,7 @@ export const zUpdateTenantBody = z.object({
           attachment: z.int().gte(0).nullish(),
           serviceAccount: z.int().gte(0).nullish(),
           apiKey: z.int().gte(0).nullish(),
+          ltiConnection: z.int().gte(0).nullish(),
         })
         .nullish(),
       rateLimits: z

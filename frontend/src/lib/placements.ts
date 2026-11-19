@@ -1,4 +1,3 @@
-import type { QueryKey } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, type EntityActionType, hierarchy } from 'shared';
@@ -112,31 +111,19 @@ function assertContextRoles(tool: Tool): void {
   }
 }
 
-/** A tab that data adds to a channel's bar: its id is the `$tool` param, its title the caption. */
+/**
+ * A tab that data adds to a channel's bar, such as an LTI tool's tab: its id is the `$tool` param and its place in the
+ * channel's stored order, its title the caption. A channel cannot hide one: its data decides whether it is there.
+ */
 export interface DataTab {
   id: string;
   title: string;
 }
 
-/**
- * A module's source of tabs that data defines, such as LTI resource links. Every channel's bar and menu show them after
- * the declared tabs, in the order `query` lists them, and `SlotTabHost` renders one for a `$tool` id no tool has.
- */
-export interface ChannelTabSource {
-  /** Lists a channel's tabs; the module's writes invalidate its key. */
-  query: (channel: EnrichedChannel) => { queryKey: QueryKey; queryFn: () => Promise<{ results: DataTab[] }> };
-  render: (channel: EnrichedChannel, tab: DataTab) => ReactNode;
-  /** The sentence the tabs arrangement shows on where these tabs go, as they keep no place in its stored order. */
-  arrangementNote: TKey;
-}
-
-const channelTabSources: ChannelTabSource[] = [];
-
-/** The registered sources of data-defined channel tabs, in registration order. */
-export const getChannelTabSources = (): readonly ChannelTabSource[] => channelTabSources;
+/** Where a tab that data adds goes while the channel's stored order does not name it: after every declared one. */
+export const dataTabOrder = Number.MAX_SAFE_INTEGER;
 
 onFrontendModuleRegister((module) => {
-  if (module.channelTabs) channelTabSources.push(module.channelTabs);
   for (const tool of module.tools ?? []) {
     assertContextRoles(tool);
     const list = bySlot.get(tool.slot) ?? [];
@@ -158,8 +145,26 @@ export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot:
   return bySlot.get(slot) ?? [];
 }
 
+/** What arranging reads of a placement: its id, its default order, the gates and whether a channel can hide it. */
+type Arrangeable = Pick<PlacementDescriptor, 'id' | 'requires' | 'visibleTo' | 'locked'> & { order: number };
+
+/**
+ * `arranged` with the `stored` ids it leaves out put back, such as tabs a card could not read: each after the stored id
+ * before it, and never ahead of an unshown id stored before it. They keep their stored order; a leading one goes first.
+ */
+export function keepUnshownIds(stored: readonly string[], arranged: readonly string[]): string[] {
+  const result = [...arranged];
+  let after = -1;
+  for (const id of stored) {
+    const at = result.indexOf(id);
+    if (at >= 0) after = Math.max(after, at);
+    else result.splice(++after, 0, id);
+  }
+  return result;
+}
+
 /** Ids in `order` first, in that sequence, and the rest after them in declared `order`. */
-function orderByIds<T extends PlacementDescriptor & { order: number }>(items: T[], order: readonly string[]): T[] {
+function orderByIds<T extends Arrangeable>(items: T[], order: readonly string[]): T[] {
   const rank = new Map<string, number>();
   for (const id of order) if (!rank.has(id)) rank.set(id, rank.size);
   const rankOf = (item: T) => rank.get(item.id) ?? rank.size;
@@ -177,7 +182,7 @@ export interface ResolvePlacementOptions {
 }
 
 /** Hiding only, no `requires`/`visibleTo` gating: the app's `surfaces` entry hides the id, or the channel's stored config hides an unlocked one. */
-export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {
+export function isPlacementHidden(slot: Slot, item: Arrangeable, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {
   if (surfaceArrangement(slot)?.hidden?.includes(item.id)) return true;
   return !item.locked && (options.slotConfig?.hidden ?? []).includes(item.id);
 }
@@ -186,18 +191,14 @@ export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options
  * The placements of a slot in the order it shows them, channel-hidden ones included: what a channel arranges. The app's
  * `surfaces` entry leaves out the ones it hides and orders the rest, and the channel's stored order applies on top.
  */
-export function arrangePlacements<T extends PlacementDescriptor & { order: number }>(slot: Slot, items: T[], slotConfig?: SlotToolsConfig): T[] {
+export function arrangePlacements<T extends Arrangeable>(slot: Slot, items: T[], slotConfig?: SlotToolsConfig): T[] {
   const { order = [], hidden = [] } = surfaceArrangement(slot) ?? {};
   const shown = items.filter((item) => !hidden.includes(item.id));
   return orderByIds(shown, [...(slotConfig?.order ?? []), ...order]);
 }
 
 /** {@link arrangePlacements} for what a viewer sees: channel-stored hiding (`locked` immune), then `requires`/`visibleTo` leave a placement out. */
-export function resolvePlacementList<T extends PlacementDescriptor & { order: number }>(
-  slot: Slot,
-  items: T[],
-  options: ResolvePlacementOptions = {},
-): T[] {
+export function resolvePlacementList<T extends Arrangeable>(slot: Slot, items: T[], options: ResolvePlacementOptions = {}): T[] {
   const { grants = [], pairs = [], slotConfig } = options;
 
   const visible = items

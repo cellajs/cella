@@ -1,11 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createLtiRegistrationLink } from 'sdk';
+import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
@@ -44,14 +45,20 @@ const platformConfiguration = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-/** A platform behind the guarded fetch's transport: it serves its configuration and answers a registration with a client id. */
+/**
+ * A platform behind the guarded fetch's transport: it serves its configuration and answers a registration with a client
+ * id, after reading the key set the registration names, as Brightspace does.
+ */
 const fakePlatform = (configuration = platformConfiguration()) => {
-  const registrations: { authorization: string | undefined; body: Record<string, unknown> }[] = [];
+  const registrations: { authorization: string | undefined; body: Record<string, unknown>; keySetStatus: number }[] = [];
   const clientId = `client-${nanoid(8)}`;
   const transport: GuardedTransport = async ({ url, method, headers, body }) => {
     if (method === 'GET' && url.href === configurationUrl) return Response.json(configuration);
     if (method === 'POST' && url.href === configuration.registration_endpoint) {
-      registrations.push({ authorization: headers.Authorization, body: JSON.parse(body ?? '{}') });
+      const request = JSON.parse(body ?? '{}');
+      const { baseApp } = await import('#/routes');
+      const keySet = await baseApp.request(new URL(request.jwks_uri).pathname);
+      registrations.push({ authorization: headers.Authorization, body: request, keySetStatus: keySet.status });
       return Response.json({ client_id: clientId, 'https://purl.imsglobal.org/spec/lti-tool-configuration': { deployment_id: 'deployment-1' } });
     }
     return new Response(null, { status: 404 });
@@ -73,7 +80,8 @@ describe('LTI registration', async () => {
     return { org, user, answer, link: created ? (new URL(created.url).searchParams.get('link') ?? '') : '' };
   }
 
-  // The contract the launch builds on: the connection names the platform's issuer and the client id it returned.
+  // The contract the launch builds on: the connection names the platform's issuer and the client id it returned. A
+  // platform that reads the key set while it handles the registration, as Brightspace does, finds it.
   it("stores the platform's connection with the client id it returned, written by the admin who created the link", async () => {
     const { org, user, link } = await mintLink();
     const platform = fakePlatform();
@@ -96,8 +104,35 @@ describe('LTI registration', async () => {
     });
     expect(platform.registrations[0]).toMatchObject({
       authorization: 'Bearer platform-token',
-      body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: `${appConfig.oauthUrl}/jwks` },
+      body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: ltiKeySetUrl(connection.id) },
+      keySetStatus: 200,
     });
+  });
+
+  // A refused registration leaves nothing behind: the connection stored before the call goes, and its key set with it.
+  // While the platform answers, the admins' list leaves the pending connection out.
+  it('deletes the pending connection of a registration the platform refuses, and its key set answers no more', async () => {
+    const { org, user, link } = await mintLink();
+    const keySets: string[] = [];
+    const listed: unknown[] = [];
+    const refusing: GuardedTransport = async ({ url, method, body }) => {
+      if (method === 'GET' && url.href === configurationUrl) return Response.json(platformConfiguration());
+      keySets.push(JSON.parse(body ?? '{}').jwks_uri);
+      const path = { tenantId: org.tenantId, organizationId: org.id };
+      listed.push((await call(listLtiConnections, { path, headers: { ...defaultHeaders, Cookie: user.sessionCookie } })).data);
+      return Response.json({ error: 'invalid_client_metadata' }, { status: 400 });
+    };
+
+    await expect(
+      registerLtiPlatformOp(
+        { link, openid_configuration: configurationUrl },
+        { transport: refusing, resolve: async () => [{ address: '1.1.1.1', family: 4 }] },
+      ),
+    ).rejects.toMatchObject({ type: 'lti_registration_refused' });
+    expect(listed).toEqual([{ results: [], totalSize: 0 }]);
+    expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, org.tenantId))).toEqual([]);
+    const { baseApp } = await import('#/routes');
+    expect((await baseApp.request(new URL(keySets[0]).pathname)).status).toBe(404);
   });
 
   it('refuses a link used before, on a page any platform may frame', async () => {
@@ -144,6 +179,45 @@ describe('LTI registration', async () => {
       type: 'lti_platform_unsupported',
     });
     expect(platform.registrations).toHaveLength(0);
+  });
+
+  // Attack: a tenant that adds connections without end holds every slot of the member import. Past its quota, a link is
+  // refused, and so is a registration through a link minted before.
+  it("refuses a registration link and a registration past the tenant's quota of LTI connections", async () => {
+    const { org, user, link } = await mintLink();
+    const quota = appConfig.defaultRestrictions.quotas.ltiConnection ?? 0;
+    const config = {
+      authorizationEndpoint: `${issuer}/a`,
+      tokenEndpoint: `${issuer}/t`,
+      jwksUri: `${issuer}/k`,
+      productFamilyCode: 'x',
+      version: '1',
+      deploymentIds: [],
+    };
+    await db.insert(connectionsTable).values(
+      Array.from({ length: quota }, (_, index) => ({
+        tenantId: org.tenantId,
+        kind: 'lti' as const,
+        issuer: `https://held-${index}.example.edu`,
+        clientId: `held-${index}`,
+        name: `held-${index}`,
+        status: 'active' as const,
+        config,
+      })),
+    );
+
+    const platform = fakePlatform();
+    await expect(registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, platform.options)).rejects.toMatchObject({
+      type: 'lti_connection_limit',
+    });
+    expect(platform.registrations).toHaveLength(0);
+    expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, org.tenantId))).toHaveLength(quota);
+    const path = { tenantId: org.tenantId, organizationId: org.id };
+    await expectRefusal(
+      await call(createLtiRegistrationLink, { path, headers: { ...defaultHeaders, Cookie: user.sessionCookie } }),
+      403,
+      'lti_connection_limit',
+    );
   });
 
   it('refuses a member creating a registration link', async () => {

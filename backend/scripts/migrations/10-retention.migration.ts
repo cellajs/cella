@@ -61,6 +61,8 @@ const sweepRules: { table: string; aged: string }[] = [
       OR (status = 'declined' AND status_changed_at < now() - ${days(retention.declinedInvitationHoldDays)})`,
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
+  // An LTI connection stays pending only while its platform answers the registration: one left over is a failed one.
+  { table: 'connections', aged: `kind = 'lti' AND status = 'pending' AND created_at < now() - ${days(retention.pendingLtiConnectionDays)}` },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
   {
     table: 'push_subscriptions',

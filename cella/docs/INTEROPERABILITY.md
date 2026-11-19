@@ -53,7 +53,7 @@ Every entity type with a policy has `<type>:read` and `<type>:write`, and `write
 - **No mask:** a session or a key issued without scopes is unmasked.
 - **REST refusal:** answers as for an actor without the permission, with no `insufficient_scope` challenge.
 - **MCP refusal:** names the scope to step up to.
-- **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents, the consent screen and an LTI platform's configuration.
+- **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents and the consent screen; LTI names `user:read` by its NRPS scope.
 
 ### Quotas and limits
 

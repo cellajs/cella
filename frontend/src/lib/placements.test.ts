@@ -1,7 +1,7 @@
 import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
 import { describe, expect, it } from 'vitest';
 import type { TKey } from '~/lib/i18n-locales';
-import { arrangePlacements, isPlacementHidden, resolvePlacementList } from '~/lib/placements';
+import { arrangePlacements, isPlacementHidden, keepUnshownIds, resolvePlacementList } from '~/lib/placements';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -52,7 +52,7 @@ describe('isPlacementHidden', () => {
 
     withSurface(slot, { hidden: ['extra'] }, () => {
       expect(isPlacementHidden(slot, { ...item, locked: true }, {})).toBe(true);
-      expect(isPlacementHidden(slot, { id: 'general', label: key('c:general'), order: 10 }, {})).toBe(false);
+      expect(isPlacementHidden(slot, { id: 'general', order: 10 }, {})).toBe(false);
     });
   });
 });
@@ -69,5 +69,23 @@ describe('resolvePlacementList', () => {
     expect(resolvePlacementList(slot, items).map((i) => i.id)).toEqual(['general', 'extra']);
     const full = resolvePlacementList(slot, items, { grants: ['delete'], pairs: ['organization.admin'] });
     expect(full.map((i) => i.id)).toEqual(['general', 'staff-only', 'extra', 'danger']);
+  });
+});
+
+// A write that could not read some tabs keeps their stored ids: in their stored order, as near their neighbours as the move allows.
+describe('keepUnshownIds', () => {
+  it.each([
+    ['nothing moved', ['a', 'x', 'b'], ['a', 'b'], ['a', 'x', 'b']],
+    [
+      'a neighbour moved to the top',
+      ['attachments', 'lti-A', 'members', 'lti-B', 'settings'],
+      ['members', 'attachments', 'settings'],
+      ['members', 'attachments', 'lti-A', 'lti-B', 'settings'],
+    ],
+    ['a neighbour moved to the end', ['a', 'x', 'b', 'c'], ['b', 'c', 'a'], ['b', 'c', 'a', 'x']],
+    ['a leading one', ['x', 'a', 'b'], ['b', 'a'], ['x', 'b', 'a']],
+    ['a run of two', ['a', 'x', 'y', 'b'], ['b', 'a'], ['b', 'a', 'x', 'y']],
+  ])('%s', (_case, stored, arranged, expected) => {
+    expect(keepUnshownIds(stored, arranged)).toEqual(expected);
   });
 });

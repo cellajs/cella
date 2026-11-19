@@ -1,10 +1,11 @@
-import { type AccessScope, accessScopes } from 'shared';
+import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
+import { accessScopeOfLtiService, ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { ltiClaimsSupported, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
 import { insertLtiToolRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
@@ -24,8 +25,9 @@ const isOnDomains = (address: string, domains: string[]) => {
  * The request, checked against what the platform offers. Each of the LTI tool's launch addresses and its key set
  * address must lie on the domains it declares; the admin approves their origins (`launchOrigins`, `keySetOrigin`):
  * where a launch posts a person's claims, and whose keys mint the installation's tokens. Of its messages, claims and
- * access scopes, the platform records the ones it supports; scopes only those its routes read (`ltiToolScopes`), and
- * only beside the `client_credentials` grant its tokens are requested with.
+ * scopes, the platform records the ones it supports. A scope is an LTI service's, recorded as the access scope it stands
+ * for (`accessScopeOfLtiService`) when a route for installed LTI tools reads it (`ltiToolScopes`), and only beside the
+ * `client_credentials` grant its tokens are requested with.
  * @throws AppError 400 `lti_tool_metadata_invalid` naming the first member refused.
  */
 const parseRegistrationRequest = (body: unknown) => {
@@ -46,7 +48,7 @@ const parseRegistrationRequest = (body: unknown) => {
   if (!messages.length) throw metadataInvalid('messages');
 
   const recorded: LtiToolConfig = { ...config, messages, claims: config.claims.filter((claim) => ltiClaimsSupported.includes(claim)) };
-  const asked = request.grant_types.includes('client_credentials') ? accessScopes.parse(request.scope) : [];
+  const asked = request.grant_types.includes('client_credentials') ? (request.scope?.split(' ') ?? []).map(accessScopeOfLtiService) : [];
   const requestedScopes = ltiToolScopes.filter((scope) => asked.includes(scope));
   return { request, recorded, requestedScopes };
 };
@@ -58,15 +60,14 @@ interface RecordedRegistration {
 }
 
 /**
- * The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. The
- * platform serves no LTI service: beside the launch it registers the token grant for the access scopes it recorded,
- * which an admin may grant the installation.
+ * The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. Beside the
+ * launch it registers the token grant for the LTI service scopes it recorded, which an admin may grant the installation.
  */
 const registrationResponse = ({ request, recorded, requestedScopes }: RecordedRegistration, clientId: string, deploymentId: string) => ({
   client_id: clientId,
   application_type: request.application_type,
   grant_types: requestedScopes.length ? ['implicit', 'client_credentials'] : ['implicit'],
-  ...(requestedScopes.length > 0 && { scope: requestedScopes.join(' ') }),
+  ...(requestedScopes.length > 0 && { scope: requestedScopes.flatMap((scope) => ltiServiceScope(scope) ?? []).join(' ') }),
   response_types: request.response_types,
   redirect_uris: request.redirect_uris,
   initiate_login_uri: request.initiate_login_uri,

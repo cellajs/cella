@@ -7,6 +7,7 @@ import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openapi-validation';
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/core';
+import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 
 /** `attachment:read` reads as "Read attachments"; `write` covers create, update and delete. */
@@ -52,9 +53,15 @@ export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
       'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`).',
   });
 
-  // The scope vocabulary is derived from the policy matrix. A person consents to the scopes discovery offers; `user:read`
-  // is for an installed LTI tool's client credentials alone.
+  // The scope vocabulary is derived from the policy matrix. A person consents to the scopes discovery offers; an
+  // installed LTI tool asks for the LTI service scope that stands for one it may be granted, such as `user:read`.
   const describe = (scopes: readonly AccessScope[]) => Object.fromEntries(scopes.map((scope) => [scope, scopeDescription(scope)]));
+  const ltiServices = Object.fromEntries(
+    accessScopes.all.flatMap((scope) => {
+      const name = ltiServiceScope(scope);
+      return name ? [[name, scopeDescription(scope)]] : [];
+    }),
+  );
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
     description:
@@ -66,7 +73,7 @@ export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
         refreshUrl: `${appConfig.oauthUrl}/token`,
         scopes: describe(accessScopes.offered),
       },
-      clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: describe(accessScopes.all) },
+      clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: { ...describe(accessScopes.offered), ...ltiServices } },
     },
   });
 

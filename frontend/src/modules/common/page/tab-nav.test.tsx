@@ -12,7 +12,7 @@ import { assumeNoSurfaces } from 'shared/testing/surfaces';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
 import type { ResolvePlacementOptions } from '~/lib/placements';
-import { guardNavTabs } from '~/modules/common/page/tab-nav';
+import { guardNavTabs, navTabRedirectTarget, resolveChannelTabs } from '~/modules/common/page/tab-nav';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -90,5 +90,26 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
     const options = runGuard([parentMatch, membersMatch], { slotConfig: { hidden: ['members'] } });
     expect(options?.search).toEqual({});
     expect(options).toMatchObject({ replace: true, hash: true });
+  });
+});
+
+// Attack: a tab that data adds, such as an LTI tool's, launches on mount and sends the person's identity to the LTI tool.
+describe("the tabs data adds, an LTI tool's", () => {
+  beforeEach(() => {
+    for (const key of Object.keys(routesById)) delete routesById[key];
+    seedRoutes('/org', 'organization.tabs');
+  });
+
+  const dataTabs = [{ id: 'lti-tool', title: 'Peer review' }];
+
+  it('are never where a redirect lands, though the stored order puts one first', () => {
+    const slotConfig = { order: ['lti-tool', 'members', 'reports'], hidden: ['members'] };
+    const target = navTabRedirectTarget('/org', { toolId: undefined, leafPath: '/org/members' }, { dataTabs, slotConfig });
+    expect(target?.id).toBe('reports');
+  });
+
+  it('stay on the bar when the stored hidden ids name one', () => {
+    const tabs = resolveChannelTabs('organization', { tenantId: 't' }, { dataTabs, slotConfig: { hidden: ['lti-tool'] } });
+    expect(tabs.map((tab) => tab.id)).toContain('lti-tool');
   });
 });

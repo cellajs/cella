@@ -578,6 +578,10 @@ export type LtiResourceLink = {
   custom: {
     [key: string]: string;
   };
+  /**
+   * Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id
+   */
+  enabled: boolean;
   createdAt: string;
   updatedAt: string | null;
   createdBy:
@@ -794,11 +798,23 @@ export type Organization = {
   archived: boolean;
   toolsConfig: {
     'organization.settings'?: {
+      /**
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
+       */
       order?: Array<string>;
+      /**
+       * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
+       */
       hidden?: Array<string>;
     };
     'organization.tabs'?: {
+      /**
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
+       */
       order?: Array<string>;
+      /**
+       * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
+       */
       hidden?: Array<string>;
     };
   };
@@ -961,7 +977,7 @@ export type Tenant = {
   expiresAt: string | null;
   restrictions: {
     /**
-     * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
+     * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
      */
     quotas: {
       user: number;
@@ -969,6 +985,7 @@ export type Tenant = {
       attachment: number;
       serviceAccount: number;
       apiKey: number;
+      ltiConnection: number;
     };
     rateLimits: {
       /**
@@ -3531,6 +3548,12 @@ export type RegisterLtiPlatformErrors = {
    */
   401: unknown;
   /**
+   * Connection limit reached
+   *
+   * The same page: the tenant holds as many LTI connections as its quota allows.
+   */
+  403: unknown;
+  /**
    * Already registered
    *
    * The same page: the platform registered this client id before.
@@ -3751,6 +3774,59 @@ export type ReceiveLtiLaunchResponses = {
    */
   200: unknown;
 };
+
+export type GetLtiKeySetData = {
+  body?: never;
+  path: {
+    connectionId: string;
+  };
+  query?: never;
+  url: '/auth/lti/connections/{connectionId}/jwks';
+};
+
+export type GetLtiKeySetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetLtiKeySetError = GetLtiKeySetErrors[keyof GetLtiKeySetErrors];
+
+export type GetLtiKeySetResponses = {
+  /**
+   * Key set
+   */
+  200: {
+    keys: Array<{
+      kty: 'RSA';
+      /**
+       * The modulus
+       */
+      n: string;
+      /**
+       * The public exponent
+       */
+      e: string;
+      /**
+       * The key id the app names in the header of each client assertion it signs with the key
+       */
+      kid: string;
+      alg: 'RS256';
+      use: 'sig';
+    }>;
+  };
+};
+
+export type GetLtiKeySetResponse = GetLtiKeySetResponses[keyof GetLtiKeySetResponses];
 
 export type FinishLtiLaunchData = {
   body: {
@@ -4070,9 +4146,9 @@ export type ListLtiContextsResponses = {
     results: Array<{
       id: string;
       /**
-       * The LTI connection whose platform launched it
+       * The LTI connection that launched it last; null once that connection is deleted
        */
-      connectionId: string;
+      connectionId: string | null;
       /**
        * The platform's id of the context
        */
@@ -4084,9 +4160,9 @@ export type ListLtiContextsResponses = {
       title: string | null;
       channel: ChannelBase;
       /**
-       * The platform's API that the member import reads, from the last launch that named one; null when none did
+       * Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did
        */
-      apiUrl: string | null;
+      membershipsUrl: string | null;
       /**
        * When the last member import ran; null before the first
        */
@@ -4096,9 +4172,11 @@ export type ListLtiContextsResponses = {
        */
       importReadCount: number | null;
       /**
-       * Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
+       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
        */
       importIssue:
+        | 'waiting'
+        | 'register_again'
         | 'address_refused'
         | 'scope_not_granted'
         | 'token_refused'
@@ -4675,6 +4753,105 @@ export type ListLtiInstallationsResponses = {
 
 export type ListLtiInstallationsResponse = ListLtiInstallationsResponses[keyof ListLtiInstallationsResponses];
 
+export type ListLtiInstallationTabsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs';
+};
+
+export type ListLtiInstallationTabsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiInstallationTabsError = ListLtiInstallationTabsErrors[keyof ListLtiInstallationTabsErrors];
+
+export type ListLtiInstallationTabsResponses = {
+  /**
+   * Tabs of the installation
+   */
+  200: {
+    results: Array<{
+      /**
+       * The resource link
+       */
+      id: string;
+      channelType: 'organization';
+      channelId: string;
+      channelName: string;
+      /**
+       * Whether the tab is on: only a tab that is on lets the LTI tool read its course
+       */
+      enabled: boolean;
+      /**
+       * The course the tab launches as; null when none is
+       */
+      context: {
+        channelType: 'organization';
+        channelId: string;
+        /**
+         * Null for a course above the channel that the caller may not read
+         */
+        name: string | null;
+      } | null;
+      /**
+       * Whether the caller may remove it: they may update its channel
+       */
+      deletable: boolean;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiInstallationTabsResponse = ListLtiInstallationTabsResponses[keyof ListLtiInstallationTabsResponses];
+
 export type ApproveLtiInstallationData = {
   body: {
     /**
@@ -4851,6 +5028,116 @@ export type RejectLtiInstallationResponses = {
 };
 
 export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
+
+export type ListLtiTabsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-tabs';
+};
+
+export type ListLtiTabsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiTabsError = ListLtiTabsErrors[keyof ListLtiTabsErrors];
+
+export type ListLtiTabsResponses = {
+  /**
+   * LTI tabs
+   */
+  200: {
+    results: Array<{
+      /**
+       * The LTI installation, which `installationId` places: a channel holds one tab of it
+       */
+      id: string;
+      name: string;
+      /**
+       * `active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then
+       */
+      status: 'pending' | 'active' | 'disabled';
+      /**
+       * Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as
+       */
+      readsMembers: boolean;
+      /**
+       * Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may
+       */
+      refusal: 'lti_installation_disabled' | 'channel_archived' | 'lti_context_update_required' | null;
+      /**
+       * The course a tab in the channel launches as; null when none is
+       */
+      context: {
+        channelType: 'organization';
+        channelId: string;
+        /**
+         * Null for a course above the channel that the caller may not read
+         */
+        name: string | null;
+      } | null;
+      /**
+       * The tab once placed, on or off; null for an LTI tool never placed in the channel
+       */
+      resourceLink: {
+        id: string;
+        title: string;
+        enabled: boolean;
+      } | null;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiTabsResponse = ListLtiTabsResponses[keyof ListLtiTabsResponses];
 
 export type ListLtiResourceLinksData = {
   body?: never;
@@ -5049,6 +5336,10 @@ export type UpdateLtiResourceLinkData = {
     custom?: {
       [key: string]: string;
     };
+    /**
+     * Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on
+     */
+    enabled?: boolean;
   };
   path: {
     tenantId: string;
@@ -5076,6 +5367,10 @@ export type UpdateLtiResourceLinkErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
   /**
    * Payload too large
    */
@@ -5164,28 +5459,28 @@ export type ListLtiMembersData = {
   path: {
     tenantId: string;
     organizationId: string;
-  };
-  query: {
-    /**
-     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
-     */
-    pageToken?: string;
-    /**
-     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
-     */
-    maxPageSize?: number;
-    /**
-     * Results to pass over after the page token's position, or from the start without a token.
-     */
-    skip?: number;
     channelId: string;
     channelType: 'organization';
-    /**
-     * A field to order by, then `asc` or `desc`; ascending when left out.
-     */
-    orderBy?: 'id' | 'id asc' | 'id desc';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members';
+  query?: {
+    /**
+     * Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`
+     */
+    role?: string;
+    /**
+     * Most members one page holds: a hint. Absent or 0 reads 40; below 25 reads 25, above 1000 reads 1000. A page may hold fewer.
+     */
+    limit?: number;
+    /**
+     * Lists the members whose id sorts after this one: the next link carries it
+     */
+    after?: string;
+    /**
+     * Refused: reading the members of one resource link, a tab, is not supported
+     */
+    rlid?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}';
 };
 
 export type ListLtiMembersErrors = {
@@ -5218,15 +5513,31 @@ export type ListLtiMembersResponses = {
    * LTI members
    */
   200: {
-    results: Array<{
+    /**
+     * The address this page was read at
+     */
+    id: string;
+    /**
+     * The course, as a launch's context claim names it: the channel's id, slug and name
+     */
+    context: {
+      id: string;
+      label: string;
+      title: string;
+    };
+    members: Array<{
       /**
        * The person: the id a launch sends as `sub`
        */
-      id: string;
+      user_id: string;
       /**
        * Their LTI roles in the course, as full URIs: the roles a launch there would send them
        */
       roles: Array<string>;
+      /**
+       * Every member listed is active
+       */
+      status: 'Active';
       /**
        * Their name, when released
        */
@@ -5248,14 +5559,6 @@ export type ListLtiMembersResponses = {
        */
       picture?: string;
     }>;
-    /**
-     * Pass as `pageToken` to read the next page. Absent on the last page.
-     */
-    nextPageToken?: string;
-    /**
-     * Results across all pages, after filters: an exact count.
-     */
-    totalSize: number;
   };
 };
 
@@ -7309,11 +7612,23 @@ export type UpdateOrganizationData = {
     };
     toolsConfig?: {
       'organization.settings'?: {
+        /**
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
+         */
         order?: Array<string> | null;
+        /**
+         * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
+         */
         hidden?: Array<string> | null;
       } | null;
       'organization.tabs'?: {
+        /**
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
+         */
         order?: Array<string> | null;
+        /**
+         * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
+         */
         hidden?: Array<string> | null;
       } | null;
     };
@@ -8771,7 +9086,7 @@ export type UpdateTenantData = {
      */
     restrictions?: {
       /**
-       * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
+       * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
        */
       quotas?: {
         user?: number | null;
@@ -8779,6 +9094,7 @@ export type UpdateTenantData = {
         attachment?: number | null;
         serviceAccount?: number | null;
         apiKey?: number | null;
+        ltiConnection?: number | null;
       } | null;
       rateLimits?: {
         /**

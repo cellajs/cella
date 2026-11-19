@@ -11,7 +11,7 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { LtiInstallationTile } from '~/modules/lti-platform/lti-installation-tile';
-import { ltiInstallationsQueryOptions, ltiResourceLinksQueryOptions, useStartLtiToolRegistrationMutation } from '~/modules/lti-platform/query';
+import { ltiInstallationsQueryOptions, useStartLtiToolRegistrationMutation } from '~/modules/lti-platform/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Form } from '~/modules/ui/field';
@@ -103,12 +103,11 @@ function AddLtiToolForm({ path }: { path: QueryOrgContext }) {
   );
 }
 
-/** The LTI tools installed in the organization's tenant: add one by its registration address, then approve, place and disable it. */
+/** The LTI tools installed in the organization's tenant: add one by its registration address, then approve or disable it and see where it has tabs. */
 export function LtiToolsCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const installations = useSuspenseQuery(ltiInstallationsQueryOptions(path)).data.results;
-  const resourceLinks = useSuspenseQuery(ltiResourceLinksQueryOptions(organization)).data.results;
   const [openTile, setOpenTile] = useState<string[]>([]);
 
   return (
@@ -117,12 +116,7 @@ export function LtiToolsCard({ organization }: { organization: EnrichedOrganizat
       {installations.length > 0 && (
         <Accordion value={openTile} onValueChange={setOpenTile} className="mt-6 flex flex-col gap-2">
           {installations.map((installation) => (
-            <LtiInstallationTile
-              key={installation.id}
-              installation={installation}
-              organization={organization}
-              resourceLinks={resourceLinks.filter((link) => link.installationId === installation.id)}
-            />
+            <LtiInstallationTile key={installation.id} installation={installation} organization={organization} />
           ))}
         </Accordion>
       )}

@@ -4,28 +4,33 @@ import { type IdentityKind, type IdentityModel, type InsertIdentityModel, identi
 import { getIsoDate } from '#/utils/iso-date';
 import { pick } from '#/utils/pick';
 
-interface FindIdentityBySubjectOpts {
-  provider: string;
-  /** The provider's own id for the account. */
-  subject: string;
-  /** The trust class the provider slug lives in; a social provider by default. */
-  kind?: IdentityKind;
-}
+/** An identity's key: the provider's own id for the account within its trust class, and an `lti` one's tenant. */
+type IdentityKey = { provider: string; subject: string } & (
+  | { /** A social provider by default. */ kind?: Exclude<IdentityKind, 'lti'>; tenantId?: never }
+  | { kind: 'lti'; tenantId: string }
+);
+
+/** The rows of one identity key; an `lti` key reads its own tenant's rows alone. */
+const identityKeyWhere = ({ provider, subject, kind = 'oauth', tenantId }: IdentityKey) =>
+  and(
+    eq(identitiesTable.kind, kind),
+    eq(identitiesTable.provider, provider),
+    eq(identitiesTable.subject, subject),
+    kind === 'lti' ? eq(identitiesTable.tenantId, tenantId ?? '') : undefined,
+  );
 
 /**
- * Holds an identity's key (kind, provider, subject) until the caller's transaction ends, found or not: two flows that
- * find or make the identity of one subject run one after the other, and the second finds what the first made.
+ * Holds an identity's key until the caller's transaction ends, found or not: two flows that find or make the identity
+ * of one subject run one after the other, and the second finds what the first made.
  */
-export const lockIdentityKey = async (ctx: DbContext, { provider, subject, kind }: Required<FindIdentityBySubjectOpts>) => {
-  await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`identity:${kind}:${provider}:${subject}`}, 0))`);
+export const lockIdentityKey = async (ctx: DbContext, { provider, subject, kind = 'oauth', tenantId }: IdentityKey) => {
+  const key = ['identity', kind, ...(tenantId ? [tenantId] : []), provider, subject].join(':');
+  await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
 };
 
-/** The identity an external account is: keyed on (kind, provider, subject), never on its address. */
-export const findIdentityBySubject = async (ctx: DbContext, { provider, subject, kind = 'oauth' }: FindIdentityBySubjectOpts) => {
-  const [identity] = await ctx.var.db
-    .select()
-    .from(identitiesTable)
-    .where(and(eq(identitiesTable.kind, kind), eq(identitiesTable.provider, provider), eq(identitiesTable.subject, subject)));
+/** The identity an external account is: keyed on (kind, provider, subject) and an `lti` one's tenant, never on its address. */
+export const findIdentityBySubject = async (ctx: DbContext, key: IdentityKey) => {
+  const [identity] = await ctx.var.db.select().from(identitiesTable).where(identityKeyWhere(key));
   return identity;
 };
 
@@ -60,7 +65,7 @@ export const findSsoIdentities = async (ctx: DbContext, { userId }: { userId: st
 
 interface InsertIdentityOpts {
   values: Pick<IdentityModel, 'userId' | 'provider' | 'subject'> &
-    Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data' | 'verifiedAt' | 'lastSignInAt'> & { email: string | null };
+    Pick<InsertIdentityModel, 'kind' | 'tenantId' | 'connectionId' | 'data' | 'verifiedAt' | 'lastSignInAt'> & { email: string | null };
   /** Verified now, when an inbox proof in the same flow already stands for it, or the provider's assertion is the proof. */
   verified?: boolean;
 }

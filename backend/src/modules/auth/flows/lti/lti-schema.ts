@@ -46,11 +46,17 @@ export const ltiPlatformConfigurationSchema = z.object({
 
 export type LtiPlatformConfiguration = z.infer<typeof ltiPlatformConfigurationSchema>;
 
-/** The platform's answer to a registration: the client id it gave the app, and its LTI deployment when it made one. */
+const deploymentIdSchema = z.string().min(1).max(maxLength.field).optional();
+
+/**
+ * The platform's answer to a registration: the client id it gave the app, and its LTI deployment when it made one, in
+ * the LTI tool configuration or, as Canvas names it, beside the client id.
+ */
 export const ltiRegistrationResponseSchema = z.object({
   client_id: z.string().min(1).max(maxLength.field),
   registration_client_uri: platformUrlSchema.optional(),
-  [ltiToolConfigurationMember]: z.object({ deployment_id: z.string().min(1).max(maxLength.field).optional() }).optional(),
+  deployment_id: deploymentIdSchema,
+  [ltiToolConfigurationMember]: z.object({ deployment_id: deploymentIdSchema }).optional(),
 });
 
 /** An opaque value a platform hands over, such as a login or message hint; Canvas's message hint is a signed token. */
@@ -91,6 +97,23 @@ export const ltiFinishFormSchema = z.object({
   storage_value: z.string().max(maxLength.field).optional(),
 });
 
+/** The path of one LTI connection's key set. */
+export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });
+
+/** A JSON Web Key Set (RFC 7517, section 5) of one public RS256 key. */
+export const ltiKeySetSchema = z.object({
+  keys: z.array(
+    z.object({
+      kty: z.literal('RSA'),
+      n: z.string().describe('The modulus'),
+      e: z.string().describe('The public exponent'),
+      kid: z.string().describe('The key id the app names in the header of each client assertion it signs with the key'),
+      alg: z.literal('RS256'),
+      use: z.literal('sig'),
+    }),
+  ),
+});
+
 /** The LTI contexts of an organization, the courses launched most recently first by default. */
 export const listLtiContextsQuerySchema = pageQuerySchema.extend({
   connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
@@ -99,19 +122,22 @@ export const listLtiContextsQuerySchema = pageQuerySchema.extend({
 
 export const ltiContextSchema = z.object({
   id: z.string(),
-  connectionId: z.string().describe('The LTI connection whose platform launched it'),
+  connectionId: z.string().nullable().describe('The LTI connection that launched it last; null once that connection is deleted'),
   contextId: z.string().describe("The platform's id of the context"),
   label: z.string().nullable().describe("The platform's short name of the context, such as a course code"),
   title: z.string().nullable(),
   channel: channelBaseSchema,
-  apiUrl: z.string().nullable().describe("The platform's API that the member import reads, from the last launch that named one; null when none did"),
+  membershipsUrl: z
+    .string()
+    .nullable()
+    .describe("Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"),
   importRanAt: z.string().nullable().describe('When the last member import ran; null before the first'),
   importReadCount: z.int().nullable().describe('How many people the last member import read from the platform'),
   importIssue: z
     .enum(ltiImportIssues)
     .nullable()
     .describe(
-      "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
+      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
     ),
   createdAt: z.string().describe('When the first launch recorded it'),
 });

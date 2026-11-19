@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, inArray } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
@@ -12,55 +12,95 @@ import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
-/** The row of a connection's LTI context; undefined before a launch mapped it. */
-export const findLtiContext = async (ctx: DbContext, { connectionId, contextId }: { connectionId: string; contextId: string }) => {
+interface LtiContextKey {
+  tenantId: string;
+  issuer: string;
+  contextId: string;
+}
+
+/** The row of a platform's LTI context in a tenant, whichever connection launched it; undefined before a launch mapped it. */
+export const findLtiContext = async (ctx: DbContext, { tenantId, issuer, contextId }: LtiContextKey) => {
   const [row] = await ctx.var.db
     .select()
     .from(ltiContextsTable)
-    .where(and(eq(ltiContextsTable.connectionId, connectionId), eq(ltiContextsTable.contextId, contextId)))
+    .where(and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.issuer, issuer), eq(ltiContextsTable.contextId, contextId)))
     .limit(1);
   return row;
 };
 
-/** An LTI context row by its own id; undefined once its connection or channel went. */
+/** An LTI context row by its own id; undefined once its channel went. */
 export const findLtiContextById = async (ctx: DbContext, { id }: { id: string }) => {
   const [row] = await ctx.var.db.select().from(ltiContextsTable).where(eq(ltiContextsTable.id, id)).limit(1);
   return row;
 };
 
 /**
- * Records an LTI context and the channel it maps to, or takes the label, title and types of a context recorded before,
- * written by `by`; the row as stored. A recorded context keeps its channel: compare it with the one given. The API
- * addresses change only when `values` names them: a launch without them clears nothing.
+ * Records an LTI context and the channel it maps to, with its label, title and types, written by `by`. A recorded
+ * context keeps its channel: compare it with the one given. Only the connection that holds the row writes on it, or one
+ * that takes over a row whose connection was deleted, with the membership address `values` names, none included. The
+ * connection that holds it sets the address `values` names, and undefined keeps it.
+ * @returns The row as stored; undefined when another live connection of the tenant and issuer holds it, which leaves
+ *   it as it is.
  */
 export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values: Omit<InsertLtiContextModel, 'createdBy'>; by: UserId }) => {
-  const { label, title, types, apiUrl, membersUrl } = values;
+  const { connectionId, label, title, types } = values;
+  const { connectionId: heldBy, membershipsUrl: heldAddress } = ltiContextsTable;
+  const free = sql`${heldBy} IS NULL`;
   const [row] = await ctx.var.db
     .insert(ltiContextsTable)
     .values({ ...values, createdBy: by })
     .onConflictDoUpdate({
-      target: [ltiContextsTable.connectionId, ltiContextsTable.contextId],
-      set: { label, title, types, ...(apiUrl && membersUrl && { apiUrl, membersUrl }), ...updateStamps(by) },
+      target: [ltiContextsTable.tenantId, ltiContextsTable.issuer, ltiContextsTable.contextId],
+      set: {
+        connectionId,
+        membershipsUrl: sql`CASE WHEN ${free} THEN excluded.memberships_url ELSE coalesce(excluded.memberships_url, ${heldAddress}) END`,
+        label,
+        title,
+        types,
+        ...updateStamps(by),
+      },
+      setWhere: sql`${free} OR ${heldBy} = ${connectionId}`,
     })
     .returning();
   return row;
 };
 
+/** How many courses of a connection a member import read since `since`. */
+export const countLtiImportsSince = (ctx: DbContext, { connectionId, since }: { connectionId: string; since: string }) =>
+  ctx.var.db.$count(ltiContextsTable, and(eq(ltiContextsTable.connectionId, connectionId), gt(ltiContextsTable.importRanAt, since)));
+
 interface RecordLtiImportOpts {
   id: string;
   readCount: number;
   issue: LtiImportIssue | null;
+  /** True when the platform refused: the membership address goes, until a launch names it again. */
+  forgetAddress?: boolean;
   /** The connection's service account, which the import writes as. */
   by: ActorId;
 }
 
 /** Records how the member import of a context ran: now, the people it read and why it stopped short, if it did. */
-export const recordLtiImport = async (ctx: DbContext, { id, readCount, issue, by }: RecordLtiImportOpts) => {
+export const recordLtiImport = async (ctx: DbContext, { id, readCount, issue, forgetAddress, by }: RecordLtiImportOpts) => {
   const at = getIsoDate();
   await ctx.var.db
     .update(ltiContextsTable)
-    .set({ importRanAt: at, importReadCount: readCount, importIssue: issue, ...updateStamps(by, at) })
+    .set({ importRanAt: at, importReadCount: readCount, importIssue: issue, ...(forgetAddress && { membershipsUrl: null }), ...updateStamps(by, at) })
     .where(eq(ltiContextsTable.id, id));
+};
+
+/** Refusals a waiting import leaves in place: the platform or the connection has to change before an import reads. */
+const lastingIssues: LtiImportIssue[] = ['register_again', 'scope_not_granted', 'members_refused'];
+
+/**
+ * Records that a context's member import waits for its connection's hourly budget; the last import's time and count
+ * stay, and so does a refusal that lasts (`lastingIssues`).
+ */
+export const recordLtiImportWaiting = async (ctx: DbContext, { id, by }: { id: string; by: ActorId }) => {
+  const { importIssue } = ltiContextsTable;
+  await ctx.var.db
+    .update(ltiContextsTable)
+    .set({ importIssue: 'waiting', ...updateStamps(by) })
+    .where(and(eq(ltiContextsTable.id, id), or(isNull(importIssue), notInArray(importIssue, lastingIssues))));
 };
 
 interface FindOrganizationLtiContextsOpts {

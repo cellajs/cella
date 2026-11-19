@@ -1,13 +1,15 @@
 import { eq, like } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { checkEmail, confirmMagicLink, invokeToken, sendMagicLink, signInWithTotp, signOut, stepUp } from 'sdk';
+import { checkEmail, confirmMagicLink, getLtiKeySet, invokeToken, sendMagicLink, signInWithTotp, signOut, stepUp } from 'sdk';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { subjectSegment } from '#/middlewares/rate-limiter/helpers';
+import { ltiKeySetLimiter } from '#/middlewares/rate-limiter/limiters';
 import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import { magicLinkEmail } from '../../emails';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, overrideConfig } from '../fixtures';
 import {
   authCookie,
   CookieJar,
@@ -336,5 +338,20 @@ describe('brute-force budgets', async () => {
     expect(location.pathname).toBe('/auth/error');
     expect(location.searchParams.get('error')).toBe('too_many_requests');
     expect(refused.headers.get('retry-after')).not.toBeNull();
+  });
+
+  it('must not grow the limiter table or read on past the budget via LTI key sets of ever new connection ids from one address', async () => {
+    onTestFinished(overrideConfig(appConfig, { enabledAuthStrategies: [...appConfig.enabledAuthStrategies, 'lti'] }));
+    const ip = randomIp();
+    const read = async () => (await call(getLtiKeySet, { path: { connectionId: generateId() }, headers: fromIp(ip) })).response.status;
+    const { points } = ltiKeySetLimiter.buckets[0].limits;
+
+    for (let attempt = 0; attempt < points; attempt++) expect(await read()).toBe(404);
+    expect(await read()).toBe(429);
+    const buckets = await getAdminDb('rate limit test')
+      .select()
+      .from(rateLimitsTable)
+      .where(like(rateLimitsTable.key, `ltiKeySet_limit:%${subjectSegment('ip', ip)}%`));
+    expect(buckets).toHaveLength(1);
   });
 });

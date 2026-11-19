@@ -1,8 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { ltiNrps } from '#/lib/lti-vocabulary';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
-import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
+import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes, ltiTabRoutes } from '#/modules/lti-platform/lti-platform-routes';
 import {
   approveLtiInstallationOp,
   rejectLtiInstallationOp,
@@ -13,7 +14,9 @@ import { getLtiMembersOp } from '#/modules/lti-platform/operations/get-lti-membe
 import {
   createLtiResourceLinkOp,
   deleteLtiResourceLinkOp,
+  getLtiInstallationTabsOp,
   getLtiResourceLinksOp,
+  getLtiTabsOp,
   updateLtiResourceLinkOp,
 } from '#/modules/lti-platform/operations/manage-lti-resource-links';
 import { initiateLtiLoginOp, startLtiLaunchOp } from '#/modules/lti-platform/operations/start-lti-launch';
@@ -30,6 +33,12 @@ app.openapi(ltiPlatformRoutes.listLtiInstallations, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, async (page) => windowOf(installations, page)), 200);
 });
 
+app.openapi(ltiPlatformRoutes.listLtiInstallationTabs, async (ctx) => {
+  const query = ctx.req.valid('query');
+  const tabs = await getLtiInstallationTabsOp(ctx, ctx.req.valid('param').ltiInstallationId, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(tabs, page)), 200);
+});
+
 app.openapi(ltiPlatformRoutes.approveLtiInstallation, async (ctx) => {
   return ctx.json(await approveLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId, ctx.req.valid('json')), 200);
 });
@@ -44,6 +53,16 @@ app.openapi(ltiPlatformRoutes.rejectLtiInstallation, async (ctx) => {
 });
 
 export const ltiPlatformHandlers = app;
+
+const tabs = new OpenAPIHono<Env>();
+
+tabs.openapi(ltiTabRoutes.listLtiTabs, async (ctx) => {
+  const query = ctx.req.valid('query');
+  const results = await getLtiTabsOp(ctx, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(results, page)), 200);
+});
+
+export const ltiTabHandlers = tabs;
 
 const resourceLinks = new OpenAPIHono<Env>();
 
@@ -89,8 +108,9 @@ export const ltiLaunchHandlers = launches;
 const members = new OpenAPIHono<Env>();
 
 members.openapi(ltiMemberRoutes.listLtiMembers, async (ctx) => {
-  const query = ctx.req.valid('query');
-  return ctx.json(await readListPage(ctx, query, (page) => getLtiMembersOp(ctx, query, page)), 200);
+  const search = new URL(ctx.req.url).search;
+  const { container, nextUrl } = await getLtiMembersOp(ctx, ctx.req.valid('param'), ctx.req.valid('query'), search);
+  return ctx.json(container, 200, { 'Content-Type': ltiNrps.mediaType, ...(nextUrl && { Link: `<${nextUrl}>; rel="next"` }) });
 });
 
 export const ltiMemberHandlers = members;

@@ -16,13 +16,19 @@ export const ltiClaims = {
   toolPlatform: 'https://purl.imsglobal.org/spec/lti/claim/tool_platform',
   launchPresentation: 'https://purl.imsglobal.org/spec/lti/claim/launch_presentation',
   custom: 'https://purl.imsglobal.org/spec/lti/claim/custom',
+  /** Where the launch's course lists its members (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
+  namesRoleService: 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice',
 } as const;
 
-/**
- * The name of the claim with which a platform on this template tells a launched LTI tool where its API is. It lies
- * under the platform's issuer: the LTI tool builds it from the issuer it holds, and no other platform's claim shares it.
- */
-export const ltiApiClaim = (issuer: string) => `${issuer}/lti/claim/api`;
+/** Names and Role Provisioning Services 2.0 (NRPS): the service an LTI tool reads a course's members through. */
+export const ltiNrps = {
+  /** The scope a token request asks for to read a course's members (section 3.6.1.2). */
+  scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
+  /** The media type of a page of a course's members (section 2.1). */
+  mediaType: 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json',
+  /** The service version the claim names and the members' address answers. */
+  version: '2.0',
+} as const;
 
 /** The LIS context types an LTI context may carry (LTI Core 1.3, appendix A.1). */
 export const lisContextTypes = {
@@ -40,6 +46,18 @@ export const lisContextRoles = {
   learner: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
   mentor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
 } as const;
+
+/**
+ * A role as a full URI: a core context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a
+ * sub-role), as NRPS lets a platform write it, is a LIS membership role. Any other role stays as it comes.
+ */
+export const lisRoleUri = (role: string) => {
+  if (role.includes(':') || role.includes('/')) return role;
+  const [base, subRole] = role.split('#');
+  return subRole
+    ? `http://purl.imsglobal.org/vocab/lis/v2/membership/${base}#${subRole}`
+    : `http://purl.imsglobal.org/vocab/lis/v2/membership#${base}`;
+};
 
 /** The LTI system role a platform adds for a user it made for testing, such as a student view (LTI Core 1.3, A.2.4). */
 export const ltiTestUserRole = 'http://purl.imsglobal.org/vocab/lti/system/person#TestUser';

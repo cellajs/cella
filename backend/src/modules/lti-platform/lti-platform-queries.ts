@@ -1,8 +1,7 @@
-import { and, asc, count, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
-import { type AccessScope, appConfig, type ChannelEntityType, hierarchy } from 'shared';
-import type { DbContext } from '#/core/context';
+import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
+import { type Access, type AccessScope, appConfig, hierarchy } from 'shared';
+import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { type LtiReleasableField, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
@@ -13,7 +12,8 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { insertServiceAccount, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { servedUserSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-import type { OrderDirection } from '#/schemas/common-schemas';
+import { readableMembershipsWhere } from '#/permissions/visible-people';
+import type { ChannelRef, OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
@@ -162,24 +162,28 @@ export async function deleteTenantLtiRegistration(ctx: DbContext, { id, tenantId
   await ctx.var.db.delete(oauthClientsTable).where(and(eq(oauthClientsTable.id, id), eq(oauthClientsTable.tenantId, tenantId)));
 }
 
-interface FindLtiResourceLinksOpts {
-  tenantId: string;
-  channelId: string;
-  order: OrderDirection;
-}
+/** The resource links of one channel of the tenant, or those of one installation in an organization. */
+type FindLtiResourceLinksOpts = { tenantId: string; order: OrderDirection } & (
+  | { channelId: string }
+  | { installationId: string; organizationId: string }
+);
 
-/** The resource links placed in one channel of the tenant, in `order` of creation. */
-export async function findLtiResourceLinks(ctx: DbContext, { tenantId, channelId, order }: FindLtiResourceLinksOpts) {
+/** The resource links placed in one channel, or the ones that place one installation in an organization, in `order` of creation. */
+export async function findLtiResourceLinks(ctx: DbContext, { tenantId, order, ...where }: FindLtiResourceLinksOpts) {
   const orderBy = getOrderColumns({
     sort: 'createdAt',
     order,
     columns: { createdAt: ltiResourceLinksTable.createdAt },
     tieBreaker: ltiResourceLinksTable.id,
   });
+  const placedBy =
+    'channelId' in where
+      ? eq(ltiResourceLinksTable.channelId, where.channelId)
+      : and(eq(ltiResourceLinksTable.installationId, where.installationId), eq(ltiResourceLinksTable.organizationId, where.organizationId));
   return ctx.var.db
     .select()
     .from(ltiResourceLinksTable)
-    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
+    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), placedBy))
     .orderBy(...orderBy);
 }
 
@@ -199,45 +203,61 @@ const placementSelect = pick(getColumns(ltiResourceLinksTable), [
   ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
 ]);
 
-/** The channels of every resource link that places the installation, in the organization when one is given. */
-export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId }: { installationId: string; organizationId?: string }) {
-  const inOrganization = organizationId ? eq(ltiResourceLinksTable.organizationId, organizationId) : undefined;
+interface FindLtiPlacementsOpts {
+  installationId: string;
+  organizationId: string;
+  course: ChannelRef;
+}
+
+/** The channels of every tab that is on and places the installation in the organization, in the course or below it. */
+export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId, course }: FindLtiPlacementsOpts) {
   return ctx.var.db
     .select(placementSelect)
     .from(ltiResourceLinksTable)
-    .where(and(eq(ltiResourceLinksTable.installationId, installationId), inOrganization));
+    .where(
+      and(
+        eq(ltiResourceLinksTable.installationId, installationId),
+        eq(ltiResourceLinksTable.organizationId, organizationId),
+        eq(ltiResourceLinksTable.enabled, true),
+        eq(getColumns(ltiResourceLinksTable)[appConfig.entityIdColumnKeys[course.channelType]], course.channelId),
+      ),
+    );
 }
 
-interface FindLtiMembersPageOpts {
+interface FindLtiMembersOpts extends ChannelRef {
   organizationId: string;
-  channelType: ChannelEntityType;
-  channelId: string;
-  order: OrderDirection;
-  offset: number;
+  /** The reader's access: a person shows when it reads one of their membership rows (`readableMembershipsWhere`). */
+  access: Access<ActorBinding>;
+  /** The id the people follow; from the first when omitted. */
+  after?: string;
   limit: number;
 }
 
 /**
- * A page of a channel's people by id, and the total: of each, what a launch's personal claims read, the address only
- * once proven.
+ * A channel's people in order of id, which an installed LTI tool reads: an order by name or address would tell what is
+ * not released. Of each, what a launch's personal claims read, the address only once proven.
  */
-export async function findLtiMembersPage(ctx: DbContext, { organizationId, channelType, channelId, order, offset, limit }: FindLtiMembersPageOpts) {
-  const { db } = ctx.var;
-  const inChannel = and(
-    eq(membershipsTable.organizationId, organizationId),
-    eq(membershipsTable.channelType, channelType),
-    eq(membershipsTable.channelId, channelId),
-  );
+export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, access, after, limit }: FindLtiMembersOpts) {
   const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
-  const itemsQuery = db
+  const readable = ctx.var.db
+    .select({ userId: membershipsTable.userId })
+    .from(membershipsTable)
+    .where(readableMembershipsWhere(access, [organizationId]));
+  return ctx.var.db
     .select({ id, name, givenName, familyName, email, thumbnailUrl })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
-    .where(inChannel)
-    .orderBy(order === 'asc' ? asc(usersTable.id) : desc(usersTable.id))
-    .limit(limit)
-    .offset(offset);
-  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(membershipsTable).where(inChannel)));
+    .where(
+      and(
+        eq(membershipsTable.organizationId, organizationId),
+        eq(membershipsTable.channelType, channelType),
+        eq(membershipsTable.channelId, channelId),
+        inArray(usersTable.id, readable),
+        after ? gt(usersTable.id, after) : undefined,
+      ),
+    )
+    .orderBy(asc(usersTable.id))
+    .limit(limit);
 }
 
 export async function insertLtiResourceLink(ctx: DbContext, { values }: { values: typeof ltiResourceLinksTable.$inferInsert }) {
@@ -247,7 +267,10 @@ export async function insertLtiResourceLink(ctx: DbContext, { values }: { values
 
 export async function updateLtiResourceLink(
   ctx: DbContext,
-  { id, values }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'updatedAt' | 'updatedBy'>> },
+  {
+    id,
+    values,
+  }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'updatedAt' | 'updatedBy'>> },
 ) {
   const [updated] = await ctx.var.db.update(ltiResourceLinksTable).set(values).where(eq(ltiResourceLinksTable.id, id)).returning();
   return updated;

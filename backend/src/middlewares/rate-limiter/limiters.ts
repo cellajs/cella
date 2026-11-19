@@ -197,6 +197,18 @@ export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
 });
 
 /**
+ * Reads of LTI connections' key sets per IP: a platform reads one to check a token request. An app that is its own
+ * platform reads every installation's key set from one address, at most once per OAuth process in five minutes (the
+ * route's cache header, which oidc-provider keeps to): the ceiling of the other LTI routes covers 3,000 such reads in
+ * five minutes, and a read refused after a cold start only delays that token request.
+ */
+export const ltiKeySetLimiter = rateLimiter('limit', 'ltiKeySet', ['ip'], {
+  limits: { points: 600, duration: 60 },
+  name: 'LTI key sets',
+  description: 'Key set reads for each IP address, answered or not.',
+});
+
+/**
  * LTI launch steps per IP, two per launch in either role: as LTI tool a launch post and its finish, which checks a
  * signature and may fetch the platform's key set; as platform the login initiation page and the launch endpoint, which
  * spends a launch record and signs an ID token.

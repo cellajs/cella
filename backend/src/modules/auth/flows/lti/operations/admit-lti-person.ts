@@ -1,7 +1,8 @@
-import { buildSubjectFromEntity, checkAccess, hierarchy, type OrganizationRole } from 'shared';
+import { buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
+import { type LtiRoleFacts, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { createLtiAccount, type LtiPerson, nameLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { resolveOrganizationMembershipRole } from '#/modules/memberships/helpers/membership-helpers';
@@ -11,6 +12,7 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findIdentityBySubject, lockIdentityKey, updateIdentity } from '#/modules/user/identities-queries';
+import { log } from '#/utils/logger';
 
 /** A person's organization membership, when they hold a seat. */
 type Seat = Pick<MembershipModel, 'id' | 'role'>;
@@ -28,8 +30,8 @@ interface AdmitLtiPersonOpts {
 }
 
 /**
- * The account of a person a platform names, under the lock of their `lti` identity (the platform's issuer and `sub`)
- * that a launch and an import of them both take. It is found by that identity, or made (`createLtiAccount`). A person
+ * The account of a person a platform names, under the lock of their `lti` identity (the connection's tenant, the
+ * platform's issuer and `sub`) that a launch and an import of them both take. It is found by that identity, or made (`createLtiAccount`). A person
  * who holds no seat needs a free one under the tenant's member limit (`hasFreeSeats`). Both keep the email the
  * platform released on the identity, and a launch records the sign-in there, the proof that verifies it.
  * @returns The account and its seat; undefined when the person needs a seat and none is left, with nothing written.
@@ -38,7 +40,7 @@ export const admitLtiPerson = async (
   ctx: DbContext,
   { connection, organization, memberQuota, person, signedInAt, by }: AdmitLtiPersonOpts,
 ): Promise<{ userId: UserId; seat?: Seat } | undefined> => {
-  const key = { kind: 'lti', provider: connection.issuer, subject: person.sub } as const;
+  const key = { kind: 'lti', tenantId: connection.tenantId, provider: connection.issuer, subject: person.sub } as const;
   await lockIdentityKey(ctx, key);
   const identity = await findIdentityBySubject(ctx, key);
   const [seat] = identity ? await findMembershipsByUserIdsAndChannel(ctx, { userIds: [identity.userId], channelId: organization.id }) : [];
@@ -50,6 +52,18 @@ export const admitLtiPerson = async (
   if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
   await nameLtiAccount(ctx, { userId: identity.userId, person, by: by ?? identity.userId });
   return { userId: identity.userId, seat };
+};
+
+/**
+ * The role the app-owned `ltiContextRole` maps a person to in a channel of `channelType`. An answer that is no role of
+ * that type, such as a course role's name for the organization, gives its least privileged role and a warning.
+ */
+export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFacts, 'channelType'>): MembershipModel['role'] => {
+  const role = ltiContextRole({ ...facts, channelType });
+  const roles: readonly string[] = hierarchy.getRoles(channelType);
+  if (roles.includes(role)) return role;
+  log.warn('LTI role mapping answered no role of the channel type', { channelType, role, connectionId: facts.connection.id });
+  return hierarchy.getLeastPrivilegedRole(channelType);
 };
 
 /** The organization role a person gets for `role`: the highest at or below it that may not update the organization. */
@@ -73,7 +87,7 @@ interface ApplyLtiRoleOpts {
   channel: MembershipEntity;
   userId: UserId;
   seat: Seat | undefined;
-  /** The role `ltiContextRole` maps the person to in the channel. */
+  /** The role `ltiRoleIn` maps the person to in the channel. */
   role: MembershipModel['role'];
   by: ActorId;
 }

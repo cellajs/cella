@@ -80,6 +80,8 @@ export const userIdParamSchema = z.object({ userId: validIdSchema });
 /** A channel entity by type and id. */
 export const channelRefSchema = z.object({ channelId: validIdSchema, channelType: channelEntityTypeSchema });
 
+export type ChannelRef = z.infer<typeof channelRefSchema>;
+
 /**
  * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,
  * `-1` and `1.5` fail with `error`; `z.coerce` would turn `''` and null into 0.

@@ -6,16 +6,7 @@ import { test } from '../../config/config.test.ts';
 import { tunnel } from '../../config/config.tunnel.ts';
 import { resolveDevPortOffset, shiftLocalPort } from './dev-port-offset.ts';
 import { authPath, servicePaths } from './service-paths.ts';
-import type {
-  AppServiceConfig,
-  BaseAuthStrategies,
-  CompanyConfig,
-  ConfigMode,
-  DeepPartial,
-  FederationConfig,
-  S3Config,
-  WidenScalars,
-} from './types.ts';
+import type { AppServiceConfig, CompanyConfig, ConfigMode, DeepPartial, FederationConfig, S3Config, WidenScalars } from './types.ts';
 import { mergeDeep, typedEntries } from './utils.ts';
 
 /** The default config as readers see it: a literal `true` or `1` of the file is its base type here. */
@@ -64,19 +55,12 @@ const mode = rawMode as ConfigMode;
 // MCP takes access tokens only, and the app's authorization server (`services.oauth`) issues them. Checked for every
 // mode, so a combination only production has fails in development and in CI too.
 for (const [name, overrides] of typedEntries(configModes)) {
-  const { services, enabledAuthStrategies, has } = mergeDeep(structuredClone(defaultConfig), overrides);
+  const { services, has } = mergeDeep(structuredClone(defaultConfig), overrides);
   const { mcp, oauth } = services;
   if (mcp.enabled && !oauth.enabled) {
     throw new Error(
       `Invalid config: services.mcp is enabled in ${name} mode while services.oauth is off. MCP calls carry an access token ` +
         'that only the authorization server issues: enable services.oauth in that mode, or turn services.mcp off.',
-    );
-  }
-  // An LTI platform verifies the app by the key set it registered, and the authorization server's is the only one.
-  if (enabledAuthStrategies.some((strategy: BaseAuthStrategies) => strategy === 'lti') && !oauth.enabled) {
-    throw new Error(
-      `Invalid config: the lti sign-in method is enabled in ${name} mode while services.oauth is off. An LTI platform ` +
-        "checks the app's signatures against the authorization server's key set: enable services.oauth in that mode, or remove lti.",
     );
   }
   // As an LTI platform the app is an issuer: its configuration, registration and launch are the authorization server's.

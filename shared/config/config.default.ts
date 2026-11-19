@@ -94,6 +94,8 @@ export const config = {
       attachment: 100,
       serviceAccount: 20,
       apiKey: 100,
+      // Fewer than the four member imports a jobs worker runs at once: one tenant's platforms never hold them all.
+      ltiConnection: 3,
     },
     rateLimits: { apiPointsPerHour: 1000, invitationEmailsPerDay: 250 },
   },
@@ -143,6 +145,7 @@ export const config = {
     declinedInvitationHoldDays: 30,
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
+    pendingLtiConnectionDays: 1,
     backupDays: 7,
   },
 
@@ -248,7 +251,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 51,
+  clientCacheVersion: 52,
 
   // Authentication
 

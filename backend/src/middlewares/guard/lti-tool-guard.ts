@@ -1,4 +1,7 @@
-import { hierarchy } from 'shared';
+import type { Context } from 'hono';
+import { appConfig, hierarchy } from 'shared';
+import { isUuid } from 'shared/utils/entity-id';
+import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { routeTarget } from '#/middlewares/guard/route-target';
@@ -29,27 +32,30 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 };
 
 /**
- * The access an installation's placements in the route's organization imply, read at every request: the least
- * privileged role of its type on each course (`placementContext`) the installation is placed in or below. Nothing is
- * stored: a removed tab or a deleted channel takes it away at once.
+ * The access the installation's placements in or below the course in the route's path imply, read at every request:
+ * the least privileged role of the course's type, when one of them in the route's organization launches as that course
+ * (`placementContext`), its id compared whatever its case, of tabs that are on. Nothing is stored: a tab removed or
+ * switched off, or a deleted channel, takes it away at once. A path that names no such course, or a channel type the
+ * app does not have, binds nothing: the tenant then refuses the actor with a 403, before the route validates its path.
  */
-const placementBindings = async (installationId: string, organizationId?: string): Promise<RoleBinding[]> => {
-  const bindings = new Map<string, RoleBinding>();
-  for (const placement of await findLtiPlacements(dbCtx, { installationId, organizationId })) {
+const courseBindings = async (installationId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
+  const channelType = appConfig.channelEntityTypes.find((type) => type === ctx.req.param('channelType'));
+  const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
+  if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
+  const placements = await findLtiPlacements(dbCtx, { installationId, organizationId, course: { channelType, channelId } });
+  const placed = placements.some((placement) => {
     const context = placementContext(placement);
-    if (!context) continue;
-    const { channelType, channelId } = context;
-    const role = hierarchy.getLeastPrivilegedRole(channelType);
-    bindings.set(channelId, { channelType, channelId, organizationId: placement.organizationId, role });
-  }
-  return [...bindings.values()];
+    return context?.channelType === channelType && context.channelId === channelId;
+  });
+  return placed ? [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }] : [];
 };
 
 /**
- * The guard of the routes an installed LTI tool calls as itself (`ltiMemberRoutes`): only a token of an LTI
- * installation, verified locally and bound to this route's tenant. The request acts as the installation's service
- * account with the bindings its placements imply (`placementBindings`), masked by the token's scopes, and carries the
- * installation. Every other proof is refused, a person's token and an API key included.
+ * The guard of the routes an installed LTI tool calls as itself (`ltiMemberRoutes`), each for the course in its path:
+ * only a token of an LTI installation, verified locally and bound to this route's tenant. The request acts as the
+ * installation's service account with the binding its placements imply on that course (`courseBindings`), masked by
+ * the token's scopes, and carries the installation. Every other proof is refused, a person's token and an API key
+ * included.
  */
 export const ltiToolGuard = xMiddleware(
   {
@@ -74,7 +80,7 @@ export const ltiToolGuard = xMiddleware(
     await challengeRefusal(ctx, ref, async () => {
       const token = await verifyAccessToken(jwt, { tenantId: target.tenantId });
       const found = await resolveInstallationToken(token);
-      const bindings = await placementBindings(found.account.id, target.organizationId?.toLowerCase());
+      const bindings = await courseBindings(found.account.id, ctx);
       setServiceActor(ctx, { ...found.account, bindings }, token.scopes);
       ctx.set('ltiInstallation', found);
     });

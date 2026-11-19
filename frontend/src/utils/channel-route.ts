@@ -110,7 +110,7 @@ export function getProductRoute(location: ProductLocation): EntityRoute {
 }
 
 /** A cached channel routes by slug; one not in cache travels by id in its own param and the organization's, which the routes' `beforeLoad` rewrite to slugs. */
-function getChannelPageRoute({ tenantId, organizationId, channelType, channelId }: ProductLocation): ChannelRoute {
+export function getChannelPageRoute({ tenantId, organizationId, channelType, channelId }: ProductLocation): ChannelRoute {
   const channel = findInCache<EnrichedChannel>(channelType, channelId);
   if (channel) return resolveChannelRoute(channel);
   return buildChannelRoute(channelType, tenantId, { organization: organizationId }, channelId);
