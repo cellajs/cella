@@ -4,6 +4,7 @@ import { appConfig, hierarchy, isStrategyEnabled } from 'shared';
 import { getSeedDb } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { issueHandoffToken } from '#/modules/auth/core';
+import { ltiImportScope } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { ltiIssuerUrl, ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
@@ -34,8 +35,9 @@ const inProcessPlatform: GuardedTransport = async ({ url, method, headers, body 
 /**
  * Connects two organizations the seed admin administers, in a mode where the app is both LTI roles: the second
  * registers as an LTI tool at the first. Both halves of Dynamic Registration run through the operations their routes
- * use, the platform answering in-process. The installation is approved with the name released and placed as a tab of
- * the platform's organization, through the queries the approval and the placement write with.
+ * use, the platform answering in-process. The installation is approved with the name released and the member import's
+ * scope granted, and placed as a tab of the platform's organization, through the queries the approval and the placement
+ * write with. A launch of that tab by the seed admin then imports the platform organization's members.
  */
 export const ltiSeed = async () => {
   const startedAt = performance.now();
@@ -72,7 +74,10 @@ export const ltiSeed = async () => {
 
   const { tenantId } = platform.organization;
   await db.transaction((tx) =>
-    approveLtiInstallation({ var: { db: tx } }, { id: installationId, tenantId, releasedFields: ['name'], by: createdBy }),
+    approveLtiInstallation(
+      { var: { db: tx } },
+      { id: installationId, tenantId, releasedFields: ['name'], grantedScopes: [ltiImportScope], by: createdBy },
+    ),
   );
 
   await insertLtiResourceLink(dbCtx, {
@@ -88,7 +93,7 @@ export const ltiSeed = async () => {
   });
 
   console.info(
-    `${checkMark} LTI: ${pc.bold(platform.organization.name)} launches ${pc.bold(tool.organization.name)} from its tab${durationSuffix(startedAt)}`,
+    `${checkMark} LTI: ${pc.bold(platform.organization.name)} launches ${pc.bold(tool.organization.name)} from its tab, which imports its members${durationSuffix(startedAt)}`,
   );
 };
 

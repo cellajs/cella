@@ -6,13 +6,14 @@ This document covers the OAuth worker: the app's own [OAuth 2.1](https://oauth.n
 
 The worker runs `node-oidc-provider` on the app origin under `/oauth`. A person consents to a client on an app page, and
 its token acts as that person in one tenant, within the approved scopes. A service account can get one from its API
-key. Keys, consents and tokens live in the app database, and a guard verifies every token locally.
+key, and an installed LTI tool from the key it registered. Keys, consents and tokens live in the app database, and a
+guard verifies every token locally.
 
 ## How it fits
 
 ```text
 MCP client / registered app
-        │  authorization code + PKCE (person)  or  client_credentials (service account)
+        │  authorization code + PKCE (person)  or  client_credentials (service account, installed LTI tool)
         ▼
 OAuth worker  (/oauth/*)
   ├─ discovery, authorize, pushed authorization requests, token, revocation, JWKS
@@ -38,6 +39,9 @@ The worker is a `SERVICE` of the backend image. The issuer shares the app origin
 | MCP client (Claude Desktop, VS Code) | A Client ID Metadata Document: `client_id` is the HTTPS URL of its metadata | Nothing (public client, PKCE) | The person, if the tenant allows consented clients |
 | Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if the app is installed in the tenant |
 | Service account | Its own id | Any of its live API keys as the client secret, which caps the token at that key's scopes | None: `client_credentials` |
+| Installed LTI tool | Its registration's `client_id` | An assertion signed with a key of the set it registered (`private_key_jwt`) | The admin's approval: `client_credentials`, within the granted scopes |
+
+A service account and an installed LTI tool act without a person, as themselves. The other two act for the person who consented.
 
 An authorization request brings the browser to the consent page, through sign-in when needed. The page shows who asks, the tenant the grant reaches and the requested scopes. On the MCP face it also names the organization.
 
@@ -45,7 +49,11 @@ A registered app shows its registered name and logo. A client known by its metad
 
 A client that registers only through dynamic client registration (RFC 7591) cannot connect. It needs a Client ID Metadata Document or a registered app.
 
-An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant and is no client of the provider: no authorization request or consent names it.
+An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
+
+The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
+
+An assertion counts once and must expire within five minutes. Its audience is the issuer, which the LTI configuration gives as the authorization server, or the token endpoint's address. The provider compares the latter with the host it sees: behind a proxy, only the public host matches.
 
 A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
 
@@ -65,20 +73,22 @@ A token never crosses tenants. Every token names a resource (RFC 8707): `<backen
 
 | Setting | Value |
 | --- | --- |
-| Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` (service accounts only) |
+| Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` (service accounts and installed LTI tools only) |
 | Access token | RS256 JWT bearer token, bound to no client key, 1 hour |
 | Refresh token | 30 days, rotated on use. Grants live 30 days. |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
 A guard verifies a token locally against the public signing keys, with no round trip to this worker and no row per token.
 
-A person's token rests on its grant, and a service account's on the API key it was minted with. The guard reads that at every request. Anything that ends a grant or a key stops its tokens at the next request, in every process. A membership change counts just as fast.
+A person's token rests on its grant, and a service account's on the API key it was minted with. An installed LTI tool's rests on its installation: approved, active and still granted every scope the token carries. The guard reads that at every request. Anything that ends a grant or a key, disables an installation or takes a scope from it stops its tokens at the next request, in every process. A membership change counts just as fast.
 
 A change to anything else the grant policy reads, such as the user row, counts at once in the process that made it. Other processes see it within seconds.
 
 ## Keystore
 
 `signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Of the three live keys, `current` signs, `next` is published ahead of use, and `previous` stays published for the tokens it signed before the last rotation. The keys rotate on a schedule while the authorization server runs, with no restart. Deleting a leaked key's row revokes every token it signed. The authorization server replaces it at its next key check, or at once after a restart.
+
+The current key also signs the assertion the app sends as an LTI tool, when it asks a connected platform for a token to import a course's members.
 
 ## Store and sweep
 

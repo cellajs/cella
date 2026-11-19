@@ -35,6 +35,13 @@ vi.mock('#/lib/mailer', async (importOriginal) => {
   return { ...actual, mailer: { ...actual.mailer, sendEmails: vi.fn(actual.mailer.sendEmails) } };
 });
 
+// The core suite runs without a job store: a producer's `send` is recorded, and a test runs the queue's handler itself.
+vi.mock('#/lib/pg-boss', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/lib/pg-boss')>();
+  const producer = { send: vi.fn(async () => null) };
+  return { ...actual, getPgBoss: vi.fn(async () => producer) };
+});
+
 // No test reaches object storage, whose client sends over node:https: every key names a stored 1-byte object, and a
 // delete succeeds. A test of a missing object or a failed delete overrides one function with `vi.mocked`.
 vi.mock('#/lib/object-storage', async (importOriginal) => {

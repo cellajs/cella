@@ -2,6 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { ltiImportIssues } from '#/modules/auth/flows/lti/lti-contexts-db';
+import { orderByQuerySchema, pageQuerySchema, validUuidSchema } from '#/schemas';
+import { channelBaseSchema } from '#/schemas/entity-base';
 
 /** What a platform opens the registration link with. */
 export const ltiRegisterQuerySchema = z.object({
@@ -9,6 +12,12 @@ export const ltiRegisterQuerySchema = z.object({
   openid_configuration: z.string().max(maxLength.url).describe("The address of the platform's OpenID configuration"),
   registration_token: z.string().max(maxLength.url).optional().describe("The platform's token for the registration request"),
 });
+
+/** An LTI id: a person, a deployment, a context or a resource link, at most 255 characters (LTI Core 1.3, section 5). */
+export const ltiIdSchema = z.string().min(1).max(255);
+
+/** A profile claim, kept only when it fits a column; a longer or empty one is dropped. */
+export const profileClaim = z.string().min(1).max(maxLength.field).optional().catch(undefined);
 
 const platformUrlSchema = z.string().max(maxLength.url).refine(isFetchableUrl);
 const memberListSchema = z.array(z.string().max(maxLength.field)).max(100);
@@ -80,4 +89,29 @@ export const ltiFinishFormSchema = z.object({
   id_token: idTokenSchema,
   state: z.string().max(maxLength.url).optional(),
   storage_value: z.string().max(maxLength.field).optional(),
+});
+
+/** The LTI contexts of an organization, the courses launched most recently first by default. */
+export const listLtiContextsQuerySchema = pageQuerySchema.extend({
+  connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
+});
+
+export const ltiContextSchema = z.object({
+  id: z.string(),
+  connectionId: z.string().describe('The LTI connection whose platform launched it'),
+  contextId: z.string().describe("The platform's id of the context"),
+  label: z.string().nullable().describe("The platform's short name of the context, such as a course code"),
+  title: z.string().nullable(),
+  channel: channelBaseSchema,
+  apiUrl: z.string().nullable().describe("The platform's API that the member import reads, from the last launch that named one; null when none did"),
+  importRanAt: z.string().nullable().describe('When the last member import ran; null before the first'),
+  importReadCount: z.int().nullable().describe('How many people the last member import read from the platform'),
+  importIssue: z
+    .enum(ltiImportIssues)
+    .nullable()
+    .describe(
+      "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
+    ),
+  createdAt: z.string().describe('When the first launch recorded it'),
 });

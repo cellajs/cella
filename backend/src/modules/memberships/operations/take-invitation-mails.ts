@@ -1,6 +1,7 @@
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getRateLimiterInstance, getRetryAfter, refundAttempt, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
+import type { LimiterStore } from '#/middlewares/rate-limiter/types';
 
 const day = 60 * 60 * 24;
 const addressLimits = { points: 1, duration: day };
@@ -31,7 +32,15 @@ interface TakeInvitationMailsInput {
 export interface TakenInvitationMails {
   emails: string[];
   heldBack: Set<string>;
+  /**
+   * Each reserved address, and the tenant's points with a held invitation's, by the store that counted them: the
+   * database's, or its in-memory insurance while the database was out. A refund goes back there.
+   */
+  reserved: { addresses: Map<string, LimiterStore>; tenant?: { store: LimiterStore; points: number } };
 }
+
+/** A take that reserved nothing, for mails whose caps were taken before. */
+export const nothingTaken = (): TakenInvitationMails => ({ emails: [], heldBack: new Set(), reserved: { addresses: new Map() } });
 
 /**
  * Takes the invitation mails an inviter's request is about to send from both caps, before any row is written. An
@@ -50,25 +59,29 @@ export async function takeInvitationMails(
     mailNow.map(async (email) => ({ email, reservation: await reserveAttempt(addressMails, addressKey(tenantId, email), addressLimits) })),
   );
   const heldBack = new Set(reservations.flatMap(({ email, reservation }) => (reservation.granted ? [] : [email])));
+  const addresses = new Map(reservations.flatMap(({ email, reservation }) => (reservation.granted ? [[email, reservation.store] as const] : [])));
 
   const count = mailNow.length - heldBack.size + mailAtPublish;
   const budget = tenant.restrictions.rateLimits.invitationEmailsPerDay;
-  if (!count || budget === 0) return { emails: mailNow, heldBack };
+  if (!count || budget === 0) return { emails: mailNow, heldBack, reserved: { addresses } };
 
   const total = await reserveAttempt(tenantMails, tenantId, { points: budget, duration: day }, count);
-  if (total.granted) return { emails: mailNow, heldBack };
+  if (total.granted) return { emails: mailNow, heldBack, reserved: { addresses, tenant: { store: total.store, points: count } } };
 
-  for (const { email, reservation } of reservations) {
-    if (reservation.granted) await refundAttempt(reservation.store, addressKey(tenantId, email));
-  }
+  for (const [email, store] of addresses) await refundAttempt(store, addressKey(tenantId, email));
   throw new AppError(429, 'invitation_limit_reached', 'warn', { meta: { retryAfter: getRetryAfter(total.state.msBeforeNext) } });
 }
 
-/** Gives back what {@link takeInvitationMails} took for addresses whose mail did not go out, so a resend the same day can. */
-export async function refundInvitationMails(ctx: InvitationMailsContext, emails: string[]): Promise<void> {
-  if (!emails.length) return;
-  const { tenantId, tenant } = ctx.var;
+/**
+ * Gives back what {@link takeInvitationMails} reserved, to the store that counted it. With `emails`, the addresses
+ * among them whose mail did not go out: a resend the same day can mail them. Without, all of it, a held invitation's
+ * points included, for a request that wrote nothing.
+ */
+export async function refundInvitationMails(ctx: InvitationMailsContext, { reserved }: TakenInvitationMails, emails?: string[]): Promise<void> {
+  const { tenantId } = ctx.var;
+  const given = [...reserved.addresses].filter(([email]) => !emails || emails.includes(email));
+  for (const [email, store] of given) await refundAttempt(store, addressKey(tenantId, email));
 
-  for (const email of emails) await refundAttempt(addressMails, addressKey(tenantId, email));
-  if (tenant.restrictions.rateLimits.invitationEmailsPerDay !== 0) await refundAttempt(tenantMails, tenantId, emails.length);
+  const points = emails ? given.length : (reserved.tenant?.points ?? 0);
+  if (reserved.tenant && points) await refundAttempt(reserved.tenant.store, tenantId, points);
 }

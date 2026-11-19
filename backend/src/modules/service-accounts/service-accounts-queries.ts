@@ -1,7 +1,9 @@
 import { and, count, desc, eq, getColumns, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
@@ -22,13 +24,16 @@ const serviceAccountSelect = { ...getColumns(serviceAccountsTable), lastSeenAt: 
 /** Joins an account's `actors` row; every query that selects {@link serviceAccountSelect} needs it. */
 const serviceAccountActorJoin = eq(actorsTable.id, serviceAccountsTable.id);
 
-/** The account by id inside a tenant, or undefined. */
+/** The accounts a tenant's admins manage: every one but the account an LTI connection writes as. */
+const managedInTenant = (tenantId: string) => and(eq(serviceAccountsTable.tenantId, tenantId), isNull(serviceAccountsTable.connectionId));
+
+/** The account by id inside a tenant, or undefined; undefined too for the account an LTI connection writes as. */
 export async function findServiceAccountInTenant(ctx: DbContext, { id, tenantId }: InTenantOpts & { id: string }) {
   const [account] = await ctx.var.db
     .select(serviceAccountSelect)
     .from(serviceAccountsTable)
     .innerJoin(actorsTable, serviceAccountActorJoin)
-    .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId)))
+    .where(and(eq(serviceAccountsTable.id, id), managedInTenant(tenantId)))
     .limit(1);
   return account;
 }
@@ -39,9 +44,12 @@ interface FindServiceAccountsPaginatedOpts extends InTenantOpts {
   limit: number;
 }
 
-/** A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is organization scope. */
+/**
+ * A page of the accounts the tenant's admins manage, newest first, and the total. A tenant holds one organization, so
+ * tenant scope is organization scope.
+ */
 export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q, offset, limit }: FindServiceAccountsPaginatedOpts) {
-  const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId)];
+  const where: (SQL | undefined)[] = [managedInTenant(tenantId)];
   const search = searchFilter([serviceAccountsTable.name], q);
   if (search) where.push(search);
 
@@ -88,9 +96,30 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
   return account;
 }
 
-/** Accounts are disabled, never deleted; only active ones count against the quota. */
+/**
+ * Disables the account an LTI connection writes as, at the connection's delete. The account stays, and what it wrote
+ * keeps naming it. It keeps the connection's id too: no admin comes to manage it.
+ */
+export async function disableConnectionServiceAccount(ctx: DbContext, { connectionId, by }: { connectionId: string; by: ActorId }) {
+  await ctx.var.db
+    .update(serviceAccountsTable)
+    .set({ status: 'disabled', ...updateStamps(by) })
+    .where(eq(serviceAccountsTable.connectionId, connectionId));
+}
+
+/** The id of the account an LTI connection writes as; undefined before one was made. */
+export async function findConnectionServiceAccountId(ctx: DbContext, { connectionId }: { connectionId: string }) {
+  const [account] = await ctx.var.db
+    .select({ id: serviceAccountsTable.id })
+    .from(serviceAccountsTable)
+    .where(eq(serviceAccountsTable.connectionId, connectionId))
+    .limit(1);
+  return account?.id;
+}
+
+/** Accounts are disabled, never deleted; only active ones the tenant's admins manage count against the quota. */
 export async function countActiveServiceAccounts(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  return ctx.var.db.$count(serviceAccountsTable, and(eq(serviceAccountsTable.tenantId, tenantId), eq(serviceAccountsTable.status, 'active')));
+  return ctx.var.db.$count(serviceAccountsTable, and(managedInTenant(tenantId), eq(serviceAccountsTable.status, 'active')));
 }
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */

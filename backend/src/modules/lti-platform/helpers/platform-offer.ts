@@ -2,6 +2,7 @@ import { appConfig } from 'shared';
 import { env } from '#/env';
 import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
 import { type LtiReleasableField, ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
+import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 
 /** The platform's own LTI routes, as paths under the issuer; the OAuth worker serves them beside the provider. */
 export const ltiIssuerPaths = {
@@ -29,7 +30,7 @@ export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.va
 /**
  * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1), with the key set and the token
  * endpoint of the authorization server. The platform signs with RS256 keys only and takes LTI tools that authenticate
- * with them.
+ * with them. An installed LTI tool may ask for the access scopes its routes read: an admin grants them to its own tokens.
  */
 export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: string; tokenEndpoint: string }) => ({
   issuer: appConfig.oauthUrl,
@@ -37,10 +38,12 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
   registration_endpoint: ltiIssuerUrl('registration'),
   jwks_uri: jwksUri,
   token_endpoint: tokenEndpoint,
+  // The audience of an LTI tool's client assertion. The token endpoint's own address is accepted only at the host the provider sees.
+  authorization_server: appConfig.oauthUrl,
   token_endpoint_auth_methods_supported: ['private_key_jwt'],
   token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-  // The spec requires `openid`. The platform serves no LTI service and offers no service scope beside it.
-  scopes_supported: ['openid'],
+  // The spec requires `openid`. The platform serves no LTI service: beside it are the API's scopes an installation can hold.
+  scopes_supported: ['openid', ...ltiToolScopes],
   response_types_supported: ['id_token'],
   subject_types_supported: ['public'],
   id_token_signing_alg_values_supported: ['RS256'],
@@ -56,7 +59,7 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
 export const requestedFields = (claims: readonly string[]): LtiReleasableField[] =>
   ltiReleasableFields.filter((field) => ltiFieldClaims[field].some((claim) => claims.includes(claim)));
 
-/** What a launch can tell about the person, from the user as the API serves it: the address only once proven. */
+/** What a launch and a member row can tell about the person, from the user as the API serves it: the address only once proven. */
 interface PersonalValues {
   name: string;
   givenName: string | null;
@@ -74,8 +77,8 @@ const claimValues = {
 } satisfies Record<(typeof ltiFieldClaims)[LtiReleasableField][number], (person: PersonalValues) => string | null>;
 
 /**
- * The personal claims of a launch: of each released field, the claims the LTI tool asked for, where the person has a
- * value. None when nothing is released.
+ * The personal claims of a launch and of a member row: of each released field, the claims the LTI tool asked for, where
+ * the person has a value. None when nothing is released.
  */
 export const releasedClaims = (released: readonly LtiReleasableField[], asked: readonly string[], person: PersonalValues): Record<string, string> => {
   const claims: Record<string, string> = {};

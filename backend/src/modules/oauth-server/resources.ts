@@ -32,8 +32,11 @@ export function parseResource(uri: string): ResourceRef | null {
   return null;
 }
 
-/** Every read scope of the catalog: what an MCP client asks for first, so its first consent grants no write. */
-const readScopes = accessScopes.all.filter((scope) => scope.endsWith(':read'));
+/**
+ * The read scope of every entity type an MCP tool may act on: what an MCP client asks for first, so its first consent
+ * grants no write. A tool's entity is never people (`XTool.entity`).
+ */
+const readScopes = accessScopes.offered.filter((scope) => scope.endsWith(':read'));
 
 /** The read scopes, space-separated, as the MCP face's 401 challenge names them. */
 export const mcpInitialScope = readScopes.join(' ');
@@ -71,8 +74,8 @@ export function protectedResourceMetadata(ref: ResourceRef) {
     resource_name: `${appConfig.name} ${ref.face === 'mcp' ? 'MCP' : 'API'}`,
     authorization_servers: [appConfig.oauthUrl],
     // An MCP client asks for these when no challenge names a scope, and steps up from there; write scopes stay listed
-    // in the authorization server's metadata and on each MCP tool. The API face lists every scope it understands.
-    scopes_supported: ref.face === 'mcp' ? readScopes : [...accessScopes.all],
+    // in the authorization server's metadata and on each MCP tool. The API face lists every scope a client may be offered.
+    scopes_supported: ref.face === 'mcp' ? readScopes : [...accessScopes.offered],
     bearer_methods_supported: ['header'],
     resource_documentation: `${appConfig.frontendUrl}/docs`,
   };

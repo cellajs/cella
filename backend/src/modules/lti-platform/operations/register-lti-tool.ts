@@ -1,3 +1,4 @@
+import { type AccessScope, accessScopes } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -6,6 +7,7 @@ import { spendHandoffToken } from '#/modules/auth/core';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiClaimsSupported, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
 import { insertLtiToolRegistration } from '#/modules/lti-platform/lti-platform-queries';
+import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 import { type LtiToolConfig, type LtiToolRegistrationRequest, ltiToolRegistrationRequestSchema } from '#/modules/lti-platform/lti-platform-schema';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import { log } from '#/utils/logger';
@@ -19,9 +21,11 @@ const isOnDomains = (address: string, domains: string[]) => {
 };
 
 /**
- * The request, checked against what the platform offers. Each of the LTI tool's launch addresses must lie on the
- * domains it declares; the admin approves their origins (`launchOrigins`), where a launch posts a person's claims. Of
- * its messages and claims, the platform records the ones it supports.
+ * The request, checked against what the platform offers. Each of the LTI tool's launch addresses and its key set
+ * address must lie on the domains it declares; the admin approves their origins (`launchOrigins`, `keySetOrigin`):
+ * where a launch posts a person's claims, and whose keys mint the installation's tokens. Of its messages, claims and
+ * access scopes, the platform records the ones it supports; scopes only those its routes read (`ltiToolScopes`), and
+ * only beside the `client_credentials` grant its tokens are requested with.
  * @throws AppError 400 `lti_tool_metadata_invalid` naming the first member refused.
  */
 const parseRegistrationRequest = (body: unknown) => {
@@ -38,20 +42,31 @@ const parseRegistrationRequest = (body: unknown) => {
     ltiToolConfig: { ...config, messages },
   });
   if (!origins.every((origin) => isOnDomains(origin, domains))) throw metadataInvalid('domain');
+  if (!isOnDomains(request.jwks_uri, domains)) throw metadataInvalid('jwks_uri');
   if (!messages.length) throw metadataInvalid('messages');
 
   const recorded: LtiToolConfig = { ...config, messages, claims: config.claims.filter((claim) => ltiClaimsSupported.includes(claim)) };
-  return { request, recorded };
+  const asked = request.grant_types.includes('client_credentials') ? accessScopes.parse(request.scope) : [];
+  const requestedScopes = ltiToolScopes.filter((scope) => asked.includes(scope));
+  return { request, recorded, requestedScopes };
 };
+
+interface RecordedRegistration {
+  request: LtiToolRegistrationRequest;
+  recorded: LtiToolConfig;
+  requestedScopes: AccessScope[];
+}
 
 /**
  * The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. The
- * platform serves no LTI service: it registers the launch alone, and grants no scope, so the answer names none.
+ * platform serves no LTI service: beside the launch it registers the token grant for the access scopes it recorded,
+ * which an admin may grant the installation.
  */
-const registrationResponse = (request: LtiToolRegistrationRequest, recorded: LtiToolConfig, clientId: string, deploymentId: string) => ({
+const registrationResponse = ({ request, recorded, requestedScopes }: RecordedRegistration, clientId: string, deploymentId: string) => ({
   client_id: clientId,
   application_type: request.application_type,
-  grant_types: ['implicit'],
+  grant_types: requestedScopes.length ? ['implicit', 'client_credentials'] : ['implicit'],
+  ...(requestedScopes.length > 0 && { scope: requestedScopes.join(' ') }),
   response_types: request.response_types,
   redirect_uris: request.redirect_uris,
   initiate_login_uri: request.initiate_login_uri,
@@ -75,7 +90,8 @@ export async function registerLtiToolOp({ registrationToken, body }: { registrat
   return baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const token = await spendHandoffToken({ kind: 'lti-tool-registration', rawToken: registrationToken, txCtx });
-    const { request, recorded } = parseRegistrationRequest(body);
+    const registration = parseRegistrationRequest(body);
+    const { request, recorded, requestedScopes } = registration;
     const organization = await findOrganizationByTenant(txCtx, { tenantId: token.tenantId });
     if (!organization) throw new AppError(401, 'lti-tool-registration_not_found', 'warn', { meta: { tokenId: token.id } });
 
@@ -91,11 +107,12 @@ export async function registerLtiToolOp({ registrationToken, body }: { registrat
         jwksUri: request.jwks_uri,
         initiateLoginUri: request.initiate_login_uri,
         ltiToolConfig: recorded,
+        requestedScopes,
         createdBy: token.createdBy,
       },
     });
 
     log.info('LTI tool registered', { clientId, installationId: installation.id, tenantId: token.tenantId, domain: recorded.domain });
-    return registrationResponse(request, recorded, clientId, installation.id);
+    return registrationResponse(registration, clientId, installation.id);
   });
 }

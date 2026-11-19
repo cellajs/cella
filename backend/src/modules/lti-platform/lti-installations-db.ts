@@ -1,4 +1,5 @@
 import { jsonb, snakeCase, uuid } from 'drizzle-orm/pg-core';
+import type { AccessScope } from 'shared';
 import { auditColumns, writerColumn } from '#/db/utils/audit-columns';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
@@ -10,9 +11,9 @@ export const ltiReleasableFields = ['name', 'email', 'picture'] as const;
 export type LtiReleasableField = (typeof ltiReleasableFields)[number];
 
 /**
- * What an LTI tool's installation holds beside its service account: the personal fields its launches may carry and
- * the admin's approval. The account's status decides whether the installation may act. An auth table outside RLS,
- * like the service account it extends.
+ * What an LTI tool's installation holds beside its service account: the personal fields its launches and member rows
+ * may carry, the access scopes its own tokens may carry and the admin's approval. The account's status decides whether
+ * the installation may act. An auth table outside RLS, like the service account it extends.
  */
 export const ltiInstallationsTable = snakeCase.table('lti_installations', {
   serviceAccountId: uuid()
@@ -21,6 +22,8 @@ export const ltiInstallationsTable = snakeCase.table('lti_installations', {
     .$type<ServiceAccountId>(),
   /** Empty until an approval releases some; never more than the LTI tool asked for. */
   releasedFields: jsonb().$type<LtiReleasableField[]>().notNull().default([]),
+  /** Empty until an admin grants some; never more than the registration asked for. A token's scopes are read here at every request. */
+  grantedScopes: jsonb().$type<AccessScope[]>().notNull().default([]),
   approvedAt: isoTimestamp(),
   approvedBy: writerColumn(),
   ...auditColumns(),

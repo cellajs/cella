@@ -1,20 +1,20 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
-import { ltiClaims } from '#/lib/lti-vocabulary';
+import { ltiApiClaim, ltiClaims } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
-import { launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { launchApiClaim, launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
-import { ltiContextTypes, ltiRolesFor } from '#/modules/lti-platform/launch-context';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { readAsLauncher } from '#/modules/lti-platform/operations/start-lti-launch';
 import { findServedUserById } from '#/modules/user/user-queries';
-import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
@@ -77,22 +77,6 @@ const spendLaunchRecord = async ({ loginHint, messageHint, clientId }: { loginHi
 
 type LaunchTarget = NonNullable<Awaited<ReturnType<typeof findLtiLaunchTarget>>>;
 
-/**
- * The channel a launch names as its LTI context: the resource link's own channel when it is one, else its nearest
- * ancestor that is, else none (`ltiContextTypes`).
- */
-const findContextChannel = async (channelType: ChannelEntityType, channel: EntityModel<ChannelEntityType>) => {
-  const types = ltiContextTypes(channelType);
-  if (types) return { channelType, channel, types };
-  for (const ancestor of hierarchy.resolveNonNullAncestors(channelType, channel)) {
-    const ancestorTypes = ltiContextTypes(ancestor.type);
-    if (!ancestorTypes) continue;
-    const found = await resolveEntity(dbCtx, { entityType: ancestor.type, identifier: ancestor.id });
-    return found ? { channelType: ancestor.type, channel: found, types: ancestorTypes } : null;
-  }
-  return null;
-};
-
 /** Who launches, checked at this moment: the installation approved and active, and the person able to launch. */
 const assertLaunchAllowed = async ({ personId, target }: { personId: string; target: LaunchTarget }) => {
   const { account, installation, resourceLink } = target;
@@ -109,16 +93,21 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
   return { person, ...launcher };
 };
 
-/** The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. */
+/**
+ * The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. The API
+ * claim goes only to an LTI tool an admin granted a scope.
+ */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
   const { person, access, channel } = await assertLaunchAllowed({ personId, target });
 
-  const context = await findContextChannel(resourceLink.channelType, channel);
+  const placed = placementContext(resourceLink);
+  const contextChannel =
+    placed &&
+    (placed.channelId === channel.id ? channel : await resolveEntity(dbCtx, { entityType: placed.channelType, identifier: placed.channelId }));
+  const context = placed && contextChannel ? { ...placed, channel: contextChannel } : null;
   // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
-  const roles = context
-    ? ltiRolesFor(context.channelType, (action) => checkAccess(access, action, buildSubjectFromEntity(context.channelType, context.channel)).allowed)
-    : [];
+  const roles = context ? ltiRolesIn(access, context.channelType, context.channel) : [];
   const custom = launchCustom(client, resourceLink.custom);
 
   return {
@@ -140,6 +129,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     ...(Object.keys(custom).length && { [ltiClaims.custom]: custom }),
     [ltiClaims.launchPresentation]: { document_target: 'iframe', locale: person.languageCode },
     [ltiClaims.toolPlatform]: { guid: resourceLink.tenantId, name: appConfig.name, product_family_code: appConfig.slug, version: env.RELEASE_SHA },
+    ...(installation.grantedScopes.length > 0 && { [ltiApiClaim(appConfig.oauthUrl)]: launchApiClaim(resourceLink, context) }),
   };
 };
 

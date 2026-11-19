@@ -1,27 +1,37 @@
-import { and, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
-import { hierarchy } from 'shared';
+import { and, asc, count, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
+import { type AccessScope, appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { type LtiReleasableField, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
 import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { insertServiceAccount, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import { servedUserSelect } from '#/modules/user/helpers/select';
+import { usersTable } from '#/modules/user/user-db';
 import type { OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 
-const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, ...clientColumns } = getColumns(oauthClientsTable);
+const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
 /**
  * An installation with its service account and its registration; the where clause keeps LTI registrations only, whose
- * login address `oauth_clients_lti_check` holds present.
+ * login and key set addresses `oauth_clients_lti_check` holds present.
  */
 const installationSelect = {
   account: serviceAccountsTable,
   installation: ltiInstallationsTable,
-  client: { ...clientColumns, ltiToolConfig: sql<LtiToolConfig>`${ltiToolConfig}`, initiateLoginUri: sql<string>`${initiateLoginUri}` },
+  client: {
+    ...clientColumns,
+    ltiToolConfig: sql<LtiToolConfig>`${ltiToolConfig}`,
+    initiateLoginUri: sql<string>`${initiateLoginUri}`,
+    jwksUri: sql<string>`${jwksUri}`,
+  },
 };
 
 const installationJoin = (ctx: DbContext) =>
@@ -45,6 +55,17 @@ export async function findLtiInstallations(ctx: DbContext, { tenantId, order }: 
   return installationJoin(ctx)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), isNotNull(ltiToolConfig)))
     .orderBy(...orderBy);
+}
+
+/**
+ * The installation of an LTI registration, by the registration's `client_id`, in the one tenant the registration is
+ * private to; undefined for any other client. `service_accounts_oauth_client_idx` holds one installation per client and tenant.
+ */
+export async function findLtiInstallationByClient(ctx: DbContext, { clientId }: { clientId: string }) {
+  const [found] = await installationJoin(ctx).where(
+    and(eq(oauthClientsTable.id, clientId), eq(serviceAccountsTable.tenantId, oauthClientsTable.tenantId), isNotNull(ltiToolConfig)),
+  );
+  return found;
 }
 
 /** One installation of the tenant with its registration; undefined when the tenant has no such installation. */
@@ -100,20 +121,40 @@ interface ApproveLtiInstallationOpts {
   id: string;
   tenantId: string;
   releasedFields: LtiReleasableField[];
+  grantedScopes: AccessScope[];
   by: ActorId;
 }
 
 /**
  * Approves an installation inside the caller's transaction: its service account turns active and its side row records
- * the released fields and the approval, both stamped by `by`.
+ * the released fields, the granted scopes and the approval, both stamped by `by`.
  * @returns What the two rows were set to.
  */
-export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, by }: ApproveLtiInstallationOpts) {
+export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, grantedScopes, by }: ApproveLtiInstallationOpts) {
   const stamps = updateStamps(by);
-  const decision = { releasedFields: [...new Set(releasedFields)], approvedAt: stamps.updatedAt, approvedBy: stamps.updatedBy, ...stamps };
+  const decision = {
+    releasedFields: [...new Set(releasedFields)],
+    grantedScopes: [...new Set(grantedScopes)],
+    approvedAt: stamps.updatedAt,
+    approvedBy: stamps.updatedBy,
+    ...stamps,
+  };
   await updateServiceAccount(ctx, { id, tenantId, values: { status: 'active', ...stamps } });
   await ctx.var.db.update(ltiInstallationsTable).set(decision).where(eq(ltiInstallationsTable.serviceAccountId, id));
   return { stamps, decision };
+}
+
+/**
+ * Replaces the access scopes an installation's tokens may carry, stamped by `by`.
+ * @returns What the side row was set to.
+ */
+export async function updateLtiInstallationScopes(
+  ctx: DbContext,
+  { id, grantedScopes, by }: { id: string; grantedScopes: AccessScope[]; by: ActorId },
+) {
+  const values = { grantedScopes: [...new Set(grantedScopes)], ...updateStamps(by) };
+  await ctx.var.db.update(ltiInstallationsTable).set(values).where(eq(ltiInstallationsTable.serviceAccountId, id));
+  return values;
 }
 
 /** Deletes a registration private to the tenant. The service account that installs it and its side row cascade. */
@@ -149,6 +190,54 @@ export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.id, id), eq(ltiResourceLinksTable.organizationId, organizationId)));
   return found;
+}
+
+/** What `placementContext` reads of a resource link: its channel and the channel id columns above it. */
+const placementSelect = pick(getColumns(ltiResourceLinksTable), [
+  'channelType',
+  'channelId',
+  ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
+]);
+
+/** The channels of every resource link that places the installation, in the organization when one is given. */
+export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId }: { installationId: string; organizationId?: string }) {
+  const inOrganization = organizationId ? eq(ltiResourceLinksTable.organizationId, organizationId) : undefined;
+  return ctx.var.db
+    .select(placementSelect)
+    .from(ltiResourceLinksTable)
+    .where(and(eq(ltiResourceLinksTable.installationId, installationId), inOrganization));
+}
+
+interface FindLtiMembersPageOpts {
+  organizationId: string;
+  channelType: ChannelEntityType;
+  channelId: string;
+  order: OrderDirection;
+  offset: number;
+  limit: number;
+}
+
+/**
+ * A page of a channel's people by id, and the total: of each, what a launch's personal claims read, the address only
+ * once proven.
+ */
+export async function findLtiMembersPage(ctx: DbContext, { organizationId, channelType, channelId, order, offset, limit }: FindLtiMembersPageOpts) {
+  const { db } = ctx.var;
+  const inChannel = and(
+    eq(membershipsTable.organizationId, organizationId),
+    eq(membershipsTable.channelType, channelType),
+    eq(membershipsTable.channelId, channelId),
+  );
+  const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
+  const itemsQuery = db
+    .select({ id, name, givenName, familyName, email, thumbnailUrl })
+    .from(usersTable)
+    .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+    .where(inChannel)
+    .orderBy(order === 'asc' ? asc(usersTable.id) : desc(usersTable.id))
+    .limit(limit)
+    .offset(offset);
+  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(membershipsTable).where(inChannel)));
 }
 
 export async function insertLtiResourceLink(ctx: DbContext, { values }: { values: typeof ltiResourceLinksTable.$inferInsert }) {

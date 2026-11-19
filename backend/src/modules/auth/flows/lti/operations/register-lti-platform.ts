@@ -1,9 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { type GuardedFetchInit, guardedFetch } from '#/lib/guarded-fetch';
+import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,
@@ -17,20 +18,7 @@ import { log } from '#/utils/logger';
 /** The registration runs before any tenant context exists, and connections sit outside RLS. */
 const dbCtx = { var: { db: baseDb } };
 
-/** Tests answer from a fake platform; production reaches the platform through the guarded fetch's own. */
-export type PlatformFetchOptions = Pick<GuardedFetchInit, 'resolve' | 'transport'>;
-
 const invalidConfiguration = (reason: string) => new AppError(400, 'lti_configuration_invalid', 'warn', { meta: { reason } });
-
-/**
- * Whether the configuration's address lies under its issuer: same origin, and the issuer's path a prefix of its own.
- * A configuration served from elsewhere could name any issuer, and the app would trust launches signed in its name.
- */
-const isUnderIssuer = (configurationUrl: URL, issuer: string) => {
-  const issuerUrl = new URL(issuer);
-  const issuerPath = issuerUrl.pathname.endsWith('/') ? issuerUrl.pathname : `${issuerUrl.pathname}/`;
-  return configurationUrl.origin === issuerUrl.origin && configurationUrl.pathname.startsWith(issuerPath);
-};
 
 /** The app signs its client assertions with RS256 keys, and a launch is an RS256 ID token. */
 const supportsLtiTool = (configuration: LtiPlatformConfiguration) =>
@@ -39,15 +27,7 @@ const supportsLtiTool = (configuration: LtiPlatformConfiguration) =>
   configuration.id_token_signing_alg_values_supported.includes('RS256') &&
   configuration.response_types_supported.includes('id_token');
 
-const parseJson = (text: string): unknown => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-};
-
-/** The platform's OpenID configuration, read from its address and checked against it. */
+/** The platform's OpenID configuration, read from its address and checked against it and its issuer. */
 const fetchPlatformConfiguration = async (address: string, options: PlatformFetchOptions) => {
   const configurationUrl = URL.canParse(address) ? new URL(address) : null;
   if (!configurationUrl || configurationUrl.hash) throw invalidConfiguration('address');
@@ -57,7 +37,8 @@ const fetchPlatformConfiguration = async (address: string, options: PlatformFetc
 
   const parsed = ltiPlatformConfigurationSchema.safeParse(parseJson(response.text));
   if (!parsed.success) throw invalidConfiguration('members');
-  if (!isUnderIssuer(configurationUrl, parsed.data.issuer)) throw invalidConfiguration('issuer');
+  // A configuration served from elsewhere could name any issuer, and the app would trust launches signed in its name.
+  if (!isUnder(configurationUrl, new URL(parsed.data.issuer))) throw invalidConfiguration('issuer');
   if (!supportsLtiTool(parsed.data)) throw new AppError(400, 'lti_platform_unsupported', 'warn', { meta: { issuer: parsed.data.issuer } });
   return parsed.data;
 };

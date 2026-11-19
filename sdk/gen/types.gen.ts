@@ -476,7 +476,7 @@ export type StreamError = {
 };
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
  */
 export type LtiInstallation = {
   /**
@@ -497,6 +497,10 @@ export type LtiInstallation = {
    * The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts
    */
   launchOrigins: Array<string>;
+  /**
+   * The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too
+   */
+  keySetOrigin: string;
   description: string | null;
   /**
    * The claims the LTI tool asked for that the platform can release
@@ -507,6 +511,14 @@ export type LtiInstallation = {
    */
   requestedFields: Array<'name' | 'email' | 'picture'>;
   releasedFields: Array<'name' | 'email' | 'picture'>;
+  /**
+   * The access scopes the LTI tool asked for in its registration, of those the platform knows: what an admin may grant
+   */
+  requestedScopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+  /**
+   * The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in
+   */
+  grantedScopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
   /**
    * `pending` until an admin approves or rejects it
    */
@@ -860,6 +872,7 @@ export type ServiceAccount = {
     role: 'admin' | 'member';
   }>;
   oauthClientId: string | null;
+  connectionId: string | null;
   createdAt: string;
   createdBy:
     | {
@@ -3766,7 +3779,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -3992,6 +4005,127 @@ export type SendStepUpCodeResponses = {
 };
 
 export type SendStepUpCodeResponse = SendStepUpCodeResponses[keyof SendStepUpCodeResponses];
+
+export type ListLtiContextsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * Lists the contexts of this LTI connection only
+     */
+    connectionId?: string;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-contexts';
+};
+
+export type ListLtiContextsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiContextsError = ListLtiContextsErrors[keyof ListLtiContextsErrors];
+
+export type ListLtiContextsResponses = {
+  /**
+   * LTI contexts
+   */
+  200: {
+    results: Array<{
+      id: string;
+      /**
+       * The LTI connection whose platform launched it
+       */
+      connectionId: string;
+      /**
+       * The platform's id of the context
+       */
+      contextId: string;
+      /**
+       * The platform's short name of the context, such as a course code
+       */
+      label: string | null;
+      title: string | null;
+      channel: ChannelBase;
+      /**
+       * The platform's API that the member import reads, from the last launch that named one; null when none did
+       */
+      apiUrl: string | null;
+      /**
+       * When the last member import ran; null before the first
+       */
+      importRanAt: string | null;
+      /**
+       * How many people the last member import read from the platform
+       */
+      importReadCount: number | null;
+      /**
+       * Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
+       */
+      importIssue:
+        | 'address_refused'
+        | 'scope_not_granted'
+        | 'token_refused'
+        | 'members_refused'
+        | 'retrying'
+        | 'failed'
+        | 'too_many_members'
+        | 'member_limit'
+        | 'inactive'
+        | null;
+      /**
+       * When the first launch recorded it
+       */
+      createdAt: string;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiContextsResponse = ListLtiContextsResponses[keyof ListLtiContextsResponses];
 
 export type CheckSlugData = {
   body: {
@@ -4544,9 +4678,13 @@ export type ListLtiInstallationsResponse = ListLtiInstallationsResponses[keyof L
 export type ApproveLtiInstallationData = {
   body: {
     /**
-     * The personal fields a launch may carry, each one the LTI tool asked for; empty releases none
+     * The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none
      */
     releasedFields: Array<'name' | 'email' | 'picture'>;
+    /**
+     * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
+     */
+    grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
   };
   path: {
     tenantId: string;
@@ -4602,6 +4740,68 @@ export type ApproveLtiInstallationResponses = {
 };
 
 export type ApproveLtiInstallationResponse = ApproveLtiInstallationResponses[keyof ApproveLtiInstallationResponses];
+
+export type UpdateLtiInstallationData = {
+  body: {
+    /**
+     * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
+     */
+    grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}';
+};
+
+export type UpdateLtiInstallationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateLtiInstallationError = UpdateLtiInstallationErrors[keyof UpdateLtiInstallationErrors];
+
+export type UpdateLtiInstallationResponses = {
+  /**
+   * Updated installation
+   */
+  200: LtiInstallation;
+};
+
+export type UpdateLtiInstallationResponse = UpdateLtiInstallationResponses[keyof UpdateLtiInstallationResponses];
 
 export type RejectLtiInstallationData = {
   body?: never;
@@ -4958,6 +5158,108 @@ export type StartLtiLaunchResponses = {
 };
 
 export type StartLtiLaunchResponse = StartLtiLaunchResponses[keyof StartLtiLaunchResponses];
+
+export type ListLtiMembersData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'id' | 'id asc' | 'id desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members';
+};
+
+export type ListLtiMembersErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiMembersError = ListLtiMembersErrors[keyof ListLtiMembersErrors];
+
+export type ListLtiMembersResponses = {
+  /**
+   * LTI members
+   */
+  200: {
+    results: Array<{
+      /**
+       * The person: the id a launch sends as `sub`
+       */
+      id: string;
+      /**
+       * Their LTI roles in the course, as full URIs: the roles a launch there would send them
+       */
+      roles: Array<string>;
+      /**
+       * Their name, when released
+       */
+      name?: string;
+      /**
+       * Their given name, when released and they have one
+       */
+      given_name?: string;
+      /**
+       * Their family name, when released and they have one
+       */
+      family_name?: string;
+      /**
+       * Their proven email address, when released and they have one
+       */
+      email?: string;
+      /**
+       * The address of their picture, when released and they have one
+       */
+      picture?: string;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiMembersResponse = ListLtiMembersResponses[keyof ListLtiMembersResponses];
 
 export type InitiateLtiLaunchLoginData = {
   body?: never;

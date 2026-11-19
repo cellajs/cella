@@ -121,7 +121,7 @@ async function loadInteraction(provider: Provider, c: Context<Env>) {
   const resource = parseResource(String(interaction.params.resource ?? ''));
   if (!resource) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'invalid_target' } });
 
-  const requested = accessScopes.parse(String(interaction.params.scope ?? ''));
+  const requested = accessScopes.parse(String(interaction.params.scope ?? '')).filter((scope) => accessScopes.offered.includes(scope));
 
   const signedIn = await findSession(c);
   const user = signedIn?.user ?? null;

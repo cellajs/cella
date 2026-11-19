@@ -1,4 +1,5 @@
 export * from '#/middlewares/guard/actor-guard';
+export * from '#/middlewares/guard/lti-tool-guard';
 export * from '#/middlewares/guard/org-guard';
 export * from '#/middlewares/guard/public-guard';
 export * from '#/middlewares/guard/service-guard';

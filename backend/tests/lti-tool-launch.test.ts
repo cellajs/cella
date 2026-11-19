@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import {
@@ -9,25 +9,32 @@ import {
   createLtiResourceLink,
   deleteLtiConnection,
   getMe,
+  inviteMembers,
   startLtiLaunch,
   startLtiToolRegistration,
 } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, ltiApiClaim, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { getPgBoss } from '#/lib/pg-boss';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { planLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { lockTenantQuota } from '#/modules/tenants/quota-lock';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
-import { adminRole, defaultHeaders, overrideConfig } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
@@ -78,7 +85,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   type Platform = Awaited<ReturnType<typeof fakePlatform>>;
 
-  /** A tenant's active connection to `platform`, as a registration stores it. */
+  /**
+   * A tenant's active connection to `platform`, as a registration stores it. Its token endpoint sits on another host,
+   * as Brightspace's and Schoology's do: a launch never reads it.
+   */
   async function connect(platform: Platform, deploymentIds = ['deployment-1']) {
     const org = await createTestOrganization();
     const issuer = `https://${platform.name}.example.com`;
@@ -93,7 +103,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         status: 'active',
         config: {
           authorizationEndpoint: `${issuer}/authorize`,
-          tokenEndpoint: `${issuer}/token`,
+          tokenEndpoint: `https://auth.${platform.name}.example.net/token`,
           jwksUri: platform.jwksUri,
           productFamilyCode: 'test',
           version: '1',
@@ -387,6 +397,137 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     expect((await signOut(embeddedHeader)).status).toBe(204);
     expect(await meStatus(embeddedHeader)).toBe(401);
+  });
+
+  // Attack: the platform names where its API is, and the installation's token goes there. Only an API on the platform's
+  // own origin and a member list under it are kept; a launch without the claim keeps what an earlier one kept.
+  it("keeps a launch's API addresses only on the platform's origin, and asks for a member import after a teacher's launch", async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const apiUrl = `${connected.issuer}/api/tenants/t1`;
+    const membersUrl = `${apiUrl}/organizations/o1/lti-members?channelType=organization&channelId=o1`;
+    const teacher = (claim?: Record<string, string>) => ({ [ltiClaims.roles]: [lisContextRoles.instructor], [ltiApiClaim(connected.issuer)]: claim });
+    const kept = async () => {
+      const [row] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+      return { id: row.id, apiUrl: row.apiUrl, membersUrl: row.membersUrl };
+    };
+    const send = vi.mocked((await getPgBoss('producer')).send);
+    const requests: URL[] = [];
+    const recording: GuardedTransport = async ({ url }) => {
+      requests.push(url);
+      return new Response(null, { status: 500 });
+    };
+
+    const untrusted = [
+      { api_url: apiUrl, members_url: 'https://elsewhere.example.com/api/tenants/t1/organizations/o1/lti-members' },
+      {
+        api_url: 'https://elsewhere.example.com/api/tenants/t1',
+        members_url: 'https://elsewhere.example.com/api/tenants/t1/organizations/o1/lti-members',
+      },
+      { api_url: apiUrl, members_url: `${connected.issuer}/api/tenants/t2/organizations/o1/lti-members` },
+      { api_url: apiUrl, members_url: `${apiUrl}/../t2/organizations/o1/lti-members` },
+    ];
+    for (const claim of untrusted) {
+      expect((await launch(connected, teacher(claim))).response.status).toBe(303);
+      expect(await kept()).toMatchObject({ apiUrl: null, membersUrl: null });
+    }
+    await importLtiMembersOp((await kept()).id, { transport: recording, resolve: async () => [{ address: '127.0.0.1', family: 4 }] });
+    expect(requests).toEqual([]);
+    expect(send).not.toHaveBeenCalled();
+
+    await launch(connected, teacher({ api_url: apiUrl, members_url: membersUrl }));
+    const { id: contextId, ...addresses } = await kept();
+    expect(addresses).toEqual({ apiUrl, membersUrl });
+    expect(send).toHaveBeenCalledWith(ltiMemberImportQueue.name, { contextId }, { singletonKey: contextId });
+
+    send.mockClear();
+    await launch(connected, teacher());
+    await launch(connected);
+    expect(await kept()).toMatchObject({ apiUrl, membersUrl });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
+  async function limitMembers({ org }: Connected, free = 0) {
+    const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
+    const user = (await countTakenSeats({ var: { db } }, { organizationId: org.id })) + free;
+    await db
+      .update(tenantsTable)
+      .set({ restrictions: { ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, user } } })
+      .where(eq(tenantsTable.id, tenant.id));
+  }
+
+  // Attack: a person the member limit keeps out of an invitation does not walk in by launching; a member always does.
+  it('refuses a launch that needs a seat when the member limit leaves none, and lets a member in', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    await limitMembers(connected);
+
+    await expectRefusalPage((await launch(connected)).response, 403, 'lti_member_limit');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
+    expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
+  });
+
+  // Attack: an archive refuses joining a channel, and a launch is no way around it; a member is never locked out.
+  it('refuses a launch that would add a person to an archived course, and lets a member in with the role they hold', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    // The template's course is the organization, which only a direct write archives.
+    await db.update(organizationsTable).set({ archived: true }).where(eq(organizationsTable.id, connected.org.id));
+
+    await expectRefusalPage((await launch(connected)).response, 403, 'channel_archived');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
+    expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
+    expect(await orgMembershipOf(member.id, connected.org.id)).toMatchObject({ role: adminRole });
+  });
+
+  // Attack: an invitation and a launch that both count the last seat free pass the limit together, unless one lock orders them.
+  it('lets in one of an invitation and a launch racing for the last seat', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const { org } = connected;
+    const admin = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
+    await limitMembers(connected, 1);
+
+    // The quota lock is held until both wait for it: neither counts before the other could.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: (pid: number) => void = () => {};
+    const locked = new Promise<number>((resolve) => {
+      holding = resolve;
+    });
+    const holder = db.transaction(async (tx) => {
+      await lockTenantQuota({ var: { db: tx } }, { tenantId: org.tenantId, key: 'user' });
+      const { rows } = await tx.execute<{ pid: number }>(sql`select pg_backend_pid() as pid`);
+      holding(rows[0].pid);
+      await released;
+    });
+    onTestFinished(async () => {
+      release();
+      await holder.catch(() => undefined);
+    });
+    const pid = await locked;
+
+    const invited = call(inviteMembers, {
+      path: { tenantId: org.tenantId, organizationId: org.id },
+      query: { channelId: org.id, channelType: 'organization' },
+      body: { emails: [`racer-${nanoid(6)}@example.com`], role: memberRole },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    const launched = launch(connected);
+    await vi.waitFor(async () => {
+      const { rows } = await db.execute<{ waiting: number }>(
+        sql`select count(*)::int as waiting from pg_stat_activity where ${pid} = any(pg_blocking_pids(pid))`,
+      );
+      expect(rows[0].waiting).toBe(2);
+    });
+    release();
+    await holder;
+
+    const [invitation, launching] = await Promise.all([invited, launched]);
+    expect([invitation.response.status === 200, launching.response.status === 303].filter(Boolean)).toHaveLength(1);
   });
 
   // D6: an address across institutions is no proof of the account behind it.

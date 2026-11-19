@@ -14,7 +14,9 @@ A service account is tenant-scoped and holds role bindings like a member does. "
 
 A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column.
 
-An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)).
+An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)). Then it acts on its own, within the scopes the admin granted: a tab gives it the least privileged role of the tab's course, the channel a launch names as its context.
+
+The other way round, each LTI platform the app is connected to as an LTI tool has a service account in the app. The import of a course's members writes as it. It shows in no list and takes no API key.
 
 ## Proving who you are
 
@@ -28,9 +30,13 @@ A key can expire, be rolled or be revoked. After a roll the old key keeps workin
 
 ### Access tokens
 
-The app is its own authorization server, on the same origin under `/oauth` ([OAuth](./OAUTH.md)). A person consents on a screen that names the client and the scopes it asks for. The resulting token acts as that person in one tenant, masked by those scopes. People revoke their consents in their account settings. A service account gets a token from its API key through `client_credentials`.
+The app is its own authorization server, on the same origin under `/oauth` ([OAuth](./OAUTH.md)). A person consents on a screen that names the client and the scopes it asks for. The resulting token acts as that person in one tenant, masked by those scopes. People revoke their consents in their account settings.
 
-Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
+A service account gets a token from its API key through `client_credentials`, and an installed LTI tool with an assertion signed by the key it registered. These two act without a person, as themselves: no person consents, and their own bindings and scopes decide.
+
+Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants.
+
+A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too, except an installed LTI tool's, which works only on the routes for installed LTI tools. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
 
 A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. The next request sees a revoked grant or key and any membership change.
 
@@ -40,14 +46,14 @@ A key or token acts with its actor's role bindings, narrowed by its scopes and b
 
 ### Access scopes
 
-Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check:
+Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. People have `user:read` alone, which only an installed LTI tool can be granted, and a key or token whose scopes leave it out reads no one. A scope masks the actor's bindings in every permission check:
 
 - **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
 - **Unknown scope:** fails closed.
 - **No mask:** a session or a key issued without scopes is unmasked.
 - **REST refusal:** answers as for an actor without the permission, with no `insufficient_scope` challenge.
 - **MCP refusal:** names the scope to step up to.
-- **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents and consent screen.
+- **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents, the consent screen and an LTI platform's configuration.
 
 ### Quotas and limits
 

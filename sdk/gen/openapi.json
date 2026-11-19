@@ -48,6 +48,10 @@
             "name": "Actor",
             "description": "Works with a signed-in session, a secret API key or an access token. The request acts as the user or service account behind it."
           },
+          "ltiToolGuard": {
+            "name": "LTI tool",
+            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the courses it is placed in or below, within the scopes an admin granted."
+          },
           "orgGuard": {
             "name": "Organization",
             "description": "Requires membership in this organization or in a channel inside it. System admins also pass."
@@ -399,7 +403,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, imports a course's people from a platform built on the template, and lists each course with how its last import ran for an organization admin.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -417,7 +421,7 @@
     },
     {
       "name": "lti-platform",
-      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry. A resource link places an installation in a channel; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame.",
+      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel and binds it there; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a channel it is placed in.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -533,7 +537,7 @@
       },
       "oauth2": {
         "type": "oauth2",
-        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret. Each route lists the scope it needs; a `write` scope covers `read`.",
+        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret, and installed LTI tools with an assertion signed by the key they registered. Each route lists the scope it needs; a `write` scope covers `read`.",
         "flows": {
           "authorizationCode": {
             "authorizationUrl": "http://localhost:3000/oauth/auth",
@@ -552,7 +556,8 @@
               "organization:read": "Read organizations",
               "organization:write": "Create, update and delete organizations",
               "attachment:read": "Read attachments",
-              "attachment:write": "Create, update and delete attachments"
+              "attachment:write": "Create, update and delete attachments",
+              "user:read": "Read users"
             }
           }
         }
@@ -2388,6 +2393,10 @@
             },
             "description": "The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"
           },
+          "keySetOrigin": {
+            "type": "string",
+            "description": "The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too"
+          },
           "description": {
             "type": ["string", "null"]
           },
@@ -2412,6 +2421,22 @@
               "type": "string",
               "enum": ["name", "email", "picture"]
             }
+          },
+          "requestedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+            },
+            "description": "The access scopes the LTI tool asked for in its registration, of those the platform knows: what an admin may grant"
+          },
+          "grantedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+            },
+            "description": "The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in"
           },
           "status": {
             "type": "string",
@@ -2537,10 +2562,13 @@
           "logoUri",
           "domain",
           "launchOrigins",
+          "keySetOrigin",
           "description",
           "claims",
           "requestedFields",
           "releasedFields",
+          "requestedScopes",
+          "grantedScopes",
           "status",
           "approvedAt",
           "createdAt",
@@ -2548,7 +2576,7 @@
           "createdBy",
           "updatedBy"
         ],
-        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.",
+        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.",
         "example": {
           "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
           "clientId": "cee45ffc-5154-4244-971c-f20f8bf45639",
@@ -2556,10 +2584,13 @@
           "logoUri": "https://peer-review.example.com/logo.svg",
           "domain": "peer-review.example.com",
           "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+          "keySetOrigin": "https://peer-review.example.com",
           "description": "Students review the drafts of their peers.",
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
           "releasedFields": ["name"],
+          "requestedScopes": ["user:read"],
+          "grantedScopes": ["user:read"],
           "status": "active",
           "approvedAt": "2024-09-19T11:48:50.276Z",
           "createdAt": "2024-09-19T11:48:50.276Z",
@@ -3668,6 +3699,10 @@
             "type": ["string", "null"],
             "maxLength": 255
           },
+          "connectionId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -3791,6 +3826,7 @@
           "status",
           "bindings",
           "oauthClientId",
+          "connectionId",
           "createdAt",
           "createdBy",
           "updatedAt",
@@ -3813,6 +3849,7 @@
             }
           ],
           "oauthClientId": null,
+          "connectionId": null,
           "createdAt": "2024-09-01T22:49:17.262Z",
           "updatedAt": "2024-09-01T22:49:17.262Z",
           "lastSeenAt": "2024-09-01T22:49:17.262Z",
@@ -9454,7 +9491,7 @@
             "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
           },
           "403": {
-            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user."
+            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left."
           },
           "404": {
             "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
@@ -9742,6 +9779,244 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-contexts": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiContexts",
+        "tags": ["connections", "cella"],
+        "summary": "Get LTI contexts",
+        "description": "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Lists the contexts of this LTI connection only"
+            },
+            "required": false,
+            "description": "Lists the contexts of this LTI connection only",
+            "name": "connectionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI contexts",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "3c30b048-4181-4939-86c9-7b21ce1811be",
+                      "connectionId": "88c5b01b-7d77-461f-95df-4a44675c722a",
+                      "contextId": "biology-101",
+                      "label": "BIO-101",
+                      "title": "Introduction to biology",
+                      "channel": {
+                        "id": "50454ce7-2467-4668-8512-20bf097b562b",
+                        "createdAt": "2024-09-21T21:55:19.374Z",
+                        "updatedAt": "2024-12-02T11:07:10.947Z",
+                        "tenantId": "e4w3w9hfoz3c7zunolkyu5e3",
+                        "name": "Hartmann, Raynor and Nader",
+                        "entityType": "organization",
+                        "slug": "hartmann-raynor-and-nader",
+                        "thumbnailUrl": null,
+                        "bannerUrl": null,
+                        "archived": false
+                      },
+                      "apiUrl": "https://lms.example.com/api/tenants/example-tenant",
+                      "importRanAt": "2024-12-15T19:00:35.514Z",
+                      "importReadCount": 42,
+                      "importIssue": null,
+                      "createdAt": "2024-12-10T01:14:23.660Z"
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "connectionId": {
+                            "type": "string",
+                            "description": "The LTI connection whose platform launched it"
+                          },
+                          "contextId": {
+                            "type": "string",
+                            "description": "The platform's id of the context"
+                          },
+                          "label": {
+                            "type": ["string", "null"],
+                            "description": "The platform's short name of the context, such as a course code"
+                          },
+                          "title": {
+                            "type": ["string", "null"]
+                          },
+                          "channel": {
+                            "$ref": "#/components/schemas/ChannelBase"
+                          },
+                          "apiUrl": {
+                            "type": ["string", "null"],
+                            "description": "The platform's API that the member import reads, from the last launch that named one; null when none did"
+                          },
+                          "importRanAt": {
+                            "type": ["string", "null"],
+                            "description": "When the last member import ran; null before the first"
+                          },
+                          "importReadCount": {
+                            "type": ["integer", "null"],
+                            "description": "How many people the last member import read from the platform"
+                          },
+                          "importIssue": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "address_refused",
+                              "scope_not_granted",
+                              "token_refused",
+                              "members_refused",
+                              "retrying",
+                              "failed",
+                              "too_many_members",
+                              "member_limit",
+                              "inactive",
+                              null
+                            ],
+                            "description": "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "When the first launch recorded it"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "connectionId",
+                          "contextId",
+                          "label",
+                          "title",
+                          "channel",
+                          "apiUrl",
+                          "importRanAt",
+                          "importReadCount",
+                          "importIssue",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -10584,10 +10859,13 @@
                       "logoUri": "https://peer-review.example.com/logo.svg",
                       "domain": "peer-review.example.com",
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+                      "keySetOrigin": "https://peer-review.example.com",
                       "description": "Students review the drafts of their peers.",
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
                       "releasedFields": ["name"],
+                      "requestedScopes": ["user:read"],
+                      "grantedScopes": ["user:read"],
                       "status": "active",
                       "approvedAt": "2024-09-19T11:48:50.276Z",
                       "createdAt": "2024-09-19T11:48:50.276Z",
@@ -10662,7 +10940,7 @@
         "operationId": "approveLtiInstallation",
         "tags": ["lti-platform", "cella"],
         "summary": "Approve LTI installation",
-        "description": "Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.",
+        "description": "Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -10711,7 +10989,16 @@
                       "enum": ["name", "email", "picture"]
                     },
                     "maxItems": 3,
-                    "description": "The personal fields a launch may carry, each one the LTI tool asked for; empty releases none"
+                    "description": "The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none"
+                  },
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
                   }
                 },
                 "required": ["releasedFields"]
@@ -10722,6 +11009,126 @@
         "responses": {
           "200": {
             "description": "Approved installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LtiInstallation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateLtiInstallation",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Update LTI installation",
+        "description": "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
+                  }
+                }
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grantedScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                    },
+                    "maxItems": 5,
+                    "description": "The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated installation",
             "content": {
               "application/json": {
                 "schema": {
@@ -11014,7 +11421,7 @@
         "operationId": "createLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Create LTI resource link",
-        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.",
+        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11398,6 +11805,198 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-members": {
+      "get": {
+        "security": [
+          {
+            "oauth2": ["user:read"]
+          }
+        ],
+        "operationId": "listLtiMembers",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get LTI members",
+        "description": "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["ltiToolGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["organization"]
+            },
+            "required": true,
+            "name": "channelType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["id", "id asc", "id desc"],
+              "default": "id asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "id asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI members",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "cc519e50-2f08-4700-9038-495ec36f7a4d",
+                      "roles": ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
+                      "name": "Charlotte Batz"
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The person: the id a launch sends as `sub`"
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Their LTI roles in the course, as full URIs: the roles a launch there would send them"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Their name, when released"
+                          },
+                          "given_name": {
+                            "type": "string",
+                            "description": "Their given name, when released and they have one"
+                          },
+                          "family_name": {
+                            "type": "string",
+                            "description": "Their family name, when released and they have one"
+                          },
+                          "email": {
+                            "type": "string",
+                            "description": "Their proven email address, when released and they have one"
+                          },
+                          "picture": {
+                            "type": "string",
+                            "description": "The address of their picture, when released and they have one"
+                          }
+                        },
+                        "required": ["id", "roles"]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17156,7 +17755,7 @@
                           "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                         },
                         "minItems": 1,
-                        "maxItems": 4
+                        "maxItems": 5
                       },
                       "expiresAt": {
                         "type": "string",
@@ -17192,6 +17791,7 @@
                       }
                     ],
                     "oauthClientId": null,
+                    "connectionId": null,
                     "createdAt": "2024-09-01T22:49:17.262Z",
                     "updatedAt": "2024-09-01T22:49:17.262Z",
                     "lastSeenAt": "2024-09-01T22:49:17.262Z",
@@ -17398,6 +17998,7 @@
                         }
                       ],
                       "oauthClientId": null,
+                      "connectionId": null,
                       "createdAt": "2024-03-18T03:56:02.722Z",
                       "updatedAt": "2024-03-18T03:56:02.722Z",
                       "lastSeenAt": "2024-03-18T03:56:02.722Z",
@@ -17425,6 +18026,7 @@
                         }
                       ],
                       "oauthClientId": null,
+                      "connectionId": null,
                       "createdAt": "2024-04-20T08:15:05.883Z",
                       "updatedAt": "2024-04-20T08:15:05.883Z",
                       "lastSeenAt": "2024-04-20T08:15:05.883Z",
@@ -17809,7 +18411,7 @@
                       "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                     },
                     "minItems": 1,
-                    "maxItems": 4
+                    "maxItems": 5
                   },
                   "expiresAt": {
                     "type": "string",
@@ -19831,20 +20433,20 @@
                       "tenantId": "dt5qq0",
                       "kind": "lti",
                       "federation": null,
-                      "issuer": "https://canvas.instructure.com",
+                      "issuer": "https://lms.example.com",
                       "clientId": "10000000000123",
                       "claimValues": [],
-                      "name": "canvas.instructure.com",
+                      "name": "lms.example.com",
                       "status": "active",
                       "jitProvisioning": true,
                       "config": {
-                        "authorizationEndpoint": "https://sso.canvaslms.com/api/lti/authorize_redirect",
-                        "tokenEndpoint": "https://sso.canvaslms.com/login/oauth2/token",
-                        "authorizationServer": "https://sso.canvaslms.com/login/oauth2/token",
-                        "jwksUri": "https://sso.canvaslms.com/api/lti/security/jwks",
-                        "productFamilyCode": "canvas",
-                        "version": "cloud",
-                        "deploymentIds": ["123:8865aa05b4b79b64a91a86042e43af5ea8ae79eb"]
+                        "authorizationEndpoint": "https://lms.example.com/lti/authorize",
+                        "tokenEndpoint": "https://lms.example.com/oauth/token",
+                        "authorizationServer": "https://lms.example.com",
+                        "jwksUri": "https://lms.example.com/oauth/jwks",
+                        "productFamilyCode": "moodle",
+                        "version": "4.5",
+                        "deploymentIds": ["deployment-1"]
                       },
                       "createdBy": {
                         "id": "9b32477d-37c7-49ca-930b-f7513e85223b",

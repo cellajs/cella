@@ -8,6 +8,7 @@ import { lockPendingInvitations, releaseHeldInvitations, stampInvitationsMailed 
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import {
   type InvitationMailsContext,
+  nothingTaken,
   refundInvitationMails,
   type TakenInvitationMails,
   takeInvitationMails,
@@ -92,14 +93,16 @@ interface MailWithinCapsOpts extends Omit<MailInvitationsOpts, 'ids'> {
  * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from a take made here; nothing is sent.
  */
 export async function mailWithinCaps(ctx: DbContext & InvitationMailsContext, { invitations, taken, ...opts }: MailWithinCapsOpts) {
-  const { emails, heldBack } = taken ?? (await takeInvitationMails(ctx, { mailNow: invitations.map(({ email }) => email) }));
+  const take = taken ?? (await takeInvitationMails(ctx, { mailNow: invitations.map(({ email }) => email) }));
+  const { emails, heldBack } = take;
 
   const toMail = invitations.filter(({ email }) => !heldBack.has(email));
   const mailed = await mailInvitations(ctx, { ...opts, ids: toMail.map(({ id }) => id) });
   const mailedEmails = new Set(mailed.map(({ email }) => email));
   await refundInvitationMails(
     ctx,
-    emails.filter((email) => !heldBack.has(email) && !mailedEmails.has(email)),
+    take,
+    emails.filter((email) => !mailedEmails.has(email)),
   );
   return mailed;
 }
@@ -120,7 +123,7 @@ export async function mailHeldInvitations(ctx: DbContext & InvitationMailsContex
   const released = await releaseHeldInvitations(ctx, { channelIds, by });
   if (!released.length) return [];
 
-  const mailed = await mailWithinCaps(ctx, { invitations: released, organization, by, taken: { emails: [], heldBack: new Set() } });
+  const mailed = await mailWithinCaps(ctx, { invitations: released, organization, by, taken: nothingTaken() });
   log.info('Held invitations mailed', { count: mailed.length, released: released.length });
   return mailed;
 }

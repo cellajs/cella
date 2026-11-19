@@ -1,21 +1,25 @@
+import type { AccessScope } from 'shared';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { mockLtiInstallationResponse, mockLtiMemberResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
   initiateLtiLoginQuerySchema,
   listLtiInstallationsQuerySchema,
+  listLtiMembersQuerySchema,
   listLtiResourceLinksQuerySchema,
   ltiInstallationParamSchema,
   ltiInstallationSchema,
   ltiLaunchStartSchema,
+  ltiMemberSchema,
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
   ltiToolRegistrationStartSchema,
   startLtiToolRegistrationBodySchema,
+  updateLtiInstallationBodySchema,
   updateLtiResourceLinkBodySchema,
 } from '#/modules/lti-platform/lti-platform-schema';
 import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
@@ -60,9 +64,21 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Approve LTI installation',
     description:
-      'Approves a pending LTI tool: its service account becomes active, and its launches may carry the personal fields released here, each one the LTI tool asked for. Disable it later as a service account.',
+      'Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.',
     request: { params: ltiInstallationParamSchema, body: jsonBody(approveLtiInstallationBodySchema) },
     responses: { 200: json('Approved installation', ltiInstallationSchema), ...errors(409) },
+  }),
+  updateLtiInstallation: xRoute({
+    method: 'patch',
+    path: '/{ltiInstallationId}',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Update LTI installation',
+    description:
+      "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.",
+    request: { params: ltiInstallationParamSchema, body: jsonBody(updateLtiInstallationBodySchema) },
+    responses: { 200: json('Updated installation', ltiInstallationSchema), ...errors(409) },
   }),
   rejectLtiInstallation: xRoute({
     method: 'post',
@@ -99,7 +115,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create LTI resource link',
     description:
-      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.",
+      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
     request: { params: tenantOrgParamSchema, body: jsonBody(createLtiResourceLinkBodySchema) },
     responses: { 201: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
@@ -163,3 +179,32 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
     },
   }),
 });
+
+/**
+ * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the courses it is placed in or
+ * below. `ltiToolScopes` reads the scopes of this list alone.
+ */
+const ltiToolRouteDrafts = {
+  listLtiMembers: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [ltiToolGuard, tenantGuard, orgGuard],
+    xScope: 'user:read',
+    summary: 'Get LTI members',
+    description:
+      "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
+    request: { params: tenantOrgParamSchema, query: listLtiMembersQuerySchema },
+    responses: {
+      200: json('LTI members', paginationSchema(ltiMemberSchema), { results: [mockLtiMemberResponse()], totalSize: 1 }),
+    },
+  }),
+};
+
+export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], ltiToolRouteDrafts);
+
+/**
+ * The access scopes the routes for installed LTI tools declare (`xScope`): the only ones a registration records, the
+ * platform's configuration advertises and an admin grants.
+ */
+export const ltiToolScopes: AccessScope[] = [...new Set(Object.values(ltiToolRouteDrafts).map((route) => route.xScope))];

@@ -1,8 +1,16 @@
-import { createXRoutes, xRoute } from '#/core/x-routes';
-import { publicGuard } from '#/middlewares/guard';
+import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
-import { ltiFinishFormSchema, ltiLaunchFormSchema, ltiLoginParamsSchema, ltiRegisterQuerySchema } from '#/modules/auth/flows/lti/lti-schema';
-import { locationSchema } from '#/schemas';
+import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
+import {
+  listLtiContextsQuerySchema,
+  ltiContextSchema,
+  ltiFinishFormSchema,
+  ltiLaunchFormSchema,
+  ltiLoginParamsSchema,
+  ltiRegisterQuerySchema,
+} from '#/modules/auth/flows/lti/lti-schema';
+import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /** A form post's body, required: an optional body skips validation on a request without a Content-Type. */
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
@@ -87,10 +95,25 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.',
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Course not set up\n\nA page: an instructor opens the app from this course first.' },
     },
+  }),
+});
+
+/** The courses of an organization's LTI connections, for a user who may update the organization. */
+export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
+  listLtiContexts: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get LTI contexts',
+    description:
+      "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+    request: { params: tenantOrgParamSchema, query: listLtiContextsQuerySchema },
+    responses: { 200: json('LTI contexts', paginationSchema(ltiContextSchema), { results: [mockLtiContextResponse()], totalSize: 1 }) },
   }),
 });

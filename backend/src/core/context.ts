@@ -4,6 +4,7 @@ import type { WritePreconditions } from '#/core/preconditions';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { AuthStrategy, SessionFacts } from '#/modules/auth/core';
+import type { LtiInstallationRecord } from '#/modules/lti-platform/lti-platform-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
@@ -91,6 +92,8 @@ export type Env = {
     session: SessionFacts;
     /** The content of this browser's step-up cookie (`userGuard` only): the session's step-up stamp counts only with it. */
     stepUpCookie?: string;
+    /** The installed LTI tool the request acts as, with its registration and approval (`ltiToolGuard` only). */
+    ltiInstallation?: LtiInstallationRecord;
     requestId: string;
     db: DbOrTx;
     tenantId: string;

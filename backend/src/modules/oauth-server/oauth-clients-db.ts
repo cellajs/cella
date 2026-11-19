@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, jsonb, snakeCase, varchar } from 'drizzle-orm/pg-core';
+import type { AccessScope } from 'shared';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
@@ -12,8 +13,8 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * accounts are not rows here either; their `client_credentials` client is the account itself, authenticated with its
  * secret key.
  *
- * An LTI tool's registration is a row too, the one kind with `ltiToolConfig` set. The provider and the grant policy
- * never read it: an LTI tool reaches the app only through the issuer's own LTI routes.
+ * An LTI tool's registration is a row too, the one kind with `ltiToolConfig` set. The grant policy never reads it, and
+ * the provider reads it only at the token endpoint, as the `client_credentials` client of an approved installation.
  */
 export const oauthClientsTable = snakeCase.table(
   'oauth_clients',
@@ -27,12 +28,14 @@ export const oauthClientsTable = snakeCase.table(
     logoUri: varchar({ length: maxLength.url }),
     /** The tenant an LTI registration is private to, gone with it; null for every other client. */
     tenantId: varchar({ length: tenantIdLength }).references(() => tenantsTable.id, { onDelete: 'cascade' }),
-    /** The LTI tool's key set: the token endpoint reads it once installed LTI tools get API access. */
+    /** The LTI tool's key set: the platform reads it to check the assertions an installation's token requests are signed with. */
     jwksUri: varchar({ length: maxLength.url }),
     /** Where an LTI launch starts: the LTI tool's login initiation address. */
     initiateLoginUri: varchar({ length: maxLength.url }),
     /** The LTI tool's configuration as the platform recorded it, its launch addresses included. */
     ltiToolConfig: jsonb().$type<LtiToolConfig>(),
+    /** The access scopes an LTI tool asked for in its registration, of those the platform knows: the most an admin grants. */
+    requestedScopes: jsonb().$type<AccessScope[]>(),
     ...auditColumns(),
   },
   (table) => [

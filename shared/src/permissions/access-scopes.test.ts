@@ -11,6 +11,16 @@ describe('deriveAccessScopes', () => {
     expect(accessScopes.all).toEqual(['attachment:read', 'attachment:write', 'organization:read', 'organization:write']);
   });
 
+  // A people policy grants only `read`: a token that names people can never be read as one that changes them.
+  it('derives `user:read` alone for people, and reads no one without it', () => {
+    const withPeople = deriveAccessScopes({ ...matrix, user: {} } as unknown as PolicyMatrix);
+    expect(withPeople.all).toEqual([...accessScopes.all, 'user:read']);
+    expect(withPeople.offered).toEqual(accessScopes.all);
+    expect(withPeople.allows(['user:read'], 'user', 'read')).toBe(true);
+    expect(withPeople.allows(['organization:write'], 'user', 'read')).toBe(false);
+    expect(withPeople.allows(['user:read'], 'user', 'update')).toBe(false);
+  });
+
   it('derives nothing from a configuration without a single policy', () => {
     expect(deriveAccessScopes({} as PolicyMatrix).all).toEqual([]);
   });

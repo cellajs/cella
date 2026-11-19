@@ -376,7 +376,7 @@ export const zStreamError = z.object({
 });
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
  */
 export const zLtiInstallation = z.object({
   id: z.string(),
@@ -385,10 +385,13 @@ export const zLtiInstallation = z.object({
   logoUri: z.string().nullable(),
   domain: z.string(),
   launchOrigins: z.array(z.string()),
+  keySetOrigin: z.string(),
   description: z.string().nullable(),
   claims: z.array(z.string()),
   requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
+  requestedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
+  grantedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
   status: z.enum(['pending', 'active', 'disabled']),
   approvedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -734,6 +737,7 @@ export const zServiceAccount = z.object({
     }),
   ),
   oauthClientId: z.string().max(255).nullable(),
+  connectionId: z.uuid().nullable(),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -1761,6 +1765,54 @@ export const zGenerateStepUpPasskeyChallengeResponse = z.object({
  */
 export const zSendStepUpCodeResponse = z.void();
 
+export const zListLtiContextsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiContextsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  connectionId: z.uuid().optional(),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
+});
+
+/**
+ * LTI contexts
+ */
+export const zListLtiContextsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      connectionId: z.string(),
+      contextId: z.string(),
+      label: z.string().nullable(),
+      title: z.string().nullable(),
+      channel: zChannelBase,
+      apiUrl: z.string().nullable(),
+      importRanAt: z.string().nullable(),
+      importReadCount: z.int().nullable(),
+      importIssue: z
+        .enum([
+          'address_refused',
+          'scope_not_granted',
+          'token_refused',
+          'members_refused',
+          'retrying',
+          'failed',
+          'too_many_members',
+          'member_limit',
+          'inactive',
+        ])
+        .nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
 export const zCheckSlugBody = z.object({
   slug: z
     .string()
@@ -1934,6 +1986,10 @@ export const zListLtiInstallationsResponse = z.object({
 
 export const zApproveLtiInstallationBody = z.object({
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])).max(3),
+  grantedScopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
+    .max(5)
+    .optional(),
 });
 
 export const zApproveLtiInstallationPath = z.object({
@@ -1946,6 +2002,24 @@ export const zApproveLtiInstallationPath = z.object({
  * Approved installation
  */
 export const zApproveLtiInstallationResponse = zLtiInstallation;
+
+export const zUpdateLtiInstallationBody = z.object({
+  grantedScopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
+    .max(5)
+    .optional(),
+});
+
+export const zUpdateLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Updated installation
+ */
+export const zUpdateLtiInstallationResponse = zLtiInstallation;
 
 export const zRejectLtiInstallationPath = z.object({
   tenantId: z.string().max(50),
@@ -2047,6 +2121,39 @@ export const zStartLtiLaunchPath = z.object({
 export const zStartLtiLaunchResponse = z.object({
   url: z.string(),
   expiresAt: z.string(),
+});
+
+export const zListLtiMembersPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiMembersQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  orderBy: z.enum(['id', 'id asc', 'id desc']).optional().default('id asc'),
+});
+
+/**
+ * LTI members
+ */
+export const zListLtiMembersResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      roles: z.array(z.string()),
+      name: z.string().optional(),
+      given_name: z.string().optional(),
+      family_name: z.string().optional(),
+      email: z.string().optional(),
+      picture: z.string().optional(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zInitiateLtiLaunchLoginQuery = z.object({
@@ -3079,7 +3186,7 @@ export const zCreateServiceAccountBody = z.object({
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
-        .max(4)
+        .max(5)
         .nullish(),
       expiresAt: z.iso.datetime().max(64).optional(),
     })
@@ -3156,7 +3263,7 @@ export const zCreateApiKeyBody = z.object({
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)
-    .max(4)
+    .max(5)
     .nullish(),
   expiresAt: z.iso.datetime().max(64).optional(),
   rollFrom: z.string().max(50).optional(),

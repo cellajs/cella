@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 
 /**
- * The account's organization role. Its create writes exactly one organization binding, and no route changes bindings.
+ * The account's organization role. Its create writes exactly one organization binding, and no route changes it.
  * @throws AppError 500 for an account without one, which only a direct database write makes.
  */
 export function organizationRole({ bindings }: Pick<ServiceAccountModel, 'bindings'>) {

@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { mockPastIsoDate, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPastIsoDate, mockRefDate, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
+import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import { TimeSpan } from '#/utils/time-span';
 
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
@@ -93,5 +94,24 @@ export const mockMeAuthResponse = (key = 'me-auth:default') =>
         },
       ],
       passkeys: [],
+    };
+  });
+
+/** A course of an LTI connection whose last member import read everyone. */
+export const mockLtiContextResponse = (key = 'ltiContext:default') =>
+  withFakerSeed(key, () => {
+    const { createdAt, updatedAt } = mockTimestamps();
+    return {
+      id: mockUuid(),
+      connectionId: mockUuid(),
+      contextId: 'biology-101',
+      label: 'BIO-101',
+      title: 'Introduction to biology',
+      channel: mockChannelBase(`${key}:channel`),
+      apiUrl: 'https://lms.example.com/api/tenants/example-tenant',
+      importRanAt: updatedAt,
+      importReadCount: 42,
+      importIssue: null,
+      createdAt,
     };
   });

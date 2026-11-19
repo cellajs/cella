@@ -20,8 +20,11 @@ import {
   type StartLtiToolRegistrationResponse,
   startLtiLaunch,
   startLtiToolRegistration,
+  type UpdateLtiInstallationData,
+  type UpdateLtiInstallationResponse,
   type UpdateServiceAccountData,
   type UpdateServiceAccountResponse,
+  updateLtiInstallation,
   updateServiceAccount,
 } from 'sdk';
 import type { ChannelEntityType } from 'shared';
@@ -44,6 +47,7 @@ const ltiPlatformKeys = {
   approve: ['lti-platform', 'approve'] as const,
   reject: ['lti-platform', 'reject'] as const,
   setStatus: ['lti-platform', 'set-status'] as const,
+  update: ['lti-platform', 'update'] as const,
   createResourceLink: ['lti-platform', 'create-resource-link'] as const,
   deleteResourceLink: ['lti-platform', 'delete-resource-link'] as const,
   startLaunch: ['lti-platform', 'start-launch'] as const,
@@ -118,6 +122,21 @@ export const useSetLtiInstallationStatusMutation = () =>
     onSuccess: ({ id, status, updatedAt }, { path }) => {
       setCachedInstallation(path, id, (installation) => ({ ...installation, status, updatedAt }));
     },
+  });
+
+/**
+ * Replaces the access scopes an approved installation's own tokens may carry; asks the step-up an approval asks. The
+ * list is read again after, so a change another admin made meanwhile shows too.
+ */
+export const useUpdateLtiInstallationMutation = () =>
+  useMutation<UpdateLtiInstallationResponse, ApiError, MutationData<UpdateLtiInstallationData>>({
+    mutationKey: ltiPlatformKeys.update,
+    mutationFn: ({ path, body }) => withStepUp(() => updateLtiInstallation({ path, body })),
+    onSuccess: (updated, { path }) => {
+      setCachedInstallation(path, updated.id, () => updated);
+      toaster.success(t('c:success.update_resource', { resource: t('c:api_access') }));
+    },
+    onSettled: (_data, _error, { path }) => queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installations(path) }),
   });
 
 /** Places an approved installation as a tab of a channel; the channel's tab bar reads the new link. */

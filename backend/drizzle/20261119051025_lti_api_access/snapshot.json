@@ -1,0 +1,381 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f619bbb5-4ee1-47b3-94e3-0b0e62bd4420",
+  "prevIds": [
+    "c1e6b883-70d0-462b-9cf6-d07aecc07f08"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "api_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.api_url",
+        "n|col|public.lti_contexts.api_url",
+        "e|col|public.lti_contexts.api_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "members_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.members_url",
+        "n|col|public.lti_contexts.members_url",
+        "e|col|public.lti_contexts.members_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_ran_at"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_ran_at",
+        "n|col|public.lti_contexts.import_ran_at",
+        "e|col|public.lti_contexts.import_ran_at"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_read_count"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_read_count",
+        "n|col|public.lti_contexts.import_read_count",
+        "e|col|public.lti_contexts.import_read_count"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_issue"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_issue",
+        "n|col|public.lti_contexts.import_issue",
+        "e|col|public.lti_contexts.import_issue"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_installations",
+        "granted_scopes"
+      ],
+      "writes": [
+        "s|col|public.lti_installations.granted_scopes",
+        "n|col|public.lti_installations.granted_scopes",
+        "e|col|public.lti_installations.granted_scopes"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "requested_scopes"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.requested_scopes",
+        "n|col|public.oauth_clients.requested_scopes",
+        "e|col|public.oauth_clients.requested_scopes"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "service_accounts",
+        "connection_id"
+      ],
+      "writes": [
+        "s|col|public.service_accounts.connection_id",
+        "n|col|public.service_accounts.connection_id",
+        "e|col|public.service_accounts.connection_id"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "service_accounts",
+        "service_accounts_oauth_client_idx"
+      ],
+      "writes": [
+        "s|idx|public.service_accounts_oauth_client_idx",
+        "n|idx|public.service_accounts_oauth_client_idx",
+        "e|idx|public.service_accounts_oauth_client_idx",
+        "n|rel|public.service_accounts_oauth_client_idx"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.tenant_id",
+        "n|col|public.service_accounts.oauth_client_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "service_accounts",
+        "service_accounts_connection_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.service_accounts_connection_id_idx",
+        "n|idx|public.service_accounts_connection_id_idx",
+        "e|idx|public.service_accounts_connection_id_idx",
+        "n|rel|public.service_accounts_connection_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.connection_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "api_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "members_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_ran_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_read_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_issue",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "granted_scopes",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "requested_scopes",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "connection_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "service_accounts_oauth_client_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "tenant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "oauth_client_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "service_accounts_connection_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "connection_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type Provider from 'oidc-provider';
 import { type CreateServiceAccountData, createServiceAccount } from 'sdk';
 import { expect, vi } from 'vitest';
@@ -16,7 +16,7 @@ import { CookieJar } from './helpers';
 import { createAppClient } from './test-client';
 
 type ServiceAccountBody = NonNullable<CreateServiceAccountData['body']>;
-type KeyScopes = NonNullable<ServiceAccountBody['key']>['scopes'];
+export type KeyScopes = NonNullable<ServiceAccountBody['key']>['scopes'];
 type OrgPath = { id: string; tenantId: string };
 
 /** A machine caller's headers: a bearer API key or access token, and neither Origin nor cookie, as a server sends. */
@@ -47,9 +47,15 @@ export const registerApp = (app: typeof oauthClientsTable.$inferInsert) => db.in
 
 /**
  * Installs a registered app in `org` as its admin does: a service account with the organization's least privileged
- * role, bound to the app's client. Returns the installation's id.
+ * role, bound to the app's client. A tenant installs an app once; installing it again keeps the first. Returns the
+ * installation's id.
  */
 export async function installApp(org: OrgPath, adminCookie: string, clientId: string) {
+  const [installed] = await db
+    .select({ id: serviceAccountsTable.id })
+    .from(serviceAccountsTable)
+    .where(and(eq(serviceAccountsTable.tenantId, org.tenantId), eq(serviceAccountsTable.oauthClientId, clientId)));
+  if (installed) return installed.id;
   const call = await createAppClient();
   const { data } = await call(createServiceAccount, {
     path: { tenantId: org.tenantId, organizationId: org.id },

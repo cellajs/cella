@@ -1,32 +1,31 @@
 import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { appConfig, hierarchy } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
+import { appConfig } from 'shared';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { i18n } from '#/lib/i18n';
 import { lisContextRoles, ltiClaims } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { insertAnonymousUser } from '#/modules/auth/core/anonymous/anonymous-account';
 import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { decodeLaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
+import { launchPlatformApi } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { createLtiContextChannel, type LtiContext, ltiContextChannelType, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
+import type { LtiContextModel } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import type { ltiFinishFormSchema } from '#/modules/auth/flows/lti/lti-schema';
-import { findLaunchConnection, type LtiLaunch, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
-import type { LtiConnection } from '#/modules/connections/connections-db';
+import { admitLtiPerson, applyLtiRole } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
 import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
-import type { MembershipModel } from '#/modules/memberships/memberships-db';
-import { findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
-import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
-import { findIdentityBySubject, insertIdentity, updateIdentity } from '#/modules/user/identities-queries';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { findTenant } from '#/modules/tenants/tenants-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -56,49 +55,6 @@ export const planLtiContextChannel = async (
 };
 
 /**
- * The account a launch acts for, found by its `lti` identity: the platform's issuer and `sub`. A first arrival gets an
- * account without a proven address, as an anonymous account is made, named as the platform released it. An email
- * claim is a display snapshot on the identity and never links an account.
- */
-const launchingPersonId = async (ctx: DbContext, { connection, launch }: { connection: LtiConnection; launch: LtiLaunch }) => {
-  const email = launch.email ?? null;
-  const identity = await findIdentityBySubject(ctx, { kind: 'lti', provider: connection.issuer, subject: launch.sub });
-  if (identity) {
-    await updateIdentity(ctx, { id: identity.id, values: { lastSignInAt: getIsoDate(), connectionId: connection.id, email } });
-    return identity.userId;
-  }
-
-  const { name: fullName, given_name: givenName, family_name: familyName } = launch;
-  const name = fullName ?? ([givenName, familyName].filter(Boolean).join(' ') || i18n.t('c:anonymous'));
-  const user = await insertAnonymousUser(ctx, { id: generateId(), name, slug: `lti-${nanoid(10)}`, givenName, familyName });
-  const values = { userId: user.id, kind: 'lti' as const, provider: connection.issuer, subject: launch.sub, email, connectionId: connection.id };
-  await insertIdentity(ctx, { values, verified: true });
-  log.info('User provisioned through LTI', { userId: user.id, connectionId: connection.id });
-  return user.id;
-};
-
-interface ApplyLtiRoleOpts {
-  userId: string;
-  channel: MembershipEntity;
-  role: MembershipModel['role'];
-}
-
-/**
- * Gives the person the role a launch maps to in the channel: a new membership as the SSO path writes one, or the
- * existing one's role changed. A role in a channel below the organization follows the launch up and down; an
- * organization role only goes up.
- */
-const applyLtiRole = async (ctx: DbContext, { userId, channel, role }: ApplyLtiRoleOpts) => {
-  const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
-  if (!membership) {
-    await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: userId }] });
-    return;
-  }
-  const follows = channel.entityType === 'organization' ? hierarchy.outranks('organization', role, membership.role) : role !== membership.role;
-  if (follows) await updateMembershipRole(ctx, { id: membership.id, role, by: userId });
-};
-
-/**
  * The embedded page of a channel: `/embed` in front of the path the app's own links to a channel take
  * (`buildNotificationPath`), which the frontend resolves to the channel's page.
  */
@@ -113,13 +69,17 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
 /**
  * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
- * creates the person, applies the mapped role and records the context, and the LTI deployment of a connection that
- * held none, all in one transaction. Then it starts the embedded session: no MFA challenge, the launch is the proof.
+ * creates the person (`admitLtiPerson`), applies the mapped role (`applyLtiRole`) and records the context with the
+ * platform's API addresses it trusts, and the LTI deployment of a connection that held none, all in one transaction.
+ * In an archived channel a member keeps their role. Then it starts the embedded session: no MFA challenge, the launch
+ * is the proof. A launch by the context's Instructor or Administrator asks for a member import
+ * (`requestLtiMemberImport`) without waiting for it.
  * @returns The embedded page of the channel to redirect to.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
- *   `lti_deployment_unknown` when another first launch recorded a different deployment, 409 `lti_context_not_set_up`,
- *   409 `write_conflict` when another launch created the context's channel at once, and what `findLaunchConnection`
- *   and `validateLtiLaunch` throw.
+ *   `channel_archived` for a person the launch would add to an archived channel, 403 `lti_member_limit` for a person
+ *   who needs a seat while none is left, 403 `lti_deployment_unknown` when another first launch recorded a different
+ *   deployment, 409 `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel
+ *   at once, and what `findLaunchConnection` and `validateLtiLaunch` throw.
  */
 export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>): Promise<string> {
   if (ctx.req.header('Sec-Fetch-Site') !== 'same-origin') throw new AppError(403, 'lti_launch_cross_site', 'warn');
@@ -130,8 +90,11 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   const { connection, header, claims } = await findLaunchConnection(token);
   const launch = await validateLtiLaunch({ token, header, claims, connection, state, storageValue });
 
-  const organization = await findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId });
-  if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+  const [organization, tenant] = await Promise.all([
+    findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId }),
+    findTenant(dbCtx, { where: eq(tenantsTable.id, connection.tenantId) }),
+  ]);
+  if (!organization || !tenant) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
   const ltiRoles = launch[ltiClaims.roles];
   const contextClaim = launch[ltiClaims.context];
@@ -142,16 +105,27 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
       ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
       : { channel: organization };
   const deploymentId = launch[ltiClaims.deploymentId];
+  const platformApi = launchPlatformApi(connection, claims);
+  const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
-  const { userId, channel } = await baseDb.transaction(async (tx) => {
+  const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const userId = await launchingPersonId(txCtx, { connection, launch });
+    const admitted = await admitLtiPerson(txCtx, {
+      connection,
+      organization,
+      memberQuota: tenant.restrictions.quotas.user,
+      person: { sub, name, givenName, familyName, email },
+      signedInAt: getIsoDate(),
+    });
+    if (!admitted) throw new AppError(403, 'lti_member_limit', 'warn', { meta: { connectionId: connection.id } });
+    const { userId, seat } = admitted;
     const channel =
       'channel' in plan ? plan.channel : await createLtiContextChannel(txCtx, { organization, context: plan.create, createdBy: userId });
 
+    let contextRow: LtiContextModel | undefined;
     if (context) {
       const { id: contextId, label, title, types } = context;
-      const row = await upsertLtiContext(txCtx, {
+      contextRow = await upsertLtiContext(txCtx, {
         values: {
           ...channelIdColumnsOf(channel),
           tenantId: connection.tenantId,
@@ -162,21 +136,28 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
           types,
           channelType: channel.entityType,
           channelId: channel.id,
+          ...platformApi,
         },
         by: userId,
       });
       // Another launch of the same course created its channel at the same moment: this one rolls back.
-      if (row.channelId !== channel.id && 'create' in plan) throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId: context.id } });
+      if (contextRow.channelId !== channel.id && 'create' in plan)
+        throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId: context.id } });
     }
 
-    await applyLtiRole(txCtx, { userId, channel, role: ltiContextRole({ ltiRoles, connection }) });
+    // Joining an archived channel is a create inside it, which an archive refuses; a member keeps the role they hold.
+    if (channel.archived) {
+      const [membership] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [userId], channelId: channel.id });
+      if (!membership) throw new AppError(403, 'channel_archived', 'warn', { entityType: channel.entityType });
+    } else await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiContextRole({ ltiRoles, connection }), by: userId });
     // Validation let any deployment through to a connection that held none: another first launch may have recorded one since.
     if (!connection.config.deploymentIds.length && !(await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId }))) {
       throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });
     }
-    return { userId, channel };
+    return { userId, channel, contextRow };
   });
   invalidateCache.user(userId);
+  if (contextRow && ltiRoles.some((role) => contextSetUpRoles.has(role))) void requestLtiMemberImport(contextRow);
 
   const user = await findUserById(dbCtx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });

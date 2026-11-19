@@ -21,14 +21,11 @@ export type Access<T extends AccessMembership = AccessMembership> = (ActorFields
 
 /**
  * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its actor's grants allow,
- * never more. Unscoped access (a session, or `scopes: null`) passes untouched. People are never a scope: a key or token
- * that carries scopes reads no one.
+ * never more. Unscoped access (a session, or `scopes: null`) passes untouched. A key or token whose scopes leave out
+ * `user:read` reads no one.
  */
-export const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean => {
-  if ('visitor' in access) return true;
-  if (entityType === 'user') return access.scopes == null;
-  return accessScopes.allows(access.scopes, entityType, action);
-};
+export const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean =>
+  'visitor' in access || accessScopes.allows(access.scopes, entityType, action);
 
 /** System admins bypass every check; a visitor holds nothing. */
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>

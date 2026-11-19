@@ -93,7 +93,11 @@ describe('who sees whom', async () => {
     return false;
   };
 
-  /** Each surface, by operation, answers whether the asker finds or reaches the person there. */
+  /**
+   * Each surface, by operation, answers whether the asker finds or reaches the person there. `listLtiMembers` lists
+   * people too, for an installed LTI tool's token alone, which no session holds: its rows follow the installation's own
+   * role there, through the check `listMembers` makes, and `lti-api-access.test.ts` refuses it a role that reads no one.
+   */
   const surfaces: Record<string, (askers: Askers) => Promise<boolean>> = {
     listUsers: async ({ viewer }) => {
       const { data } = await call(listUsers, { query: {}, headers: headersOf(viewer) });
