@@ -24,7 +24,7 @@ Each connection gets a key pair of its own, and the registration names that conn
 
 A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
 
-A course belongs to the connection that launched it first. Two connections of one tenant to the same platform, such as two schools on one hosted platform, both open the course, and its member list stays with its own connection.
+A course belongs to the connection that launched it first. Two connections of one tenant to the same platform, such as two schools on one hosted platform, both open the course and admit people into it, and only its own connection changes it: its name, its member list and its imports.
 
 Registering the same platform again takes a course over only once the old connection is deleted: the next launch through the new one keeps the course's channel and people. Until then the old connection keeps the course. The platform's existing links still point at the old registration, as a Moodle activity keeps its tool type and client id: re-point them there. A course whose connection is gone shows on no card until a launch takes it over.
 
@@ -88,7 +88,7 @@ As an LTI tool, your app also reads who is in a course by NRPS, before any of th
 
 The import starts when an Instructor or Administrator of the course launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course and for a limited number of courses per connection an hour, and the launch never waits for it. A course past that number says its import waits. No button starts one: the next such launch after that while does.
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course and for a limited number of courses per connection an hour, and the launch never waits for it. A course past that number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
 Imports of one connection run one after the other, and those of different connections beside each other, each within a time budget: a platform that answers slowly holds up its own imports alone.
 

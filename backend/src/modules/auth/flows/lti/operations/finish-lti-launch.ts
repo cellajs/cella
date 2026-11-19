@@ -72,9 +72,10 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
  * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
  * creates the person (`admitLtiPerson`), applies the mapped role (`applyLtiRole`) and records the context with the
- * membership address it trusts, and the LTI deployment of a connection that held none, all in one transaction.
- * In an archived channel a member keeps their role. Then it starts the embedded session: no MFA challenge, the launch
- * is the proof. A launch by the context's Instructor or Administrator asks for a member import
+ * membership address it trusts, and the LTI deployment of a connection that held none, all in one transaction. A
+ * context another live connection holds is only read for its channel (`upsertLtiContext`). In an archived channel a
+ * member keeps their role. Then it starts the embedded session: no MFA challenge, the launch is the proof. A launch by
+ * the context's Instructor or Administrator, through the connection that holds it, asks for a member import
  * (`requestLtiMemberImport`) without waiting for it.
  * @returns The embedded page of the channel to redirect to.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
@@ -145,7 +146,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
         by: userId,
       });
       // Another launch of the same course created its channel at the same moment: this one rolls back.
-      if (contextRow.channelId !== channel.id && 'create' in plan)
+      if ('create' in plan && contextRow?.channelId !== channel.id)
         throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId: context.id } });
     }
 

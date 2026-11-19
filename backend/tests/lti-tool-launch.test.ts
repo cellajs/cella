@@ -27,7 +27,7 @@ import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-requ
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { planLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
-import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -36,6 +36,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { lockTenantQuota } from '#/modules/tenants/quota-lock';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
@@ -602,9 +603,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
   });
 
   // Attack: two active connections of one tenant and issuer, such as two schools on one hosted platform. A launch through
-  // one finds the course the other holds, and leaves its connection and its membership address alone: an import signs
+  // one opens the course the other holds and admits its person, and writes nothing on the course: not its label, title,
+  // membership address or import state, and it queues no import, also once the holder's hour is spent. An import signs
   // as the connection that named the address and sends its token there alone.
-  it("keeps a course's connection and membership address through another active connection's launches", async () => {
+  it("leaves a course another active connection holds as it is, and admits that connection's people into it", async () => {
     const platform = await fakePlatform('platform-a');
     const first = await connect(platform);
     const second = await connect(platform, ['deployment-1'], { org: first.org, clientId: 'platform-a-second-school' });
@@ -614,24 +616,37 @@ describe('LTI launch at the app as an LTI tool', async () => {
     });
     const teacher = { [ltiClaims.roles]: [lisContextRoles.instructor] };
     const courses = () => db.select().from(ltiContextsTable).where(eq(ltiContextsTable.tenantId, first.org.tenantId));
+    const send = vi.mocked((await getPgBoss('producer')).send);
 
     await launch(first, { ...teacher, [ltiClaims.namesRoleService]: claim('first') });
     const [course] = await courses();
-    for (const changes of [{ [ltiClaims.namesRoleService]: claim('second') }, { ...teacher, [ltiClaims.namesRoleService]: claim('second') }]) {
+    send.mockClear();
+    const elsewhere = {
+      [ltiClaims.namesRoleService]: claim('second'),
+      [ltiClaims.context]: { id: 'course-1', label: 'OTHER', title: 'Renamed by the second school' },
+    };
+    for (const changes of [elsewhere, { ...elsewhere, ...teacher }]) {
       expect((await launch(second, changes)).response.status).toBe(303);
-      expect(await courses()).toEqual([
-        expect.objectContaining({ id: course.id, connectionId: first.connection.id, membershipsUrl: claim('first').context_memberships_url }),
-      ]);
+      expect(await courses()).toEqual([course]);
     }
+    expect(send).not.toHaveBeenCalled();
+
+    const { id: _id, ...held } = course;
+    await db
+      .insert(ltiContextsTable)
+      .values(Array.from({ length: maxCoursesPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
+    expect((await launch(second, { ...elsewhere, ...teacher })).response.status).toBe(303);
+    expect((await courses()).find(({ id }) => id === course.id)).toEqual(course);
 
     const requests: { url: URL; body?: string }[] = [];
     const recording: GuardedTransport = async ({ url, body }) => {
       requests.push({ url, body });
       return new Response(null, { status: 500 });
     };
-    await importLtiMembersOp(course.id, { transport: recording, resolve: async () => [{ address: '127.0.0.1', family: 4 }] }).catch(() => undefined);
+    await importLtiMembersOp(course.id, { transport: recording, resolve: async () => [{ address: '127.0.0.1', family: 4 }], retry: true }).catch(
+      () => undefined,
+    );
     expect(requests.map(({ url }) => url.href)).toEqual([first.connection.config.tokenEndpoint]);
-    expect(new URLSearchParams(requests[0].body).get('client_assertion')).toBeTruthy();
     expect(decodeJwt(new URLSearchParams(requests[0].body).get('client_assertion') ?? '')).toMatchObject({ iss: first.clientId });
   });
 

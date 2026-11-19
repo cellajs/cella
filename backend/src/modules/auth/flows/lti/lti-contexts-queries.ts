@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
@@ -35,12 +35,12 @@ export const findLtiContextById = async (ctx: DbContext, { id }: { id: string })
 };
 
 /**
- * Records an LTI context and the channel it maps to, with its label, title and types, written by `by`; the row as
- * stored. A recorded context keeps its channel: compare it with the one given. Its connection and membership address
- * change together, and only for a row whose connection was deleted: the connection in `values` takes it over with the
- * address `values` names, none included. The connection a row holds sets the address `values` names, and undefined
- * keeps it. Another connection of the tenant and issuer leaves both alone: an import signs as the row's connection and
- * reads the row's address.
+ * Records an LTI context and the channel it maps to, with its label, title and types, written by `by`. A recorded
+ * context keeps its channel: compare it with the one given. Only the connection that holds the row writes on it, or one
+ * that takes over a row whose connection was deleted, with the membership address `values` names, none included. The
+ * connection that holds it sets the address `values` names, and undefined keeps it.
+ * @returns The row as stored; undefined when another live connection of the tenant and issuer holds it, which leaves
+ *   it as it is.
  */
 export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values: Omit<InsertLtiContextModel, 'createdBy'>; by: UserId }) => {
   const { connectionId, label, title, types } = values;
@@ -52,13 +52,14 @@ export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values:
     .onConflictDoUpdate({
       target: [ltiContextsTable.tenantId, ltiContextsTable.issuer, ltiContextsTable.contextId],
       set: {
-        connectionId: sql`CASE WHEN ${free} THEN excluded.connection_id ELSE ${heldBy} END`,
-        membershipsUrl: sql`CASE WHEN ${free} THEN excluded.memberships_url WHEN ${heldBy} = ${connectionId} THEN coalesce(excluded.memberships_url, ${heldAddress}) ELSE ${heldAddress} END`,
+        connectionId,
+        membershipsUrl: sql`CASE WHEN ${free} THEN excluded.memberships_url ELSE coalesce(excluded.memberships_url, ${heldAddress}) END`,
         label,
         title,
         types,
         ...updateStamps(by),
       },
+      setWhere: sql`${free} OR ${heldBy} = ${connectionId}`,
     })
     .returning();
   return row;
@@ -87,12 +88,19 @@ export const recordLtiImport = async (ctx: DbContext, { id, readCount, issue, fo
     .where(eq(ltiContextsTable.id, id));
 };
 
-/** Records that a context's member import waits for its connection's hourly budget; the last import's time and count stay. */
+/** Refusals a waiting import leaves in place: the platform or the connection has to change before an import reads. */
+const lastingIssues: LtiImportIssue[] = ['register_again', 'scope_not_granted', 'members_refused'];
+
+/**
+ * Records that a context's member import waits for its connection's hourly budget; the last import's time and count
+ * stay, and so does a refusal that lasts (`lastingIssues`).
+ */
 export const recordLtiImportWaiting = async (ctx: DbContext, { id, by }: { id: string; by: ActorId }) => {
+  const { importIssue } = ltiContextsTable;
   await ctx.var.db
     .update(ltiContextsTable)
     .set({ importIssue: 'waiting', ...updateStamps(by) })
-    .where(eq(ltiContextsTable.id, id));
+    .where(and(eq(ltiContextsTable.id, id), or(isNull(importIssue), notInArray(importIssue, lastingIssues))));
 };
 
 interface FindOrganizationLtiContextsOpts {

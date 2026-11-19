@@ -490,7 +490,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   });
 
   // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them an hour.
-  // The course says its import waits.
+  // The course says its import waits, unless the last import was refused in a way that lasts.
   it('queues no import of a connection whose imports within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
     const imported = await Promise.all(
@@ -505,6 +505,15 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await requestLtiMemberImport(side.context, side.admin.id);
     expect(send).not.toHaveBeenCalled();
     expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
+
+    // A refusal that lasts stays in place: the connection or the platform has to change before an import reads.
+    for (const importIssue of ['register_again', 'scope_not_granted', 'members_refused'] as const) {
+      const refused = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/${importIssue}/memberships`, importIssue);
+      await db.update(ltiContextsTable).set({ importIssue }).where(eq(ltiContextsTable.id, refused.id));
+      await requestLtiMemberImport(await contextRow(refused.id), side.admin.id);
+      expect(await contextRow(refused.id)).toMatchObject({ importIssue });
+    }
+    expect(send).not.toHaveBeenCalled();
 
     const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
     await importLtiMembersOp(side.context.id, api.options);

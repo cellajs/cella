@@ -1,7 +1,6 @@
 import { and, eq, gt, gte, lte, or, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
-import { isUuid } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -229,16 +228,11 @@ const identifierReaders = {
   ip: (ctx) => getIp(ctx),
   actorId: (ctx) => ctx.var.actor?.id ?? null,
   tenantId: (ctx) => ctx.var.tenantId || null,
-  // Only an id counts apart: any other value shares the bucket of the key's other parts
-  connectionId: (ctx) => {
-    const id = ctx.req.param('connectionId');
-    return id && isUuid(id) ? id.toLowerCase() : null;
-  },
 } satisfies Record<RateLimitIdentifier, (ctx: Context<Env>) => string | null | Promise<string | null>>;
 
 /** The value of each identifier in `identifiersToExtract` from the request, null where it has none. */
 export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract: RateLimitIdentifier[]): Promise<Identifiers> => {
-  const results: Identifiers = { email: null, ip: null, actorId: null, tenantId: null, connectionId: null };
+  const results: Identifiers = { email: null, ip: null, actorId: null, tenantId: null };
   for (const identifier of identifiersToExtract) results[identifier] = await identifierReaders[identifier](ctx);
   return results;
 };

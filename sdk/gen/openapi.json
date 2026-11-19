@@ -249,10 +249,10 @@
           },
           "ltiKeySetLimiter": {
             "name": "LTI key sets",
-            "description": "Key set reads for each IP address and connection, answered or not.",
+            "description": "Key set reads for each IP address, answered or not.",
             "policy": {
               "mode": "limit",
-              "points": 120,
+              "points": 600,
               "duration": 60
             }
           },
