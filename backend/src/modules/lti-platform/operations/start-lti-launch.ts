@@ -7,7 +7,6 @@ import { issueHandoffToken, readHandoffToken } from '#/modules/auth/core';
 import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-import { accessFrom } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
@@ -17,7 +16,7 @@ type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | '
  * Who may launch a resource link: a person who may read its channel through their own memberships, read now. A system
  * admin is nobody special here: the ID token carries the person's own access, as a token does. Starting a launch and
  * the launch endpoint decide alike.
- * @returns The channel and the person's access, which the launch's roles are decided with.
+ * @returns The channel, and the person's memberships, which the launch's roles are decided with.
  * @throws AppError 404 when the person may not read the channel.
  */
 export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
@@ -32,7 +31,7 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
     },
   };
   const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
-  return { channel: entity, access: accessFrom(launcherCtx) };
+  return { channel: entity, memberships };
 };
 
 /**

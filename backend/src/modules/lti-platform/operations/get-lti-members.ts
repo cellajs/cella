@@ -8,7 +8,6 @@ import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiMembers } from '#/modules/lti-platform/lti-platform-queries';
 import type { listLtiMembersQuerySchema, ltiMembershipContainerSchema, ltiMembershipsParamSchema } from '#/modules/lti-platform/lti-platform-schema';
-import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
 import { accessFrom } from '#/permissions/access';
 import { assertReadsPeople } from '#/permissions/visible-people';
 
@@ -56,15 +55,12 @@ export async function getLtiMembersOp(
   for (let batch = 0; batch < maxBatches && !listed && members.length < limit; batch++) {
     const people = await findLtiMembers(ctx, { organizationId, channelType, channelId: channel.id, access, after: cursor, limit: limit + 1 });
     const read = people.slice(0, limit);
-    const memberships = await findMembershipsByUserIds(ctx, { userIds: read.map((person) => person.id), organizationId });
     let taken = 0;
     for (const person of read) {
       if (members.length === limit) break;
       taken += 1;
       cursor = person.id;
-      const bindings = memberships.filter((membership) => membership.userId === person.id);
-      const access = accessFrom({ var: { actor: { id: person.id, bindings, scopes: null }, isSystemAdmin: false } });
-      const roles = ltiRolesIn(access, channelType, channel);
+      const roles = ltiRolesIn(person.id, { channelType, channelId: channel.id, organizationId, role: person.role }, channelType, channel);
       if (wanted && !roles.includes(wanted)) continue;
       members.push({
         user_id: person.id,

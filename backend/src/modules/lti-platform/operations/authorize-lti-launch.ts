@@ -10,7 +10,7 @@ import { resolveEntity } from '#/modules/entities/entities-queries';
 import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
-import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
+import { ltiInstitutionRolesIn, ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
@@ -101,15 +101,19 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
  */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
-  const { person, access, channel } = await assertLaunchAllowed({ personId, target });
+  const { person, memberships, channel } = await assertLaunchAllowed({ personId, target });
 
   const placed = placementContext(resourceLink);
   const contextChannel =
     placed &&
     (placed.channelId === channel.id ? channel : await resolveEntity(dbCtx, { entityType: placed.channelType, identifier: placed.channelId }));
   const context = placed && contextChannel ? { ...placed, channel: contextChannel } : null;
-  // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
-  const roles = context ? ltiRolesIn(access, context.channelType, context.channel) : [];
+  // Context roles from the person's membership in the context alone, institution roles from theirs in the organization.
+  const membershipIn = (channelId: string) => memberships.find((membership) => membership.channelId === channelId);
+  const roles = [
+    ...(context ? ltiRolesIn(personId, membershipIn(context.channelId), context.channelType, context.channel) : []),
+    ...ltiInstitutionRolesIn(personId, membershipIn(resourceLink.organizationId), resourceLink.organizationId),
+  ];
   const custom = launchCustom(client, resourceLink.custom);
   const readsMembers = installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
 

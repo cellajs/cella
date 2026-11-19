@@ -235,7 +235,8 @@ interface FindLtiMembersOpts extends ChannelRef {
 
 /**
  * A channel's people in order of id, which an installed LTI tool reads: an order by name or address would tell what is
- * not released. Of each, what a launch's personal claims read, the address only once proven.
+ * not released. Of each, their role in the channel, which their LTI roles there come from, and what a launch's personal
+ * claims read, the address only once proven.
  */
 export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, access, after, limit }: FindLtiMembersOpts) {
   const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
@@ -244,7 +245,7 @@ export async function findLtiMembers(ctx: DbContext, { organizationId, channelTy
     .from(membershipsTable)
     .where(readableMembershipsWhere(access, [organizationId]));
   return ctx.var.db
-    .select({ id, name, givenName, familyName, email, thumbnailUrl })
+    .select({ id, name, givenName, familyName, email, thumbnailUrl, role: membershipsTable.role })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .where(
