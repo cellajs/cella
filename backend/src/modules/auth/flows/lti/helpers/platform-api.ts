@@ -20,11 +20,8 @@ export const ltiImportScope: AccessScope = 'user:read';
 /** The rows one page of a member list asks for: a page of long rows stays under the guarded fetch's size cap. */
 const membersPageSize = 50;
 
-/** The most pages one import reads, whatever the platform answers per page. */
+/** The most pages one import reads: with `membersPageSize` the most rows too. The platform's list goes on unread past it. */
 export const maxMembersPages = 40;
-
-/** The most rows one import reads; the platform's list goes on unread past it. */
-const maxMembersRead = 2000;
 
 /** How long a client assertion is good for: one token request. */
 const assertionLifetimeSeconds = 60;
@@ -44,19 +41,37 @@ export const isUnder = (url: URL, base: URL) => {
   return url.origin === base.origin && url.pathname.startsWith(basePath);
 };
 
+/** Whether `address` lies on the origin of the platform's `issuer`: the one host the app signs for and sends a token to. */
+const onIssuerOrigin = (issuer: string, address: string) =>
+  URL.canParse(issuer) && URL.canParse(address) && new URL(address).origin === new URL(issuer).origin;
+
+interface PlatformTokenAddresses {
+  issuer: string;
+  tokenEndpoint: string;
+  authorizationServer?: string;
+}
+
 /**
- * The API addresses a platform named, when the app trusts them: the API on the origin of the connection's token
- * endpoint or issuer, and the member list under the API. The installation's token goes wherever they point.
+ * Where a platform's token comes from: its token endpoint, and the audience of the client assertion, its authorization
+ * server when it names one. Both lie on the issuer's origin, since the app signs with one key for every platform:
+ * registration refuses a platform otherwise, and a connection stored otherwise signs nothing.
+ * @returns Undefined when either lies on another origin.
+ */
+export const platformTokenAddresses = ({ issuer, tokenEndpoint, authorizationServer }: PlatformTokenAddresses) => {
+  const audience = authorizationServer ?? tokenEndpoint;
+  return onIssuerOrigin(issuer, tokenEndpoint) && onIssuerOrigin(issuer, audience) ? { tokenEndpoint, audience } : undefined;
+};
+
+/**
+ * The API addresses a platform named, when the app trusts them: the API on the origin of the connection's issuer, and
+ * the member list under the API. The installation's token goes wherever they point.
  * @returns Undefined for any other pair.
  */
-export const trustedPlatformApi = (connection: LtiConnection, { apiUrl, membersUrl }: PlatformApi): PlatformApi | undefined => {
+const trustedPlatformApi = (connection: LtiConnection, { apiUrl, membersUrl }: PlatformApi): PlatformApi | undefined => {
   if (!isFetchableUrl(apiUrl) || !isFetchableUrl(membersUrl)) return undefined;
   const api = new URL(apiUrl);
   const members = new URL(membersUrl);
-  const platformOrigins = [connection.issuer, connection.config.tokenEndpoint].flatMap((address) =>
-    URL.canParse(address) ? [new URL(address).origin] : [],
-  );
-  if (!platformOrigins.includes(api.origin) || api.search || api.hash || members.hash || !isUnder(members, api)) return undefined;
+  if (!onIssuerOrigin(connection.issuer, apiUrl) || api.search || api.hash || members.hash || !isUnder(members, api)) return undefined;
   return { apiUrl, membersUrl };
 };
 
@@ -72,7 +87,8 @@ export const launchPlatformApi = (connection: LtiConnection, claims: JWTPayload)
 const readFailed = (reason: string, connection: LtiConnection) =>
   new AppError(400, 'outbound_request_failed', 'warn', { meta: { reason, connectionId: connection.id } });
 
-const parseJson = (text: string): unknown => {
+/** A platform's answer as JSON; undefined for one that does not parse. */
+export const parseJson = (text: string): unknown => {
   try {
     return JSON.parse(text);
   } catch {
@@ -80,17 +96,16 @@ const parseJson = (text: string): unknown => {
   }
 };
 
-/**
- * A client assertion for the connection's registration (`private_key_jwt`), signed with the key the app's key set
- * publishes. Its audience is the platform's authorization server when the platform named one, else its token endpoint.
- */
-const signClientAssertion = async ({ clientId, config }: LtiConnection) => {
+type TokenAddresses = NonNullable<ReturnType<typeof platformTokenAddresses>>;
+
+/** A client assertion for the connection's registration (`private_key_jwt`), signed with the key the app's key set publishes. */
+const signClientAssertion = async (clientId: string, { audience }: TokenAddresses) => {
   const { kid, key } = await currentSigningKey();
   return new SignJWT({})
     .setProtectedHeader({ alg: 'RS256', kid, typ: 'JWT' })
     .setIssuer(clientId)
     .setSubject(clientId)
-    .setAudience(config.authorizationServer ?? config.tokenEndpoint)
+    .setAudience(audience)
     .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${assertionLifetimeSeconds}s`)
@@ -108,10 +123,23 @@ const tokenAnswerSchema = z.object({
 
 const oauthErrorSchema = z.object({ error: z.string().max(maxLength.field) });
 
+/** The most tokens one process keeps: one per connection and API it reads. */
+const maxCachedTokens = 500;
+
 /** Tokens per connection and resource in this process, until shortly before they expire; never shared between connections. */
 const tokens = new Map<string, { accessToken: string; renewAt: number }>();
 
 const tokenKey = (connection: LtiConnection, resource: string) => `${connection.id} ${resource}`;
+
+/** Keeps a token, after dropping the expired ones and, at the cap, the oldest: a map iterates in insertion order. */
+const cacheToken = (key: string, token: { accessToken: string; renewAt: number }) => {
+  for (const [held, { renewAt }] of tokens) if (renewAt <= Date.now()) tokens.delete(held);
+  for (const held of tokens.keys()) {
+    if (tokens.size < maxCachedTokens) break;
+    tokens.delete(held);
+  }
+  tokens.set(key, token);
+};
 
 type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
 
@@ -121,18 +149,23 @@ type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
  * `invalid_scope`, the scope not granted, is a normal state.
  * @throws AppError 400 `outbound_request_failed` for any other answer, and what `guardedFetch` throws.
  */
-const platformToken = async (connection: LtiConnection, resource: string, options: PlatformFetchOptions): Promise<TokenOutcome> => {
+const platformToken = async (
+  connection: LtiConnection,
+  addresses: TokenAddresses,
+  resource: string,
+  options: PlatformFetchOptions,
+): Promise<TokenOutcome> => {
   const cached = tokens.get(tokenKey(connection, resource));
   if (cached && cached.renewAt > Date.now()) return cached;
 
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-    client_assertion: await signClientAssertion(connection),
+    client_assertion: await signClientAssertion(connection.clientId, addresses),
     scope: ltiImportScope,
     resource,
   });
-  const response = await guardedFetch(connection.config.tokenEndpoint, {
+  const response = await guardedFetch(addresses.tokenEndpoint, {
     ...options,
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -147,7 +180,7 @@ const platformToken = async (connection: LtiConnection, resource: string, option
 
   const accessToken = token.access_token;
   if (token.expires_in)
-    tokens.set(tokenKey(connection, resource), { accessToken, renewAt: Date.now() + (token.expires_in - tokenRenewMarginSeconds) * 1000 });
+    cacheToken(tokenKey(connection, resource), { accessToken, renewAt: Date.now() + (token.expires_in - tokenRenewMarginSeconds) * 1000 });
   return { accessToken };
 };
 
@@ -168,23 +201,20 @@ const membersPageSchema = z.object({
 
 type MembersOutcome = { people: LtiMemberRow[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
 
-/**
- * The people of an LTI context at a platform built on the template, read page by page with the connection's token.
- * A row that fails validation or names a test user is left out, and a person listed twice counts once. A 401 gets one
- * new token. The read stops at `maxMembersPages` pages or `maxMembersRead` rows.
- * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list.
- * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, and what
- *   `guardedFetch` throws.
- */
-export const readLtiMembers = async (connection: LtiConnection, api: PlatformApi, options: PlatformFetchOptions = {}): Promise<MembersOutcome> => {
-  let token = await platformToken(connection, api.apiUrl, options);
+/** The pages of a context's member list, read with the connection's token from `addresses`; `readLtiMembers` checked both. */
+const readMemberPages = async (
+  connection: LtiConnection,
+  addresses: TokenAddresses,
+  api: PlatformApi,
+  options: PlatformFetchOptions,
+): Promise<MembersOutcome> => {
+  let token = await platformToken(connection, addresses, api.apiUrl, options);
   if ('refusal' in token) return token;
 
   const people = new Map<string, LtiMemberRow>();
   let renewed = false;
-  let rows = 0;
   let pageToken: string | undefined;
-  for (let pages = 0; pages < maxMembersPages && rows < maxMembersRead; ) {
+  for (let pages = 0; pages < maxMembersPages; ) {
     const url = new URL(api.membersUrl);
     url.searchParams.set('maxPageSize', String(membersPageSize));
     if (pageToken) url.searchParams.set('pageToken', pageToken);
@@ -196,7 +226,7 @@ export const readLtiMembers = async (connection: LtiConnection, api: PlatformApi
     if (response.status === 401 && !renewed) {
       renewed = true;
       tokens.delete(tokenKey(connection, api.apiUrl));
-      token = await platformToken(connection, api.apiUrl, options);
+      token = await platformToken(connection, addresses, api.apiUrl, options);
       if ('refusal' in token) return token;
       continue;
     }
@@ -204,8 +234,7 @@ export const readLtiMembers = async (connection: LtiConnection, api: PlatformApi
     const page = response.status === 200 && membersPageSchema.safeParse(parseJson(response.text)).data;
     if (!page) throw readFailed('members_page', connection);
 
-    for (const row of page.results.slice(0, maxMembersRead - rows)) {
-      rows += 1;
+    for (const row of page.results) {
       const member = memberRowSchema.safeParse(row).data;
       if (member && !member.roles.includes(ltiTestUserRole)) people.set(member.id, member);
     }
@@ -214,4 +243,25 @@ export const readLtiMembers = async (connection: LtiConnection, api: PlatformApi
     if (!pageToken) return { people: [...people.values()], issue: null };
   }
   return { people: [...people.values()], issue: 'too_many_members' };
+};
+
+/**
+ * The people of an LTI context at a platform built on the template, read page by page with the connection's token.
+ * Nothing is signed or sent unless the token's addresses (`platformTokenAddresses`) and the API (`trustedPlatformApi`)
+ * lie on the connection's issuer's origin. A row that fails validation or names a test user is left out, and a person
+ * listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages.
+ * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
+ *   or `address_refused` for an address the app does not reach.
+ * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
+ *   that does not answer.
+ */
+export const readLtiMembers = async (connection: LtiConnection, stored: PlatformApi, options: PlatformFetchOptions = {}): Promise<MembersOutcome> => {
+  const api = trustedPlatformApi(connection, stored);
+  const addresses = platformTokenAddresses({ issuer: connection.issuer, ...connection.config });
+  if (!api || !addresses) return { refusal: 'address_refused' };
+  return readMemberPages(connection, addresses, api, options).catch((error: unknown) => {
+    // The guarded fetch refuses an address for good, unlike a platform that failed to answer.
+    if (error instanceof AppError && error.type === 'outbound_request_refused') return { refusal: 'address_refused' as const };
+    throw error;
+  });
 };

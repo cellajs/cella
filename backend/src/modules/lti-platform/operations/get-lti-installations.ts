@@ -15,6 +15,7 @@ export const toLtiInstallation = ({ account, installation, client }: LtiInstalla
   logoUri: client.logoUri,
   domain: client.ltiToolConfig.domain,
   launchOrigins: launchOrigins(client),
+  keySetOrigin: new URL(client.jwksUri).origin,
   description: client.ltiToolConfig.description ?? null,
   claims: client.ltiToolConfig.claims,
   requestedFields: requestedFields(client.ltiToolConfig.claims),

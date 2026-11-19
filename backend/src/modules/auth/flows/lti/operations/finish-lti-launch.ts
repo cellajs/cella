@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -15,18 +16,15 @@ import { createLtiContextChannel, type LtiContext, ltiContextChannelType, ltiCon
 import type { LtiContextModel } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import type { ltiFinishFormSchema } from '#/modules/auth/flows/lti/lti-schema';
-import { createLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
+import { admitLtiPerson, applyLtiRole } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
-import { findLaunchConnection, type LtiLaunch, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
-import type { LtiConnection } from '#/modules/connections/connections-db';
+import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
 import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
-import type { MembershipModel } from '#/modules/memberships/memberships-db';
-import { findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
-import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
-import { findIdentityBySubject, lockIdentityKey, updateIdentity } from '#/modules/user/identities-queries';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { findTenant } from '#/modules/tenants/tenants-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -56,42 +54,6 @@ export const planLtiContextChannel = async (
 };
 
 /**
- * The account a launch acts for, found by its `lti` identity (the platform's issuer and `sub`) under the lock a member
- * import of the person takes, or made for a first arrival (`createLtiAccount`). The identity records the sign-in.
- */
-const launchingPersonId = async (ctx: DbContext, { connection, launch }: { connection: LtiConnection; launch: LtiLaunch }) => {
-  const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
-  const signedInAt = getIsoDate();
-  const key = { kind: 'lti', provider: connection.issuer, subject: sub } as const;
-  await lockIdentityKey(ctx, key);
-  const identity = await findIdentityBySubject(ctx, key);
-  if (!identity) return createLtiAccount(ctx, { connection, person: { sub, name, givenName, familyName, email }, signedInAt });
-  await updateIdentity(ctx, { id: identity.id, values: { lastSignInAt: signedInAt, connectionId: connection.id, email: email ?? null } });
-  return identity.userId;
-};
-
-interface ApplyLtiRoleOpts {
-  userId: string;
-  channel: MembershipEntity;
-  role: MembershipModel['role'];
-}
-
-/**
- * Gives the person the role a launch maps to in the channel: a new membership as the SSO path writes one, or the
- * existing one's role changed. A role in a channel below the organization follows the launch up and down; an
- * organization role only goes up.
- */
-const applyLtiRole = async (ctx: DbContext, { userId, channel, role }: ApplyLtiRoleOpts) => {
-  const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
-  if (!membership) {
-    await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: userId }] });
-    return;
-  }
-  const follows = channel.entityType === 'organization' ? hierarchy.outranks('organization', role, membership.role) : role !== membership.role;
-  if (follows) await updateMembershipRole(ctx, { id: membership.id, role, by: userId });
-};
-
-/**
  * The embedded page of a channel: `/embed` in front of the path the app's own links to a channel take
  * (`buildNotificationPath`), which the frontend resolves to the channel's page.
  */
@@ -106,15 +68,16 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
 /**
  * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
- * creates the person, applies the mapped role and records the context with the platform's API addresses it trusts,
- * and the LTI deployment of a connection that held none, all in one transaction. Then it starts the embedded session:
- * no MFA challenge, the launch is the proof. A launch by the context's Instructor or Administrator asks for a member
- * import (`requestLtiMemberImport`) without waiting for it.
+ * creates the person (`admitLtiPerson`), applies the mapped role (`applyLtiRole`) and records the context with the
+ * platform's API addresses it trusts, and the LTI deployment of a connection that held none, all in one transaction.
+ * Then it starts the embedded session: no MFA challenge, the launch is the proof. A launch by the context's Instructor
+ * or Administrator asks for a member import (`requestLtiMemberImport`) without waiting for it.
  * @returns The embedded page of the channel to redirect to.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
- *   `lti_deployment_unknown` when another first launch recorded a different deployment, 409 `lti_context_not_set_up`,
- *   409 `write_conflict` when another launch created the context's channel at once, and what `findLaunchConnection`
- *   and `validateLtiLaunch` throw.
+ *   `channel_archived` for a context whose channel is archived, 403 `lti_member_limit` for a person who needs a seat
+ *   while none is left, 403 `lti_deployment_unknown` when another first launch recorded a different deployment, 409
+ *   `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel at once, and what
+ *   `findLaunchConnection` and `validateLtiLaunch` throw.
  */
 export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>): Promise<string> {
   if (ctx.req.header('Sec-Fetch-Site') !== 'same-origin') throw new AppError(403, 'lti_launch_cross_site', 'warn');
@@ -125,8 +88,11 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   const { connection, header, claims } = await findLaunchConnection(token);
   const launch = await validateLtiLaunch({ token, header, claims, connection, state, storageValue });
 
-  const organization = await findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId });
-  if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+  const [organization, tenant] = await Promise.all([
+    findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId }),
+    findTenant(dbCtx, { where: eq(tenantsTable.id, connection.tenantId) }),
+  ]);
+  if (!organization || !tenant) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
   const ltiRoles = launch[ltiClaims.roles];
   const contextClaim = launch[ltiClaims.context];
@@ -136,12 +102,23 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     context && ltiContextChannelType !== 'organization'
       ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
       : { channel: organization };
+  // Joining an archived channel is a create inside it, which an archive refuses.
+  if ('channel' in plan && plan.channel.archived) throw new AppError(403, 'channel_archived', 'warn', { entityType: plan.channel.entityType });
   const deploymentId = launch[ltiClaims.deploymentId];
   const platformApi = launchPlatformApi(connection, claims);
+  const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
   const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const userId = await launchingPersonId(txCtx, { connection, launch });
+    const admitted = await admitLtiPerson(txCtx, {
+      connection,
+      organization,
+      memberQuota: tenant.restrictions.quotas.user,
+      person: { sub, name, givenName, familyName, email },
+      signedInAt: getIsoDate(),
+    });
+    if (!admitted) throw new AppError(403, 'lti_member_limit', 'warn', { meta: { connectionId: connection.id } });
+    const { userId, seat } = admitted;
     const channel =
       'channel' in plan ? plan.channel : await createLtiContextChannel(txCtx, { organization, context: plan.create, createdBy: userId });
 
@@ -168,7 +145,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
         throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId: context.id } });
     }
 
-    await applyLtiRole(txCtx, { userId, channel, role: ltiContextRole({ ltiRoles, connection }) });
+    await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiContextRole({ ltiRoles, connection }), by: userId });
     // Validation let any deployment through to a connection that held none: another first launch may have recorded one since.
     if (!connection.config.deploymentIds.length && !(await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId }))) {
       throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });

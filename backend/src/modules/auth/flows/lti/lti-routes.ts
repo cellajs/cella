@@ -1,6 +1,7 @@
 import { createXRoutes, json, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
 import {
   listLtiContextsQuerySchema,
   ltiContextSchema,
@@ -9,7 +10,6 @@ import {
   ltiLoginParamsSchema,
   ltiRegisterQuerySchema,
 } from '#/modules/auth/flows/lti/lti-schema';
-import { mockLtiContextResponse } from '#/modules/connections/connections-mocks';
 import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /** A form post's body, required: an optional body skips validation on a request without a Content-Type. */
@@ -95,7 +95,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.',
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Course not set up\n\nA page: an instructor opens the app from this course first.' },

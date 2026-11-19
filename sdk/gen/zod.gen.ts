@@ -385,6 +385,7 @@ export const zLtiInstallation = z.object({
   logoUri: z.string().nullable(),
   domain: z.string(),
   launchOrigins: z.array(z.string()),
+  keySetOrigin: z.string(),
   description: z.string().nullable(),
   claims: z.array(z.string()),
   requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
@@ -789,7 +790,7 @@ export const zApiKey = z.object({
   name: z.string().max(255),
   prefix: z.string().max(255),
   last4: z.string().max(4),
-  scopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])).nullable(),
+  scopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write'])).nullable(),
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   createdBy: z
@@ -1791,7 +1792,19 @@ export const zListLtiContextsResponse = z.object({
       apiUrl: z.string().nullable(),
       importRanAt: z.string().nullable(),
       importReadCount: z.int().nullable(),
-      importIssue: z.enum(['scope_not_granted', 'token_refused', 'members_refused', 'read_failed', 'too_many_members', 'member_limit']).nullable(),
+      importIssue: z
+        .enum([
+          'address_refused',
+          'scope_not_granted',
+          'token_refused',
+          'members_refused',
+          'read_retrying',
+          'read_failed',
+          'too_many_members',
+          'member_limit',
+          'inactive',
+        ])
+        .nullable(),
       createdAt: z.string(),
     }),
   ),
@@ -2132,6 +2145,8 @@ export const zListLtiMembersResponse = z.object({
       id: z.string(),
       roles: z.array(z.string()),
       name: z.string().optional(),
+      given_name: z.string().optional(),
+      family_name: z.string().optional(),
       email: z.string().optional(),
       picture: z.string().optional(),
     }),
@@ -3168,7 +3183,7 @@ export const zCreateServiceAccountBody = z.object({
         .max(255)
         .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
       scopes: z
-        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
+        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
         .max(5)
         .nullish(),
@@ -3245,7 +3260,7 @@ export const zCreateApiKeyBody = z.object({
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   scopes: z
-    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)
     .max(5)
     .nullish(),

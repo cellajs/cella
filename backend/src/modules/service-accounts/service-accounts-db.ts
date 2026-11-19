@@ -31,14 +31,21 @@ export const serviceAccountsTable = snakeCase.table(
     name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: serviceAccountStatuses }).notNull().default('active'),
     bindings: jsonb().$type<RoleBinding[]>().notNull().default([]),
-    /** Set when this account is the installation of a registered app in this tenant; its consents hang off it. */
+    /** Set when this account is the installation of a registered app in this tenant, at most one per app; its consents hang off it. */
     oauthClientId: varchar({ length: maxLength.field }).references(() => oauthClientsTable.id, { onDelete: 'cascade' }),
-    /** Set when this account is the one an LTI connection writes as, such as its member imports; it takes no API key. */
-    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'cascade' }),
+    /**
+     * Set when this account is the one an LTI connection writes as, such as its member imports: no admin manages it and
+     * it takes no API key. Cleared, the account disabled, when the connection goes.
+     */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     // `updatedBy` names who last changed name or status; disabling is the security-relevant act here.
     ...auditColumns(),
   },
-  (table) => [index('service_accounts_tenant_id_idx').on(table.tenantId), uniqueIndex('service_accounts_connection_id_idx').on(table.connectionId)],
+  (table) => [
+    index('service_accounts_tenant_id_idx').on(table.tenantId),
+    uniqueIndex('service_accounts_oauth_client_idx').on(table.tenantId, table.oauthClientId),
+    uniqueIndex('service_accounts_connection_id_idx').on(table.connectionId),
+  ],
 );
 
 export type ServiceAccountModel = typeof serviceAccountsTable.$inferSelect;

@@ -1,7 +1,8 @@
-import { and, eq, getColumns, inArray } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { type InsertLtiContextModel, type LtiImportIssue, ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import type { OrderDirection } from '#/schemas/common-schemas';
@@ -67,31 +68,48 @@ interface FindOrganizationLtiContextsOpts {
   organizationId: string;
   /** By when a launch first recorded the context. */
   order: OrderDirection;
+  offset: number;
+  limit: number;
 }
 
-/** The LTI contexts mapped to the organization's channels, of every connection of its tenant, each with its channel. */
-export async function findOrganizationLtiContexts(ctx: DbContext, { tenantId, organizationId, order }: FindOrganizationLtiContextsOpts) {
+/**
+ * A page of the LTI contexts mapped to the organization's channels, of every connection of its tenant, each with its
+ * channel, and the total.
+ */
+export async function findOrganizationLtiContexts(
+  ctx: DbContext,
+  { tenantId, organizationId, order, offset, limit }: FindOrganizationLtiContextsOpts,
+) {
+  const where = and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.organizationId, organizationId));
   const orderBy = getOrderColumns({ sort: 'createdAt', order, columns: { createdAt: ltiContextsTable.createdAt }, tieBreaker: ltiContextsTable.id });
-  const contexts = await ctx.var.db
+  const itemsQuery = ctx.var.db
     .select()
     .from(ltiContextsTable)
-    .where(and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.organizationId, organizationId)))
-    .orderBy(...orderBy);
+    .where(where)
+    .orderBy(...orderBy)
+    .limit(limit)
+    .offset(offset);
+  const { items: contexts, total } = await resolveListTotal(
+    itemsQuery,
+    exactTotal(ctx.var.db.select({ total: count() }).from(ltiContextsTable).where(where)),
+  );
 
   const channels = await Promise.all(
     appConfig.channelEntityTypes.map(async (channelType) => {
-      const ids = contexts.flatMap((context) => (context.channelType === channelType ? [context.channelId] : []));
-      if (!ids.length) return [];
+      const ids = new Set(contexts.flatMap((context) => (context.channelType === channelType ? [context.channelId] : [])));
+      if (!ids.size) return [];
       const table = getEntityTable(channelType);
       return ctx.var.db
         .select(pick(getColumns(table), channelBaseSchema.keyof().options))
         .from(table)
-        .where(inArray(table.id, ids));
+        .where(inArray(table.id, [...ids]));
     }),
   );
   const byId = new Map(channels.flat().map((channel) => [channel.id, channel]));
-  return contexts.flatMap((context) => {
+  // A context goes with its channel, so each finds one; the total counts them alike.
+  const items = contexts.flatMap((context) => {
     const channel = byId.get(context.channelId);
     return channel ? [{ context, channel }] : [];
   });
+  return { items, total };
 }

@@ -13,7 +13,7 @@ import { getLtiContextsOp } from '#/modules/auth/flows/lti/operations/get-lti-co
 import { initiateLtiLoginOp } from '#/modules/auth/flows/lti/operations/initiate-lti-login';
 import { receiveLtiLaunchOp } from '#/modules/auth/flows/lti/operations/receive-lti-launch';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
-import { readListPage, windowOf } from '#/utils/list-page';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>();
 
@@ -59,8 +59,7 @@ const contextApp = new OpenAPIHono<Env>();
 
 contextApp.openapi(ltiContextRoutes.listLtiContexts, async (ctx) => {
   const query = ctx.req.valid('query');
-  const contexts = await getLtiContextsOp(ctx, query);
-  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(contexts, page)), 200);
+  return ctx.json(await readListPage(ctx, query, (page) => getLtiContextsOp(ctx, query, page)), 200);
 });
 
 export const ltiContextHandlers = contextApp;

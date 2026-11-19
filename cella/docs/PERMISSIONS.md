@@ -219,8 +219,9 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | --- | --- | --- |
 | `publicGuard` | Anyone, with no actor | Nothing |
 | `userGuard` | A session cookie: the signed-in user | 401 |
-| `serviceGuard` | An API key or an access token, masked by its scopes, never a system admin | 401; 403 from a browser origin |
-| `tokenGuard` | An access token only, for the MCP face | 401 |
+| `serviceGuard` | An API key or an access token other than an installed LTI tool's, masked by its scopes, never a system admin | 401; 403 from a browser origin |
+| `tokenGuard` | An access token other than an installed LTI tool's, for the MCP face | 401 |
+| `ltiToolGuard` | An installed LTI tool's access token alone, with the bindings its tabs imply ([LTI](./LTI.md#api-access)) | 401 |
 | `actorGuard` | Any of the three proofs | 401, 403 |
 | `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's sign-in policy | 403 `forbidden`, `sso_required` |
 | `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |

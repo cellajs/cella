@@ -67,14 +67,14 @@ function kidOf(assertion: string): string | undefined {
 
 /**
  * An approved, active LTI installation's registration as a `client_credentials` client, which authenticates with
- * `private_key_jwt`. The provider never fetches an address the LTI tool supplied: the platform reads the key set it
- * registered through the guarded fetch and hands the keys over inline. An unreadable set leaves no key, and client
- * authentication fails.
+ * `private_key_jwt`; one that asked for no access scope is no client. The provider never fetches an address the LTI
+ * tool supplied: the platform reads the key set it registered through the guarded fetch and hands the keys over
+ * inline. An unreadable set leaves no key, and client authentication fails.
  */
 async function findLtiTokenClient(id: string, assertion: string): Promise<AppClientMetadata | undefined> {
   if (!isSwitchOn({ feature: 'ltiPlatform' })) return undefined;
   const found = await findLtiInstallationByClient({ var: { db: baseDb } }, { clientId: id });
-  if (!found?.installation.approvedAt || found.account.status !== 'active' || !found.client.jwksUri) return undefined;
+  if (!found?.installation.approvedAt || found.account.status !== 'active' || !found.client.requestedScopes?.length) return undefined;
 
   const owner = { id, jwksUri: found.client.jwksUri, meta: { clientId: id } };
   const jwks: JSONWebKeySet = await readLtiKeySet(owner, kidOf(assertion)).catch((err) => {

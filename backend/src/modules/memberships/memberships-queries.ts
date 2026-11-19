@@ -288,12 +288,21 @@ export const insertMissingMembershipRows = async (ctx: DbContext, { values }: In
 export const inUndeletedTenant = (tenantId: typeof membershipsTable.tenantId) =>
   sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'deleted')`;
 
-/** Every membership of these users that counts, in any organization, as a session reads its own (`loadMemberships`). */
-export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: { userIds: string[] }) =>
+/**
+ * Every membership of these users that counts, as a session reads its own (`loadMemberships`): in any organization, or
+ * in `organizationId` alone when given.
+ */
+export const findMembershipsByUserIds = async (ctx: DbContext, { userIds, organizationId }: { userIds: string[]; organizationId?: string }) =>
   ctx.var.db
     .select()
     .from(membershipsTable)
-    .where(and(inArray(membershipsTable.userId, userIds), inUndeletedTenant(membershipsTable.tenantId)));
+    .where(
+      and(
+        inArray(membershipsTable.userId, userIds),
+        organizationId === undefined ? undefined : eq(membershipsTable.organizationId, organizationId),
+        inUndeletedTenant(membershipsTable.tenantId),
+      ),
+    );
 
 interface TenantMembersOpts {
   tenantId: string;

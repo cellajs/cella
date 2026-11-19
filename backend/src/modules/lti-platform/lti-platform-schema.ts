@@ -120,6 +120,9 @@ export const ltiInstallationSchema = z
     launchOrigins: z
       .array(z.string())
       .describe("The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"),
+    keySetOrigin: z
+      .string()
+      .describe("The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too"),
     description: z.string().nullable(),
     claims: z.array(z.string()).describe('The claims the LTI tool asked for that the platform can release'),
     requestedFields: z.array(z.enum(ltiReleasableFields)).describe('The personal fields those claims carry: what an approval may release'),
@@ -193,25 +196,31 @@ export const ltiLaunchStartSchema = z.object({
 /** A channel's people as an installed LTI tool reads them, by id alone: an order by name or address would tell what is not released. */
 export const listLtiMembersQuerySchema = pageQuerySchema.extend({ ...channelRefSchema.shape, orderBy: orderByQuerySchema(['id'], 'id asc') });
 
+/** The personal values are the claims a launch carries, by their names: each present when its field is released and the LTI tool asked for it. */
 export const ltiMemberSchema = z.object({
   id: z.string().describe('The person: the id a launch sends as `sub`'),
-  roles: z.array(z.string()).describe('Their LTI roles in the channel, as full URIs: the roles a launch there would send them'),
-  name: z.string().optional().describe('Their name, when the installation releases it'),
-  email: z.string().optional().describe('Their proven email address, when the installation releases it and they have one'),
-  picture: z.string().optional().describe('The address of their picture, when the installation releases it and they have one'),
+  roles: z.array(z.string()).describe('Their LTI roles in the course, as full URIs: the roles a launch there would send them'),
+  name: z.string().optional().describe('Their name, when released'),
+  given_name: z.string().optional().describe('Their given name, when released and they have one'),
+  family_name: z.string().optional().describe('Their family name, when released and they have one'),
+  email: z.string().optional().describe('Their proven email address, when released and they have one'),
+  picture: z.string().optional().describe('The address of their picture, when released and they have one'),
 });
 
 /**
- * The claim a launch adds, under a name built from the issuer (`ltiApiClaim`), to say where the platform's API is: an
- * installed LTI tool reads the members of the placement's channel there with a token of its own.
+ * The claim a launch of an LTI tool granted API access adds, under a name built from the issuer (`ltiApiClaim`), to say
+ * where the platform's API is: the installation reads the people of the launch's course there with a token of its own.
  */
 export const ltiApiClaimSchema = z.object({
   api_url: z.string().describe("The tenant's API: the `resource` a token request names, and the start of every route address"),
   tenant_id: z.string(),
   organization_id: z.string(),
-  channel_type: channelEntityTypeSchema.describe('The entity type of the channel the launch was placed in'),
-  channel_id: z.string(),
-  members_url: z.string().describe("The first page of the channel's members for the installation's token (`listLtiMembers`)"),
+  members_url: z
+    .string()
+    .optional()
+    .describe(
+      "The first page of the people of the launch's course, its LTI context, for the installation's token (`listLtiMembers`); absent without a context",
+    ),
 });
 
 export const initiateLtiLoginQuerySchema = z.object({ token: z.string().max(maxLength.url).describe('The launch record a launch start answered') });

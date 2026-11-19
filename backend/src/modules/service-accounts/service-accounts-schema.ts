@@ -10,7 +10,7 @@ import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
 
 /** Derived from the policy matrix: the only values a key may be narrowed to. */
-const scopeEnum = z.enum(accessScopes.all);
+const scopeEnum = z.enum(accessScopes.offered);
 
 const roleBindingSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),

@@ -124,7 +124,10 @@ export const useSetLtiInstallationStatusMutation = () =>
     },
   });
 
-/** Replaces the access scopes an approved installation's own tokens may carry; asks the step-up an approval asks. */
+/**
+ * Replaces the access scopes an approved installation's own tokens may carry; asks the step-up an approval asks. The
+ * list is read again after, so a change another admin made meanwhile shows too.
+ */
 export const useUpdateLtiInstallationMutation = () =>
   useMutation<UpdateLtiInstallationResponse, ApiError, MutationData<UpdateLtiInstallationData>>({
     mutationKey: ltiPlatformKeys.update,
@@ -133,6 +136,7 @@ export const useUpdateLtiInstallationMutation = () =>
       setCachedInstallation(path, updated.id, () => updated);
       toaster.success(t('c:success.update_resource', { resource: t('c:api_access') }));
     },
+    onSettled: (_data, _error, { path }) => queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installations(path) }),
   });
 
 /** Places an approved installation as a tab of a channel; the channel's tab bar reads the new link. */

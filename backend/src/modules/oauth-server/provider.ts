@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
-import { type AccessScope, accessScopes, appConfig, type EntityType } from 'shared';
+import { type AccessScope, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -23,6 +23,9 @@ import { log } from '#/utils/logger';
 const hour = 60 * 60;
 const day = 24 * hour;
 
+/** The longest a client assertion may still be good for when presented: a leaked one is redeemable once until then. */
+const maxAssertionLifetime = 5 * 60;
+
 /** The provider routes that start an authorization request: the authorization endpoint and pushed requests. */
 const authorizationRoutes = new Set(['authorization', 'pushed_authorization_request']);
 
@@ -36,19 +39,17 @@ const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessS
 /**
  * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
  * stays within the key it authenticated with (`write` covers `read`, as on the API); an installed LTI tool's stays
- * within what an admin granted; other clients may ask for all.
+ * within what an admin granted; other clients may ask for every offered one.
  */
 function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
   const kind = clientKindOf(client);
   if (kind === 'lti') return ltiInstallationOf(client)?.granted_scopes ?? [];
-  if (kind !== 'service') return accessScopes.all;
+  if (kind !== 'service') return accessScopes.offered;
   const key = presentedKeys.get(ctx);
   // No recorded key means client authentication did not run for this request: grant nothing.
   if (!key) return [];
-  return accessScopes.all.filter((scope) => {
-    const [type, verb] = scope.split(':') as [EntityType, 'read' | 'write'];
-    return accessScopes.allows(key.scopes, type, verb === 'read' ? 'read' : 'update');
-  });
+  const held = key.scopes;
+  return accessScopes.offered.filter((scope) => !held || held.some((scoped) => scoped === scope || scoped === scope.replace(/:read$/, ':write')));
 }
 
 /**
@@ -171,8 +172,15 @@ export async function createProvider(): Promise<Provider> {
     // Keeps the adapter's own metadata on its clients; `allowClient` refuses a metadata document that sets any.
     extraClientMetadata: { properties: [...appClientProperties] },
     responseTypes: ['code'],
-    // The entity scopes only; `openid` stays out: this server issues no ID tokens.
-    scopes: [...accessScopes.all],
+    // The offered entity scopes only; `openid` stays out: this server issues no ID tokens. An installed LTI tool's token
+    // carries `user:read` through its resource's scopes (`getResourceServerInfo`), which discovery leaves unlisted.
+    scopes: [...accessScopes.offered],
+    // An assertion's own `exp` would let a leaked one wait for its single use until then.
+    assertJwtClientAuthClaimsAndHeader: (_ctx, claims) => {
+      if (typeof claims.exp === 'number' && claims.exp - Date.now() / 1000 > maxAssertionLifetime) {
+        throw new errors.InvalidClientAuth('client assertion must expire within five minutes');
+      }
+    },
     pkce: { required: () => true },
     // Subjects are public, so a sector identifier means nothing here; the provider would fetch one on every use of a
     // client whose metadata document names it, outside the fetch budget.

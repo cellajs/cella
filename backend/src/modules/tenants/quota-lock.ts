@@ -1,20 +1,29 @@
 import { sql } from 'drizzle-orm';
 import type { ProductEntityType } from 'shared';
-import type { ActorContext } from '#/core/context';
+import type { ActorContext, DbContext } from '#/core/context';
 import { countTenantEntityRows } from '#/modules/entities/entities-queries';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
+import type { Restrictions } from '#/modules/tenants/tenants-schema';
 
 /**
- * Runs a product create's `insert` in the caller's tenant transaction under a Postgres lock on the tenant's quota of
- * `entityType`, then counts the tenant's rows: creates of one tenant, in any process, count after each other's commit,
- * so concurrent requests cannot pass the quota together. The lock is held only where a quota applies.
+ * Holds a Postgres lock on the tenant's quota of `key` until the caller's transaction ends: writes of one tenant that
+ * count against it, in any process, count after each other's commit.
+ */
+export async function lockTenantQuota(txCtx: DbContext, { tenantId, key }: { tenantId: string; key: keyof Restrictions['quotas'] }) {
+  await txCtx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:${key}:${tenantId}`}, 0))`);
+}
+
+/**
+ * Runs a product create's `insert` in the caller's tenant transaction under the tenant's lock on its quota of
+ * `entityType` (`lockTenantQuota`), then counts the tenant's rows: concurrent requests cannot pass the quota together.
+ * The lock is held only where a quota applies.
  * @throws AppError 403 `restrict_by_app` when the inserted rows pass the quota; the throw rolls the insert back.
  */
 export async function insertWithinTenantQuota<T>(txCtx: ActorContext, entityType: ProductEntityType, insert: () => Promise<T[]>): Promise<T[]> {
   const quota = txCtx.var.tenant.restrictions.quotas[entityType];
   if (txCtx.var.isSystemAdmin || quota === 0) return insert();
 
-  await txCtx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:${entityType}:${txCtx.var.tenantId}`}, 0))`);
+  await lockTenantQuota(txCtx, { tenantId: txCtx.var.tenantId, key: entityType });
   const rows = await insert();
   // A row id an earlier attempt inserted adds no row, so a replay at a full quota still answers with it.
   if (rows.length > 0) {

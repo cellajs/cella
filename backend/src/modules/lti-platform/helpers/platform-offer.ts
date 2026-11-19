@@ -1,7 +1,8 @@
-import { accessScopes, appConfig } from 'shared';
+import { appConfig } from 'shared';
 import { env } from '#/env';
 import { ltiPlatformConfigurationMember } from '#/lib/lti-vocabulary';
 import { type LtiReleasableField, ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
+import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 
 /** The platform's own LTI routes, as paths under the issuer; the OAuth worker serves them beside the provider. */
 export const ltiIssuerPaths = {
@@ -29,7 +30,7 @@ export const ltiClaimsSupported: readonly string[] = ['iss', 'sub', ...Object.va
 /**
  * The platform's OpenID configuration (LTI Dynamic Registration 1.0, section 2.1), with the key set and the token
  * endpoint of the authorization server. The platform signs with RS256 keys only and takes LTI tools that authenticate
- * with them. An installed LTI tool may ask for the API's access scopes: an admin grants them to its own tokens.
+ * with them. An installed LTI tool may ask for the access scopes its routes read: an admin grants them to its own tokens.
  */
 export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: string; tokenEndpoint: string }) => ({
   issuer: appConfig.oauthUrl,
@@ -41,8 +42,8 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
   authorization_server: appConfig.oauthUrl,
   token_endpoint_auth_methods_supported: ['private_key_jwt'],
   token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-  // The spec requires `openid`. The platform serves no LTI service: beside it are the API's own scopes.
-  scopes_supported: ['openid', ...accessScopes.all],
+  // The spec requires `openid`. The platform serves no LTI service: beside it are the API's scopes an installation can hold.
+  scopes_supported: ['openid', ...ltiToolScopes],
   response_types_supported: ['id_token'],
   subject_types_supported: ['public'],
   id_token_signing_alg_values_supported: ['RS256'],
@@ -76,8 +77,8 @@ const claimValues = {
 } satisfies Record<(typeof ltiFieldClaims)[LtiReleasableField][number], (person: PersonalValues) => string | null>;
 
 /**
- * The personal claims of a launch: of each released field, the claims the LTI tool asked for, where the person has a
- * value. None when nothing is released.
+ * The personal claims of a launch and of a member row: of each released field, the claims the LTI tool asked for, where
+ * the person has a value. None when nothing is released.
  */
 export const releasedClaims = (released: readonly LtiReleasableField[], asked: readonly string[], person: PersonalValues): Record<string, string> => {
   const claims: Record<string, string> = {};
@@ -89,21 +90,3 @@ export const releasedClaims = (released: readonly LtiReleasableField[], asked: r
   }
   return claims;
 };
-
-const fieldValues = {
-  name: (person) => person.name,
-  email: (person) => person.email,
-  picture: (person) => person.thumbnailUrl,
-} satisfies Record<LtiReleasableField, (person: Pick<PersonalValues, 'name' | 'email' | 'thumbnailUrl'>) => string | null>;
-
-/** The released fields of a member row, each under its field's name, where the person has a value. None when nothing is released. */
-export const releasedFieldValues = (
-  released: readonly LtiReleasableField[],
-  person: Pick<PersonalValues, 'name' | 'email' | 'thumbnailUrl'>,
-): Partial<Record<LtiReleasableField, string>> =>
-  Object.fromEntries(
-    released.flatMap((field) => {
-      const value = fieldValues[field](person);
-      return value ? [[field, value]] : [];
-    }),
-  );

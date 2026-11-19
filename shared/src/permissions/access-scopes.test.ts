@@ -15,6 +15,7 @@ describe('deriveAccessScopes', () => {
   it('derives `user:read` alone for people, and reads no one without it', () => {
     const withPeople = deriveAccessScopes({ ...matrix, user: {} } as unknown as PolicyMatrix);
     expect(withPeople.all).toEqual([...accessScopes.all, 'user:read']);
+    expect(withPeople.offered).toEqual(accessScopes.all);
     expect(withPeople.allows(['user:read'], 'user', 'read')).toBe(true);
     expect(withPeople.allows(['organization:write'], 'user', 'read')).toBe(false);
     expect(withPeople.allows(['user:read'], 'user', 'update')).toBe(false);

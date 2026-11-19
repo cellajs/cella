@@ -34,7 +34,9 @@ The app is its own authorization server, on the same origin under `/oauth` ([OAu
 
 A service account gets a token from its API key through `client_credentials`, and an installed LTI tool with an assertion signed by the key it registered. These two act without a person, as themselves: no person consents, and their own bindings and scopes decide.
 
-Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
+Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants.
+
+A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too, except an installed LTI tool's, which works only on the routes for installed LTI tools. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
 
 A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. The next request sees a revoked grant or key and any membership change.
 
@@ -44,7 +46,7 @@ A key or token acts with its actor's role bindings, narrowed by its scopes and b
 
 ### Access scopes
 
-Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. People have `user:read` alone, and a key or token whose scopes leave it out reads no one. A scope masks the actor's bindings in every permission check:
+Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. People have `user:read` alone, which only an installed LTI tool can be granted, and a key or token whose scopes leave it out reads no one. A scope masks the actor's bindings in every permission check:
 
 - **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
 - **Unknown scope:** fails closed.

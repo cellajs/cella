@@ -51,7 +51,9 @@ A client that registers only through dynamic client registration (RFC 7591) cann
 
 An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
 
-The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. Each assertion counts once and names the issuer as its audience, which the LTI configuration gives as the authorization server. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
+The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
+
+An assertion counts once and must expire within five minutes. Its audience is the issuer, which the LTI configuration gives as the authorization server, or the token endpoint's address. The provider compares the latter with the host it sees: behind a proxy, only the public host matches.
 
 A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
 

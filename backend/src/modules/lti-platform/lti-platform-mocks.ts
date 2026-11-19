@@ -13,6 +13,7 @@ export const mockLtiInstallationResponse = (key = 'ltiInstallation:default') => 
       logoUri: 'https://peer-review.example.com/logo.svg',
       domain: 'peer-review.example.com',
       launchOrigins: ['https://peer-review.example.com', 'https://launch.peer-review.example.com'],
+      keySetOrigin: 'https://peer-review.example.com',
       description: 'Students review the drafts of their peers.',
       claims: ['iss', 'sub', 'name', 'email'],
       requestedFields: ['name' as const, 'email' as const],

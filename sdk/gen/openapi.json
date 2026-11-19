@@ -50,7 +50,7 @@
           },
           "ltiToolGuard": {
             "name": "LTI tool",
-            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation, within the scopes an admin granted."
+            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the courses it is placed in or below, within the scopes an admin granted."
           },
           "orgGuard": {
             "name": "Organization",
@@ -547,8 +547,7 @@
               "organization:read": "Read organizations",
               "organization:write": "Create, update and delete organizations",
               "attachment:read": "Read attachments",
-              "attachment:write": "Create, update and delete attachments",
-              "user:read": "Read users"
+              "attachment:write": "Create, update and delete attachments"
             }
           },
           "clientCredentials": {
@@ -2394,6 +2393,10 @@
             },
             "description": "The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"
           },
+          "keySetOrigin": {
+            "type": "string",
+            "description": "The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too"
+          },
           "description": {
             "type": ["string", "null"]
           },
@@ -2559,6 +2562,7 @@
           "logoUri",
           "domain",
           "launchOrigins",
+          "keySetOrigin",
           "description",
           "claims",
           "requestedFields",
@@ -2580,6 +2584,7 @@
           "logoUri": "https://peer-review.example.com/logo.svg",
           "domain": "peer-review.example.com",
           "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+          "keySetOrigin": "https://peer-review.example.com",
           "description": "Students review the drafts of their peers.",
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
@@ -2824,7 +2829,7 @@
           "resource": "http://localhost:3000/api/tenants/m5jfjs",
           "resource_name": "Cella DEVELOPMENT API",
           "authorization_servers": ["http://localhost:3000/oauth"],
-          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
           "bearer_methods_supported": ["header"],
           "resource_documentation": "http://localhost:3000/docs"
         },
@@ -3898,7 +3903,7 @@
             "type": ["array", "null"],
             "items": {
               "type": "string",
-              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
             }
           },
           "expiresAt": {
@@ -9486,7 +9491,7 @@
             "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
           },
           "403": {
-            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user."
+            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left."
           },
           "404": {
             "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
@@ -9942,15 +9947,18 @@
                           "importIssue": {
                             "type": ["string", "null"],
                             "enum": [
+                              "address_refused",
                               "scope_not_granted",
                               "token_refused",
                               "members_refused",
+                              "read_retrying",
                               "read_failed",
                               "too_many_members",
                               "member_limit",
+                              "inactive",
                               null
                             ],
-                            "description": "Why the last member import stopped short: the platform refused the scope, the token or the member list, a read failed and is tried again, the platform listed more people than one import reads, or the member limit refused the next person. Null when it read and wrote everyone."
+                            "description": "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, a read failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
                           },
                           "createdAt": {
                             "type": "string",
@@ -10840,6 +10848,7 @@
                       "logoUri": "https://peer-review.example.com/logo.svg",
                       "domain": "peer-review.example.com",
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
+                      "keySetOrigin": "https://peer-review.example.com",
                       "description": "Students review the drafts of their peers.",
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
@@ -11802,7 +11811,7 @@
         "operationId": "listLtiMembers",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI members",
-        "description": "The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.",
+        "description": "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11925,19 +11934,27 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "Their LTI roles in the channel, as full URIs: the roles a launch there would send them"
+                            "description": "Their LTI roles in the course, as full URIs: the roles a launch there would send them"
                           },
                           "name": {
                             "type": "string",
-                            "description": "Their name, when the installation releases it"
+                            "description": "Their name, when released"
+                          },
+                          "given_name": {
+                            "type": "string",
+                            "description": "Their given name, when released and they have one"
+                          },
+                          "family_name": {
+                            "type": "string",
+                            "description": "Their family name, when released and they have one"
                           },
                           "email": {
                             "type": "string",
-                            "description": "Their proven email address, when the installation releases it and they have one"
+                            "description": "Their proven email address, when released and they have one"
                           },
                           "picture": {
                             "type": "string",
-                            "description": "The address of their picture, when the installation releases it and they have one"
+                            "description": "The address of their picture, when released and they have one"
                           }
                         },
                         "required": ["id", "roles"]
@@ -17724,7 +17741,7 @@
                         "type": ["array", "null"],
                         "items": {
                           "type": "string",
-                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                         },
                         "minItems": 1,
                         "maxItems": 5
@@ -18380,7 +18397,7 @@
                     "type": ["array", "null"],
                     "items": {
                       "type": "string",
-                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write", "user:read"]
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                     },
                     "minItems": 1,
                     "maxItems": 5
@@ -20405,20 +20422,20 @@
                       "tenantId": "dt5qq0",
                       "kind": "lti",
                       "federation": null,
-                      "issuer": "https://canvas.instructure.com",
+                      "issuer": "https://lms.example.com",
                       "clientId": "10000000000123",
                       "claimValues": [],
-                      "name": "canvas.instructure.com",
+                      "name": "lms.example.com",
                       "status": "active",
                       "jitProvisioning": true,
                       "config": {
-                        "authorizationEndpoint": "https://sso.canvaslms.com/api/lti/authorize_redirect",
-                        "tokenEndpoint": "https://sso.canvaslms.com/login/oauth2/token",
-                        "authorizationServer": "https://sso.canvaslms.com/login/oauth2/token",
-                        "jwksUri": "https://sso.canvaslms.com/api/lti/security/jwks",
-                        "productFamilyCode": "canvas",
-                        "version": "cloud",
-                        "deploymentIds": ["123:8865aa05b4b79b64a91a86042e43af5ea8ae79eb"]
+                        "authorizationEndpoint": "https://lms.example.com/lti/authorize",
+                        "tokenEndpoint": "https://lms.example.com/oauth/token",
+                        "authorizationServer": "https://lms.example.com",
+                        "jwksUri": "https://lms.example.com/oauth/jwks",
+                        "productFamilyCode": "moodle",
+                        "version": "4.5",
+                        "deploymentIds": ["deployment-1"]
                       },
                       "createdBy": {
                         "id": "9b32477d-37c7-49ca-930b-f7513e85223b",

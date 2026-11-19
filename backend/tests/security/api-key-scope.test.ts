@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { updateOrganization } from 'sdk';
-import type { AccessScope } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -9,7 +8,14 @@ import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { adminRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
-import { bearerHeaders, clientCredentialsToken, serviceAccountWithKey, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
+import {
+  bearerHeaders,
+  clientCredentialsToken,
+  type KeyScopes,
+  serviceAccountWithKey,
+  startTestOauthServer,
+  type TestOauthServer,
+} from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
@@ -29,7 +35,7 @@ describe('API key scopes at the token endpoint', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   /** An admin service account whose one key carries `scopes` (null: unscoped). */
-  async function adminAccountWithKey(scopes: AccessScope[] | null) {
+  async function adminAccountWithKey(scopes: KeyScopes) {
     const org = await createTestOrganization();
     const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     return { org, client: await serviceAccountWithKey(org, admin.sessionCookie, { scopes }) };

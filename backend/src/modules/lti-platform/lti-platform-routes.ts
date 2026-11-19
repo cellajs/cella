@@ -1,3 +1,4 @@
+import type { AccessScope } from 'shared';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -179,8 +180,11 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
   }),
 });
 
-/** The routes an installed LTI tool calls with a token of its own, for the channels it is placed in. */
-export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], {
+/**
+ * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the courses it is placed in or
+ * below. A route behind that guard belongs here: the scopes these routes declare are all an installation can hold.
+ */
+const ltiToolRouteDrafts = {
   listLtiMembers: xRoute({
     method: 'get',
     path: '/',
@@ -189,10 +193,18 @@ export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], {
     xScope: 'user:read',
     summary: 'Get LTI members',
     description:
-      "The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.",
+      "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
     request: { params: tenantOrgParamSchema, query: listLtiMembersQuerySchema },
     responses: {
       200: json('LTI members', paginationSchema(ltiMemberSchema), { results: [mockLtiMemberResponse()], totalSize: 1 }),
     },
   }),
-});
+};
+
+export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], ltiToolRouteDrafts);
+
+/**
+ * The access scopes the routes for installed LTI tools declare (`xScope`): the only ones a registration records, the
+ * platform's configuration advertises and an admin grants.
+ */
+export const ltiToolScopes: AccessScope[] = [...new Set(Object.values(ltiToolRouteDrafts).map((route) => route.xScope))];

@@ -497,6 +497,10 @@ export type LtiInstallation = {
    * The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts
    */
   launchOrigins: Array<string>;
+  /**
+   * The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too
+   */
+  keySetOrigin: string;
   description: string | null;
   /**
    * The claims the LTI tool asked for that the platform can release
@@ -917,7 +921,7 @@ export type ApiKey = {
   name: string;
   prefix: string;
   last4: string;
-  scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'> | null;
+  scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
   expiresAt: string | null;
   revokedAt: string | null;
   createdBy:
@@ -3775,7 +3779,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, or a test user.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -4088,9 +4092,19 @@ export type ListLtiContextsResponses = {
        */
       importReadCount: number | null;
       /**
-       * Why the last member import stopped short: the platform refused the scope, the token or the member list, a read failed and is tried again, the platform listed more people than one import reads, or the member limit refused the next person. Null when it read and wrote everyone.
+       * Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, a read failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
        */
-      importIssue: 'scope_not_granted' | 'token_refused' | 'members_refused' | 'read_failed' | 'too_many_members' | 'member_limit' | null;
+      importIssue:
+        | 'address_refused'
+        | 'scope_not_granted'
+        | 'token_refused'
+        | 'members_refused'
+        | 'read_retrying'
+        | 'read_failed'
+        | 'too_many_members'
+        | 'member_limit'
+        | 'inactive'
+        | null;
       /**
        * When the first launch recorded it
        */
@@ -5206,19 +5220,27 @@ export type ListLtiMembersResponses = {
        */
       id: string;
       /**
-       * Their LTI roles in the channel, as full URIs: the roles a launch there would send them
+       * Their LTI roles in the course, as full URIs: the roles a launch there would send them
        */
       roles: Array<string>;
       /**
-       * Their name, when the installation releases it
+       * Their name, when released
        */
       name?: string;
       /**
-       * Their proven email address, when the installation releases it and they have one
+       * Their given name, when released and they have one
+       */
+      given_name?: string;
+      /**
+       * Their family name, when released and they have one
+       */
+      family_name?: string;
+      /**
+       * Their proven email address, when released and they have one
        */
       email?: string;
       /**
-       * The address of their picture, when the installation releases it and they have one
+       * The address of their picture, when released and they have one
        */
       picture?: string;
     }>;
@@ -7975,7 +7997,7 @@ export type CreateServiceAccountData = {
     role: 'admin' | 'member';
     key?: {
       name: string;
-      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'> | null;
+      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
       expiresAt?: string;
     };
   };
@@ -8171,7 +8193,7 @@ export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponse
 export type CreateApiKeyData = {
   body: {
     name: string;
-    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'> | null;
+    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
     expiresAt?: string;
     rollFrom?: string;
     rollOverlapDays?: number;

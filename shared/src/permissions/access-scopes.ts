@@ -12,8 +12,13 @@ export type AccessScopedEntityType = Exclude<EntityType, 'user'>;
 export type AccessScope = `${AccessScopedEntityType}:${ScopeVerb}` | 'user:read';
 
 export interface AccessScopes {
-  /** Every derivable scope: the API key form's enum, `scopes_supported` in discovery documents, the consent screen. Empty only for a configuration without a single policy. */
+  /** Every derivable scope: what a token may carry and a route may declare. Empty only for a configuration without a single policy. */
   all: readonly AccessScope[];
+  /**
+   * The scopes an API key, a consent screen and a discovery document offer: every one but `user:read`, which a route
+   * reads only for an installed LTI tool.
+   */
+  offered: readonly AccessScope[];
   /** The scope a key or token needs for an action on an entity type: `read` for reads, `write` for everything else. */
   required: (entityType: AccessScopedEntityType, action: EntityActionType) => AccessScope;
   /** The scopes in a space-separated `scope` value that this vocabulary knows; anything else is dropped. */
@@ -34,11 +39,13 @@ export interface AccessScopes {
 export const deriveAccessScopes = (policyMatrix: PolicyMatrix): AccessScopes => {
   const types = Object.keys(policyMatrix).filter((type): type is AccessScopedEntityType => type !== 'user');
   const people: AccessScope[] = Object.hasOwn(policyMatrix, 'user') ? ['user:read'] : [];
-  const all: AccessScopes['all'] = [...types.flatMap((type) => scopeVerbs.map((verb): AccessScope => `${type}:${verb}`)), ...people];
+  const offered: AccessScopes['offered'] = types.flatMap((type) => scopeVerbs.map((verb): AccessScope => `${type}:${verb}`));
+  const all: AccessScopes['all'] = [...offered, ...people];
   const known = new Set<string>(all);
   const required: AccessScopes['required'] = (type, action) => `${type}:${action === 'read' ? 'read' : 'write'}`;
   return {
     all,
+    offered,
     required,
     parse: (value) => (value ?? '').split(' ').filter((scope): scope is AccessScope => known.has(scope)),
     allows: (scopes, type, action) => {

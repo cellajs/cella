@@ -35,6 +35,10 @@ export const findIdentityById = async (ctx: DbContext, { id }: { id: string }) =
   return identity;
 };
 
+/** How many external accounts, of any kind, link to the user. */
+export const countUserIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db.$count(identitiesTable, eq(identitiesTable.userId, userId));
+
 /** The user's verified OAuth identities: the provider, the address it asserted last, when it was linked and last signed in. */
 export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db

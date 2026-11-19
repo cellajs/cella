@@ -12,6 +12,7 @@ import {
   lockLtiInstallation,
   updateLtiInstallationScopes,
 } from '#/modules/lti-platform/lti-platform-queries';
+import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 import { toLtiInstallation } from '#/modules/lti-platform/operations/get-lti-installations';
 import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
 import { countActiveServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
@@ -30,11 +31,12 @@ const lockPendingInstallation = async (txCtx: DbContext, { id, tenantId }: { id:
 };
 
 /**
- * Refuses a grant of a scope the LTI tool did not ask for in its registration.
+ * Refuses a grant of a scope the LTI tool did not ask for in its registration, or that no route for installed LTI
+ * tools reads (`ltiToolScopes`).
  * @throws AppError 400 `lti_scope_not_requested` naming the first such scope.
  */
 const assertScopesRequested = ({ client }: Pick<LtiInstallationRecord, 'client'>, grantedScopes: AccessScope[]) => {
-  const unrequested = grantedScopes.find((scope) => !client.requestedScopes?.includes(scope));
+  const unrequested = grantedScopes.find((scope) => !client.requestedScopes?.includes(scope) || !ltiToolScopes.includes(scope));
   if (unrequested) throw new AppError(400, 'lti_scope_not_requested', 'warn', { meta: { scope: unrequested } });
 };
 

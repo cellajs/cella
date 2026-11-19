@@ -108,7 +108,7 @@ export const ltiContextSchema = z.object({
     .enum(ltiImportIssues)
     .nullable()
     .describe(
-      'Why the last member import stopped short: the platform refused the scope, the token or the member list, a read failed and is tried again, the platform listed more people than one import reads, or the member limit refused the next person. Null when it read and wrote everyone.',
+      "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, a read failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
     ),
   createdAt: z.string().describe('When the first launch recorded it'),
 });

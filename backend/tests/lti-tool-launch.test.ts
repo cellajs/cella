@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import {
@@ -9,12 +9,13 @@ import {
   createLtiResourceLink,
   deleteLtiConnection,
   getMe,
+  inviteMembers,
   startLtiLaunch,
   startLtiToolRegistration,
 } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
@@ -28,8 +29,11 @@ import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/l
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
+import { lockTenantQuota } from '#/modules/tenants/quota-lock';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
-import { adminRole, defaultHeaders, overrideConfig } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
@@ -436,6 +440,76 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await launch(connected);
     expect(await kept()).toMatchObject({ apiUrl, membersUrl });
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
+  async function limitMembers({ org }: Connected, free = 0) {
+    const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
+    const user = (await countTakenSeats({ var: { db } }, { organizationId: org.id })) + free;
+    await db
+      .update(tenantsTable)
+      .set({ restrictions: { ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, user } } })
+      .where(eq(tenantsTable.id, tenant.id));
+  }
+
+  // Attack: a person the member limit keeps out of an invitation does not walk in by launching; a member always does.
+  it('refuses a launch that needs a seat when the member limit leaves none, and lets a member in', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    await limitMembers(connected);
+
+    await expectRefusalPage((await launch(connected)).response, 403, 'lti_member_limit');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
+    expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
+  });
+
+  // Attack: an invitation and a launch that both count the last seat free pass the limit together, unless one lock orders them.
+  it('lets in one of an invitation and a launch racing for the last seat', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const { org } = connected;
+    const admin = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
+    await limitMembers(connected, 1);
+
+    // The quota lock is held until both wait for it: neither counts before the other could.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: (pid: number) => void = () => {};
+    const locked = new Promise<number>((resolve) => {
+      holding = resolve;
+    });
+    const holder = db.transaction(async (tx) => {
+      await lockTenantQuota({ var: { db: tx } }, { tenantId: org.tenantId, key: 'user' });
+      const { rows } = await tx.execute<{ pid: number }>(sql`select pg_backend_pid() as pid`);
+      holding(rows[0].pid);
+      await released;
+    });
+    onTestFinished(async () => {
+      release();
+      await holder.catch(() => undefined);
+    });
+    const pid = await locked;
+
+    const invited = call(inviteMembers, {
+      path: { tenantId: org.tenantId, organizationId: org.id },
+      query: { channelId: org.id, channelType: 'organization' },
+      body: { emails: [`racer-${nanoid(6)}@example.com`], role: memberRole },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    const launched = launch(connected);
+    await vi.waitFor(async () => {
+      const { rows } = await db.execute<{ waiting: number }>(
+        sql`select count(*)::int as waiting from pg_stat_activity where ${pid} = any(pg_blocking_pids(pid))`,
+      );
+      expect(rows[0].waiting).toBe(2);
+    });
+    release();
+    await holder;
+
+    const [invitation, launching] = await Promise.all([invited, launched]);
+    expect([invitation.response.status === 200, launching.response.status === 303].filter(Boolean)).toHaveLength(1);
   });
 
   // D6: an address across institutions is no proof of the account behind it.

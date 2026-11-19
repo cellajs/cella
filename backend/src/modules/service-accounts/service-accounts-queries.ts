@@ -1,12 +1,13 @@
 import { and, count, desc, eq, getColumns, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import { searchFilter } from '#/utils/sql';
 
@@ -23,13 +24,16 @@ const serviceAccountSelect = { ...getColumns(serviceAccountsTable), lastSeenAt: 
 /** Joins an account's `actors` row; every query that selects {@link serviceAccountSelect} needs it. */
 const serviceAccountActorJoin = eq(actorsTable.id, serviceAccountsTable.id);
 
-/** The account by id inside a tenant, or undefined. */
+/** The accounts a tenant's admins manage: every one but the account an LTI connection writes as. */
+const managedInTenant = (tenantId: string) => and(eq(serviceAccountsTable.tenantId, tenantId), isNull(serviceAccountsTable.connectionId));
+
+/** The account by id inside a tenant, or undefined; undefined too for the account an LTI connection writes as. */
 export async function findServiceAccountInTenant(ctx: DbContext, { id, tenantId }: InTenantOpts & { id: string }) {
   const [account] = await ctx.var.db
     .select(serviceAccountSelect)
     .from(serviceAccountsTable)
     .innerJoin(actorsTable, serviceAccountActorJoin)
-    .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId)))
+    .where(and(eq(serviceAccountsTable.id, id), managedInTenant(tenantId)))
     .limit(1);
   return account;
 }
@@ -41,11 +45,11 @@ interface FindServiceAccountsPaginatedOpts extends InTenantOpts {
 }
 
 /**
- * A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is
- * organization scope. The account an LTI connection writes as is left out: no admin manages it.
+ * A page of the accounts the tenant's admins manage, newest first, and the total. A tenant holds one organization, so
+ * tenant scope is organization scope.
  */
 export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q, offset, limit }: FindServiceAccountsPaginatedOpts) {
-  const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId), isNull(serviceAccountsTable.connectionId)];
+  const where: (SQL | undefined)[] = [managedInTenant(tenantId)];
   const search = searchFilter([serviceAccountsTable.name], q);
   if (search) where.push(search);
 
@@ -93,17 +97,14 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
 }
 
 /**
- * The account row, locked until the caller's transaction ends: writes to one account's bindings run one after the
- * other. Undefined when no such account exists.
+ * Disables the account an LTI connection writes as and clears its reference, ahead of the connection's delete: the
+ * account stays, so what it wrote keeps naming it.
  */
-export async function lockServiceAccount(ctx: DbContext, { id }: { id: string }) {
-  const [account] = await ctx.var.db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, id)).for('update');
-  return account;
-}
-
-/** Replaces the account's role bindings; call it on a row the transaction locked (`lockServiceAccount`). */
-export async function updateServiceAccountBindings(ctx: DbContext, { id, bindings }: { id: string; bindings: RoleBinding[] }) {
-  await ctx.var.db.update(serviceAccountsTable).set({ bindings }).where(eq(serviceAccountsTable.id, id));
+export async function disableConnectionServiceAccount(ctx: DbContext, { connectionId, by }: { connectionId: string; by: ActorId }) {
+  await ctx.var.db
+    .update(serviceAccountsTable)
+    .set({ status: 'disabled', connectionId: null, ...updateStamps(by) })
+    .where(eq(serviceAccountsTable.connectionId, connectionId));
 }
 
 /** The id of the account an LTI connection writes as; undefined before one was made. */
@@ -116,9 +117,9 @@ export async function findConnectionServiceAccountId(ctx: DbContext, { connectio
   return account?.id;
 }
 
-/** Accounts are disabled, never deleted; only active ones count against the quota. */
+/** Accounts are disabled, never deleted; only active ones the tenant's admins manage count against the quota. */
 export async function countActiveServiceAccounts(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  return ctx.var.db.$count(serviceAccountsTable, and(eq(serviceAccountsTable.tenantId, tenantId), eq(serviceAccountsTable.status, 'active')));
+  return ctx.var.db.$count(serviceAccountsTable, and(managedInTenant(tenantId), eq(serviceAccountsTable.status, 'active')));
 }
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */

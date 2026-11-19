@@ -2369,7 +2369,7 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI members
  *
- * The people of a channel an installed LTI tool is placed in, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the channel and only the personal fields the installation releases. It answers whom the installation's own role there may see, ordered by id. A channel the installation is not placed in answers as one it may not read.
+ * The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members) ·· _lti-platform · cella_
  *

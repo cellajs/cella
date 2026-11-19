@@ -2,7 +2,7 @@ import { CheckboxGroup } from '@base-ui/react/checkbox-group';
 import { Field } from '@base-ui/react/field';
 import type { TFunction } from 'i18next';
 import { BlocksIcon, CheckIcon, KeyRoundIcon, PlusIcon, PowerIcon, PowerOffIcon, XIcon } from 'lucide-react';
-import { type MouseEvent, useRef } from 'react';
+import { type MouseEvent, useId, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { LtiInstallation, LtiResourceLink } from 'sdk';
@@ -63,14 +63,14 @@ function FieldList({ fields }: { fields: PersonalField[] }) {
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
-/** An access scope as an admin decides on it: people are read only where the LTI tool has a tab, with the shared fields. */
+/** An access scope as an admin decides on it: people are read only in the courses where the LTI tool has a tab, with the shared fields. */
 const ltiScopeLabel = (t: TFunction, scope: AccessScope) => (scope === 'user:read' ? t('c:lti_scope_user_read') : scopeLabel(t, scope));
 
 const approveSchema = zApproveLtiInstallationBody;
 
 /**
- * Where the LTI tool's launches go, and the fields and access scopes it asked for as choices with none chosen: what an
- * approval releases and grants is the admin's act.
+ * Where the LTI tool's launches go and whose keys act as it, and the fields and access scopes it asked for as choices
+ * with none chosen: what an approval trusts, releases and grants is the admin's act.
  */
 function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
@@ -97,6 +97,11 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
             ))}
           </ul>
           <p className="text-muted-foreground text-sm">{t('c:launch_origins.text')}</p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="group-label text-xs">{t('c:key_set_origin')}</span>
+          <p className="text-sm break-all">{installation.keySetOrigin}</p>
+          <p className="text-muted-foreground text-sm">{t('c:key_set_origin.text')}</p>
         </div>
         {installation.requestedFields.length > 0 && (
           <FormField
@@ -223,12 +228,43 @@ function InstallationTabs({
   );
 }
 
+/** One access scope of an approved LTI tool, granted or not; its button's name says which scope it changes. */
+function ApiAccessScope({
+  scope,
+  granted,
+  disabled,
+  onChange,
+}: {
+  scope: AccessScope;
+  granted: boolean;
+  disabled: boolean;
+  onChange: (event: MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const { t } = useTranslation();
+  const [labelId, actionId] = [useId(), useId()];
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
+      {granted && <CheckIcon className="text-success size-4 shrink-0" />}
+      <span id={labelId} className={granted ? 'min-w-0 grow' : 'text-muted-foreground min-w-0 grow pl-6'}>
+        {ltiScopeLabel(t, scope)}
+      </span>
+      <Button variant={granted ? 'ghost' : 'secondary'} size="sm" disabled={disabled} aria-labelledby={`${actionId} ${labelId}`} onClick={onChange}>
+        {!granted && <KeyRoundIcon />}
+        <span id={actionId}>{t(granted ? 'c:withdraw' : 'c:grant')}</span>
+      </Button>
+    </div>
+  );
+}
+
 /** The access scopes an approved LTI tool asked for, each granted or not; taking one away asks first. */
 function InstallationApiAccess({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
-  const { mutate: update, isPending } = useUpdateLtiInstallationMutation();
+  const { mutate, isPending } = useUpdateLtiInstallationMutation();
 
-  const grant = (grantedScopes: AccessScope[]) => update({ path: { ...path, ltiInstallationId: installation.id }, body: { grantedScopes } });
+  const update = (grantedScopes: AccessScope[]) => mutate({ path: { ...path, ltiInstallationId: installation.id }, body: { grantedScopes } });
+  const grant = (scope: AccessScope) => update([...installation.grantedScopes, scope]);
+  const withdraw = (scope: AccessScope) => update(installation.grantedScopes.filter((granted) => granted !== scope));
 
   const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, scope: AccessScope) =>
     openConfirm(event.currentTarget, {
@@ -236,31 +272,17 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
       title: <NamedText i18nKey="c:confirm.withdraw_api_access" name={installation.name} />,
       label: 'c:withdraw',
       icon: XIcon,
-      onConfirm: () => grant(installation.grantedScopes.filter((granted) => granted !== scope)),
+      onConfirm: () => withdraw(scope),
     });
 
   return (
     <div className="flex flex-col gap-2">
       <span className="group-label text-xs">{t('c:api_access')}</span>
-      {installation.requestedScopes.map((scope) =>
-        installation.grantedScopes.includes(scope) ? (
-          <div key={scope} className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
-            <CheckIcon className="text-success size-4 shrink-0" />
-            <span className="min-w-0 grow">{ltiScopeLabel(t, scope)}</span>
-            <Button variant="ghost" size="sm" onClick={(event) => openWithdrawConfirm(event, scope)}>
-              {t('c:withdraw')}
-            </Button>
-          </div>
-        ) : (
-          <div key={scope} className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
-            <span className="text-muted-foreground min-w-0 grow pl-6">{ltiScopeLabel(t, scope)}</span>
-            <Button variant="secondary" size="sm" loading={isPending} onClick={() => grant([...installation.grantedScopes, scope])}>
-              <KeyRoundIcon />
-              {t('c:grant')}
-            </Button>
-          </div>
-        ),
-      )}
+      {installation.requestedScopes.map((scope) => {
+        const granted = installation.grantedScopes.includes(scope);
+        const onChange = (event: MouseEvent<HTMLButtonElement>) => (granted ? openWithdrawConfirm(event, scope) : grant(scope));
+        return <ApiAccessScope key={scope} scope={scope} granted={granted} disabled={isPending} onChange={onChange} />;
+      })}
       <p className="text-muted-foreground text-sm">{t('c:api_access.text')}</p>
     </div>
   );
@@ -329,6 +351,9 @@ export function LtiInstallationTile({ installation, organization, resourceLinks 
           )}
           <ExpandableTileDetail label={t('c:launch_origins')} wide>
             {installation.launchOrigins.join(', ')}
+          </ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:key_set_origin')} wide>
+            {installation.keySetOrigin}
           </ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:lti_tool_domain')}>{installation.domain}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:asks_for')}>

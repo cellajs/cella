@@ -9,12 +9,12 @@ import { findConnectionServiceAccountId, insertServiceAccount } from '#/modules/
 import { log } from '#/utils/logger';
 
 /**
- * The service account an LTI connection writes as, such as its member imports: made at registration, or at first use
- * for a connection that predates that, at the organization's least privileged role. The connection's row stays locked
- * while the account is looked up and made: two imports at once make one.
+ * The id of the service account an LTI connection writes as, such as its member imports: made at its first use, at the
+ * organization's least privileged role. The connection's row stays locked while the account is looked up and made:
+ * two imports at once make one.
  * @throws AppError 404 `not_found` (`entityType: 'organization'`) for a tenant that holds no organization.
  */
-export const provisionConnectionActor = (ctx: DbContext, connection: LtiConnection): Promise<ServiceAccountId> =>
+export const connectionServiceAccountId = (ctx: DbContext, connection: LtiConnection): Promise<ServiceAccountId> =>
   ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     await lockConnection(txCtx, { id: connection.id });

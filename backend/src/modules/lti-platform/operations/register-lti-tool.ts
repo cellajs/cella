@@ -7,6 +7,7 @@ import { spendHandoffToken } from '#/modules/auth/core';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiClaimsSupported, ltiMessageTypes } from '#/modules/lti-platform/helpers/platform-offer';
 import { insertLtiToolRegistration } from '#/modules/lti-platform/lti-platform-queries';
+import { ltiToolScopes } from '#/modules/lti-platform/lti-platform-routes';
 import { type LtiToolConfig, type LtiToolRegistrationRequest, ltiToolRegistrationRequestSchema } from '#/modules/lti-platform/lti-platform-schema';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import { log } from '#/utils/logger';
@@ -20,10 +21,11 @@ const isOnDomains = (address: string, domains: string[]) => {
 };
 
 /**
- * The request, checked against what the platform offers. Each of the LTI tool's launch addresses must lie on the
- * domains it declares; the admin approves their origins (`launchOrigins`), where a launch posts a person's claims. Of
- * its messages, claims and access scopes, the platform records the ones it supports; scopes only beside the
- * `client_credentials` grant its tokens are requested with.
+ * The request, checked against what the platform offers. Each of the LTI tool's launch addresses and its key set
+ * address must lie on the domains it declares; the admin approves their origins (`launchOrigins`, `keySetOrigin`):
+ * where a launch posts a person's claims, and whose keys mint the installation's tokens. Of its messages, claims and
+ * access scopes, the platform records the ones it supports; scopes only those its routes read (`ltiToolScopes`), and
+ * only beside the `client_credentials` grant its tokens are requested with.
  * @throws AppError 400 `lti_tool_metadata_invalid` naming the first member refused.
  */
 const parseRegistrationRequest = (body: unknown) => {
@@ -40,10 +42,12 @@ const parseRegistrationRequest = (body: unknown) => {
     ltiToolConfig: { ...config, messages },
   });
   if (!origins.every((origin) => isOnDomains(origin, domains))) throw metadataInvalid('domain');
+  if (!isOnDomains(request.jwks_uri, domains)) throw metadataInvalid('jwks_uri');
   if (!messages.length) throw metadataInvalid('messages');
 
   const recorded: LtiToolConfig = { ...config, messages, claims: config.claims.filter((claim) => ltiClaimsSupported.includes(claim)) };
-  const requestedScopes = request.grant_types.includes('client_credentials') ? [...new Set(accessScopes.parse(request.scope))] : [];
+  const asked = request.grant_types.includes('client_credentials') ? accessScopes.parse(request.scope) : [];
+  const requestedScopes = ltiToolScopes.filter((scope) => asked.includes(scope));
   return { request, recorded, requestedScopes };
 };
 

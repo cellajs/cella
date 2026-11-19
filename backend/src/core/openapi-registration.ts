@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import { accessScopes, appConfig, withConfiguredDevPorts } from 'shared';
+import { type AccessScope, accessScopes, appConfig, withConfiguredDevPorts } from 'shared';
 import type { Env } from '#/core/context';
 import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
@@ -52,8 +52,9 @@ export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
       'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`).',
   });
 
-  // The scope vocabulary is derived from the policy matrix; the same ids feed discovery and the consent screen.
-  const scopeDescriptions = Object.fromEntries(accessScopes.all.map((scope) => [scope, scopeDescription(scope)]));
+  // The scope vocabulary is derived from the policy matrix. A person consents to the scopes discovery offers; `user:read`
+  // is for an installed LTI tool's client credentials alone.
+  const describe = (scopes: readonly AccessScope[]) => Object.fromEntries(scopes.map((scope) => [scope, scopeDescription(scope)]));
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
     description:
@@ -63,9 +64,9 @@ export const registerOpenApiDocs = (app: OpenAPIHono<Env>) => {
         authorizationUrl: `${appConfig.oauthUrl}/auth`,
         tokenUrl: `${appConfig.oauthUrl}/token`,
         refreshUrl: `${appConfig.oauthUrl}/token`,
-        scopes: scopeDescriptions,
+        scopes: describe(accessScopes.offered),
       },
-      clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: scopeDescriptions },
+      clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: describe(accessScopes.all) },
     },
   });
 

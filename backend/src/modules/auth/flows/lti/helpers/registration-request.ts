@@ -11,8 +11,8 @@ export const ltiLaunchUrl = () => `${appConfig.backendAuthUrl}/lti/launch`;
 /**
  * The app as an LTI tool in a Dynamic Registration request: every platform gets these members. A platform verifies
  * the app's signatures against the authorization server's key set, the one key set the app has. The grant and scope
- * ask a platform built on the template for its people (`ltiImportScope`). A platform that grants neither launches the
- * app as before.
+ * ask a platform built on the template for its people (`ltiImportScope`). A platform that grants neither still launches
+ * the app.
  */
 export const ltiRegistrationRequest = () => ({
   application_type: 'web',

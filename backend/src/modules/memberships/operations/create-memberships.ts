@@ -6,11 +6,11 @@ import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { channelIdColumnsOf, findMenuParent, isHeldInvitation, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
-import { countInvitationSeats, insertInvitations, raiseInvitations } from '#/modules/memberships/invitations-queries';
-import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
+import { insertInvitations, raiseInvitations } from '#/modules/memberships/invitations-queries';
 import type { membershipCreateBodySchema } from '#/modules/memberships/memberships-schema';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitations';
+import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
@@ -62,48 +62,47 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
 
   // Seats: new invitations and, at the organization, members added at once. A resend and a member take none.
   const seatTakers = [...invites, ...(channelType === 'organization' ? adds : [])];
-  const newSeats = seatTakers.length;
-  const seatQuota = ctx.var.tenant.restrictions.quotas.user;
-  if (seatQuota !== 0 && newSeats > 0) {
-    const [members, pending] = await Promise.all([
-      countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id }),
-      // An address this request charges is left out of the pending count, so a second invitation costs no second seat.
-      countInvitationSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
-    ]);
-    if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType: channelType });
-  }
 
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
   const mailedAgain = resends.filter(({ invitation }) => invitation.status === 'pending' || raisedIds.has(invitation.id));
   const mailNow = held ? [] : [...invites, ...mailedAgain].map(({ email }) => email);
-  const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length : 0 });
 
-  // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
-  const createdMemberships = adds.length
-    ? await db.transaction((tx) =>
-        insertMemberships(
-          { var: { db: tx } },
-          { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) },
-        ),
-      )
-    : [];
-  for (const { userId } of adds) invalidateCache.user(userId);
-
-  const inserted = await insertInvitations(ctx, {
-    invitations: invites.map(({ email, userId }) => ({
-      id: generateId(),
-      email,
-      userId,
-      role,
-      status: held ? 'held' : 'pending',
-      createdBy: user.id,
-      channelType,
+  // One transaction: the seats are counted under the lock a launch and an import count under, and what a module writes
+  // for a membership (`membershipColumns`) commits with it.
+  const { createdMemberships, inserted, taken } = await db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const seats = {
       tenantId,
-      ...channelIdColumnsOf(entity),
-      channelId: entity.id,
-    })),
+      organizationId: organization.id,
+      quota: ctx.var.tenant.restrictions.quotas.user,
+      seats: seatTakers.length,
+      // A second invitation costs no second seat: an address this request charges is left out of the pending count.
+      exceptEmails: seatTakers.map(({ email }) => email),
+    };
+    if (!(await hasFreeSeats(txCtx, seats))) throw new AppError(403, 'restrict_by_org', 'warn', { entityType: channelType });
+
+    const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length : 0 });
+    const createdMemberships = await insertMemberships(txCtx, {
+      items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })),
+    });
+    const inserted = await insertInvitations(txCtx, {
+      invitations: invites.map(({ email, userId }) => ({
+        id: generateId(),
+        email,
+        userId,
+        role,
+        status: held ? 'held' : 'pending',
+        createdBy: user.id,
+        channelType,
+        tenantId,
+        ...channelIdColumnsOf(entity),
+        channelId: entity.id,
+      })),
+    });
+    await raiseInvitations(txCtx, { ids: [...raisedIds], role, by: user.id, release: !held });
+    return { createdMemberships, inserted, taken };
   });
-  await raiseInvitations(ctx, { ids: [...raisedIds], role, by: user.id, release: !held });
+  for (const { userId } of adds) invalidateCache.user(userId);
 
   if (!held) {
     // New invitations and resends go out alike: a resend names the role its invitation holds now, and its inviter.

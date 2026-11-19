@@ -38,7 +38,7 @@ overrideConfig(appConfig.has, { ltiPlatform: true });
 const ltiToolHost = 'peer-review.example.com';
 const launchUri = `https://${ltiToolHost}/launch`;
 
-/** A Dynamic Registration request of a fake LTI tool whose keys `jwksUri` serves, asking for `scope`. */
+/** A Dynamic Registration request of a fake LTI tool whose keys `jwksUri` serves, on a domain it declares, asking for `scope`. */
 const ltiToolRegistration = (jwksUri: string, scope: string) => ({
   application_type: 'web',
   grant_types: ['client_credentials', 'implicit'],
@@ -51,6 +51,7 @@ const ltiToolRegistration = (jwksUri: string, scope: string) => ({
   scope,
   [ltiToolConfigurationMember]: {
     domain: ltiToolHost,
+    secondary_domains: ['127.0.0.1'],
     target_link_uri: launchUri,
     claims: ['iss', 'sub', 'name', 'email'],
     messages: [{ type: 'LtiResourceLinkRequest' }],
@@ -112,22 +113,27 @@ describe('LTI installation API access', async () => {
     placed?: boolean;
   }
 
-  /** Registers the fake LTI tool in the organization's tenant, approves it and places it in the organization. */
-  async function installLtiTool(
-    org: Org,
-    { scope = 'user:read', approval = { releasedFields: [], grantedScopes: ['user:read'] }, placed = true }: InstallOptions = {},
-  ) {
+  /** Sends the fake LTI tool's registration request to the issuer with a token the organization's admin started. */
+  async function register(org: Org, request: ReturnType<typeof ltiToolRegistration>) {
     const started = await call(startLtiToolRegistration, {
       path: org.path,
       body: { registrationUrl: `https://${ltiToolHost}/register` },
       headers: org.headers,
     });
     const registrationToken = new URL((started.data as { url: string }).url).searchParams.get('registration_token') ?? '';
-    const response = await fetch(`${oauth.issuer}/lti/register`, {
+    return fetch(`${oauth.issuer}/lti/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${registrationToken}` },
-      body: JSON.stringify(ltiToolRegistration(jwksUri, scope)),
+      body: JSON.stringify(request),
     });
+  }
+
+  /** Registers the fake LTI tool in the organization's tenant, approves it and places it in the organization. */
+  async function installLtiTool(
+    org: Org,
+    { scope = 'user:read', approval = { releasedFields: [], grantedScopes: ['user:read'] }, placed = true }: InstallOptions = {},
+  ) {
+    const response = await register(org, ltiToolRegistration(jwksUri, scope));
     const registered = (await response.json()) as { client_id: string; [ltiToolConfigurationMember]: { deployment_id: string } };
     const installationId = registered[ltiToolConfigurationMember].deployment_id;
     if (approval)
@@ -231,8 +237,6 @@ describe('LTI installation API access', async () => {
       api_url: apiUrl,
       tenant_id: org.org.tenantId,
       organization_id: org.org.id,
-      channel_type: 'organization',
-      channel_id: org.org.id,
       members_url: `${apiUrl}/organizations/${org.org.id}/lti-members?channelType=organization&channelId=${org.org.id}`,
     });
 
@@ -265,6 +269,33 @@ describe('LTI installation API access', async () => {
     expect(rows).toEqual(expected);
   });
 
+  // Privacy: an LTI tool granted nothing is told nothing about the API.
+  it('names no API in the launch of an LTI tool granted no scope', async () => {
+    const org = await orgWithAdmin();
+    const ltiTool = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] } });
+    expect((await launch(ltiTool))[ltiApiClaim(appConfig.oauthUrl)]).toBeUndefined();
+  });
+
+  // Attack: whoever serves the key set mints the installation's tokens. It lies on the domains the admin approves, as launches do.
+  it('refuses a registration whose key set lies off the domains it declares', async () => {
+    const org = await orgWithAdmin();
+    const offDomains = ltiToolRegistration('https://keys.example.net/jwks', 'user:read');
+    const response = await register(org, offDomains);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'invalid_client_metadata', error_description: 'Refused: jwks_uri' });
+  });
+
+  // Attack: a grant of a scope no route reads would turn on with the first route that does. Only a read one is recorded and granted.
+  it('records only the scopes a route reads, and refuses granting another', async () => {
+    const org = await orgWithAdmin();
+    const ltiTool = await installLtiTool(org, { scope: 'user:read organization:read', approval: null, placed: false });
+    const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
+    const approval = { releasedFields: [], grantedScopes: ['organization:read'] satisfies AccessScope[] };
+    await expectRefusal(await call(approveLtiInstallation, { path, body: approval, headers: org.headers }), 400, 'lti_scope_not_requested');
+    const approved = await call(approveLtiInstallation, { path, body: { releasedFields: [], grantedScopes: ['user:read'] }, headers: org.headers });
+    expect(approved.data).toMatchObject({ requestedScopes: ['user:read'], grantedScopes: ['user:read'] });
+  });
+
   // Privacy: a row carries the personal fields the installation releases, and nothing else about the person.
   it('answers rows without name, email or picture unless released, and only the name when the name is released', async () => {
     const org = await orgWithAdmin();
@@ -281,10 +312,12 @@ describe('LTI installation API access', async () => {
 
   describe('the token endpoint refuses', () => {
     // Attack: an installation acts only once approved, and stops when disabled, for tokens minted before too.
-    it('a pending or disabled installation', async () => {
+    it('a pending or disabled installation, and one that asked for no scope', async () => {
       const org = await orgWithAdmin();
       const pending = await installLtiTool(org, { approval: null, placed: false });
       expect(await requestToken(pending)).toMatchObject({ status: 401, body: { error: 'invalid_client' } });
+      const unscoped = await installLtiTool(org, { scope: '', approval: { releasedFields: [], grantedScopes: [] } });
+      expect(await requestToken(unscoped, { scope: '' })).toMatchObject({ status: 401, body: { error: 'invalid_client' } });
 
       const ltiTool = await installLtiTool(org);
       const minted = await tokenOf(ltiTool);
@@ -316,8 +349,9 @@ describe('LTI installation API access', async () => {
       expect(await requestToken(ltiTool)).toMatchObject({ status: 400, body: { error: 'invalid_scope' } });
     });
 
-    // Attack: only an assertion the registered key signed for this server, once and in time, authenticates.
-    it('an assertion signed by another key, for another audience, expired or used twice', async () => {
+    // Attack: only an assertion the registered key signed for this server, once and in time, authenticates; a leaked one
+    // cannot wait long for its single use.
+    it('an assertion signed by another key, for another audience, expired, expiring too far ahead or used twice', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
       const refusedAs = { status: 401, body: { error: 'invalid_client' } };
@@ -325,6 +359,7 @@ describe('LTI installation API access', async () => {
       expect(await requestToken(ltiTool, { key: strangerKey })).toMatchObject(refusedAs);
       expect(await requestToken(ltiTool, { audience: 'https://stranger.example.com/token' })).toMatchObject(refusedAs);
       expect(await requestToken(ltiTool, { expiresIn: -300 })).toMatchObject(refusedAs);
+      expect(await requestToken(ltiTool, { expiresIn: 600 })).toMatchObject(refusedAs);
 
       const first = await requestToken(ltiTool);
       expect(first.status).toBe(200);
@@ -343,27 +378,28 @@ describe('LTI installation API access', async () => {
   });
 
   describe('the members route refuses', () => {
-    // Attack: an installation reads only the channels it is placed in, though it holds its organization role from the start.
+    // Attack: an installation reads only the courses its placements imply. Placed nowhere, it is bound to nothing, and
+    // the tenant refuses it as any such actor.
     it('a channel the installation is not placed in, or no longer, and a channel of another organization', async () => {
       const org = await orgWithAdmin();
       const other = await orgWithAdmin();
       const ltiTool = await installLtiTool(org, { placed: false });
       const token = await tokenOf(ltiTool);
-      await expectRefusal(await readMembers(org, token), 404, 'not_found');
+      await expectRefusal(await readMembers(org, token), 403, 'forbidden');
 
       ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
       expect((await readMembers(org, token)).response.status).toBe(200);
       await expectRefusal(await readMembers(org, token, other.org.id), 404, 'not_found');
 
       await call(deleteLtiResourceLink, { path: { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId }, headers: org.headers });
-      await expectRefusal(await readMembers(org, token), 404, 'not_found');
+      await expectRefusal(await readMembers(org, token), 403, 'forbidden');
     });
 
     // Attack: the route is for an installation's token alone; no other proof reads members through it.
     it("an API key, a service account's token and a person's token", async () => {
       const org = await orgWithAdmin();
       await installLtiTool(org);
-      const key = await serviceAccountWithKey(org.org, org.admin.sessionCookie, { role: memberRole, scopes: ['user:read'] });
+      const key = await serviceAccountWithKey(org.org, org.admin.sessionCookie, { role: memberRole });
       await expectRefusal(await readMembers(org, key.clientSecret), 401, 'unauthorized');
       const resource = resourceUri({ face: 'api', tenantId: org.org.tenantId });
       const serviceToken = await clientCredentialsToken(oauth.issuer, key, { scope: 'user:read', resource });
@@ -376,7 +412,7 @@ describe('LTI installation API access', async () => {
       const consented = await authorizationCodeToken(oauth.issuer, {
         clientId: appId,
         redirectUri,
-        scope: 'user:read',
+        scope: 'organization:read',
         resource,
         sessionCookie: org.admin.sessionCookie,
       });
@@ -384,12 +420,10 @@ describe('LTI installation API access', async () => {
       await expectRefusal(await readMembers(org, String(consented.body.access_token)), 401, 'unauthorized');
     });
 
-    // Attack: the token opens this route alone, though the installation's role reads the organization and the scope allows it.
+    // Attack: the token opens the routes for installed LTI tools alone, though its course is the organization.
     it("the installation's token on any other route", async () => {
       const org = await orgWithAdmin();
-      const approval = { releasedFields: [], grantedScopes: ['user:read', 'organization:read'] satisfies AccessScope[] };
-      const ltiTool = await installLtiTool(org, { scope: 'user:read organization:read', approval });
-      const token = await tokenOf(ltiTool, { scope: 'user:read organization:read' });
+      const token = await tokenOf(await installLtiTool(org));
       await expectRefusal(await call(getOrganization, { path: org.path, headers: bearerHeaders(token) }), 401, 'unauthorized');
     });
 
