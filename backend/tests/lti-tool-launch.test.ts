@@ -14,15 +14,17 @@ import {
 } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, ltiApiClaim, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { getPgBoss } from '#/lib/pg-boss';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { planLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -387,6 +389,53 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     expect((await signOut(embeddedHeader)).status).toBe(204);
     expect(await meStatus(embeddedHeader)).toBe(401);
+  });
+
+  // Attack: the platform names where its API is, and the installation's token goes there. Only an API on the platform's
+  // own origin and a member list under it are kept; a launch without the claim keeps what an earlier one kept.
+  it("keeps a launch's API addresses only on the platform's origin, and asks for a member import after a teacher's launch", async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const apiUrl = `${connected.issuer}/api/tenants/t1`;
+    const membersUrl = `${apiUrl}/organizations/o1/lti-members?channelType=organization&channelId=o1`;
+    const teacher = (claim?: Record<string, string>) => ({ [ltiClaims.roles]: [lisContextRoles.instructor], [ltiApiClaim(connected.issuer)]: claim });
+    const kept = async () => {
+      const [row] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+      return { id: row.id, apiUrl: row.apiUrl, membersUrl: row.membersUrl };
+    };
+    const send = vi.mocked((await getPgBoss('producer')).send);
+    const requests: URL[] = [];
+    const recording: GuardedTransport = async ({ url }) => {
+      requests.push(url);
+      return new Response(null, { status: 500 });
+    };
+
+    const untrusted = [
+      { api_url: apiUrl, members_url: 'https://elsewhere.example.com/api/tenants/t1/organizations/o1/lti-members' },
+      {
+        api_url: 'https://elsewhere.example.com/api/tenants/t1',
+        members_url: 'https://elsewhere.example.com/api/tenants/t1/organizations/o1/lti-members',
+      },
+      { api_url: apiUrl, members_url: `${connected.issuer}/api/tenants/t2/organizations/o1/lti-members` },
+      { api_url: apiUrl, members_url: `${apiUrl}/../t2/organizations/o1/lti-members` },
+    ];
+    for (const claim of untrusted) {
+      expect((await launch(connected, teacher(claim))).response.status).toBe(303);
+      expect(await kept()).toMatchObject({ apiUrl: null, membersUrl: null });
+    }
+    await importLtiMembersOp((await kept()).id, { transport: recording, resolve: async () => [{ address: '127.0.0.1', family: 4 }] });
+    expect(requests).toEqual([]);
+    expect(send).not.toHaveBeenCalled();
+
+    await launch(connected, teacher({ api_url: apiUrl, members_url: membersUrl }));
+    const { id: contextId, ...addresses } = await kept();
+    expect(addresses).toEqual({ apiUrl, membersUrl });
+    expect(send).toHaveBeenCalledWith(ltiMemberImportQueue.name, { contextId }, { singletonKey: contextId });
+
+    send.mockClear();
+    await launch(connected, teacher());
+    await launch(connected);
+    expect(await kept()).toMatchObject({ apiUrl, membersUrl });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   // D6: an address across institutions is no proof of the account behind it.

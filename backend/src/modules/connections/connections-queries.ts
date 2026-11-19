@@ -106,6 +106,14 @@ export const insertConnection = async (ctx: DbContext, { values }: { values: Ins
   return row;
 };
 
+/**
+ * Locks a connection's row until the caller's transaction ends, leaving rows that reference it free to be written:
+ * what hangs off one connection is made one transaction after the other.
+ */
+export const lockConnection = async (ctx: DbContext, { id }: { id: string }) => {
+  await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('no key update');
+};
+
 interface UpdateConnectionOpts {
   id: string;
   tenantId: string;

@@ -403,7 +403,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, and imports a course's people from a platform built on the template.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -3694,6 +3694,10 @@
             "type": ["string", "null"],
             "maxLength": 255
           },
+          "connectionId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -3817,6 +3821,7 @@
           "status",
           "bindings",
           "oauthClientId",
+          "connectionId",
           "createdAt",
           "createdBy",
           "updatedAt",
@@ -3839,6 +3844,7 @@
             }
           ],
           "oauthClientId": null,
+          "connectionId": null,
           "createdAt": "2024-09-01T22:49:17.262Z",
           "updatedAt": "2024-09-01T22:49:17.262Z",
           "lastSeenAt": "2024-09-01T22:49:17.262Z",
@@ -17533,6 +17539,7 @@
                       }
                     ],
                     "oauthClientId": null,
+                    "connectionId": null,
                     "createdAt": "2024-09-01T22:49:17.262Z",
                     "updatedAt": "2024-09-01T22:49:17.262Z",
                     "lastSeenAt": "2024-09-01T22:49:17.262Z",
@@ -17739,6 +17746,7 @@
                         }
                       ],
                       "oauthClientId": null,
+                      "connectionId": null,
                       "createdAt": "2024-03-18T03:56:02.722Z",
                       "updatedAt": "2024-03-18T03:56:02.722Z",
                       "lastSeenAt": "2024-03-18T03:56:02.722Z",
@@ -17766,6 +17774,7 @@
                         }
                       ],
                       "oauthClientId": null,
+                      "connectionId": null,
                       "createdAt": "2024-04-20T08:15:05.883Z",
                       "updatedAt": "2024-04-20T08:15:05.883Z",
                       "lastSeenAt": "2024-04-20T08:15:05.883Z",

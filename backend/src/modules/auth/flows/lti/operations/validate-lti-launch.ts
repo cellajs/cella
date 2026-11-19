@@ -8,6 +8,7 @@ import { ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import type { LaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
 import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-key-set';
+import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { findActiveLtiConnections } from '#/modules/connections/connections-queries';
 
@@ -15,12 +16,6 @@ const dbCtx = { var: { db: baseDb } };
 
 /** How far a launch's `iat` may lie from now either way: a platform's clock drifts, and a launch takes seconds. */
 const issuedAtWindowSeconds = 5 * 60;
-
-/** An LTI id: a deployment, a context or a resource link, at most 255 characters (LTI Core 1.3, section 5). */
-const ltiIdSchema = z.string().min(1).max(255);
-
-/** A profile claim, kept only when it fits a column; a longer or empty one is dropped. */
-const profileClaim = z.string().min(1).max(maxLength.field).optional().catch(undefined);
 
 /** The claims a valid launch carries, as the launch reads them after every rule passed. */
 const ltiLaunchSchema = z.object({

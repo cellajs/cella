@@ -60,6 +60,16 @@ A person who arrives for the first time gets an account without a proven email a
 
 As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channels are LTI contexts and which LTI roles a person's permissions there send. The template sends every channel as a group. Whoever may update the context's channel goes as Instructor, whoever may only read it as Learner, as the permission engine decides with the person's access at launch.
 
+## Course members
+
+As an LTI tool, your app also reads who is in a course from a platform built on the template, before any of them launched. It asks for `user:read` when it registers. A platform that grants nothing, or any other platform, launches it as before.
+
+The import starts when an Instructor or Administrator of the course launches and the launch named the platform's API. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it.
+
+Each person listed gets the account their own launch finds later, and the role a launch would give them. An organization role only goes up, and never to a role the hierarchy marks `elevated`. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
+
+The import writes as a service account of the connection, and it stops at the tenant's member limit. Each course records when its last import ran, how many people it read and why it stopped short, if it did: the scope not granted, a refusal, a failed read the import tries again, a list longer than one import reads, or the member limit.
+
 ## Embedded pages
 
 A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. These are the only pages another site may frame, and only the origins your mode lists may do so.

@@ -1,17 +1,27 @@
-import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
+ * Why the last member import of a context stopped short, in fixed words: the platform refused the scope, the token or
+ * the member list, a read failed (and is retried), the platform listed more people than an import reads, or the
+ * tenant's member limit refused the next person.
+ */
+const ltiImportIssues = ['scope_not_granted', 'token_refused', 'members_refused', 'read_failed', 'too_many_members', 'member_limit'] as const;
+export type LtiImportIssue = (typeof ltiImportIssues)[number];
+
+/**
  * An LTI context (a course) of a connected platform and the channel it became: one row per context of a connection,
- * written by the launch that maps it. It goes with its connection and with its channel (the organization foreign key
- * and the channel id columns below it). A tenant table read through queries, outside RLS like memberships.
+ * written by the launch that maps it and by the member import that reads its people. It goes with its connection and
+ * with its channel (the organization foreign key and the channel id columns below it). A tenant table read through
+ * queries, outside RLS like memberships.
  */
 export const ltiContextsTable = snakeCase.table(
   'lti_contexts',
@@ -32,6 +42,16 @@ export const ltiContextsTable = snakeCase.table(
     types: varchar({ length: maxLength.field }).array().notNull().default([]),
     channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
     channelId: uuid().notNull(),
+    /** The platform's API for the installation's token, from the last launch that named one the app trusts; null before. */
+    apiUrl: varchar({ length: maxLength.url }),
+    /** The first page of the context's members at the platform, under `apiUrl`; set with it. */
+    membersUrl: varchar({ length: maxLength.url }),
+    /** When the last member import ran; null before the first. */
+    importRanAt: isoTimestamp(),
+    /** How many people the last member import read from the platform. */
+    importReadCount: integer(),
+    /** Null when the last member import read and wrote everyone. */
+    importIssue: varchar({ enum: ltiImportIssues }),
     ...membershipChannelColumns(),
     ...auditColumns(),
   },

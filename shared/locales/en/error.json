@@ -80,7 +80,7 @@
   "insert_in_progress": "Still saving",
   "insert_in_progress.text": "An earlier attempt is still being saved. Wait a moment.",
   "installation_takes_no_api_key": "No API key for an installation",
-  "installation_takes_no_api_key.text": "This service account installs an app or an LTI tool, which acts through its own registration and takes no API key.",
+  "installation_takes_no_api_key.text": "This service account installs an app or an LTI tool, or acts for an LTI platform the app is connected to, and takes no API key.",
   "invalid_between_num": "{{name}} must be between {{min}} and {{max}} characters",
   "invalid_cdn_url": "URL must point to the configured CDN",
   "invalid_country": "Use a two-letter country code, such as NL",

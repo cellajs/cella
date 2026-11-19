@@ -40,9 +40,12 @@ interface FindServiceAccountsPaginatedOpts extends InTenantOpts {
   limit: number;
 }
 
-/** A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is organization scope. */
+/**
+ * A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is
+ * organization scope. The account an LTI connection writes as is left out: no admin manages it.
+ */
 export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q, offset, limit }: FindServiceAccountsPaginatedOpts) {
-  const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId)];
+  const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId), isNull(serviceAccountsTable.connectionId)];
   const search = searchFilter([serviceAccountsTable.name], q);
   if (search) where.push(search);
 
@@ -101,6 +104,16 @@ export async function lockServiceAccount(ctx: DbContext, { id }: { id: string })
 /** Replaces the account's role bindings; call it on a row the transaction locked (`lockServiceAccount`). */
 export async function updateServiceAccountBindings(ctx: DbContext, { id, bindings }: { id: string; bindings: RoleBinding[] }) {
   await ctx.var.db.update(serviceAccountsTable).set({ bindings }).where(eq(serviceAccountsTable.id, id));
+}
+
+/** The id of the account an LTI connection writes as; undefined before one was made. */
+export async function findConnectionServiceAccountId(ctx: DbContext, { connectionId }: { connectionId: string }) {
+  const [account] = await ctx.var.db
+    .select({ id: serviceAccountsTable.id })
+    .from(serviceAccountsTable)
+    .where(eq(serviceAccountsTable.connectionId, connectionId))
+    .limit(1);
+  return account?.id;
 }
 
 /** Accounts are disabled, never deleted; only active ones count against the quota. */

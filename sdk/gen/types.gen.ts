@@ -868,6 +868,7 @@ export type ServiceAccount = {
     role: 'admin' | 'member';
   }>;
   oauthClientId: string | null;
+  connectionId: string | null;
   createdAt: string;
   createdBy:
     | {

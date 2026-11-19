@@ -1,0 +1,304 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "18776807-de20-4440-8e20-e6417476e3d9",
+  "prevIds": [
+    "590d1b65-d01e-4495-97f3-54dee9630aad"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "api_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.api_url",
+        "n|col|public.lti_contexts.api_url",
+        "e|col|public.lti_contexts.api_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "members_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.members_url",
+        "n|col|public.lti_contexts.members_url",
+        "e|col|public.lti_contexts.members_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_ran_at"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_ran_at",
+        "n|col|public.lti_contexts.import_ran_at",
+        "e|col|public.lti_contexts.import_ran_at"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_read_count"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_read_count",
+        "n|col|public.lti_contexts.import_read_count",
+        "e|col|public.lti_contexts.import_read_count"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "import_issue"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.import_issue",
+        "n|col|public.lti_contexts.import_issue",
+        "e|col|public.lti_contexts.import_issue"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "service_accounts",
+        "connection_id"
+      ],
+      "writes": [
+        "s|col|public.service_accounts.connection_id",
+        "n|col|public.service_accounts.connection_id",
+        "e|col|public.service_accounts.connection_id"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "service_accounts",
+        "service_accounts_connection_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.service_accounts_connection_id_idx",
+        "n|idx|public.service_accounts_connection_id_idx",
+        "e|idx|public.service_accounts_connection_id_idx",
+        "n|rel|public.service_accounts_connection_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.connection_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "service_accounts"
+      ],
+      "writes": [
+        "s|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
+        "n|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
+        "e|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
+        "n|con|public.service_accounts.service_accounts_connection_id_connections_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.service_accounts.connection_id",
+        "n|col|public.connections.id",
+        "e|uniqueness|public.connections.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "api_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "members_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_ran_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_read_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "import_issue",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "connection_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "service_accounts_connection_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "connection_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "service_accounts_connection_id_connections_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "connection_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "connections",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    }
+  ]
+}

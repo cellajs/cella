@@ -1,5 +1,5 @@
 import { and, eq, lt, sql } from 'drizzle-orm';
-import { calculateJwkThumbprint, createLocalJWKSet, errors, exportJWK, generateKeyPair, type JWK, type JWTVerifyGetKey } from 'jose';
+import { calculateJwkThumbprint, createLocalJWKSet, errors, exportJWK, generateKeyPair, importJWK, type JWK, type JWTVerifyGetKey } from 'jose';
 import { baseDb, type DbOrTx } from '#/db/db';
 import { type SigningKeyModel, signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
@@ -78,6 +78,16 @@ export async function loadSigningJwks(): Promise<{ keys: JWK[] }> {
   const order: Record<SigningKeyModel['status'], number> = { current: 0, next: 1, previous: 2 };
   const keys = rows.sort((a, b) => order[a.status] - order[b.status]).map((row): JWK => JSON.parse(decryptData(row.privateJwk, encryptionPurpose)));
   return { keys };
+}
+
+/**
+ * The key that signs now, ready to sign RS256 with, and its `kid`.
+ * @throws Error when the keystore holds no current key, which the OAuth worker's boot guarantees.
+ */
+export async function currentSigningKey() {
+  const [current] = (await loadSigningJwks()).keys;
+  if (!current?.kid) throw new Error('currentSigningKey: the keystore holds no current signing key');
+  return { kid: current.kid, key: await importJWK(current, alg) };
 }
 
 /** The `kid` of the key that signs, undefined while the keystore holds none. */

@@ -1,9 +1,10 @@
-import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -32,10 +33,12 @@ export const serviceAccountsTable = snakeCase.table(
     bindings: jsonb().$type<RoleBinding[]>().notNull().default([]),
     /** Set when this account is the installation of a registered app in this tenant; its consents hang off it. */
     oauthClientId: varchar({ length: maxLength.field }).references(() => oauthClientsTable.id, { onDelete: 'cascade' }),
+    /** Set when this account is the one an LTI connection writes as, such as its member imports; it takes no API key. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'cascade' }),
     // `updatedBy` names who last changed name or status; disabling is the security-relevant act here.
     ...auditColumns(),
   },
-  (table) => [index('service_accounts_tenant_id_idx').on(table.tenantId)],
+  (table) => [index('service_accounts_tenant_id_idx').on(table.tenantId), uniqueIndex('service_accounts_connection_id_idx').on(table.connectionId)],
 );
 
 export type ServiceAccountModel = typeof serviceAccountsTable.$inferSelect;

@@ -1,9 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { type GuardedFetchInit, guardedFetch } from '#/lib/guarded-fetch';
+import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { isUnder, type PlatformFetchOptions } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,
@@ -11,26 +12,12 @@ import {
   type ltiRegisterQuerySchema,
   ltiRegistrationResponseSchema,
 } from '#/modules/auth/flows/lti/lti-schema';
+import { provisionConnectionActor } from '#/modules/auth/flows/lti/operations/provision-connection-actor';
+import { isLtiConnection } from '#/modules/connections/connections-db';
 import { insertConnection } from '#/modules/connections/connections-queries';
 import { log } from '#/utils/logger';
 
-/** The registration runs before any tenant context exists, and connections sit outside RLS. */
-const dbCtx = { var: { db: baseDb } };
-
-/** Tests answer from a fake platform; production reaches the platform through the guarded fetch's own. */
-export type PlatformFetchOptions = Pick<GuardedFetchInit, 'resolve' | 'transport'>;
-
 const invalidConfiguration = (reason: string) => new AppError(400, 'lti_configuration_invalid', 'warn', { meta: { reason } });
-
-/**
- * Whether the configuration's address lies under its issuer: same origin, and the issuer's path a prefix of its own.
- * A configuration served from elsewhere could name any issuer, and the app would trust launches signed in its name.
- */
-const isUnderIssuer = (configurationUrl: URL, issuer: string) => {
-  const issuerUrl = new URL(issuer);
-  const issuerPath = issuerUrl.pathname.endsWith('/') ? issuerUrl.pathname : `${issuerUrl.pathname}/`;
-  return configurationUrl.origin === issuerUrl.origin && configurationUrl.pathname.startsWith(issuerPath);
-};
 
 /** The app signs its client assertions with RS256 keys, and a launch is an RS256 ID token. */
 const supportsLtiTool = (configuration: LtiPlatformConfiguration) =>
@@ -57,7 +44,8 @@ const fetchPlatformConfiguration = async (address: string, options: PlatformFetc
 
   const parsed = ltiPlatformConfigurationSchema.safeParse(parseJson(response.text));
   if (!parsed.success) throw invalidConfiguration('members');
-  if (!isUnderIssuer(configurationUrl, parsed.data.issuer)) throw invalidConfiguration('issuer');
+  // A configuration served from elsewhere could name any issuer, and the app would trust launches signed in its name.
+  if (!isUnder(configurationUrl, new URL(parsed.data.issuer))) throw invalidConfiguration('issuer');
   if (!supportsLtiTool(parsed.data)) throw new AppError(400, 'lti_platform_unsupported', 'warn', { meta: { issuer: parsed.data.issuer } });
   return parsed.data;
 };
@@ -87,7 +75,7 @@ const registerAtPlatform = async (configuration: LtiPlatformConfiguration, regis
  * Registers the app as an LTI tool at a platform by Dynamic Registration, from the frame the platform opened the
  * registration link in. The link is spent first, so any outcome takes a new one. Then the platform's configuration
  * is read and checked, the app registers, and the connection is stored for the link's tenant, written by the admin who
- * created the link.
+ * created the link, with the service account the connection writes as.
  * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400 `lti_configuration_invalid`,
  *   `lti_platform_unsupported` or `lti_registration_refused`, what `guardedFetch` throws, and 409 when the platform
  *   already registered this client id.
@@ -100,26 +88,32 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
 
   const platform = configuration[ltiPlatformConfigurationMember];
   const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id;
-  const connection = await insertConnection(dbCtx, {
-    values: {
-      tenantId: link.tenantId,
-      kind: 'lti',
-      issuer: configuration.issuer,
-      clientId: registration.client_id,
-      name: new URL(configuration.issuer).host,
-      status: 'active',
-      config: {
-        authorizationEndpoint: configuration.authorization_endpoint,
-        tokenEndpoint: configuration.token_endpoint,
-        ...(configuration.authorization_server ? { authorizationServer: configuration.authorization_server } : {}),
-        jwksUri: configuration.jwks_uri,
-        ...(registration.registration_client_uri ? { registrationClientUri: registration.registration_client_uri } : {}),
-        productFamilyCode: platform.product_family_code,
-        version: platform.version,
-        deploymentIds: deploymentId ? [deploymentId] : [],
+  // The registration runs before any tenant context exists, and connections sit outside RLS.
+  const connection = await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const inserted = await insertConnection(txCtx, {
+      values: {
+        tenantId: link.tenantId,
+        kind: 'lti',
+        issuer: configuration.issuer,
+        clientId: registration.client_id,
+        name: new URL(configuration.issuer).host,
+        status: 'active',
+        config: {
+          authorizationEndpoint: configuration.authorization_endpoint,
+          tokenEndpoint: configuration.token_endpoint,
+          ...(configuration.authorization_server ? { authorizationServer: configuration.authorization_server } : {}),
+          jwksUri: configuration.jwks_uri,
+          ...(registration.registration_client_uri ? { registrationClientUri: registration.registration_client_uri } : {}),
+          productFamilyCode: platform.product_family_code,
+          version: platform.version,
+          deploymentIds: deploymentId ? [deploymentId] : [],
+        },
+        createdBy: link.createdBy,
       },
-      createdBy: link.createdBy,
-    },
+    });
+    if (isLtiConnection(inserted)) await provisionConnectionActor(txCtx, inserted);
+    return inserted;
   });
 
   log.info('LTI connection registered', { connectionId: connection.id, tenantId: connection.tenantId, issuer: configuration.issuer });

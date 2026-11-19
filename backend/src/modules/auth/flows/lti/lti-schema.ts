@@ -10,6 +10,12 @@ export const ltiRegisterQuerySchema = z.object({
   registration_token: z.string().max(maxLength.url).optional().describe("The platform's token for the registration request"),
 });
 
+/** An LTI id: a person, a deployment, a context or a resource link, at most 255 characters (LTI Core 1.3, section 5). */
+export const ltiIdSchema = z.string().min(1).max(255);
+
+/** A profile claim, kept only when it fits a column; a longer or empty one is dropped. */
+export const profileClaim = z.string().min(1).max(maxLength.field).optional().catch(undefined);
+
 const platformUrlSchema = z.string().max(maxLength.url).refine(isFetchableUrl);
 const memberListSchema = z.array(z.string().max(maxLength.field)).max(100);
 

@@ -21,6 +21,7 @@ export const mockServiceAccountResponse = (
       status: 'active',
       bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role }],
       oauthClientId: null,
+      connectionId: null,
       createdAt,
       updatedAt: createdAt,
       lastSeenAt: createdAt,

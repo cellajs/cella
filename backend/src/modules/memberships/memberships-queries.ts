@@ -3,7 +3,7 @@ import { and, count, eq, exists, inArray, lte, or, type SQL, sql } from 'drizzle
 import { alias } from 'drizzle-orm/pg-core';
 import type { Access, ChannelEntityType, EntityRole } from 'shared';
 import type { ActorBinding, DbContext, OrgContext } from '#/core/context';
-import type { UserId } from '#/db/utils/ids';
+import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -109,7 +109,7 @@ export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userI
     .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
 
 /** Sets a membership's role, written by `by`; for a server flow that already read the row, outside any organization scope. */
-export const updateMembershipRole = async (ctx: DbContext, { id, role, by }: { id: string; role: EntityRole; by: UserId }) => {
+export const updateMembershipRole = async (ctx: DbContext, { id, role, by }: { id: string; role: EntityRole; by: ActorId }) => {
   await ctx.var.db
     .update(membershipsTable)
     .set({ role, ...updateStamps(by) })

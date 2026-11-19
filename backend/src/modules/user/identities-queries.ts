@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { type IdentityKind, type IdentityModel, type InsertIdentityModel, identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -11,6 +11,14 @@ interface FindIdentityBySubjectOpts {
   /** The trust class the provider slug lives in; a social provider by default. */
   kind?: IdentityKind;
 }
+
+/**
+ * Holds an identity's key (kind, provider, subject) until the caller's transaction ends, found or not: two flows that
+ * find or make the identity of one subject run one after the other, and the second finds what the first made.
+ */
+export const lockIdentityKey = async (ctx: DbContext, { provider, subject, kind }: Required<FindIdentityBySubjectOpts>) => {
+  await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`identity:${kind}:${provider}:${subject}`}, 0))`);
+};
 
 /** The identity an external account is: keyed on (kind, provider, subject), never on its address. */
 export const findIdentityBySubject = async (ctx: DbContext, { provider, subject, kind = 'oauth' }: FindIdentityBySubjectOpts) => {
@@ -48,7 +56,7 @@ export const findSsoIdentities = async (ctx: DbContext, { userId }: { userId: st
 
 interface InsertIdentityOpts {
   values: Pick<IdentityModel, 'userId' | 'provider' | 'subject'> &
-    Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data'> & { email: string | null };
+    Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data' | 'verifiedAt' | 'lastSignInAt'> & { email: string | null };
   /** Verified now, when an inbox proof in the same flow already stands for it, or the provider's assertion is the proof. */
   verified?: boolean;
 }

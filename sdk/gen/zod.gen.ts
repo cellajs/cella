@@ -736,6 +736,7 @@ export const zServiceAccount = z.object({
     }),
   ),
   oauthClientId: z.string().max(255).nullable(),
+  connectionId: z.uuid().nullable(),
   createdAt: z.string(),
   createdBy: z
     .union([
