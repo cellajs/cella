@@ -59,10 +59,15 @@ const vetConfigurationAddress = async (address: string, options: PlatformFetchOp
   return configurationUrl;
 };
 
-/** A request to the platform that the guarded fetch refused or could not finish, as the registration's refusal. */
+/**
+ * A request to the platform that the guarded fetch refused or could not finish, as the registration's refusal: an
+ * address the platform named that the app does not contact (`lti_platform_address_refused`), or any other failure.
+ */
 const platformUnreachable = (err: unknown) => {
   if (!(err instanceof AppError) || (err.type !== 'outbound_request_failed' && err.type !== 'outbound_request_refused')) return err;
-  return new AppError(400, 'lti_platform_unreachable', 'warn', { meta: { reason: String(err.meta?.reason) } });
+  const reason = String(err.meta?.reason);
+  const type = err.type === 'outbound_request_refused' && reason !== 'redirect' ? 'lti_platform_address_refused' : 'lti_platform_unreachable';
+  return new AppError(400, type, 'warn', { meta: { reason } });
 };
 
 /** The platform's OpenID configuration, read from its vetted address and checked against it and its issuer. */
@@ -117,13 +122,15 @@ const assertTenantRoom = async (ctx: DbContext, tenantId: string) => {
 
 /**
  * A client id the platform gave before, refused by the unique pair of issuer and client id across tenants
- * (`lti_client_id_taken`). Only a connection of this tenant is named to its admin; another tenant's stays unnamed.
- * @returns The error to throw: `lti_platform_already_connected` for this tenant's connection, else `err` itself.
+ * (`lti_client_id_taken` in `pgConstraintMap`). Only a connection of this tenant is named to its admin; another
+ * tenant's stays unnamed.
+ * @returns The error to throw: `lti_platform_already_connected` for this tenant's connection, `lti_client_id_taken` for
+ *   another's, else `err` itself.
  */
 const takenClientIdRefusal = async (err: unknown, { tenantId, issuer, clientId }: { tenantId: string; issuer: string; clientId: string }) => {
   if (constraintErrorType(err) !== 'lti_client_id_taken') return err;
   const holder = await findLtiConnectionByClient(dbCtx, { issuer, clientId });
-  if (holder?.tenantId !== tenantId) return err;
+  if (holder?.tenantId !== tenantId) return new AppError(409, 'lti_client_id_taken', 'warn', { meta: { issuer } });
   return new AppError(409, 'lti_platform_already_connected', 'warn', { meta: { issuer } });
 };
 
@@ -138,7 +145,8 @@ const takenClientIdRefusal = async (err: unknown, { tenantId, issuer, clientId }
  * set, and the connection turns active with the client id the platform gave; a refused registration deletes it.
  * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400
  *   `lti_configuration_address_refused` with the link left; with the link spent 400 `lti_configuration_invalid`,
- *   `lti_platform_unreachable`, `lti_platform_unsupported` or `lti_registration_refused`; 403 `lti_connection_limit`
+ *   `lti_platform_address_refused`, `lti_platform_unreachable`, `lti_platform_unsupported` or
+ *   `lti_registration_refused`; 403 `lti_connection_limit`
  *   before the spend and `lti_connection_limit_link_used` after it; 409 `lti_platform_already_connected` or
  *   `lti_client_id_taken` (`takenClientIdRefusal`).
  */

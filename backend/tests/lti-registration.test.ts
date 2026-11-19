@@ -1,17 +1,21 @@
 import { eq } from 'drizzle-orm';
+import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { toClientError } from '#/lib/error';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
+import { decodeHtml } from './oauth-helpers';
 import { createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 import { clearDatabase, setTestConfig } from './test-utils';
@@ -319,12 +323,15 @@ describe('LTI registration', async () => {
       .insert(connectionsTable)
       .values(heldConnection(other.tenantId, issuer, otherPlatform.clientId))
       .returning();
-    const refusal = await registerLtiPlatformOp({ link: elsewhere.link, openid_configuration: configurationUrl }, otherPlatform.options).catch(
-      (err: unknown) => toClientError(err),
+    const refused = await registerLtiPlatformOp({ link: elsewhere.link, openid_configuration: configurationUrl }, otherPlatform.options).catch(
+      (err: unknown) => err,
     );
-    expect(refusal).toMatchObject({ status: 409, type: 'lti_client_id_taken' });
-    expect(JSON.stringify(refusal)).not.toContain(other.tenantId);
-    expect(JSON.stringify(refusal)).not.toContain(held.id);
+    const response = await new Hono<Env>().get('/', (ctx) => registrationRefusalPage(ctx, refused)).request('/');
+    const page = decodeHtml(await response.text());
+    expect(response.status).toBe(409);
+    expect(page).toContain(new AppError(409, 'lti_client_id_taken', 'warn').message);
+    expect(page).not.toContain(other.tenantId);
+    expect(page).not.toContain(held.id);
     expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, elsewhere.org.tenantId))).toEqual([]);
   });
 
