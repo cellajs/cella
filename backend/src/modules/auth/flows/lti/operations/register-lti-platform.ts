@@ -1,9 +1,12 @@
 import type { z } from '@hono/zod-openapi';
+import { generateId } from 'shared/utils/entity-id';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { updateStamps } from '#/db/utils/stamps';
 import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
@@ -12,7 +15,8 @@ import {
   type ltiRegisterQuerySchema,
   ltiRegistrationResponseSchema,
 } from '#/modules/auth/flows/lti/lti-schema';
-import { insertConnection } from '#/modules/connections/connections-queries';
+import { deleteConnection, insertConnection, updateConnection } from '#/modules/connections/connections-queries';
+import type { LtiConnectionConfig } from '#/modules/connections/connections-schema';
 import { log } from '#/utils/logger';
 
 /** The registration runs before any tenant context exists, and connections sit outside RLS. */
@@ -43,8 +47,14 @@ const fetchPlatformConfiguration = async (address: string, options: PlatformFetc
   return parsed.data;
 };
 
-/** Registers the app at the platform's registration endpoint, with the platform's token when it gave one. */
-const registerAtPlatform = async (configuration: LtiPlatformConfiguration, registrationToken: string | undefined, options: PlatformFetchOptions) => {
+interface RegistrationCall {
+  configuration: LtiPlatformConfiguration;
+  connectionId: string;
+  registrationToken: string | undefined;
+}
+
+/** Registers the app at the platform's registration endpoint for one connection, with the platform's token when it gave one. */
+const registerAtPlatform = async ({ configuration, connectionId, registrationToken }: RegistrationCall, options: PlatformFetchOptions) => {
   const response = await guardedFetch(configuration.registration_endpoint, {
     ...options,
     method: 'POST',
@@ -53,7 +63,7 @@ const registerAtPlatform = async (configuration: LtiPlatformConfiguration, regis
       'Content-Type': 'application/json',
       ...(registrationToken ? { Authorization: `Bearer ${registrationToken}` } : {}),
     },
-    body: JSON.stringify(ltiRegistrationRequest()),
+    body: JSON.stringify(ltiRegistrationRequest(connectionId)),
   });
   const refused = (reason: string) =>
     new AppError(400, 'lti_registration_refused', 'warn', { meta: { reason, platformStatus: response.status, issuer: configuration.issuer } });
@@ -67,8 +77,10 @@ const registerAtPlatform = async (configuration: LtiPlatformConfiguration, regis
 /**
  * Registers the app as an LTI tool at a platform by Dynamic Registration, from the frame the platform opened the
  * registration link in. The link is spent first, so any outcome takes a new one. Then the platform's configuration
- * is read and checked, the app registers, and the connection is stored for the link's tenant, written by the admin who
- * created the link.
+ * is read and checked, and the connection is stored `pending` with a key pair of its own (`mintConnectionKey`), for
+ * the link's tenant and written by the admin who created the link. Its key set answers from then on: a platform such
+ * as Brightspace reads it while it handles the registration. The app registers with that key set, and the connection
+ * turns active with the client id the platform gave; a refused registration deletes it.
  * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400 `lti_configuration_invalid`,
  *   `lti_platform_unsupported` or `lti_registration_refused`, what `guardedFetch` throws, and 409 when the platform
  *   already registered this client id.
@@ -77,32 +89,53 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
   const link = await spendHandoffToken({ kind: 'lti-registration', rawToken: query.link });
 
   const configuration = await fetchPlatformConfiguration(query.openid_configuration, options);
-  const registration = await registerAtPlatform(configuration, query.registration_token, options);
-
   const platform = configuration[ltiPlatformConfigurationMember];
-  const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id;
-  const connection = await insertConnection(dbCtx, {
+  const id = generateId();
+  const config: LtiConnectionConfig = {
+    authorizationEndpoint: configuration.authorization_endpoint,
+    tokenEndpoint: configuration.token_endpoint,
+    ...(configuration.authorization_server ? { authorizationServer: configuration.authorization_server } : {}),
+    jwksUri: configuration.jwks_uri,
+    productFamilyCode: platform.product_family_code,
+    version: platform.version,
+    deploymentIds: [],
+  };
+  await insertConnection(dbCtx, {
     values: {
+      id,
       tenantId: link.tenantId,
       kind: 'lti',
       issuer: configuration.issuer,
-      clientId: registration.client_id,
       name: new URL(configuration.issuer).host,
-      status: 'active',
-      config: {
-        authorizationEndpoint: configuration.authorization_endpoint,
-        tokenEndpoint: configuration.token_endpoint,
-        ...(configuration.authorization_server ? { authorizationServer: configuration.authorization_server } : {}),
-        jwksUri: configuration.jwks_uri,
-        ...(registration.registration_client_uri ? { registrationClientUri: registration.registration_client_uri } : {}),
-        productFamilyCode: platform.product_family_code,
-        version: platform.version,
-        deploymentIds: deploymentId ? [deploymentId] : [],
-      },
+      status: 'pending',
+      config,
+      privateJwk: await mintConnectionKey(id),
       createdBy: link.createdBy,
     },
   });
 
-  log.info('LTI connection registered', { connectionId: connection.id, tenantId: connection.tenantId, issuer: configuration.issuer });
-  return connection;
+  try {
+    const registration = await registerAtPlatform({ configuration, connectionId: id, registrationToken: query.registration_token }, options);
+    const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id;
+    const connection = await updateConnection(dbCtx, {
+      id,
+      tenantId: link.tenantId,
+      values: {
+        clientId: registration.client_id,
+        status: 'active',
+        config: {
+          ...config,
+          ...(registration.registration_client_uri ? { registrationClientUri: registration.registration_client_uri } : {}),
+          deploymentIds: deploymentId ? [deploymentId] : [],
+        },
+        ...(link.createdBy && updateStamps(link.createdBy)),
+      },
+    });
+    if (!connection) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
+    log.info('LTI connection registered', { connectionId: id, tenantId: connection.tenantId, issuer: configuration.issuer });
+    return connection;
+  } catch (error) {
+    await deleteConnection(dbCtx, { id, tenantId: link.tenantId });
+    throw error;
+  }
 };

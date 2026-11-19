@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, check, index, jsonb, snakeCase, text, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
@@ -30,7 +30,7 @@ export const connectionsTable = snakeCase.table(
     federation: varchar({ length: maxLength.field }),
     /** The LTI platform's issuer; set on an LTI connection only. */
     issuer: varchar({ length: maxLength.field }),
-    /** The client id the LTI platform gave the app at registration; set on an LTI connection only. */
+    /** The client id the LTI platform gave the app at registration; set on an LTI connection once it registered. */
     clientId: varchar({ length: maxLength.field }),
     /** The values of the federation's `tenantClaim` this institution asserts (its domains, lower case); the assertion key. */
     claimValues: varchar({ length: maxLength.field }).array().notNull().default([]),
@@ -40,6 +40,11 @@ export const connectionsTable = snakeCase.table(
     /** An active connection admits the institution's members without an invitation; off, invited addresses only. */
     jitProvisioning: boolean().notNull().default(true),
     config: jsonb().$type<ConnectionConfig>().notNull().default({}),
+    /**
+     * An LTI connection's own RS256 key pair, minted at registration: the private JWK, encrypted for this row
+     * (`mintConnectionKey`). Null on a connection registered before keys were made per connection.
+     */
+    privateJwk: text(),
     ...auditColumns(),
   },
   (table) => [
@@ -48,9 +53,10 @@ export const connectionsTable = snakeCase.table(
     uniqueIndex('connections_tenant_id_kind_idx').on(table.tenantId, table.kind).where(sql`${table.kind} = 'sso'`),
     // A launch finds its connection by issuer and client id, whichever tenant holds it.
     uniqueIndex('connections_issuer_client_id_idx').on(table.issuer, table.clientId),
+    // An LTI connection is stored `pending` before the platform answers its registration with a client id.
     check(
       'connections_kind_check',
-      sql`(${table.kind} = 'sso' AND ${table.federation} IS NOT NULL) OR (${table.kind} = 'lti' AND ${table.issuer} IS NOT NULL AND ${table.clientId} IS NOT NULL)`,
+      sql`(${table.kind} = 'sso' AND ${table.federation} IS NOT NULL) OR (${table.kind} = 'lti' AND ${table.issuer} IS NOT NULL AND (${table.clientId} IS NOT NULL OR ${table.status} = 'pending'))`,
     ),
   ],
 );
@@ -61,6 +67,9 @@ export type InsertConnectionModel = typeof connectionsTable.$inferInsert;
 /** An LTI connection as its readers type it: issuer, client id and the LTI config present. */
 export type LtiConnection = ConnectionModel & { kind: 'lti'; issuer: string; clientId: string; config: LtiConnectionConfig };
 
-/** Whether a connection row is an LTI connection with its config (`connections_kind_check` holds the columns). */
+/**
+ * Whether a connection row is a registered LTI connection with its config (`connections_kind_check` holds the
+ * columns): one still `pending` its platform's answer holds no client id.
+ */
 export const isLtiConnection = (row: ConnectionModel): row is LtiConnection =>
   row.kind === 'lti' && row.issuer !== null && row.clientId !== null && row.config.jwksUri !== undefined;

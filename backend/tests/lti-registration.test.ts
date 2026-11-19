@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createLtiRegistrationLink } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
@@ -44,14 +44,20 @@ const platformConfiguration = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-/** A platform behind the guarded fetch's transport: it serves its configuration and answers a registration with a client id. */
+/**
+ * A platform behind the guarded fetch's transport: it serves its configuration and answers a registration with a client
+ * id, after reading the key set the registration names, as Brightspace does.
+ */
 const fakePlatform = (configuration = platformConfiguration()) => {
-  const registrations: { authorization: string | undefined; body: Record<string, unknown> }[] = [];
+  const registrations: { authorization: string | undefined; body: Record<string, unknown>; keySetStatus: number }[] = [];
   const clientId = `client-${nanoid(8)}`;
   const transport: GuardedTransport = async ({ url, method, headers, body }) => {
     if (method === 'GET' && url.href === configurationUrl) return Response.json(configuration);
     if (method === 'POST' && url.href === configuration.registration_endpoint) {
-      registrations.push({ authorization: headers.Authorization, body: JSON.parse(body ?? '{}') });
+      const request = JSON.parse(body ?? '{}');
+      const { baseApp } = await import('#/routes');
+      const keySet = await baseApp.request(new URL(request.jwks_uri).pathname);
+      registrations.push({ authorization: headers.Authorization, body: request, keySetStatus: keySet.status });
       return Response.json({ client_id: clientId, 'https://purl.imsglobal.org/spec/lti-tool-configuration': { deployment_id: 'deployment-1' } });
     }
     return new Response(null, { status: 404 });
@@ -73,7 +79,8 @@ describe('LTI registration', async () => {
     return { org, user, answer, link: created ? (new URL(created.url).searchParams.get('link') ?? '') : '' };
   }
 
-  // The contract the launch builds on: the connection names the platform's issuer and the client id it returned.
+  // The contract the launch builds on: the connection names the platform's issuer and the client id it returned. A
+  // platform that reads the key set while it handles the registration, as Brightspace does, finds it.
   it("stores the platform's connection with the client id it returned, written by the admin who created the link", async () => {
     const { org, user, link } = await mintLink();
     const platform = fakePlatform();
@@ -96,7 +103,8 @@ describe('LTI registration', async () => {
     });
     expect(platform.registrations[0]).toMatchObject({
       authorization: 'Bearer platform-token',
-      body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: `${appConfig.oauthUrl}/jwks` },
+      body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: ltiKeySetUrl(connection.id) },
+      keySetStatus: 200,
     });
   });
 

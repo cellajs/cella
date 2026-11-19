@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, accessScopes, appConfig } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -180,10 +181,15 @@ export async function createProvider(): Promise<Provider> {
     // The offered entity scopes only; `openid` stays out: this server issues no ID tokens. An installed LTI tool's token
     // carries `user:read` through its resource's scopes (`getResourceServerInfo`), which discovery leaves unlisted.
     scopes: [...accessScopes.offered],
-    // An assertion's own `exp` would let a leaked one wait for its single use until then.
-    assertJwtClientAuthClaimsAndHeader: (_ctx, claims) => {
+    // An assertion's own `exp` would let a leaked one wait for its single use until then. Its one audience is this
+    // server as the configuration publishes it: the provider also takes the token endpoint at the host a request names.
+    assertJwtClientAuthClaimsAndHeader: (ctx, claims) => {
       if (typeof claims.exp === 'number' && claims.exp - Date.now() / 1000 > maxAssertionLifetime) {
         throw new errors.InvalidClientAuth('client assertion must expire within five minutes');
+      }
+      const [audience, ...more] = [claims.aud].flat();
+      if (more.length || (audience !== appConfig.oauthUrl && audience !== ctx.oidc.provider.urlFor('token'))) {
+        throw new errors.InvalidClientAuth('client assertion audience must be the issuer or the token endpoint');
       }
     },
     pkce: { required: () => true },
@@ -281,6 +287,15 @@ export async function createProvider(): Promise<Provider> {
 
   const provider = new Provider(appConfig.oauthUrl, configuration);
   provider.proxy = true;
+
+  // An installed LTI tool asked for LTI service scopes (`readLtiTokenRequest`): the token answer names them so.
+  provider.use(async (ctx, next) => {
+    await next();
+    const body: unknown = ctx.body;
+    if (ctx.oidc?.route !== 'token' || !ltiInstallationOf(ctx.oidc.client ?? {}) || !isRecord(body) || typeof body.scope !== 'string') return;
+    const scopes = body.scope.split(' ').flatMap((scope) => accessScopes.all.filter((known) => known === scope));
+    body.scope = scopes.flatMap((scope) => ltiServiceScope(scope) ?? []).join(' ');
+  });
 
   // Secrets are never stored in plaintext: a registered app's secret is compared by hash, a service account's client
   // secret is any of its live secret keys, whose scopes then cap the token (`grantableScopes`).

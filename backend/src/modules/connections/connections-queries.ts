@@ -144,7 +144,9 @@ export const lockConnectionForDelete = async (ctx: DbContext, { id, tenantId }: 
 interface UpdateConnectionOpts {
   id: string;
   tenantId: string;
-  values: Partial<Pick<InsertConnectionModel, 'name' | 'claimValues' | 'status' | 'jitProvisioning' | 'config' | 'updatedAt' | 'updatedBy'>>;
+  values: Partial<
+    Pick<InsertConnectionModel, 'name' | 'clientId' | 'claimValues' | 'status' | 'jitProvisioning' | 'config' | 'updatedAt' | 'updatedBy'>
+  >;
 }
 
 /** Writes `values` to one tenant's connection; the updated row, or undefined when the tenant holds no such connection. */

@@ -1,5 +1,8 @@
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { getRequestListener } from '@hono/node-server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { decodeJwt } from 'jose';
+import { decodeJwt, importJWK, type JWK, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
@@ -17,13 +20,16 @@ import {
 } from 'sdk';
 import { type AccessScope, appConfig, buildSubjectFromEntity, checkAccess, hierarchy } from 'shared';
 import { embeddedSessionHeader } from 'shared/utils/embedded-session';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
+import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-memberships';
+import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
@@ -35,7 +41,7 @@ import { holdConnection } from '#/modules/connections/connections-queries';
 import { ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
-import { currentSigningKey, ensureSigningKeys } from '#/modules/oauth-server/keystore';
+import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -52,12 +58,6 @@ import { setTestConfig } from './test-utils';
 vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/modules/auth/flows/lti/lti-context-channel')>();
   return { ...actual, ltiContextRole: vi.fn(actual.ltiContextRole) };
-});
-
-// Every client assertion the app signs takes its key here: an attack test sees whether one was signed.
-vi.mock('#/modules/oauth-server/keystore', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/oauth-server/keystore')>();
-  return { ...actual, currentSigningKey: vi.fn(actual.currentSigningKey) };
 });
 
 // The app takes both LTI roles: the round trip imports the people of one tenant into another.
@@ -119,12 +119,26 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     return { org, admin, path, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } };
   }
 
+  interface FakeConnection {
+    issuer?: string;
+    clientId?: string;
+    /** A connection registered before keys were made per connection holds none. */
+    keyless?: boolean;
+  }
+
   /** A tenant connected to a platform at `issuer`, with a context of its organization whose launch named its membership address. */
-  async function connectToFakePlatform(issuer = 'https://platform-a.example.com', clientId = `client-${nanoid(6)}`) {
+  async function connectToFakePlatform({
+    issuer = 'https://platform-a.example.com',
+    clientId = `client-${nanoid(6)}`,
+    keyless,
+  }: FakeConnection = {}) {
     const side = await orgWithAdmin();
+    const id = generateId();
     const [connection] = await db
       .insert(connectionsTable)
       .values({
+        id,
+        privateJwk: keyless ? null : await mintConnectionKey(id),
         tenantId: side.org.tenantId,
         kind: 'lti',
         issuer,
@@ -182,11 +196,19 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
   describe('as one app that is both sides', () => {
     let oauth: TestOauthServer;
+    let api: Server;
+    let apiOrigin: string;
 
     beforeAll(async () => {
       oauth = await startTestOauthServer();
+      api = createServer(getRequestListener(baseApp.fetch)).listen(0, '127.0.0.1');
+      await new Promise<void>((resolve) => api.once('listening', resolve));
+      apiOrigin = `http://127.0.0.1:${(api.address() as AddressInfo).port}`;
     });
-    afterAll(async () => await oauth.close());
+    afterAll(async () => {
+      api.close();
+      await oauth.close();
+    });
 
     /**
      * The platform's addresses, answered in-process: the API by the app, and the authorization server by the test
@@ -233,14 +255,14 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
         platformOptions,
       );
       if (!isLtiConnection(connection)) throw new Error('the registration stored no LTI connection');
-      // Each side reads the other's key set at the worker's own listener in a test.
+      // Each side reads the other's key set at a listener of its own in a test: the platform's at the worker, the LTI tool's at the API.
       await db
         .update(connectionsTable)
         .set({ config: { ...connection.config, jwksUri: `${oauth.issuer}/jwks` } })
         .where(eq(connectionsTable.id, connection.id));
       await db
         .update(oauthClientsTable)
-        .set({ jwksUri: `${oauth.issuer}/jwks` })
+        .set({ jwksUri: `${apiOrigin}${new URL(ltiKeySetUrl(connection.id)).pathname}` })
         .where(eq(oauthClientsTable.id, connection.clientId));
 
       const [installationId] = connection.config.deploymentIds;
@@ -557,8 +579,8 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   // Attack: two tenants registered at one platform read one membership address, never with each other's token.
   it('sends each connection only its own token, though both read one membership address', async () => {
     const issuer = 'https://platform-a.example.com';
-    const first = await connectToFakePlatform(issuer, 'client-first');
-    const second = await connectToFakePlatform(issuer, 'client-second');
+    const first = await connectToFakePlatform({ issuer, clientId: 'client-first' });
+    const second = await connectToFakePlatform({ issuer, clientId: 'client-second' });
     const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
 
     await importLtiMembersOp(first.context.id, api.options);
@@ -571,60 +593,101 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(reads.slice(firstReads).every(({ authorization }) => authorization?.startsWith('Bearer client-second:'))).toBe(true);
   });
 
-  // Attack: the app signs with one key for every platform. Someone who registers a platform of their own names the
-  // victim platform as the audience of the assertion and its own host as the token endpoint, to receive an assertion
-  // the victim accepts; or names the victim's token endpoint and a course there, to read its people into their own
-  // organization. Such a platform registers, as Brightspace and Schoology do, and its import signs and sends nothing.
-  describe('a platform that names another host than its issuer for its token', () => {
-    const attacker = 'https://attacker.example.com';
-    const victim = 'https://victim.example.com';
-    const variants = [
-      {
-        name: 'its own token endpoint and the victim as the audience',
-        tokenEndpoint: `${attacker}/token`,
-        authorizationServer: victim,
-        membershipsUrl: `${attacker}/api/lti/courses/attacker/memberships`,
-      },
-      {
-        name: "the victim's token endpoint and a course there",
-        tokenEndpoint: `${victim}/token`,
-        authorizationServer: undefined,
-        membershipsUrl: `${victim}/api/lti/courses/victim/memberships`,
-      },
-    ];
+  interface FakeRegistration {
+    issuer: string;
+    clientId: string;
+    tokenEndpoint?: string;
+    authorizationServer?: string;
+  }
 
-    it.each(variants)('registers a platform that names $name, and signs and sends nothing to import', async (variant) => {
-      const side = await orgWithAdmin();
-      const link = await call(createLtiRegistrationLink, { path: side.path, headers: side.headers });
-      const requests: URL[] = [];
-      const transport: GuardedTransport = async ({ url }) => {
-        requests.push(url);
-        if (url.pathname === '/register') return Response.json({ client_id: 'victim-client' }, { status: 201 });
-        const configuration = ltiPlatformConfiguration({ jwksUri: `${attacker}/jwks`, tokenEndpoint: variant.tokenEndpoint });
-        return Response.json({
-          ...configuration,
-          issuer: attacker,
-          authorization_endpoint: `${attacker}/authorize`,
-          registration_endpoint: `${attacker}/register`,
-          authorization_server: variant.authorizationServer,
-        });
-      };
+  /** Registers the app for the side's tenant at a platform answered in-process, which names `tokenEndpoint` and gives `clientId`. */
+  async function registerAtFakePlatform(side: Awaited<ReturnType<typeof orgWithAdmin>>, registration: FakeRegistration) {
+    const { issuer, clientId, tokenEndpoint = `${issuer}/token`, authorizationServer } = registration;
+    const link = await call(createLtiRegistrationLink, { path: side.path, headers: side.headers });
+    const transport: GuardedTransport = async ({ url }) => {
+      if (url.pathname === '/register') return Response.json({ client_id: clientId }, { status: 201 });
+      const configuration = ltiPlatformConfiguration({ jwksUri: `${issuer}/jwks`, tokenEndpoint });
+      return Response.json({
+        ...configuration,
+        issuer,
+        authorization_endpoint: `${issuer}/authorize`,
+        registration_endpoint: `${issuer}/register`,
+        authorization_server: authorizationServer,
+      });
+    };
+    const connection = await registerLtiPlatformOp(
+      { link: new URL((link.data as { url: string }).url).searchParams.get('link') ?? '', openid_configuration: `${issuer}/lti/configuration` },
+      { transport, resolve: loopback },
+    );
+    if (!isLtiConnection(connection)) throw new Error('the registration stored no LTI connection');
+    return connection;
+  }
 
-      const connection = await registerLtiPlatformOp(
-        { link: new URL((link.data as { url: string }).url).searchParams.get('link') ?? '', openid_configuration: `${attacker}/lti/configuration` },
-        { transport, resolve: loopback },
-      );
-      expect(connection.config).toMatchObject({ tokenEndpoint: variant.tokenEndpoint });
-      const context = await addCourse(side, connection.id, variant.membershipsUrl);
-      requests.length = 0;
-      vi.mocked(currentSigningKey).mockClear();
+  /** The key set the API serves at a connection's `jwks_uri`. */
+  const keySetOf = (connectionId: string) => fetchApp(new URL(ltiKeySetUrl(connectionId)).pathname);
+  const publicKeyOf = async (connectionId: string) => ((await (await keySetOf(connectionId)).json()) as { keys: JWK[] }).keys;
 
-      await importLtiMembersOp(context.id, { transport, resolve: loopback });
-      expect(requests).toEqual([]);
-      expect(currentSigningKey).not.toHaveBeenCalled();
-      expect(await contextRow(context.id)).toMatchObject({ importReadCount: 0, importIssue: 'address_refused' });
-      expect(await ltiIdentities(attacker)).toEqual([]);
+  // Attack: a platform verifies the app's assertions against the key set its registration names. With one key for every
+  // connection, a platform an admin registered could replay an assertion the app signed for it at another platform.
+  it("gives each connection a key of its own, and serves at each key set address that connection's public key alone", async () => {
+    const side = await orgWithAdmin();
+    const first = await registerAtFakePlatform(side, { issuer: 'https://platform-a.example.com', clientId: 'client-a' });
+    const second = await registerAtFakePlatform(side, { issuer: 'https://platform-b.example.com', clientId: 'client-b' });
+
+    const [firstKeys, secondKeys] = await Promise.all([publicKeyOf(first.id), publicKeyOf(second.id)]);
+    expect([firstKeys.length, secondKeys.length]).toEqual([1, 1]);
+    expect(firstKeys[0]).not.toMatchObject({ kid: secondKeys[0].kid });
+    expect(firstKeys[0]).not.toMatchObject({ n: secondKeys[0].n });
+    expect(Object.keys(firstKeys[0]).sort()).toEqual(['alg', 'e', 'kid', 'kty', 'n', 'use']);
+  });
+
+  // Attack: a platform names another registration's client id, token endpoint and audience, to make the app sign an
+  // assertion that registration's platform accepts. The app signs it with the key of the connection that asked, which
+  // the other registration's key set does not hold.
+  it("signs for a platform that names another registration's client id and token endpoint with its own connection's key", async () => {
+    const victim = await registerAtFakePlatform(await orgWithAdmin(), { issuer: 'https://victim.example.com', clientId: 'victim-client' });
+    const side = await orgWithAdmin();
+    const attacker = await registerAtFakePlatform(side, {
+      issuer: 'https://attacker.example.com',
+      clientId: victim.clientId,
+      tokenEndpoint: victim.config.tokenEndpoint,
+      authorizationServer: victim.issuer,
     });
+    const context = await addCourse(side, attacker.id, 'https://attacker.example.com/api/lti/courses/c1/memberships');
+    const api = fakePlatformApi(() => ({ members: [] }));
+
+    await importLtiMembersOp(context.id, api.options);
+    const [tokenRequest] = api.requests.filter(({ params }) => params);
+    expect(tokenRequest.url.href).toBe(victim.config.tokenEndpoint);
+    const assertion = tokenRequest.params?.get('client_assertion') ?? '';
+    expect(decodeJwt(assertion)).toMatchObject({ iss: victim.clientId, sub: victim.clientId, aud: victim.issuer });
+    const [attackerKey] = await publicKeyOf(attacker.id);
+    const [victimKey] = await publicKeyOf(victim.id);
+    await expect(jwtVerify(assertion, await importJWK(attackerKey, 'RS256'))).resolves.toBeDefined();
+    await expect(jwtVerify(assertion, await importJWK(victimKey, 'RS256'))).rejects.toThrow();
+  });
+
+  // A key set address names its connection: once the connection is deleted, no platform reads a key there.
+  it('answers no key set for a connection that was deleted, or never existed', async () => {
+    const side = await orgWithAdmin();
+    const connection = await registerAtFakePlatform(side, { issuer: 'https://platform-a.example.com', clientId: 'client-a' });
+    expect((await keySetOf(connection.id)).status).toBe(200);
+
+    const deleted = await call(deleteLtiConnection, { path: { ...side.path, connectionId: connection.id }, headers: side.headers });
+    expect(deleted.response.status).toBe(204);
+    expect((await keySetOf(connection.id)).status).toBe(404);
+    expect((await keySetOf(generateId())).status).toBe(404);
+  });
+
+  // A connection registered before keys were made per connection still launches; reading members takes a new registration.
+  it('signs and sends nothing for a connection without a key of its own, and records that it must register again', async () => {
+    const side = await connectToFakePlatform({ keyless: true });
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+
+    await importLtiMembersOp(side.context.id, api.options);
+    expect(api.requests).toEqual([]);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 0, importIssue: 'register_again' });
+    expect(await ltiIdentities(side.issuer)).toEqual([]);
   });
 
   // Attack: the account an import wrote as stays when its connection goes, and never falls to the tenant's admins, who
@@ -772,7 +835,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   // Attack: a course list tells which platforms an organization trusts and how its imports ran; it is for whoever may update the organization.
   it("lists the courses of the organization's own connections, and refuses a member and another tenant's admin", async () => {
     const own = await connectToFakePlatform();
-    const other = await connectToFakePlatform('https://platform-b.example.com');
+    const other = await connectToFakePlatform({ issuer: 'https://platform-b.example.com' });
     await importLtiMembersOp(
       own.context.id,
       fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] })).options,

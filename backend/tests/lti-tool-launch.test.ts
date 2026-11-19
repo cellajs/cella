@@ -399,11 +399,11 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await meStatus(embeddedHeader)).toBe(401);
   });
 
-  // Attack: the platform names where its course's members are, and the installation's token goes there. Only an address
-  // on the platform's own origin is kept, and a launch without the claim keeps what an earlier one kept.
-  it("keeps a launch's membership address only on the platform's origin, and asks for a member import after a teacher's launch", async () => {
+  // The platform names where its course's members are, and the connection's token goes there: an address the guarded
+  // fetch takes, on any host, as Canvas names one apart from its issuer. A launch without the claim keeps what an earlier one kept.
+  it("keeps the membership address a launch names, and asks for a member import after a teacher's launch", async () => {
     const connected = await connect(await fakePlatform('platform-a'));
-    const membershipsUrl = `${connected.issuer}/api/lti/courses/c1/memberships`;
+    const membershipsUrl = 'https://school.example.net/api/lti/courses/c1/names_and_roles';
     const teacher = (claim?: Record<string, unknown>) => ({ [ltiClaims.roles]: [lisContextRoles.instructor], [ltiClaims.namesRoleService]: claim });
     const kept = async () => {
       const [row] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
@@ -417,9 +417,9 @@ describe('LTI launch at the app as an LTI tool', async () => {
     };
 
     const untrusted = [
-      { context_memberships_url: 'https://elsewhere.example.com/api/lti/courses/c1/memberships', service_versions: ['2.0'] },
-      { context_memberships_url: `https://${connected.platform.name}.example.com.elsewhere.example.com/memberships`, service_versions: ['2.0'] },
+      { context_memberships_url: 'ftp://school.example.net/memberships', service_versions: ['2.0'] },
       { context_memberships_url: `${membershipsUrl}#elsewhere`, service_versions: ['2.0'] },
+      { context_memberships_url: membershipsUrl, service_versions: ['1.0'] },
     ];
     for (const claim of untrusted) {
       expect((await launch(connected, teacher(claim))).response.status).toBe(303);

@@ -30,6 +30,7 @@ import { clockTime, dateShort } from '~/utils/date-short';
 type LtiContext = ListLtiContextsResponse['results'][number];
 
 const importIssues = {
+  register_again: 'c:lti_import.register_again',
   address_refused: 'c:lti_import.address_refused',
   scope_not_granted: 'c:lti_import.scope_not_granted',
   token_refused: 'c:lti_import.token_refused',

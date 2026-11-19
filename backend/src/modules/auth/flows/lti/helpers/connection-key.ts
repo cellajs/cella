@@ -1,0 +1,37 @@
+import { calculateJwkThumbprint, exportJWK, generateKeyPair, importJWK, type JWK } from 'jose';
+import type { ConnectionModel } from '#/modules/connections/connections-db';
+import { decryptData, encryptData } from '#/utils/data-encryption';
+
+const alg = 'RS256';
+
+/** A purpose per connection: a private key copied onto another row decrypts there to nothing. */
+const encryptionPurpose = (connectionId: string) => `lti-connection-key:${connectionId}`;
+
+/**
+ * A new RS256 key pair for the LTI connection `connectionId`: its private JWK with `kid`, `alg` and `use`, encrypted as
+ * `connections.privateJwk` holds it. Each connection signs with its own key: a platform verifies the app's client
+ * assertions against the key set of that registration alone.
+ */
+export const mintConnectionKey = async (connectionId: string) => {
+  const { privateKey } = await generateKeyPair(alg, { extractable: true });
+  const jwk = await exportJWK(privateKey);
+  const kid = await calculateJwkThumbprint(jwk);
+  return encryptData(JSON.stringify({ ...jwk, kid, alg, use: 'sig' }), encryptionPurpose(connectionId));
+};
+
+type KeyHolder = Pick<ConnectionModel, 'id' | 'privateJwk'>;
+
+const privateJwkOf = ({ id, privateJwk }: KeyHolder): JWK | null => (privateJwk ? JSON.parse(decryptData(privateJwk, encryptionPurpose(id))) : null);
+
+/** The public half of a connection's key, as its key set serves it; null for a connection registered without one. */
+export const connectionPublicJwk = (connection: KeyHolder) => {
+  const jwk = privateJwkOf(connection);
+  if (jwk?.kty !== 'RSA' || !jwk.n || !jwk.e || !jwk.kid) return null;
+  return { kty: 'RSA' as const, n: jwk.n, e: jwk.e, kid: jwk.kid, alg: 'RS256' as const, use: 'sig' as const };
+};
+
+/** A connection's key, ready to sign RS256, with its `kid`; null for a connection registered without one. */
+export const connectionSigningKey = async (connection: KeyHolder) => {
+  const jwk = privateJwkOf(connection);
+  return jwk?.kid ? { kid: jwk.kid, key: await importJWK(jwk, alg) } : null;
+};

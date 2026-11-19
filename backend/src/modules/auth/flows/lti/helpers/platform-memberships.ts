@@ -5,10 +5,10 @@ import { AppError } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
 import { type GuardedFetchInit, guardedFetch, isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiClaims, ltiNrps, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { connectionSigningKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import type { LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
-import { currentSigningKey } from '#/modules/oauth-server/keystore';
 
 /** Tests answer from a fake platform; production reaches the platform through the guarded fetch's own. */
 export type PlatformFetchOptions = Pick<GuardedFetchInit, 'resolve' | 'transport'>;
@@ -34,36 +34,16 @@ export const isUnder = (url: URL, base: URL) => {
   return url.origin === base.origin && url.pathname.startsWith(basePath);
 };
 
-/** Whether `address` lies on the origin of the platform's `issuer`: the one host the app signs for and sends a token to. */
-const onIssuerOrigin = (issuer: string, address: string) =>
-  URL.canParse(issuer) && URL.canParse(address) && new URL(address).origin === new URL(issuer).origin;
-
-interface PlatformTokenAddresses {
-  issuer: string;
-  tokenEndpoint: string;
-  authorizationServer?: string;
-}
-
 /**
- * Where a platform's token comes from: its token endpoint, and the audience of the client assertion, its authorization
- * server when it names one. Both lie on the issuer's origin, since the app signs with one key for every platform: a
- * connection whose addresses lie elsewhere registers and launches, and signs nothing.
- * @returns Undefined when either lies on another origin.
- */
-const platformTokenAddresses = ({ issuer, tokenEndpoint, authorizationServer }: PlatformTokenAddresses) => {
-  const audience = authorizationServer ?? tokenEndpoint;
-  return onIssuerOrigin(issuer, tokenEndpoint) && onIssuerOrigin(issuer, audience) ? { tokenEndpoint, audience } : undefined;
-};
-
-/**
- * A membership address a platform named, or the next page it links to, when the app trusts it: on the origin of the
- * connection's issuer, where the installation's token goes. A next page keeps the path of the first.
+ * A membership address a verified launch named, or the next page it links to, when the app reads it: an address the
+ * guarded fetch takes, and a next page on the origin and path of the first.
  * @returns Undefined for any other address.
  */
-const trustedMembershipsUrl = (connection: LtiConnection, address: string, first?: URL) => {
-  if (!isFetchableUrl(address) || !onIssuerOrigin(connection.issuer, address)) return undefined;
+const trustedMembershipsUrl = (address: string, first?: URL) => {
+  if (!isFetchableUrl(address)) return undefined;
   const url = new URL(address);
-  return url.hash || (first && url.pathname !== first.pathname) ? undefined : url;
+  if (url.hash || (first && (url.origin !== first.origin || url.pathname !== first.pathname))) return undefined;
+  return url;
 };
 
 /** A launch's NRPS claim (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
@@ -73,13 +53,13 @@ const namesRoleServiceSchema = z.object({
 });
 
 /**
- * The membership address a verified launch names in its NRPS claim, when it offers the version the import reads, or
- * names none, and the app trusts the address.
+ * The membership address a verified launch names in its NRPS claim, when the claim offers the version the import
+ * reads, or names none, and the guarded fetch takes the address. Only a launch of its connection writes it.
  */
-export const launchMembershipsUrl = (connection: LtiConnection, claims: JWTPayload): string | undefined => {
+export const launchMembershipsUrl = (claims: JWTPayload): string | undefined => {
   const claim = namesRoleServiceSchema.safeParse(claims[ltiClaims.namesRoleService]).data;
   if (!claim || (claim.service_versions && !claim.service_versions.includes(ltiNrps.version))) return undefined;
-  return trustedMembershipsUrl(connection, claim.context_memberships_url) && claim.context_memberships_url;
+  return trustedMembershipsUrl(claim.context_memberships_url) && claim.context_memberships_url;
 };
 
 const readFailed = (reason: string, connection: LtiConnection) =>
@@ -94,21 +74,23 @@ export const parseJson = (text: string): unknown => {
   }
 };
 
-type TokenAddresses = NonNullable<ReturnType<typeof platformTokenAddresses>>;
+type SigningKey = NonNullable<Awaited<ReturnType<typeof connectionSigningKey>>>;
 
-/** A client assertion for the connection's registration (`private_key_jwt`), signed with the key the app's key set publishes. */
-const signClientAssertion = async (clientId: string, { audience }: TokenAddresses) => {
-  const { kid, key } = await currentSigningKey();
-  return new SignJWT({})
+/**
+ * A client assertion for the connection's registration (`private_key_jwt`), signed with the connection's own key: a
+ * platform verifies it against that registration's key set alone. Its audience is what the platform's configuration
+ * names, its authorization server, else its token endpoint, as one string: an opaque value, never read as an address.
+ */
+const signClientAssertion = ({ clientId, config }: LtiConnection, { kid, key }: SigningKey) =>
+  new SignJWT({})
     .setProtectedHeader({ alg: 'RS256', kid, typ: 'JWT' })
     .setIssuer(clientId)
     .setSubject(clientId)
-    .setAudience(audience)
+    .setAudience(config.authorizationServer ?? config.tokenEndpoint)
     .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${assertionLifetimeSeconds}s`)
     .sign(key);
-};
 
 const tokenAnswerSchema = z.object({
   access_token: z
@@ -145,17 +127,17 @@ type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
  * refusal: `invalid_scope`, the scope not granted, is a normal state.
  * @throws AppError 400 `outbound_request_failed` for any other answer, and what `guardedFetch` throws.
  */
-const platformToken = async (connection: LtiConnection, addresses: TokenAddresses, options: PlatformFetchOptions): Promise<TokenOutcome> => {
+const platformToken = async (connection: LtiConnection, signingKey: SigningKey, options: PlatformFetchOptions): Promise<TokenOutcome> => {
   const cached = tokens.get(connection.id);
   if (cached && cached.renewAt > Date.now()) return cached;
 
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-    client_assertion: await signClientAssertion(connection.clientId, addresses),
+    client_assertion: await signClientAssertion(connection, signingKey),
     scope: ltiNrps.scope,
   });
-  const response = await guardedFetch(addresses.tokenEndpoint, {
+  const response = await guardedFetch(connection.config.tokenEndpoint, {
     ...options,
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -200,14 +182,14 @@ const nextLink = (header: string | null, page: URL) => {
 
 type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
 
-/** The pages of a context's membership container from `first`, read with the connection's token from `addresses`. */
+/** The pages of a context's membership container from `first`, read with the connection's token. */
 const readMemberPages = async (
   connection: LtiConnection,
-  addresses: TokenAddresses,
+  signingKey: SigningKey,
   first: URL,
   options: PlatformFetchOptions,
 ): Promise<MembersOutcome> => {
-  let token = await platformToken(connection, addresses, options);
+  let token = await platformToken(connection, signingKey, options);
   if ('refusal' in token) return token;
 
   const people = new Map<string, LtiMember>();
@@ -223,7 +205,7 @@ const readMemberPages = async (
     if (response.status === 401 && !renewed) {
       renewed = true;
       tokens.delete(connection.id);
-      token = await platformToken(connection, addresses, options);
+      token = await platformToken(connection, signingKey, options);
       if ('refusal' in token) return token;
       continue;
     }
@@ -240,7 +222,7 @@ const readMemberPages = async (
     pages += 1;
     const next = nextLink(response.headers.get('Link'), page);
     if (!next) return { people: [...people.values()], issue: null };
-    const trusted = trustedMembershipsUrl(connection, next, first);
+    const trusted = trustedMembershipsUrl(next, first);
     if (!trusted) return { refusal: 'address_refused' };
     page = trusted;
   }
@@ -248,13 +230,14 @@ const readMemberPages = async (
 };
 
 /**
- * The members of an LTI context at a platform, read by NRPS 2.0 page by page with the connection's token. Nothing is
- * signed or sent unless the token's addresses (`platformTokenAddresses`) and each page (`trustedMembershipsUrl`) lie on
- * the connection's issuer's origin. A member that fails validation, names a test user or is not active is left out,
- * and a person listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages or
- * `maxMembers` people.
+ * The members of an LTI context at a platform, read by NRPS 2.0 page by page with the connection's token, which a
+ * client assertion signed with the connection's own key gets. Every request goes through the guarded fetch, and each
+ * page lies at the membership address a launch of the connection named (`trustedMembershipsUrl`). A connection without
+ * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
+ * person listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages or `maxMembers`
+ * people.
  * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
- *   or `address_refused` for an address the app does not reach.
+ *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.
  */
@@ -263,10 +246,11 @@ export const readLtiMembers = async (
   membershipsUrl: string,
   options: PlatformFetchOptions = {},
 ): Promise<MembersOutcome> => {
-  const first = trustedMembershipsUrl(connection, membershipsUrl);
-  const addresses = platformTokenAddresses({ issuer: connection.issuer, ...connection.config });
-  if (!first || !addresses) return { refusal: 'address_refused' };
-  return readMemberPages(connection, addresses, first, options).catch((error: unknown) => {
+  const signingKey = await connectionSigningKey(connection);
+  if (!signingKey) return { refusal: 'register_again' };
+  const first = trustedMembershipsUrl(membershipsUrl);
+  if (!first) return { refusal: 'address_refused' };
+  return readMemberPages(connection, signingKey, first, options).catch((error: unknown) => {
     // The guarded fetch refuses an address for good, unlike a platform that failed to answer.
     if (error instanceof AppError && error.type === 'outbound_request_refused') return { refusal: 'address_refused' as const };
     throw error;

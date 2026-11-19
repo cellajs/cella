@@ -12,7 +12,7 @@ Your app is a **platform** when it hosts other apps: an admin installs an LTI to
 
 Your app is an **LTI tool** when a learning platform, such as another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
 
-An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. As an LTI tool, the app fetches the platform's configuration and keys server to server. As a platform, it stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. Outside development, each needs a public HTTPS address.
+An app can be both. As a platform, it needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. It stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. As an LTI tool, the app needs the API and the [jobs worker](./JOBS.md) alone, and fetches the platform's configuration and keys server to server. Outside development, each needs a public HTTPS address.
 
 ## Registration
 
@@ -20,7 +20,7 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
-A platform whose token endpoint, authorization server or membership address sits on another host than its issuer, such as Brightspace or Schoology, registers and launches the app. The app reads no course members from it: it signs for its issuer's host alone.
+Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. A key is never rotated: a new key means registering the app again. Deleting the connection deletes its key, and its key set answers no more.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
@@ -78,7 +78,17 @@ As an LTI tool, your app also reads who is in a course by NRPS, before any of th
 
 The import starts when an Instructor or Administrator of the course launches and the launch carried the NRPS claim. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. No button starts one: the next such launch after that while does.
 
-It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. It follows the platform's next links page by page, each on the issuer's origin at the address the launch named. A member the platform lists as Inactive is not added.
+It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added.
+
+Before it signs or fetches anything, the app holds to these rules:
+
+- The membership address comes from a verified launch of that connection.
+- A next page stays on the origin and path of the address the launch named.
+- A token request is signed with the connection's own key, for the audience the platform's configuration names.
+- A token is kept per connection and sent to that connection's membership addresses alone.
+- Every request goes through the guarded fetch, which reaches public HTTPS addresses only.
+
+So members are read from any platform that registers the app by Dynamic Registration and serves NRPS: a platform on the template, and by their sources and documentation Moodle, Sakai, Brightspace and a self-hosted Canvas.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
 
@@ -88,6 +98,7 @@ The import writes as a service account of the connection, which no admin manages
 
 Under LTI connections, each connection lists its courses, the channel each maps to and how its last import went: how many people it read and when, or why it stopped short. The reasons are:
 
+- A connection registered before it held a key of its own, which registers again.
 - An address the platform names that the app refuses.
 - A scope the platform did not grant, or a refused token or member list.
 - A failed import, while it tries again and once it gave up.
@@ -115,11 +126,13 @@ The template ships the organization's embedded page. An app that maps a course t
 - **An import that stops short:** the course under LTI connections says why, and the members imported before stay.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
+- **A connection without a key of its own:** it launches as before, and its courses under LTI connections ask to register the app at the platform again before members are read.
 
 ## Not built
 
 - The grade and deep linking services of LTI.
 - Of NRPS, a resource link's members (`rlid`, which the platform refuses) and the differences link.
+- Rotating a connection's key: registering the app again gives a new one.
 - Acting for a person on the platform: an installed LTI tool's token acts only as itself.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.

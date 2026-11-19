@@ -147,6 +147,9 @@ import type {
   GetAuthHealthData,
   GetAuthHealthErrors,
   GetAuthHealthResponses,
+  GetLtiKeySetData,
+  GetLtiKeySetErrors,
+  GetLtiKeySetResponses,
   GetMcpProtectedResourceMetadataData,
   GetMcpProtectedResourceMetadataErrors,
   GetMcpProtectedResourceMetadataResponses,
@@ -485,6 +488,7 @@ import {
   zGetApiProtectedResourceMetadataResponse,
   zGetAttachmentResponse,
   zGetAuthHealthResponse,
+  zGetLtiKeySetResponse,
   zGetMcpProtectedResourceMetadataResponse,
   zGetMeResponse,
   zGetMyAuthResponse,
@@ -1785,6 +1789,27 @@ export const receiveLtiLaunch = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/x-www-form-urlencoded',
       ...options.headers,
     },
+  });
+
+/**
+ * Get LTI key set
+ *
+ * The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted.
+ *
+ * **GET /auth/lti/connections/{connectionId}/jwks** ·· [getLtiKeySet](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/connections/{connectionId}/jwks) ·· _auth · cella_
+ *
+ * @param {getLtiKeySetData} options
+ * @param {string} options.path.connectionId - `string`
+ * @returns Possible status codes: 200, 400, 404, 429
+ */
+export const getLtiKeySet = <ThrowOnError extends boolean = true>(
+  options: Options<GetLtiKeySetData, ThrowOnError>,
+): RequestResult<GetLtiKeySetResponses, GetLtiKeySetErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetLtiKeySetResponses, GetLtiKeySetErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetLtiKeySetResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/lti/connections/{connectionId}/jwks',
+    ...options,
   });
 
 /**

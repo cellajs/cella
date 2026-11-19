@@ -533,6 +533,7 @@
   "lti_import.not_run": "No member import has run yet.",
   "lti_import.read_one": "{{count, number}} person read, {{time}}",
   "lti_import.read_other": "{{count, number}} people read, {{time}}",
+  "lti_import.register_again": "This connection holds no key of its own and reads no members: register the app at this platform again.",
   "lti_import.retrying": "The import failed and is tried again.",
   "lti_import.scope_not_granted": "The platform has not granted reading members.",
   "lti_import.token_refused": "The platform refused to give a token.",

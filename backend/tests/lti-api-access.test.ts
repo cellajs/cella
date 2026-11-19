@@ -162,7 +162,9 @@ describe('LTI installation API access', async () => {
     scope?: string;
     resource?: string;
     key?: SigningKey;
-    audience?: string;
+    audience?: string | string[];
+    /** Headers a proxy in front of the worker would pass on, such as a forwarded host. */
+    headers?: Record<string, string>;
     /** Seconds from now; a negative value makes an expired assertion. */
     expiresIn?: number;
     assertion?: string;
@@ -174,7 +176,7 @@ describe('LTI installation API access', async () => {
    */
   async function requestToken(
     ltiTool: LtiTool,
-    { scope = ltiNrps.scope, resource, key = ltiToolKey, audience = appConfig.oauthUrl, expiresIn = 120, assertion }: TokenRequest = {},
+    { scope = ltiNrps.scope, resource, key = ltiToolKey, audience = appConfig.oauthUrl, expiresIn = 120, assertion, headers }: TokenRequest = {},
   ) {
     const now = Math.floor(Date.now() / 1000);
     const signed =
@@ -190,7 +192,7 @@ describe('LTI installation API access', async () => {
         .sign(key.privateKey));
     const response = await fetch(`${oauth.issuer}/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...headers },
       body: new URLSearchParams({
         grant_type: 'client_credentials',
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
@@ -247,9 +249,10 @@ describe('LTI installation API access', async () => {
     expect(claim).toEqual({ context_memberships_url: membershipsUrl, service_versions: ['2.0'] });
 
     const answer = await requestToken(ltiTool);
-    expect(answer).toMatchObject({ status: 200, body: { token_type: 'Bearer', scope: 'user:read' } });
+    expect(answer).toMatchObject({ status: 200, body: { token_type: 'Bearer', scope: ltiNrps.scope } });
     const accessToken = String(answer.body.access_token);
     expect(decodeJwt(accessToken)).toMatchObject({
+      scope: 'user:read',
       aud: resourceUri({ face: 'api', tenantId: org.org.tenantId }),
       actor_kind: 'service',
       installation_id: ltiTool.installationId,
@@ -401,12 +404,30 @@ describe('LTI installation API access', async () => {
 
       expect(await requestToken(ltiTool, { key: strangerKey })).toMatchObject(refusedAs);
       expect(await requestToken(ltiTool, { audience: 'https://stranger.example.com/token' })).toMatchObject(refusedAs);
+      expect(await requestToken(ltiTool, { audience: [appConfig.oauthUrl, 'https://stranger.example.com/token'] })).toMatchObject(refusedAs);
       expect(await requestToken(ltiTool, { expiresIn: -300 })).toMatchObject(refusedAs);
       expect(await requestToken(ltiTool, { expiresIn: 600 })).toMatchObject(refusedAs);
 
       const first = await requestToken(ltiTool);
       expect(first.status).toBe(200);
       expect(await requestToken(ltiTool, { assertion: first.assertion })).toMatchObject(refusedAs);
+    });
+
+    // Attack: the token endpoint's address the provider builds from a request's host is any host a client sends. The
+    // audience is the issuer or the token endpoint as the configuration publishes them, alone or as a one-element list.
+    it('an audience at the host a request names, which a forged host header sets, and takes the published addresses', async () => {
+      const org = await orgWithAdmin();
+      const ltiTool = await installLtiTool(org);
+      const refusedAs = { status: 401, body: { error: 'invalid_client' } };
+
+      expect(await requestToken(ltiTool, { audience: `${oauth.issuer}/token` })).toMatchObject(refusedAs);
+      const forged = { 'X-Forwarded-Host': 'attacker.example.com', 'X-Forwarded-Proto': 'https' };
+      expect(await requestToken(ltiTool, { audience: 'https://attacker.example.com/oauth/token', headers: forged })).toMatchObject(refusedAs);
+      // The provider takes the token endpoint only at the host the request names: the public host a proxy forwards.
+      const { host, protocol } = new URL(appConfig.oauthUrl);
+      const proxied = { 'X-Forwarded-Host': host, 'X-Forwarded-Proto': protocol.replace(':', '') };
+      expect((await requestToken(ltiTool, { audience: `${appConfig.oauthUrl}/token`, headers: proxied })).status).toBe(200);
+      expect((await requestToken(ltiTool, { audience: [appConfig.oauthUrl] })).status).toBe(200);
     });
 
     // Attack: a registration acts in its own tenant: it gets no token for another tenant's API, though it may name its own.

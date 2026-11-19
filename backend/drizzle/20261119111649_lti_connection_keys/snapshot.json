@@ -1,0 +1,79 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0be337a9-abc7-4271-8cf7-cf614cd40d21",
+  "prevIds": [
+    "18cdda71-53a8-4a1e-946f-ba06fd63c87f"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "private_jwk"
+      ],
+      "writes": [
+        "s|col|public.connections.private_jwk",
+        "n|col|public.connections.private_jwk",
+        "e|col|public.connections.private_jwk"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "connections"
+      ],
+      "writes": [
+        "s|ck|public.connections.connections_kind_check"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.kind",
+        "n|col|public.connections.federation",
+        "n|col|public.connections.issuer",
+        "n|col|public.connections.client_id",
+        "n|col|public.connections.status",
+        "e|col|public.connections.kind",
+        "e|col|public.connections.federation",
+        "e|col|public.connections.issuer",
+        "e|col|public.connections.client_id"
+      ],
+      "sqlHash": "7fd0c66e44ba895e"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "private_jwk",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"connections\",\"connections_kind_check\"]",
+      "set": {
+        "value": "(\"kind\" = 'sso' AND \"federation\" IS NOT NULL) OR (\"kind\" = 'lti' AND \"issuer\" IS NOT NULL AND (\"client_id\" IS NOT NULL OR \"status\" = 'pending'))"
+      }
+    }
+  ]
+}

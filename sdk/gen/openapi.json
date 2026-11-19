@@ -9436,6 +9436,100 @@
         }
       }
     },
+    "/auth/lti/connections/{connectionId}/jwks": {
+      "get": {
+        "security": [],
+        "operationId": "getLtiKeySet",
+        "tags": ["auth", "cella"],
+        "summary": "Get LTI key set",
+        "description": "The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "connectionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key set",
+            "content": {
+              "application/json": {
+                "example": {
+                  "keys": [
+                    {
+                      "kty": "RSA",
+                      "n": "example-modulus",
+                      "e": "AQAB",
+                      "kid": "example-key-id",
+                      "alg": "RS256",
+                      "use": "sig"
+                    }
+                  ]
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kty": {
+                            "type": "string",
+                            "enum": ["RSA"]
+                          },
+                          "n": {
+                            "type": "string",
+                            "description": "The modulus"
+                          },
+                          "e": {
+                            "type": "string",
+                            "description": "The public exponent"
+                          },
+                          "kid": {
+                            "type": "string",
+                            "description": "The key id the app names in the header of each client assertion it signs with the key"
+                          },
+                          "alg": {
+                            "type": "string",
+                            "enum": ["RS256"]
+                          },
+                          "use": {
+                            "type": "string",
+                            "enum": ["sig"]
+                          }
+                        },
+                        "required": ["kty", "n", "e", "kid", "alg", "use"]
+                      }
+                    }
+                  },
+                  "required": ["keys"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/lti/finish": {
       "post": {
         "security": [],
@@ -9958,6 +10052,7 @@
                           "importIssue": {
                             "type": ["string", "null"],
                             "enum": [
+                              "register_again",
                               "address_refused",
                               "scope_not_granted",
                               "token_refused",
@@ -9969,7 +10064,7 @@
                               "inactive",
                               null
                             ],
-                            "description": "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
+                            "description": "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
                           },
                           "createdAt": {
                             "type": "string",

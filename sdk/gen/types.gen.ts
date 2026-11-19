@@ -3752,6 +3752,59 @@ export type ReceiveLtiLaunchResponses = {
   200: unknown;
 };
 
+export type GetLtiKeySetData = {
+  body?: never;
+  path: {
+    connectionId: string;
+  };
+  query?: never;
+  url: '/auth/lti/connections/{connectionId}/jwks';
+};
+
+export type GetLtiKeySetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetLtiKeySetError = GetLtiKeySetErrors[keyof GetLtiKeySetErrors];
+
+export type GetLtiKeySetResponses = {
+  /**
+   * Key set
+   */
+  200: {
+    keys: Array<{
+      kty: 'RSA';
+      /**
+       * The modulus
+       */
+      n: string;
+      /**
+       * The public exponent
+       */
+      e: string;
+      /**
+       * The key id the app names in the header of each client assertion it signs with the key
+       */
+      kid: string;
+      alg: 'RS256';
+      use: 'sig';
+    }>;
+  };
+};
+
+export type GetLtiKeySetResponse = GetLtiKeySetResponses[keyof GetLtiKeySetResponses];
+
 export type FinishLtiLaunchData = {
   body: {
     id_token?: string;
@@ -4096,9 +4149,10 @@ export type ListLtiContextsResponses = {
        */
       importReadCount: number | null;
       /**
-       * Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
+       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
        */
       importIssue:
+        | 'register_again'
         | 'address_refused'
         | 'scope_not_granted'
         | 'token_refused'

@@ -8,6 +8,7 @@ import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
 import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
 import { encryptTotpSecret } from '#/modules/auth/flows/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
@@ -23,6 +24,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 /** The table of each `secretColumns` entry: a table added to the registry is a type error until it is listed here. */
 const secretTables = {
   api_keys: apiKeysTable,
+  connections: connectionsTable,
   oauth_clients: oauthClientsTable,
   passkey_challenges: passkeyChallengesTable,
   sessions: sessionsTable,

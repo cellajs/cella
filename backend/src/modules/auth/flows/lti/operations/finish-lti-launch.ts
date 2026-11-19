@@ -105,7 +105,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
       ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
       : { channel: organization };
   const deploymentId = launch[ltiClaims.deploymentId];
-  const membershipsUrl = launchMembershipsUrl(connection, claims);
+  const membershipsUrl = launchMembershipsUrl(claims);
   const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
   const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {

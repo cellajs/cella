@@ -91,6 +91,23 @@ export const ltiFinishFormSchema = z.object({
   storage_value: z.string().max(maxLength.field).optional(),
 });
 
+/** The path of one LTI connection's key set. */
+export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });
+
+/** A JSON Web Key Set (RFC 7517, section 5) of one public RS256 key. */
+export const ltiKeySetSchema = z.object({
+  keys: z.array(
+    z.object({
+      kty: z.literal('RSA'),
+      n: z.string().describe('The modulus'),
+      e: z.string().describe('The public exponent'),
+      kid: z.string().describe('The key id the app names in the header of each client assertion it signs with the key'),
+      alg: z.literal('RS256'),
+      use: z.literal('sig'),
+    }),
+  ),
+});
+
 /** The LTI contexts of an organization, the courses launched most recently first by default. */
 export const listLtiContextsQuerySchema = pageQuerySchema.extend({
   connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
@@ -114,7 +131,7 @@ export const ltiContextSchema = z.object({
     .enum(ltiImportIssues)
     .nullable()
     .describe(
-      "Why the last member import stopped short: the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
+      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
     ),
   createdAt: z.string().describe('When the first launch recorded it'),
 });

@@ -1,0 +1,2 @@
+ALTER TABLE "connections" ADD COLUMN "private_jwk" text;--> statement-breakpoint
+ALTER TABLE "connections" DROP CONSTRAINT "connections_kind_check", ADD CONSTRAINT "connections_kind_check" CHECK (("kind" = 'sso' AND "federation" IS NOT NULL) OR ("kind" = 'lti' AND "issuer" IS NOT NULL AND ("client_id" IS NOT NULL OR "status" = 'pending')));

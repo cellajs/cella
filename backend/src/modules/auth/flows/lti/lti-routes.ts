@@ -1,4 +1,4 @@
-import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
@@ -6,6 +6,8 @@ import {
   listLtiContextsQuerySchema,
   ltiContextSchema,
   ltiFinishFormSchema,
+  ltiKeySetParamSchema,
+  ltiKeySetSchema,
   ltiLaunchFormSchema,
   ltiLoginParamsSchema,
   ltiRegisterQuerySchema,
@@ -77,6 +79,22 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       200: { description: 'Launch page\n\nA page that reads the launch value from platform storage and posts it on, same-origin.' },
       400: { description: 'Launch refused\n\nA field is longer than a launch carries.' },
       401: { description: 'Launch refused\n\nA page: the state names no active LTI connection, or the platform posted an error.' },
+    },
+  }),
+  getLtiKeySet: xRoute({
+    method: 'get',
+    path: '/lti/connections/{connectionId}/jwks',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [publicGuard],
+    summary: 'Get LTI key set',
+    description:
+      'The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted.',
+    request: { params: ltiKeySetParamSchema },
+    responses: {
+      200: json('Key set', ltiKeySetSchema, {
+        keys: [{ kty: 'RSA', n: 'example-modulus', e: 'AQAB', kid: 'example-key-id', alg: 'RS256', use: 'sig' }],
+      }),
+      ...errors(404),
     },
   }),
   finishLtiLaunch: xRoute({

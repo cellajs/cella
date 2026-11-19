@@ -1692,6 +1692,26 @@ export const zReceiveLtiLaunchBody = z.object({
   error_description: z.string().max(2048).optional(),
 });
 
+export const zGetLtiKeySetPath = z.object({
+  connectionId: z.uuid(),
+});
+
+/**
+ * Key set
+ */
+export const zGetLtiKeySetResponse = z.object({
+  keys: z.array(
+    z.object({
+      kty: z.enum(['RSA']),
+      n: z.string(),
+      e: z.string(),
+      kid: z.string(),
+      alg: z.enum(['RS256']),
+      use: z.enum(['sig']),
+    }),
+  ),
+});
+
 export const zFinishLtiLaunchBody = z.object({
   id_token: z.string().max(32768).optional(),
   state: z.string().max(2048).optional(),
@@ -1795,6 +1815,7 @@ export const zListLtiContextsResponse = z.object({
       importReadCount: z.int().nullable(),
       importIssue: z
         .enum([
+          'register_again',
           'address_refused',
           'scope_not_granted',
           'token_refused',
