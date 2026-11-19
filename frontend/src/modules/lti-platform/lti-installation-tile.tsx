@@ -315,21 +315,28 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
   );
 }
 
-/** The channel types an approved LTI tool may get a tab in, each allowed or not; withdrawing one asks first. */
+/**
+ * The channel types an approved LTI tool may get a tab in, each allowed or not; withdrawing one asks first, saying how
+ * many of its tabs that are on it switches off.
+ */
 function InstallationChannelTypes({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateLtiInstallationMutation();
+  const { data } = useQuery(ltiInstallationTabsQueryOptions(path, installation.id));
 
   const update = (channelTypes: TabChannelType[]) => mutate({ path: { ...path, ltiInstallationId: installation.id }, body: { channelTypes } });
 
-  const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) =>
-    openConfirm(event.currentTarget, {
+  const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) => {
+    const count = (data?.results ?? []).filter((tab) => tab.enabled && tab.channelType === channelType).length;
+    const i18nKey = count ? 'c:confirm.withdraw_lti_channel_type_tabs' : 'c:confirm.withdraw_lti_channel_type';
+    return openConfirm(event.currentTarget, {
       id: `withdraw-lti-channel-type-${installation.id}-${channelType}`,
-      title: <NamedText i18nKey="c:confirm.withdraw_lti_channel_type" name={installation.name} values={{ resource: t(`c:${channelType}`) }} />,
+      title: <NamedText i18nKey={i18nKey} name={installation.name} values={{ resource: t(`c:${channelType}`), count }} />,
       label: 'c:withdraw',
       icon: XIcon,
       onConfirm: () => update(installation.channelTypes.filter((allowed) => allowed !== channelType)),
     });
+  };
 
   return (
     <div className="flex flex-col gap-2">

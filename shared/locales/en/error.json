@@ -131,7 +131,7 @@
   "load_more_failed": "Could not load more data. Try reloading or come back later.",
   "local_file_not_found": "File not found. This file was stored locally on a specific browser and therefore is not accessible by other browsers or devices.",
   "lti_channel_type_not_allowed": "No tab here",
-  "lti_channel_type_not_allowed.text": "This LTI tool cannot have a tab in a {{resource, lowercase}}. An organization admin chooses where each LTI tool may get one.",
+  "lti_channel_type_not_allowed.text": "This LTI tool cannot have a tab on {{resource, lowercase}} pages. An organization admin chooses where each LTI tool may get one.",
   "lti_client_id_taken": "Registration not usable",
   "lti_client_id_taken.text": "The platform gave {{appName}} a registration it cannot use. Register {{appName}} at the platform again with a new registration link, or ask the platform's administrator.",
   "lti_configuration_address_refused": "Platform address not allowed",
