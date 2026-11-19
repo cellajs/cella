@@ -1,7 +1,15 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { decodeJwt } from 'jose';
 import { nanoid } from 'nanoid';
-import { approveLtiInstallation, createLtiRegistrationLink, createLtiResourceLink, getMe, startLtiLaunch, startLtiToolRegistration } from 'sdk';
+import {
+  approveLtiInstallation,
+  createLtiRegistrationLink,
+  createLtiResourceLink,
+  getMe,
+  listLtiContexts,
+  startLtiLaunch,
+  startLtiToolRegistration,
+} from 'sdk';
 import { type AccessScope, appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -22,7 +30,7 @@ import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { createTestOrganization, expectRefusal } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -141,13 +149,16 @@ describe('LTI member import from a platform built on the template', async () => 
 
     /**
      * The platform's addresses, answered in-process: the API by the app, and the authorization server by the test
-     * listener as if at its public address, which a client assertion's audience names.
+     * listener. Its configuration is read as if at its public address. A token request arrives at the listener's own
+     * address, as behind a proxy that forwards no host: only an assertion addressed to the issuer passes there.
      */
     const platformTransport: GuardedTransport = ({ url, method, headers, body }) => {
       if (url.href.startsWith(appConfig.backendUrl))
         return Promise.resolve(baseApp.request(`${url.pathname}${url.search}`, { method, headers, body }));
       const publicAddress = new URL(appConfig.oauthUrl);
-      const forwarded = { 'X-Forwarded-Host': publicAddress.host, 'X-Forwarded-Proto': publicAddress.protocol.replace(':', '') };
+      const forwarded: Record<string, string> = url.pathname.endsWith('/token')
+        ? {}
+        : { 'X-Forwarded-Host': publicAddress.host, 'X-Forwarded-Proto': publicAddress.protocol.replace(':', '') };
       return fetch(new URL(`${url.pathname}${url.search}`, oauth.issuer), {
         method,
         headers: { ...headers, ...forwarded },
@@ -262,6 +273,7 @@ describe('LTI member import from a platform built on the template', async () => 
     it("imports the platform's people after a teacher's launch, as the accounts their own launches then sign into, and changes nothing on a second run", async () => {
       const connected = await connectThroughRegistration();
       const { toolSide, platformSide, learners, connection } = connected;
+      expect(connection.config.authorizationServer).toBe(appConfig.oauthUrl);
 
       await launch(connected, platformSide.admin.sessionCookie);
       const [context] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connection.id));
@@ -383,5 +395,25 @@ describe('LTI member import from a platform built on the template', async () => 
     expect(reads.slice(0, firstReads).every(({ authorization }) => authorization?.startsWith('Bearer client-first:'))).toBe(true);
     expect(reads.slice(firstReads).length).toBeGreaterThan(0);
     expect(reads.slice(firstReads).every(({ authorization }) => authorization?.startsWith('Bearer client-second:'))).toBe(true);
+  });
+
+  // Attack: a course list tells which platforms an organization trusts and how its imports ran; it is for whoever may update the organization.
+  it("lists the courses of the organization's own connections, and refuses a member and another tenant's admin", async () => {
+    const own = await connectToFakePlatform();
+    const other = await connectToFakePlatform('https://platform-b.example.com');
+    await importLtiMembersOp(own.context.id, fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] })).options);
+
+    const listed = await call(listLtiContexts, { path: own.path, headers: own.headers });
+    expect((listed.data as { results: unknown[] }).results).toEqual([
+      expect.objectContaining({ id: own.context.id, channel: expect.objectContaining({ id: own.org.id }), importReadCount: 1, importIssue: null }),
+    ]);
+
+    const member = await createFactorOrgUser(call, own.org.tenantId, own.org.id, `lti-${nanoid(8)}`, memberRole);
+    await expectRefusal(
+      await call(listLtiContexts, { path: own.path, headers: { ...defaultHeaders, Cookie: member.sessionCookie } }),
+      403,
+      'forbidden',
+    );
+    await expectRefusal(await call(listLtiContexts, { path: own.path, headers: other.headers }), 403, 'forbidden');
   });
 });

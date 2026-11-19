@@ -1,5 +1,5 @@
 import { mockTenantId, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
-import { mockActorRef } from '#/schemas/entity-base-mocks';
+import { mockActorRef, mockChannelBase } from '#/schemas/entity-base-mocks';
 
 export const mockConnectionResponse = (key = 'connection:default') =>
   withFakerSeed(key, () => ({
@@ -44,3 +44,22 @@ export const mockLtiConnectionResponse = (key = 'connection:lti') =>
     updatedBy: null,
     ...mockTimestamps(),
   }));
+
+/** A course of an LTI connection whose last member import read everyone. */
+export const mockLtiContextResponse = (key = 'ltiContext:default') =>
+  withFakerSeed(key, () => {
+    const { createdAt, updatedAt } = mockTimestamps();
+    return {
+      id: mockUuid(),
+      connectionId: mockUuid(),
+      contextId: 'biology-101',
+      label: 'BIO-101',
+      title: 'Introduction to biology',
+      channel: mockChannelBase(`${key}:channel`),
+      apiUrl: 'https://lms.example.com/api/tenants/example-tenant',
+      importRanAt: updatedAt,
+      importReadCount: 42,
+      importIssue: null,
+      createdAt,
+    };
+  });

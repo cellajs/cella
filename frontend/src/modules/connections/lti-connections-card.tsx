@@ -2,7 +2,8 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { GraduationCapIcon, LinkIcon, TrashIcon } from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Connection, CreateLtiRegistrationLinkResponse } from 'sdk';
+import type { Connection, CreateLtiRegistrationLinkResponse, ListLtiContextsResponse } from 'sdk';
+import type { TKey } from '~/lib/i18n-locales';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import { ExpandableTile, ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { NamedText } from '~/modules/common/named-text';
@@ -10,15 +11,80 @@ import { openConfirm } from '~/modules/common/open-confirm';
 import { SecretBox } from '~/modules/common/secret-box';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
-import { ltiConnectionsQueryOptions, useCreateLtiRegistrationLinkMutation, useDeleteLtiConnectionMutation } from '~/modules/connections/query';
+import {
+  ltiConnectionsQueryOptions,
+  ltiContextsQueryOptions,
+  useCreateLtiRegistrationLinkMutation,
+  useDeleteLtiConnectionMutation,
+} from '~/modules/connections/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import type { QueryOrgContext } from '~/query/types';
+import { dateRelative } from '~/utils/date-mini';
 import { clockTime, dateShort } from '~/utils/date-short';
 
-/** One LTI platform the app is registered at; deleting it ends the launches from there. */
-function LtiConnectionTile({ connection, path }: { connection: Connection; path: QueryOrgContext }) {
+type LtiContext = ListLtiContextsResponse['results'][number];
+
+const importIssues = {
+  scope_not_granted: 'c:lti_import.scope_not_granted',
+  token_refused: 'c:lti_import.token_refused',
+  members_refused: 'c:lti_import.members_refused',
+  read_failed: 'c:lti_import.read_failed',
+  too_many_members: 'c:lti_import.too_many_members',
+  member_limit: 'c:lti_import.member_limit',
+} as const satisfies Record<NonNullable<LtiContext['importIssue']>, TKey>;
+
+/** How the last member import of a course ran; one that stopped short says why, and when. */
+function ImportState({ context }: { context: LtiContext }) {
+  const { t } = useTranslation();
+  const { apiUrl, importRanAt, importReadCount, importIssue } = context;
+
+  if (!apiUrl) return <p className="text-muted-foreground">{t('c:lti_import.no_api')}</p>;
+  if (!importRanAt) return <p className="text-muted-foreground">{t('c:lti_import.not_run')}</p>;
+  if (!importIssue) return <p>{t('c:lti_import.read', { count: importReadCount ?? 0, time: dateRelative(importRanAt) })}</p>;
+  return (
+    <p className="flex flex-wrap gap-x-2">
+      <span className="text-warning">{t(importIssues[importIssue])}</span>
+      <DateTooltip date={importRanAt}>
+        <span className="text-muted-foreground">{dateRelative(importRanAt)}</span>
+      </DateTooltip>
+    </p>
+  );
+}
+
+/** The courses a platform launched the app from, each with the channel it maps to and how its people were last imported. */
+function LtiContextList({ contexts }: { contexts: LtiContext[] }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="group-label text-xs">{t('c:lti_contexts')}</span>
+      {contexts.length === 0 && <p className="text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:lti_contexts') })}</p>}
+      <ul className="flex flex-col gap-2">
+        {contexts.map((context) => (
+          <li key={context.id} className="flex flex-col gap-0.5 rounded-md border px-3 py-2 text-sm">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate font-medium">{context.title ?? context.label ?? context.contextId}</span>
+              {context.title && context.label && <span className="text-muted-foreground shrink-0">{context.label}</span>}
+              <span className="text-muted-foreground ml-auto truncate">{context.channel.name}</span>
+            </div>
+            <ImportState context={context} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface LtiConnectionTileProps {
+  connection: Connection;
+  path: QueryOrgContext;
+  /** The connection's courses mapped to this organization. */
+  contexts: LtiContext[];
+}
+
+/** One LTI platform the app is registered at, with its courses; deleting it ends the launches from there. */
+function LtiConnectionTile({ connection, path, contexts }: LtiConnectionTileProps) {
   const { t } = useTranslation();
   const { mutate: remove } = useDeleteLtiConnectionMutation();
   const platform = 'productFamilyCode' in connection.config ? connection.config.productFamilyCode : null;
@@ -38,6 +104,7 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
       value={connection.id}
       icon={<GraduationCapIcon />}
       title={connection.name}
+      lead={<LtiContextList contexts={contexts} />}
       meta={
         <DateTooltip date={connection.createdAt}>
           <span>{dateShort(connection.createdAt)}</span>
@@ -70,6 +137,7 @@ export function LtiConnectionsCard({ organization }: { organization: EnrichedOrg
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const connections = useSuspenseQuery(ltiConnectionsQueryOptions(path)).data.results;
+  const contexts = useSuspenseQuery(ltiContextsQueryOptions(path)).data.results;
   const { mutate: createLink, isPending } = useCreateLtiRegistrationLinkMutation();
   // Component state only: the link registers a platform for this tenant, and the query cache persists
   const [link, setLink] = useState<CreateLtiRegistrationLinkResponse | null>(null);
@@ -97,7 +165,12 @@ export function LtiConnectionsCard({ organization }: { organization: EnrichedOrg
       {connections.length > 0 && (
         <Accordion value={openTile} onValueChange={setOpenTile} className="mt-6 flex flex-col gap-2">
           {connections.map((connection) => (
-            <LtiConnectionTile key={connection.id} connection={connection} path={path} />
+            <LtiConnectionTile
+              key={connection.id}
+              connection={connection}
+              path={path}
+              contexts={contexts.filter((context) => context.connectionId === connection.id)}
+            />
           ))}
         </Accordion>
       )}

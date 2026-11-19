@@ -1,8 +1,16 @@
-import { createXRoutes, xRoute } from '#/core/x-routes';
-import { publicGuard } from '#/middlewares/guard';
+import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
-import { ltiFinishFormSchema, ltiLaunchFormSchema, ltiLoginParamsSchema, ltiRegisterQuerySchema } from '#/modules/auth/flows/lti/lti-schema';
-import { locationSchema } from '#/schemas';
+import {
+  listLtiContextsQuerySchema,
+  ltiContextSchema,
+  ltiFinishFormSchema,
+  ltiLaunchFormSchema,
+  ltiLoginParamsSchema,
+  ltiRegisterQuerySchema,
+} from '#/modules/auth/flows/lti/lti-schema';
+import { mockLtiContextResponse } from '#/modules/connections/connections-mocks';
+import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /** A form post's body, required: an optional body skips validation on a request without a Content-Type. */
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
@@ -92,5 +100,20 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Course not set up\n\nA page: an instructor opens the app from this course first.' },
     },
+  }),
+});
+
+/** The courses of an organization's LTI connections, for a user who may update the organization. */
+export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
+  listLtiContexts: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get LTI contexts',
+    description:
+      "The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+    request: { params: tenantOrgParamSchema, query: listLtiContextsQuerySchema },
+    responses: { 200: json('LTI contexts', paginationSchema(ltiContextSchema), { results: [mockLtiContextResponse()], totalSize: 1 }) },
   }),
 });

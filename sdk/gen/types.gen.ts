@@ -4002,6 +4002,113 @@ export type SendStepUpCodeResponses = {
 
 export type SendStepUpCodeResponse = SendStepUpCodeResponses[keyof SendStepUpCodeResponses];
 
+export type ListLtiContextsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-contexts';
+};
+
+export type ListLtiContextsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiContextsError = ListLtiContextsErrors[keyof ListLtiContextsErrors];
+
+export type ListLtiContextsResponses = {
+  /**
+   * LTI contexts
+   */
+  200: {
+    results: Array<{
+      id: string;
+      /**
+       * The LTI connection whose platform launched it
+       */
+      connectionId: string;
+      /**
+       * The platform's id of the context
+       */
+      contextId: string;
+      /**
+       * The platform's short name of the context, such as a course code
+       */
+      label: string | null;
+      title: string | null;
+      channel: ChannelBase;
+      /**
+       * The platform's API that the member import reads, from the last launch that named one; null when none did
+       */
+      apiUrl: string | null;
+      /**
+       * When the last member import ran; null before the first
+       */
+      importRanAt: string | null;
+      /**
+       * How many people the last member import read from the platform
+       */
+      importReadCount: number | null;
+      /**
+       * Why the last member import stopped short: the platform refused the scope, the token or the member list, a read failed and is tried again, the platform listed more people than one import reads, or the member limit refused the next person. Null when it read and wrote everyone.
+       */
+      importIssue: 'scope_not_granted' | 'token_refused' | 'members_refused' | 'read_failed' | 'too_many_members' | 'member_limit' | null;
+      /**
+       * When the first launch recorded it
+       */
+      createdAt: string;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiContextsResponse = ListLtiContextsResponses[keyof ListLtiContextsResponses];
+
 export type CheckSlugData = {
   body: {
     slug: string;

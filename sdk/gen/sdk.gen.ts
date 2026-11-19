@@ -247,6 +247,9 @@ import type {
   ListLtiConnectionsData,
   ListLtiConnectionsErrors,
   ListLtiConnectionsResponses,
+  ListLtiContextsData,
+  ListLtiContextsErrors,
+  ListLtiContextsResponses,
   ListLtiInstallationsData,
   ListLtiInstallationsErrors,
   ListLtiInstallationsResponses,
@@ -509,6 +512,7 @@ import {
   zListConnectionsResponse,
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
+  zListLtiContextsResponse,
   zListLtiInstallationsResponse,
   zListLtiMembersResponse,
   zListLtiResourceLinksResponse,
@@ -1895,6 +1899,32 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zSendStepUpCodeResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/send-step-up-code',
+    ...options,
+  });
+
+/**
+ * Get LTI contexts
+ *
+ * The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-contexts** ·· [listLtiContexts](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/organizations/{organizationId}/lti-contexts) ·· _connections · cella_
+ *
+ * @param {listLtiContextsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiContexts = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiContextsData, ThrowOnError>,
+): RequestResult<ListLtiContextsResponses, ListLtiContextsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiContextsResponses, ListLtiContextsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiContextsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-contexts',
     ...options,
   });
 

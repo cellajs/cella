@@ -14,7 +14,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * the member list, a read failed (and is retried), the platform listed more people than an import reads, or the
  * tenant's member limit refused the next person.
  */
-const ltiImportIssues = ['scope_not_granted', 'token_refused', 'members_refused', 'read_failed', 'too_many_members', 'member_limit'] as const;
+export const ltiImportIssues = ['scope_not_granted', 'token_refused', 'members_refused', 'read_failed', 'too_many_members', 'member_limit'] as const;
 export type LtiImportIssue = (typeof ltiImportIssues)[number];
 
 /**

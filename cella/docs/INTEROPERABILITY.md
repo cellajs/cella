@@ -16,6 +16,8 @@ A service account is disabled, never deleted. The rows it wrote keep pointing at
 
 An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)). Then it acts on its own, within the scopes the admin granted: placing it in a channel gives it that channel's least privileged role.
 
+The other way round, each LTI platform the app is connected to as an LTI tool has a service account in the app. The import of a course's members writes as it. It shows in no list and takes no API key.
+
 ## Proving who you are
 
 Every caller gets the same OpenAPI contract and SDK. Routes open to machines take an API key or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
@@ -28,7 +30,9 @@ A key can expire, be rolled or be revoked. After a roll the old key keeps workin
 
 ### Access tokens
 
-The app is its own authorization server, on the same origin under `/oauth` ([OAuth](./OAUTH.md)). A person consents on a screen that names the client and the scopes it asks for. The resulting token acts as that person in one tenant, masked by those scopes. People revoke their consents in their account settings. A service account gets a token from its API key through `client_credentials`, and an installed LTI tool with an assertion signed by the key it registered.
+The app is its own authorization server, on the same origin under `/oauth` ([OAuth](./OAUTH.md)). A person consents on a screen that names the client and the scopes it asks for. The resulting token acts as that person in one tenant, masked by those scopes. People revoke their consents in their account settings.
+
+A service account gets a token from its API key through `client_credentials`, and an installed LTI tool with an assertion signed by the key it registered. These two act without a person, as themselves: no person consents, and their own bindings and scopes decide.
 
 Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
 

@@ -37,6 +37,8 @@ export const ltiPlatformConfiguration = ({ jwksUri, tokenEndpoint }: { jwksUri: 
   registration_endpoint: ltiIssuerUrl('registration'),
   jwks_uri: jwksUri,
   token_endpoint: tokenEndpoint,
+  // The audience of an LTI tool's client assertion. The token endpoint's own address is accepted only at the host the provider sees.
+  authorization_server: appConfig.oauthUrl,
   token_endpoint_auth_methods_supported: ['private_key_jwt'],
   token_endpoint_auth_signing_alg_values_supported: ['RS256'],
   // The spec requires `openid`. The platform serves no LTI service: beside it are the API's own scopes.

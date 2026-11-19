@@ -403,7 +403,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, and imports a course's people from a platform built on the template.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, imports a course's people from a platform built on the template, and lists each course with how its last import ran for an organization admin.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -9774,6 +9774,230 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-contexts": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiContexts",
+        "tags": ["connections", "cella"],
+        "summary": "Get LTI contexts",
+        "description": "The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LTI contexts",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "3c30b048-4181-4939-86c9-7b21ce1811be",
+                      "connectionId": "88c5b01b-7d77-461f-95df-4a44675c722a",
+                      "contextId": "biology-101",
+                      "label": "BIO-101",
+                      "title": "Introduction to biology",
+                      "channel": {
+                        "id": "50454ce7-2467-4668-8512-20bf097b562b",
+                        "createdAt": "2024-09-21T21:55:19.374Z",
+                        "updatedAt": "2024-12-02T11:07:10.947Z",
+                        "tenantId": "e4w3w9hfoz3c7zunolkyu5e3",
+                        "name": "Hartmann, Raynor and Nader",
+                        "entityType": "organization",
+                        "slug": "hartmann-raynor-and-nader",
+                        "thumbnailUrl": null,
+                        "bannerUrl": null,
+                        "archived": false
+                      },
+                      "apiUrl": "https://lms.example.com/api/tenants/example-tenant",
+                      "importRanAt": "2024-12-15T19:00:35.514Z",
+                      "importReadCount": 42,
+                      "importIssue": null,
+                      "createdAt": "2024-12-10T01:14:23.660Z"
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "connectionId": {
+                            "type": "string",
+                            "description": "The LTI connection whose platform launched it"
+                          },
+                          "contextId": {
+                            "type": "string",
+                            "description": "The platform's id of the context"
+                          },
+                          "label": {
+                            "type": ["string", "null"],
+                            "description": "The platform's short name of the context, such as a course code"
+                          },
+                          "title": {
+                            "type": ["string", "null"]
+                          },
+                          "channel": {
+                            "$ref": "#/components/schemas/ChannelBase"
+                          },
+                          "apiUrl": {
+                            "type": ["string", "null"],
+                            "description": "The platform's API that the member import reads, from the last launch that named one; null when none did"
+                          },
+                          "importRanAt": {
+                            "type": ["string", "null"],
+                            "description": "When the last member import ran; null before the first"
+                          },
+                          "importReadCount": {
+                            "type": ["integer", "null"],
+                            "description": "How many people the last member import read from the platform"
+                          },
+                          "importIssue": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "scope_not_granted",
+                              "token_refused",
+                              "members_refused",
+                              "read_failed",
+                              "too_many_members",
+                              "member_limit",
+                              null
+                            ],
+                            "description": "Why the last member import stopped short: the platform refused the scope, the token or the member list, a read failed and is tried again, the platform listed more people than one import reads, or the member limit refused the next person. Null when it read and wrote everyone."
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "When the first launch recorded it"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "connectionId",
+                          "contextId",
+                          "label",
+                          "title",
+                          "channel",
+                          "apiUrl",
+                          "importRanAt",
+                          "importReadCount",
+                          "importIssue",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

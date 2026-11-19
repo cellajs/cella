@@ -41,6 +41,8 @@ The worker is a `SERVICE` of the backend image. The issuer shares the app origin
 | Service account | Its own id | Any of its live API keys as the client secret, which caps the token at that key's scopes | None: `client_credentials` |
 | Installed LTI tool | Its registration's `client_id` | An assertion signed with a key of the set it registered (`private_key_jwt`) | The admin's approval: `client_credentials`, within the granted scopes |
 
+A service account and an installed LTI tool act without a person, as themselves. The other two act for the person who consented.
+
 An authorization request brings the browser to the consent page, through sign-in when needed. The page shows who asks, the tenant the grant reaches and the requested scopes. On the MCP face it also names the organization.
 
 A registered app shows its registered name and logo. A client known by its metadata document shows only the host that serves it. Beside either, the page names the host of the redirect URI, which a client's name does not vouch for.
@@ -49,7 +51,7 @@ A client that registers only through dynamic client registration (RFC 7591) cann
 
 An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
 
-The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. Each assertion counts once. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
+The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. Each assertion counts once and names the issuer as its audience, which the LTI configuration gives as the authorization server. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
 
 A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
 
@@ -83,6 +85,8 @@ A change to anything else the grant policy reads, such as the user row, counts a
 ## Keystore
 
 `signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Of the three live keys, `current` signs, `next` is published ahead of use, and `previous` stays published for the tokens it signed before the last rotation. The keys rotate on a schedule while the authorization server runs, with no restart. Deleting a leaked key's row revokes every token it signed. The authorization server replaces it at its next key check, or at once after a restart.
+
+The current key also signs the assertion the app sends as an LTI tool, when it asks a connected platform for a token to import a course's members.
 
 ## Store and sweep
 

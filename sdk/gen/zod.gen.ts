@@ -1764,6 +1764,41 @@ export const zGenerateStepUpPasskeyChallengeResponse = z.object({
  */
 export const zSendStepUpCodeResponse = z.void();
 
+export const zListLtiContextsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiContextsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
+});
+
+/**
+ * LTI contexts
+ */
+export const zListLtiContextsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      connectionId: z.string(),
+      contextId: z.string(),
+      label: z.string().nullable(),
+      title: z.string().nullable(),
+      channel: zChannelBase,
+      apiUrl: z.string().nullable(),
+      importRanAt: z.string().nullable(),
+      importReadCount: z.int().nullable(),
+      importIssue: z.enum(['scope_not_granted', 'token_refused', 'members_refused', 'read_failed', 'too_many_members', 'member_limit']).nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
 export const zCheckSlugBody = z.object({
   slug: z
     .string()

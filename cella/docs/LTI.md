@@ -26,7 +26,9 @@ As a platform, an admin pastes the address an LTI tool's admin handed over under
 
 An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
-An LTI tool may also ask for access scopes of the app's API, such as `user:read`. The admin grants which of them the LTI tool's own tokens carry, none by default, and may change the grant later, which asks the second factor too.
+An LTI tool may also ask for access scopes of the app's API, such as `user:read`. The approval dialog lists them under API access, none chosen by default. What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the channels where it has a tab.
+
+The admin changes the grant later on the LTI tool's tile, which asks the second factor too. Withdrawing a scope asks first, and the LTI tool loses it at its next request.
 
 Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
@@ -48,6 +50,8 @@ An installed LTI tool reads the app's API as itself, within the scopes the admin
 
 Placing an LTI tool in a channel gives its installation the channel's least privileged role there; removing its last tab takes the role away. With `user:read`, its token lists the people of a channel it is placed in, as far as that role sees them: each person's id, their LTI roles there and only the personal fields the admin released.
 
+The platform's configuration names its issuer as the authorization server, and an LTI tool addresses its assertion there.
+
 Every launch names the API in a claim under the issuer's address: the tenant's API, the tenant, the organization, the channel and the address of its member list. The claim's members are documented in [lti-platform-schema.ts](../../backend/src/modules/lti-platform/lti-platform-schema.ts).
 
 ## Courses and roles
@@ -64,11 +68,15 @@ As a platform, your app says in [launch-context.ts](../../backend/src/modules/lt
 
 As an LTI tool, your app also reads who is in a course from a platform built on the template, before any of them launched. It asks for `user:read` when it registers. A platform that grants nothing, or any other platform, launches it as before.
 
-The import starts when an Instructor or Administrator of the course launches and the launch named the platform's API. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it.
+The import starts when an Instructor or Administrator of the course launches and the launch named the platform's API. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. No button starts one: the next such launch after that while does.
+
+It reads each person's id, their LTI roles in the course, and their name and email address where the platform's admin released them.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them. An organization role only goes up, and never to a role the hierarchy marks `elevated`. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
 
-The import writes as a service account of the connection, and it stops at the tenant's member limit. Each course records when its last import ran, how many people it read and why it stopped short, if it did: the scope not granted, a refusal, a failed read the import tries again, a list longer than one import reads, or the member limit.
+The import writes as a service account of the connection, and it stops at the tenant's member limit.
+
+Under LTI connections, each connection lists its courses, the channel each maps to and how its last import went: how many people it read and when, or why it stopped short. The reasons are a scope the platform did not grant, a refused token or member list, a failed read the import tries again, a list longer than one import reads, and the member limit.
 
 ## Embedded pages
 
@@ -85,13 +93,14 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A course not set up yet:** a student who arrives before any instructor is asked to have an instructor open it first.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
+- **An import that stops short:** the course under LTI connections says why, and the members imported before stay.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 
 ## Not built
 
-- The roster, grade and deep linking services. An LTI tool reads course members through the platform's own API.
-- Tokens that act for a person: an installed LTI tool acts only as itself.
+- The roster, grade and deep linking services of LTI. Reading course members through the platform's own API is built, for a platform on the template.
+- Acting for a person on the platform: an installed LTI tool's token acts only as itself.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
@@ -99,6 +108,8 @@ The template ships the organization's embedded page. An app that maps a course t
 
 ## Try it locally
 
-Development turns both roles on, and `pnpm seed` connects two seeded organizations. The first organization the seeded admin manages is the platform: it shows a tab named after the second, which is registered there as an LTI tool, approved with the name released. Open that tab to land in the second organization inside the frame, as a new person carrying your name.
+Development turns both roles on, and `pnpm seed` connects two seeded organizations. The first organization the seeded admin manages is the platform: it shows a tab named after the second, which is registered there as an LTI tool, approved with the name released and reading members granted.
+
+Open that tab to land in the second organization inside the frame, as a new person carrying your name. Moments later the jobs worker imports the first organization's members into the second, with their names.
 
 To walk the registration by hand, create a registration link under LTI connections in one organization, paste it under LTI tools in another, approve the LTI tool and add its tab.

@@ -7,6 +7,7 @@ import {
   type DeleteLtiConnectionData,
   deleteLtiConnection,
   listLtiConnections,
+  listLtiContexts,
 } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { withStepUp } from '~/modules/auth/step-up';
@@ -18,6 +19,7 @@ import type { MutationData, QueryOrgContext } from '~/query/types';
 
 const ltiConnectionKeys = {
   list: (path: QueryOrgContext) => ['connections', 'lti', path.tenantId, path.organizationId] as const,
+  contexts: (path: QueryOrgContext) => ['connections', 'lti-contexts', path.tenantId, path.organizationId] as const,
   createLink: ['connections', 'create-lti-registration-link'] as const,
   delete: ['connections', 'delete-lti'] as const,
 };
@@ -27,6 +29,13 @@ export const ltiConnectionsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: ltiConnectionKeys.list(path),
     queryFn: () => fetchAllPages((page) => listLtiConnections({ path, query: page }), syncChunkSize),
+  });
+
+/** The courses of the organization's LTI connections, with how the last member import of each ran. */
+export const ltiContextsQueryOptions = (path: QueryOrgContext) =>
+  queryOptions({
+    queryKey: ltiConnectionKeys.contexts(path),
+    queryFn: () => fetchAllPages((page) => listLtiContexts({ path, query: page }), syncChunkSize),
   });
 
 /** A one-use registration link; its value is answered once and never enters the cache. */

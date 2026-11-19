@@ -1,9 +1,15 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, getColumns, inArray } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
 import { type InsertLtiContextModel, type LtiImportIssue, ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
+import type { OrderDirection } from '#/schemas/common-schemas';
+import { channelBaseSchema } from '#/schemas/entity-base';
+import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
+import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 
 /** The row of a connection's LTI context; undefined before a launch mapped it. */
 export const findLtiContext = async (ctx: DbContext, { connectionId, contextId }: { connectionId: string; contextId: string }) => {
@@ -55,3 +61,37 @@ export const recordLtiImport = async (ctx: DbContext, { id, readCount, issue, by
     .set({ importRanAt: at, importReadCount: readCount, importIssue: issue, ...updateStamps(by, at) })
     .where(eq(ltiContextsTable.id, id));
 };
+
+interface FindOrganizationLtiContextsOpts {
+  tenantId: string;
+  organizationId: string;
+  /** By when a launch first recorded the context. */
+  order: OrderDirection;
+}
+
+/** The LTI contexts mapped to the organization's channels, of every connection of its tenant, each with its channel. */
+export async function findOrganizationLtiContexts(ctx: DbContext, { tenantId, organizationId, order }: FindOrganizationLtiContextsOpts) {
+  const orderBy = getOrderColumns({ sort: 'createdAt', order, columns: { createdAt: ltiContextsTable.createdAt }, tieBreaker: ltiContextsTable.id });
+  const contexts = await ctx.var.db
+    .select()
+    .from(ltiContextsTable)
+    .where(and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.organizationId, organizationId)))
+    .orderBy(...orderBy);
+
+  const channels = await Promise.all(
+    appConfig.channelEntityTypes.map(async (channelType) => {
+      const ids = contexts.flatMap((context) => (context.channelType === channelType ? [context.channelId] : []));
+      if (!ids.length) return [];
+      const table = getEntityTable(channelType);
+      return ctx.var.db
+        .select(pick(getColumns(table), channelBaseSchema.keyof().options))
+        .from(table)
+        .where(inArray(table.id, ids));
+    }),
+  );
+  const byId = new Map(channels.flat().map((channel) => [channel.id, channel]));
+  return contexts.flatMap((context) => {
+    const channel = byId.get(context.channelId);
+    return channel ? [{ context, channel }] : [];
+  });
+}

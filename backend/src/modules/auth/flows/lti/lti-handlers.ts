@@ -6,12 +6,14 @@ import { toClientError } from '#/lib/error';
 import { i18n } from '#/lib/i18n';
 import { launchStepRefusalPage, type StorageExchange, storagePage } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { registrationPage } from '#/modules/auth/flows/lti/helpers/registration-page';
-import { authLtiRoutes } from '#/modules/auth/flows/lti/lti-routes';
+import { authLtiRoutes, ltiContextRoutes } from '#/modules/auth/flows/lti/lti-routes';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
 import { finishLtiLaunchOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { getLtiContextsOp } from '#/modules/auth/flows/lti/operations/get-lti-contexts';
 import { initiateLtiLoginOp } from '#/modules/auth/flows/lti/operations/initiate-lti-login';
 import { receiveLtiLaunchOp } from '#/modules/auth/flows/lti/operations/receive-lti-launch';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
+import { readListPage, windowOf } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>();
 
@@ -52,3 +54,13 @@ app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
 });
 
 export const authLtiHandlers = app;
+
+const contextApp = new OpenAPIHono<Env>();
+
+contextApp.openapi(ltiContextRoutes.listLtiContexts, async (ctx) => {
+  const query = ctx.req.valid('query');
+  const contexts = await getLtiContextsOp(ctx, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(contexts, page)), 200);
+});
+
+export const ltiContextHandlers = contextApp;
