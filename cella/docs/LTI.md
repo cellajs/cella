@@ -20,7 +20,11 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
-Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. A key is never rotated: a new key means registering the app again. Deleting the connection deletes its key, and its key set answers no more.
+Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
+
+A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day.
+
+Registering the same platform again in a tenant, after its connection was deleted, takes over that connection's courses: their channels and their people. A person is known to a tenant by the platform's issuer and their id there. The same person coming through the same platform into two tenants has an account in each: a platform registered in one tenant reaches the accounts made through that tenant alone.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
@@ -48,7 +52,7 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the course is refused at their next click.
 
-## API access
+## Serving course members
 
 An installed LTI tool reads a course's members as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
@@ -58,7 +62,9 @@ Adding a tab takes the right to update the channel it sits in and its course, wh
 
 A launch with a course carries the NRPS claim to an LTI tool granted `user:read`: the course's membership address and the service version, 2.0. A launch without a course, or of an LTI tool granted nothing, carries none.
 
-At that address, the token lists the course's members as far as its role sees them, in the NRPS membership container. Each member is the person's id, the same a launch sends, their LTI roles there, the status Active and the personal fields the admin released, by their NRPS names. A page holds about what `limit` asks, a `Link` header leads to the next, and `role` keeps one LTI role.
+At that address, the token lists the course's members as far as its role sees them, in the NRPS membership container. Each member is the person's id, the same a launch sends, their LTI roles there, the status Active and the personal fields the admin released, by their NRPS names.
+
+A page holds about what `limit` asks, never fewer than 25, a `Link` header leads to the next, and `role` keeps one LTI role. A request for one tab's members (`rlid`) is refused.
 
 The platform's configuration offers the NRPS scope and names its issuer as the authorization server, which an LTI tool addresses its assertion to.
 
@@ -72,13 +78,15 @@ A person who arrives for the first time gets an account without a proven email a
 
 As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channels are LTI contexts and which LTI roles a person's permissions there send. The template sends every channel as a group. Whoever may update the context's channel goes as Instructor, whoever may only read it as Learner, as the permission engine decides with the person's access at launch.
 
-## Course members
+## Reading course members
 
 As an LTI tool, your app also reads who is in a course by NRPS, before any of them launched. It asks for the NRPS scope when it registers. A platform that grants nothing still launches it.
 
-The import starts when an Instructor or Administrator of the course launches and the launch carried the NRPS claim. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. No button starts one: the next such launch after that while does.
+The import starts when an Instructor or Administrator of the course launches and the launch carried the NRPS claim; such a launch without the claim forgets the member list. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course and for a limited number of courses per connection an hour, and the launch never waits for it. No button starts one: the next such launch after that while does.
 
-It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added.
+Imports of one connection run one after the other, and those of different connections beside each other, each within a time budget: a platform that answers slowly holds up its own imports alone.
+
+It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added. A context role the platform names by its short name, as Sakai does, reads as its full URI; institution and system roles reach the app's role mapping as they come.
 
 Before it signs or fetches anything, the app holds to these rules:
 
@@ -88,7 +96,7 @@ Before it signs or fetches anything, the app holds to these rules:
 - A token is kept per connection and sent to that connection's membership addresses alone.
 - Every request goes through the guarded fetch, which reaches public HTTPS addresses only.
 
-So members are read from any platform that registers the app by Dynamic Registration and serves NRPS: a platform on the template, and by their sources and documentation Moodle, Sakai, Brightspace and a self-hosted Canvas.
+So members are read from any platform that registers the app by Dynamic Registration and serves NRPS. That is tested against a platform on the template, and against answers built from the code of Canvas and Moodle. Canvas's code serves its configuration on its issuer's host and names its authorization server as a bare host, which the app takes as the audience as given; no live Canvas, Moodle, Sakai or Brightspace was tried.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
 
@@ -100,7 +108,7 @@ Under LTI connections, each connection lists its courses, the channel each maps 
 
 - A connection registered before it held a key of its own, which registers again.
 - An address the platform names that the app refuses.
-- A scope the platform did not grant, or a refused token or member list.
+- A scope the platform did not grant, or a refused token or member list: any client error but a timeout or a throttle.
 - A failed import, while it tries again and once it gave up.
 - A list longer than one import reads.
 - The member limit.
@@ -137,7 +145,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
-- Canvas as a platform, which the app refuses: its configuration address is not under its issuer, and its sign-in host is not the host that frames the page.
+- Launches from Canvas: its sign-in host is not the host that frames the page.
 
 ## Try it locally
 

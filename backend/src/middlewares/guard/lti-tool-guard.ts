@@ -34,12 +34,13 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 /**
  * The access the installation's placements in or below the course in the route's path imply, read at every request:
  * the least privileged role of the course's type, when one of them in the route's organization launches as that course
- * (`placementContext`). Nothing is stored: a removed tab or a deleted channel takes it away at once. A path that names
- * no channel by its type and id binds nothing, and the route's validation refuses it.
+ * (`placementContext`), its id compared whatever its case. Nothing is stored: a removed tab or a deleted channel takes it
+ * away at once. A path that names no such course, or a channel type the app does not have, binds nothing: the tenant
+ * then refuses the actor with a 403, before the route validates its path.
  */
 const courseBindings = async (installationId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
   const channelType = appConfig.channelEntityTypes.find((type) => type === ctx.req.param('channelType'));
-  const [channelId, organizationId] = [ctx.req.param('channelId'), ctx.req.param('organizationId')?.toLowerCase()];
+  const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
   if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
   const placements = await findLtiPlacements(dbCtx, { installationId, organizationId, course: { channelType, channelId } });
   const placed = placements.some((placement) => {

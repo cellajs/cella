@@ -23,12 +23,17 @@ export interface LtiContextChannelFacts {
   createdBy: string;
 }
 
-/** What a launch hands `ltiContextRole`. */
+/** What a launch or a member import hands `ltiContextRole`. */
 export interface LtiRoleFacts {
-  /** The launch's LTI roles, as full URIs (`lisContextRoles`). */
+  /**
+   * The person's LTI roles as full URIs: context roles (`lisContextRoles`), and any institution or system roles the
+   * platform sends beside them.
+   */
   ltiRoles: string[];
-  /** The connection the launch came through: an app may map roles per institution. */
-  connection: LtiConnection;
+  /** The type of the channel the role is for: the context's channel, or the organization for a launch without a course. */
+  channelType: ChannelEntityType;
+  /** The connection the launch came through, without its key: an app may map roles per institution. */
+  connection: Omit<LtiConnection, 'privateJwk'>;
 }
 
 /**
@@ -48,8 +53,9 @@ export const createLtiContextChannel = async (_ctx: DbContext, { context }: LtiC
 };
 
 /**
- * The role a launch gives in the context's channel. Re-applied at every launch: a role in a channel below the
- * organization follows the launch up and down, an organization role only goes up. An LTI administrator never becomes
- * an app admin. The template's answer: the least privileged organization role, whatever the platform sends.
+ * The role a launch or an import gives in a channel of `channelType`; an answer that is no role of that type gives its
+ * least privileged role. Re-applied at every launch: a role in a channel below the organization follows the launch up
+ * and down, an organization role only goes up. An LTI administrator never becomes an app admin. The template's answer:
+ * the least privileged role, whatever the platform sends.
  */
-export const ltiContextRole = (_facts: LtiRoleFacts): MembershipModel['role'] => hierarchy.getLeastPrivilegedRole(ltiContextChannelType);
+export const ltiContextRole = ({ channelType }: LtiRoleFacts): MembershipModel['role'] => hierarchy.getLeastPrivilegedRole(channelType);

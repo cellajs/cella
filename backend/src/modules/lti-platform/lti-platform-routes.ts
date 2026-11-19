@@ -4,6 +4,7 @@ import { ltiNrps } from '#/lib/lti-vocabulary';
 import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import {
   mockLtiInstallationResponse,
   mockLtiMembershipContainerResponse,
@@ -24,6 +25,7 @@ import {
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
   ltiToolRegistrationStartSchema,
+  minLtiMembersPage,
   startLtiToolRegistrationBodySchema,
   updateLtiInstallationBodySchema,
   updateLtiResourceLinkBodySchema,
@@ -197,9 +199,11 @@ const ltiToolRouteDrafts = {
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [ltiToolGuard, tenantGuard, orgGuard],
     xScope: 'user:read',
+    // A token carries `user:read`, which an LTI tool asks for by its NRPS name alone.
+    security: [{ oauth2: [ltiNrps.scope] }],
     summary: 'Get LTI members',
-    description:
-      "The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as is refused, as for an installation placed nowhere.",
+    description: `The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as \`sub\`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a \`Link\` header continues to the next page. \`limit\` is a hint, at least ${minLtiMembersPage}. A resource link's members (\`rlid\`) and the differences link are not served. A course none of its placements launches as, or a channel type the app does not have, answers 403, as for an installation placed nowhere`,
+
     request: { params: ltiMembershipsParamSchema, query: listLtiMembersQuerySchema },
     responses: {
       200: {
@@ -214,7 +218,12 @@ const ltiToolRouteDrafts = {
 export const ltiMemberRoutes = createXRoutes(['lti-platform', 'cella'], ltiToolRouteDrafts);
 
 /**
- * The access scopes the routes for installed LTI tools declare (`xScope`): the only ones a registration records, the
- * platform's configuration advertises and an admin grants.
+ * The access scopes the routes for installed LTI tools declare (`xScope`), each standing for an LTI service scope
+ * (`ltiServiceScope`): the only ones a registration records, the platform's configuration offers by their service
+ * names and an admin grants.
  */
 export const ltiToolScopes: AccessScope[] = [...new Set(Object.values(ltiToolRouteDrafts).map((route) => route.xScope))];
+
+// A route scope without a service name could be neither asked for nor granted: the module refuses to load.
+const unnamed = ltiToolScopes.find((scope) => !ltiServiceScope(scope));
+if (unnamed) throw new Error(`[lti] The scope ${unnamed} of a route for installed LTI tools has no LTI service scope in lti-service-scopes.ts.`);

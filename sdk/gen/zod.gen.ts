@@ -1805,7 +1805,7 @@ export const zListLtiContextsResponse = z.object({
   results: z.array(
     z.object({
       id: z.string(),
-      connectionId: z.string(),
+      connectionId: z.string().nullable(),
       contextId: z.string(),
       label: z.string().nullable(),
       title: z.string().nullable(),

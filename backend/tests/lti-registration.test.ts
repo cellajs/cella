@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createLtiRegistrationLink } from 'sdk';
+import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
@@ -106,6 +106,32 @@ describe('LTI registration', async () => {
       body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: ltiKeySetUrl(connection.id) },
       keySetStatus: 200,
     });
+  });
+
+  // A refused registration leaves nothing behind: the connection stored before the call goes, and its key set with it.
+  // While the platform answers, the admins' list leaves the pending connection out.
+  it('deletes the pending connection of a registration the platform refuses, and its key set answers no more', async () => {
+    const { org, user, link } = await mintLink();
+    const keySets: string[] = [];
+    const listed: unknown[] = [];
+    const refusing: GuardedTransport = async ({ url, method, body }) => {
+      if (method === 'GET' && url.href === configurationUrl) return Response.json(platformConfiguration());
+      keySets.push(JSON.parse(body ?? '{}').jwks_uri);
+      const path = { tenantId: org.tenantId, organizationId: org.id };
+      listed.push((await call(listLtiConnections, { path, headers: { ...defaultHeaders, Cookie: user.sessionCookie } })).data);
+      return Response.json({ error: 'invalid_client_metadata' }, { status: 400 });
+    };
+
+    await expect(
+      registerLtiPlatformOp(
+        { link, openid_configuration: configurationUrl },
+        { transport: refusing, resolve: async () => [{ address: '1.1.1.1', family: 4 }] },
+      ),
+    ).rejects.toMatchObject({ type: 'lti_registration_refused' });
+    expect(listed).toEqual([{ results: [], totalSize: 0 }]);
+    expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, org.tenantId))).toEqual([]);
+    const { baseApp } = await import('#/routes');
+    expect((await baseApp.request(new URL(keySets[0]).pathname)).status).toBe(404);
   });
 
   it('refuses a link used before, on a page any platform may frame', async () => {

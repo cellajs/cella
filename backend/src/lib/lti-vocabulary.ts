@@ -47,5 +47,17 @@ export const lisContextRoles = {
   mentor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
 } as const;
 
+/**
+ * A role as a full URI: a core context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a
+ * sub-role), as NRPS lets a platform write it, is a LIS membership role. Any other role stays as it comes.
+ */
+export const lisRoleUri = (role: string) => {
+  if (role.includes(':') || role.includes('/')) return role;
+  const [base, subRole] = role.split('#');
+  return subRole
+    ? `http://purl.imsglobal.org/vocab/lis/v2/membership/${base}#${subRole}`
+    : `http://purl.imsglobal.org/vocab/lis/v2/membership#${base}`;
+};
+
 /** The LTI system role a platform adds for a user it made for testing, such as a student view (LTI Core 1.3, A.2.4). */
 export const ltiTestUserRole = 'http://purl.imsglobal.org/vocab/lti/system/person#TestUser';

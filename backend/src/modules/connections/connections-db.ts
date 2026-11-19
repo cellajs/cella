@@ -62,6 +62,8 @@ export const connectionsTable = snakeCase.table(
 );
 
 export type ConnectionModel = typeof connectionsTable.$inferSelect;
+/** A connection as an answer carries it: without its private key. */
+export type ServedConnection = Omit<ConnectionModel, 'privateJwk'>;
 export type InsertConnectionModel = typeof connectionsTable.$inferInsert;
 
 /** An LTI connection as its readers type it: issuer, client id and the LTI config present. */
@@ -71,5 +73,5 @@ export type LtiConnection = ConnectionModel & { kind: 'lti'; issuer: string; cli
  * Whether a connection row is a registered LTI connection with its config (`connections_kind_check` holds the
  * columns): one still `pending` its platform's answer holds no client id.
  */
-export const isLtiConnection = (row: ConnectionModel): row is LtiConnection =>
+export const isLtiConnection = <T extends ServedConnection>(row: T): row is T & Pick<LtiConnection, 'kind' | 'issuer' | 'clientId' | 'config'> =>
   row.kind === 'lti' && row.issuer !== null && row.clientId !== null && row.config.jwksUri !== undefined;

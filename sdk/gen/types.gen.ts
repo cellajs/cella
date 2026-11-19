@@ -4123,9 +4123,9 @@ export type ListLtiContextsResponses = {
     results: Array<{
       id: string;
       /**
-       * The LTI connection whose platform launched it
+       * The LTI connection that launched it last; null once that connection is deleted
        */
-      connectionId: string;
+      connectionId: string | null;
       /**
        * The platform's id of the context
        */
@@ -5227,7 +5227,7 @@ export type ListLtiMembersData = {
      */
     role?: string;
     /**
-     * Most members one page holds: a hint. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     * Most members one page holds: a hint. Absent or 0 reads 40; below 25 reads 25, above 1000 reads 1000. A page may hold fewer.
      */
     limit?: number;
     /**
@@ -5235,7 +5235,7 @@ export type ListLtiMembersData = {
      */
     after?: string;
     /**
-     * Refused: the platform lists no resource link's members
+     * Refused: reading the members of one resource link, a tab, is not supported
      */
     rlid?: string;
   };

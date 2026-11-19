@@ -196,6 +196,8 @@ export interface RetentionConfig {
   declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;
+  /** An LTI connection still pending its platform's answer to the registration, from its creation: a failed registration. */
+  pendingLtiConnectionDays: number;
   /**
    * Every copy outside the live data, from when it is made: the daily database backups, the backup and dump before a
    * reset or a teardown, and an uploaded file's earlier versions. Infra applies it; backups serve disasters only.

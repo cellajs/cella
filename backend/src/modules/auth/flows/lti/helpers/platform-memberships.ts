@@ -3,15 +3,16 @@ import { z } from '@hono/zod-openapi';
 import { type JWTPayload, SignJWT } from 'jose';
 import { AppError } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
-import { type GuardedFetchInit, guardedFetch, isFetchableUrl } from '#/lib/guarded-fetch';
-import { ltiClaims, ltiNrps, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { guardedFetch, isFetchableUrl } from '#/lib/guarded-fetch';
+import { lisRoleUri, ltiClaims, ltiNrps, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { connectionSigningKey } from '#/modules/auth/flows/lti/helpers/connection-key';
+import { type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-fetch';
 import type { LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 
-/** Tests answer from a fake platform; production reaches the platform through the guarded fetch's own. */
-export type PlatformFetchOptions = Pick<GuardedFetchInit, 'resolve' | 'transport'>;
+/** How a member read reaches the platform, and the signal that ends it before its next page. */
+export type ReadLtiMembersOptions = PlatformFetchOptions & { signal?: AbortSignal };
 
 /** The members one page asks for (`limit`): a page of long rows stays under the guarded fetch's size cap. */
 const membersPageSize = 50;
@@ -28,12 +29,6 @@ const assertionLifetimeSeconds = 60;
 /** How long before its expiry a cached token is replaced by a new one. */
 const tokenRenewMarginSeconds = 60;
 
-/** Whether `url` lies under `base`: the same origin, and the base's path a prefix of its own. */
-export const isUnder = (url: URL, base: URL) => {
-  const basePath = base.pathname.endsWith('/') ? base.pathname : `${base.pathname}/`;
-  return url.origin === base.origin && url.pathname.startsWith(basePath);
-};
-
 /**
  * A membership address a verified launch named, or the next page it links to, when the app reads it: an address the
  * guarded fetch takes, and a next page on the origin and path of the first.
@@ -46,10 +41,12 @@ const trustedMembershipsUrl = (address: string, first?: URL) => {
   return url;
 };
 
-/** A launch's NRPS claim (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
+const serviceVersionSchema = z.string().max(maxLength.field);
+
+/** A launch's NRPS claim (Names and Role Provisioning Services 2.0, section 3.6.1.1); a single version reads as a list of one. */
 const namesRoleServiceSchema = z.object({
   context_memberships_url: z.string().max(maxLength.url),
-  service_versions: z.array(z.string().max(maxLength.field)).max(20).optional(),
+  service_versions: z.union([serviceVersionSchema, z.array(serviceVersionSchema).max(20)]).optional(),
 });
 
 /**
@@ -58,21 +55,12 @@ const namesRoleServiceSchema = z.object({
  */
 export const launchMembershipsUrl = (claims: JWTPayload): string | undefined => {
   const claim = namesRoleServiceSchema.safeParse(claims[ltiClaims.namesRoleService]).data;
-  if (!claim || (claim.service_versions && !claim.service_versions.includes(ltiNrps.version))) return undefined;
+  if (!claim || (claim.service_versions && ![claim.service_versions].flat().includes(ltiNrps.version))) return undefined;
   return trustedMembershipsUrl(claim.context_memberships_url) && claim.context_memberships_url;
 };
 
 const readFailed = (reason: string, connection: LtiConnection) =>
   new AppError(400, 'outbound_request_failed', 'warn', { meta: { reason, connectionId: connection.id } });
-
-/** A platform's answer as JSON; undefined for one that does not parse. */
-export const parseJson = (text: string): unknown => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-};
 
 type SigningKey = NonNullable<Awaited<ReturnType<typeof connectionSigningKey>>>;
 
@@ -155,10 +143,16 @@ const platformToken = async (connection: LtiConnection, signingKey: SigningKey, 
   return { accessToken };
 };
 
-/** A member of a platform's membership container as the import reads it (NRPS 2.0, section 2.2): the claims a launch reads. */
+/**
+ * A member of a platform's membership container as the import reads it (NRPS 2.0, section 2.2): the claims a launch
+ * reads. A context role by its short name, as NRPS and Sakai send it, reads as its full URI.
+ */
 const memberSchema = z.object({
   user_id: ltiIdSchema,
-  roles: z.array(z.string().max(maxLength.url)).max(100),
+  roles: z
+    .array(z.string().max(maxLength.url))
+    .max(100)
+    .transform((roles) => roles.map(lisRoleUri)),
   /** NRPS takes a member that names none as `Active`. */
   status: z.string().max(maxLength.field).optional(),
   name: profileClaim,
@@ -187,7 +181,7 @@ const readMemberPages = async (
   connection: LtiConnection,
   signingKey: SigningKey,
   first: URL,
-  options: PlatformFetchOptions,
+  { signal, ...options }: ReadLtiMembersOptions,
 ): Promise<MembersOutcome> => {
   let token = await platformToken(connection, signingKey, options);
   if ('refusal' in token) return token;
@@ -197,6 +191,7 @@ const readMemberPages = async (
   let page = new URL(first);
   page.searchParams.set('limit', String(membersPageSize));
   for (let pages = 0; pages < maxMembersPages; ) {
+    signal?.throwIfAborted();
     const response = await guardedFetch(page.href, {
       ...options,
       headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${token.accessToken}` },
@@ -209,7 +204,8 @@ const readMemberPages = async (
       if ('refusal' in token) return token;
       continue;
     }
-    if ([401, 403, 404].includes(response.status)) return { refusal: 'members_refused' };
+    // A client error is the platform's refusal, such as Sakai's 400 for a missing scope; a timeout or a throttle is not.
+    if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) return { refusal: 'members_refused' };
     const container = response.status === 200 && membershipContainerSchema.safeParse(parseJson(response.text)).data;
     if (!container) throw readFailed('members_page', connection);
 
@@ -234,8 +230,8 @@ const readMemberPages = async (
  * client assertion signed with the connection's own key gets. Every request goes through the guarded fetch, and each
  * page lies at the membership address a launch of the connection named (`trustedMembershipsUrl`). A connection without
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
- * person listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages or `maxMembers`
- * people.
+ * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
+ * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people or an aborted `signal`.
  * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
  *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
@@ -244,7 +240,7 @@ const readMemberPages = async (
 export const readLtiMembers = async (
   connection: LtiConnection,
   membershipsUrl: string,
-  options: PlatformFetchOptions = {},
+  options: ReadLtiMembersOptions = {},
 ): Promise<MembersOutcome> => {
   const signingKey = await connectionSigningKey(connection);
   if (!signingKey) return { refusal: 'register_again' };

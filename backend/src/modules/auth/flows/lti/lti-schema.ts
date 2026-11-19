@@ -116,7 +116,7 @@ export const listLtiContextsQuerySchema = pageQuerySchema.extend({
 
 export const ltiContextSchema = z.object({
   id: z.string(),
-  connectionId: z.string().describe('The LTI connection whose platform launched it'),
+  connectionId: z.string().nullable().describe('The LTI connection that launched it last; null once that connection is deleted'),
   contextId: z.string().describe("The platform's id of the context"),
   label: z.string().nullable().describe("The platform's short name of the context, such as a course code"),
   title: z.string().nullable(),

@@ -7,7 +7,7 @@ import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
-import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-memberships';
+import { type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-fetch';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,
@@ -30,6 +30,12 @@ const supportsLtiTool = (configuration: LtiPlatformConfiguration) =>
   configuration.token_endpoint_auth_signing_alg_values_supported.includes('RS256') &&
   configuration.id_token_signing_alg_values_supported.includes('RS256') &&
   configuration.response_types_supported.includes('id_token');
+
+/** Whether `url` lies under `base`: the same origin, and the base's path a prefix of its own. */
+const isUnder = (url: URL, base: URL) => {
+  const basePath = base.pathname.endsWith('/') ? base.pathname : `${base.pathname}/`;
+  return url.origin === base.origin && url.pathname.startsWith(basePath);
+};
 
 /** The platform's OpenID configuration, read from its address and checked against it and its issuer. */
 const fetchPlatformConfiguration = async (address: string, options: PlatformFetchOptions) => {

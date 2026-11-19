@@ -15,6 +15,7 @@ import {
 } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -40,6 +41,14 @@ import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } fro
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
+
+// The template's answers in the files an app fills: an app's own answers leave these tests as they are.
+vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
+);
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
+);
 
 // The app takes both LTI roles: the round trip launches it in itself.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });
@@ -84,13 +93,18 @@ describe('LTI launch at the app as an LTI tool', async () => {
   }
 
   type Platform = Awaited<ReturnType<typeof fakePlatform>>;
+  type TestOrganization = Awaited<ReturnType<typeof createTestOrganization>>;
 
   /**
    * A tenant's active connection to `platform`, as a registration stores it. Its token endpoint sits on another host,
    * as Brightspace's and Schoology's do: a launch never reads it.
    */
-  async function connect(platform: Platform, deploymentIds = ['deployment-1']) {
-    const org = await createTestOrganization();
+  async function connect(
+    platform: Platform,
+    deploymentIds = ['deployment-1'],
+    { org: existing, clientId = `${platform.name}-client` }: { org?: TestOrganization; clientId?: string } = {},
+  ) {
+    const org = existing ?? (await createTestOrganization());
     const issuer = `https://${platform.name}.example.com`;
     const [connection] = await db
       .insert(connectionsTable)
@@ -98,7 +112,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         tenantId: org.tenantId,
         kind: 'lti',
         issuer,
-        clientId: `${platform.name}-client`,
+        clientId,
         name: platform.name,
         status: 'active',
         config: {
@@ -111,7 +125,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         },
       })
       .returning();
-    return { org, connection, platform, issuer, clientId: `${platform.name}-client` };
+    return { org, connection, platform, issuer, clientId };
   }
 
   type Connected = Awaited<ReturnType<typeof connect>>;
@@ -400,8 +414,9 @@ describe('LTI launch at the app as an LTI tool', async () => {
   });
 
   // The platform names where its course's members are, and the connection's token goes there: an address the guarded
-  // fetch takes, on any host, as Canvas names one apart from its issuer. A launch without the claim keeps what an earlier one kept.
-  it("keeps the membership address a launch names, and asks for a member import after a teacher's launch", async () => {
+  // fetch takes, on any host, as Canvas names one apart from its issuer. A learner's launch without the claim keeps what
+  // an earlier one kept; a teacher's clears it, so a grant withdrawn on the platform queues no more imports.
+  it("keeps the membership address a launch names, asks for a member import after a teacher's launch, and clears it after one without", async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const membershipsUrl = 'https://school.example.net/api/lti/courses/c1/names_and_roles';
     const teacher = (claim?: Record<string, unknown>) => ({ [ltiClaims.roles]: [lisContextRoles.instructor], [ltiClaims.namesRoleService]: claim });
@@ -432,13 +447,18 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await launch(connected, teacher({ context_memberships_url: membershipsUrl, service_versions: ['2.0'] }));
     const { id: contextId, ...stored } = await kept();
     expect(stored).toEqual({ membershipsUrl });
-    expect(send).toHaveBeenCalledWith(ltiMemberImportQueue.name, { contextId }, { singletonKey: contextId });
+    expect(send).toHaveBeenCalledWith(ltiMemberImportQueue.name, { contextId }, { singletonKey: contextId, group: { id: connected.connection.id } });
 
     send.mockClear();
-    await launch(connected, teacher());
     await launch(connected);
     expect(await kept()).toMatchObject({ membershipsUrl });
-    expect(send).toHaveBeenCalledTimes(1);
+    await launch(connected, teacher());
+    expect(await kept()).toMatchObject({ membershipsUrl: null });
+    expect(send).not.toHaveBeenCalled();
+
+    // NRPS's prose names one version where its example lists them: a single string reads as a list of one.
+    await launch(connected, teacher({ context_memberships_url: membershipsUrl, service_versions: '2.0' }));
+    expect(await kept()).toMatchObject({ membershipsUrl });
   });
 
   /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
@@ -455,7 +475,9 @@ describe('LTI launch at the app as an LTI tool', async () => {
   it('refuses a launch that needs a seat when the member limit leaves none, and lets a member in', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
-    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    await db
+      .insert(identitiesTable)
+      .values({ userId: member.id, kind: 'lti', tenantId: connected.org.tenantId, provider: connected.issuer, subject: 'lms-member', email: null });
     await limitMembers(connected);
 
     await expectRefusalPage((await launch(connected)).response, 403, 'lti_member_limit');
@@ -467,7 +489,9 @@ describe('LTI launch at the app as an LTI tool', async () => {
   it('refuses a launch that would add a person to an archived course, and lets a member in with the role they hold', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
-    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    await db
+      .insert(identitiesTable)
+      .values({ userId: member.id, kind: 'lti', tenantId: connected.org.tenantId, provider: connected.issuer, subject: 'lms-member', email: null });
     // The template's course is the organization, which only a direct write archives.
     await db.update(organizationsTable).set({ archived: true }).where(eq(organizationsTable.id, connected.org.id));
 
@@ -525,6 +549,50 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect([invitation.response.status === 200, launching.response.status === 303].filter(Boolean)).toHaveLength(1);
   });
 
+  // Attack: any tenant's admin can register "a platform" under an issuer whose host serves a file of theirs, with keys of
+  // their own. A launch through that connection reaches the accounts made through its own tenant alone.
+  it("makes a new account for a person another tenant's connection to the same issuer knows, with no membership there", async () => {
+    const victim = await connect(await fakePlatform('platform-a'));
+    expect((await launch(victim, { sub: 'lms-person' })).response.status).toBe(303);
+    const attacker = await connect(await fakePlatform('platform-a'), ['deployment-1'], { clientId: 'attacker-client' });
+    expect(attacker.issuer).toBe(victim.issuer);
+
+    expect((await launch(attacker, { sub: 'lms-person' })).response.status).toBe(303);
+    const identities = await db.select().from(identitiesTable).where(eq(identitiesTable.provider, victim.issuer));
+    const byTenant = new Map(identities.map(({ tenantId, userId }) => [tenantId, userId]));
+    expect(byTenant.size).toBe(2);
+    const attackerAccount = byTenant.get(attacker.org.tenantId) ?? '';
+    expect(attackerAccount).not.toBe(byTenant.get(victim.org.tenantId));
+    expect(await orgMembershipOf(attackerAccount, victim.org.id)).toBeUndefined();
+  });
+
+  // Registering a platform again in a tenant gives a new connection: it takes over the courses of the one it replaces,
+  // with their channels and their people.
+  it('lets a new registration of the same platform take over a course, its channel and its people', async () => {
+    const platform = await fakePlatform('platform-a');
+    const first = await connect(platform);
+    const admin = await createFactorOrgUser(call, first.org.tenantId, first.org.id, `lti-${nanoid(8)}`, adminRole);
+    const teacher = { sub: 'lms-teacher', [ltiClaims.roles]: [lisContextRoles.instructor] };
+    await launch(first, teacher);
+    await launch(first, { sub: 'lms-student' });
+    const courses = () => db.select().from(ltiContextsTable).where(eq(ltiContextsTable.tenantId, first.org.tenantId));
+    const [course] = await courses();
+    const accounts = async () =>
+      (await db.select().from(identitiesTable).where(eq(identitiesTable.tenantId, first.org.tenantId))).map(({ userId }) => userId).sort();
+    const people = await accounts();
+
+    const path = { tenantId: first.org.tenantId, organizationId: first.org.id, connectionId: first.connection.id };
+    const deleted = await call(deleteLtiConnection, { path, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } });
+    expect(deleted.response.status).toBe(204);
+    expect(await courses()).toEqual([expect.objectContaining({ id: course.id, connectionId: null })]);
+
+    const second = await connect(platform, ['deployment-1'], { org: first.org, clientId: 'platform-a-client-again' });
+    expect((await launch(second, teacher)).response.status).toBe(303);
+    expect(await courses()).toEqual([expect.objectContaining({ id: course.id, connectionId: second.connection.id, channelId: course.channelId })]);
+    expect(await accounts()).toEqual(people);
+    for (const userId of people) expect(await orgMembershipOf(userId, first.org.id)).toBeDefined();
+  });
+
   // D6: an address across institutions is no proof of the account behind it.
   it('creates a separate account for an email claim an account of another tenant holds', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
@@ -542,7 +610,8 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const { org, connection: ltiConnection } = await connect(await fakePlatform('platform-a'));
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
-    const plan = (ltiRoles: string[]) => planLtiContextChannel(ctx, { connectionId: ltiConnection.id, context, ltiRoles });
+    const plan = (ltiRoles: string[]) =>
+      planLtiContextChannel(ctx, { connection: { ...ltiConnection, issuer: ltiConnection.issuer ?? '' }, context, ltiRoles });
 
     await expect(plan([lisContextRoles.learner])).rejects.toMatchObject({ status: 409, type: 'lti_context_not_set_up' });
     expect(await plan([lisContextRoles.instructor])).toEqual({ create: context });
@@ -554,6 +623,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
       values: {
         tenantId: org.tenantId,
         organizationId: org.id,
+        issuer: ltiConnection.issuer ?? '',
         connectionId: ltiConnection.id,
         contextId: context.id,
         types: [],
@@ -563,6 +633,11 @@ describe('LTI launch at the app as an LTI tool', async () => {
       by: instructor.id,
     });
     expect(await plan([lisContextRoles.learner])).toMatchObject({ channel: { id: org.id } });
+
+    // A new registration of the platform in the tenant finds the course's channel: an Instructor's launch creates none.
+    const again = { id: generateId(), tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
+    const replanned = await planLtiContextChannel(ctx, { connection: again, context, ltiRoles: [lisContextRoles.instructor] });
+    expect(replanned).toMatchObject({ channel: { id: org.id } });
   });
 
   // One app is the platform in one tenant and the LTI tool in another, and launches itself, as the development seed does.

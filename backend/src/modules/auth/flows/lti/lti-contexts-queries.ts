@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, inArray } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, inArray } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
@@ -12,39 +12,50 @@ import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
-/** The row of a connection's LTI context; undefined before a launch mapped it. */
-export const findLtiContext = async (ctx: DbContext, { connectionId, contextId }: { connectionId: string; contextId: string }) => {
+interface LtiContextKey {
+  tenantId: string;
+  issuer: string;
+  contextId: string;
+}
+
+/** The row of a platform's LTI context in a tenant, whichever connection launched it; undefined before a launch mapped it. */
+export const findLtiContext = async (ctx: DbContext, { tenantId, issuer, contextId }: LtiContextKey) => {
   const [row] = await ctx.var.db
     .select()
     .from(ltiContextsTable)
-    .where(and(eq(ltiContextsTable.connectionId, connectionId), eq(ltiContextsTable.contextId, contextId)))
+    .where(and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.issuer, issuer), eq(ltiContextsTable.contextId, contextId)))
     .limit(1);
   return row;
 };
 
-/** An LTI context row by its own id; undefined once its connection or channel went. */
+/** An LTI context row by its own id; undefined once its channel went. */
 export const findLtiContextById = async (ctx: DbContext, { id }: { id: string }) => {
   const [row] = await ctx.var.db.select().from(ltiContextsTable).where(eq(ltiContextsTable.id, id)).limit(1);
   return row;
 };
 
 /**
- * Records an LTI context and the channel it maps to, or takes the label, title and types of a context recorded before,
- * written by `by`; the row as stored. A recorded context keeps its channel: compare it with the one given. The
- * membership address changes only when `values` names one: a launch without it clears nothing.
+ * Records an LTI context and the channel it maps to, or takes over a context recorded before for the connection in
+ * `values`, with its label, title and types, written by `by`; the row as stored. A recorded context keeps its channel:
+ * compare it with the one given. The membership address changes when `values` names it, null included: undefined
+ * keeps it.
  */
 export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values: Omit<InsertLtiContextModel, 'createdBy'>; by: UserId }) => {
-  const { label, title, types, membershipsUrl } = values;
+  const { connectionId, label, title, types, membershipsUrl } = values;
   const [row] = await ctx.var.db
     .insert(ltiContextsTable)
     .values({ ...values, createdBy: by })
     .onConflictDoUpdate({
-      target: [ltiContextsTable.connectionId, ltiContextsTable.contextId],
-      set: { label, title, types, ...(membershipsUrl && { membershipsUrl }), ...updateStamps(by) },
+      target: [ltiContextsTable.tenantId, ltiContextsTable.issuer, ltiContextsTable.contextId],
+      set: { connectionId, label, title, types, ...(membershipsUrl !== undefined && { membershipsUrl }), ...updateStamps(by) },
     })
     .returning();
   return row;
 };
+
+/** How many courses of a connection a member import read since `since`. */
+export const countLtiImportsSince = (ctx: DbContext, { connectionId, since }: { connectionId: string; since: string }) =>
+  ctx.var.db.$count(ltiContextsTable, and(eq(ltiContextsTable.connectionId, connectionId), gt(ltiContextsTable.importRanAt, since)));
 
 interface RecordLtiImportOpts {
   id: string;

@@ -15,12 +15,16 @@ import {
   updateServiceAccount,
 } from 'sdk';
 import { type AccessScope, appConfig, policyMatrix } from 'shared';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { lisContextRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiMembershipsUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { minLtiMembersPage } from '#/modules/lti-platform/lti-platform-schema';
+import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
+import { mockUser } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
 import {
@@ -36,6 +40,14 @@ import {
 } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
+
+// The template's answers in the files an app fills: an app's own answers leave these tests as they are.
+vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
+);
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
+);
 
 overrideConfig(appConfig.has, { ltiPlatform: true });
 
@@ -210,6 +222,25 @@ describe('LTI installation API access', async () => {
     return String(answer.body.access_token);
   };
 
+  /** A page of members at an address an NRPS reader holds, the first or a next link, read with the NRPS media type. */
+  const readMembersAt = async (address: string, accessToken: string) => {
+    const url = new URL(address);
+    const response = await baseApp.request(`${url.pathname}${url.search}`, {
+      headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${accessToken}` },
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toContain(ltiNrps.mediaType);
+    return { container: (await response.json()) as Container, next: nextOf(response) };
+  };
+
+  /** Adds `count` members to the organization at once, for a course longer than a page. */
+  const addLearners = async (org: Org, count: number) => {
+    const users = await insertUsers({ var: { db } }, { users: Array.from({ length: count }, () => mockUser()) });
+    const items = users.map(({ id }) => ({ userId: id, role: memberRole, entity: org.org, createdBy: org.admin.id }));
+    await insertMemberships({ var: { db } }, { items });
+    return users;
+  };
+
   const readMembers = (org: Org, token: string, channelId = org.org.id) =>
     call(listLtiMembers, { path: { ...org.path, channelType: 'organization', channelId }, headers: bearerHeaders(token) });
 
@@ -259,36 +290,59 @@ describe('LTI installation API access', async () => {
       client_id: ltiTool.clientId,
     });
 
-    const readPage = async (address: string) => {
-      const url = new URL(address);
-      const response = await baseApp.request(`${url.pathname}${url.search}`, {
-        headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${accessToken}` },
-      });
-      expect(response.status).toBe(200);
-      expect(response.headers.get('Content-Type')).toContain(ltiNrps.mediaType);
-      return { container: (await response.json()) as Container, next: nextOf(response) };
-    };
+    // A `limit` below the smallest page reads that page: a reader of a few hundred stays inside the burst limit.
+    const learners = await addLearners(org, minLtiMembersPage + 3);
+    const readPage = (address: string) => readMembersAt(address, accessToken);
     const first = await readPage(`${membershipsUrl}?limit=1`);
     expect(first.container).toEqual({
       id: `${membershipsUrl}?limit=1`,
       context: { id: org.org.id, label: org.org.slug, title: org.org.name },
-      members: [expect.objectContaining({ status: 'Active' })],
+      members: expect.any(Array),
     });
+    expect(first.container.members).toHaveLength(minLtiMembersPage);
     const second = await readPage(first.next ?? '');
     expect(second.next).toBeUndefined();
     const members = [...first.container.members, ...second.container.members];
-    expect(members).toEqual(
-      [
-        { user_id: org.admin.id, roles: [lisContextRoles.instructor], status: 'Active' },
-        { user_id: member.id, roles: [lisContextRoles.learner], status: 'Active' },
-      ].sort((a, b) => a.user_id.localeCompare(b.user_id)),
-    );
+    const expected = [
+      { user_id: org.admin.id, roles: [lisContextRoles.instructor], status: 'Active' },
+      ...[member, ...learners].map(({ id }) => ({ user_id: id, roles: [lisContextRoles.learner], status: 'Active' })),
+    ];
+    expect(members).toEqual(expected.sort((a, b) => a.user_id.localeCompare(b.user_id)));
 
-    const learners = await readPage(`${membershipsUrl}?role=Learner`);
-    expect(learners).toEqual({
-      container: expect.objectContaining({ members: [members.find(({ user_id }) => user_id === member.id)] }),
+    const instructors = await readPage(`${membershipsUrl}?role=Instructor`);
+    expect(instructors).toEqual({
+      container: expect.objectContaining({ members: [expected.find(({ user_id }) => user_id === org.admin.id)] }),
       next: undefined,
     });
+  });
+
+  // NRPS: a page with a `role` filter may hold fewer than `limit` and still link to the next. One page reads at most ten
+  // batches of people: a course where the role is rare answers short pages over all of it.
+  it('answers a page a role filter thins below its limit with a next link, until the course is read', async () => {
+    const org = await orgWithAdmin();
+    const ltiTool = await installLtiTool(org);
+    await addLearners(org, 10 * minLtiMembersPage + 5);
+    const accessToken = await tokenOf(ltiTool);
+    const membershipsUrl = ltiMembershipsUrl(org.path, { channelType: 'organization', channelId: org.org.id });
+
+    const first = await readMembersAt(`${membershipsUrl}?role=Instructor&limit=1`, accessToken);
+    expect(first.container.members.map(({ user_id }) => user_id)).toEqual([org.admin.id]);
+    expect(first.next).toBeDefined();
+    const second = await readMembersAt(first.next ?? '', accessToken);
+    expect(second).toEqual({ container: expect.objectContaining({ members: [] }), next: undefined });
+  });
+
+  // NRPS section 3: one resource link's members carry a message per member, which the platform does not build. A reader
+  // that asks for them learns so, and never takes the course's members for the tab's.
+  it("refuses a request for one resource link's members", async () => {
+    const org = await orgWithAdmin();
+    const ltiTool = await installLtiTool(org);
+    const answer = await call(listLtiMembers, {
+      path: { ...org.path, channelType: 'organization', channelId: org.org.id },
+      query: { rlid: ltiTool.resourceLinkId },
+      headers: bearerHeaders(await tokenOf(ltiTool)),
+    });
+    await expectRefusal(answer, 400, 'lti_rlid_unsupported');
   });
 
   // Contract: ltijs 7 registers asking for the NRPS scope beside scopes the platform does not serve.
@@ -302,7 +356,7 @@ describe('LTI installation API access', async () => {
     expect(client.requestedScopes).toEqual(['user:read']);
 
     const configuration = (await (await fetch(`${oauth.issuer}/lti/openid-configuration`)).json()) as { scopes_supported: string[] };
-    expect(configuration.scopes_supported).toEqual(['openid', ltiNrps.scope]);
+    expect(configuration.scopes_supported).toContain(ltiNrps.scope);
   });
 
   // Privacy: an LTI tool granted nothing is told nothing about the members.
@@ -454,7 +508,10 @@ describe('LTI installation API access', async () => {
 
       ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
       expect((await readMembers(org, token)).response.status).toBe(200);
+      expect((await readMembers(org, token, org.org.id.toUpperCase())).response.status).toBe(200);
       await expectRefusal(await readMembers(org, token, other.org.id), 403, 'forbidden');
+      const unknownType = `/tenants/${org.org.tenantId}/organizations/${org.org.id}/lti-members/no-such-type/${org.org.id}`;
+      await expectRefusal(await baseApp.request(unknownType, { headers: bearerHeaders(token) }), 403, 'forbidden');
 
       await call(deleteLtiResourceLink, { path: { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId }, headers: org.headers });
       await expectRefusal(await readMembers(org, token), 403, 'forbidden');

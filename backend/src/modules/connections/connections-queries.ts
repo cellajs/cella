@@ -1,13 +1,13 @@
-import { and, arrayOverlaps, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, getColumns, inArray, ne, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { UserId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
 import {
   type ConnectionKind,
-  type ConnectionModel,
   connectionsTable,
   type InsertConnectionModel,
   isLtiConnection,
+  type ServedConnection,
 } from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -15,18 +15,27 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { pick } from '#/utils/pick';
 
+/** Every column an answer may carry: all but the private key. */
+const { privateJwk: _privateJwk, ...servedColumns } = getColumns(connectionsTable);
+
 interface FindConnectionsByTenantOpts {
   tenantId: string;
   /** Narrows to one kind; every kind when left out. */
   kind?: ConnectionKind;
 }
 
-/** The tenant's connections, oldest first. */
-export const findConnectionsByTenant = async (ctx: DbContext, { tenantId, kind }: FindConnectionsByTenantOpts) =>
+/** The tenant's connections, oldest first, without their private keys; an LTI one still registering is left out. */
+export const findConnectionsByTenant = async (ctx: DbContext, { tenantId, kind }: FindConnectionsByTenantOpts): Promise<ServedConnection[]> =>
   ctx.var.db
-    .select()
+    .select(servedColumns)
     .from(connectionsTable)
-    .where(and(eq(connectionsTable.tenantId, tenantId), kind ? eq(connectionsTable.kind, kind) : undefined))
+    .where(
+      and(
+        eq(connectionsTable.tenantId, tenantId),
+        kind ? eq(connectionsTable.kind, kind) : undefined,
+        or(ne(connectionsTable.kind, 'lti'), ne(connectionsTable.status, 'pending')),
+      ),
+    )
     .orderBy(connectionsTable.createdAt);
 
 interface FindConnectionByIdOpts {
@@ -101,8 +110,8 @@ export const findConnectionsClaiming = async (ctx: DbContext, { federation, clai
     );
 
 /** Inserts a connection; the unique indexes refuse a second SSO connection of a tenant and a second LTI registration of one client. */
-export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ConnectionModel> => {
-  const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning();
+export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ServedConnection> => {
+  const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning(servedColumns);
   return row;
 };
 
@@ -149,13 +158,13 @@ interface UpdateConnectionOpts {
   >;
 }
 
-/** Writes `values` to one tenant's connection; the updated row, or undefined when the tenant holds no such connection. */
+/** Writes `values` to one tenant's connection; the updated row without its private key, or undefined when the tenant holds no such connection. */
 export const updateConnection = async (ctx: DbContext, { id, tenantId, values }: UpdateConnectionOpts) => {
   const [row] = await ctx.var.db
     .update(connectionsTable)
     .set(values)
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
-    .returning();
+    .returning(servedColumns);
   return row;
 };
 

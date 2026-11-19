@@ -1794,7 +1794,7 @@ export const receiveLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI key set
  *
- * The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted.
+ * The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.
  *
  * **GET /auth/lti/connections/{connectionId}/jwks** ·· [getLtiKeySet](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/connections/{connectionId}/jwks) ·· _auth · cella_
  *
@@ -2395,7 +2395,7 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI members
  *
- * The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as is refused, as for an installation placed nowhere.
+ * The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. `limit` is a hint, at least 25. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as, or a channel type the app does not have, answers 403, as for an installation placed nowhere
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}) ·· _lti-platform · cella_
  *

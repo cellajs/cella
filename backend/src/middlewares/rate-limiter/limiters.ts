@@ -196,6 +196,13 @@ export const ltiLoginLimiter = rateLimiter('limit', 'ltiLogin', ['ip'], {
   description: 'Login initiations for each IP address, refused or not.',
 });
 
+/** Reads of an LTI connection's key set per IP: a platform reads it to check a token request, and keeps it a while. */
+export const ltiKeySetLimiter = rateLimiter('limit', 'ltiKeySet', ['ip'], {
+  limits: { points: 120, duration: 60 },
+  name: 'LTI key sets',
+  description: 'Key set reads for each IP address, answered or not.',
+});
+
 /**
  * LTI launch steps per IP, two per launch in either role: as LTI tool a launch post and its finish, which checks a
  * signature and may fetch the platform's key set; as platform the login initiation page and the launch endpoint, which

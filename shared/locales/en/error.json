@@ -166,6 +166,8 @@
   "lti_platform_unsupported.text": "The platform does not offer signed client assertions (private_key_jwt with RS256) and ID tokens, which the app needs to register.",
   "lti_registration_refused": "Registration refused by the platform",
   "lti_registration_refused.text": "The platform did not accept the app's registration. Try again with a new registration link, or ask the platform's administrator.",
+  "lti_rlid_unsupported": "Tab members not supported",
+  "lti_rlid_unsupported.text": "Reading the members of one tab (rlid) is not supported: read the course's members without it.",
   "lti_scope_not_grantable": "Scope not grantable",
   "lti_scope_not_grantable.text": "The LTI tool did not ask for this access scope, or the app's API offers it to no LTI tool, so it cannot be granted.",
   "lti_storage_missing": "Platform storage not offered",

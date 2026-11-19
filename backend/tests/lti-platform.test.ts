@@ -11,7 +11,7 @@ import {
 } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
@@ -27,6 +27,14 @@ import { startAuthorization, startTestOauthServer, type TestOauthServer } from '
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
+
+// The template's answers in the files an app fills: an app's own answers leave these tests as they are.
+vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
+);
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
+);
 
 // The app takes both LTI roles: the round trip registers it with itself.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });

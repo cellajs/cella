@@ -46,7 +46,9 @@ app.openapi(authLtiRoutes.initiateLtiLoginByPost, (ctx) => answerLogin(ctx, ctx.
 
 app.openapi(authLtiRoutes.receiveLtiLaunch, (ctx) => answerStoragePage(ctx, () => receiveLtiLaunchOp(ctx.req.valid('form'))));
 
-app.openapi(authLtiRoutes.getLtiKeySet, async (ctx) => ctx.json(await getLtiKeySetOp(ctx.req.valid('param').connectionId), 200));
+app.openapi(authLtiRoutes.getLtiKeySet, async (ctx) =>
+  ctx.json(await getLtiKeySetOp(ctx.req.valid('param').connectionId), 200, { 'Cache-Control': 'public, max-age=300' }),
+);
 
 app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
   try {

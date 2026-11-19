@@ -30,10 +30,10 @@ export const ltiImportIssues = [
 export type LtiImportIssue = (typeof ltiImportIssues)[number];
 
 /**
- * An LTI context (a course) of a connected platform and the channel it became: one row per context of a connection,
- * written by the launch that maps it and by the member import that reads its people. It goes with its connection and
- * with its channel (the organization foreign key and the channel id columns below it). A tenant table read through
- * queries, outside RLS like memberships.
+ * An LTI context (a course) of a platform and the channel it became: one row per tenant, issuer and context, written by
+ * the launch that maps it and by the member import that reads its people. A new registration of the same platform in
+ * the tenant takes the row over: its launches find the channel again. It goes with its channel (the organization
+ * foreign key and the channel id columns below it). A tenant table read through queries, outside RLS like memberships.
  */
 export const ltiContextsTable = snakeCase.table(
   'lti_contexts',
@@ -43,9 +43,10 @@ export const ltiContextsTable = snakeCase.table(
       .notNull()
       .references(() => tenantsTable.id),
     organizationId: uuid().notNull(),
-    connectionId: uuid()
-      .notNull()
-      .references(() => connectionsTable.id, { onDelete: 'cascade' }),
+    /** The platform's issuer: a context id is unique only within it. */
+    issuer: varchar({ length: maxLength.field }).notNull(),
+    /** The connection that launched it last; null once that connection is deleted, until another one launches it. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     /** The platform's context id, at most 255 characters (LTI Core 1.3, section 5.4.1). */
     contextId: varchar({ length: maxLength.field }).notNull(),
     label: varchar({ length: maxLength.field }),
@@ -66,7 +67,8 @@ export const ltiContextsTable = snakeCase.table(
     ...auditColumns(),
   },
   (table) => [
-    uniqueIndex('lti_contexts_connection_id_context_id_idx').on(table.connectionId, table.contextId),
+    uniqueIndex('lti_contexts_tenant_id_issuer_context_id_idx').on(table.tenantId, table.issuer, table.contextId),
+    index('lti_contexts_connection_id_idx').on(table.connectionId),
     index('lti_contexts_channel_id_idx').on(table.channelId),
     organizationForeignKey(table),
   ],

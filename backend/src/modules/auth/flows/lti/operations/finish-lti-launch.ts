@@ -12,13 +12,14 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { decodeLaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
 import { launchMembershipsUrl } from '#/modules/auth/flows/lti/helpers/platform-memberships';
-import { createLtiContextChannel, type LtiContext, ltiContextChannelType, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
+import { createLtiContextChannel, type LtiContext, ltiContextChannelType } from '#/modules/auth/flows/lti/lti-context-channel';
 import type { LtiContextModel } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import type { ltiFinishFormSchema } from '#/modules/auth/flows/lti/lti-schema';
-import { admitLtiPerson, applyLtiRole } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
+import type { LtiConnection } from '#/modules/connections/connections-db';
 import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
@@ -39,19 +40,20 @@ const contextSetUpRoles = new Set<string>([lisContextRoles.instructor, lisContex
 type ContextPlan = { channel: MembershipEntity } | { create: LtiContext };
 
 /**
- * The channel an LTI context below the organization maps to: the one its row names. Before it has one, only an
- * Instructor or Administrator of the context may arrive, and the launch creates it.
+ * The channel an LTI context below the organization maps to: the one its row in the connection's tenant names, also
+ * when another registration of the platform launched it before. Before it has one, only an Instructor or Administrator
+ * of the context may arrive, and the launch creates it.
  * @throws AppError 409 `lti_context_not_set_up` for anyone else.
  */
 export const planLtiContextChannel = async (
   ctx: DbContext,
-  { connectionId, context, ltiRoles }: { connectionId: string; context: LtiContext; ltiRoles: string[] },
+  { connection, context, ltiRoles }: { connection: Pick<LtiConnection, 'id' | 'tenantId' | 'issuer'>; context: LtiContext; ltiRoles: string[] },
 ): Promise<ContextPlan> => {
-  const row = await findLtiContext(ctx, { connectionId, contextId: context.id });
+  const row = await findLtiContext(ctx, { tenantId: connection.tenantId, issuer: connection.issuer, contextId: context.id });
   const channel = row && (await resolveEntity(ctx, { entityType: row.channelType, identifier: row.channelId }));
   if (channel) return { channel };
   if (ltiRoles.some((role) => contextSetUpRoles.has(role))) return { create: context };
-  throw new AppError(409, 'lti_context_not_set_up', 'info', { meta: { connectionId, contextId: context.id } });
+  throw new AppError(409, 'lti_context_not_set_up', 'info', { meta: { connectionId: connection.id, contextId: context.id } });
 };
 
 /**
@@ -102,10 +104,12 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   // Decided before any account exists: whoever arrives at a course nobody set up yet leaves nothing behind.
   const plan: ContextPlan =
     context && ltiContextChannelType !== 'organization'
-      ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
+      ? await planLtiContextChannel(dbCtx, { connection, context, ltiRoles })
       : { channel: organization };
   const deploymentId = launch[ltiClaims.deploymentId];
-  const membershipsUrl = launchMembershipsUrl(claims);
+  const teaches = ltiRoles.some((role) => contextSetUpRoles.has(role));
+  // A teacher's launch without a member list clears the one stored: a grant withdrawn on the platform queues no import.
+  const membershipsUrl = launchMembershipsUrl(claims) ?? (teaches ? null : undefined);
   const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
   const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {
@@ -129,6 +133,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
         values: {
           ...channelIdColumnsOf(channel),
           tenantId: connection.tenantId,
+          issuer: connection.issuer,
           connectionId: connection.id,
           contextId,
           label,
@@ -149,7 +154,8 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     if (channel.archived) {
       const [membership] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [userId], channelId: channel.id });
       if (!membership) throw new AppError(403, 'channel_archived', 'warn', { entityType: channel.entityType });
-    } else await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiContextRole({ ltiRoles, connection }), by: userId });
+    } else
+      await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiRoleIn(channel.entityType, { ltiRoles, connection }), by: userId });
     // Validation let any deployment through to a connection that held none: another first launch may have recorded one since.
     if (!connection.config.deploymentIds.length && !(await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId }))) {
       throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });
@@ -157,7 +163,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     return { userId, channel, contextRow };
   });
   invalidateCache.user(userId);
-  if (contextRow && ltiRoles.some((role) => contextSetUpRoles.has(role))) void requestLtiMemberImport(contextRow);
+  if (contextRow && teaches) void requestLtiMemberImport(contextRow);
 
   const user = await findUserById(dbCtx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });

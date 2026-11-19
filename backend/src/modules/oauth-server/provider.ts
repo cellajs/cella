@@ -62,8 +62,9 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
  */
 function readLtiTokenRequest(ctx: KoaContextWithOIDC, client: object, resource: { face: string; tenantId: string }) {
   const installation = ltiInstallationOf(client);
-  if (!installation || !ctx.oidc.params) return;
+  if (!installation) return;
   if (resource.face !== 'api' || resource.tenantId !== installation.tenant_id) throw new errors.InvalidTarget();
+  if (!ctx.oidc.params) return;
   const asked = String(ctx.oidc.params.scope ?? '')
     .split(' ')
     .filter(Boolean);

@@ -1,10 +1,9 @@
 import { appConfig } from 'shared';
 import { ltiNrps } from '#/lib/lti-vocabulary';
-import type { PlacementContext } from '#/modules/lti-platform/helpers/context-channel';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-
-type CourseRef = Pick<PlacementContext, 'channelType' | 'channelId'>;
+import { resourceUri } from '#/modules/oauth-server/resources';
+import type { ChannelRef } from '#/schemas/common-schemas';
 
 /** The page that posts a launch's login initiation to the LTI tool, served by the API (`initiateLtiLaunchLogin`). */
 export const loginInitiationUrl = `${appConfig.backendUrl}/lti-launches/~initiate-login`;
@@ -46,11 +45,11 @@ export const launchCustom = ({ ltiToolConfig }: LaunchClient, resourceLinkCustom
  * The address of a course's members for an installed LTI tool's token (`listLtiMembers`). It holds no query: an NRPS
  * reader appends its own params.
  */
-export const ltiMembershipsUrl = ({ tenantId, organizationId }: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: CourseRef) =>
-  `${appConfig.backendUrl}/tenants/${tenantId}/organizations/${organizationId}/lti-members/${course.channelType}/${course.channelId}`;
+export const ltiMembershipsUrl = ({ tenantId, organizationId }: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: ChannelRef) =>
+  `${resourceUri({ face: 'api', tenantId })}/organizations/${organizationId}/lti-members/${course.channelType}/${course.channelId}`;
 
 /** The NRPS claim (`ltiClaims.namesRoleService`) of a launch of a placement in `course`, the launch's context. */
-export const launchNamesRoleService = (placement: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: CourseRef) => ({
+export const launchNamesRoleService = (placement: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: ChannelRef) => ({
   context_memberships_url: ltiMembershipsUrl(placement, course),
   service_versions: [ltiNrps.version],
 });

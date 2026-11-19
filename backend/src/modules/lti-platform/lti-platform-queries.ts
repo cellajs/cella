@@ -1,6 +1,6 @@
-import { and, asc, eq, getColumns, gt, isNotNull, sql } from 'drizzle-orm';
-import { type AccessScope, appConfig, type ChannelEntityType, hierarchy } from 'shared';
-import type { DbContext } from '#/core/context';
+import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
+import { type Access, type AccessScope, appConfig, hierarchy } from 'shared';
+import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
 import { type LtiReleasableField, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
@@ -12,12 +12,10 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { insertServiceAccount, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { servedUserSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-import type { OrderDirection } from '#/schemas/common-schemas';
+import { readableMembershipsWhere } from '#/permissions/visible-people';
+import type { ChannelRef, OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
-
-/** A channel by its type and id. */
-type ChannelRef = { channelType: ChannelEntityType; channelId: string };
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -223,6 +221,8 @@ export async function findLtiPlacements(ctx: DbContext, { installationId, organi
 
 interface FindLtiMembersOpts extends ChannelRef {
   organizationId: string;
+  /** The reader's access: a person shows when it reads one of their membership rows (`readableMembershipsWhere`). */
+  access: Access<ActorBinding>;
   /** The id the people follow; from the first when omitted. */
   after?: string;
   limit: number;
@@ -232,8 +232,12 @@ interface FindLtiMembersOpts extends ChannelRef {
  * A channel's people in order of id, which an installed LTI tool reads: an order by name or address would tell what is
  * not released. Of each, what a launch's personal claims read, the address only once proven.
  */
-export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, after, limit }: FindLtiMembersOpts) {
+export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, access, after, limit }: FindLtiMembersOpts) {
   const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
+  const readable = ctx.var.db
+    .select({ userId: membershipsTable.userId })
+    .from(membershipsTable)
+    .where(readableMembershipsWhere(access, [organizationId]));
   return ctx.var.db
     .select({ id, name, givenName, familyName, email, thumbnailUrl })
     .from(usersTable)
@@ -243,6 +247,7 @@ export async function findLtiMembers(ctx: DbContext, { organizationId, channelTy
         eq(membershipsTable.organizationId, organizationId),
         eq(membershipsTable.channelType, channelType),
         eq(membershipsTable.channelId, channelId),
+        inArray(usersTable.id, readable),
         after ? gt(usersTable.id, after) : undefined,
       ),
     )

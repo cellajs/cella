@@ -1,10 +1,12 @@
 import type { PgTable } from 'drizzle-orm/pg-core';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type SecretColumnTable, secretColumns } from '#/db/secret-columns';
 import { mockPastIsoDate } from '#/mocks';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { passkeyChallengesTable } from '#/modules/auth/flows/passkeys/passkey-challenges-db';
 import { encryptTotpSecret } from '#/modules/auth/flows/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
@@ -19,7 +21,7 @@ import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
-setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
+setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'lti'] });
 
 /** The table of each `secretColumns` entry: a table added to the registry is a type error until it is listed here. */
 const secretTables = {
@@ -79,6 +81,7 @@ describe('Secret columns in responses', async () => {
   let serviceAccountId: string;
   let apiKeyId: string;
   let rolledKeyId: string;
+  let ltiConnectionId: string;
 
   const serviceAccounts = () => `/tenants/${organization.tenantId}/organizations/${organization.id}/service-accounts`;
 
@@ -92,6 +95,29 @@ describe('Secret columns in responses', async () => {
   beforeAll(async () => {
     organization = await createTestOrganization();
     admin = await createFactorOrgUser(call, organization.tenantId, organization.id, 'secrets-admin', adminRole);
+
+    // An LTI connection holds its own private key.
+    ltiConnectionId = generateId();
+    const issuer = 'https://lms.security-test.com';
+    const config = {
+      authorizationEndpoint: `${issuer}/authorize`,
+      tokenEndpoint: `${issuer}/token`,
+      jwksUri: `${issuer}/jwks`,
+      productFamilyCode: 'test',
+      version: '1',
+      deploymentIds: [],
+    };
+    await db.insert(connectionsTable).values({
+      id: ltiConnectionId,
+      tenantId: organization.tenantId,
+      kind: 'lti',
+      issuer,
+      clientId: 'secrets-client',
+      name: 'lms.security-test.com',
+      status: 'active',
+      config,
+      privateJwk: await mintConnectionKey(ltiConnectionId),
+    });
 
     // The invitee holds the TOTP: on the admin it would make key creation ask for a step-up.
     const inviteeUser = await createTestUser('secrets-invitee@security-test.com');
@@ -169,6 +195,13 @@ describe('Secret columns in responses', async () => {
       send: () => rawJsonRequest(`${serviceAccounts()}/${serviceAccountId}/api-keys/${apiKeyId}:revoke`, admin.sessionCookie, { method: 'POST' }),
       status: 200,
       shows: () => [apiKeyId],
+    },
+    {
+      route: 'GET organizations/{organizationId}/connections',
+      tables: ['connections'],
+      send: () => rawJsonRequest(`/tenants/${organization.tenantId}/organizations/${organization.id}/connections`, admin.sessionCookie),
+      status: 200,
+      shows: () => [ltiConnectionId],
     },
     {
       route: 'GET /me/invitations',

@@ -34,8 +34,8 @@ interface CreateLtiAccountOpts {
 }
 
 /**
- * Makes the account of a person a platform names for the first time, with the `lti` identity (the platform's issuer
- * and `sub`) that finds it again: without a proven address, as an anonymous account is made, named as the platform
+ * Makes the account of a person a platform names for the first time, with the `lti` identity (the connection's
+ * tenant, the platform's issuer and `sub`) that finds it again: without a proven address, as an anonymous account is made, named as the platform
  * released it. An email is a display snapshot on the identity and never links an account. A launch and a member import
  * call it under `lockIdentityKey` of that identity, once they found none.
  */
@@ -52,6 +52,7 @@ export const createLtiAccount = async (ctx: DbContext, { connection, person, sig
     values: {
       userId: user.id,
       kind: 'lti',
+      tenantId: connection.tenantId,
       provider: connection.issuer,
       subject: sub,
       email: person.email ?? null,

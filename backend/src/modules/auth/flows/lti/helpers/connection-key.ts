@@ -1,10 +1,11 @@
 import { calculateJwkThumbprint, exportJWK, generateKeyPair, importJWK, type JWK } from 'jose';
 import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
+import { log } from '#/utils/logger';
 
 const alg = 'RS256';
 
-/** A purpose per connection: a private key copied onto another row decrypts there to nothing. */
+/** A purpose per connection: a private key copied onto another row fails to decrypt there, and that row holds no key. */
 const encryptionPurpose = (connectionId: string) => `lti-connection-key:${connectionId}`;
 
 /**
@@ -21,16 +22,25 @@ export const mintConnectionKey = async (connectionId: string) => {
 
 type KeyHolder = Pick<ConnectionModel, 'id' | 'privateJwk'>;
 
-const privateJwkOf = ({ id, privateJwk }: KeyHolder): JWK | null => (privateJwk ? JSON.parse(decryptData(privateJwk, encryptionPurpose(id))) : null);
+/** The private JWK a connection holds; null for none, or one that does not decrypt for its row. */
+const privateJwkOf = ({ id, privateJwk }: KeyHolder): JWK | null => {
+  if (!privateJwk) return null;
+  try {
+    return JSON.parse(decryptData(privateJwk, encryptionPurpose(id)));
+  } catch {
+    log.warn('LTI connection key does not decrypt', { connectionId: id });
+    return null;
+  }
+};
 
-/** The public half of a connection's key, as its key set serves it; null for a connection registered without one. */
+/** The public half of a connection's key, as its key set serves it; null for a connection without a key that decrypts. */
 export const connectionPublicJwk = (connection: KeyHolder) => {
   const jwk = privateJwkOf(connection);
   if (jwk?.kty !== 'RSA' || !jwk.n || !jwk.e || !jwk.kid) return null;
   return { kty: 'RSA' as const, n: jwk.n, e: jwk.e, kid: jwk.kid, alg: 'RS256' as const, use: 'sig' as const };
 };
 
-/** A connection's key, ready to sign RS256, with its `kid`; null for a connection registered without one. */
+/** A connection's key, ready to sign RS256, with its `kid`; null for a connection without a key that decrypts. */
 export const connectionSigningKey = async (connection: KeyHolder) => {
   const jwk = privateJwkOf(connection);
   return jwk?.kid ? { kid: jwk.kid, key: await importJWK(jwk, alg) } : null;

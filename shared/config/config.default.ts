@@ -143,6 +143,7 @@ export const config = {
     declinedInvitationHoldDays: 30,
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
+    pendingLtiConnectionDays: 1,
     backupDays: 7,
   },
 

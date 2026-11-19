@@ -1,0 +1,549 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d85373d6-9117-4a6c-81e5-f2a4242f490c",
+  "prevIds": [
+    "f619bbb5-4ee1-47b3-94e3-0b0e62bd4420"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_connection_id_context_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|idx|public.lti_contexts_connection_id_context_id_idx",
+        "e|idx|public.lti_contexts_connection_id_context_id_idx",
+        "n|rel|public.lti_contexts_connection_id_context_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "e|col|public.lti_contexts.connection_id",
+        "e|col|public.lti_contexts.context_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.lti_contexts.connection_id.context_id"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "issuer"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.issuer",
+        "n|col|public.lti_contexts.issuer",
+        "e|col|public.lti_contexts.issuer"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "memberships_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.memberships_url",
+        "n|col|public.lti_contexts.memberships_url",
+        "e|col|public.lti_contexts.memberships_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "private_jwk"
+      ],
+      "writes": [
+        "s|col|public.connections.private_jwk",
+        "n|col|public.connections.private_jwk",
+        "e|col|public.connections.private_jwk"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "tenant_id"
+      ],
+      "writes": [
+        "s|col|public.identities.tenant_id",
+        "n|col|public.identities.tenant_id",
+        "e|col|public.identities.tenant_id"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "api_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.api_url",
+        "n|col|public.lti_contexts.api_url",
+        "e|col|public.lti_contexts.api_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "members_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.members_url",
+        "n|col|public.lti_contexts.members_url",
+        "e|col|public.lti_contexts.members_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "connection_id"
+      ],
+      "writes": [
+        "s|colprop|public.lti_contexts.connection_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id"
+      ],
+      "sqlHash": "dfe2743204b8c339"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "identities",
+        "identities_kind_provider_subject_idx"
+      ],
+      "writes": [
+        "s|idx|public.identities_kind_provider_subject_idx",
+        "n|idx|public.identities_kind_provider_subject_idx",
+        "e|idx|public.identities_kind_provider_subject_idx",
+        "n|rel|public.identities_kind_provider_subject_idx"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|col|public.identities.kind",
+        "n|col|public.identities.provider",
+        "n|col|public.identities.subject"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.identities.kind.provider.subject"
+      ],
+      "sqlHash": "a8dc937afab5d53a"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_tenant_id_issuer_context_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_tenant_id_issuer_context_id_idx",
+        "n|idx|public.lti_contexts_tenant_id_issuer_context_id_idx",
+        "e|idx|public.lti_contexts_tenant_id_issuer_context_id_idx",
+        "n|rel|public.lti_contexts_tenant_id_issuer_context_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.tenant_id",
+        "n|col|public.lti_contexts.issuer",
+        "n|col|public.lti_contexts.context_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_contexts",
+        "lti_contexts_connection_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_contexts_connection_id_idx",
+        "n|idx|public.lti_contexts_connection_id_idx",
+        "e|idx|public.lti_contexts_connection_id_idx",
+        "n|rel|public.lti_contexts_connection_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "identities",
+        "identities_lti_tenant_subject_idx"
+      ],
+      "writes": [
+        "s|idx|public.identities_lti_tenant_subject_idx",
+        "n|idx|public.identities_lti_tenant_subject_idx",
+        "e|idx|public.identities_lti_tenant_subject_idx",
+        "n|rel|public.identities_lti_tenant_subject_idx"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|col|public.identities.tenant_id",
+        "n|col|public.identities.provider",
+        "n|col|public.identities.subject"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "identities"
+      ],
+      "writes": [
+        "s|fk|public.identities.identities_tenant_id_tenants_id_fkey",
+        "n|fk|public.identities.identities_tenant_id_tenants_id_fkey",
+        "e|fk|public.identities.identities_tenant_id_tenants_id_fkey",
+        "n|con|public.identities.identities_tenant_id_tenants_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.identities.tenant_id",
+        "n|col|public.tenants.id",
+        "e|uniqueness|public.tenants.id"
+      ]
+    },
+    {
+      "statementType": "recreate_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "lti_contexts"
+      ],
+      "writes": [
+        "s|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "e|fk|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey",
+        "n|con|public.lti_contexts.lti_contexts_connection_id_connections_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public",
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.lti_contexts.connection_id",
+        "n|col|public.connections.id",
+        "e|uniqueness|public.connections.id"
+      ],
+      "sqlHash": "046d0192c1a47750"
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "connections"
+      ],
+      "writes": [
+        "s|ck|public.connections.connections_kind_check"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.kind",
+        "n|col|public.connections.federation",
+        "n|col|public.connections.issuer",
+        "n|col|public.connections.client_id",
+        "n|col|public.connections.status",
+        "e|col|public.connections.kind",
+        "e|col|public.connections.federation",
+        "e|col|public.connections.issuer",
+        "e|col|public.connections.client_id"
+      ],
+      "sqlHash": "7fd0c66e44ba895e"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "issuer",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "memberships_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "private_jwk",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "identities",
+        "name": "tenant_id",
+        "type": "varchar(24)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_tenant_id_issuer_context_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "tenant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "issuer",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "context_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "lti_contexts_connection_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "connection_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "identities",
+        "name": "identities_lti_tenant_subject_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "tenant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "provider",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "subject",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"kind\" = 'lti'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "identities",
+        "name": "identities_tenant_id_tenants_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "tenant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "tenants",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"lti_contexts\",\"api_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"lti_contexts\",\"members_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"lti_contexts_connection_id_context_id_idx\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"lti_contexts\",\"connection_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"identities_kind_provider_subject_idx\"]",
+      "set": {
+        "where": "\"kind\" <> 'lti'"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "fks\u0000[\"public\",\"lti_contexts\",\"lti_contexts_connection_id_connections_id_fkey\"]",
+      "set": {
+        "onDelete": "SET NULL"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"connections\",\"connections_kind_check\"]",
+      "set": {
+        "value": "(\"kind\" = 'sso' AND \"federation\" IS NOT NULL) OR (\"kind\" = 'lti' AND \"issuer\" IS NOT NULL AND (\"client_id\" IS NOT NULL OR \"status\" = 'pending'))"
+      }
+    }
+  ]
+}

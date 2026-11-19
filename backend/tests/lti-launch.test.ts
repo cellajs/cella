@@ -3,7 +3,7 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import { approveLtiInstallation, createLtiResourceLink, startLtiLaunch, startLtiToolRegistration } from 'sdk';
 import { appConfig } from 'shared';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { lisContextRoles, lisContextTypes, ltiClaims, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
@@ -14,6 +14,14 @@ import { createTestOrganization, expectRefusal } from './helpers';
 import { parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
+
+// The template's answers in the files an app fills: an app's own answers leave these tests as they are.
+vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
+);
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
+  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
+);
 
 overrideConfig(appConfig.has, { ltiPlatform: true });
 

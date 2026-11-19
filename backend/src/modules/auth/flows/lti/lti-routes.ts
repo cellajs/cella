@@ -1,6 +1,6 @@
 import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
-import { ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
+import { ltiKeySetLimiter, ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
 import {
   listLtiContextsQuerySchema,
@@ -86,14 +86,18 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     path: '/lti/connections/{connectionId}/jwks',
     xEnabledBy: { strategy: 'lti' },
     xGuard: [publicGuard],
+    xRateLimiter: [ltiKeySetLimiter],
     summary: 'Get LTI key set',
     description:
-      'The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted.',
+      'The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.',
     request: { params: ltiKeySetParamSchema },
     responses: {
-      200: json('Key set', ltiKeySetSchema, {
-        keys: [{ kty: 'RSA', n: 'example-modulus', e: 'AQAB', kid: 'example-key-id', alg: 'RS256', use: 'sig' }],
-      }),
+      200: {
+        ...json('Key set', ltiKeySetSchema, {
+          keys: [{ kty: 'RSA', n: 'example-modulus', e: 'AQAB', kid: 'example-key-id', alg: 'RS256', use: 'sig' }],
+        }),
+        headers: { 'Cache-Control': { description: 'How long a platform may keep the key set: five minutes', schema: { type: 'string' } } },
+      },
       ...errors(404),
     },
   }),

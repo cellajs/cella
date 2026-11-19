@@ -199,6 +199,9 @@ export const ltiLaunchStartSchema = z.object({
 /** The path of a course's members: the channel a launch names as its LTI context. */
 export const ltiMembershipsParamSchema = tenantOrgParamSchema.extend(channelRefSchema.shape);
 
+/** The fewest members a page holds whatever `limit` asks: a reader of a few hundred stays well inside the burst limit. */
+export const minLtiMembersPage = 25;
+
 /** What an NRPS reader appends (section 2.4), and the position the next link carries. */
 export const listLtiMembersQuerySchema = z.object({
   role: z
@@ -206,11 +209,13 @@ export const listLtiMembersQuerySchema = z.object({
     .max(maxLength.url)
     .optional()
     .describe('Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`'),
-  limit: maxPageSizeSchema(pageSizeCap).describe(
-    `Most members one page holds: a hint. Absent or 0 reads ${appConfig.pageSizes.default}; above ${pageSizeCap} reads ${pageSizeCap}. A page may hold fewer.`,
-  ),
+  limit: maxPageSizeSchema(pageSizeCap)
+    .transform((size) => Math.max(size, minLtiMembersPage))
+    .describe(
+      `Most members one page holds: a hint. Absent or 0 reads ${appConfig.pageSizes.default}; below ${minLtiMembersPage} reads ${minLtiMembersPage}, above ${pageSizeCap} reads ${pageSizeCap}. A page may hold fewer.`,
+    ),
   after: validUuidSchema.optional().describe('Lists the members whose id sorts after this one: the next link carries it'),
-  rlid: z.string().max(maxLength.field).optional().describe("Refused: the platform lists no resource link's members"),
+  rlid: z.string().max(maxLength.field).optional().describe('Refused: reading the members of one resource link, a tab, is not supported'),
 });
 
 /** A member as NRPS lists one (section 2.2); the personal fields are the claims a launch carries, by their names. */
