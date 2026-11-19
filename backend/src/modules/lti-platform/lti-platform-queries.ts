@@ -1,8 +1,7 @@
-import { and, asc, count, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, eq, getColumns, gt, isNotNull, sql } from 'drizzle-orm';
 import { type AccessScope, appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { type LtiReleasableField, ltiInstallationsTable } from '#/modules/lti-platform/lti-installations-db';
 import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
@@ -16,6 +15,9 @@ import { usersTable } from '#/modules/user/user-db';
 import type { OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
+
+/** A channel by its type and id. */
+type ChannelRef = { channelType: ChannelEntityType; channelId: string };
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -199,45 +201,53 @@ const placementSelect = pick(getColumns(ltiResourceLinksTable), [
   ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
 ]);
 
-/** The channels of every resource link that places the installation, in the organization when one is given. */
-export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId }: { installationId: string; organizationId?: string }) {
-  const inOrganization = organizationId ? eq(ltiResourceLinksTable.organizationId, organizationId) : undefined;
+interface FindLtiPlacementsOpts {
+  installationId: string;
+  organizationId: string;
+  course: ChannelRef;
+}
+
+/** The channels of every resource link that places the installation in the organization, in the course or below it. */
+export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId, course }: FindLtiPlacementsOpts) {
   return ctx.var.db
     .select(placementSelect)
     .from(ltiResourceLinksTable)
-    .where(and(eq(ltiResourceLinksTable.installationId, installationId), inOrganization));
+    .where(
+      and(
+        eq(ltiResourceLinksTable.installationId, installationId),
+        eq(ltiResourceLinksTable.organizationId, organizationId),
+        eq(getColumns(ltiResourceLinksTable)[appConfig.entityIdColumnKeys[course.channelType]], course.channelId),
+      ),
+    );
 }
 
-interface FindLtiMembersPageOpts {
+interface FindLtiMembersOpts extends ChannelRef {
   organizationId: string;
-  channelType: ChannelEntityType;
-  channelId: string;
-  order: OrderDirection;
-  offset: number;
+  /** The id the people follow; from the first when omitted. */
+  after?: string;
   limit: number;
 }
 
 /**
- * A page of a channel's people by id, and the total: of each, what a launch's personal claims read, the address only
- * once proven.
+ * A channel's people in order of id, which an installed LTI tool reads: an order by name or address would tell what is
+ * not released. Of each, what a launch's personal claims read, the address only once proven.
  */
-export async function findLtiMembersPage(ctx: DbContext, { organizationId, channelType, channelId, order, offset, limit }: FindLtiMembersPageOpts) {
-  const { db } = ctx.var;
-  const inChannel = and(
-    eq(membershipsTable.organizationId, organizationId),
-    eq(membershipsTable.channelType, channelType),
-    eq(membershipsTable.channelId, channelId),
-  );
+export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, after, limit }: FindLtiMembersOpts) {
   const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
-  const itemsQuery = db
+  return ctx.var.db
     .select({ id, name, givenName, familyName, email, thumbnailUrl })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
-    .where(inChannel)
-    .orderBy(order === 'asc' ? asc(usersTable.id) : desc(usersTable.id))
-    .limit(limit)
-    .offset(offset);
-  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(membershipsTable).where(inChannel)));
+    .where(
+      and(
+        eq(membershipsTable.organizationId, organizationId),
+        eq(membershipsTable.channelType, channelType),
+        eq(membershipsTable.channelId, channelId),
+        after ? gt(usersTable.id, after) : undefined,
+      ),
+    )
+    .orderBy(asc(usersTable.id))
+    .limit(limit);
 }
 
 export async function insertLtiResourceLink(ctx: DbContext, { values }: { values: typeof ltiResourceLinksTable.$inferInsert }) {

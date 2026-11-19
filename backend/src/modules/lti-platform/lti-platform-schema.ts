@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { accessScopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
+import { pageSizeCap } from 'shared/sync-pace';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
@@ -10,11 +11,13 @@ import { serviceAccountStatuses } from '#/modules/service-accounts/service-accou
 import {
   channelEntityTypeSchema,
   channelRefSchema,
+  maxPageSizeSchema,
   orderByQuerySchema,
   pageQuerySchema,
   tenantOrgParamSchema,
   validIdSchema,
   validNameSchema,
+  validUuidSchema,
 } from '#/schemas';
 import { boundedRecord } from '#/schemas/common-schemas';
 import { auditShape } from '#/schemas/entity-base';
@@ -193,13 +196,28 @@ export const ltiLaunchStartSchema = z.object({
   expiresAt: z.string().describe('When the launch record stops working, unless the launch used it before'),
 });
 
-/** A channel's people as an installed LTI tool reads them, by id alone: an order by name or address would tell what is not released. */
-export const listLtiMembersQuerySchema = pageQuerySchema.extend({ ...channelRefSchema.shape, orderBy: orderByQuerySchema(['id'], 'id asc') });
+/** The path of a course's members: the channel a launch names as its LTI context. */
+export const ltiMembershipsParamSchema = tenantOrgParamSchema.extend(channelRefSchema.shape);
 
-/** The personal values are the claims a launch carries, by their names: each present when its field is released and the LTI tool asked for it. */
-export const ltiMemberSchema = z.object({
-  id: z.string().describe('The person: the id a launch sends as `sub`'),
+/** What an NRPS reader appends (section 2.4), and the position the next link carries. */
+export const listLtiMembersQuerySchema = z.object({
+  role: z
+    .string()
+    .max(maxLength.url)
+    .optional()
+    .describe('Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`'),
+  limit: maxPageSizeSchema(pageSizeCap).describe(
+    `Most members one page holds: a hint. Absent or 0 reads ${appConfig.pageSizes.default}; above ${pageSizeCap} reads ${pageSizeCap}. A page may hold fewer.`,
+  ),
+  after: validUuidSchema.optional().describe('Lists the members whose id sorts after this one: the next link carries it'),
+  rlid: z.string().max(maxLength.field).optional().describe("Refused: the platform lists no resource link's members"),
+});
+
+/** A member as NRPS lists one (section 2.2); the personal fields are the claims a launch carries, by their names. */
+const ltiMemberSchema = z.object({
+  user_id: z.string().describe('The person: the id a launch sends as `sub`'),
   roles: z.array(z.string()).describe('Their LTI roles in the course, as full URIs: the roles a launch there would send them'),
+  status: z.literal('Active').describe('Every member listed is active'),
   name: z.string().optional().describe('Their name, when released'),
   given_name: z.string().optional().describe('Their given name, when released and they have one'),
   family_name: z.string().optional().describe('Their family name, when released and they have one'),
@@ -207,20 +225,13 @@ export const ltiMemberSchema = z.object({
   picture: z.string().optional().describe('The address of their picture, when released and they have one'),
 });
 
-/**
- * The claim a launch of an LTI tool granted API access adds, under a name built from the issuer (`ltiApiClaim`), to say
- * where the platform's API is: the installation reads the people of the launch's course there with a token of its own.
- */
-export const ltiApiClaimSchema = z.object({
-  api_url: z.string().describe("The tenant's API: the `resource` a token request names, and the start of every route address"),
-  tenant_id: z.string(),
-  organization_id: z.string(),
-  members_url: z
-    .string()
-    .optional()
-    .describe(
-      "The first page of the people of the launch's course, its LTI context, for the installation's token (`listLtiMembers`); absent without a context",
-    ),
+/** A page of a course's members, an NRPS membership container (section 2.1). */
+export const ltiMembershipContainerSchema = z.object({
+  id: z.string().describe('The address this page was read at'),
+  context: z
+    .object({ id: z.string(), label: z.string(), title: z.string() })
+    .describe("The course, as a launch's context claim names it: the channel's id, slug and name"),
+  members: z.array(ltiMemberSchema),
 });
 
 export const initiateLtiLoginQuerySchema = z.object({ token: z.string().max(maxLength.url).describe('The launch record a launch start answered') });

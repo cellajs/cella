@@ -51,7 +51,7 @@ A client that registers only through dynamic client registration (RFC 7591) cann
 
 An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
 
-The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted.
+The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted. The LTI tool asks for them by the LTI service scopes that stand for them, such as the NRPS scope for `user:read`, which the token carries.
 
 An assertion counts once and must expire within five minutes. Its audience is the issuer, which the LTI configuration gives as the authorization server, or the token endpoint's address. The provider compares the latter with the host it sees: behind a proxy, only the public host matches.
 
@@ -69,7 +69,7 @@ Signing out of the app, ending one's other sessions or turning on MFA ends the p
 
 ## Tokens
 
-A token never crosses tenants. Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API, or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, as does an authorization request that names none.
+A token never crosses tenants. Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API, or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, as does an authorization request that names none. An installed LTI tool names none, as LTI tools do, and its token is for its own tenant's API.
 
 | Setting | Value |
 | --- | --- |

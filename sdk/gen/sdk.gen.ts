@@ -2370,19 +2370,19 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI members
  *
- * The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.
+ * The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as is refused, as for an installation placed nowhere.
  *
- * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members) ·· _lti-platform · cella_
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}) ·· _lti-platform · cella_
  *
  * @param {listLtiMembersData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.pageToken - `string` (optional)
- * @param {integer=} options.query.maxPageSize - `integer` (optional)
- * @param {integer=} options.query.skip - `integer` (optional)
- * @param {string} options.query.channelId - `string`
- * @param {enum} options.query.channelType - `enum`
- * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @param {string} options.path.channelId - `string`
+ * @param {enum} options.path.channelType - `enum`
+ * @param {string=} options.query.role - `string` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {string=} options.query.after - `string` (optional)
+ * @param {string=} options.query.rlid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listLtiMembers = <ThrowOnError extends boolean = true>(
@@ -2391,7 +2391,7 @@ export const listLtiMembers = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<ListLtiMembersResponses, ListLtiMembersErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zListLtiMembersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}',
     ...options,
   });
 

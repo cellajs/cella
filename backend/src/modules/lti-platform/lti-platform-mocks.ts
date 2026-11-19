@@ -46,10 +46,13 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
   return { ...resourceLink, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
 };
 
-/** A member row of an installation that releases the name alone. */
-export const mockLtiMemberResponse = (key = 'ltiMember:default') =>
-  withFakerSeed(key, () => ({
-    id: mockUuid(),
-    roles: [lisContextRoles.learner],
-    name: faker.person.fullName(),
-  }));
+/** A page of a course's members for an installation that releases the name alone. */
+export const mockLtiMembershipContainerResponse = (key = 'ltiMembershipContainer:default') =>
+  withFakerSeed(key, () => {
+    const organizationId = mockUuid();
+    return {
+      id: `https://app.example.com/api/tenants/example-tenant/organizations/${organizationId}/lti-members/organization/${organizationId}?limit=1`,
+      context: { id: organizationId, label: 'biology-101', title: 'Introduction to biology' },
+      members: [{ user_id: mockUuid(), roles: [lisContextRoles.learner], status: 'Active' as const, name: faker.person.fullName() }],
+    };
+  });

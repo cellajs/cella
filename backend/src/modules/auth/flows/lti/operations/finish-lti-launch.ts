@@ -11,7 +11,7 @@ import type { MembershipEntity } from '#/lib/module';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { decodeLaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
-import { launchPlatformApi } from '#/modules/auth/flows/lti/helpers/platform-api';
+import { launchMembershipsUrl } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { createLtiContextChannel, type LtiContext, ltiContextChannelType, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import type { LtiContextModel } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
@@ -70,7 +70,7 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
  * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
  * creates the person (`admitLtiPerson`), applies the mapped role (`applyLtiRole`) and records the context with the
- * platform's API addresses it trusts, and the LTI deployment of a connection that held none, all in one transaction.
+ * membership address it trusts, and the LTI deployment of a connection that held none, all in one transaction.
  * In an archived channel a member keeps their role. Then it starts the embedded session: no MFA challenge, the launch
  * is the proof. A launch by the context's Instructor or Administrator asks for a member import
  * (`requestLtiMemberImport`) without waiting for it.
@@ -105,7 +105,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
       ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
       : { channel: organization };
   const deploymentId = launch[ltiClaims.deploymentId];
-  const platformApi = launchPlatformApi(connection, claims);
+  const membershipsUrl = launchMembershipsUrl(connection, claims);
   const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
 
   const { userId, channel, contextRow } = await baseDb.transaction(async (tx) => {
@@ -136,7 +136,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
           types,
           channelType: channel.entityType,
           channelId: channel.id,
-          ...platformApi,
+          membershipsUrl,
         },
         by: userId,
       });

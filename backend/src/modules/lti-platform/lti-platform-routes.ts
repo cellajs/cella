@@ -1,9 +1,14 @@
 import type { AccessScope } from 'shared';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
+import { ltiNrps } from '#/lib/lti-vocabulary';
 import { ltiToolGuard, orgGuard, publicGuard, stepUpFactorGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiLaunchLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
-import { mockLtiInstallationResponse, mockLtiMemberResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import {
+  mockLtiInstallationResponse,
+  mockLtiMembershipContainerResponse,
+  mockLtiResourceLinkResponse,
+} from '#/modules/lti-platform/lti-platform-mocks';
 import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
@@ -14,7 +19,8 @@ import {
   ltiInstallationParamSchema,
   ltiInstallationSchema,
   ltiLaunchStartSchema,
-  ltiMemberSchema,
+  ltiMembershipContainerSchema,
+  ltiMembershipsParamSchema,
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
   ltiToolRegistrationStartSchema,
@@ -181,22 +187,26 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
 });
 
 /**
- * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the courses it is placed in or
- * below. `ltiToolScopes` reads the scopes of this list alone.
+ * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the course in their path. Each
+ * keeps the shape of the LTI service it serves. `ltiToolScopes` reads the scopes of this list alone.
  */
 const ltiToolRouteDrafts = {
   listLtiMembers: xRoute({
     method: 'get',
-    path: '/',
+    path: '/{channelType}/{channelId}',
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [ltiToolGuard, tenantGuard, orgGuard],
     xScope: 'user:read',
     summary: 'Get LTI members',
     description:
-      "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
-    request: { params: tenantOrgParamSchema, query: listLtiMembersQuerySchema },
+      "The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as is refused, as for an installation placed nowhere.",
+    request: { params: ltiMembershipsParamSchema, query: listLtiMembersQuerySchema },
     responses: {
-      200: json('LTI members', paginationSchema(ltiMemberSchema), { results: [mockLtiMemberResponse()], totalSize: 1 }),
+      200: {
+        description: 'LTI members',
+        headers: { Link: { description: 'The next page as `<address>; rel="next"`, while the course lists more', schema: { type: 'string' } } },
+        content: { [ltiNrps.mediaType]: { schema: ltiMembershipContainerSchema, example: mockLtiMembershipContainerResponse() } },
+      },
     },
   }),
 };

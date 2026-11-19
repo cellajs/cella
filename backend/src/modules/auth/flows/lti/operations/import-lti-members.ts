@@ -5,7 +5,7 @@ import { baseDb } from '#/db/db';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
-import { type LtiMemberRow, type PlatformFetchOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-api';
+import { type LtiMember, type PlatformFetchOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContextById, recordLtiImport } from '#/modules/auth/flows/lti/lti-contexts-queries';
@@ -49,9 +49,9 @@ interface ImportTarget {
  * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, and
  *   `connection_gone` once the connection was deleted; nothing is written for either.
  */
-const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMemberRow) => {
+const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
-  const { id: sub, name, given_name: givenName, family_name: familyName, email } = person;
+  const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
   const role = ltiContextRole({ ltiRoles: person.roles, connection });
@@ -65,9 +65,9 @@ interface ImportLtiMembersOpts extends PlatformFetchOptions {
 }
 
 /**
- * Imports the people a platform built on the template lists for an LTI context into the context's channel, as the
- * connection's service account, and records how it ran on the context. It adds and updates, never removes, and
- * touches no one the platform did not list. Run twice, or beside a launch of a listed person, it makes one account per
+ * Imports the people a platform lists for an LTI context into the context's channel, as the connection's service
+ * account, and records how it ran on the context. It adds and updates, never removes, and touches no one the platform
+ * did not list as active. Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
  * an error and unrecorded: its context rows went with it.
@@ -77,7 +77,7 @@ interface ImportLtiMembersOpts extends PlatformFetchOptions {
 export async function importLtiMembersOp(contextId: string, { lastAttempt = true, ...options }: ImportLtiMembersOpts = {}) {
   const context = await findLtiContextById(dbCtx, { id: contextId });
   const connection = context && (await findConnectionById(dbCtx, { id: context.connectionId }));
-  if (!context?.apiUrl || !context.membersUrl || !connection || !isLtiConnection(connection)) return;
+  if (!context?.membershipsUrl || !connection || !isLtiConnection(connection)) return;
 
   const by = await connectionServiceAccountId(dbCtx, connection);
   if (!by) return;
@@ -92,7 +92,7 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     // Joining an archived channel is a create inside it, which an archive refuses.
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
 
-    const read = await readLtiMembers(connection, { apiUrl: context.apiUrl, membersUrl: context.membersUrl }, options);
+    const read = await readLtiMembers(connection, context.membershipsUrl, options);
     if ('refusal' in read) return record(0, read.refusal);
 
     const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
@@ -114,7 +114,7 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
 const importJobSchema = z.object({ contextId: z.uuid() });
 
 /**
- * The member import's queue (`cella/docs/JOBS.md`): it reads a platform's API, outside the database. One job per
+ * The member import's queue (`cella/docs/JOBS.md`): it reads a platform's member list, outside the database. One job per
  * context waits and one runs at a time. A job that waited behind another finds that import within `importPeriod` and
  * ends, while a retry goes on. A failed import is retried with growing delays, and never ends the grant.
  */
@@ -136,12 +136,12 @@ export const ltiMemberImportQueue = {
 } satisfies BackendQueue;
 
 /**
- * Queues a member import of a context after a launch by its Instructor or Administrator, when the context holds the
- * platform's API and no import ran for it within `importPeriod`. The launch never waits for it: a job store that
+ * Queues a member import of a context after a launch by its Instructor or Administrator, when the context holds a
+ * membership address and no import ran for it within `importPeriod`. The launch never waits for it: a job store that
  * refuses the job is logged.
  */
 export const requestLtiMemberImport = async (context: LtiContextModel) => {
-  if (!context.apiUrl || importedLately(context)) return;
+  if (!context.membershipsUrl || importedLately(context)) return;
   try {
     const boss = await getPgBoss('producer');
     await boss.send(ltiMemberImportQueue.name, { contextId: context.id }, { singletonKey: context.id });

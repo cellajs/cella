@@ -20,10 +20,10 @@ import { embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles } from '#/lib/lti-vocabulary';
+import { lisContextRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
-import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-api';
+import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
@@ -70,28 +70,39 @@ const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 const pageExchange = (page: string): { key: string; value?: string; next?: string } =>
   JSON.parse(decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'));
 
-type MemberRow = { id: string; roles: string[]; name?: string; given_name?: string; family_name?: string };
-type MembersPage = { results: MemberRow[]; nextPageToken?: string };
+type Member = { user_id: string; roles: string[]; status?: string; name?: string; given_name?: string; family_name?: string };
+/** A page of a fake platform: its members and the next page's address, or the answer as the platform sends it. */
+type Page = { members: Member[]; next?: string } | Response;
 
-/** A platform built on the template, answered in-process: a token named after the assertion's client, and the pages `page` answers. */
-function fakePlatformApi(page: (url: URL) => MembersPage | Promise<MembersPage>, tokenError?: string) {
-  const requests: { url: URL; authorization?: string }[] = [];
+/**
+ * A platform answered in-process: a token named after the assertion's client, and the pages `page` answers as NRPS
+ * membership containers. It records each request with the token request's params.
+ */
+function fakePlatformApi(page: (url: URL) => Page | Promise<Page>, tokenError?: string) {
+  const requests: { url: URL; authorization?: string; accept?: string; params?: URLSearchParams }[] = [];
   let minted = 0;
   const transport: GuardedTransport = async ({ url, headers, body }) => {
-    requests.push({ url, authorization: headers.Authorization });
-    if (url.pathname === '/token') {
+    const params = url.pathname === '/token' ? new URLSearchParams(body) : undefined;
+    requests.push({ url, authorization: headers.Authorization, accept: headers.Accept, params });
+    if (params) {
       if (tokenError) return Response.json({ error: tokenError }, { status: 400 });
       minted += 1;
-      const clientId = decodeJwt(new URLSearchParams(body).get('client_assertion') ?? '').sub;
-      return Response.json({ access_token: `${clientId}:${minted}`, token_type: 'Bearer', expires_in: 3600 });
+      return Response.json({
+        access_token: `${decodeJwt(params.get('client_assertion') ?? '').sub}:${minted}`,
+        token_type: 'Bearer',
+        expires_in: 3600,
+      });
     }
-    return Response.json(await page(url));
+    const answer = await page(url);
+    if (answer instanceof Response) return answer;
+    const container = { id: url.href, context: { id: 'course-1' }, members: answer.members };
+    return Response.json(container, { headers: { 'Content-Type': ltiNrps.mediaType, ...(answer.next && { Link: `<${answer.next}>; rel="next"` }) } });
   };
-  const memberReads = () => requests.filter(({ url }) => url.pathname.endsWith('/lti-members'));
+  const memberReads = () => requests.filter(({ params }) => !params);
   return { options: { transport, resolve: loopback }, requests, memberReads };
 }
 
-describe('LTI member import from a platform built on the template', async () => {
+describe('LTI member import by Names and Role Provisioning Services', async () => {
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
   const send = vi.mocked((await getPgBoss('producer')).send);
@@ -108,7 +119,7 @@ describe('LTI member import from a platform built on the template', async () => 
     return { org, admin, path, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } };
   }
 
-  /** A tenant connected to a platform at `issuer`, with a context of its organization whose launch named the platform's API. */
+  /** A tenant connected to a platform at `issuer`, with a context of its organization whose launch named its membership address. */
   async function connectToFakePlatform(issuer = 'https://platform-a.example.com', clientId = `client-${nanoid(6)}`) {
     const side = await orgWithAdmin();
     const [connection] = await db
@@ -130,11 +141,11 @@ describe('LTI member import from a platform built on the template', async () => 
         },
       })
       .returning();
-    return { ...side, issuer, clientId, connection, context: await addCourse(side, connection.id, `${issuer}/api/tenants/platform-tenant`) };
+    return { ...side, issuer, clientId, connection, context: await addCourse(side, connection.id, `${issuer}/api/lti/courses/course-1/memberships`) };
   }
 
-  /** A context of the side's organization whose launch named the platform's API at `apiUrl`. */
-  const addCourse = (side: Awaited<ReturnType<typeof orgWithAdmin>>, connectionId: string, apiUrl: string) =>
+  /** A context of the side's organization whose launch named `membershipsUrl`. */
+  const addCourse = (side: Awaited<ReturnType<typeof orgWithAdmin>>, connectionId: string, membershipsUrl: string) =>
     upsertLtiContext(
       { var: { db } },
       {
@@ -146,8 +157,7 @@ describe('LTI member import from a platform built on the template', async () => 
           types: [],
           channelType: 'organization',
           channelId: side.org.id,
-          apiUrl,
-          membersUrl: `${apiUrl}/organizations/platform-org/lti-members?channelType=organization&channelId=platform-org`,
+          membershipsUrl,
         },
         by: side.admin.id,
       },
@@ -308,7 +318,7 @@ describe('LTI member import from a platform built on the template', async () => 
 
       await launch(connected, platformSide.admin.sessionCookie);
       const [context] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connection.id));
-      expect(context.membersUrl).toContain(`/organizations/${platformSide.org.id}/lti-members`);
+      expect(context.membershipsUrl).toContain(`/organizations/${platformSide.org.id}/lti-members/organization/${platformSide.org.id}`);
       expect(send).toHaveBeenCalledWith(ltiMemberImportQueue.name, { contextId: context.id }, { singletonKey: context.id });
 
       await importLtiMembersOp(context.id, platformOptions);
@@ -344,13 +354,13 @@ describe('LTI member import from a platform built on the template', async () => 
       expect(await toolSideState(connected)).toEqual(before);
     });
 
-    // Normal state: an admin who granted nothing names no API in a launch, and one who withdraws the grant later leaves
-    // the import without a token; either way the LTI tool's tenant stays as it was.
-    it('stores no API without a grant, records a grant withdrawn since, and makes no account', async () => {
+    // Normal state: an admin who granted nothing names no members in a launch, and one who withdraws the grant later
+    // leaves the import without a token; either way the LTI tool's tenant stays as it was.
+    it('stores no membership address without a grant, records a grant withdrawn since, and makes no account', async () => {
       const ungranted = await connectThroughRegistration({ grantedScopes: [] });
       await launch(ungranted, ungranted.platformSide.admin.sessionCookie);
       const [stored] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, ungranted.connection.id));
-      expect(stored).toMatchObject({ apiUrl: null, membersUrl: null });
+      expect(stored).toMatchObject({ membershipsUrl: null });
 
       const connected = await connectThroughRegistration();
       const { platformSide } = connected;
@@ -373,7 +383,7 @@ describe('LTI member import from a platform built on the template', async () => 
     vi.mocked(ltiContextRole).mockImplementation(({ ltiRoles }) => (ltiRoles.includes(lisContextRoles.administrator) ? top : memberRole));
     try {
       const side = await connectToFakePlatform();
-      const api = fakePlatformApi(() => ({ results: [{ id: 'lms-admin', roles: [lisContextRoles.administrator], name: 'Grace Hopper' }] }));
+      const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-admin', roles: [lisContextRoles.administrator], name: 'Grace Hopper' }] }));
       await importLtiMembersOp(side.context.id, api.options);
 
       const [identity] = await ltiIdentities(side.issuer);
@@ -395,9 +405,9 @@ describe('LTI member import from a platform built on the template', async () => 
     const unlisted = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
     await db.insert(identitiesTable).values({ userId: side.admin.id, kind: 'lti', provider: side.issuer, subject: 'lms-teacher', email: null });
     const api = fakePlatformApi(() => ({
-      results: [
-        { id: 'lms-teacher', roles: [lisContextRoles.learner] },
-        { id: 'lms-student', roles: [lisContextRoles.learner] },
+      members: [
+        { user_id: 'lms-teacher', roles: [lisContextRoles.learner] },
+        { user_id: 'lms-student', roles: [lisContextRoles.learner] },
       ],
     }));
     const before = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, side.org.id));
@@ -410,21 +420,108 @@ describe('LTI member import from a platform built on the template', async () => 
     expect(await orgMembershipOf(unlisted.id, side.org.id)).toMatchObject({ role: memberRole });
   });
 
-  // Attack: a platform that never ends its list holds no import, and no worker, for long. The bound on pages bounds the
-  // rows too: a page holds at most the rows the import asks for.
+  // Attack: a platform that never ends its list holds no import, and no worker, for long.
   it('stops reading at the bound of a platform that lists without end', async () => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi((url) => ({
-      results: Array.from({ length: Number(url.searchParams.get('maxPageSize')) }, (_, index) => ({
-        id: `lms-${index % 3}`,
+      members: Array.from({ length: Number(url.searchParams.get('limit')) }, (_, index) => ({
+        user_id: `lms-${index % 3}`,
         roles: [lisContextRoles.learner],
       })),
-      nextPageToken: 'more',
+      next: url.href,
     }));
 
     await importLtiMembersOp(side.context.id, api.options);
     expect(api.memberReads()).toHaveLength(maxMembersPages);
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'too_many_members' });
+  });
+
+  // Contract: NRPS 2.0 as the spec's example answers it (section 2.1, its trailing comma dropped) and as Canvas does,
+  // whose `Link` header names its other pages beside the next. A member NRPS lists as `Inactive` left the course.
+  it("imports the active members of the spec's example and a Canvas page, asking with the NRPS scope and no resource", async () => {
+    const side = await connectToFakePlatform();
+    const membershipsUrl = side.context.membershipsUrl ?? '';
+    const pageUrl = (page: number) => `${membershipsUrl}?page=${page}&per_page=50`;
+    const canvasPage = {
+      id: membershipsUrl,
+      context: { id: '4dde05e8ca1973bcca9bffc13e1548820eee93a3', label: 'CS-101', title: 'Computer Science 101' },
+      members: [
+        {
+          status: 'Active',
+          name: 'Sienna Howell',
+          picture: 'https://example.instructure.com/images/messages/avatar-50.png',
+          given_name: 'Sienna',
+          family_name: 'Howell',
+          email: 'showell@school.edu',
+          lis_person_sourcedid: '1238.8763.00',
+          user_id: '535fa085f22b4655f48cd5a36a9215f64c062838',
+          roles: [
+            'http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor',
+            'http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper',
+          ],
+        },
+      ],
+    };
+    const specExample = {
+      id: 'https://lms.example.com/sections/2923/memberships',
+      context: { id: '2923-abc', label: 'CPS 435', title: 'CPS 435 Learning Analytics' },
+      members: [
+        {
+          status: 'Active',
+          name: 'Jane Q. Public',
+          picture: 'https://platform.example.edu/jane.jpg',
+          given_name: 'Jane',
+          family_name: 'Doe',
+          middle_name: 'Marie',
+          email: 'jane@platform.example.edu',
+          user_id: '0ae836b9-7fc9-4060-006f-27b2066ac545',
+          lis_person_sourcedid: '59254-6782-12ab',
+          roles: ['http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor'],
+        },
+        { status: 'Inactive', user_id: 'lms-left', roles: [lisContextRoles.learner] },
+      ],
+    };
+    const links = [`<${pageUrl(1)}>; rel="current"`, `<${pageUrl(2)}>; rel="next"`, `<${pageUrl(1)}>; rel="first"`, `<${pageUrl(2)}>; rel="last"`];
+    const headers = { 'Content-Type': ltiNrps.mediaType };
+    const api = fakePlatformApi((url) =>
+      url.searchParams.get('page') === '2'
+        ? Response.json(specExample, { headers })
+        : Response.json(canvasPage, { headers: { ...headers, Link: links.join(',') } }),
+    );
+
+    await importLtiMembersOp(side.context.id, api.options);
+    const [tokenRequest] = api.requests.flatMap(({ params }) => params ?? []);
+    expect([tokenRequest.get('scope'), tokenRequest.has('resource')]).toEqual([ltiNrps.scope, false]);
+    expect(api.memberReads().map(({ url, accept }) => [url.href, accept])).toEqual([
+      [`${membershipsUrl}?limit=50`, ltiNrps.mediaType],
+      [pageUrl(2), ltiNrps.mediaType],
+    ]);
+    const names = await db
+      .select({ subject: identitiesTable.subject, name: usersTable.name })
+      .from(identitiesTable)
+      .innerJoin(usersTable, eq(usersTable.id, identitiesTable.userId))
+      .where(eq(identitiesTable.provider, side.issuer))
+      .orderBy(identitiesTable.subject);
+    expect(names).toEqual([
+      { subject: '0ae836b9-7fc9-4060-006f-27b2066ac545', name: 'Jane Q. Public' },
+      { subject: '535fa085f22b4655f48cd5a36a9215f64c062838', name: 'Sienna Howell' },
+    ]);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
+  });
+
+  // Attack: the installation's token goes wherever a next link points. Only a page at the launch's membership address
+  // on the platform's own origin is read; any other next link refuses the import, which then writes no one.
+  it.each([
+    { to: 'another origin', next: 'https://elsewhere.example.com/api/lti/courses/course-1/memberships?page=2' },
+    { to: 'another path', next: 'https://platform-a.example.com/api/lti/courses/course-2/memberships?page=2' },
+  ])('refuses a next link to $to, and writes no one', async ({ next }) => {
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }], next }));
+
+    await importLtiMembersOp(side.context.id, api.options);
+    expect(api.memberReads()).toHaveLength(1);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 0, importIssue: 'address_refused' });
+    expect(await ltiIdentities(side.issuer)).toEqual([]);
   });
 
   // One seat rule for invitations, launches and imports: whoever needs a seat when none is left stays out, and the
@@ -433,17 +530,20 @@ describe('LTI member import from a platform built on the template', async () => 
   it('leaves out who needs a seat at the member limit, goes on with the rest, and names only a placeholder account', async () => {
     const side = await connectToFakePlatform();
     await db.insert(identitiesTable).values({ userId: side.admin.id, kind: 'lti', provider: side.issuer, subject: 'lms-teacher', email: null });
-    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ results: [{ id: 'lms-early', roles: [lisContextRoles.learner] }] })).options);
+    await importLtiMembersOp(
+      side.context.id,
+      fakePlatformApi(() => ({ members: [{ user_id: 'lms-early', roles: [lisContextRoles.learner] }] })).options,
+    );
     const [early] = await ltiIdentities(side.issuer).then((rows) => rows.filter(({ subject }) => subject === 'lms-early'));
     const named = async (userId: string) => (await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, userId)))[0].name;
     const adminName = await named(side.admin.id);
 
     await limitSeats(side, 0);
     const api = fakePlatformApi(() => ({
-      results: [
-        { id: 'lms-new', roles: [lisContextRoles.learner], name: 'Ada Lovelace' },
-        { id: 'lms-early', roles: [lisContextRoles.learner], given_name: 'Grace', family_name: 'Hopper' },
-        { id: 'lms-teacher', roles: [lisContextRoles.instructor], name: 'Someone Else' },
+      members: [
+        { user_id: 'lms-new', roles: [lisContextRoles.learner], name: 'Ada Lovelace' },
+        { user_id: 'lms-early', roles: [lisContextRoles.learner], given_name: 'Grace', family_name: 'Hopper' },
+        { user_id: 'lms-teacher', roles: [lisContextRoles.instructor], name: 'Someone Else' },
       ],
     }));
     await importLtiMembersOp(side.context.id, api.options);
@@ -454,12 +554,12 @@ describe('LTI member import from a platform built on the template', async () => 
     expect(await named(side.admin.id)).toBe(adminName);
   });
 
-  // Attack: two tenants registered at one platform share its API address, never each other's token.
-  it('sends each connection only its own token, though both read one API', async () => {
+  // Attack: two tenants registered at one platform read one membership address, never with each other's token.
+  it('sends each connection only its own token, though both read one membership address', async () => {
     const issuer = 'https://platform-a.example.com';
     const first = await connectToFakePlatform(issuer, 'client-first');
     const second = await connectToFakePlatform(issuer, 'client-second');
-    const api = fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
 
     await importLtiMembersOp(first.context.id, api.options);
     const firstReads = api.memberReads().length;
@@ -483,13 +583,13 @@ describe('LTI member import from a platform built on the template', async () => 
         name: 'its own token endpoint and the victim as the audience',
         tokenEndpoint: `${attacker}/token`,
         authorizationServer: victim,
-        apiUrl: `${attacker}/api/tenants/attacker`,
+        membershipsUrl: `${attacker}/api/lti/courses/attacker/memberships`,
       },
       {
         name: "the victim's token endpoint and a course there",
         tokenEndpoint: `${victim}/token`,
         authorizationServer: undefined,
-        apiUrl: `${victim}/api/tenants/victim`,
+        membershipsUrl: `${victim}/api/lti/courses/victim/memberships`,
       },
     ];
 
@@ -515,7 +615,7 @@ describe('LTI member import from a platform built on the template', async () => 
         { transport, resolve: loopback },
       );
       expect(connection.config).toMatchObject({ tokenEndpoint: variant.tokenEndpoint });
-      const context = await addCourse(side, connection.id, variant.apiUrl);
+      const context = await addCourse(side, connection.id, variant.membershipsUrl);
       requests.length = 0;
       vi.mocked(currentSigningKey).mockClear();
 
@@ -533,7 +633,7 @@ describe('LTI member import from a platform built on the template', async () => 
     const side = await connectToFakePlatform();
     await importLtiMembersOp(
       side.context.id,
-      fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] })).options,
+      fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] })).options,
     );
     const deleted = await call(deleteLtiConnection, { path: { ...side.path, connectionId: side.connection.id }, headers: side.headers });
     expect(deleted.response.status).toBe(204);
@@ -559,9 +659,9 @@ describe('LTI member import from a platform built on the template', async () => 
       const deleted = await call(deleteLtiConnection, { path: { ...side.path, connectionId: side.connection.id }, headers: side.headers });
       expect(deleted.response.status).toBe(204);
       return {
-        results: [
-          { id: 'lms-returning', roles: [lisContextRoles.learner] },
-          { id: 'lms-new', roles: [lisContextRoles.learner] },
+        members: [
+          { user_id: 'lms-returning', roles: [lisContextRoles.learner] },
+          { user_id: 'lms-new', roles: [lisContextRoles.learner] },
         ],
       };
     });
@@ -673,7 +773,10 @@ describe('LTI member import from a platform built on the template', async () => 
   it("lists the courses of the organization's own connections, and refuses a member and another tenant's admin", async () => {
     const own = await connectToFakePlatform();
     const other = await connectToFakePlatform('https://platform-b.example.com');
-    await importLtiMembersOp(own.context.id, fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] })).options);
+    await importLtiMembersOp(
+      own.context.id,
+      fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] })).options,
+    );
 
     const listed = await call(listLtiContexts, { path: own.path, headers: own.headers });
     expect((listed.data as { results: unknown[] }).results).toEqual([

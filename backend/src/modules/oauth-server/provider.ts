@@ -7,6 +7,7 @@ import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { amrOf, authStrategiesEnum, cookieSecrets, stepUpProofs } from '#/modules/auth/core';
+import { accessScopeOfLtiService, ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { appClientProperties, clientKindOf, DrizzleAdapter, ltiInstallationOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
@@ -53,18 +54,22 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
 }
 
 /**
- * Refuses an installed LTI tool's token request beyond what it may get: a resource other than its own tenant's API, or
- * a scope an admin did not grant, unknown ones included. Other clients' unknown scopes are dropped as the provider does.
+ * Checks an installed LTI tool's token request and names its scopes as the app does. It asks for LTI service scopes,
+ * which the token carries as the access scopes they stand for (`accessScopeOfLtiService`). Refused: a resource other
+ * than its own tenant's API, or a scope an admin did not grant, unknown ones included. Other clients' unknown scopes are
+ * dropped as the provider does.
  */
-function assertLtiTokenRequest(ctx: KoaContextWithOIDC, client: object, resource: { face: string; tenantId: string }) {
+function readLtiTokenRequest(ctx: KoaContextWithOIDC, client: object, resource: { face: string; tenantId: string }) {
   const installation = ltiInstallationOf(client);
-  if (!installation) return;
+  if (!installation || !ctx.oidc.params) return;
   if (resource.face !== 'api' || resource.tenantId !== installation.tenant_id) throw new errors.InvalidTarget();
-  const granted = new Set<string>(installation.granted_scopes);
-  const refused = String(ctx.oidc.params?.scope ?? '')
+  const asked = String(ctx.oidc.params.scope ?? '')
     .split(' ')
-    .find((scope) => scope && !granted.has(scope));
+    .filter(Boolean);
+  const refused = asked.find((scope) => !installation.granted_scopes.some((granted) => ltiServiceScope(granted) === scope));
   if (refused) throw new errors.InvalidScope('requested scope is not granted', refused);
+  // The grant handler reads the scopes from the params after this, and keeps those the resource's scopes list.
+  if (asked.length) ctx.oidc.params.scope = asked.map(accessScopeOfLtiService).join(' ');
 }
 
 /**
@@ -199,9 +204,11 @@ export async function createProvider(): Promise<Provider> {
         enabled: true,
         // Every token names its resource. An authorization request without one is answered `invalid_target` on the
         // client's redirect URI (RFC 8707 §2.1); at the token endpoint the grant's resource applies (`useGrantedResource`).
-        defaultResource: (ctx, _client, oneOf) => {
+        // An installed LTI tool asks for a token as LTI tools do, without one: its installation's tenant has one API.
+        defaultResource: (ctx, client, oneOf) => {
           if (!oneOf && authorizationRoutes.has(ctx.oidc.route)) throw new errors.InvalidTarget('resource indicator is required');
-          return undefined;
+          const installation = ltiInstallationOf(client);
+          return installation ? resourceUri({ face: 'api', tenantId: installation.tenant_id }) : undefined;
         },
         useGrantedResource: () => true,
         getResourceServerInfo: (ctx, resourceIndicator, client) => {
@@ -209,7 +216,7 @@ export async function createProvider(): Promise<Provider> {
           if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
-          assertLtiTokenRequest(ctx, client, resource);
+          readLtiTokenRequest(ctx, client, resource);
           const scope = grantableScopes(ctx, client).join(' ');
           // The audience is the resource as the guards spell it, whatever case its origin and tenant id were sent in.
           return { scope, audience: resourceUri(resource), accessTokenFormat: 'jwt', accessTokenTTL: hour };

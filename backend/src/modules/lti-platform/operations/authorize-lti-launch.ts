@@ -4,13 +4,14 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
-import { ltiApiClaim, ltiClaims } from '#/lib/lti-vocabulary';
+import { ltiClaims, ltiNrps } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
-import { launchApiClaim, launchCustom, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
+import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
+import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { readAsLauncher } from '#/modules/lti-platform/operations/start-lti-launch';
@@ -94,8 +95,8 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
 };
 
 /**
- * The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. The API
- * claim goes only to an LTI tool an admin granted a scope.
+ * The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. The
+ * NRPS claim goes only with a course, to an LTI tool an admin granted the access scope the NRPS scope stands for.
  */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
@@ -109,6 +110,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
   // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
   const roles = context ? ltiRolesIn(access, context.channelType, context.channel) : [];
   const custom = launchCustom(client, resourceLink.custom);
+  const readsMembers = installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
 
   return {
     iss: appConfig.oauthUrl,
@@ -129,7 +131,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     ...(Object.keys(custom).length && { [ltiClaims.custom]: custom }),
     [ltiClaims.launchPresentation]: { document_target: 'iframe', locale: person.languageCode },
     [ltiClaims.toolPlatform]: { guid: resourceLink.tenantId, name: appConfig.name, product_family_code: appConfig.slug, version: env.RELEASE_SHA },
-    ...(installation.grantedScopes.length > 0 && { [ltiApiClaim(appConfig.oauthUrl)]: launchApiClaim(resourceLink, context) }),
+    ...(context && readsMembers && { [ltiClaims.namesRoleService]: launchNamesRoleService(resourceLink, context) }),
   };
 };
 

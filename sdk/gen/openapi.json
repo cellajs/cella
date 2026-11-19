@@ -421,7 +421,7 @@
     },
     {
       "name": "lti-platform",
-      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel and binds it there; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a channel it is placed in.",
+      "description": "The app as an LTI 1.3 platform. An organization admin starts an LTI tool's Dynamic Registration; the LTI tool reads the platform's configuration and registers at the issuer, the authorization server. Its registration is private to the tenant, and its installation, a service account whose id is the LTI deployment id, waits for the admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may carry. A resource link places an installation in a channel and binds it there; a launch of it signs the person's ID token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads the members of a course it is placed in or below, by Names and Role Provisioning Services 2.0.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -9905,7 +9905,7 @@
                         "bannerUrl": null,
                         "archived": false
                       },
-                      "apiUrl": "https://lms.example.com/api/tenants/example-tenant",
+                      "membershipsUrl": "https://lms.example.com/api/lti/courses/biology-101/memberships",
                       "importRanAt": "2024-12-15T19:00:35.514Z",
                       "importReadCount": 42,
                       "importIssue": null,
@@ -9943,9 +9943,9 @@
                           "channel": {
                             "$ref": "#/components/schemas/ChannelBase"
                           },
-                          "apiUrl": {
+                          "membershipsUrl": {
                             "type": ["string", "null"],
-                            "description": "The platform's API that the member import reads, from the last launch that named one; null when none did"
+                            "description": "Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"
                           },
                           "importRanAt": {
                             "type": ["string", "null"],
@@ -9983,7 +9983,7 @@
                           "label",
                           "title",
                           "channel",
-                          "apiUrl",
+                          "membershipsUrl",
                           "importRanAt",
                           "importReadCount",
                           "importIssue",
@@ -11812,7 +11812,7 @@
         }
       }
     },
-    "/tenants/{tenantId}/organizations/{organizationId}/lti-members": {
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}": {
       "get": {
         "security": [
           {
@@ -11822,7 +11822,7 @@
         "operationId": "listLtiMembers",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI members",
-        "description": "The people of a course an installed LTI tool is placed in or below, for the LTI tool's own token: each person's id, the same a launch sends as `sub`, their LTI roles in the course and the personal claims a launch would carry. A course is the channel a launch names as its LTI context; the address comes in the launch. It answers whom the installation's least privileged role there may see, ordered by id. Any other channel answers as one it may not read.",
+        "description": "The members of a course an installed LTI tool is placed in or below, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. A course is the channel a launch names as its LTI context, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles in the course, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. A resource link's members (`rlid`) and the differences link are not served. A course none of its placements launches as is refused, as for an installation placed nowhere.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11850,45 +11850,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 2048,
-              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
-            },
-            "required": false,
-            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
-            "name": "pageToken",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
-            },
-            "required": false,
-            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
-            "name": "maxPageSize",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "description": "Results to pass over after the page token's position, or from the start without a token."
-            },
-            "required": false,
-            "description": "Results to pass over after the page token's position, or from the start without a token.",
-            "name": "skip",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
               "maxLength": 50
             },
             "required": true,
             "name": "channelId",
-            "in": "query"
+            "in": "path"
           },
           {
             "schema": {
@@ -11897,46 +11863,111 @@
             },
             "required": true,
             "name": "channelType",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`"
+            },
+            "required": false,
+            "description": "Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`",
+            "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most members one page holds: a hint. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most members one page holds: a hint. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "limit",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "enum": ["id", "id asc", "id desc"],
-              "default": "id asc",
-              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
-              "example": "id asc"
+              "format": "uuid",
+              "description": "Lists the members whose id sorts after this one: the next link carries it"
             },
             "required": false,
-            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
-            "name": "orderBy",
+            "description": "Lists the members whose id sorts after this one: the next link carries it",
+            "name": "after",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Refused: the platform lists no resource link's members"
+            },
+            "required": false,
+            "description": "Refused: the platform lists no resource link's members",
+            "name": "rlid",
             "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "LTI members",
+            "headers": {
+              "Link": {
+                "description": "The next page as `<address>; rel=\"next\"`, while the course lists more",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
-              "application/json": {
+              "application/vnd.ims.lti-nrps.v2.membershipcontainer+json": {
                 "example": {
-                  "results": [
+                  "id": "https://app.example.com/api/tenants/example-tenant/organizations/0c9c2670-2013-4b4d-8d08-d27c0c253e8f/lti-members/organization/0c9c2670-2013-4b4d-8d08-d27c0c253e8f?limit=1",
+                  "context": {
+                    "id": "0c9c2670-2013-4b4d-8d08-d27c0c253e8f",
+                    "label": "biology-101",
+                    "title": "Introduction to biology"
+                  },
+                  "members": [
                     {
-                      "id": "cc519e50-2f08-4700-9038-495ec36f7a4d",
+                      "user_id": "0a471625-9295-4f5c-ab89-d50636e31db1",
                       "roles": ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
-                      "name": "Charlotte Batz"
+                      "status": "Active",
+                      "name": "Melyna Blick V"
                     }
-                  ],
-                  "totalSize": 1
+                  ]
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "results": {
+                    "id": {
+                      "type": "string",
+                      "description": "The address this page was read at"
+                    },
+                    "context": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "label", "title"],
+                      "description": "The course, as a launch's context claim names it: the channel's id, slug and name"
+                    },
+                    "members": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
+                          "user_id": {
                             "type": "string",
                             "description": "The person: the id a launch sends as `sub`"
                           },
@@ -11946,6 +11977,11 @@
                               "type": "string"
                             },
                             "description": "Their LTI roles in the course, as full URIs: the roles a launch there would send them"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["Active"],
+                            "description": "Every member listed is active"
                           },
                           "name": {
                             "type": "string",
@@ -11968,20 +12004,11 @@
                             "description": "The address of their picture, when released and they have one"
                           }
                         },
-                        "required": ["id", "roles"]
+                        "required": ["user_id", "roles", "status"]
                       }
-                    },
-                    "nextPageToken": {
-                      "type": "string",
-                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
-                    },
-                    "totalSize": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["results", "totalSize"]
+                  "required": ["id", "context", "members"]
                 }
               }
             }

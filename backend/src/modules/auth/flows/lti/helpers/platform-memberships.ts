@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { z } from '@hono/zod-openapi';
 import { type JWTPayload, SignJWT } from 'jose';
-import type { AccessScope } from 'shared';
 import { AppError } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
 import { type GuardedFetchInit, guardedFetch, isFetchableUrl } from '#/lib/guarded-fetch';
-import { ltiApiClaim, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { ltiClaims, ltiNrps, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import type { LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
@@ -14,26 +13,20 @@ import { currentSigningKey } from '#/modules/oauth-server/keystore';
 /** Tests answer from a fake platform; production reaches the platform through the guarded fetch's own. */
 export type PlatformFetchOptions = Pick<GuardedFetchInit, 'resolve' | 'transport'>;
 
-/** The access scope a member import asks a platform built on the template for, at registration and in each token request. */
-export const ltiImportScope: AccessScope = 'user:read';
-
-/** The rows one page of a member list asks for: a page of long rows stays under the guarded fetch's size cap. */
+/** The members one page asks for (`limit`): a page of long rows stays under the guarded fetch's size cap. */
 const membersPageSize = 50;
 
-/** The most pages one import reads: with `membersPageSize` the most rows too. The platform's list goes on unread past it. */
+/** The most pages one import reads. The platform's list goes on unread past it. */
 export const maxMembersPages = 40;
+
+/** The most people one import reads: a platform may answer a page with more members than it asked for. */
+const maxMembers = maxMembersPages * membersPageSize;
 
 /** How long a client assertion is good for: one token request. */
 const assertionLifetimeSeconds = 60;
 
 /** How long before its expiry a cached token is replaced by a new one. */
 const tokenRenewMarginSeconds = 60;
-
-/** Where a context's people are read: the platform's API, and the first page of the context's members under it. */
-export interface PlatformApi {
-  apiUrl: string;
-  membersUrl: string;
-}
 
 /** Whether `url` lies under `base`: the same origin, and the base's path a prefix of its own. */
 export const isUnder = (url: URL, base: URL) => {
@@ -63,25 +56,30 @@ const platformTokenAddresses = ({ issuer, tokenEndpoint, authorizationServer }: 
 };
 
 /**
- * The API addresses a platform named, when the app trusts them: the API on the origin of the connection's issuer, and
- * the member list under the API. The installation's token goes wherever they point.
- * @returns Undefined for any other pair.
+ * A membership address a platform named, or the next page it links to, when the app trusts it: on the origin of the
+ * connection's issuer, where the installation's token goes. A next page keeps the path of the first.
+ * @returns Undefined for any other address.
  */
-const trustedPlatformApi = (connection: LtiConnection, { apiUrl, membersUrl }: PlatformApi): PlatformApi | undefined => {
-  if (!isFetchableUrl(apiUrl) || !isFetchableUrl(membersUrl)) return undefined;
-  const api = new URL(apiUrl);
-  const members = new URL(membersUrl);
-  if (!onIssuerOrigin(connection.issuer, apiUrl) || api.search || api.hash || members.hash || !isUnder(members, api)) return undefined;
-  return { apiUrl, membersUrl };
+const trustedMembershipsUrl = (connection: LtiConnection, address: string, first?: URL) => {
+  if (!isFetchableUrl(address) || !onIssuerOrigin(connection.issuer, address)) return undefined;
+  const url = new URL(address);
+  return url.hash || (first && url.pathname !== first.pathname) ? undefined : url;
 };
 
-/** The members of the API claim a platform built on the template adds to a launch (`ltiApiClaim`) that the import reads. */
-const apiClaimSchema = z.object({ api_url: z.string().max(maxLength.url), members_url: z.string().max(maxLength.url) });
+/** A launch's NRPS claim (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
+const namesRoleServiceSchema = z.object({
+  context_memberships_url: z.string().max(maxLength.url),
+  service_versions: z.array(z.string().max(maxLength.field)).max(20).optional(),
+});
 
-/** The API addresses a verified launch names in the claim under its connection's issuer, when the app trusts them. */
-export const launchPlatformApi = (connection: LtiConnection, claims: JWTPayload): PlatformApi | undefined => {
-  const claim = apiClaimSchema.safeParse(claims[ltiApiClaim(connection.issuer)]).data;
-  return claim && trustedPlatformApi(connection, { apiUrl: claim.api_url, membersUrl: claim.members_url });
+/**
+ * The membership address a verified launch names in its NRPS claim, when it offers the version the import reads, or
+ * names none, and the app trusts the address.
+ */
+export const launchMembershipsUrl = (connection: LtiConnection, claims: JWTPayload): string | undefined => {
+  const claim = namesRoleServiceSchema.safeParse(claims[ltiClaims.namesRoleService]).data;
+  if (!claim || (claim.service_versions && !claim.service_versions.includes(ltiNrps.version))) return undefined;
+  return trustedMembershipsUrl(connection, claim.context_memberships_url) && claim.context_memberships_url;
 };
 
 const readFailed = (reason: string, connection: LtiConnection) =>
@@ -123,13 +121,11 @@ const tokenAnswerSchema = z.object({
 
 const oauthErrorSchema = z.object({ error: z.string().max(maxLength.field) });
 
-/** The most tokens one process keeps: one per connection and API it reads. */
+/** The most tokens one process keeps: one per connection. */
 const maxCachedTokens = 500;
 
-/** Tokens per connection and resource in this process, until shortly before they expire; never shared between connections. */
+/** Tokens per connection in this process, until shortly before they expire; never shared between connections. */
 const tokens = new Map<string, { accessToken: string; renewAt: number }>();
-
-const tokenKey = (connection: LtiConnection, resource: string) => `${connection.id} ${resource}`;
 
 /** Keeps a token, after dropping the expired ones and, at the cap, the oldest: a map iterates in insertion order. */
 const cacheToken = (key: string, token: { accessToken: string; renewAt: number }) => {
@@ -144,26 +140,20 @@ const cacheToken = (key: string, token: { accessToken: string; renewAt: number }
 type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
 
 /**
- * The connection's token for the platform's API at `resource`, within `ltiImportScope`: the cached one, else a new one
- * from the token endpoint by `client_credentials`. An OAuth error is the platform's answer and a refusal:
- * `invalid_scope`, the scope not granted, is a normal state.
+ * The connection's token for the NRPS scope: the cached one, else a new one from the token endpoint by
+ * `client_credentials`, which names no resource, as LTI tools ask. An OAuth error is the platform's answer and a
+ * refusal: `invalid_scope`, the scope not granted, is a normal state.
  * @throws AppError 400 `outbound_request_failed` for any other answer, and what `guardedFetch` throws.
  */
-const platformToken = async (
-  connection: LtiConnection,
-  addresses: TokenAddresses,
-  resource: string,
-  options: PlatformFetchOptions,
-): Promise<TokenOutcome> => {
-  const cached = tokens.get(tokenKey(connection, resource));
+const platformToken = async (connection: LtiConnection, addresses: TokenAddresses, options: PlatformFetchOptions): Promise<TokenOutcome> => {
+  const cached = tokens.get(connection.id);
   if (cached && cached.renewAt > Date.now()) return cached;
 
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     client_assertion: await signClientAssertion(connection.clientId, addresses),
-    scope: ltiImportScope,
-    resource,
+    scope: ltiNrps.scope,
   });
   const response = await guardedFetch(addresses.tokenEndpoint, {
     ...options,
@@ -179,89 +169,104 @@ const platformToken = async (
   if (!token) throw readFailed('token_answer', connection);
 
   const accessToken = token.access_token;
-  if (token.expires_in)
-    cacheToken(tokenKey(connection, resource), { accessToken, renewAt: Date.now() + (token.expires_in - tokenRenewMarginSeconds) * 1000 });
+  if (token.expires_in) cacheToken(connection.id, { accessToken, renewAt: Date.now() + (token.expires_in - tokenRenewMarginSeconds) * 1000 });
   return { accessToken };
 };
 
-/** A row of a platform's member list as the import reads it (`listLtiMembers` of the platform's API): the claims a launch reads. */
-const memberRowSchema = z.object({
-  id: ltiIdSchema,
+/** A member of a platform's membership container as the import reads it (NRPS 2.0, section 2.2): the claims a launch reads. */
+const memberSchema = z.object({
+  user_id: ltiIdSchema,
   roles: z.array(z.string().max(maxLength.url)).max(100),
+  /** NRPS takes a member that names none as `Active`. */
+  status: z.string().max(maxLength.field).optional(),
   name: profileClaim,
   given_name: profileClaim,
   family_name: profileClaim,
   email: profileClaim,
 });
 
-export type LtiMemberRow = z.infer<typeof memberRowSchema>;
+export type LtiMember = z.infer<typeof memberSchema>;
 
-const membersPageSchema = z.object({
-  results: z.array(z.unknown()).max(membersPageSize),
-  nextPageToken: z.string().min(1).max(maxLength.url).optional(),
-});
+const membershipContainerSchema = z.object({ members: z.array(z.unknown()) });
 
-type MembersOutcome = { people: LtiMemberRow[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
+/** The target of a `Link` header's `rel="next"` (RFC 8288), resolved against the page it came with; undefined without one. */
+const nextLink = (header: string | null, page: URL) => {
+  for (const [, target, params] of (header ?? '').matchAll(/<([^>]*)>([^,]*)/g)) {
+    const rel = /;\s*rel\s*=\s*"?([^";]*)"?/i.exec(params)?.[1];
+    if (rel?.toLowerCase().split(/\s+/).includes('next') && URL.canParse(target, page)) return new URL(target, page).href;
+  }
+  return undefined;
+};
 
-/** The pages of a context's member list, read with the connection's token from `addresses`; `readLtiMembers` checked both. */
+type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
+
+/** The pages of a context's membership container from `first`, read with the connection's token from `addresses`. */
 const readMemberPages = async (
   connection: LtiConnection,
   addresses: TokenAddresses,
-  api: PlatformApi,
+  first: URL,
   options: PlatformFetchOptions,
 ): Promise<MembersOutcome> => {
-  let token = await platformToken(connection, addresses, api.apiUrl, options);
+  let token = await platformToken(connection, addresses, options);
   if ('refusal' in token) return token;
 
-  const people = new Map<string, LtiMemberRow>();
+  const people = new Map<string, LtiMember>();
   let renewed = false;
-  let pageToken: string | undefined;
+  let page = new URL(first);
+  page.searchParams.set('limit', String(membersPageSize));
   for (let pages = 0; pages < maxMembersPages; ) {
-    const url = new URL(api.membersUrl);
-    url.searchParams.set('maxPageSize', String(membersPageSize));
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
-    const response = await guardedFetch(url.href, {
+    const response = await guardedFetch(page.href, {
       ...options,
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token.accessToken}` },
+      headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${token.accessToken}` },
     });
 
     if (response.status === 401 && !renewed) {
       renewed = true;
-      tokens.delete(tokenKey(connection, api.apiUrl));
-      token = await platformToken(connection, addresses, api.apiUrl, options);
+      tokens.delete(connection.id);
+      token = await platformToken(connection, addresses, options);
       if ('refusal' in token) return token;
       continue;
     }
     if ([401, 403, 404].includes(response.status)) return { refusal: 'members_refused' };
-    const page = response.status === 200 && membersPageSchema.safeParse(parseJson(response.text)).data;
-    if (!page) throw readFailed('members_page', connection);
+    const container = response.status === 200 && membershipContainerSchema.safeParse(parseJson(response.text)).data;
+    if (!container) throw readFailed('members_page', connection);
 
-    for (const row of page.results) {
-      const member = memberRowSchema.safeParse(row).data;
-      if (member && !member.roles.includes(ltiTestUserRole)) people.set(member.id, member);
+    for (const row of container.members) {
+      const member = memberSchema.safeParse(row).data;
+      if (!member || member.roles.includes(ltiTestUserRole) || (member.status ?? 'Active') !== 'Active') continue;
+      if (people.size >= maxMembers && !people.has(member.user_id)) return { people: [...people.values()], issue: 'too_many_members' };
+      people.set(member.user_id, member);
     }
     pages += 1;
-    pageToken = page.nextPageToken;
-    if (!pageToken) return { people: [...people.values()], issue: null };
+    const next = nextLink(response.headers.get('Link'), page);
+    if (!next) return { people: [...people.values()], issue: null };
+    const trusted = trustedMembershipsUrl(connection, next, first);
+    if (!trusted) return { refusal: 'address_refused' };
+    page = trusted;
   }
   return { people: [...people.values()], issue: 'too_many_members' };
 };
 
 /**
- * The people of an LTI context at a platform built on the template, read page by page with the connection's token.
- * Nothing is signed or sent unless the token's addresses (`platformTokenAddresses`) and the API (`trustedPlatformApi`)
- * lie on the connection's issuer's origin. A row that fails validation or names a test user is left out, and a person
- * listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages.
+ * The members of an LTI context at a platform, read by NRPS 2.0 page by page with the connection's token. Nothing is
+ * signed or sent unless the token's addresses (`platformTokenAddresses`) and each page (`trustedMembershipsUrl`) lie on
+ * the connection's issuer's origin. A member that fails validation, names a test user or is not active is left out,
+ * and a person listed twice counts once. A 401 gets one new token. The read stops at `maxMembersPages` pages or
+ * `maxMembers` people.
  * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
  *   or `address_refused` for an address the app does not reach.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.
  */
-export const readLtiMembers = async (connection: LtiConnection, stored: PlatformApi, options: PlatformFetchOptions = {}): Promise<MembersOutcome> => {
-  const api = trustedPlatformApi(connection, stored);
+export const readLtiMembers = async (
+  connection: LtiConnection,
+  membershipsUrl: string,
+  options: PlatformFetchOptions = {},
+): Promise<MembersOutcome> => {
+  const first = trustedMembershipsUrl(connection, membershipsUrl);
   const addresses = platformTokenAddresses({ issuer: connection.issuer, ...connection.config });
-  if (!api || !addresses) return { refusal: 'address_refused' };
-  return readMemberPages(connection, addresses, api, options).catch((error: unknown) => {
+  if (!first || !addresses) return { refusal: 'address_refused' };
+  return readMemberPages(connection, addresses, first, options).catch((error: unknown) => {
     // The guarded fetch refuses an address for good, unlike a platform that failed to answer.
     if (error instanceof AppError && error.type === 'outbound_request_refused') return { refusal: 'address_refused' as const };
     throw error;

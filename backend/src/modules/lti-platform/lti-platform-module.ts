@@ -11,7 +11,7 @@ defineBackendModule({
     admin's approval, which names the personal fields its launches may carry and the access scopes its own tokens may
     carry. A resource link places an installation in a channel and binds it there; a launch of it signs the person's ID
     token at the issuer and posts it to the LTI tool in a frame. With a token of its own, an installed LTI tool reads
-    the members of a channel it is placed in.`,
+    the members of a course it is placed in or below, by Names and Role Provisioning Services 2.0.`,
   routes: [
     { path: '/tenants/:tenantId/organizations/:organizationId/lti-installations', app: ltiPlatformHandlers },
     { path: '/tenants/:tenantId/organizations/:organizationId/lti-resource-links', app: ltiResourceLinkHandlers },

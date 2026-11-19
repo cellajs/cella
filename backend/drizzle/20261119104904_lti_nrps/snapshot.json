@@ -1,0 +1,91 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "18cdda71-53a8-4a1e-946f-ba06fd63c87f",
+  "prevIds": [
+    "f619bbb5-4ee1-47b3-94e3-0b0e62bd4420"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "memberships_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.memberships_url",
+        "n|col|public.lti_contexts.memberships_url",
+        "e|col|public.lti_contexts.memberships_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "api_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.api_url",
+        "n|col|public.lti_contexts.api_url",
+        "e|col|public.lti_contexts.api_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_contexts",
+        "members_url"
+      ],
+      "writes": [
+        "s|col|public.lti_contexts.members_url",
+        "n|col|public.lti_contexts.members_url",
+        "e|col|public.lti_contexts.members_url"
+      ],
+      "reads": [
+        "n|tbl|public.lti_contexts",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_contexts",
+        "name": "memberships_url",
+        "type": "varchar(2048)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"lti_contexts\",\"api_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"lti_contexts\",\"members_url\"]"
+    }
+  ]
+}

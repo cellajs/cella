@@ -529,7 +529,7 @@
   "lti_import.inactive": "Not imported: the connection, the organization or the course is not active.",
   "lti_import.member_limit": "The organization's member limit left people out.",
   "lti_import.members_refused": "The platform refused to list the course's members.",
-  "lti_import.no_api": "The platform named no API for the course's members: it offers none, or an admin there has not granted it.",
+  "lti_import.no_memberships": "The platform named no member list for the course: it offers none, or an admin there has not granted it.",
   "lti_import.not_run": "No member import has run yet.",
   "lti_import.read_one": "{{count, number}} person read, {{time}}",
   "lti_import.read_other": "{{count, number}} people read, {{time}}",

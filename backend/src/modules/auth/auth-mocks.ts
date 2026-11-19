@@ -108,7 +108,7 @@ export const mockLtiContextResponse = (key = 'ltiContext:default') =>
       label: 'BIO-101',
       title: 'Introduction to biology',
       channel: mockChannelBase(`${key}:channel`),
-      apiUrl: 'https://lms.example.com/api/tenants/example-tenant',
+      membershipsUrl: 'https://lms.example.com/api/lti/courses/biology-101/memberships',
       importRanAt: updatedAt,
       importReadCount: 42,
       importIssue: null,

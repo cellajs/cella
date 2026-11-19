@@ -53,10 +53,8 @@ export const ltiContextsTable = snakeCase.table(
     types: varchar({ length: maxLength.field }).array().notNull().default([]),
     channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
     channelId: uuid().notNull(),
-    /** The platform's API for the installation's token, from the last launch that named one the app trusts; null before. */
-    apiUrl: varchar({ length: maxLength.url }),
-    /** The first page of the context's members at the platform, under `apiUrl`; set with it. */
-    membersUrl: varchar({ length: maxLength.url }),
+    /** Where the platform lists the context's members (NRPS), from the last launch that named one the app trusts; null before. */
+    membershipsUrl: varchar({ length: maxLength.url }),
     /** When the last member import ran; null before the first. */
     importRanAt: isoTimestamp(),
     /** How many people the last member import read from the platform. */

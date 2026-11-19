@@ -44,9 +44,9 @@ const importIssues = {
 /** How the last member import of a course ran; one that stopped short says why, and when. */
 function ImportState({ context }: { context: LtiContext }) {
   const { t } = useTranslation();
-  const { apiUrl, importRanAt, importReadCount, importIssue } = context;
+  const { membershipsUrl, importRanAt, importReadCount, importIssue } = context;
 
-  if (!apiUrl) return <p className="text-muted-foreground">{t('c:lti_import.no_api')}</p>;
+  if (!membershipsUrl) return <p className="text-muted-foreground">{t('c:lti_import.no_memberships')}</p>;
   if (!importRanAt) return <p className="text-muted-foreground">{t('c:lti_import.not_run')}</p>;
   if (!importIssue) return <p>{t('c:lti_import.read', { count: importReadCount ?? 0, time: dateRelative(importRanAt) })}</p>;
   return (

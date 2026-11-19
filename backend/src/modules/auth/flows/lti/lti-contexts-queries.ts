@@ -30,17 +30,17 @@ export const findLtiContextById = async (ctx: DbContext, { id }: { id: string })
 
 /**
  * Records an LTI context and the channel it maps to, or takes the label, title and types of a context recorded before,
- * written by `by`; the row as stored. A recorded context keeps its channel: compare it with the one given. The API
- * addresses change only when `values` names them: a launch without them clears nothing.
+ * written by `by`; the row as stored. A recorded context keeps its channel: compare it with the one given. The
+ * membership address changes only when `values` names one: a launch without it clears nothing.
  */
 export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values: Omit<InsertLtiContextModel, 'createdBy'>; by: UserId }) => {
-  const { label, title, types, apiUrl, membersUrl } = values;
+  const { label, title, types, membershipsUrl } = values;
   const [row] = await ctx.var.db
     .insert(ltiContextsTable)
     .values({ ...values, createdBy: by })
     .onConflictDoUpdate({
       target: [ltiContextsTable.connectionId, ltiContextsTable.contextId],
-      set: { label, title, types, ...(apiUrl && membersUrl && { apiUrl, membersUrl }), ...updateStamps(by) },
+      set: { label, title, types, ...(membershipsUrl && { membershipsUrl }), ...updateStamps(by) },
     })
     .returning();
   return row;

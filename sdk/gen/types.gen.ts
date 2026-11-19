@@ -4084,9 +4084,9 @@ export type ListLtiContextsResponses = {
       title: string | null;
       channel: ChannelBase;
       /**
-       * The platform's API that the member import reads, from the last launch that named one; null when none did
+       * Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did
        */
-      apiUrl: string | null;
+      membershipsUrl: string | null;
       /**
        * When the last member import ran; null before the first
        */
@@ -5164,28 +5164,28 @@ export type ListLtiMembersData = {
   path: {
     tenantId: string;
     organizationId: string;
-  };
-  query: {
-    /**
-     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
-     */
-    pageToken?: string;
-    /**
-     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
-     */
-    maxPageSize?: number;
-    /**
-     * Results to pass over after the page token's position, or from the start without a token.
-     */
-    skip?: number;
     channelId: string;
     channelType: 'organization';
-    /**
-     * A field to order by, then `asc` or `desc`; ascending when left out.
-     */
-    orderBy?: 'id' | 'id asc' | 'id desc';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members';
+  query?: {
+    /**
+     * Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`
+     */
+    role?: string;
+    /**
+     * Most members one page holds: a hint. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    limit?: number;
+    /**
+     * Lists the members whose id sorts after this one: the next link carries it
+     */
+    after?: string;
+    /**
+     * Refused: the platform lists no resource link's members
+     */
+    rlid?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}';
 };
 
 export type ListLtiMembersErrors = {
@@ -5218,15 +5218,31 @@ export type ListLtiMembersResponses = {
    * LTI members
    */
   200: {
-    results: Array<{
+    /**
+     * The address this page was read at
+     */
+    id: string;
+    /**
+     * The course, as a launch's context claim names it: the channel's id, slug and name
+     */
+    context: {
+      id: string;
+      label: string;
+      title: string;
+    };
+    members: Array<{
       /**
        * The person: the id a launch sends as `sub`
        */
-      id: string;
+      user_id: string;
       /**
        * Their LTI roles in the course, as full URIs: the roles a launch there would send them
        */
       roles: Array<string>;
+      /**
+       * Every member listed is active
+       */
+      status: 'Active';
       /**
        * Their name, when released
        */
@@ -5248,14 +5264,6 @@ export type ListLtiMembersResponses = {
        */
       picture?: string;
     }>;
-    /**
-     * Pass as `pageToken` to read the next page. Absent on the last page.
-     */
-    nextPageToken?: string;
-    /**
-     * Results across all pages, after filters: an exact count.
-     */
-    totalSize: number;
   };
 };
 

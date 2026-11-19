@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { ltiNrps } from '#/lib/lti-vocabulary';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
 import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
 import {
@@ -89,8 +90,9 @@ export const ltiLaunchHandlers = launches;
 const members = new OpenAPIHono<Env>();
 
 members.openapi(ltiMemberRoutes.listLtiMembers, async (ctx) => {
-  const query = ctx.req.valid('query');
-  return ctx.json(await readListPage(ctx, query, (page) => getLtiMembersOp(ctx, query, page)), 200);
+  const search = new URL(ctx.req.url).search;
+  const { container, nextUrl } = await getLtiMembersOp(ctx, ctx.req.valid('param'), ctx.req.valid('query'), search);
+  return ctx.json(container, 200, { 'Content-Type': ltiNrps.mediaType, ...(nextUrl && { Link: `<${nextUrl}>; rel="next"` }) });
 });
 
 export const ltiMemberHandlers = members;

@@ -17,7 +17,8 @@ import {
 import { type AccessScope, appConfig, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { lisContextRoles, ltiApiClaim, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { lisContextRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { ltiMembershipsUrl } from '#/modules/lti-platform/helpers/launch-message';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
@@ -68,12 +69,15 @@ const signingKey = async (kid: string) => {
 
 type SigningKey = Awaited<ReturnType<typeof signingKey>>;
 
-type Row = { id: string; roles: string[]; name?: string; email?: string; picture?: string };
-type Page = { results: Row[]; nextPageToken?: string; totalSize: number };
+type Member = { user_id: string; roles: string[]; status: string; name?: string; email?: string; picture?: string };
+type Container = { id: string; context: { id: string; label: string; title: string }; members: Member[] };
+
+/** The target of a `Link` header's `rel="next"`, as the template's platform writes it. */
+const nextOf = (response: Response) => /<([^>]*)>; rel="next"/.exec(response.headers.get('Link') ?? '')?.[1];
 
 /**
- * An installed LTI tool reads the people of a channel it is placed in through the platform's API, with a token for
- * its registered key, within the scopes an admin granted.
+ * An installed LTI tool reads the members of a course it is placed in by Names and Role Provisioning Services 2.0,
+ * with a token for its registered key, within the scopes an admin granted.
  */
 describe('LTI installation API access', async () => {
   const call = await createAppClient();
@@ -134,7 +138,7 @@ describe('LTI installation API access', async () => {
   /** Registers the fake LTI tool in the organization's tenant, approves it and places it in the organization. */
   async function installLtiTool(
     org: Org,
-    { scope = 'user:read', approval = { releasedFields: [], grantedScopes: ['user:read'] }, placed = true }: InstallOptions = {},
+    { scope = ltiNrps.scope, approval = { releasedFields: [], grantedScopes: ['user:read'] }, placed = true }: InstallOptions = {},
   ) {
     const response = await register(org, ltiToolRegistration(jwksUri, scope));
     const registered = (await response.json()) as { client_id: string; [ltiToolConfigurationMember]: { deployment_id: string } };
@@ -164,10 +168,13 @@ describe('LTI installation API access', async () => {
     assertion?: string;
   }
 
-  /** The LTI tool's `client_credentials` request, authenticated with an assertion signed by `key` (`private_key_jwt`). */
+  /**
+   * The LTI tool's `client_credentials` request, authenticated with an assertion signed by `key` (`private_key_jwt`),
+   * naming a resource only when given, as LTI tools name none.
+   */
   async function requestToken(
     ltiTool: LtiTool,
-    { scope = 'user:read', resource, key = ltiToolKey, audience = appConfig.oauthUrl, expiresIn = 120, assertion }: TokenRequest = {},
+    { scope = ltiNrps.scope, resource, key = ltiToolKey, audience = appConfig.oauthUrl, expiresIn = 120, assertion }: TokenRequest = {},
   ) {
     const now = Math.floor(Date.now() / 1000);
     const signed =
@@ -189,7 +196,7 @@ describe('LTI installation API access', async () => {
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: signed,
         scope,
-        resource: resource ?? resourceUri({ face: 'api', tenantId: ltiTool.org.org.tenantId }),
+        ...(resource && { resource }),
       }),
     });
     return { status: response.status, body: (await response.json()) as Record<string, unknown>, assertion: signed };
@@ -202,7 +209,7 @@ describe('LTI installation API access', async () => {
   };
 
   const readMembers = (org: Org, token: string, channelId = org.org.id) =>
-    call(listLtiMembers, { path: org.path, query: { channelType: 'organization', channelId }, headers: bearerHeaders(token) });
+    call(listLtiMembers, { path: { ...org.path, channelType: 'organization', channelId }, headers: bearerHeaders(token) });
 
   /** A launch of the resource link by `cookie`'s person, through the issuer, as the frame and the LTI tool run it. */
   async function launch(ltiTool: LtiTool, cookie = ltiTool.org.admin.sessionCookie) {
@@ -228,61 +235,84 @@ describe('LTI installation API access', async () => {
     return decodeJwt(parseForm(await response.text()).fields.id_token);
   }
 
-  // Contract: the LTI tool's reader of the next commit reads the claim, requests the token and pages the members.
-  it('names the API in the launch, and a token for the registered key reads the channel members with their LTI roles, paged', async () => {
+  // Contract: an NRPS reader (ltijs, pylti1.3, the template's own) reads the claim, asks for a token with the NRPS scope
+  // and no resource, and pages the membership container by its `Link` header. The shape is the spec's section 2.1.
+  it('names the members in the NRPS claim, and a token for the registered key pages them as an NRPS membership container', async () => {
     const org = await orgWithAdmin();
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const ltiTool = await installLtiTool(org);
 
-    const claim = (await launch(ltiTool))[ltiApiClaim(appConfig.oauthUrl)] as Record<string, string>;
-    const apiUrl = resourceUri({ face: 'api', tenantId: org.org.tenantId });
-    expect(claim).toEqual({
-      api_url: apiUrl,
-      tenant_id: org.org.tenantId,
-      organization_id: org.org.id,
-      members_url: `${apiUrl}/organizations/${org.org.id}/lti-members?channelType=organization&channelId=${org.org.id}`,
-    });
+    const claim = (await launch(ltiTool))[ltiClaims.namesRoleService];
+    const membershipsUrl = ltiMembershipsUrl(org.path, { channelType: 'organization', channelId: org.org.id });
+    expect(claim).toEqual({ context_memberships_url: membershipsUrl, service_versions: ['2.0'] });
 
-    const answer = await requestToken(ltiTool, { resource: claim.api_url });
+    const answer = await requestToken(ltiTool);
     expect(answer).toMatchObject({ status: 200, body: { token_type: 'Bearer', scope: 'user:read' } });
-    expect(decodeJwt(String(answer.body.access_token))).toMatchObject({
+    const accessToken = String(answer.body.access_token);
+    expect(decodeJwt(accessToken)).toMatchObject({
+      aud: resourceUri({ face: 'api', tenantId: org.org.tenantId }),
       actor_kind: 'service',
       installation_id: ltiTool.installationId,
       client_id: ltiTool.clientId,
     });
 
-    const readPage = async (pageToken?: string): Promise<Page> => {
-      const url = new URL(claim.members_url);
-      url.searchParams.set('maxPageSize', '1');
-      if (pageToken) url.searchParams.set('pageToken', pageToken);
-      const response = await baseApp.request(`${url.pathname}${url.search}`, { headers: bearerHeaders(String(answer.body.access_token)) });
+    const readPage = async (address: string) => {
+      const url = new URL(address);
+      const response = await baseApp.request(`${url.pathname}${url.search}`, {
+        headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${accessToken}` },
+      });
       expect(response.status).toBe(200);
-      return response.json();
+      expect(response.headers.get('Content-Type')).toContain(ltiNrps.mediaType);
+      return { container: (await response.json()) as Container, next: nextOf(response) };
     };
-    const first = await readPage();
-    expect(first.results).toHaveLength(1);
-    expect(first.totalSize).toBe(2);
-    const second = await readPage(first.nextPageToken);
-    expect(second.nextPageToken).toBeUndefined();
-    const rows = [...first.results, ...second.results].sort((a, b) => a.id.localeCompare(b.id));
-    const expected = [
-      { id: org.admin.id, roles: [lisContextRoles.instructor] },
-      { id: member.id, roles: [lisContextRoles.learner] },
-    ].sort((a, b) => a.id.localeCompare(b.id));
-    expect(rows).toEqual(expected);
+    const first = await readPage(`${membershipsUrl}?limit=1`);
+    expect(first.container).toEqual({
+      id: `${membershipsUrl}?limit=1`,
+      context: { id: org.org.id, label: org.org.slug, title: org.org.name },
+      members: [expect.objectContaining({ status: 'Active' })],
+    });
+    const second = await readPage(first.next ?? '');
+    expect(second.next).toBeUndefined();
+    const members = [...first.container.members, ...second.container.members];
+    expect(members).toEqual(
+      [
+        { user_id: org.admin.id, roles: [lisContextRoles.instructor], status: 'Active' },
+        { user_id: member.id, roles: [lisContextRoles.learner], status: 'Active' },
+      ].sort((a, b) => a.user_id.localeCompare(b.user_id)),
+    );
+
+    const learners = await readPage(`${membershipsUrl}?role=Learner`);
+    expect(learners).toEqual({
+      container: expect.objectContaining({ members: [members.find(({ user_id }) => user_id === member.id)] }),
+      next: undefined,
+    });
   });
 
-  // Privacy: an LTI tool granted nothing is told nothing about the API.
-  it('names no API in the launch of an LTI tool granted no scope', async () => {
+  // Contract: ltijs 7 registers asking for the NRPS scope beside scopes the platform does not serve.
+  it('records an NRPS scope asked for at registration as `user:read`, answers it by its NRPS name, and offers it', async () => {
+    const org = await orgWithAdmin();
+    const asked = `${ltiNrps.scope} https://purl.imsglobal.org/spec/lti-ags/scope/score`;
+    const response = await register(org, ltiToolRegistration(jwksUri, asked));
+    const registered = (await response.json()) as { client_id: string; scope?: string };
+    expect(registered.scope).toBe(ltiNrps.scope);
+    const [client] = await db.select().from(oauthClientsTable).where(eq(oauthClientsTable.id, registered.client_id));
+    expect(client.requestedScopes).toEqual(['user:read']);
+
+    const configuration = (await (await fetch(`${oauth.issuer}/lti/openid-configuration`)).json()) as { scopes_supported: string[] };
+    expect(configuration.scopes_supported).toEqual(['openid', ltiNrps.scope]);
+  });
+
+  // Privacy: an LTI tool granted nothing is told nothing about the members.
+  it('names no members in the launch of an LTI tool granted no scope', async () => {
     const org = await orgWithAdmin();
     const ltiTool = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] } });
-    expect((await launch(ltiTool))[ltiApiClaim(appConfig.oauthUrl)]).toBeUndefined();
+    expect((await launch(ltiTool))[ltiClaims.namesRoleService]).toBeUndefined();
   });
 
   // Attack: whoever serves the key set mints the installation's tokens. It lies on the domains the admin approves, as launches do.
   it('refuses a registration whose key set lies off the domains it declares', async () => {
     const org = await orgWithAdmin();
-    const offDomains = ltiToolRegistration('https://keys.example.net/jwks', 'user:read');
+    const offDomains = ltiToolRegistration('https://keys.example.net/jwks', ltiNrps.scope);
     const response = await register(org, offDomains);
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'invalid_client_metadata', error_description: 'Refused: jwks_uri' });
@@ -292,7 +322,7 @@ describe('LTI installation API access', async () => {
   // and a registration recorded before that filter, which holds another, still gets only a read one granted.
   it('records only the scopes a route reads, and refuses granting another that a registration holds', async () => {
     const org = await orgWithAdmin();
-    const ltiTool = await installLtiTool(org, { scope: 'user:read organization:read', approval: null, placed: false });
+    const ltiTool = await installLtiTool(org, { scope: `${ltiNrps.scope} organization:read`, approval: null, placed: false });
     const [registered] = await db.select().from(oauthClientsTable).where(eq(oauthClientsTable.id, ltiTool.clientId));
     expect(registered.requestedScopes).toEqual(['user:read']);
     await db
@@ -315,10 +345,10 @@ describe('LTI installation API access', async () => {
 
     const keysOf = async (ltiTool: LtiTool) => {
       const { data } = await readMembers(org, await tokenOf(ltiTool));
-      return (data as Page).results.map((row) => Object.keys(row).sort());
+      return (data as Container).members.map((member) => Object.keys(member).sort());
     };
-    expect(await keysOf(silent)).toEqual([['id', 'roles']]);
-    expect(await keysOf(named)).toEqual([['id', 'name', 'roles']]);
+    expect(await keysOf(silent)).toEqual([['roles', 'status', 'user_id']]);
+    expect(await keysOf(named)).toEqual([['name', 'roles', 'status', 'user_id']]);
   });
 
   describe('the token endpoint refuses', () => {
@@ -338,12 +368,14 @@ describe('LTI installation API access', async () => {
       await expectRefusal(await readMembers(org, minted), 401, 'unauthorized');
     });
 
-    // Attack: the admin's grant is the most a token carries, whatever the LTI tool asked for, and an unknown scope gets nothing.
+    // Attack: the admin's grant is the most a token carries, whatever the LTI tool asked for, and an unknown scope gets
+    // nothing: on the wire an LTI tool names LTI service scopes alone.
     it('a scope asked for but not granted, and one the platform does not know', async () => {
       const org = await orgWithAdmin();
-      const ltiTool = await installLtiTool(org, { scope: 'user:read organization:read' });
-      expect(await requestToken(ltiTool, { scope: 'user:read organization:read' })).toMatchObject({ status: 400, body: { error: 'invalid_scope' } });
-      expect(await requestToken(ltiTool, { scope: 'user:read label:write' })).toMatchObject({ status: 400, body: { error: 'invalid_scope' } });
+      const ltiTool = await installLtiTool(org, { scope: `${ltiNrps.scope} organization:read` });
+      for (const scope of [`${ltiNrps.scope} organization:read`, `${ltiNrps.scope} label:write`, 'user:read']) {
+        expect(await requestToken(ltiTool, { scope })).toMatchObject({ status: 400, body: { error: 'invalid_scope' } });
+      }
     });
 
     // Attack: a grant taken away stops the tokens minted under it at their next request, not at their expiry.
@@ -377,20 +409,21 @@ describe('LTI installation API access', async () => {
       expect(await requestToken(ltiTool, { assertion: first.assertion })).toMatchObject(refusedAs);
     });
 
-    // Attack: a registration acts in its own tenant: it gets no token for another tenant's API.
+    // Attack: a registration acts in its own tenant: it gets no token for another tenant's API, though it may name its own.
     it("a token for another tenant's API, and the token of one tenant at another's route", async () => {
       const org = await orgWithAdmin();
       const other = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
       const elsewhere = resourceUri({ face: 'api', tenantId: other.org.tenantId });
       expect(await requestToken(ltiTool, { resource: elsewhere })).toMatchObject({ status: 400, body: { error: 'invalid_target' } });
+      expect((await requestToken(ltiTool, { resource: resourceUri({ face: 'api', tenantId: org.org.tenantId }) })).status).toBe(200);
       await expectRefusal(await readMembers(other, await tokenOf(ltiTool)), 401, 'unauthorized');
     });
   });
 
   describe('the members route refuses', () => {
-    // Attack: an installation reads only the courses its placements imply. Placed nowhere, it is bound to nothing, and
-    // the tenant refuses it as any such actor.
+    // Attack: an installation reads only the courses its placements imply. On a course none of them launches as, it is
+    // bound to nothing, and the tenant refuses it as any such actor.
     it('a channel the installation is not placed in, or no longer, and a channel of another organization', async () => {
       const org = await orgWithAdmin();
       const other = await orgWithAdmin();
@@ -400,7 +433,7 @@ describe('LTI installation API access', async () => {
 
       ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
       expect((await readMembers(org, token)).response.status).toBe(200);
-      await expectRefusal(await readMembers(org, token, other.org.id), 404, 'not_found');
+      await expectRefusal(await readMembers(org, token, other.org.id), 403, 'forbidden');
 
       await call(deleteLtiResourceLink, { path: { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId }, headers: org.headers });
       await expectRefusal(await readMembers(org, token), 403, 'forbidden');

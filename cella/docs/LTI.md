@@ -20,7 +20,7 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
-A platform whose token endpoint or authorization server sits on another host than its issuer, such as Brightspace or Schoology, registers and launches the app. The app reads no course members from it: it signs for its issuer's host alone.
+A platform whose token endpoint, authorization server or membership address sits on another host than its issuer, such as Brightspace or Schoology, registers and launches the app. The app reads no course members from it: it signs for its issuer's host alone.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
@@ -30,7 +30,7 @@ An LTI tool asks for the personal fields it wants: name, email, picture. When ap
 
 The approval dialog also shows where launches go and the site whose keys act as the LTI tool. Registration refuses an LTI tool whose launch addresses or key set lie off the domains it declares.
 
-An LTI tool may also ask for access scopes of the app's API. Only a scope that a route for installed LTI tools reads can be asked for and granted, today `user:read`. The approval dialog lists them under API access, none chosen by default. What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the courses where it has a tab.
+An LTI tool may also ask for the scope of an LTI service the app serves, today Names and Role Provisioning Services (NRPS), which lists a course's members. The app records it as the access scope it stands for, `user:read`. The approval dialog lists it under API access, none chosen by default. What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the courses where it has a tab.
 
 The admin changes the grant later on the LTI tool's tile, which asks the second factor too. Withdrawing a scope asks first, and the LTI tool loses it at its next request.
 
@@ -50,17 +50,17 @@ The platform's storage replaces a cookie for the launch state. Every launch chec
 
 ## API access
 
-An installed LTI tool reads the app's API as itself, within the scopes the admin granted. It asks the OAuth worker for a token with an assertion signed by a key of the set it registered. The token is for the tenant's API and acts as the installation.
+An installed LTI tool reads a course's members as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
-Its reach follows its tabs, read at every request. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Removing the last tab, or the channel, takes that away. Nothing about a tab is stored on the installation.
+Its reach follows its tabs, read at every request for the course the address names. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Removing the last tab, or the channel, takes that away. Nothing about a tab is stored on the installation.
 
 Adding a tab takes the right to update the channel it sits in and its course, when that is a channel above it.
 
-With `user:read`, its token lists the people of such a course, as far as that role sees them: each person's id, their LTI roles there and the personal claims a launch carries.
+A launch with a course carries the NRPS claim to an LTI tool granted `user:read`: the course's membership address and the service version, 2.0. A launch without a course, or of an LTI tool granted nothing, carries none.
 
-The platform's configuration names its issuer as the authorization server, and an LTI tool addresses its assertion there.
+At that address, the token lists the course's members as far as its role sees them, in the NRPS membership container. Each member is the person's id, the same a launch sends, their LTI roles there, the status Active and the personal fields the admin released, by their NRPS names. A page holds about what `limit` asks, a `Link` header leads to the next, and `role` keeps one LTI role.
 
-A launch of an LTI tool granted a scope names the API in a claim under the issuer's address: the tenant's API, the tenant, the organization and the address of its course's member list. A launch without a course names no member list, and one of an LTI tool granted nothing carries no claim. The claim's members are documented in [lti-platform-schema.ts](../../backend/src/modules/lti-platform/lti-platform-schema.ts).
+The platform's configuration offers the NRPS scope and names its issuer as the authorization server, which an LTI tool addresses its assertion to.
 
 ## Courses and roles
 
@@ -74,11 +74,11 @@ As a platform, your app says in [launch-context.ts](../../backend/src/modules/lt
 
 ## Course members
 
-As an LTI tool, your app also reads who is in a course from a platform built on the template, before any of them launched. It asks for `user:read` when it registers. A platform that grants nothing, or any other platform, still launches it.
+As an LTI tool, your app also reads who is in a course by NRPS, before any of them launched. It asks for the NRPS scope when it registers. A platform that grants nothing still launches it.
 
-The import starts when an Instructor or Administrator of the course launches and the launch named the platform's API. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. No button starts one: the next such launch after that while does.
+The import starts when an Instructor or Administrator of the course launches and the launch carried the NRPS claim. It runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. No button starts one: the next such launch after that while does.
 
-It reads each person's id, their LTI roles in the course, and their name and email address where the platform's admin released them.
+It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. It follows the platform's next links page by page, each on the issuer's origin at the address the launch named. A member the platform lists as Inactive is not added.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules. The import adds and updates, and never removes anyone: who left the course stays a member until an admin removes them.
 
@@ -118,7 +118,8 @@ The template ships the organization's embedded page. An app that maps a course t
 
 ## Not built
 
-- The roster, grade and deep linking services of LTI. Reading course members through the platform's own API is built, for a platform on the template.
+- The grade and deep linking services of LTI.
+- Of NRPS, a resource link's members (`rlid`, which the platform refuses) and the differences link.
 - Acting for a person on the platform: an installed LTI tool's token acts only as itself.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.

@@ -4,7 +4,7 @@ import { baseDb } from '#/db/db';
 import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
-import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-api';
+import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,

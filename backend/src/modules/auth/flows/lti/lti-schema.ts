@@ -104,7 +104,10 @@ export const ltiContextSchema = z.object({
   label: z.string().nullable().describe("The platform's short name of the context, such as a course code"),
   title: z.string().nullable(),
   channel: channelBaseSchema,
-  apiUrl: z.string().nullable().describe("The platform's API that the member import reads, from the last launch that named one; null when none did"),
+  membershipsUrl: z
+    .string()
+    .nullable()
+    .describe("Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"),
   importRanAt: z.string().nullable().describe('When the last member import ran; null before the first'),
   importReadCount: z.int().nullable().describe('How many people the last member import read from the platform'),
   importIssue: z

@@ -1,9 +1,10 @@
-import type { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import { ltiNrps } from '#/lib/lti-vocabulary';
 import type { PlacementContext } from '#/modules/lti-platform/helpers/context-channel';
-import type { LtiToolConfig, ltiApiClaimSchema } from '#/modules/lti-platform/lti-platform-schema';
+import type { LtiToolConfig } from '#/modules/lti-platform/lti-platform-schema';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-import { resourceUri } from '#/modules/oauth-server/resources';
+
+type CourseRef = Pick<PlacementContext, 'channelType' | 'channelId'>;
 
 /** The page that posts a launch's login initiation to the LTI tool, served by the API (`initiateLtiLaunchLogin`). */
 export const loginInitiationUrl = `${appConfig.backendUrl}/lti-launches/~initiate-login`;
@@ -41,26 +42,15 @@ export const launchCustom = ({ ltiToolConfig }: LaunchClient, resourceLinkCustom
   ...resourceLinkCustom,
 });
 
-/** Where the people of a launch's course are read with the installation's token (`listLtiMembers`): the first page. */
-const ltiMembersUrl = (apiUrl: string, organizationId: string, { channelType, channelId }: PlacementContext) => {
-  const url = new URL(`${apiUrl}/organizations/${organizationId}/lti-members`);
-  url.search = new URLSearchParams({ channelType, channelId }).toString();
-  return url.href;
-};
-
 /**
- * The value of the claim that tells the LTI tool where the platform's API is (`ltiApiClaim`), for a launch of a
- * placement in `context`: a launch without a course names no member list.
+ * The address of a course's members for an installed LTI tool's token (`listLtiMembers`). It holds no query: an NRPS
+ * reader appends its own params.
  */
-export const launchApiClaim = (
-  placement: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>,
-  context: PlacementContext | null,
-): z.infer<typeof ltiApiClaimSchema> => {
-  const apiUrl = resourceUri({ face: 'api', tenantId: placement.tenantId });
-  return {
-    api_url: apiUrl,
-    tenant_id: placement.tenantId,
-    organization_id: placement.organizationId,
-    ...(context && { members_url: ltiMembersUrl(apiUrl, placement.organizationId, context) }),
-  };
-};
+export const ltiMembershipsUrl = ({ tenantId, organizationId }: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: CourseRef) =>
+  `${appConfig.backendUrl}/tenants/${tenantId}/organizations/${organizationId}/lti-members/${course.channelType}/${course.channelId}`;
+
+/** The NRPS claim (`ltiClaims.namesRoleService`) of a launch of a placement in `course`, the launch's context. */
+export const launchNamesRoleService = (placement: Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId'>, course: CourseRef) => ({
+  context_memberships_url: ltiMembershipsUrl(placement, course),
+  service_versions: [ltiNrps.version],
+});

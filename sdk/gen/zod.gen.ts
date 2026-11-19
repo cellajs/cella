@@ -1790,7 +1790,7 @@ export const zListLtiContextsResponse = z.object({
       label: z.string().nullable(),
       title: z.string().nullable(),
       channel: zChannelBase,
-      apiUrl: z.string().nullable(),
+      membershipsUrl: z.string().nullable(),
       importRanAt: z.string().nullable(),
       importReadCount: z.int().nullable(),
       importIssue: z
@@ -2126,25 +2126,32 @@ export const zStartLtiLaunchResponse = z.object({
 export const zListLtiMembersPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
 });
 
 export const zListLtiMembersQuery = z.object({
-  pageToken: z.string().max(2048).optional(),
-  maxPageSize: z.int().gte(0).optional(),
-  skip: z.int().gte(0).optional().default(0),
-  channelId: z.string().max(50),
-  channelType: z.enum(['organization']),
-  orderBy: z.enum(['id', 'id asc', 'id desc']).optional().default('id asc'),
+  role: z.string().max(2048).optional(),
+  limit: z.int().gte(0).optional(),
+  after: z.uuid().optional(),
+  rlid: z.string().max(255).optional(),
 });
 
 /**
  * LTI members
  */
 export const zListLtiMembersResponse = z.object({
-  results: z.array(
+  id: z.string(),
+  context: z.object({
+    id: z.string(),
+    label: z.string(),
+    title: z.string(),
+  }),
+  members: z.array(
     z.object({
-      id: z.string(),
+      user_id: z.string(),
       roles: z.array(z.string()),
+      status: z.enum(['Active']),
       name: z.string().optional(),
       given_name: z.string().optional(),
       family_name: z.string().optional(),
@@ -2152,8 +2159,6 @@ export const zListLtiMembersResponse = z.object({
       picture: z.string().optional(),
     }),
   ),
-  nextPageToken: z.string().optional(),
-  totalSize: z.int().gte(0),
 });
 
 export const zInitiateLtiLaunchLoginQuery = z.object({
