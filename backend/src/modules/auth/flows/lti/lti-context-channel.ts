@@ -1,6 +1,6 @@
 import { type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
-import { isLisContextRole, isLisContextType } from '#/lib/lti-vocabulary';
+import { isLisContextRole, isLisContextType, lisInstitutionRoles } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -61,8 +61,11 @@ export const createLtiContextChannel = async (_ctx: DbContext, { context }: LtiC
  * The role a launch or an import gives in a channel of `channelType`, or null for none: the launch is refused with a
  * page, and the import leaves the person out. An answer that is no role of that type gives its least privileged role.
  * Re-applied at every launch: a role in a channel below the organization follows the launch up and down, an
- * organization role only goes up. An LTI administrator never becomes an app admin. The template's answer: the least
- * privileged role for a person with a context role, null for one with institution or system roles alone.
+ * organization role only goes up. An LTI administrator never becomes an app admin. The template's answer, by case:
+ * - a context role (`isLisContextRole`): the least privileged role;
+ * - no context role, but the institution role Administrator, which platforms send their admins: the least privileged
+ *   role too;
+ * - neither, such as institution roles of another kind or none at all: null.
  */
 export const ltiContextRole = ({ channelType, ltiRoles }: LtiRoleFacts): MembershipModel['role'] | null =>
-  ltiRoles.some(isLisContextRole) ? hierarchy.getLeastPrivilegedRole(channelType) : null;
+  ltiRoles.some(isLisContextRole) || ltiRoles.includes(lisInstitutionRoles.administrator) ? hierarchy.getLeastPrivilegedRole(channelType) : null;

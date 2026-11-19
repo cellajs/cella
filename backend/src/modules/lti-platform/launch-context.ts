@@ -12,8 +12,9 @@ export const ltiContextTypes = (_channelType: ChannelEntityType): string[] | nul
 /**
  * The LTI context roles a launch and a member row send for what the person's own membership in the context channel lets
  * them do (`can`, the permission engine with that one membership), as full URIs (`lisContextRoles`). Power that reaches
- * them from a channel above counts for nothing, and a person without a membership there gets no call. The app fills
- * this pinned file. The default: whoever may update the channel is an Instructor, whoever may only read it a Learner.
+ * them from a channel above counts for nothing. A person without a membership there gets no call: only a tab for its
+ * editors lets them in, as the context role Administrator (`ltiLaunchRoles`). The app fills this pinned file. The
+ * default: whoever may update the channel is an Instructor, whoever may only read it a Learner.
  */
 export const ltiRolesFor = (_channelType: ChannelEntityType, can: (action: EntityActionType) => boolean): string[] =>
   can('update') ? [lisContextRoles.instructor] : can('read') ? [lisContextRoles.learner] : [];

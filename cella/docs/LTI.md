@@ -65,7 +65,7 @@ A tab launches as its own channel. Only a channel type the app makes an LTI cont
 Switching a tab on asks whom it opens for, its audience:
 
 - **Its members:** whoever holds a membership in the channel. Someone who may read or change the channel without being its member does not see it. These are exactly the people the LTI tool reads there.
-- **Only those who can change the channel:** whoever may update it, as the permission engine decides.
+- **Only those who can change the channel:** whoever may update it, as the permission engine decides. Someone among them without a membership there goes as Administrator of the context: they manage it without being part of it.
 
 The tab list, the start of a launch and the launch itself check the audience alike, and someone outside it is refused as for a tab that does not exist. The audience bounds who opens the tab, not whom the LTI tool reads: with members granted, it reads every member either way, and the question says so. The tab's row in the Tabs card changes its audience later.
 
@@ -103,13 +103,19 @@ A course on the platform is an LTI context. As an LTI tool, your app maps each c
 
 An app whose course is a channel below the organization names that channel type there, and may name another for a group. It creates the channel on an instructor's first launch, named after the course, and maps LTI roles to the channel's roles at every launch. A role in such a channel follows the platform up and down. An organization role only goes up, and never to one that may update the organization, as the permission engine decides.
 
-The role mapping may give no role, which refuses the launch with a page and leaves the person out of an import. The template gives none to a person with institution or system roles alone.
+The role mapping may give no role, which refuses the launch with a page and leaves the person out of an import. The template's mapping has three cases:
+
+- **A context role:** the channel's least privileged role.
+- **No context role, but the institution role Administrator,** which platforms send their admins: the least privileged role too.
+- **Neither:** no role, so the launch is refused.
 
 A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a course or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a course.
 
 A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An email the platform releases never links them to an existing account. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
 
-As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channel types are LTI contexts and which LTI roles a person's membership there sends. The template sends every channel as a group, so its seeded pair works. Whoever's membership in the channel may update it goes as Instructor, whoever's may only read it as Learner. Power that reaches a person from a channel above, such as an organization admin's, makes no context role, and without a membership there they have none.
+As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channel types are LTI contexts and which LTI roles a person's membership there sends. The template sends every channel as a group, so its seeded pair works. Whoever's membership in the channel may update it goes as Instructor, whoever's may only read it as Learner.
+
+Power that reaches a person from a channel above, such as an organization admin's, never changes the roles their own membership gives. Without a membership there, only a tab for its editors lets them in, and they go as Administrator of the context. The member list an LTI tool reads holds members alone, with the roles their memberships give.
 
 Every launch also carries institution roles from the same file, with or without a context. The template sends Administrator to whoever may update the organization, Member to anyone else.
 
@@ -168,7 +174,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A course not set up yet:** a student who arrives before any instructor is told that someone who can change it on the platform must open it first.
 - **A launch without a course:** someone the organization does not know yet is told to open the app from a course first.
-- **No role the app takes:** the launch is refused with a page, and nothing is written.
+- **No role the app takes:** a launch with neither a context role nor the institution role Administrator is refused with a page in the template, and nothing is written.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived course:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.

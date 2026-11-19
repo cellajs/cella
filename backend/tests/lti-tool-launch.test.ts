@@ -272,19 +272,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
         status: 403,
         type: 'lti_deployment_unknown',
       },
-      // The template maps no role for a launch without a context role: an empty list, or institution roles alone.
-      {
-        name: 'no context role',
-        run: async () => (await launch(connected, { [ltiClaims.roles]: [lisInstitutionRoles.administrator] })).response,
-        status: 403,
-        type: 'lti_launch_no_roles',
-      },
-      {
-        name: 'an empty roles list',
-        run: async () => (await launch(connected, { [ltiClaims.roles]: [] })).response,
-        status: 403,
-        type: 'lti_launch_no_roles',
-      },
       {
         name: 'the test user role',
         run: async () => (await launch(connected, { [ltiClaims.roles]: [lisContextRoles.learner, ltiTestUserRole] })).response,
@@ -343,6 +330,33 @@ describe('LTI launch at the app as an LTI tool', async () => {
       `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
     );
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
+  });
+
+  // Contract: the template's role mapping as a platform's launch meets it. A context role admits, and so does the
+  // institution role Administrator alone, which platforms send their admins; a launch with neither is refused and
+  // creates no account.
+  it('admits a context role or the institution role Administrator at the least privileged role, and refuses a launch with neither', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const roleOf = async (sub: string) => {
+      const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, sub));
+      return identity && (await orgMembershipOf(identity.userId, connected.org.id))?.role;
+    };
+    const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
+
+    for (const [sub, roles] of [
+      ['lms-learner', [lisContextRoles.learner]],
+      ['lms-admin', [lisInstitutionRoles.administrator]],
+    ] as const) {
+      expect((await launch(connected, { sub, [ltiClaims.roles]: roles })).response.status, sub).toBe(303);
+      expect(await roleOf(sub)).toBe(leastPrivileged);
+    }
+    for (const [sub, roles] of [
+      ['lms-member', [lisInstitutionRoles.member]],
+      ['lms-nobody', []],
+    ] as const) {
+      await expectRefusalPage((await launch(connected, { sub, [ltiClaims.roles]: roles })).response, 403, 'lti_launch_no_roles');
+      expect(await roleOf(sub)).toBeUndefined();
+    }
   });
 
   // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.

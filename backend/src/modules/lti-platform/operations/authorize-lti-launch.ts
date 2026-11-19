@@ -9,7 +9,7 @@ import { spendHandoffToken } from '#/modules/auth/core';
 import { holdsLtiTabs, linkContext } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
-import { ltiInstitutionRolesIn, ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
+import { ltiLaunchRoles } from '#/modules/lti-platform/helpers/lti-roles';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
@@ -105,12 +105,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
   const { person, memberships, channel } = await assertLaunchAllowed({ personId, target });
 
   const context = linkContext(resourceLink);
-  // Context roles from the person's membership in the context alone, institution roles from theirs in the organization.
-  const membershipIn = (channelId: string) => memberships.find((membership) => membership.channelId === channelId);
-  const roles = [
-    ...(context ? ltiRolesIn(personId, membershipIn(channel.id), context.channelType, channel) : []),
-    ...ltiInstitutionRolesIn(personId, membershipIn(resourceLink.organizationId), resourceLink.organizationId),
-  ];
+  const roles = ltiLaunchRoles({ personId, memberships, link: resourceLink, channel });
   const custom = launchCustom(client, resourceLink.custom);
   const readsMembers = installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
 
