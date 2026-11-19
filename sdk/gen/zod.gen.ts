@@ -2127,7 +2127,7 @@ export const zListLtiTabsResponse = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      domain: z.string(),
+      launchOrigins: z.array(z.string()),
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),

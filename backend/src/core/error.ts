@@ -69,7 +69,8 @@ export class AppError extends Error {
 
   constructor(status: AppErrorStatus, type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const title = errorTitle(type, status);
-    const resource = opts?.entityType && resourceLabel(opts.entityType);
+    // Without an entity type the slot reads empty in either form, never as its braces, as the frontend renders it.
+    const resource = opts?.entityType ? resourceLabel(opts.entityType) : '';
     // Passed to `super`, the cause stays non-enumerable as on a native error, so a log line never copies a library's plain-object cause.
     super(opts?.message ?? i18n.t(`${type}.text`, { ns: errorNamespaces, defaultValue: title, resource }), { cause: opts?.originalError?.cause });
 

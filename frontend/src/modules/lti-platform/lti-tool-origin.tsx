@@ -1,21 +1,37 @@
 import { useTranslation } from 'react-i18next';
 import { DateTooltip } from '~/modules/common/date-tooltip';
-import { dateShort } from '~/utils/date-short';
+import { clockTime } from '~/utils/date-short';
 
-/** What tells two LTI tools of one name apart: the domain each names itself by and when it was added. */
-export function LtiToolOrigin({ domain, createdAt }: { domain: string; createdAt: string }) {
-  const { t } = useTranslation();
+interface LtiToolOriginProps {
+  createdAt: string;
+  /** Left out where the line beside it names them already. */
+  launchOrigins?: string[];
+}
+
+/**
+ * What tells two LTI tools of one name apart: the hosts their launches go to, which an approval trusts, and the moment
+ * each was added.
+ */
+export function LtiToolOrigin({ createdAt, launchOrigins }: LtiToolOriginProps) {
+  const { t, i18n } = useTranslation();
+  const added = new Date(createdAt);
+  // A date with its year, never "Today": the moment reads inside the line
+  const date = `${added.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })}, ${clockTime(added)}`;
+  const hosts = launchOrigins?.map((origin) => new URL(origin).host).join(', ');
   return (
     <span className="text-muted-foreground min-w-0 truncate text-xs font-normal">
-      {domain}
-      {' · '}
+      {hosts && `${hosts} · `}
       <DateTooltip date={createdAt}>
-        <span>{t('c:added_on', { date: dateShort(createdAt) })}</span>
+        <span>{t('c:added_on', { date })}</span>
       </DateTooltip>
     </span>
   );
 }
 
-/** The names that more than one of `items` carries. */
-export const sharedNames = (items: { name: string }[]) =>
-  new Set(items.filter((item, index) => items.some((other, otherIndex) => otherIndex !== index && other.name === item.name)).map(({ name }) => name));
+/** Whether another of `items` carries a name, compared without regard to case and surrounding spaces. */
+export const sharesNameAmong = (items: { name: string }[]) => {
+  const counts = new Map<string, number>();
+  const key = (name: string) => name.trim().toLocaleLowerCase();
+  for (const { name } of items) counts.set(key(name), (counts.get(key(name)) ?? 0) + 1);
+  return (name: string) => (counts.get(key(name)) ?? 0) > 1;
+};

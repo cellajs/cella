@@ -24,7 +24,7 @@ Each connection gets a key pair of its own, and the registration names that conn
 
 A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
 
-A refused registration's page says why, in words the platform's admin can act on, and stays open until they close it. A refusal the app decides alone, a link not valid or a tenant at its quota, leaves the link for another try. Once the app has asked the platform, every outcome takes a new link.
+A refused registration's page says why, in words the platform's admin can act on, and stays open until they close it. A refusal the app decides alone leaves the link for another try: a link not valid, a tenant at its quota, or a configuration address the app does not contact. Once the app has asked the platform, every outcome takes a new link, and the page says which of the two it is.
 
 A course belongs to the connection that launched it first. Two connections of one tenant to the same platform, such as two schools on one hosted platform, both open the course and admit people into it, and only its own connection changes it: its name, its member list and its imports.
 
@@ -46,7 +46,7 @@ The admin changes the grant later on the LTI tool's tile, which asks the second 
 
 Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
-Deleting an LTI tool, in any state, asks for the second factor too, after a confirmation that names its tabs: its registration, its tabs and its access go, and adding it again takes a new registration. Two LTI tools of one name, such as an LTI tool registered again, show beside their name the domain each names itself by and when it was added.
+An approved or disabled LTI tool is deleted on its tile, as a waiting one is rejected, and both ask for the second factor. Deleting asks first, naming its tabs: its registration, its tabs and its access go, and adding it again takes a new registration. Two LTI tools of one name, such as an LTI tool registered again, show when each was added, and in a channel's Tabs card where its launches go.
 
 ## Tabs
 
@@ -155,7 +155,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its courses under LTI connections ask to register the app at the platform again before members are read.
-- **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted.
+- **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted, unless another registration took the last place while it ran.
 - **A deleted LTI tool:** its tabs leave every channel, a launch of one is refused as of a tab that does not exist, and its tokens stop at their next request.
 
 ## Not built

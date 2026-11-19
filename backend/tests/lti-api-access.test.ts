@@ -9,6 +9,7 @@ import {
   deleteLtiInstallation,
   deleteLtiResourceLink,
   getOrganization,
+  listLtiInstallations,
   listLtiInstallationTabs,
   listLtiMembers,
   listLtiResourceLinks,
@@ -593,7 +594,7 @@ describe('LTI installation API access', async () => {
 
       const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
       const context = { ...channel, name: org.org.name };
-      const tab = { name: 'Peer review', domain: ltiToolHost, createdAt: expect.any(String), context };
+      const tab = { name: 'Peer review', launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String), context };
       const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true });
       expect((tabs.data as { results: unknown[] }).results).toEqual([
         { ...tab, id: reader.installationId, status: 'active', readsMembers: true, refusal: null, resourceLink: placed(reader.resourceLinkId) },
@@ -672,6 +673,13 @@ describe('LTI installation API access', async () => {
       await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: org.headers }), 404, 'not_found');
       const page = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${launchToken}`));
       expect(page.status).toBe(401);
+
+      // A waiting one too, which its tile rejects
+      const waiting = await installLtiTool(org, { approval: null, placed: false });
+      const waitingPath = { ...org.path, ltiInstallationId: waiting.installationId };
+      expect((await call(deleteLtiInstallation, { path: waitingPath, headers: org.headers })).response.status).toBe(204);
+      const listed = await call(listLtiInstallations, { path: org.path, headers: org.headers });
+      expect((listed.data as { results: unknown[] }).results).toEqual([]);
     });
 
     // Attack: only who may update the channel places a tab, switches or removes it, sees what it may place there, or lists

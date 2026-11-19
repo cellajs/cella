@@ -8,6 +8,7 @@ import type { MembershipEntity } from '#/lib/module';
 import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
+import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import {
   deleteLtiResourceLink,
@@ -130,7 +131,7 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
       {
         id: account.id,
         name: client.name,
-        domain: client.ltiToolConfig.domain,
+        launchOrigins: launchOrigins(client),
         createdAt: installation.createdAt,
         status: account.status,
         readsMembers: installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),

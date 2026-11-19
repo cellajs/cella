@@ -160,7 +160,7 @@ export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
           {
             id: mockLtiInstallationResponse().id,
             name: 'Peer review',
-            domain: mockLtiInstallationResponse().domain,
+            launchOrigins: mockLtiInstallationResponse().launchOrigins,
             createdAt: mockLtiInstallationResponse().createdAt,
             status: 'active',
             readsMembers: true,

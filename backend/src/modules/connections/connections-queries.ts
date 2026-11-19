@@ -271,6 +271,15 @@ export const findActiveLtiConnections = async (ctx: DbContext, { issuer, clientI
   return rows.filter(isLtiConnection);
 };
 
+/** The LTI connection that holds a platform's issuer and client id, whichever tenant holds it; undefined when none does. */
+export const findLtiConnectionByClient = async (ctx: DbContext, { issuer, clientId }: { issuer: string; clientId: string }) => {
+  const [row] = await ctx.var.db
+    .select({ id: connectionsTable.id, tenantId: connectionsTable.tenantId })
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.kind, 'lti'), eq(connectionsTable.issuer, issuer), eq(connectionsTable.clientId, clientId)));
+  return row;
+};
+
 /**
  * Records the LTI deployment of a connection whose platform named none at registration. Of two concurrent first
  * launches the first to write decides: the other's update waits for that commit and then matches no row.

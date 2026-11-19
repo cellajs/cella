@@ -310,7 +310,7 @@ function DeletedTabs({ tabs }: { tabs: LtiInstallationTab[] }) {
   );
 }
 
-/** What deleting an LTI tool takes along, read before the person confirms: its tabs, and its access once approved. */
+/** What deleting an LTI tool takes along, read before the person confirms: its tabs, and what it was shared or granted. */
 function DeleteLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { data } = useQuery(ltiInstallationTabsQueryOptions(path, installation.id));
@@ -320,7 +320,7 @@ function DeleteLtiToolForm({ installation, path }: { installation: LtiInstallati
   return (
     <div className="flex flex-col gap-4 text-sm">
       {data && <DeletedTabs tabs={data.results} />}
-      {installation.approvedAt && <p>{t('c:lti_tool_delete.access')}</p>}
+      {(installation.releasedFields.length > 0 || installation.grantedScopes.length > 0) && <p>{t('c:lti_tool_delete.access')}</p>}
       <DeleteForm
         resource="c:lti_tool"
         pending={isPending}
@@ -388,7 +388,7 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
       value={installation.id}
       icon={<BlocksIcon />}
       title={installation.name}
-      badges={sharesName && <LtiToolOrigin domain={installation.domain} createdAt={installation.createdAt} />}
+      badges={sharesName && <LtiToolOrigin createdAt={installation.createdAt} />}
       status={{ tone: statusTones[installation.status], label: t(statusLabels[installation.status]) }}
       meta={installation.launchOrigins.map((origin) => new URL(origin).host).join(', ')}
       lead={

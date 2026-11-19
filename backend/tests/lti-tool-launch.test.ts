@@ -17,7 +17,7 @@ import { appConfig, hierarchy } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { AppError, type ErrorKey } from '#/core/error';
+import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
@@ -187,10 +187,11 @@ describe('LTI launch at the app as an LTI tool', async () => {
     return { started, idToken, response: await finish({ id_token: idToken, state: started.state, storage_value: started.value }) };
   }
 
-  /** A refusal page naming the error's translated text, with no session set. */
-  const expectRefusalPage = async (response: Response, status: number, type: ErrorKey) => {
+  /** A refusal page naming the error's translated text, for the entity type it is about where it names one, with no session set. */
+  const expectRefusalPage = async (response: Response, status: number, type: ErrorKey, entityType?: string) => {
     expect(response.status).toBe(status);
-    expect(decodeHtml(await response.text())).toContain(new AppError(400, type, 'info').message);
+    const text = resourceErrorTexts(type, entityType)?.text ?? new AppError(400, type, 'info').message;
+    expect(decodeHtml(await response.text())).toContain(text);
     expect(embeddedCookieOf(response).cookie).toBeUndefined();
   };
 
@@ -500,7 +501,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     // The template's course is the organization, which only a direct write archives.
     await db.update(organizationsTable).set({ archived: true }).where(eq(organizationsTable.id, connected.org.id));
 
-    await expectRefusalPage((await launch(connected)).response, 403, 'channel_archived');
+    await expectRefusalPage((await launch(connected)).response, 403, 'channel_archived', 'organization');
     expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
     expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
     expect(await orgMembershipOf(member.id, connected.org.id)).toMatchObject({ role: adminRole });

@@ -244,7 +244,11 @@ export const useDeleteLtiResourceLinkMutation = () =>
     mutationFn: async ({ path }) => {
       await deleteLtiResourceLink({ path });
     },
-    onSuccess: (_, { path, channelId }) => setCachedResourceLink(path.tenantId, channelId, path.ltiResourceLinkId, null),
+    onSuccess: (_, { path, channelId }) => {
+      setCachedResourceLink(path.tenantId, channelId, path.ltiResourceLinkId, null);
+      // A disabled LTI tool leaves the channel's Tabs card with its last tab there
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId, channelId) });
+    },
   });
 
 /** Starts a launch of a resource link; the frame that asked shows a failure in place. */

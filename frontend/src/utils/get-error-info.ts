@@ -70,8 +70,8 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const key = type && findKey(type);
   const textKey = type && findKey(`${type}.text`);
 
-  const resource = error instanceof ApiError && error.entityType ? i18n.t(error.entityType) : undefined;
-  const options = resource ? { resource } : {};
+  // An error naming no entity type fills `{{resource}}` with nothing, as `AppError` does: no braces reach a reader
+  const options = { resource: error instanceof ApiError && error.entityType ? i18n.t(error.entityType) : '' };
 
   const title = key ? i18n.t(key, options) : getFallbackTitle(error);
 

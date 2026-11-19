@@ -1699,7 +1699,7 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
 /**
  * Register at an LTI platform
  *
- * The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Checks the one-use link and the tenant's quota of LTI connections, then spends the link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. A refusal before the link is spent leaves it usable. Any LTI platform may frame the page, which holds no session.
+ * The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Checks the one-use link, the tenant's quota of LTI connections and the configuration's address, then spends the link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. A refusal before the link is spent leaves it usable. Any LTI platform may frame the page, which holds no session.
  *
  * **GET /auth/lti/register** ·· [registerLtiPlatform](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/register) ·· _auth · cella_
  *

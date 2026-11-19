@@ -5,8 +5,8 @@ import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { updateStamps } from '#/db/utils/stamps';
-import { extractPgError } from '#/lib/error';
-import { guardedFetch } from '#/lib/guarded-fetch';
+import { constraintErrorType } from '#/lib/error';
+import { guardedFetch, vetAddress } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { readHandoffToken, spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
@@ -18,7 +18,7 @@ import {
   type ltiRegisterQuerySchema,
   ltiRegistrationResponseSchema,
 } from '#/modules/auth/flows/lti/lti-schema';
-import { deleteConnection, insertConnection, updateConnection } from '#/modules/connections/connections-queries';
+import { deleteConnection, findLtiConnectionByClient, insertConnection, updateConnection } from '#/modules/connections/connections-queries';
 import type { LtiConnectionConfig } from '#/modules/connections/connections-schema';
 import { assertLtiConnectionRoom } from '#/modules/connections/operations/assert-lti-connection-room';
 import { lockTenantQuota } from '#/modules/tenants/quota-lock';
@@ -44,12 +44,30 @@ const isUnder = (url: URL, base: URL) => {
   return url.origin === base.origin && url.pathname.startsWith(basePath);
 };
 
-/** The platform's OpenID configuration, read from its address and checked against it and its issuer. */
-const fetchPlatformConfiguration = async (address: string, options: PlatformFetchOptions) => {
+/**
+ * The configuration's address, refused where the app would not contact it: malformed, with a fragment, or failing the
+ * guarded fetch's checks (`vetAddress`). Nothing is asked of the platform yet.
+ * @throws AppError 400 `lti_configuration_address_refused` naming the reason.
+ */
+const vetConfigurationAddress = async (address: string, options: PlatformFetchOptions) => {
+  const refused = (reason: unknown) => new AppError(400, 'lti_configuration_address_refused', 'warn', { meta: { reason: String(reason) } });
   const configurationUrl = URL.canParse(address) ? new URL(address) : null;
-  if (!configurationUrl || configurationUrl.hash) throw invalidConfiguration('address');
+  if (!configurationUrl || configurationUrl.hash) throw refused('address');
+  await vetAddress(address, options.resolve).catch((err) => {
+    throw err instanceof AppError ? refused(err.meta?.reason) : err;
+  });
+  return configurationUrl;
+};
 
-  const response = await guardedFetch(address, { ...options, headers: { Accept: 'application/json' } });
+/** A request to the platform that the guarded fetch refused or could not finish, as the registration's refusal. */
+const platformUnreachable = (err: unknown) => {
+  if (!(err instanceof AppError) || (err.type !== 'outbound_request_failed' && err.type !== 'outbound_request_refused')) return err;
+  return new AppError(400, 'lti_platform_unreachable', 'warn', { meta: { reason: String(err.meta?.reason) } });
+};
+
+/** The platform's OpenID configuration, read from its vetted address and checked against it and its issuer. */
+const fetchPlatformConfiguration = async (configurationUrl: URL, options: PlatformFetchOptions) => {
+  const response = await guardedFetch(configurationUrl.href, { ...options, headers: { Accept: 'application/json' } });
   if (response.status !== 200) throw invalidConfiguration('status');
 
   const parsed = ltiPlatformConfigurationSchema.safeParse(parseJson(response.text));
@@ -97,33 +115,44 @@ const assertTenantRoom = async (ctx: DbContext, tenantId: string) => {
   await assertLtiConnectionRoom(ctx, tenant);
 };
 
-/** Whether a write failed on the unique pair of issuer and client id: the platform gave a client id it gave before. */
-const isClientIdTaken = (error: unknown) => {
-  const pgError = extractPgError(error);
-  return pgError?.code === '23505' && pgError.constraint === 'connections_issuer_client_id_idx';
+/**
+ * A client id the platform gave before, refused by the unique pair of issuer and client id across tenants
+ * (`lti_client_id_taken`). Only a connection of this tenant is named to its admin; another tenant's stays unnamed.
+ * @returns The error to throw: `lti_platform_already_connected` for this tenant's connection, else `err` itself.
+ */
+const takenClientIdRefusal = async (err: unknown, { tenantId, issuer, clientId }: { tenantId: string; issuer: string; clientId: string }) => {
+  if (constraintErrorType(err) !== 'lti_client_id_taken') return err;
+  const holder = await findLtiConnectionByClient(dbCtx, { issuer, clientId });
+  if (holder?.tenantId !== tenantId) return err;
+  return new AppError(409, 'lti_platform_already_connected', 'warn', { meta: { issuer } });
 };
 
 /**
  * Registers the app as an LTI tool at a platform by Dynamic Registration, from the frame the platform opened the
  * registration link in. What the app decides alone comes first, and leaves the link for another try: a link unknown or
- * expired, and a tenant at its quota of LTI connections. Every outcome after the first request to the platform takes a
- * new link: the link is spent before it. The platform's configuration is read and checked, and the connection
- * is stored `pending` with a key pair of its own (`mintConnectionKey`), for the link's tenant and written by the admin
- * who created the link, under the tenant's quota lock. Its key set answers from then on: a platform such as Brightspace
- * reads it while it handles the registration. The app registers with that key set, and the connection turns active
- * with the client id the platform gave; a refused registration deletes it.
- * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400 `lti_configuration_invalid`,
- *   `lti_platform_unsupported` or `lti_registration_refused`, 403 `lti_connection_limit`, what `guardedFetch` throws,
- *   and 409 `lti_platform_already_connected` when the platform gave a client id it gave the app before.
+ * expired, a tenant at its quota of LTI connections, and a configuration address it does not contact. Every outcome
+ * after the first request to the platform takes a new link: the link is spent before it. The platform's configuration
+ * is read and checked, and the connection is stored `pending` with a key pair of its own (`mintConnectionKey`), for the
+ * link's tenant and written by the admin who created the link, under the tenant's quota lock. Its key set answers from
+ * then on: a platform such as Brightspace reads it while it handles the registration. The app registers with that key
+ * set, and the connection turns active with the client id the platform gave; a refused registration deletes it.
+ * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400
+ *   `lti_configuration_address_refused` with the link left; with the link spent 400 `lti_configuration_invalid`,
+ *   `lti_platform_unreachable`, `lti_platform_unsupported` or `lti_registration_refused`; 403 `lti_connection_limit`
+ *   before the spend and `lti_connection_limit_link_used` after it; 409 `lti_platform_already_connected` or
+ *   `lti_client_id_taken` (`takenClientIdRefusal`).
  */
 export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQuerySchema>, options: PlatformFetchOptions = {}) => {
   const kind = 'lti-registration';
   const link = await readHandoffToken({ kind, rawToken: query.link });
   // Read without the quota lock, which the insert takes: this check only spares the link, the insert's decides.
   await assertTenantRoom(dbCtx, link.tenantId);
+  const configurationUrl = await vetConfigurationAddress(query.openid_configuration, options);
   await spendHandoffToken({ kind, rawToken: query.link, id: link.id });
 
-  const configuration = await fetchPlatformConfiguration(query.openid_configuration, options);
+  const configuration = await fetchPlatformConfiguration(configurationUrl, options).catch((err) => {
+    throw platformUnreachable(err);
+  });
   const platform = configuration[ltiPlatformConfigurationMember];
   const id = generateId();
   const config: LtiConnectionConfig = {
@@ -139,7 +168,12 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     await lockTenantQuota(txCtx, { tenantId: link.tenantId, key: 'ltiConnection' });
-    await assertTenantRoom(txCtx, link.tenantId);
+    // Another registration took the last slot since the first check: the link is spent by now.
+    await assertTenantRoom(txCtx, link.tenantId).catch((err) => {
+      if (err instanceof AppError && err.type === 'lti_connection_limit')
+        throw new AppError(403, 'lti_connection_limit_link_used', 'info', { meta: err.meta });
+      throw err;
+    });
     await insertConnection(txCtx, {
       values: {
         id,
@@ -156,9 +190,14 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
   });
 
   try {
-    const registration = await registerAtPlatform({ configuration, connectionId: id, registrationToken: query.registration_token }, options);
+    const registration = await registerAtPlatform({ configuration, connectionId: id, registrationToken: query.registration_token }, options).catch(
+      (err) => {
+        throw platformUnreachable(err);
+      },
+    );
     // Canvas names the deployment beside the client id, others inside the LTI tool configuration.
     const deploymentId = registration[ltiToolConfigurationMember]?.deployment_id ?? registration.deployment_id;
+    const taken = { tenantId: link.tenantId, issuer: configuration.issuer, clientId: registration.client_id };
     const connection = await updateConnection(dbCtx, {
       id,
       tenantId: link.tenantId,
@@ -172,13 +211,14 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
         },
         ...(link.createdBy && updateStamps(link.createdBy)),
       },
+    }).catch(async (err) => {
+      throw await takenClientIdRefusal(err, taken);
     });
     if (!connection) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
     log.info('LTI connection registered', { connectionId: id, tenantId: connection.tenantId, issuer: configuration.issuer });
     return connection;
   } catch (error) {
     await deleteConnection(dbCtx, { id, tenantId: link.tenantId });
-    if (isClientIdTaken(error)) throw new AppError(409, 'lti_platform_already_connected', 'warn', { meta: { issuer: configuration.issuer } });
     throw error;
   }
 };

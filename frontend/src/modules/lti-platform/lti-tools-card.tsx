@@ -11,7 +11,7 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { LtiInstallationTile } from '~/modules/lti-platform/lti-installation-tile';
-import { sharedNames } from '~/modules/lti-platform/lti-tool-origin';
+import { sharesNameAmong } from '~/modules/lti-platform/lti-tool-origin';
 import { ltiInstallationsQueryOptions, useStartLtiToolRegistrationMutation } from '~/modules/lti-platform/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Accordion } from '~/modules/ui/accordion';
@@ -142,7 +142,7 @@ export function LtiToolsCard({ organization }: { organization: EnrichedOrganizat
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const installations = useSuspenseQuery(ltiInstallationsQueryOptions(path)).data.results;
   const [openTile, setOpenTile] = useState<string[]>([]);
-  const shared = sharedNames(installations);
+  const sharesName = sharesNameAmong(installations);
 
   return (
     <ToolCard label="c:lti_tools" description={t('c:lti_tools.text')}>
@@ -154,7 +154,7 @@ export function LtiToolsCard({ organization }: { organization: EnrichedOrganizat
               key={installation.id}
               installation={installation}
               organization={organization}
-              sharesName={shared.has(installation.name)}
+              sharesName={sharesName(installation.name)}
             />
           ))}
         </Accordion>

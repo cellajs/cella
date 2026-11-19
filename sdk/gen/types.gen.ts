@@ -3538,7 +3538,7 @@ export type RegisterLtiPlatformErrors = {
   /**
    * Registration refused
    *
-   * A page naming why the platform or its configuration was refused, with a button that sends the close message.
+   * A page naming why the configuration address, the platform or its answer was refused, with a button that sends the close message. A refused address leaves the link usable.
    */
   400: unknown;
   /**
@@ -3550,13 +3550,13 @@ export type RegisterLtiPlatformErrors = {
   /**
    * Connection limit reached
    *
-   * The refusal page: the tenant holds as many LTI connections as its quota allows. The link stays usable.
+   * The refusal page: the tenant holds as many LTI connections as its quota allows. Found before the link is spent, it leaves the link usable; found under the quota lock after, it says the link is used.
    */
   403: unknown;
   /**
-   * Already registered
+   * Client id taken
    *
-   * The refusal page: the platform gave a client id it gave the app before.
+   * The refusal page: the platform gave a client id a connection holds already, named only when the link's tenant holds it.
    */
   409: unknown;
   /**
@@ -5140,9 +5140,9 @@ export type ListLtiTabsResponses = {
       id: string;
       name: string;
       /**
-       * The domain the LTI tool names itself by: with `createdAt`, what tells two LTI tools of one name apart
+       * The distinct origins the LTI tool's launches go to, which an approval trusts: with `createdAt`, what tells two LTI tools of one name apart
        */
-      domain: string;
+      launchOrigins: Array<string>;
       /**
        * When the LTI tool was added
        */

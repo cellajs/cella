@@ -179,7 +179,11 @@ const ltiTabContextSchema = z.object({
 export const ltiTabSchema = z.object({
   id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
   name: z.string(),
-  domain: z.string().describe('The domain the LTI tool names itself by: with `createdAt`, what tells two LTI tools of one name apart'),
+  launchOrigins: z
+    .array(z.string())
+    .describe(
+      "The distinct origins the LTI tool's launches go to, which an approval trusts: with `createdAt`, what tells two LTI tools of one name apart",
+    ),
   createdAt: z.string().describe('When the LTI tool was added'),
   status: z.enum(serviceAccountStatuses).describe('`active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then'),
   readsMembers: z
