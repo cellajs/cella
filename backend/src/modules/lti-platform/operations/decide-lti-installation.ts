@@ -96,8 +96,8 @@ const sameValues = <T>(left: T[], right: T[]) => {
 /**
  * Changes the access scopes an approved installation's own tokens may carry, each one the LTI tool asked for, or the
  * channel types it may get a tab in; what is already stored writes nothing. A token minted before rests on the scopes
- * it carries: one that loses a scope is refused at its next request, by the guard. Its tabs that are on in a channel
- * type taken away are switched off. Who may change them is who may approve.
+ * it carries: one that loses a scope is refused at its next request, by the guard. Its tabs in a channel type taken
+ * away stay as they are and stop opening (`ltiTabClosure`). Who may change them is who may approve.
  * @throws AppError 400 `lti_scope_not_grantable`, 404 `not_found` for no LTI installation of the tenant, 409
  *   `lti_installation_not_approved` while it waits for an approval, and what `getManagedServiceAccount` throws.
  */

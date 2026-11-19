@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
-import { allowsLtiTab, ltiTabChannelTypes } from '#/modules/lti-platform/helpers/context-channel';
+import { ltiTabChannelTypes, ltiTabTypeRefusal } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { requestedFields } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiInstallations, type LtiInstallationRecord } from '#/modules/lti-platform/lti-platform-queries';
@@ -23,7 +23,7 @@ export const toLtiInstallation = ({ account, installation, client }: LtiInstalla
   releasedFields: installation.releasedFields,
   requestedScopes: client.requestedScopes ?? [],
   grantedScopes: installation.grantedScopes,
-  channelTypes: ltiTabChannelTypes.filter((channelType) => allowsLtiTab(installation, channelType)),
+  channelTypes: ltiTabChannelTypes.filter((channelType) => !ltiTabTypeRefusal(installation, channelType)),
   status: account.status,
   approvedAt: installation.approvedAt,
   createdAt: installation.createdAt,

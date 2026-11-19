@@ -12,8 +12,9 @@ export interface TabOpener {
 
 /**
  * Whether a tab of `audience` in a channel opens for a person: `members` takes a membership row in that channel itself,
- * which power over it from elsewhere never replaces; `editors` takes update on it, as the permission engine decides,
- * whatever its archived state. The one check the tab list, the start of a launch and the launch itself make.
+ * which power over it from elsewhere never replaces; `editors` takes update on it, as the permission engine decides.
+ * An audience the code does not know opens for nobody. The one check the tab list, the start of a launch and the
+ * launch itself make, beside whether the tab opens at all (`ltiTabClosure`).
  */
 export const opensFor = (
   audience: LtiAudience,
@@ -21,7 +22,14 @@ export const opensFor = (
   channelType: ChannelEntityType,
   channel: EntityModel<ChannelEntityType>,
 ) => {
-  if (audience === 'members') return memberships.some((membership) => membership.channelId === channel.id);
-  const access = accessFrom({ var: { actor: { id: personId, bindings: memberships, scopes: null }, isSystemAdmin: false } });
-  return checkAccess(access, 'update', buildSubjectFromEntity(channelType, channel)).allowed;
+  switch (audience) {
+    case 'members':
+      return memberships.some((membership) => membership.channelId === channel.id);
+    case 'editors': {
+      const access = accessFrom({ var: { actor: { id: personId, bindings: memberships, scopes: null }, isSystemAdmin: false } });
+      return checkAccess(access, 'update', buildSubjectFromEntity(channelType, channel)).allowed;
+    }
+    default:
+      return false;
+  }
 };

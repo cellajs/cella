@@ -42,8 +42,20 @@ const contextSetUpRoles = new Set<string>([lisContextRoles.instructor, lisContex
 /** Where a launch's context leads: a channel the app has, or a context whose channel of `channelType` this launch creates. */
 type ContextPlan = { channel: MembershipEntity } | { create: LtiContext; channelType: ChannelEntityType };
 
+/**
+ * The channel a context's row in the connection's tenant names, also when another registration of the platform launched
+ * it before: a context keeps it whatever types a later launch sends. Undefined before it has one, or once it is gone.
+ */
+export const storedLtiContextChannel = async (
+  ctx: DbContext,
+  { connection, context }: { connection: Pick<LtiConnection, 'tenantId' | 'issuer'>; context: Pick<LtiContext, 'id'> },
+) => {
+  const row = await findLtiContext(ctx, { tenantId: connection.tenantId, issuer: connection.issuer, contextId: context.id });
+  return row && (await resolveEntity(ctx, { entityType: row.channelType, identifier: row.channelId }));
+};
+
 interface PlanLtiContextChannelOpts {
-  connection: Pick<LtiConnection, 'id' | 'tenantId' | 'issuer'>;
+  connection: Pick<LtiConnection, 'id'>;
   context: LtiContext;
   /** What `ltiContextChannelType` answers for the context: the type a launch that sets it up creates. */
   channelType: ChannelEntityType;
@@ -51,18 +63,11 @@ interface PlanLtiContextChannelOpts {
 }
 
 /**
- * The channel an LTI context below the organization maps to: the one its row in the connection's tenant names, also
- * when another registration of the platform launched it before. Before it has one, only an Instructor or Administrator
- * of the context may arrive, and the launch creates it.
+ * Plans the channel of a context below the organization that has none yet: only an Instructor or Administrator of the
+ * context may arrive, and the launch creates it.
  * @throws AppError 409 `lti_context_not_set_up` for anyone else.
  */
-export const planLtiContextChannel = async (
-  ctx: DbContext,
-  { connection, context, channelType, ltiRoles }: PlanLtiContextChannelOpts,
-): Promise<ContextPlan> => {
-  const row = await findLtiContext(ctx, { tenantId: connection.tenantId, issuer: connection.issuer, contextId: context.id });
-  const channel = row && (await resolveEntity(ctx, { entityType: row.channelType, identifier: row.channelId }));
-  if (channel) return { channel };
+export const planLtiContextChannel = ({ connection, context, channelType, ltiRoles }: PlanLtiContextChannelOpts): ContextPlan => {
   if (ltiRoles.some((role) => contextSetUpRoles.has(role))) return { create: context, channelType };
   throw new AppError(409, 'lti_context_not_set_up', 'info', { meta: { connectionId: connection.id, contextId: context.id } });
 };
@@ -209,12 +214,17 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   const ltiRoles = launch[ltiClaims.roles];
   const contextClaim = launch[ltiClaims.context];
   const context = contextClaim && { id: contextClaim.id, label: contextClaim.label, title: contextClaim.title, types: contextClaim.type ?? [] };
-  const channelType = context ? ltiContextChannelType(context) : null;
+  // A context with a channel keeps it; the app maps only one that has none yet, and its null counts as no context.
+  const stored = context && (await storedLtiContextChannel(dbCtx, { connection, context }));
+  const channelType = stored ? stored.entityType : context ? ltiContextChannelType(context) : null;
   // Decided before any account exists: whoever arrives at a context nobody set up yet, or with no role there, leaves nothing behind.
   let entry: ContextEntry | undefined;
   if (context && channelType) {
-    const plan: ContextPlan =
-      channelType === 'organization' ? { channel: organization } : await planLtiContextChannel(dbCtx, { connection, context, channelType, ltiRoles });
+    const plan: ContextPlan = stored
+      ? { channel: stored }
+      : channelType === 'organization'
+        ? { channel: organization }
+        : planLtiContextChannel({ connection, context, channelType, ltiRoles });
     const role = ltiRoleIn('channel' in plan ? plan.channel.entityType : channelType, { ltiRoles, connection });
     if (!role) throw new AppError(403, 'lti_launch_no_roles', 'info', { meta: { connectionId: connection.id } });
     entry = { context, plan, role };

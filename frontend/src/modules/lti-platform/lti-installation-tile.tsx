@@ -316,7 +316,7 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
 
 /**
  * The channel types an approved LTI tool may get a tab in, each allowed or not; withdrawing one asks first, saying how
- * many of its tabs that are on it switches off.
+ * many of its tabs that are on stop opening there.
  */
 function InstallationChannelTypes({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
@@ -327,7 +327,12 @@ function InstallationChannelTypes({ installation, path }: { installation: LtiIns
 
   const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) => {
     const count = (data?.results ?? []).filter((tab) => tab.enabled && tab.channelType === channelType).length;
-    const i18nKey = count ? 'c:confirm.withdraw_lti_channel_type_tabs' : 'c:confirm.withdraw_lti_channel_type';
+    const i18nKey =
+      count > 1
+        ? 'c:confirm.withdraw_lti_channel_type_tab_counted'
+        : count
+          ? 'c:confirm.withdraw_lti_channel_type_tab'
+          : 'c:confirm.withdraw_lti_channel_type';
     return openConfirm(event.currentTarget, {
       id: `withdraw-lti-channel-type-${installation.id}-${channelType}`,
       title: <NamedText i18nKey={i18nKey} name={installation.name} values={{ resource: t(`c:${channelType}`), count }} />,

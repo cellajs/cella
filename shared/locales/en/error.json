@@ -130,6 +130,8 @@
   "link_not_held.text": "This page waited too long for the link it opened. Open the link from your email again to continue.",
   "load_more_failed": "Could not load more data. Try reloading or come back later.",
   "local_file_not_found": "File not found. This file was stored locally on a specific browser and therefore is not accessible by other browsers or devices.",
+  "lti_channel_type_holds_no_tabs": "No LTI tabs here",
+  "lti_channel_type_holds_no_tabs.text": "LTI tools get no tabs on {{resource, lowercase}} pages.",
   "lti_channel_type_not_allowed": "No tab here",
   "lti_channel_type_not_allowed.text": "This LTI tool cannot have a tab on {{resource, lowercase}} pages. An organization admin chooses where each LTI tool may get one.",
   "lti_client_id_taken": "Registration not usable",

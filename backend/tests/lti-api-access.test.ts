@@ -26,6 +26,7 @@ import { baseDb as db } from '#/db/db';
 import { lisContextRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiMembershipsUrl } from '#/modules/lti-platform/helpers/launch-message';
 import { minLtiMembersPage } from '#/modules/lti-platform/lti-platform-schema';
+import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -262,13 +263,8 @@ describe('LTI installation API access', async () => {
   const readMembers = (org: Org, token: string, channelId = org.org.id) =>
     call(listLtiMembers, { path: { ...org.path, channelType: 'organization', channelId }, headers: bearerHeaders(token) });
 
-  /** A launch of the resource link by `cookie`'s person, through the issuer, as the frame and the LTI tool run it. */
-  async function launch(ltiTool: LtiTool, cookie = ltiTool.org.admin.sessionCookie) {
-    const started = await call(startLtiLaunch, {
-      path: { ...ltiTool.org.path, ltiResourceLinkId: ltiTool.resourceLinkId },
-      headers: { ...defaultHeaders, Cookie: cookie },
-    });
-    const launchToken = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
+  /** What the issuer posts back for a launch record, as the frame and the LTI tool run it: an ID token or a refusal. */
+  async function authorizeLaunch(launchToken: string) {
     const page = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${launchToken}`));
     const { fields } = parseForm(await page.text());
     const query = new URLSearchParams({
@@ -283,7 +279,17 @@ describe('LTI installation API access', async () => {
       nonce: nanoid(),
     });
     const response = await fetch(`${oauth.issuer}/lti/authorize?${query}`);
-    return decodeJwt(parseForm(await response.text()).fields.id_token);
+    return parseForm(await response.text()).fields;
+  }
+
+  /** A launch of the resource link by `cookie`'s person: the claims of its ID token. */
+  async function launch(ltiTool: LtiTool, cookie = ltiTool.org.admin.sessionCookie) {
+    const started = await call(startLtiLaunch, {
+      path: { ...ltiTool.org.path, ltiResourceLinkId: ltiTool.resourceLinkId },
+      headers: { ...defaultHeaders, Cookie: cookie },
+    });
+    const launchToken = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
+    return decodeJwt((await authorizeLaunch(launchToken)).id_token);
   }
 
   // Contract: an NRPS reader (ltijs, pylti1.3, the template's own) reads the claim, asks for a token with the NRPS scope
@@ -631,14 +637,18 @@ describe('LTI installation API access', async () => {
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body: again, headers: org.headers }), 409, 'resource_already_exists');
     });
 
-    // Attack: an LTI tool gets a tab only in a channel type an admin allowed it in, at approval or later, and taking the
-    // type away switches its tabs there off, which stops its token reading members and which no channel undoes.
-    it('places an LTI tool only in a channel type an admin allowed, and switches its tabs off when the type is taken away', async () => {
+    // Attack: an LTI tool gets a tab only in a channel type an admin allowed it in, at approval or later. Taking the type
+    // away writes nothing to its tabs: each use asks whether a tab opens. A tab that is on, also one a switch that ran
+    // beside the withdrawal turned on, lists to nobody, starts and launches nothing and lets the LTI tool read no one.
+    // Allowing the type again opens it.
+    it('places an LTI tool only in a channel type an admin allowed, and closes its tabs there while the type is taken away', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org, { allowed: [], placed: false });
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
       const tabs = async () =>
         ((await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers })).data as { results: unknown[] }).results;
+      const bar = async () =>
+        ((await call(listLtiResourceLinks, { path: org.path, query: channel, headers: org.headers })).data as { results: unknown[] }).results;
       expect(await tabs()).toEqual([]);
       const body = { ...channel, installationId: ltiTool.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers: org.headers }), 409, 'lti_channel_type_not_allowed');
@@ -648,19 +658,32 @@ describe('LTI installation API access', async () => {
       expect((await allow(['organization'])).data).toMatchObject({ channelTypes: ['organization'] });
       ltiTool.resourceLinkId = await placeLtiTool(ltiTool);
       const token = await tokenOf(ltiTool);
+      const linkPath = { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId };
+      const started = await call(startLtiLaunch, { path: linkPath, headers: org.headers });
       expect((await readMembers(org, token)).response.status).toBe(200);
 
       expect((await allow([])).data).toMatchObject({ channelTypes: [] });
+      // The end state of a switch-on that read the LTI tool before the withdrawal and wrote after it.
+      await db.update(ltiResourceLinksTable).set({ enabled: true }).where(eq(ltiResourceLinksTable.id, ltiTool.resourceLinkId));
       await expectRefusal(await readMembers(org, token), 403, 'forbidden');
+      expect(await bar()).toEqual([]);
+      await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: org.headers }), 409, 'lti_channel_type_not_allowed');
+      const launchToken = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
+      expect(await authorizeLaunch(launchToken)).toMatchObject({ error: 'access_denied' });
       expect(await tabs()).toEqual([
         expect.objectContaining({
           id: ltiTool.installationId,
           refusal: 'lti_channel_type_not_allowed',
-          resourceLink: expect.objectContaining({ enabled: false }),
+          resourceLink: expect.objectContaining({ enabled: true }),
         }),
       ]);
-      const switchOn = { path: { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId }, body: { enabled: true }, headers: org.headers };
-      await expectRefusal(await call(updateLtiResourceLink, switchOn), 409, 'lti_channel_type_not_allowed');
+      const switchOff = { path: linkPath, body: { enabled: false }, headers: org.headers };
+      expect((await call(updateLtiResourceLink, switchOff)).data).toMatchObject({ enabled: false });
+      await expectRefusal(await call(updateLtiResourceLink, { ...switchOff, body: { enabled: true } }), 409, 'lti_channel_type_not_allowed');
+
+      expect((await allow(['organization'])).data).toMatchObject({ channelTypes: ['organization'] });
+      expect((await call(updateLtiResourceLink, { ...switchOff, body: { enabled: true } })).data).toMatchObject({ enabled: true });
+      expect((await readMembers(org, token)).response.status).toBe(200);
     });
 
     // Contract: an LTI tool keys what it stores by the resource link id, which switching a tab off and on keeps.

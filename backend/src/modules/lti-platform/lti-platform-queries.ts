@@ -1,4 +1,4 @@
-import { and, asc, eq, getColumns, gt, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
 import { type Access, type AccessScope, type ChannelEntityType, hierarchy } from 'shared';
 import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
@@ -150,32 +150,19 @@ export async function approveLtiInstallation(
 
 /**
  * Replaces the access scopes an installation's tokens may carry, or the channel types it may get a tab in, stamped by
- * `by`. Its tabs that are on in a type taken away are switched off, keeping their ids.
+ * `by`. Its tabs in a type taken away stay as they are and stop opening (`ltiTabClosure`).
  * @returns What the side row was set to.
  */
 export async function updateLtiInstallationGrant(
   ctx: DbContext,
   { id, grantedScopes, channelTypes, by }: { id: string; grantedScopes?: AccessScope[]; channelTypes?: ChannelEntityType[]; by: ActorId },
 ) {
-  const stamps = updateStamps(by);
   const values = {
     ...(grantedScopes && { grantedScopes: [...new Set(grantedScopes)] }),
     ...(channelTypes && { channelTypes: [...new Set(channelTypes)] }),
-    ...stamps,
+    ...updateStamps(by),
   };
   await ctx.var.db.update(ltiInstallationsTable).set(values).where(eq(ltiInstallationsTable.serviceAccountId, id));
-  if (channelTypes) {
-    await ctx.var.db
-      .update(ltiResourceLinksTable)
-      .set({ enabled: false, ...stamps })
-      .where(
-        and(
-          eq(ltiResourceLinksTable.installationId, id),
-          eq(ltiResourceLinksTable.enabled, true),
-          channelTypes.length ? notInArray(ltiResourceLinksTable.channelType, channelTypes) : undefined,
-        ),
-      );
-  }
   return values;
 }
 
@@ -206,6 +193,33 @@ export async function findLtiResourceLinks(ctx: DbContext, { tenantId, order, ..
     .select()
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), placedBy))
+    .orderBy(...orderBy);
+}
+
+/**
+ * The resource links placed in one channel of the tenant, in `order` of creation, each with what decides whether it
+ * opens (`ltiTabClosure`): its installation's status, approval and allowed channel types.
+ */
+export async function findLtiChannelTabs(
+  ctx: DbContext,
+  { tenantId, channelId, order }: { tenantId: string; channelId: string; order: OrderDirection },
+) {
+  const orderBy = getOrderColumns({
+    sort: 'createdAt',
+    order,
+    columns: { createdAt: ltiResourceLinksTable.createdAt },
+    tieBreaker: ltiResourceLinksTable.id,
+  });
+  return ctx.var.db
+    .select({
+      resourceLink: ltiResourceLinksTable,
+      account: { status: serviceAccountsTable.status },
+      installation: { approvedAt: ltiInstallationsTable.approvedAt, channelTypes: ltiInstallationsTable.channelTypes },
+    })
+    .from(ltiResourceLinksTable)
+    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, ltiResourceLinksTable.installationId))
+    .innerJoin(ltiInstallationsTable, eq(ltiInstallationsTable.serviceAccountId, ltiResourceLinksTable.installationId))
+    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
     .orderBy(...orderBy);
 }
 

@@ -5,8 +5,9 @@ import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
 import { ltiClaims, ltiNrps } from '#/lib/lti-vocabulary';
+import { loadArchivedChannelIds } from '#/middlewares/guard/archived-channels-cache';
 import { spendHandoffToken } from '#/modules/auth/core';
-import { holdsLtiTabs, linkContext } from '#/modules/lti-platform/helpers/context-channel';
+import { linkContext, ltiTabClosure } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiLaunchRoles } from '#/modules/lti-platform/helpers/lti-roles';
@@ -77,12 +78,14 @@ const spendLaunchRecord = async ({ loginHint, messageHint, clientId }: { loginHi
 
 type LaunchTarget = NonNullable<Awaited<ReturnType<typeof findLtiLaunchTarget>>>;
 
-/** Who launches, checked at this moment: the installation approved and active, the tab on, and the person able to launch. */
+/** Who launches, checked at this moment: the tab opens (`ltiTabClosure`), and the person may open it. */
 const assertLaunchAllowed = async ({ personId, target }: { personId: string; target: LaunchTarget }) => {
-  const { account, installation, resourceLink } = target;
-  if (!installation.approvedAt || account.status !== 'active') throw new LaunchError('unauthorized_client', 'the installation is not active');
-  if (!resourceLink.enabled) throw new LaunchError('access_denied', 'the tab is switched off');
-  if (!holdsLtiTabs(resourceLink.channelType)) throw new LaunchError('access_denied', 'the channel type holds no tabs');
+  const { resourceLink } = target;
+  const { tenantId, organizationId } = resourceLink;
+  const archivedChannelIds = await loadArchivedChannelIds(dbCtx, { tenantId, organizationId });
+  const closure = ltiTabClosure({ ...target, link: resourceLink, archivedChannelIds });
+  if (closure === 'lti_installation_not_active') throw new LaunchError('unauthorized_client', 'the installation is not active');
+  if (closure) throw new LaunchError('access_denied', `the tab does not open: ${closure}`);
 
   const person = await findServedUserById(dbCtx, { id: personId });
   const launcher =

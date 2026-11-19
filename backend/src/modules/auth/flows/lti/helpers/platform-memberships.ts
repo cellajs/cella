@@ -12,7 +12,11 @@ import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 
 /** How a member read reaches the platform, and the signal that ends it before its next page. */
-export type ReadLtiMembersOptions = PlatformFetchOptions & { signal?: AbortSignal };
+export type ReadLtiMembersOptions = PlatformFetchOptions & {
+  signal?: AbortSignal;
+  /** Counts each page's members as it is read; false stops the read before that page's people, as bounded. */
+  countRead?: (members: number) => Promise<boolean>;
+};
 
 /** The members one page asks for (`limit`): a page of long rows stays under the guarded fetch's size cap. */
 const membersPageSize = 50;
@@ -174,14 +178,14 @@ const nextLink = (header: string | null, page: URL) => {
   return undefined;
 };
 
-type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
+type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | 'waiting' | null } | { refusal: LtiImportIssue };
 
 /** The pages of a context's membership container from `first`, read with the connection's token. */
 const readMemberPages = async (
   connection: LtiConnection,
   signingKey: SigningKey,
   first: URL,
-  { signal, ...options }: ReadLtiMembersOptions,
+  { signal, countRead, ...options }: ReadLtiMembersOptions,
 ): Promise<MembersOutcome> => {
   let token = await platformToken(connection, signingKey, options);
   if ('refusal' in token) return token;
@@ -208,6 +212,7 @@ const readMemberPages = async (
     if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) return { refusal: 'members_refused' };
     const container = response.status === 200 && membershipContainerSchema.safeParse(parseJson(response.text)).data;
     if (!container) throw readFailed('members_page', connection);
+    if (countRead && !(await countRead(container.members.length))) return { people: [...people.values()], issue: 'waiting' };
 
     for (const row of container.members) {
       const member = memberSchema.safeParse(row).data;
@@ -231,8 +236,10 @@ const readMemberPages = async (
  * page lies at the membership address a launch of the connection named (`trustedMembershipsUrl`). A connection without
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
  * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
- * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people or an aborted `signal`.
- * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
+ * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people, an aborted `signal`, or a page `countRead`
+ * refuses, whose people it leaves out.
+ * @returns The people, with `too_many_members` when the platform lists more and `waiting` when `countRead` refused a
+ *   page; or the refusal of the token or the list,
  *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.

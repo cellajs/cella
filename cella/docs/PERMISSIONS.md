@@ -180,6 +180,7 @@ A channel below the organization can be archived, which closes it. The organizat
 - **No writes.** It refuses every write to itself, every create inside it and every change to a product homed in it, system admins included.
 - **Still readable.** It reads and streams as before. A list shows it when asked.
 - **Nobody stuck.** A member can still be removed or leave.
+- **LTI tabs closed.** Its tabs of LTI tools do not open, and their LTI tools read no members there, until it is unarchived.
 - **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
 - **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
 

@@ -122,7 +122,9 @@ export const updateLtiInstallationBodySchema = z.object({
   grantedScopes: grantedScopesSchema.optional(),
   channelTypes: channelTypesSchema
     .optional()
-    .describe('Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids'),
+    .describe(
+      'Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again',
+    ),
 });
 
 /** The path of one LTI installation in its organization. */

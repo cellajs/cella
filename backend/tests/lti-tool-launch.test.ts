@@ -26,8 +26,13 @@ import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-k
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { planLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
-import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import {
+  importLtiMembersOp,
+  ltiMemberImportQueue,
+  maxCoursesPerHour,
+  takeFromImportBudget,
+} from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -36,7 +41,6 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { lockTenantQuota } from '#/modules/tenants/quota-lock';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
-import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
@@ -681,10 +685,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     }
     expect(send).not.toHaveBeenCalled();
 
-    const { id: _id, ...held } = course;
-    await db
-      .insert(ltiContextsTable)
-      .values(Array.from({ length: maxCoursesPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
+    expect(await takeFromImportBudget('courses', first.connection.id, maxCoursesPerHour)).toBe(true);
     expect((await launch(second, { ...elsewhere, ...teacher })).response.status).toBe(303);
     expect((await courses()).find(({ id }) => id === course.id)).toEqual(course);
 
@@ -717,25 +718,21 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const { org, connection: ltiConnection } = await connect(await fakePlatform('platform-a'));
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
-    const plan = (ltiRoles: string[]) =>
-      planLtiContextChannel(ctx, {
-        connection: { ...ltiConnection, issuer: ltiConnection.issuer ?? '' },
-        context,
-        channelType: 'organization',
-        ltiRoles,
-      });
+    const plan = (ltiRoles: string[]) => () => planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', ltiRoles });
 
-    await expect(plan([lisContextRoles.learner])).rejects.toMatchObject({ status: 409, type: 'lti_context_not_set_up' });
-    expect(await plan([lisContextRoles.instructor])).toEqual({ create: context, channelType: 'organization' });
-    expect(await plan([lisContextRoles.administrator])).toEqual({ create: context, channelType: 'organization' });
+    expect(plan([lisContextRoles.learner])).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
+    expect(plan([lisContextRoles.instructor])()).toEqual({ create: context, channelType: 'organization' });
+    expect(plan([lisContextRoles.administrator])()).toEqual({ create: context, channelType: 'organization' });
 
-    // Once a launch recorded the channel it created, everyone of the context lands there.
+    // Once a launch recorded the channel it created, everyone of the context lands there, also through a new
+    // registration of the platform in the tenant.
+    const connection = { tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
+    expect(await storedLtiContextChannel(ctx, { connection, context })).toBeUndefined();
     const instructor = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
     await upsertLtiContext(ctx, {
       values: {
-        tenantId: org.tenantId,
+        ...connection,
         organizationId: org.id,
-        issuer: ltiConnection.issuer ?? '',
         connectionId: ltiConnection.id,
         contextId: context.id,
         types: [],
@@ -744,17 +741,21 @@ describe('LTI launch at the app as an LTI tool', async () => {
       },
       by: instructor.id,
     });
-    expect(await plan([lisContextRoles.learner])).toMatchObject({ channel: { id: org.id } });
+    expect(await storedLtiContextChannel(ctx, { connection, context })).toMatchObject({ id: org.id });
+  });
 
-    // A new registration of the platform in the tenant finds the course's channel: an Instructor's launch creates none.
-    const again = { id: generateId(), tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
-    const replanned = await planLtiContextChannel(ctx, {
-      connection: again,
-      context,
-      channelType: 'organization',
-      ltiRoles: [lisContextRoles.instructor],
-    });
-    expect(replanned).toMatchObject({ channel: { id: org.id } });
+  // Attack: a context the app mapped keeps its channel whatever types a later launch sends. A platform that sends a
+  // course again as a navigation context, which the template maps to none, cannot turn it into a launch without a
+  // context: its person still joins the course's channel, and the import goes on filling it.
+  it('keeps the channel of a mapped context when a later launch sends it with other types', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const course = { id: 'course-1', title: 'Course one', type: ['CourseSection'] };
+    expect((await launch(connected, { sub: 'lms-first', [ltiClaims.context]: course })).response.status).toBe(303);
+
+    const later = await launch(connected, { sub: 'lms-later', [ltiClaims.context]: { ...course, type: ['Account'] } });
+    expect(later.response.status).toBe(303);
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, 'lms-later'));
+    expect(await orgMembershipOf(identity.userId, connected.org.id)).toBeDefined();
   });
 
   // One app is the platform in one tenant and the LTI tool in another, and launches itself, as the development seed does.

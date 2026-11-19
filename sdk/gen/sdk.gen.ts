@@ -2269,7 +2269,7 @@ export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Update LTI installation
  *
- * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs that are on in a channel type taken away are switched off, keeping their ids. Requires permission to update the organization.
+ * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs in a channel type taken away stop opening, and stop letting it read members, until the type is allowed again. Requires permission to update the organization.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [updateLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
  *

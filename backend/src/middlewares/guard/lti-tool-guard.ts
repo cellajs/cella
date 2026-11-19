@@ -4,12 +4,13 @@ import { isUuid } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { loadArchivedChannelIds } from '#/middlewares/guard/archived-channels-cache';
 import { routeTarget } from '#/middlewares/guard/route-target';
 import { challengeRefusal, setServiceActor, unauthorized } from '#/middlewares/guard/service-guard';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
-import { linkContext } from '#/modules/lti-platform/helpers/context-channel';
-import { findLtiInstallation, findLtiResourceLinks } from '#/modules/lti-platform/lti-platform-queries';
+import { linkContext, ltiTabClosure } from '#/modules/lti-platform/helpers/context-channel';
+import { findLtiChannelTabs, findLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
 import { bearerChallenge, type ResourceRef } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
@@ -33,23 +34,27 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 
 /**
  * The access the installation's tab in the channel in the route's path implies, read at every request: the least
- * privileged role of the channel's type, when the installation has a tab that is on in exactly that channel of the
- * route's organization, its id compared whatever its case, and the channel is an LTI context (`linkContext`). A tab in
- * a channel above or below gives nothing. Nothing is stored: a tab removed or switched off, or a deleted channel, takes
- * it away at once. A path that names no such channel, or a channel type the app does not have, binds nothing: the
- * tenant then refuses the actor with a 403, before the route validates its path.
+ * privileged role of the channel's type, when the installation has a tab in exactly that channel of the route's
+ * organization, its id compared whatever its case, that opens (`ltiTabClosure`), and the channel is an LTI context
+ * (`linkContext`). A tab in a channel above or below gives nothing. Nothing is stored: a tab switched off, a withdrawn
+ * channel type, an archive or a deleted channel takes it away at once. A path that names no such channel, or a channel
+ * type the app does not have, binds nothing: the tenant then refuses the actor with a 403, before the route validates
+ * its path.
  */
 const contextBindings = async (installationId: string, tenantId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
   const channelType = appConfig.channelEntityTypes.find((type) => type === ctx.req.param('channelType'));
   const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
   if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
-  const links = await findLtiResourceLinks(dbCtx, { tenantId, channelId, order: 'asc' });
-  const placed = links.some(
-    (link) =>
+  const [tabs, archivedChannelIds] = await Promise.all([
+    findLtiChannelTabs(dbCtx, { tenantId, channelId, order: 'asc' }),
+    loadArchivedChannelIds(dbCtx, { tenantId, organizationId }),
+  ]);
+  const placed = tabs.some(
+    ({ resourceLink: link, account, installation }) =>
       link.installationId === installationId &&
       link.organizationId === organizationId &&
       link.channelType === channelType &&
-      link.enabled &&
+      !ltiTabClosure({ link, account, installation, archivedChannelIds }) &&
       linkContext(link),
   );
   return placed ? [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }] : [];

@@ -11406,7 +11406,7 @@
         "operationId": "updateLtiInstallation",
         "tags": ["lti-platform", "cella"],
         "summary": "Update LTI installation",
-        "description": "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs that are on in a channel type taken away are switched off, keeping their ids. Requires permission to update the organization.",
+        "description": "Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for, or the channel types it may get a tab in. A token that carries a scope taken away here is refused at its next request, and its tabs in a channel type taken away stop opening, and stop letting it read members, until the type is allowed again. Requires permission to update the organization.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11464,7 +11464,7 @@
                       "enum": ["organization"]
                     },
                     "maxItems": 1,
-                    "description": "Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids"
+                    "description": "Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again"
                   }
                 }
               }
@@ -11489,7 +11489,7 @@
                       "enum": ["organization"]
                     },
                     "maxItems": 1,
-                    "description": "Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids"
+                    "description": "Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again"
                   }
                 }
               }

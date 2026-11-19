@@ -192,7 +192,7 @@ export const useSetLtiInstallationStatusMutation = () =>
 /**
  * Replaces the access scopes an approved installation's own tokens may carry, or the channel types it may get a tab in;
  * asks the step-up an approval asks. The lists are read again after: they show a change another admin made meanwhile,
- * and the tabs a type taken away switched off.
+ * and the tabs a type taken away closed.
  */
 export const useUpdateLtiInstallationMutation = () =>
   useMutation<UpdateLtiInstallationResponse, ApiError, MutationData<UpdateLtiInstallationData>>({

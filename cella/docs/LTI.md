@@ -44,7 +44,7 @@ An LTI tool may also ask for the scope of an LTI service the app serves, today N
 
 What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the channels where it has a tab that is on.
 
-The admin also chooses where the LTI tool may get a tab: the channel types, of those that hold LTI tabs, none chosen by default. The admin changes them later on the tile, with the second factor. Taking a type away switches the LTI tool's tabs there off, which keeps their ids.
+The admin also chooses where the LTI tool may get a tab: the channel types, of those that hold LTI tabs, none chosen by default. The admin changes them later on the tile, with the second factor. Taking a type away leaves the LTI tool's tabs there as they are, and they stop opening until the type is allowed again.
 
 The admin changes the grant later on the LTI tool's tile, which asks the second factor too. Withdrawing a scope or a channel type asks first, and the LTI tool loses it at its next request.
 
@@ -125,7 +125,7 @@ As an LTI tool, your app also reads who is in a course by NRPS, before any of th
 
 The import starts when an Instructor or Administrator of the course launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports a limited number of courses and of people an hour: a class whose teams each have a tab fits, and one platform's reach stays bounded.
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports a limited number of courses and of people an hour: a class whose teams each have a tab fits, and one platform's reach stays bounded. Every page counts as it is read, a retry's too, and nothing gives a count back.
 
 A course past either number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
@@ -180,7 +180,8 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
 - **A tab switched off or removed:** it leaves the bar, a launch started before is refused, and someone on it lands on the channel's first tab. When the channel shows them no tab of its own, they see its page header alone.
 - **Someone outside a tab's audience:** the tab is not in their bar, and its address and a launch started before are refused as for a tab that does not exist.
-- **A channel type the admin took away:** the LTI tool's tabs there are switched off, and no one there switches them on until the admin allows the type again.
+- **A channel type the admin took away:** the LTI tool's tabs there stay as they are and stop opening, and it reads no members there, until the admin allows the type again.
+- **An archived channel:** its LTI tabs do not open and the LTI tool reads no members there, until it is unarchived.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the course under LTI connections says why, and the members imported before stay.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.

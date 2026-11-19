@@ -24,7 +24,7 @@ export const ltiInstallationsTable = snakeCase.table('lti_installations', {
   releasedFields: jsonb().$type<LtiReleasableField[]>().notNull().default([]),
   /** Empty until an admin grants some; never more than the registration asked for. A token's scopes are read here at every request. */
   grantedScopes: jsonb().$type<AccessScope[]>().notNull().default([]),
-  /** Empty until an admin allows some; only types that hold tabs count (`allowsLtiTab`). */
+  /** Empty until an admin allows some; only types that hold tabs count (`ltiTabTypeRefusal`). */
   channelTypes: jsonb().$type<ChannelEntityType[]>().notNull().default([]),
   approvedAt: isoTimestamp(),
   approvedBy: writerColumn(),

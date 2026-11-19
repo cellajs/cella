@@ -41,6 +41,7 @@ import {
   maxCoursesPerHour,
   maxPeoplePerHour,
   requestLtiMemberImport,
+  takeFromImportBudget,
 } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
@@ -53,7 +54,6 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
-import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
 import {
@@ -490,31 +490,13 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'too_many_members' });
   });
 
-  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them, and
-  // `maxPeoplePerHour` people, an hour. The course says its import waits, unless the last import was refused in a way
-  // that lasts.
-  it('queues no import of a connection whose imports within the hour reached their bound, and records that it waits', async () => {
+  // Attack: a platform that names any number of courses makes the app start at most `maxCoursesPerHour` imports an hour.
+  // The course says its import waits, unless the last import was refused in a way that lasts.
+  it('queues no import of a connection whose courses within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
-    const imported = await Promise.all(
-      Array.from({ length: maxCoursesPerHour }, (_, index) =>
-        addCourse(side, side.connection, `${side.issuer}/api/lti/courses/${index}/memberships`, `course-${index + 2}`),
-      ),
-    );
-    const ids = imported.map(({ id }) => id);
-    await db.update(ltiContextsTable).set({ importRanAt: getIsoDate() }).where(inArray(ltiContextsTable.id, ids));
+    expect(await takeFromImportBudget('courses', side.connection.id, maxCoursesPerHour)).toBe(true);
 
     send.mockClear();
-    await requestLtiMemberImport(side.context, side.admin.id);
-    expect(send).not.toHaveBeenCalled();
-    expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
-
-    // Fewer courses than the bound, which read as many people as an hour allows, wait too.
-    await db
-      .update(ltiContextsTable)
-      .set({ importRanAt: null })
-      .where(inArray(ltiContextsTable.id, ids.slice(1)));
-    await db.update(ltiContextsTable).set({ importReadCount: maxPeoplePerHour }).where(eq(ltiContextsTable.id, ids[0]));
-    await db.update(ltiContextsTable).set({ importIssue: null }).where(eq(ltiContextsTable.id, side.context.id));
     await requestLtiMemberImport(side.context, side.admin.id);
     expect(send).not.toHaveBeenCalled();
     expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
@@ -528,11 +510,42 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     }
     expect(send).not.toHaveBeenCalled();
 
+    // A retry of a course counted when it first ran still reads.
     const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
     await importLtiMembersOp(side.context.id, api.options);
     expect(api.requests).toEqual([]);
     await importLtiMembersOp(side.context.id, { ...api.options, retry: true });
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+  });
+
+  // Attack: the people an hour allows count as their pages are read, and nothing gives them back. Reading a course again
+  // with an empty list frees nobody, and a first attempt that fails after a page, then its retries, each count what
+  // they read: a page past the bound ends the read, and the course records that it waits.
+  it("counts every page read against the connection's hourly people, retries included, and gives nothing back", async () => {
+    const two = [
+      { user_id: 'lms-first', roles: [lisContextRoles.learner] },
+      { user_id: 'lms-second', roles: [lisContextRoles.learner] },
+    ];
+    const reread = await connectToFakePlatform();
+    expect(await takeFromImportBudget('people', reread.connection.id, maxPeoplePerHour - 3)).toBe(true);
+    await importLtiMembersOp(reread.context.id, fakePlatformApi(() => ({ members: two })).options);
+    expect(await contextRow(reread.context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
+    await importLtiMembersOp(reread.context.id, fakePlatformApi(() => ({ members: [] })).options);
+    const other = await addCourse(reread, reread.connection, `${reread.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
+    await importLtiMembersOp(other.id, fakePlatformApi(() => ({ members: two })).options);
+    expect(await contextRow(other.id)).toMatchObject({ importReadCount: 0, importIssue: 'waiting' });
+
+    const failing = await connectToFakePlatform();
+    expect(await takeFromImportBudget('people', failing.connection.id, maxPeoplePerHour - 5)).toBe(true);
+    const api = fakePlatformApi((url) =>
+      url.searchParams.has('page')
+        ? new Response(null, { status: 500 })
+        : { members: [...two, { user_id: 'lms-third', roles: [lisContextRoles.learner] }], next: `${url.origin}${url.pathname}?page=2` },
+    );
+    await expect(importLtiMembersOp(failing.context.id, { ...api.options, lastAttempt: false })).rejects.toThrow();
+    await importLtiMembersOp(failing.context.id, { ...api.options, retry: true });
+    expect(await contextRow(failing.context.id)).toMatchObject({ importReadCount: 0, importIssue: 'waiting' });
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.tenantId, failing.org.tenantId))).toEqual([]);
   });
 
   // Contract: NRPS 2.0 as the spec's example answers it (section 2.1, its trailing comma dropped) and as Canvas does,

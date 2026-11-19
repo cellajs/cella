@@ -14,7 +14,15 @@ import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates, hostsDataTabs } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { LtiTabAudience, LtiTabOrigin, LtiTabRefusal, type LtiTabRow, LtiTabSwitch, useLtiTabRows } from '~/modules/lti-platform/lti-tab-rows';
+import {
+  LtiTabAudience,
+  LtiTabOrigin,
+  LtiTabReads,
+  LtiTabRefusal,
+  type LtiTabRow,
+  LtiTabSwitch,
+  useLtiTabRows,
+} from '~/modules/lti-platform/lti-tab-rows';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
@@ -194,6 +202,7 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
                 <LtiTabOrigin row={row.lti} />
               </span>
               <LtiTabAudience channel={entity} row={row.lti} tabIndex={tabIndex} />
+              <LtiTabReads row={row.lti} channel={entity} />
               <LtiTabRefusal row={row.lti} channel={entity} />
             </>
           );

@@ -6,13 +6,14 @@ import { updateStamps } from '#/db/utils/stamps';
 import { ltiNrps } from '#/lib/lti-vocabulary';
 import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { allowsLtiTab, holdsLtiTabs, linkContext } from '#/modules/lti-platform/helpers/context-channel';
+import { holdsLtiTabs, linkContext, ltiTabClosure, ltiTabTypeRefusal } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import type { LtiInstallationModel } from '#/modules/lti-platform/lti-installations-db';
 import {
   deleteLtiResourceLink,
+  findLtiChannelTabs,
   findLtiInstallation,
   findLtiInstallations,
   findLtiResourceLink,
@@ -60,25 +61,28 @@ async function getUpdatableLtiResourceLink(ctx: UserContext, id: string) {
 }
 
 /**
- * Refuses an installation a tab in a channel of `channelType` where it may not get one (`allowsLtiTab`): a type that
- * holds no tabs, or one an admin did not allow it in.
- * @throws AppError 409 `lti_channel_type_not_allowed` with the channel's type.
+ * Refuses an installation a tab in a channel of `channelType` where it may not get one (`ltiTabTypeRefusal`).
+ * @throws AppError 409 `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed` with the channel's type.
  */
-const assertAllowsLtiTab = (installation: LtiInstallationModel, channelType: ChannelEntityType) => {
-  if (!allowsLtiTab(installation, channelType)) throw new AppError(409, 'lti_channel_type_not_allowed', 'warn', { entityType: channelType });
+const assertAllowsLtiTab = (installation: Pick<LtiInstallationModel, 'channelTypes'>, channelType: ChannelEntityType) => {
+  const refusal = ltiTabTypeRefusal(installation, channelType);
+  if (refusal) throw new AppError(409, refusal, 'warn', { entityType: channelType });
 };
 
 /**
- * The tabs switched on in a channel that open for the caller (`opensFor`), as a launch decides it, for a caller who may
- * read the channel; none in a channel type that holds no tabs. Those switched off go to whoever may switch them
- * (`getLtiTabsOp`).
+ * The tabs of a channel that open (`ltiTabClosure`) and open for the caller (`opensFor`), as a launch decides both, for
+ * a caller who may read the channel. Those switched off go to whoever may switch them (`getLtiTabsOp`).
  */
 export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiResourceLinksQuerySchema>) {
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
-  if (!holdsLtiTabs(channelType)) return [];
   const opener = { personId: ctx.var.user.id, memberships: ctx.var.memberships };
-  const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
-  const opened = links.filter((link) => link.enabled && opensFor(link.audience, opener, channelType, entity));
+  const archivedChannelIds = ctx.var.archivedChannelIds ?? new Set<string>();
+  const tabs = await findLtiChannelTabs(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
+  const opened = tabs.flatMap(({ resourceLink, account, installation }) =>
+    !ltiTabClosure({ link: resourceLink, account, installation, archivedChannelIds }) && opensFor(resourceLink.audience, opener, channelType, entity)
+      ? [resourceLink]
+      : [],
+  );
   return withActorRefs(ctx, opened.map(toLtiResourceLink));
 }
 
@@ -98,7 +102,7 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
   return records.flatMap(({ account, installation, client }) => {
     const link = links.find(({ installationId }) => installationId === account.id);
     const refusal: (typeof ltiTabRefusals)[number] | null =
-      account.status !== 'active' ? 'lti_installation_disabled' : !allowsLtiTab(installation, channelType) ? 'lti_channel_type_not_allowed' : null;
+      account.status !== 'active' ? 'lti_installation_disabled' : ltiTabTypeRefusal(installation, channelType) && 'lti_channel_type_not_allowed';
     if (!installation.approvedAt || (refusal && !link)) return [];
     return [
       {
@@ -162,7 +166,8 @@ interface CreateLtiResourceLinkInput {
  * update the channel. Its own token then reads the people of the channel when it is an LTI context (`ltiToolGuard`). A
  * channel holds one tab of an installation.
  * @throws AppError 404 `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_approved` for one
- *   that waits for an approval, 409 `lti_channel_type_not_allowed` in a channel type it may not get a tab in, 409
+ *   that waits for an approval, 409 `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed` in a channel
+ *   type it may not get a tab in (`ltiTabTypeRefusal`), 409
  *   `lti_installation_disabled` for a disabled one, 409 `resource_already_exists` for one placed in the channel before,
  *   and what `getValidChannel` throws.
  */
@@ -198,8 +203,8 @@ export async function createLtiResourceLinkOp(
 /**
  * Renames a resource link, replaces its custom values, changes whom its tab opens for or switches it on or off, for a
  * caller who may update its channel. Switching on takes an active installation allowed in the channel's type.
- * @throws AppError 409 `lti_channel_type_not_allowed` or `lti_installation_disabled` for switching on, and what
- *   `getUpdatableLtiResourceLink` throws.
+ * @throws AppError 409 `lti_installation_disabled`, `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed`
+ *   for switching on, and what `getUpdatableLtiResourceLink` throws.
  */
 export async function updateLtiResourceLinkOp(
   ctx: UserContext,

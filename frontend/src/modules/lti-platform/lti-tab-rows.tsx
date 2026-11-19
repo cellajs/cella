@@ -51,6 +51,16 @@ export function LtiTabOrigin({ row }: { row: LtiTabRow }) {
   return <LtiToolOrigin launchOrigins={row.tab.launchOrigins} createdAt={row.tab.createdAt} />;
 }
 
+/** Whose people the row's LTI tool reads while its tab is on, whoever the tab opens for. */
+export function LtiTabReads({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
+  if (!row.tab.readsMembers || !row.tab.resourceLink?.enabled) return null;
+  return (
+    <span className="text-muted-foreground text-xs leading-tight">
+      <NamedText i18nKey="c:lti_tab_reads.text" name={channel.name} />
+    </span>
+  );
+}
+
 /** Why the row's tab cannot be switched on: a disabled LTI tool, or one an admin did not allow in the channel's type. */
 export function LtiTabRefusal({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
   const { t } = useTranslation();

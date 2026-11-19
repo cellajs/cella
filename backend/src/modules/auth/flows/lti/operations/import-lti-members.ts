@@ -5,9 +5,10 @@ import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
+import { getRateLimiterInstance, reserveAttempt } from '#/middlewares/rate-limiter/helpers';
 import { type LtiMember, maxMembers, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { findLtiContextById, recordLtiImport, recordLtiImportWaiting, sumLtiImportsSince } from '#/modules/auth/flows/lti/lti-contexts-queries';
+import { findLtiContextById, recordLtiImport, recordLtiImportWaiting } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
@@ -39,16 +40,39 @@ const importBudgetSeconds = 120;
 export const maxCoursesPerHour = 150;
 
 /**
- * The most people the imports of one connection read within an hour, counted as their courses' last imports read them.
- * Five imports of the longest list one import reads, or some thirty courses of 300: a platform's reach stays near what
- * 30 usual courses an hour read, however it spreads its people over courses.
+ * The most people the imports of one connection read within an hour: five imports of the longest list one import
+ * reads, or some thirty courses of 300. A platform's reach stays near what 30 usual courses an hour read, however it
+ * spreads its people over courses.
  */
 export const maxPeoplePerHour = 5 * maxMembers;
 
-/** Whether the connection's imports within the last hour reached `maxCoursesPerHour` or `maxPeoplePerHour`. */
+/**
+ * A connection's hourly budgets, buckets of the rate limit store keyed by the connection: a course for each import a
+ * launch starts, and the people each page of every attempt reads, a retry's included. Nothing gives a point back: a
+ * course read again with fewer people, or a failed attempt, frees none.
+ */
+const importBudgets = {
+  courses: { keyPrefix: 'lti_import_courses', points: maxCoursesPerHour },
+  people: { keyPrefix: 'lti_import_people', points: maxPeoplePerHour },
+} as const;
+
+const budgetHour = 60 * 60;
+
+const budgetStore = (budget: keyof typeof importBudgets) => getRateLimiterInstance({ ...importBudgets[budget], duration: budgetHour });
+
+/** Takes `cost` from one of the connection's hourly budgets while it holds it; false, with nothing taken, when it does not. */
+export const takeFromImportBudget = async (budget: keyof typeof importBudgets, connectionId: string, cost: number) => {
+  const { points } = importBudgets[budget];
+  return (await reserveAttempt(budgetStore(budget), connectionId, { points, duration: budgetHour }, cost)).granted;
+};
+
+/** Whether either hourly budget of the connection is spent (`importBudgets`). */
 const connectionImportsSpent = async (connectionId: string) => {
-  const { courses, people } = await sumLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) });
-  return courses >= maxCoursesPerHour || people >= maxPeoplePerHour;
+  for (const [budget, { points }] of Object.entries(importBudgets)) {
+    const state = await budgetStore(budget as keyof typeof importBudgets).get(connectionId);
+    if (state && state.consumedPoints >= points) return true;
+  }
+  return false;
 };
 
 /** Whether an import of the context ran within `importPeriod`. */
@@ -82,10 +106,10 @@ const importPerson = async (ctx: DbContext, { connection, channel, organization,
   return 'imported';
 };
 
-interface ImportLtiMembersOpts extends ReadLtiMembersOptions {
+interface ImportLtiMembersOpts extends Omit<ReadLtiMembersOptions, 'countRead'> {
   /** False while the job tries a failed import again: the context records that it will. True by default. */
   lastAttempt?: boolean;
-  /** True while the job tries a failed import again, which the connection's hourly budget counted when it first ran. */
+  /** True while the job tries a failed import again: its course counted when it first ran, its pages count again. */
   retry?: boolean;
 }
 
@@ -99,7 +123,8 @@ const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_re
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
  * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
- * connection's hourly budget is spent reads nothing and records that it waits. A refusal of the scope or the member
+ * connection's hourly budget is spent reads nothing and records that it waits, and a page past the people the hour
+ * allows ends the read: the people before it are imported and the import records that it waits. A refusal of the scope or the member
  * list forgets the membership address, which the next launch that names it stores again.
  * @throws What fails after the connection's service account is known, such as a failed read or an abort: recorded as
  *   `retrying` or, on the last attempt, `failed`.
@@ -121,9 +146,11 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     ]);
     // Joining an archived channel is a create inside it, which an archive refuses.
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
-    if (!retry && (await connectionImportsSpent(connection.id))) return recordLtiImportWaiting(dbCtx, { id: context.id, by });
+    if (!retry && ((await connectionImportsSpent(connection.id)) || !(await takeFromImportBudget('courses', connection.id, 1))))
+      return recordLtiImportWaiting(dbCtx, { id: context.id, by });
 
-    const read = await readLtiMembers(connection, context.membershipsUrl, options);
+    const countRead = (members: number) => takeFromImportBudget('people', connection.id, members);
+    const read = await readLtiMembers(connection, context.membershipsUrl, { ...options, countRead });
     if ('refusal' in read) {
       return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
     }

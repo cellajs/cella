@@ -4975,7 +4975,7 @@ export type UpdateLtiInstallationData = {
      */
     grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
     /**
-     * Replaces the channel types it may get a tab in; its tabs in a type taken away are switched off, keeping their ids
+     * Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again
      */
     channelTypes?: Array<'organization'>;
   };
