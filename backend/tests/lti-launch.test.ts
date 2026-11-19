@@ -257,10 +257,10 @@ describe('LTI launch', async () => {
     expect(refused.response.status).toBe(403);
     expect(await db.select().from(tokensTable).where(eq(tokensTable.kind, 'lti-launch'))).toHaveLength(0);
 
-    // A member who may only read the context launches as a Learner, and an institution Member.
+    // A member who may only read the context launches as a Learner, with no institution role.
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const learner = await authorize((await startLaunch(org, resourceLinkId, member.sessionCookie)).login.fields, tool.redirectUri);
-    expect(decodeJwt(learner.fields.id_token)[ltiClaims.roles]).toEqual([lisContextRoles.learner, lisInstitutionRoles.member]);
+    expect(decodeJwt(learner.fields.id_token)[ltiClaims.roles]).toEqual([lisContextRoles.learner]);
 
     const { login } = await startLaunch(org, resourceLinkId, member.sessionCookie);
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, member.id), eq(membershipsTable.channelId, org.org.id)));
@@ -284,10 +284,11 @@ describe('LTI launch', async () => {
       );
     };
 
+    // The list reads the channel as the caller: a system admin gets this far. A launch judges their own access and
+    // refuses them before the audience. The audience's own check is shown on a nested hierarchy (lti-nested-roles.test.ts).
     const systemAdmin = await createSystemAdminUser(`lti-${nanoid(8)}@test.com`);
     const asSystemAdmin = { ...defaultHeaders, Cookie: await createTestSession(systemAdmin) };
     expect(await listed(asSystemAdmin)).toEqual([]);
-    await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asSystemAdmin }), 404, 'not_found');
 
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const asMember = { ...defaultHeaders, Cookie: member.sessionCookie };

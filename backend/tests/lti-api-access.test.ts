@@ -23,8 +23,9 @@ import {
 import { type AccessScope, appConfig, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { lisContextRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiMembershipsUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import { minLtiMembersPage } from '#/modules/lti-platform/lti-platform-schema';
 import { ltiResourceLinksTable } from '#/modules/lti-platform/lti-resource-links-db';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
@@ -53,9 +54,11 @@ import { createAppClient } from './test-client';
 vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
   (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
 );
-vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
-  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
-);
+// `ltiContextTypes` answers as the template's until a test makes the organization no context.
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
+  const template = (await import('./lti-template-answers')).templateLaunchContext(await importOriginal());
+  return { ...template, ltiContextTypes: vi.fn(template.ltiContextTypes) };
+});
 
 overrideConfig(appConfig.has, { ltiPlatform: true });
 
@@ -430,6 +433,27 @@ describe('LTI installation API access', async () => {
     };
     expect(await keysOf(silent)).toEqual([['roles', 'status', 'user_id']]);
     expect(await keysOf(named)).toEqual([['name', 'roles', 'status', 'user_id']]);
+  });
+
+  // Attack and contract: an app whose organization is no LTI context still holds organization tabs. A launch there names
+  // no context and no member list, and carries institution roles alone, none for a plain member; the LTI tool's token
+  // reads no one there.
+  it('launches an organization tab without a context where the organization is none, and lets the LTI tool read no one there', async () => {
+    const org = await orgWithAdmin();
+    const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+    vi.mocked(ltiContextTypes).mockImplementation(() => null);
+    try {
+      const ltiTool = await installLtiTool(org);
+      const token = await tokenOf(ltiTool);
+      const claims = await launch(ltiTool);
+      expect(claims).not.toHaveProperty(ltiClaims.context);
+      expect(claims).not.toHaveProperty(ltiClaims.namesRoleService);
+      expect(claims[ltiClaims.roles]).toEqual([lisInstitutionRoles.administrator]);
+      expect((await launch(ltiTool, member.sessionCookie))[ltiClaims.roles]).toEqual([]);
+      await expectRefusal(await readMembers(org, token), 403, 'forbidden');
+    } finally {
+      vi.mocked(ltiContextTypes).mockReset();
+    }
   });
 
   describe('the token endpoint refuses', () => {

@@ -58,14 +58,27 @@ export const lisContextRoles = {
   mentor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
 } as const;
 
-/** The LIS institution roles a launch carries beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs. */
+/** The core LIS institution roles a launch may carry beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs. */
 export const lisInstitutionRoles = {
   administrator: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
-  member: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Member',
+  faculty: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Faculty',
+  guest: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Guest',
+  none: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#None',
+  other: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Other',
+  staff: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff',
+  student: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student',
 } as const;
 
 /** Whether a role, as a full URI, is a LIS context role or one of its sub-roles, not an institution or system role. */
 export const isLisContextRole = (role: string) => role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/membership');
+
+/**
+ * A person's LTI roles as an LTI tool reads them: the institution role Administrator with no context role, as platforms
+ * send their admins outside the courses they are enrolled in, counts as the context role Administrator too. A context
+ * role, whenever there is one, decides alone.
+ */
+export const ltiRolesAsRead = (roles: string[]) =>
+  !roles.some(isLisContextRole) && roles.includes(lisInstitutionRoles.administrator) ? [...roles, lisContextRoles.administrator] : roles;
 
 /**
  * A role as a full URI: a core context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a

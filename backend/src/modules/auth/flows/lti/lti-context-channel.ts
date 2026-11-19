@@ -1,6 +1,6 @@
 import { type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
-import { isLisContextRole, isLisContextType, lisInstitutionRoles } from '#/lib/lti-vocabulary';
+import { isLisContextRole, isLisContextType } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -30,7 +30,8 @@ export interface LtiContextChannelFacts {
 export interface LtiRoleFacts {
   /**
    * The person's LTI roles as full URIs: context roles (`lisContextRoles`), and any institution or system roles the
-   * platform sends beside them.
+   * platform sends beside them; an institution Administrator with no context role also holds the context role
+   * Administrator (`ltiRolesAsRead`).
    */
   ltiRoles: string[];
   /** The type of the context's channel the role is for. */
@@ -61,11 +62,12 @@ export const createLtiContextChannel = async (_ctx: DbContext, { context }: LtiC
  * The role a launch or an import gives in a channel of `channelType`, or null for none: the launch is refused with a
  * page, and the import leaves the person out. An answer that is no role of that type gives its least privileged role.
  * Re-applied at every launch: a role in a channel below the organization follows the launch up and down, an
- * organization role only goes up. An LTI administrator never becomes an app admin. The template's answer, by case:
- * - a context role (`isLisContextRole`): the least privileged role;
- * - no context role, but the institution role Administrator, which platforms send their admins: the least privileged
- *   role too;
- * - neither, such as institution roles of another kind or none at all: null.
+ * organization role only goes up. An LTI administrator never becomes an app admin. `ltiRoles` hold the context role
+ * Administrator for an institution Administrator who arrives with no context role (`ltiRolesAsRead`), who may also set
+ * a context up. The template's answer, by case:
+ * - a context role, Administrator included: the least privileged role;
+ * - institution or system roles alone, other than Administrator: null;
+ * - no roles at all: null.
  */
 export const ltiContextRole = ({ channelType, ltiRoles }: LtiRoleFacts): MembershipModel['role'] | null =>
-  ltiRoles.some(isLisContextRole) || ltiRoles.includes(lisInstitutionRoles.administrator) ? hierarchy.getLeastPrivilegedRole(channelType) : null;
+  ltiRoles.some(isLisContextRole) ? hierarchy.getLeastPrivilegedRole(channelType) : null;

@@ -1,8 +1,7 @@
 import { buildSubjectFromEntity, type ChannelEntityType, checkAccess } from 'shared';
 import type { ActorBinding } from '#/core/context';
 import type { LtiAudience } from '#/modules/lti-platform/lti-resource-links-db';
-import { accessFrom } from '#/permissions/access';
-import type { EntityModel } from '#/tables';
+import { accessFrom, ownActor } from '#/permissions/access';
 
 /** A person as a tab's audience judges them: their own memberships, no system admin power and no token mask. */
 export interface TabOpener {
@@ -20,13 +19,13 @@ export const opensFor = (
   audience: LtiAudience,
   { personId, memberships }: TabOpener,
   channelType: ChannelEntityType,
-  channel: EntityModel<ChannelEntityType>,
+  channel: Parameters<typeof buildSubjectFromEntity>[1],
 ) => {
   switch (audience) {
     case 'members':
       return memberships.some((membership) => membership.channelId === channel.id);
     case 'editors': {
-      const access = accessFrom({ var: { actor: { id: personId, bindings: memberships, scopes: null }, isSystemAdmin: false } });
+      const access = accessFrom({ var: ownActor(personId, memberships) });
       return checkAccess(access, 'update', buildSubjectFromEntity(channelType, channel)).allowed;
     }
     default:

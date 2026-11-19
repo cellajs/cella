@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
+import { ltiRolesAsRead } from '#/lib/lti-vocabulary';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
 import { getRateLimiterInstance, reserveAttempt } from '#/middlewares/rate-limiter/helpers';
@@ -97,7 +98,7 @@ interface ImportTarget {
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
-  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
+  const role = ltiRoleIn(channel.entityType, { ltiRoles: ltiRolesAsRead(person.roles), connection });
   if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
@@ -161,7 +162,8 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
       options.signal?.throwIfAborted();
       const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
       if (outcome === 'connection_gone') return;
-      if (outcome === 'member_limit') issue = 'member_limit';
+      // A member limit is what an admin acts on: it outranks people left without a role.
+      if (outcome === 'member_limit' || (outcome === 'no_role' && issue !== 'member_limit')) issue = outcome;
     }
     await record(read.people.length, issue);
     log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });

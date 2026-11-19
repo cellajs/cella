@@ -127,7 +127,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim or without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.',
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first.' },

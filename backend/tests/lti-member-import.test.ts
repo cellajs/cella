@@ -24,7 +24,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiNrps } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
@@ -777,6 +777,22 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'member_limit' });
     expect(await named(early.userId)).toBe('Grace Hopper');
     expect(await named(side.admin.id)).toBe(adminName);
+  });
+
+  // Attack: a person the app's role mapping gives no role is no member: the import leaves them out with no account,
+  // and the course says people were left out. An institution Administrator alone is read as the context's.
+  it('leaves out who has no role the app takes, makes no account for them, and records it', async () => {
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi(() => ({
+      members: [
+        { user_id: 'lms-learner', roles: [lisContextRoles.learner] },
+        { user_id: 'lms-staff', roles: [lisInstitutionRoles.staff] },
+        { user_id: 'lms-admin', roles: [lisInstitutionRoles.administrator] },
+      ],
+    }));
+    await importLtiMembersOp(side.context.id, api.options);
+    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject).sort()).toEqual(['lms-admin', 'lms-learner']);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'no_role' });
   });
 
   // Attack: two tenants registered at one platform read one membership address, never with each other's token.

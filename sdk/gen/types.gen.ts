@@ -3863,7 +3863,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim or without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -4193,6 +4193,7 @@ export type ListLtiContextsResponses = {
         | 'failed'
         | 'too_many_members'
         | 'member_limit'
+        | 'no_role'
         | 'inactive'
         | null;
       /**

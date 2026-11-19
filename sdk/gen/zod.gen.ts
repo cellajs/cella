@@ -1829,6 +1829,7 @@ export const zListLtiContextsResponse = z.object({
           'failed',
           'too_many_members',
           'member_limit',
+          'no_role',
           'inactive',
         ])
         .nullable(),

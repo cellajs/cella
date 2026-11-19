@@ -7,7 +7,7 @@ import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import type { UserId } from '#/db/utils/ids';
-import { lisContextRoles, ltiClaims } from '#/lib/lti-vocabulary';
+import { lisContextRoles, ltiClaims, ltiRolesAsRead } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
@@ -36,7 +36,10 @@ import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** The LTI roles that may set a course up in the app: Instructor and Administrator of the context. */
+/**
+ * The LTI roles that may set a course up in the app: Instructor and Administrator of the context, an institution
+ * Administrator without a context role among them (`ltiRolesAsRead`).
+ */
 const contextSetUpRoles = new Set<string>([lisContextRoles.instructor, lisContextRoles.administrator]);
 
 /** Where a launch's context leads: a channel the app has, or a context whose channel of `channelType` this launch creates. */
@@ -211,7 +214,7 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   ]);
   if (!organization || !tenant) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
-  const ltiRoles = launch[ltiClaims.roles];
+  const ltiRoles = ltiRolesAsRead(launch[ltiClaims.roles]);
   const contextClaim = launch[ltiClaims.context];
   const context = contextClaim && { id: contextClaim.id, label: contextClaim.label, title: contextClaim.title, types: contextClaim.type ?? [] };
   // A context with a channel keeps it; the app maps only one that has none yet, and its null counts as no context.

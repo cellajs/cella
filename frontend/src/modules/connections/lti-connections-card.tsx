@@ -40,6 +40,7 @@ const importIssues = {
   failed: 'c:lti_import.failed',
   too_many_members: 'c:lti_import.too_many_members',
   member_limit: 'c:lti_import.member_limit',
+  no_role: 'c:lti_import.no_role',
   inactive: 'c:lti_import.inactive',
 } as const satisfies Record<NonNullable<LtiContext['importIssue']>, TKey>;
 

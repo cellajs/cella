@@ -7,6 +7,15 @@ export interface AccessContext {
 }
 
 /**
+ * The actor of a person judged by `memberships` alone, as an LTI launch carries them: no token mask and no system admin
+ * power. `accessFrom` reads it like any other actor.
+ */
+export const ownActor = (personId: string, memberships: ActorBinding[]) => ({
+  actor: { id: personId, bindings: memberships, scopes: null },
+  isSystemAdmin: false,
+});
+
+/**
  * Actor AND grants in one object for every check and read scope. Hand-assembling one risks pairing one
  * actor's grants with another's identity.
  */

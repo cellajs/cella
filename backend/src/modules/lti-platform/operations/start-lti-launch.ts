@@ -9,6 +9,7 @@ import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/module
 import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
+import { ownActor } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
@@ -28,8 +29,7 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
       db: baseDb,
       tenantId: link.tenantId,
       organizationId: link.organizationId,
-      actor: { id: personId, bindings: memberships, scopes: null },
-      isSystemAdmin: false,
+      ...ownActor(personId, memberships),
     },
   };
   const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
