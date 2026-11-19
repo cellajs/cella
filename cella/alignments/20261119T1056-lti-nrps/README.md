@@ -14,7 +14,8 @@ LTI identities and contexts per tenant. The members route `listLtiMembers` answe
 2.0 (NRPS) at `lti-members/{channelType}/{channelId}`, the claim under `<issuer>/lti/claim/api` is gone,
 `auth/flows/lti/helpers/platform-api.ts` is `platform-memberships.ts`, each LTI connection signs with a key of its own,
 and the app's `ltiContextRole` learns which channel type it answers for. A channel's tabs of LTI tools are rows of its
-Tabs card, a channel holds one tab of an LTI tool, and a module's `channelTabs` source is gone.
+Tabs card, a channel holds one tab of an LTI tool, which `lti_resource_links.enabled` switches on and off, and a
+module's `channelTabs` source is gone.
 
 ## What & why
 

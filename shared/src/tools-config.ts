@@ -27,7 +27,7 @@ export type ToolsConfig = Partial<Record<ChannelSlot, SlotToolsConfig>>;
 
 /**
  * The id of an LTI tool's tab in a channel's tabs slot, its `$tool` route param too. It names the installation, of
- * which a channel holds one tab: the tab keeps its place in `order` while it is removed and placed again. The resource
- * link decides whether the tab is there, and `hidden` never names one.
+ * which a channel holds one tab. `order` names it once its resource link exists, and it keeps that place while it is
+ * switched off and on. Its resource link decides whether it shows: the wire takes it in `hidden`, and arranging ignores it there.
  */
 export const ltiTabId = (installationId: string) => `lti-${installationId}`;

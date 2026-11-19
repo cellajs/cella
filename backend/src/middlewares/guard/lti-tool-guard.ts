@@ -34,8 +34,8 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 /**
  * The access the installation's placements in or below the course in the route's path imply, read at every request:
  * the least privileged role of the course's type, when one of them in the route's organization launches as that course
- * (`placementContext`), its id compared whatever its case. Nothing is stored: a removed tab or a deleted channel takes it
- * away at once. A path that names no such course, or a channel type the app does not have, binds nothing: the tenant
+ * (`placementContext`), its id compared whatever its case, of tabs that are on. Nothing is stored: a tab removed or
+ * switched off, or a deleted channel, takes it away at once. A path that names no such course, or a channel type the app does not have, binds nothing: the tenant
  * then refuses the actor with a 403, before the route validates its path.
  */
 const courseBindings = async (installationId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {

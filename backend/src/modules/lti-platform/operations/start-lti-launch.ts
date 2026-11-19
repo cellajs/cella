@@ -39,14 +39,15 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
  * Starts a launch of a resource link, for a caller who may launch it (`readAsLauncher`): a one-use launch record names
  * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
  * LTI tool.
- * @throws AppError 404 `not_found` for no such link or a caller who may not launch it, 409 `lti_installation_not_active`
- *   while the installation waits for an approval or is disabled.
+ * @throws AppError 404 `not_found` for no such link or a caller who may not launch it, 409 `lti_tab_switched_off` for a
+ *   tab switched off, 409 `lti_installation_not_active` while the installation waits for an approval or is disabled.
  */
 export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   const { tenantId, organizationId } = ctx.var;
   const link = await findLtiResourceLink(ctx, { id, organizationId });
   if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
   await readAsLauncher(ctx.var.user.id, link);
+  if (!link.enabled) throw new AppError(409, 'lti_tab_switched_off', 'warn', { meta: { resourceLinkId: link.id } });
   const target = await findLtiLaunchTarget(ctx, { resourceLinkId: link.id });
   if (!target?.installation.approvedAt || target.account.status !== 'active') {
     throw new AppError(409, 'lti_installation_not_active', 'warn', { meta: { installationId: link.installationId } });

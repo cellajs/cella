@@ -14,32 +14,29 @@ import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
   initiateLtiLoginQuerySchema,
-  listLtiInstallationResourceLinksQuerySchema,
   listLtiInstallationsQuerySchema,
+  listLtiInstallationTabsQuerySchema,
   listLtiMembersQuerySchema,
   listLtiResourceLinksQuerySchema,
-  listPlaceableLtiInstallationsQuerySchema,
+  listLtiTabsQuerySchema,
   ltiInstallationParamSchema,
-  ltiInstallationResourceLinkSchema,
   ltiInstallationSchema,
+  ltiInstallationTabSchema,
   ltiLaunchStartSchema,
   ltiMembershipContainerSchema,
   ltiMembershipsParamSchema,
   ltiResourceLinkParamSchema,
   ltiResourceLinkSchema,
+  ltiTabSchema,
   ltiToolRegistrationStartSchema,
   minLtiMembersPage,
-  placeableLtiInstallationSchema,
   startLtiToolRegistrationBodySchema,
   updateLtiInstallationBodySchema,
   updateLtiResourceLinkBodySchema,
 } from '#/modules/lti-platform/lti-platform-schema';
 import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
-/**
- * An organization's LTI tools, for a user who may update the organization, and the ones a channel may place, for a user
- * who may update that channel; every decision asks a recent step-up.
- */
+/** An organization's LTI tools and where each has tabs, for a user who may update the organization; every decision asks a recent step-up. */
 export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
   startLtiToolRegistration: xRoute({
     method: 'post',
@@ -71,48 +68,25 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
       200: json('LTI installations', paginationSchema(ltiInstallationSchema), { results: [mockLtiInstallationResponse()], totalSize: 1 }),
     },
   }),
-  listPlaceableLtiInstallations: xRoute({
+  listLtiInstallationTabs: xRoute({
     method: 'get',
-    path: '/~list-placeable',
+    path: '/{ltiInstallationId}/tabs',
     xEnabledBy: { feature: 'ltiPlatform' },
     xGuard: [userGuard, tenantGuard, orgGuard],
-    summary: 'Get placeable LTI installations',
+    summary: 'Get tabs of LTI installation',
     description:
-      "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there: the LTI tool is active, and the caller may update that course when it is a channel above. Requires permission to update the channel.",
-    request: { params: tenantOrgParamSchema, query: listPlaceableLtiInstallationsQuerySchema },
+      'Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, the course it launches as and whether the caller may remove it. The LTI tool reads the people of the courses of its tabs that are on. Requires permission to update the organization.',
+    request: { params: ltiInstallationParamSchema, query: listLtiInstallationTabsQuerySchema },
     responses: {
-      200: json('Placeable LTI installations', paginationSchema(placeableLtiInstallationSchema), {
-        results: [
-          {
-            id: mockLtiInstallationResponse().id,
-            name: 'Peer review',
-            readsMembers: true,
-            status: 'active',
-            placeable: true,
-            context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
-          },
-        ],
-        totalSize: 1,
-      }),
-    },
-  }),
-  listLtiInstallationResourceLinks: xRoute({
-    method: 'get',
-    path: '/{ltiInstallationId}/~list-resource-links',
-    xEnabledBy: { feature: 'ltiPlatform' },
-    xGuard: [userGuard, tenantGuard, orgGuard],
-    summary: 'Get resource links of LTI installation',
-    description:
-      'Every channel of the organization where an LTI tool has a tab, by name, and whether the caller may remove each: the courses whose people it may read follow from them. Requires permission to update the organization.',
-    request: { params: ltiInstallationParamSchema, query: listLtiInstallationResourceLinksQuerySchema },
-    responses: {
-      200: json('Resource links of the installation', paginationSchema(ltiInstallationResourceLinkSchema), {
+      200: json('Tabs of the installation', paginationSchema(ltiInstallationTabSchema), {
         results: [
           {
             id: mockLtiResourceLinkResponse().id,
             channelType: 'organization',
             channelId: mockLtiResourceLinkResponse().channelId,
             channelName: 'Biology department',
+            enabled: true,
+            context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
             deletable: true,
           },
         ],
@@ -157,6 +131,36 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
   }),
 });
 
+/** A channel's tabs of LTI tools, for a user who may update the channel. */
+export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
+  listLtiTabs: xRoute({
+    method: 'get',
+    path: '/',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    summary: 'Get LTI tabs',
+    description:
+      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
+    request: { params: tenantOrgParamSchema, query: listLtiTabsQuerySchema },
+    responses: {
+      200: json('LTI tabs', paginationSchema(ltiTabSchema), {
+        results: [
+          {
+            id: mockLtiInstallationResponse().id,
+            name: 'Peer review',
+            status: 'active',
+            readsMembers: true,
+            refusal: null,
+            context: { channelType: 'organization', channelId: mockLtiResourceLinkResponse().channelId, name: 'Biology department' },
+            resourceLink: { id: mockLtiResourceLinkResponse().id, title: 'Peer review', enabled: true },
+          },
+        ],
+        totalSize: 1,
+      }),
+    },
+  }),
+});
+
 /** An organization's resource links: LTI tools placed in its channels, and the launches they start. */
 export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
   listLtiResourceLinks: xRoute({
@@ -191,9 +195,10 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update LTI resource link',
-    description: 'Renames a resource link or replaces its custom values. Requires permission to update its channel.',
+    description:
+      'Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching also takes the course it launches as when that is a channel above, and switching on an active LTI tool.',
     request: { params: ltiResourceLinkParamSchema, body: jsonBody(updateLtiResourceLinkBodySchema) },
-    responses: { 200: json('LTI resource link', ltiResourceLinkSchema) },
+    responses: { 200: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
   deleteLtiResourceLink: xRoute({
     method: 'delete',
@@ -202,7 +207,8 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI resource link',
-    description: 'Removes a resource link and its launches that have not reached the LTI tool. Requires permission to update its channel.',
+    description:
+      'Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.',
     request: { params: ltiResourceLinkParamSchema },
     responses: { 204: { description: 'Resource link deleted' } },
   }),

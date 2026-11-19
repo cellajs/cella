@@ -1,8 +1,8 @@
-import { useSuspenseQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ListPlaceableLtiInstallationsResponse, LtiResourceLink } from 'sdk';
+import type { ListLtiTabsResponse } from 'sdk';
 import { ltiTabId } from 'shared/tools-config';
 import { ConfirmForm } from '~/modules/common/confirm-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -10,79 +10,84 @@ import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import {
-  ltiResourceLinksQueryOptions,
-  placeableLtiInstallationsQueryOptions,
-  useCreateLtiResourceLinkMutation,
-  useDeleteLtiResourceLinkMutation,
-} from '~/modules/lti-platform/query';
+import { ltiTabsQueryOptions, useCreateLtiResourceLinkMutation, useUpdateLtiResourceLinkMutation } from '~/modules/lti-platform/query';
 import { Switch } from '~/modules/ui/switch';
 
-type PlaceableLtiInstallation = ListPlaceableLtiInstallationsResponse['results'][number];
+type LtiTab = ListLtiTabsResponse['results'][number];
 
-/** An approved LTI tool as a row of a channel's tabs: its tab is there while its resource link is. */
+/** An approved LTI tool as a row of a channel's tabs: placed once its resource link exists, on or off. */
 export interface LtiTabRow {
   id: string;
   name: string;
-  installation: PlaceableLtiInstallation;
-  link?: LtiResourceLink;
+  tab: LtiTab;
 }
 
-/** Every approved LTI tool as a row of the channel's tabs: the placed ones in the tab bar's order, then the others. */
-export function useLtiTabRows(channel: EnrichedChannel): LtiTabRow[] {
-  const [{ data: installations }, { data: links }] = useSuspenseQueries({
-    queries: [placeableLtiInstallationsQueryOptions(channel), ltiResourceLinksQueryOptions(channel)],
-  });
-  const rows = installations.results.map((installation) => {
-    const link = links.results.find(({ installationId }) => installationId === installation.id);
-    // A placed tab goes by its own title, as the tab bar shows it
-    return { id: ltiTabId(installation.id), name: link?.title ?? installation.name, installation, link };
-  });
-  const placed = links.results.flatMap((link) => rows.filter((row) => row.link?.id === link.id));
-  return [...placed, ...rows.filter((row) => !row.link)];
+/** A refusal that keeps the tab from being switched either way: the course it launches as. */
+const isCourseRefusal = (refusal: LtiTab['refusal']) => refusal === 'channel_archived' || refusal === 'lti_context_update_required';
+
+const refusalTexts = {
+  lti_installation_disabled: 'c:lti_tab_tool_disabled.text',
+  channel_archived: 'c:lti_tab_course_archived.text',
+  lti_context_update_required: 'c:lti_tab_course_required.text',
+} as const satisfies Record<NonNullable<LtiTab['refusal']>, string>;
+
+/**
+ * The channel's LTI tabs as rows, read in the card with their own pending and failed state: the placed ones in the order
+ * they were placed, as the tab bar has them, then the LTI tools never placed here.
+ */
+export function useLtiTabRows(channel: EnrichedChannel) {
+  const query = useQuery(ltiTabsQueryOptions(channel));
+  const rows: LtiTabRow[] = (query.data?.results ?? []).map((tab) => ({
+    id: ltiTabId(tab.id),
+    name: tab.resourceLink?.title ?? tab.name,
+    tab,
+  }));
+  // Resource link ids are UUID v7: their order is the order they were placed
+  const placed = rows
+    .filter((row) => row.tab.resourceLink)
+    .sort((a, b) => (a.tab.resourceLink?.id ?? '').localeCompare(b.tab.resourceLink?.id ?? ''));
+  return { rows: [...placed, ...rows.filter((row) => !row.tab.resourceLink)], query };
 }
 
-/** Why the row's tab cannot be placed: a disabled LTI tool, placed or not, or a course above the caller may not update. */
+/** Why the row's tab cannot be switched on, or either way: a disabled LTI tool, or the course it launches as. */
 export function LtiTabRefusal({ row }: { row: LtiTabRow }) {
   const { t } = useTranslation();
-  const disabled = row.installation.status === 'disabled';
-  if (!disabled && (row.link || row.installation.placeable)) return null;
-  return (
-    <span className="text-muted-foreground text-xs leading-tight">
-      {t(disabled ? 'c:lti_tab_tool_disabled.text' : 'c:lti_tab_course_required.text')}
-    </span>
-  );
+  const { refusal } = row.tab;
+  if (!refusal) return null;
+  return <span className="text-muted-foreground text-xs leading-tight">{t(refusalTexts[refusal])}</span>;
 }
 
 interface LtiTabSwitchProps {
   channel: EnrichedChannel;
   row: LtiTabRow;
   tabIndex: number;
-  /** Right before the tab is placed or removed. */
+  /** Right before the tab is placed or switched. */
   onToggle: () => void;
 }
 
-/** Places or removes an LTI tool's tab; placing one that reads course members asks first, naming the course it reads. */
+/** Switches an LTI tool's tab on and off, keeping its resource link; switching on one that reads course members asks first. */
 export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchProps) {
   const { t } = useTranslation();
   const switchRef = useRef<HTMLElement>(null);
   const { mutate: create, isPending: placing } = useCreateLtiResourceLinkMutation();
-  const { mutate: remove, isPending: removing } = useDeleteLtiResourceLinkMutation();
+  const { mutate: update, isPending: switching, variables } = useUpdateLtiResourceLinkMutation();
   const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
-  const { installation, link } = row;
+  const { tab } = row;
+  const link = tab.resourceLink;
 
-  const place = () => {
+  const setEnabled = (enabled: boolean) => {
     onToggle();
-    create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: installation.id, title: installation.name } });
+    if (link) return update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled } });
+    create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name } });
   };
 
-  const confirmPlace = (trigger: HTMLElement, course: NonNullable<PlaceableLtiInstallation['context']>) =>
+  const confirmOn = (trigger: HTMLElement, course: NonNullable<LtiTab['context']>) =>
     openConfirm(trigger, {
-      id: `place-lti-tab-${installation.id}`,
+      id: `switch-on-lti-tab-${tab.id}`,
       title: (
         <NamedText
           i18nKey={course.channelId === channel.id ? 'c:confirm.add_lti_tab' : 'c:confirm.add_lti_tab_above'}
-          name={installation.name}
+          name={tab.name}
           values={{ course: course.name ?? '' }}
         />
       ),
@@ -93,31 +98,32 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
           pending={false}
           onConfirm={() => {
             dropdowner.getState().remove();
-            place();
+            setEnabled(true);
           }}
         />
       ),
     });
 
   const onCheckedChange = (checked: boolean) => {
-    if (!checked) {
-      if (!link) return;
-      onToggle();
-      return remove({ path: { ...path, ltiResourceLinkId: link.id }, channelId: channel.id });
+    if (!checked) return setEnabled(false);
+    // A course to read and the grant to read it: the person sees whose people the LTI tool reads before it does, or nothing happens
+    if (tab.readsMembers && tab.context) {
+      if (switchRef.current) confirmOn(switchRef.current, tab.context);
+      return;
     }
-    // A course to read and the grant to read it: the person sees whose people the LTI tool reads before it does
-    const { context } = installation;
-    if (installation.readsMembers && context && switchRef.current) return confirmPlace(switchRef.current, context);
-    place();
+    setEnabled(true);
   };
+
+  const on = switching ? !!variables?.body.enabled : placing || !!link?.enabled;
+  const refused = isCourseRefusal(tab.refusal) || (!on && tab.refusal === 'lti_installation_disabled');
 
   return (
     <Switch
       ref={switchRef}
       aria-label={`${row.name}: ${t('c:visible')}`}
       tabIndex={tabIndex}
-      checked={placing || (!!link && !removing)}
-      disabled={placing || removing || (!link && !installation.placeable)}
+      checked={on}
+      disabled={placing || switching || refused}
       onCheckedChange={onCheckedChange}
     />
   );

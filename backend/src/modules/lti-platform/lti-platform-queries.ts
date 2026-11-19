@@ -209,7 +209,7 @@ interface FindLtiPlacementsOpts {
   course: ChannelRef;
 }
 
-/** The channels of every resource link that places the installation in the organization, in the course or below it. */
+/** The channels of every tab that is on and places the installation in the organization, in the course or below it. */
 export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId, course }: FindLtiPlacementsOpts) {
   return ctx.var.db
     .select(placementSelect)
@@ -218,6 +218,7 @@ export async function findLtiPlacements(ctx: DbContext, { installationId, organi
       and(
         eq(ltiResourceLinksTable.installationId, installationId),
         eq(ltiResourceLinksTable.organizationId, organizationId),
+        eq(ltiResourceLinksTable.enabled, true),
         eq(getColumns(ltiResourceLinksTable)[appConfig.entityIdColumnKeys[course.channelType]], course.channelId),
       ),
     );
@@ -266,7 +267,10 @@ export async function insertLtiResourceLink(ctx: DbContext, { values }: { values
 
 export async function updateLtiResourceLink(
   ctx: DbContext,
-  { id, values }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'updatedAt' | 'updatedBy'>> },
+  {
+    id,
+    values,
+  }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'updatedAt' | 'updatedBy'>> },
 ) {
   const [updated] = await ctx.var.db.update(ltiResourceLinksTable).set(values).where(eq(ltiResourceLinksTable.id, id)).returning();
   return updated;

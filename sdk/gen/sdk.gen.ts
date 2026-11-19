@@ -253,18 +253,21 @@ import type {
   ListLtiContextsData,
   ListLtiContextsErrors,
   ListLtiContextsResponses,
-  ListLtiInstallationResourceLinksData,
-  ListLtiInstallationResourceLinksErrors,
-  ListLtiInstallationResourceLinksResponses,
   ListLtiInstallationsData,
   ListLtiInstallationsErrors,
   ListLtiInstallationsResponses,
+  ListLtiInstallationTabsData,
+  ListLtiInstallationTabsErrors,
+  ListLtiInstallationTabsResponses,
   ListLtiMembersData,
   ListLtiMembersErrors,
   ListLtiMembersResponses,
   ListLtiResourceLinksData,
   ListLtiResourceLinksErrors,
   ListLtiResourceLinksResponses,
+  ListLtiTabsData,
+  ListLtiTabsErrors,
+  ListLtiTabsResponses,
   ListMembersData,
   ListMembersErrors,
   ListMembersResponses,
@@ -280,9 +283,6 @@ import type {
   ListOrganizationsData,
   ListOrganizationsErrors,
   ListOrganizationsResponses,
-  ListPlaceableLtiInstallationsData,
-  ListPlaceableLtiInstallationsErrors,
-  ListPlaceableLtiInstallationsResponses,
   ListRequestsData,
   ListRequestsErrors,
   ListRequestsResponses,
@@ -523,16 +523,16 @@ import {
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
   zListLtiContextsResponse,
-  zListLtiInstallationResourceLinksResponse,
   zListLtiInstallationsResponse,
+  zListLtiInstallationTabsResponse,
   zListLtiMembersResponse,
   zListLtiResourceLinksResponse,
+  zListLtiTabsResponse,
   zListMembersResponse,
   zListMyInvitationsResponse,
   zListMyMembershipsResponse,
   zListNotificationsResponse,
   zListOrganizationsResponse,
-  zListPlaceableLtiInstallationsResponse,
   zListRequestsResponse,
   zListServiceAccountsResponse,
   zListTenantsResponse,
@@ -2187,41 +2187,13 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get placeable LTI installations
+ * Get tabs of LTI installation
  *
- * The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there: the LTI tool is active, and the caller may update that course when it is a channel above. Requires permission to update the channel.
+ * Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, the course it launches as and whether the caller may remove it. The LTI tool reads the people of the courses of its tabs that are on. Requires permission to update the organization.
  *
- * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable** ·· [listPlaceableLtiInstallations](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable) ·· _lti-platform · cella_
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs** ·· [listLtiInstallationTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs) ·· _lti-platform · cella_
  *
- * @param {listPlaceableLtiInstallationsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.pageToken - `string` (optional)
- * @param {integer=} options.query.maxPageSize - `integer` (optional)
- * @param {integer=} options.query.skip - `integer` (optional)
- * @param {string} options.query.channelId - `string`
- * @param {enum} options.query.channelType - `enum`
- * @param {enum=} options.query.orderBy - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const listPlaceableLtiInstallations = <ThrowOnError extends boolean = true>(
-  options: Options<ListPlaceableLtiInstallationsData, ThrowOnError>,
-): RequestResult<ListPlaceableLtiInstallationsResponses, ListPlaceableLtiInstallationsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<ListPlaceableLtiInstallationsResponses, ListPlaceableLtiInstallationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zListPlaceableLtiInstallationsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable',
-    ...options,
-  });
-
-/**
- * Get resource links of LTI installation
- *
- * Every channel of the organization where an LTI tool has a tab, by name, and whether the caller may remove each: the courses whose people it may read follow from them. Requires permission to update the organization.
- *
- * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links** ·· [listLtiInstallationResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links) ·· _lti-platform · cella_
- *
- * @param {listLtiInstallationResourceLinksData} options
+ * @param {listLtiInstallationTabsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.ltiInstallationId - `string`
@@ -2231,13 +2203,13 @@ export const listPlaceableLtiInstallations = <ThrowOnError extends boolean = tru
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const listLtiInstallationResourceLinks = <ThrowOnError extends boolean = true>(
-  options: Options<ListLtiInstallationResourceLinksData, ThrowOnError>,
-): RequestResult<ListLtiInstallationResourceLinksResponses, ListLtiInstallationResourceLinksErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<ListLtiInstallationResourceLinksResponses, ListLtiInstallationResourceLinksErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zListLtiInstallationResourceLinksResponse.parseAsync(data),
+export const listLtiInstallationTabs = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiInstallationTabsData, ThrowOnError>,
+): RequestResult<ListLtiInstallationTabsResponses, ListLtiInstallationTabsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiInstallationTabsResponses, ListLtiInstallationTabsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiInstallationTabsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs',
     ...options,
   });
 
@@ -2322,6 +2294,34 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get LTI tabs
+ *
+ * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-tabs** ·· [listLtiTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-tabs) ·· _lti-platform · cella_
+ *
+ * @param {listLtiTabsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiTabs = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiTabsData, ThrowOnError>,
+): RequestResult<ListLtiTabsResponses, ListLtiTabsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiTabsResponses, ListLtiTabsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiTabsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-tabs',
+    ...options,
+  });
+
+/**
  * Get LTI resource links
  *
  * The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.
@@ -2383,7 +2383,7 @@ export const createLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI resource link
  *
- * Removes a resource link and its launches that have not reached the LTI tool. Requires permission to update its channel.
+ * Removes a tab for good: its resource link and its launches that have not reached the LTI tool. What the LTI tool keeps under its id may be lost, which switching the tab off avoids. Requires permission to update its channel.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [deleteLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
  *
@@ -2406,7 +2406,7 @@ export const deleteLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Update LTI resource link
  *
- * Renames a resource link or replaces its custom values. Requires permission to update its channel.
+ * Renames a resource link, replaces its custom values, or switches its tab on or off, keeping its id. Requires permission to update its channel; switching also takes the course it launches as when that is a channel above, and switching on an active LTI tool.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}** ·· [updateLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/PATCH/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}) ·· _lti-platform · cella_
  *
@@ -2416,7 +2416,8 @@ export const deleteLtiResourceLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.ltiResourceLinkId - `string`
  * @param {string=} options.body.title - `string` (optional)
  * @param {object=} options.body.custom - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 415, 429
+ * @param {boolean=} options.body.enabled - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const updateLtiResourceLink = <ThrowOnError extends boolean = true>(
   options: Options<UpdateLtiResourceLinkData, ThrowOnError>,

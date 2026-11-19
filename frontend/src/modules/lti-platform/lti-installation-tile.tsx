@@ -19,7 +19,7 @@ import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { scopeLabel } from '~/modules/common/scope-badges';
 import {
-  ltiInstallationResourceLinksQueryOptions,
+  ltiInstallationTabsQueryOptions,
   useApproveLtiInstallationMutation,
   useDeleteLtiResourceLinkMutation,
   useRejectLtiInstallationMutation,
@@ -158,32 +158,49 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
 }
 
 /**
- * Every channel where the LTI tool has a tab, linked, each removable by whoever may update it: the courses whose people
- * it reads follow from them. Channels place and remove tabs in their own Tabs card.
+ * Every tab of the LTI tool, linked to its channel, the ones switched off marked off, with the course whose people a tab
+ * that is on lets it read where that is another channel. Whoever may update a tab's channel removes it for good here,
+ * after a confirmation; channels switch their tabs on and off in their own Tabs card.
  */
 function InstallationTabs({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
-  const { data } = useQuery(ltiInstallationResourceLinksQueryOptions(path, installation.id));
+  const { data } = useQuery(ltiInstallationTabsQueryOptions(path, installation.id));
   const { mutate: remove } = useDeleteLtiResourceLinkMutation();
-  const links = data?.results ?? [];
+  const tabs = data?.results ?? [];
+
+  const openRemoveConfirm = (event: MouseEvent<HTMLButtonElement>, tab: (typeof tabs)[number]) =>
+    openConfirm(event.currentTarget, {
+      id: `remove-lti-tab-${tab.id}`,
+      title: <NamedText i18nKey="c:confirm.remove_lti_tab" name={tab.channelName} />,
+      label: 'c:remove',
+      icon: XIcon,
+      onConfirm: () => remove({ path: { ...path, ltiResourceLinkId: tab.id }, channelId: tab.channelId }),
+    });
 
   return (
     <div className="flex flex-col gap-2">
       <span className="group-label text-xs">{t('c:tabs')}</span>
-      {links.map((link) => {
-        const route: EntityRoute = getChannelPageRoute({ ...path, channelType: link.channelType, channelId: link.channelId });
+      {tabs.map((tab) => {
+        const route: EntityRoute = getChannelPageRoute({ ...path, channelType: tab.channelType, channelId: tab.channelId });
+        const course = tab.enabled && tab.context && tab.context.channelId !== tab.channelId ? tab.context : null;
         return (
-          <div key={link.id} className="flex min-h-10 items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
-            <Link {...route} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
-              {link.channelName}
-            </Link>
-            <span className="text-muted-foreground grow">{t(`c:${link.channelType}`)}</span>
-            {link.deletable && (
+          <div key={tab.id} className="flex min-h-10 items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
+            <div className="flex min-w-0 grow flex-col">
+              <div className="flex min-w-0 items-baseline gap-2">
+                <Link {...route} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
+                  {tab.channelName}
+                </Link>
+                <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
+                {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
+              </div>
+              {course && <span className="text-muted-foreground text-xs">{t('c:lti_tab_reads.text', { name: course.name ?? '' })}</span>}
+            </div>
+            {tab.deletable && (
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`${link.channelName}: ${t('c:remove_resource', { resource: t('c:tab') })}`}
-                onClick={() => remove({ path: { ...path, ltiResourceLinkId: link.id }, channelId: link.channelId })}
+                aria-label={`${tab.channelName}: ${t('c:remove_resource', { resource: t('c:tab') })}`}
+                onClick={(event) => openRemoveConfirm(event, tab)}
               >
                 <XIcon className="size-4" />
               </Button>
@@ -191,7 +208,7 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
           </div>
         );
       })}
-      {data && !links.length && <p className="text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:tabs') })}</p>}
+      {data && !tabs.length && <p className="text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:tabs') })}</p>}
       <p className="text-muted-foreground text-sm">{t('c:lti_tool_tabs.text')}</p>
     </div>
   );

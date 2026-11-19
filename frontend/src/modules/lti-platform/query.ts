@@ -9,12 +9,13 @@ import {
   createLtiResourceLink,
   type DeleteLtiResourceLinkData,
   deleteLtiResourceLink,
+  type ListLtiTabsResponse,
   type LtiInstallation,
   type LtiResourceLink,
-  listLtiInstallationResourceLinks,
   listLtiInstallations,
+  listLtiInstallationTabs,
   listLtiResourceLinks,
-  listPlaceableLtiInstallations,
+  listLtiTabs,
   type RejectLtiInstallationData,
   rejectLtiInstallation,
   type StartLtiLaunchData,
@@ -25,9 +26,12 @@ import {
   startLtiToolRegistration,
   type UpdateLtiInstallationData,
   type UpdateLtiInstallationResponse,
+  type UpdateLtiResourceLinkData,
+  type UpdateLtiResourceLinkResponse,
   type UpdateServiceAccountData,
   type UpdateServiceAccountResponse,
   updateLtiInstallation,
+  updateLtiResourceLink,
   updateServiceAccount,
 } from 'sdk';
 import type { ChannelEntityType } from 'shared';
@@ -45,16 +49,17 @@ export type ResourceLinkChannel = { id: string; entityType: ChannelEntityType; t
 
 const ltiPlatformKeys = {
   installations: (path: QueryOrgContext) => ['lti-platform', 'installations', path.tenantId, path.organizationId] as const,
-  placeable: (tenantId: string, channelId?: string) => ['lti-platform', 'placeable', tenantId, ...(channelId ? [channelId] : [])] as const,
-  resourceLinks: (channel: Pick<ResourceLinkChannel, 'id' | 'tenantId'>) => ['lti-platform', 'resource-links', channel.tenantId, channel.id] as const,
-  installationResourceLinks: (tenantId: string, installationId?: string) =>
-    ['lti-platform', 'installation-resource-links', tenantId, ...(installationId ? [installationId] : [])] as const,
+  tabs: (tenantId: string, channelId?: string) => ['lti-platform', 'tabs', tenantId, ...(channelId ? [channelId] : [])] as const,
+  resourceLinks: (tenantId: string, channelId?: string) => ['lti-platform', 'resource-links', tenantId, ...(channelId ? [channelId] : [])] as const,
+  installationTabs: (tenantId: string, installationId?: string) =>
+    ['lti-platform', 'installation-tabs', tenantId, ...(installationId ? [installationId] : [])] as const,
   startRegistration: ['lti-platform', 'start-registration'] as const,
   approve: ['lti-platform', 'approve'] as const,
   reject: ['lti-platform', 'reject'] as const,
   setStatus: ['lti-platform', 'set-status'] as const,
   update: ['lti-platform', 'update'] as const,
   createResourceLink: ['lti-platform', 'create-resource-link'] as const,
+  updateResourceLink: ['lti-platform', 'update-resource-link'] as const,
   deleteResourceLink: ['lti-platform', 'delete-resource-link'] as const,
   startLaunch: ['lti-platform', 'start-launch'] as const,
 };
@@ -72,7 +77,7 @@ const channelPath = (channel: ResourceLinkChannel) => ({ tenantId: channel.tenan
 /** The LTI resource links placed in a channel, in creation order: its tabs of LTI tools. */
 export const ltiResourceLinksQueryOptions = (channel: ResourceLinkChannel) =>
   queryOptions({
-    queryKey: ltiPlatformKeys.resourceLinks(channel),
+    queryKey: ltiPlatformKeys.resourceLinks(channel.tenantId, channel.id),
     queryFn: () =>
       fetchAllPages(
         (page) => listLtiResourceLinks({ path: channelPath(channel), query: { ...page, channelType: channel.entityType, channelId: channel.id } }),
@@ -80,34 +85,48 @@ export const ltiResourceLinksQueryOptions = (channel: ResourceLinkChannel) =>
       ),
   });
 
-/** The approved LTI tools a channel's tabs offer, for a user who may update it, oldest first. */
-export const placeableLtiInstallationsQueryOptions = (channel: ResourceLinkChannel) =>
+/** A channel's tabs of LTI tools, for a user who may update it: every approved LTI tool, oldest first, with its tab once placed. */
+export const ltiTabsQueryOptions = (channel: ResourceLinkChannel) =>
   queryOptions({
-    queryKey: ltiPlatformKeys.placeable(channel.tenantId, channel.id),
+    queryKey: ltiPlatformKeys.tabs(channel.tenantId, channel.id),
     queryFn: () =>
       fetchAllPages(
-        (page) =>
-          listPlaceableLtiInstallations({ path: channelPath(channel), query: { ...page, channelType: channel.entityType, channelId: channel.id } }),
+        (page) => listLtiTabs({ path: channelPath(channel), query: { ...page, channelType: channel.entityType, channelId: channel.id } }),
         syncChunkSize,
       ),
   });
 
-/** Every channel of the organization where an installation has a tab, for an organization admin. */
-export const ltiInstallationResourceLinksQueryOptions = (path: QueryOrgContext, installationId: string) =>
+/** Every tab of an installation in the organization, on or off, for an organization admin. */
+export const ltiInstallationTabsQueryOptions = (path: QueryOrgContext, installationId: string) =>
   queryOptions({
-    queryKey: ltiPlatformKeys.installationResourceLinks(path.tenantId, installationId),
+    queryKey: ltiPlatformKeys.installationTabs(path.tenantId, installationId),
     queryFn: () =>
-      fetchAllPages((page) => listLtiInstallationResourceLinks({ path: { ...path, ltiInstallationId: installationId }, query: page }), syncChunkSize),
+      fetchAllPages((page) => listLtiInstallationTabs({ path: { ...path, ltiInstallationId: installationId }, query: page }), syncChunkSize),
   });
 
-/** Applies a placed or removed link to the cached tabs of its channel, and reads the admins' lists of placed tabs again. */
-const setCachedResourceLinks = (tenantId: string, channelId: string, update: (links: LtiResourceLink[]) => LtiResourceLink[]) => {
-  queryClient.setQueryData(ltiPlatformKeys.resourceLinks({ id: channelId, tenantId }), (oldData: QueryData<LtiResourceLink> | undefined) => {
+type LtiTab = ListLtiTabsResponse['results'][number];
+
+/**
+ * Applies a resource link placed, switched or removed (`null`) to the cached tabs of its channel, its bar's and its card's,
+ * and reads the admins' lists of tabs again.
+ */
+const setCachedResourceLink = (tenantId: string, channelId: string, linkId: string, link: LtiResourceLink | null) => {
+  queryClient.setQueryData(ltiPlatformKeys.resourceLinks(tenantId, channelId), (oldData: QueryData<LtiResourceLink> | undefined) => {
     if (!oldData) return oldData;
-    const results = update(oldData.results);
+    const results = oldData.results.some(({ id }) => id === linkId)
+      ? oldData.results.flatMap((cached) => (cached.id !== linkId ? [cached] : link ? [link] : []))
+      : [...oldData.results, ...(link ? [link] : [])];
     return { ...oldData, results, totalSize: results.length };
   });
-  queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationResourceLinks(tenantId) });
+  queryClient.setQueryData(ltiPlatformKeys.tabs(tenantId, channelId), (oldData: QueryData<LtiTab> | undefined) => {
+    if (!oldData) return oldData;
+    const results = oldData.results.map((tab) => {
+      if (link ? tab.id !== link.installationId : tab.resourceLink?.id !== linkId) return tab;
+      return { ...tab, resourceLink: link && { id: link.id, title: link.title, enabled: link.enabled } };
+    });
+    return { ...oldData, results };
+  });
+  queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationTabs(tenantId) });
 };
 
 /** Replaces one installation in the organization's cached list. */
@@ -135,7 +154,7 @@ export const useApproveLtiInstallationMutation = () =>
     mutationFn: ({ path, body }) => withStepUp(() => approveLtiInstallation({ path, body })),
     onSuccess: (approved, { path }) => {
       setCachedInstallation(path, approved.id, () => approved);
-      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.placeable(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
       toaster.success(t('c:success.approve_lti_tool', { name: approved.name }));
     },
   });
@@ -158,7 +177,7 @@ export const useSetLtiInstallationStatusMutation = () =>
     mutationFn: ({ path, body }) => withStepUp(() => updateServiceAccount({ path, body })),
     onSuccess: ({ id, status, updatedAt }, { path }) => {
       setCachedInstallation(path, id, (installation) => ({ ...installation, status, updatedAt }));
-      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.placeable(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
     },
   });
 
@@ -176,27 +195,34 @@ export const useUpdateLtiInstallationMutation = () =>
     },
     onSettled: (_data, _error, { path }) => {
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installations(path) });
-      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.placeable(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
     },
   });
 
-/** Places an approved installation as a tab of a channel; the channel's tab bar shows it at once. */
+/** Places an approved installation as a tab of a channel, on; the channel's tab bar shows it at once. */
 export const useCreateLtiResourceLinkMutation = () =>
   useMutation<CreateLtiResourceLinkResponse, ApiError, MutationData<CreateLtiResourceLinkData>>({
     mutationKey: ltiPlatformKeys.createResourceLink,
     mutationFn: ({ path, body }) => createLtiResourceLink({ path, body }),
-    onSuccess: (link, { path }) => setCachedResourceLinks(path.tenantId, link.channelId, (links) => [...links, link]),
+    onSuccess: (link, { path }) => setCachedResourceLink(path.tenantId, link.channelId, link.id, link),
   });
 
-/** Removes a resource link; `channelId` names the channel whose tab bar drops it. */
+/** Switches a tab on or off, or renames it; the resource link and its id stay. */
+export const useUpdateLtiResourceLinkMutation = () =>
+  useMutation<UpdateLtiResourceLinkResponse, ApiError, MutationData<UpdateLtiResourceLinkData>>({
+    mutationKey: ltiPlatformKeys.updateResourceLink,
+    mutationFn: ({ path, body }) => updateLtiResourceLink({ path, body }),
+    onSuccess: (link, { path }) => setCachedResourceLink(path.tenantId, link.channelId, link.id, link),
+  });
+
+/** Removes a tab for good; `channelId` names the channel whose tabs drop it. */
 export const useDeleteLtiResourceLinkMutation = () =>
   useMutation<void, ApiError, MutationData<DeleteLtiResourceLinkData> & { channelId: string }>({
     mutationKey: ltiPlatformKeys.deleteResourceLink,
     mutationFn: async ({ path }) => {
       await deleteLtiResourceLink({ path });
     },
-    onSuccess: (_, { path, channelId }) =>
-      setCachedResourceLinks(path.tenantId, channelId, (links) => links.filter((link) => link.id !== path.ltiResourceLinkId)),
+    onSuccess: (_, { path, channelId }) => setCachedResourceLink(path.tenantId, channelId, path.ltiResourceLinkId, null),
   });
 
 /** Starts a launch of a resource link; the frame that asked shows a failure in place. */
@@ -205,4 +231,9 @@ export const useStartLtiLaunchMutation = () =>
     mutationKey: ltiPlatformKeys.startLaunch,
     mutationFn: ({ path }) => startLtiLaunch({ path }),
     meta: { suppressGlobalErrorToast: true },
+    // A tab switched off or removed meanwhile: its channel's tabs are read again, which takes the page off it
+    onError: (error, { path }) => {
+      if (error.status === 404 || error.type === 'lti_tab_switched_off')
+        queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+    },
   });

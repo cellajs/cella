@@ -578,6 +578,10 @@ export type LtiResourceLink = {
   custom: {
     [key: string]: string;
   };
+  /**
+   * Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id
+   */
+  enabled: boolean;
   createdAt: string;
   updatedAt: string | null;
   createdBy:
@@ -795,21 +799,21 @@ export type Organization = {
   toolsConfig: {
     'organization.settings'?: {
       /**
-       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
        */
       order?: Array<string>;
       /**
-       * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+       * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
        */
       hidden?: Array<string>;
     };
     'organization.tabs'?: {
       /**
-       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
        */
       order?: Array<string>;
       /**
-       * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+       * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
        */
       hidden?: Array<string>;
     };
@@ -4749,109 +4753,7 @@ export type ListLtiInstallationsResponses = {
 
 export type ListLtiInstallationsResponse = ListLtiInstallationsResponses[keyof ListLtiInstallationsResponses];
 
-export type ListPlaceableLtiInstallationsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    /**
-     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
-     */
-    pageToken?: string;
-    /**
-     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
-     */
-    maxPageSize?: number;
-    /**
-     * Results to pass over after the page token's position, or from the start without a token.
-     */
-    skip?: number;
-    channelId: string;
-    channelType: 'organization';
-    /**
-     * A field to order by, then `asc` or `desc`; ascending when left out.
-     */
-    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
-  };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable';
-};
-
-export type ListPlaceableLtiInstallationsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type ListPlaceableLtiInstallationsError = ListPlaceableLtiInstallationsErrors[keyof ListPlaceableLtiInstallationsErrors];
-
-export type ListPlaceableLtiInstallationsResponses = {
-  /**
-   * Placeable LTI installations
-   */
-  200: {
-    results: Array<{
-      /**
-       * The installation, which `installationId` places
-       */
-      id: string;
-      name: string;
-      /**
-       * Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as
-       */
-      readsMembers: boolean;
-      /**
-       * `active`, or `disabled` while an admin has stopped it: it cannot be placed then, and its tabs refuse every launch
-       */
-      status: 'pending' | 'active' | 'disabled';
-      /**
-       * Whether the caller may place it in the channel: it is active, and they may update the course a tab there launches as when that is a channel above it
-       */
-      placeable: boolean;
-      /**
-       * The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is
-       */
-      context: {
-        channelType: 'organization';
-        channelId: string;
-        /**
-         * Null for a course above the channel that the caller may not read
-         */
-        name: string | null;
-      } | null;
-    }>;
-    /**
-     * Pass as `pageToken` to read the next page. Absent on the last page.
-     */
-    nextPageToken?: string;
-    /**
-     * Results across all pages, after filters: an exact count.
-     */
-    totalSize: number;
-  };
-};
-
-export type ListPlaceableLtiInstallationsResponse = ListPlaceableLtiInstallationsResponses[keyof ListPlaceableLtiInstallationsResponses];
-
-export type ListLtiInstallationResourceLinksData = {
+export type ListLtiInstallationTabsData = {
   body?: never;
   path: {
     tenantId: string;
@@ -4876,10 +4778,10 @@ export type ListLtiInstallationResourceLinksData = {
      */
     orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
   };
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs';
 };
 
-export type ListLtiInstallationResourceLinksErrors = {
+export type ListLtiInstallationTabsErrors = {
   /**
    * Bad request
    */
@@ -4902,11 +4804,11 @@ export type ListLtiInstallationResourceLinksErrors = {
   429: TooManyRequestsError;
 };
 
-export type ListLtiInstallationResourceLinksError = ListLtiInstallationResourceLinksErrors[keyof ListLtiInstallationResourceLinksErrors];
+export type ListLtiInstallationTabsError = ListLtiInstallationTabsErrors[keyof ListLtiInstallationTabsErrors];
 
-export type ListLtiInstallationResourceLinksResponses = {
+export type ListLtiInstallationTabsResponses = {
   /**
-   * Resource links of the installation
+   * Tabs of the installation
    */
   200: {
     results: Array<{
@@ -4918,7 +4820,22 @@ export type ListLtiInstallationResourceLinksResponses = {
       channelId: string;
       channelName: string;
       /**
-       * Whether the caller may delete it: they may update its channel
+       * Whether the tab is on: only a tab that is on lets the LTI tool read its course
+       */
+      enabled: boolean;
+      /**
+       * The course the tab launches as; null when none is
+       */
+      context: {
+        channelType: 'organization';
+        channelId: string;
+        /**
+         * Null for a course above the channel that the caller may not read
+         */
+        name: string | null;
+      } | null;
+      /**
+       * Whether the caller may remove it: they may update its channel
        */
       deletable: boolean;
     }>;
@@ -4933,7 +4850,7 @@ export type ListLtiInstallationResourceLinksResponses = {
   };
 };
 
-export type ListLtiInstallationResourceLinksResponse = ListLtiInstallationResourceLinksResponses[keyof ListLtiInstallationResourceLinksResponses];
+export type ListLtiInstallationTabsResponse = ListLtiInstallationTabsResponses[keyof ListLtiInstallationTabsResponses];
 
 export type ApproveLtiInstallationData = {
   body: {
@@ -5111,6 +5028,116 @@ export type RejectLtiInstallationResponses = {
 };
 
 export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
+
+export type ListLtiTabsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-tabs';
+};
+
+export type ListLtiTabsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiTabsError = ListLtiTabsErrors[keyof ListLtiTabsErrors];
+
+export type ListLtiTabsResponses = {
+  /**
+   * LTI tabs
+   */
+  200: {
+    results: Array<{
+      /**
+       * The LTI installation, which `installationId` places: a channel holds one tab of it
+       */
+      id: string;
+      name: string;
+      /**
+       * `active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then
+       */
+      status: 'pending' | 'active' | 'disabled';
+      /**
+       * Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as
+       */
+      readsMembers: boolean;
+      /**
+       * Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, an archived course above, or one the caller may not update; null when they may. A course refusal also keeps a tab from being switched off
+       */
+      refusal: 'lti_installation_disabled' | 'channel_archived' | 'lti_context_update_required' | null;
+      /**
+       * The course a tab in the channel launches as; null when none is
+       */
+      context: {
+        channelType: 'organization';
+        channelId: string;
+        /**
+         * Null for a course above the channel that the caller may not read
+         */
+        name: string | null;
+      } | null;
+      /**
+       * The tab once placed, on or off; null for an LTI tool never placed in the channel
+       */
+      resourceLink: {
+        id: string;
+        title: string;
+        enabled: boolean;
+      } | null;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiTabsResponse = ListLtiTabsResponses[keyof ListLtiTabsResponses];
 
 export type ListLtiResourceLinksData = {
   body?: never;
@@ -5309,6 +5336,10 @@ export type UpdateLtiResourceLinkData = {
     custom?: {
       [key: string]: string;
     };
+    /**
+     * Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on
+     */
+    enabled?: boolean;
   };
   path: {
     tenantId: string;
@@ -5336,6 +5367,10 @@ export type UpdateLtiResourceLinkErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
   /**
    * Payload too large
    */
@@ -7578,21 +7613,21 @@ export type UpdateOrganizationData = {
     toolsConfig?: {
       'organization.settings'?: {
         /**
-         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
          */
         order?: Array<string> | null;
         /**
-         * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+         * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
          */
         hidden?: Array<string> | null;
       } | null;
       'organization.tabs'?: {
         /**
-         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's placed tab
          */
         order?: Array<string> | null;
         /**
-         * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+         * Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored
          */
         hidden?: Array<string> | null;
       } | null;

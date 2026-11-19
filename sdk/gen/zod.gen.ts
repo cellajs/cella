@@ -444,6 +444,7 @@ export const zLtiResourceLink = z.object({
   installationId: z.string(),
   title: z.string(),
   custom: z.record(z.string(), z.string()),
+  enabled: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   createdBy: z
@@ -2007,31 +2008,30 @@ export const zListLtiInstallationsResponse = z.object({
   totalSize: z.int().gte(0),
 });
 
-export const zListPlaceableLtiInstallationsPath = z.object({
+export const zListLtiInstallationTabsPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
 });
 
-export const zListPlaceableLtiInstallationsQuery = z.object({
+export const zListLtiInstallationTabsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
-  channelId: z.string().max(50),
-  channelType: z.enum(['organization']),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
 });
 
 /**
- * Placeable LTI installations
+ * Tabs of the installation
  */
-export const zListPlaceableLtiInstallationsResponse = z.object({
+export const zListLtiInstallationTabsResponse = z.object({
   results: z.array(
     z.object({
       id: z.string(),
-      name: z.string(),
-      readsMembers: z.boolean(),
-      status: z.enum(['pending', 'active', 'disabled']),
-      placeable: z.boolean(),
+      channelType: z.enum(['organization']),
+      channelId: z.string(),
+      channelName: z.string(),
+      enabled: z.boolean(),
       context: z
         .object({
           channelType: z.enum(['organization']),
@@ -2039,35 +2039,6 @@ export const zListPlaceableLtiInstallationsResponse = z.object({
           name: z.string().nullable(),
         })
         .nullable(),
-    }),
-  ),
-  nextPageToken: z.string().optional(),
-  totalSize: z.int().gte(0),
-});
-
-export const zListLtiInstallationResourceLinksPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  ltiInstallationId: z.string().max(50),
-});
-
-export const zListLtiInstallationResourceLinksQuery = z.object({
-  pageToken: z.string().max(2048).optional(),
-  maxPageSize: z.int().gte(0).optional(),
-  skip: z.int().gte(0).optional().default(0),
-  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
-});
-
-/**
- * Resource links of the installation
- */
-export const zListLtiInstallationResourceLinksResponse = z.object({
-  results: z.array(
-    z.object({
-      id: z.string(),
-      channelType: z.enum(['organization']),
-      channelId: z.string(),
-      channelName: z.string(),
       deletable: z.boolean(),
     }),
   ),
@@ -2122,6 +2093,51 @@ export const zRejectLtiInstallationPath = z.object({
  * Installation rejected
  */
 export const zRejectLtiInstallationResponse = z.void();
+
+export const zListLtiTabsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListLtiTabsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * LTI tabs
+ */
+export const zListLtiTabsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      status: z.enum(['pending', 'active', 'disabled']),
+      readsMembers: z.boolean(),
+      refusal: z.enum(['lti_installation_disabled', 'channel_archived', 'lti_context_update_required']).nullable(),
+      context: z
+        .object({
+          channelType: z.enum(['organization']),
+          channelId: z.string(),
+          name: z.string().nullable(),
+        })
+        .nullable(),
+      resourceLink: z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          enabled: z.boolean(),
+        })
+        .nullable(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
 
 export const zListLtiResourceLinksPath = z.object({
   tenantId: z.string().max(50),
@@ -2187,6 +2203,7 @@ export const zUpdateLtiResourceLinkBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  enabled: z.boolean().optional(),
 });
 
 export const zUpdateLtiResourceLinkPath = z.object({

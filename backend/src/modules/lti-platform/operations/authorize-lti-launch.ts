@@ -78,10 +78,11 @@ const spendLaunchRecord = async ({ loginHint, messageHint, clientId }: { loginHi
 
 type LaunchTarget = NonNullable<Awaited<ReturnType<typeof findLtiLaunchTarget>>>;
 
-/** Who launches, checked at this moment: the installation approved and active, and the person able to launch. */
+/** Who launches, checked at this moment: the installation approved and active, the tab on, and the person able to launch. */
 const assertLaunchAllowed = async ({ personId, target }: { personId: string; target: LaunchTarget }) => {
   const { account, installation, resourceLink } = target;
   if (!installation.approvedAt || account.status !== 'active') throw new LaunchError('unauthorized_client', 'the installation is not active');
+  if (!resourceLink.enabled) throw new LaunchError('access_denied', 'the tab is switched off');
 
   const person = await findServedUserById(dbCtx, { id: personId });
   const launcher =

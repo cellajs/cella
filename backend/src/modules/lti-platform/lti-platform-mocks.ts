@@ -39,6 +39,7 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
       installationId: mockUuid(),
       title: 'Peer review',
       custom: { round: '1' },
+      enabled: true,
       createdAt,
       updatedAt: createdAt,
     };

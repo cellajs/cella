@@ -1,4 +1,4 @@
-import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
@@ -33,6 +33,8 @@ export const ltiResourceLinksTable = snakeCase.table(
     title: varchar({ length: maxLength.field }).notNull(),
     /** Sent in the launch's `custom` claim over the LTI tool's own custom parameters; every value a string. */
     custom: jsonb().$type<Record<string, string>>().notNull().default({}),
+    /** A tab switched off keeps its row and id: it shows nowhere, launches nothing and gives the installation no course. */
+    enabled: boolean().notNull().default(true),
     ...auditColumns(),
   },
   (table) => [

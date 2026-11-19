@@ -144,6 +144,13 @@ function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: Na
 }
 
 /**
+ * The tab a redirect lands on: the first one the surface resolves, data tabs left out. An LTI tool's tab launches on
+ * mount and sends the person's identity to the LTI tool, which takes their click.
+ */
+const resolveLandingTab = (parentRouteId: string, options: NavTabOptions = {}): PageTab | undefined =>
+  resolveNavTabs(parentRouteId, { ...options, dataTabs: [] })[0];
+
+/**
  * A channel's page tabs, gated and ordered as its page bar shows them, linked with `channelParams` so they work from any
  * page: route tabs take the channel's params as they are, registry tabs add their `$tool`.
  */
@@ -162,7 +169,7 @@ export function resolveChannelTabs(entityType: ChannelEntityType, channelParams:
  * @public
  */
 export const defaultNavTabPath = (parentRouteId: string, options?: NavTabOptions): string | undefined =>
-  resolveNavTabs(parentRouteId, options)[0]?.path;
+  resolveLandingTab(parentRouteId, options)?.path;
 
 /**
  * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, a tab that
@@ -193,7 +200,7 @@ export function guardNavTabs(
   if (!needsLanding) return;
 
   // The landing tab is the first one this surface resolves: the app's `surfaces` order sets it.
-  const landing = resolveNavTabs(parentRouteId, options)[0];
+  const landing = resolveLandingTab(parentRouteId, options);
   if (landing) throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
 
   // No tab is left: a refused tab goes to the layout itself, which this guard then lets through, never in a loop.
@@ -202,8 +209,20 @@ export function guardNavTabs(
   if (!fromBareParent && layoutPath) throw redirect({ to: layoutPath, params: true, search: {}, replace: true, hash: true });
 }
 
+/** Where {@link useNavTabRedirect} sends a location on a tab the arrangement hides: the landing tab, never a data tab. */
+export function navTabRedirectTarget(
+  parentRouteId: string,
+  location: { toolId: string | undefined; leafPath: string | undefined },
+  options: NavTabOptions = {},
+): PageTab | undefined {
+  const active = findActiveTab(getNavTabCandidates(parentRouteId), location.toolId, location.leafPath);
+  const slot = getTabsSlot(parentRouteId);
+  const hidden = slot !== undefined && active !== undefined && isPlacementHidden(slot, active, options);
+  return hidden ? resolveLandingTab(parentRouteId, options) : undefined;
+}
+
 /**
- * Replace-navigates to the first resolved tab while the location sits on a tab that `surfaces` or the channel arrangement
+ * Replace-navigates to the landing tab while the location sits on a tab that `surfaces` or the channel arrangement
  * hides, judged on the arrangement layers as in {@link guardNavTabs}. {@link PageTabNav} runs it for route-derived bars.
  * @public
  */
@@ -212,12 +231,7 @@ export function useNavTabRedirect(parentRouteId: string, options: NavTabOptions 
   // Primitives only: the leaf match object is new on every navigation
   const leafPath = useRouterState({ select: (state) => state.matches.at(-1)?.fullPath });
   const toolId = useRouterState({ select: (state) => toolParam(state.matches.at(-1)?.params) });
-
-  const active = findActiveTab(getNavTabCandidates(parentRouteId), toolId, leafPath);
-
-  const slot = getTabsSlot(parentRouteId);
-  const disabled = slot !== undefined && active !== undefined && isPlacementHidden(slot, active, options);
-  const target = disabled ? resolveNavTabs(parentRouteId, options)[0] : undefined;
+  const target = navTabRedirectTarget(parentRouteId, { toolId, leafPath }, options);
 
   const targetId = target?.id;
   useEffect(() => {

@@ -3,7 +3,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { ltiNrps } from '#/lib/lti-vocabulary';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
-import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes } from '#/modules/lti-platform/lti-platform-routes';
+import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes, ltiTabRoutes } from '#/modules/lti-platform/lti-platform-routes';
 import {
   approveLtiInstallationOp,
   rejectLtiInstallationOp,
@@ -14,9 +14,9 @@ import { getLtiMembersOp } from '#/modules/lti-platform/operations/get-lti-membe
 import {
   createLtiResourceLinkOp,
   deleteLtiResourceLinkOp,
-  getLtiInstallationResourceLinksOp,
+  getLtiInstallationTabsOp,
   getLtiResourceLinksOp,
-  getPlaceableLtiInstallationsOp,
+  getLtiTabsOp,
   updateLtiResourceLinkOp,
 } from '#/modules/lti-platform/operations/manage-lti-resource-links';
 import { initiateLtiLoginOp, startLtiLaunchOp } from '#/modules/lti-platform/operations/start-lti-launch';
@@ -33,16 +33,10 @@ app.openapi(ltiPlatformRoutes.listLtiInstallations, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, async (page) => windowOf(installations, page)), 200);
 });
 
-app.openapi(ltiPlatformRoutes.listPlaceableLtiInstallations, async (ctx) => {
+app.openapi(ltiPlatformRoutes.listLtiInstallationTabs, async (ctx) => {
   const query = ctx.req.valid('query');
-  const installations = await getPlaceableLtiInstallationsOp(ctx, query);
-  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(installations, page)), 200);
-});
-
-app.openapi(ltiPlatformRoutes.listLtiInstallationResourceLinks, async (ctx) => {
-  const query = ctx.req.valid('query');
-  const links = await getLtiInstallationResourceLinksOp(ctx, ctx.req.valid('param').ltiInstallationId, query);
-  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(links, page)), 200);
+  const tabs = await getLtiInstallationTabsOp(ctx, ctx.req.valid('param').ltiInstallationId, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(tabs, page)), 200);
 });
 
 app.openapi(ltiPlatformRoutes.approveLtiInstallation, async (ctx) => {
@@ -59,6 +53,16 @@ app.openapi(ltiPlatformRoutes.rejectLtiInstallation, async (ctx) => {
 });
 
 export const ltiPlatformHandlers = app;
+
+const tabs = new OpenAPIHono<Env>();
+
+tabs.openapi(ltiTabRoutes.listLtiTabs, async (ctx) => {
+  const query = ctx.req.valid('query');
+  const results = await getLtiTabsOp(ctx, query);
+  return ctx.json(await readListPage(ctx, query, async (page) => windowOf(results, page)), 200);
+});
+
+export const ltiTabHandlers = tabs;
 
 const resourceLinks = new OpenAPIHono<Env>();
 

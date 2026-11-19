@@ -176,6 +176,8 @@
   "lti_scope_not_grantable.text": "The LTI tool did not ask for this access scope, or the app's API offers it to no LTI tool, so it cannot be granted.",
   "lti_storage_missing": "Platform storage not offered",
   "lti_storage_missing.text": "The platform offers no platform storage, which a launch of the app needs. Ask the platform's administrator.",
+  "lti_tab_switched_off": "Tab switched off",
+  "lti_tab_switched_off.text": "This tab is switched off in the channel's settings, so it does not open.",
   "lti_tool_metadata_invalid": "LTI tool registration not valid",
   "lti_tool_metadata_invalid.text": "The LTI tool's registration names something the platform does not offer, or misses a required member.",
   "lti-launch_expired": "Launch expired",

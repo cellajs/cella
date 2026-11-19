@@ -111,6 +111,24 @@
       "statementTarget": [
         "column",
         "public",
+        "lti_resource_links",
+        "enabled"
+      ],
+      "writes": [
+        "s|col|public.lti_resource_links.enabled",
+        "n|col|public.lti_resource_links.enabled",
+        "e|col|public.lti_resource_links.enabled"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
         "identities",
         "tenant_id"
       ],
@@ -424,6 +442,22 @@
         "notNull": false,
         "dimensions": 0,
         "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
         "generated": null,
         "identity": null,
         "entityType": "columns"

@@ -5,7 +5,7 @@ import { maxLength } from '#/db/utils/constraints';
 
 const slots = channelSlots();
 
-// More than any slot holds tools, a channel's tabs of the tenant's LTI tools included.
+// More than any slot holds: its tools, and the LTI tabs placed in the channel, whose ids alone the order names.
 const toolIdsSchema = z.array(z.string().max(maxLength.field)).max(100);
 
 /**
@@ -17,8 +17,10 @@ export const toolsConfigSchema: z.ZodType<ToolsConfig> = z.partialRecord(
   z.enum(slots),
   z.object({
     order: toolIdsSchema
-      .describe(`Tool and tab ids in display order; in a tabs slot, \`${ltiTabId('{installationId}')}\` names an LTI tool's tab`)
+      .describe(`Tool and tab ids in display order; in a tabs slot, \`${ltiTabId('{installationId}')}\` names an LTI tool's placed tab`)
       .optional(),
-    hidden: toolIdsSchema.describe("Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden").optional(),
+    hidden: toolIdsSchema
+      .describe("Tool and tab ids the channel hides; an LTI tool's tab is switched off on its resource link, and its id here is ignored")
+      .optional(),
   }),
 );

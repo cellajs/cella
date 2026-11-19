@@ -48,9 +48,11 @@ Rejecting a waiting LTI tool deletes its registration. Disabling an approved one
 
 A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant among the channel's own tabs. Whoever may update the channel switches an LTI tool's tab on or off and drags it among the others, and the tab bar follows that one order. A channel holds one tab of an LTI tool, named after it.
 
-Switching a tab on takes the right to update the channel and, when the tab launches as a course above it, that course. Someone without it sees the row off, with the reason, and so does everyone while an admin has disabled the LTI tool. When the LTI tool may read course members, the card asks first, naming the course whose people it will read and saying when that course is the one above. Switching the tab off removes it.
+The first switch on places the tab. From then on it keeps one id, whatever is switched, which the LTI tool keys what it stores for the tab by. A tab is shown, launches and lets the LTI tool read its course only while it is on. No tab of an LTI tool opens by itself: a page lands on one of the channel's own tabs.
 
-Under LTI tools in organization settings, each LTI tool lists the channels where it has a tab, each a link. An admin sees there every course whose people the LTI tool reads, and removes a tab from any channel they may update.
+Switching a tab either way takes the right to update the channel and, when the tab launches as a course above it, that course. Someone without it sees the row with the reason, and so does everyone while an admin has disabled the LTI tool or archived the course. When the LTI tool may read course members, switching it on asks first, naming the course whose people it will read and saying when that course is the one above.
+
+Under LTI tools in organization settings, each LTI tool lists its tabs, each a link to its channel, the ones switched off marked off. A tab that is on names the course whose people the LTI tool reads where that is another channel. An admin removes a tab there for good, after a confirmation: what the LTI tool keeps for the tab may be lost.
 
 ## A launch
 
@@ -68,7 +70,7 @@ The platform's storage replaces a cookie for the launch state. Every launch chec
 
 An installed LTI tool reads a course's members as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
-Its reach follows its tabs, read at every request for the course the address names. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Removing the last tab, or the channel, takes that away. Nothing about a tab is stored on the installation.
+Its reach follows its tabs that are on, read at every request for the course the address names. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Switching off or removing the last tab, or deleting the channel, takes that away. Nothing about a tab is stored on the installation.
 
 A launch with a course carries the NRPS claim to an LTI tool granted `user:read`: the course's membership address and the service version, 2.0. A launch without a course, or of an LTI tool granted nothing, carries none.
 
@@ -143,6 +145,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived course:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
+- **A tab switched off:** it leaves the bar, a launch started before is refused, and someone on it lands on the channel's first tab.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the course under LTI connections says why, and the members imported before stay.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.

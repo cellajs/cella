@@ -160,47 +160,55 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-export const listPlaceableLtiInstallationsQuerySchema = pageQuerySchema.extend({
+/** Why a caller may not place an LTI tool in a channel, or switch its tab on or off there: the error a write would answer. */
+export const ltiTabRefusals = ['lti_installation_disabled', 'channel_archived', 'lti_context_update_required'] as const;
+
+export const listLtiTabsQuerySchema = pageQuerySchema.extend({
   ...channelRefSchema.shape,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** An approved LTI tool as the tabs of one channel offer it. */
-export const placeableLtiInstallationSchema = z.object({
-  id: z.string().describe('The installation, which `installationId` places'),
-  name: z.string(),
-  readsMembers: z
-    .boolean()
-    .describe('Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as'),
-  status: z
-    .enum(serviceAccountStatuses)
-    .describe('`active`, or `disabled` while an admin has stopped it: it cannot be placed then, and its tabs refuse every launch'),
-  placeable: z
-    .boolean()
-    .describe(
-      'Whether the caller may place it in the channel: it is active, and they may update the course a tab there launches as when that is a channel above it',
-    ),
-  context: z
-    .object({
-      channelType: channelEntityTypeSchema,
-      channelId: z.string(),
-      name: z.string().nullable().describe('Null for a course above the channel that the caller may not read'),
-    })
-    .nullable()
-    .describe('The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is'),
+/** The course a tab launches as, an LTI context: the tab's channel or a channel above it. */
+const ltiTabContextSchema = z.object({
+  channelType: channelEntityTypeSchema,
+  channelId: z.string(),
+  name: z.string().nullable().describe('Null for a course above the channel that the caller may not read'),
 });
 
-export const listLtiInstallationResourceLinksQuerySchema = pageQuerySchema.extend({
+/** An approved LTI tool as a tab of one channel, placed or not. */
+export const ltiTabSchema = z.object({
+  id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
+  name: z.string(),
+  status: z.enum(serviceAccountStatuses).describe('`active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then'),
+  readsMembers: z
+    .boolean()
+    .describe('Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as'),
+  refusal: z
+    .enum(ltiTabRefusals)
+    .nullable()
+    .describe(
+      'Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, an archived course above, or one the caller may not update; null when they may. A course refusal also keeps a tab from being switched off',
+    ),
+  context: ltiTabContextSchema.nullable().describe('The course a tab in the channel launches as; null when none is'),
+  resourceLink: z
+    .object({ id: z.string(), title: z.string(), enabled: z.boolean() })
+    .nullable()
+    .describe('The tab once placed, on or off; null for an LTI tool never placed in the channel'),
+});
+
+export const listLtiInstallationTabsQuerySchema = pageQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** Where an installation has a tab: its resource link and the channel it sits in. */
-export const ltiInstallationResourceLinkSchema = z.object({
+/** A tab of one installation: its resource link, the channel it sits in and the course whose people it lets it read. */
+export const ltiInstallationTabSchema = z.object({
   id: z.string().describe('The resource link'),
   channelType: channelEntityTypeSchema,
   channelId: z.string(),
   channelName: z.string(),
-  deletable: z.boolean().describe('Whether the caller may delete it: they may update its channel'),
+  enabled: z.boolean().describe('Whether the tab is on: only a tab that is on lets the LTI tool read its course'),
+  context: ltiTabContextSchema.nullable().describe('The course the tab launches as; null when none is'),
+  deletable: z.boolean().describe('Whether the caller may remove it: they may update its channel'),
 });
 
 const resourceLinkCustomSchema = customParametersSchema.describe(
@@ -213,7 +221,14 @@ export const createLtiResourceLinkBodySchema = channelRefSchema.extend({
   custom: resourceLinkCustomSchema.optional(),
 });
 
-export const updateLtiResourceLinkBodySchema = z.object({ title: validNameSchema.optional(), custom: resourceLinkCustomSchema.optional() });
+export const updateLtiResourceLinkBodySchema = z.object({
+  title: validNameSchema.optional(),
+  custom: resourceLinkCustomSchema.optional(),
+  enabled: z
+    .boolean()
+    .optional()
+    .describe('Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on'),
+});
 
 export const ltiResourceLinkSchema = z
   .object({
@@ -223,6 +238,7 @@ export const ltiResourceLinkSchema = z
     installationId: z.string().describe('The LTI installation it launches'),
     title: z.string(),
     custom: z.record(z.string(), z.string()),
+    enabled: z.boolean().describe('Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id'),
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
     ...auditShape,

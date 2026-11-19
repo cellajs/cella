@@ -6,6 +6,7 @@ ALTER TABLE "lti_contexts" ALTER COLUMN "issuer" SET NOT NULL;--> statement-brea
 DELETE FROM "lti_contexts" AS "later" USING "lti_contexts" AS "first" WHERE "later"."tenant_id" = "first"."tenant_id" AND "later"."issuer" = "first"."issuer" AND "later"."context_id" = "first"."context_id" AND ("later"."created_at", "later"."id") > ("first"."created_at", "first"."id");--> statement-breakpoint
 ALTER TABLE "lti_contexts" ADD COLUMN "memberships_url" varchar(2048);--> statement-breakpoint
 ALTER TABLE "connections" ADD COLUMN "private_jwk" text;--> statement-breakpoint
+ALTER TABLE "lti_resource_links" ADD COLUMN "enabled" boolean DEFAULT true NOT NULL;--> statement-breakpoint
 ALTER TABLE "identities" ADD COLUMN "tenant_id" varchar(24);--> statement-breakpoint
 UPDATE "identities" SET "tenant_id" = "connections"."tenant_id" FROM "connections" WHERE "identities"."kind" = 'lti' AND "connections"."id" = "identities"."connection_id";--> statement-breakpoint
 ALTER TABLE "lti_contexts" DROP COLUMN "api_url";--> statement-breakpoint

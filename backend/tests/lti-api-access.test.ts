@@ -8,12 +8,13 @@ import {
   createLtiResourceLink,
   deleteLtiResourceLink,
   getOrganization,
-  listLtiInstallationResourceLinks,
+  listLtiInstallationTabs,
   listLtiMembers,
-  listPlaceableLtiInstallations,
+  listLtiTabs,
   startLtiLaunch,
   startLtiToolRegistration,
   updateLtiInstallation,
+  updateLtiResourceLink,
   updateServiceAccount,
 } from 'sdk';
 import { type AccessScope, appConfig, policyMatrix } from 'shared';
@@ -569,9 +570,10 @@ describe('LTI installation API access', async () => {
   });
 
   describe("a channel's tabs of LTI tools", () => {
-    // Contract: a channel's Tabs card shows whose people placing a tab lets an LTI tool read, the LTI tools card every
-    // channel where it reads them, a channel holds one tab of an LTI tool, and a disabled one is placed nowhere.
-    it('lists the approved LTI tools a channel may place, where an LTI tool has its tabs, and refuses a second tab', async () => {
+    // Contract: a channel's Tabs card shows whose people a tab lets an LTI tool read and why one cannot be placed, the
+    // LTI tools card every channel where it has a tab, a channel holds one tab of an LTI tool, and a disabled one is
+    // placed nowhere.
+    it('lists the LTI tabs of a channel and those of an LTI tool, and refuses a second tab and a disabled LTI tool', async () => {
       const org = await orgWithAdmin();
       const reader = await installLtiTool(org);
       const silent = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] }, placed: false });
@@ -584,40 +586,69 @@ describe('LTI installation API access', async () => {
       await installLtiTool(org, { approval: null, placed: false });
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
-      const placeable = await call(listPlaceableLtiInstallations, { path: org.path, query: channel, headers: org.headers });
+      const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
       const context = { ...channel, name: org.org.name };
-      expect((placeable.data as { results: unknown[] }).results).toEqual([
-        { id: reader.installationId, name: 'Peer review', readsMembers: true, status: 'active', placeable: true, context },
-        { id: silent.installationId, name: 'Peer review', readsMembers: false, status: 'active', placeable: true, context },
-        { id: disabled.installationId, name: 'Peer review', readsMembers: true, status: 'disabled', placeable: false, context },
+      const placed = { id: reader.resourceLinkId, title: 'Peer review', enabled: true };
+      expect((tabs.data as { results: unknown[] }).results).toEqual([
+        { id: reader.installationId, name: 'Peer review', status: 'active', readsMembers: true, refusal: null, context, resourceLink: placed },
+        { id: silent.installationId, name: 'Peer review', status: 'active', readsMembers: false, refusal: null, context, resourceLink: null },
+        {
+          id: disabled.installationId,
+          name: 'Peer review',
+          status: 'disabled',
+          readsMembers: true,
+          refusal: 'lti_installation_disabled',
+          context,
+          resourceLink: null,
+        },
       ]);
       const body = { ...channel, installationId: disabled.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers: org.headers }), 409, 'lti_installation_disabled');
 
       const path = { ...org.path, ltiInstallationId: reader.installationId };
-      const tabs = await call(listLtiInstallationResourceLinks, { path, headers: org.headers });
-      expect((tabs.data as { results: unknown[] }).results).toEqual([
-        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, deletable: true },
+      const installationTabs = await call(listLtiInstallationTabs, { path, headers: org.headers });
+      expect((installationTabs.data as { results: unknown[] }).results).toEqual([
+        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, context, deletable: true },
       ]);
 
       const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body: again, headers: org.headers }), 409, 'resource_already_exists');
     });
 
-    // Attack: only who may update the channel places a tab, sees what it may place there, or lists where an LTI tool has
-    // tabs. A tab lets the LTI tool read the course's people.
+    // Contract: an LTI tool keys what it stores by the resource link id, which switching a tab off and on keeps.
+    // Attack: a tab switched off opens nothing and lets the LTI tool read no one, for a token minted while it was on too.
+    it('keeps the resource link of a tab switched off and on, and refuses its launch and its members while it is off', async () => {
+      const org = await orgWithAdmin();
+      const ltiTool = await installLtiTool(org);
+      const token = await tokenOf(ltiTool);
+      const linkPath = { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId };
+      const switchTab = (enabled: boolean) => call(updateLtiResourceLink, { path: linkPath, body: { enabled }, headers: org.headers });
+
+      expect((await switchTab(false)).data).toMatchObject({ id: ltiTool.resourceLinkId, enabled: false });
+      await expectRefusal(await readMembers(org, token), 403, 'forbidden');
+      const launch = await call(startLtiLaunch, { path: linkPath, headers: org.headers });
+      await expectRefusal(launch, 409, 'lti_tab_switched_off');
+
+      expect((await switchTab(true)).data).toMatchObject({ id: ltiTool.resourceLinkId, enabled: true });
+      expect((await readMembers(org, token)).response.status).toBe(200);
+    });
+
+    // Attack: only who may update the channel places a tab, switches it, sees what it may place there, or lists where an
+    // LTI tool has tabs. A tab lets the LTI tool read the course's people.
     it('refuses a member who may not update the channel', async () => {
       const org = await orgWithAdmin();
-      const ltiTool = await installLtiTool(org, { placed: false });
+      const ltiTool = await installLtiTool(org);
       const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
       const headers = { ...defaultHeaders, Cookie: member.sessionCookie };
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
-      await expectRefusal(await call(listPlaceableLtiInstallations, { path: org.path, query: channel, headers }), 403, 'forbidden');
+      await expectRefusal(await call(listLtiTabs, { path: org.path, query: channel, headers }), 403, 'forbidden');
       const body = { ...channel, installationId: ltiTool.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers }), 403, 'forbidden');
+      const linkPath = { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId };
+      await expectRefusal(await call(updateLtiResourceLink, { path: linkPath, body: { enabled: false }, headers }), 403, 'forbidden');
       const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
-      await expectRefusal(await call(listLtiInstallationResourceLinks, { path, headers }), 403, 'forbidden');
+      await expectRefusal(await call(listLtiInstallationTabs, { path, headers }), 403, 'forbidden');
     });
   });
 });
