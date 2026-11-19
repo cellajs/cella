@@ -32,6 +32,27 @@
       ]
     },
     {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_resource_links",
+        "lti_resource_links_channel_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_resource_links_channel_id_idx",
+        "n|idx|public.lti_resource_links_channel_id_idx",
+        "e|idx|public.lti_resource_links_channel_id_idx",
+        "n|rel|public.lti_resource_links_channel_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "e|col|public.lti_resource_links.channel_id"
+      ],
+      "sharedWrites": []
+    },
+    {
       "statementType": "add_column",
       "statementTarget": [
         "column",
@@ -223,6 +244,27 @@
         "n|tbl|public.lti_contexts",
         "n|sch|public",
         "n|col|public.lti_contexts.connection_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "lti_resource_links",
+        "lti_resource_links_channel_id_installation_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.lti_resource_links_channel_id_installation_id_idx",
+        "n|idx|public.lti_resource_links_channel_id_installation_id_idx",
+        "e|idx|public.lti_resource_links_channel_id_installation_id_idx",
+        "n|rel|public.lti_resource_links_channel_id_installation_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public",
+        "n|col|public.lti_resource_links.channel_id",
+        "n|col|public.lti_resource_links.installation_id"
       ]
     },
     {
@@ -469,6 +511,37 @@
       "op": "create",
       "row": {
         "schema": "public",
+        "table": "lti_resource_links",
+        "name": "lti_resource_links_channel_id_installation_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "channel_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "installation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
         "table": "identities",
         "name": "identities_lti_tenant_subject_idx",
         "nameExplicit": true,
@@ -534,6 +607,10 @@
     {
       "op": "drop",
       "key": "indexes\u0000[\"public\",\"lti_contexts_connection_id_context_id_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"lti_resource_links_channel_id_idx\"]"
     },
     {
       "op": "alter",

@@ -3,7 +3,7 @@ breaking: true
 clientCacheBump: true
 caughtBy: compiler
 generate: true
-grep: requestLtiMemberImport, upsertLtiContext, defaultRestrictions, RateLimitIdentifier, ltiApiClaim, launchApiClaim, ltiApiClaimSchema, ltiImportScope, launchPlatformApi, PlatformApi, LtiMemberRow, platform-api, api_url, members_url, apiUrl, membersUrl, lti/claim/api, nextPageToken, lti_import.no_api, ltiRegistrationRequest, currentSigningKey, connections_kind_check, oauthUrl}/jwks, findLtiMembersPage, mockLtiMemberResponse, ltiMemberSchema, findLtiPlacements, getLtiMembersOp, planLtiContextChannel, readLtiMembers, LtiRoleFacts, ltiContextRole, findLtiContext, findIdentityBySubject, lockIdentityKey, isUnder, PlatformFetchOptions, parseJson, lti_contexts_connection_id_context_id_idx, identities_kind_provider_subject_idx
+grep: requestLtiMemberImport, upsertLtiContext, defaultRestrictions, RateLimitIdentifier, ltiApiClaim, launchApiClaim, ltiApiClaimSchema, ltiImportScope, launchPlatformApi, PlatformApi, LtiMemberRow, platform-api, api_url, members_url, apiUrl, membersUrl, lti/claim/api, nextPageToken, lti_import.no_api, ltiRegistrationRequest, currentSigningKey, connections_kind_check, oauthUrl}/jwks, findLtiMembersPage, mockLtiMemberResponse, ltiMemberSchema, findLtiPlacements, getLtiMembersOp, planLtiContextChannel, readLtiMembers, LtiRoleFacts, ltiContextRole, findLtiContext, findIdentityBySubject, lockIdentityKey, isUnder, PlatformFetchOptions, parseJson, lti_contexts_connection_id_context_id_idx, identities_kind_provider_subject_idx, channelTabs, ChannelTabSource, getChannelTabSources, useChannelDataTabs, arrangementNote, lti_tabs_order, lti_resource_links_channel_id_idx
 ---
 
 # LTI course members by NRPS
@@ -13,7 +13,8 @@ An app runs `pnpm generate` with this folder's `hints.json` and `data.sql`: it a
 LTI identities and contexts per tenant. The members route `listLtiMembers` answers Names and Role Provisioning Services
 2.0 (NRPS) at `lti-members/{channelType}/{channelId}`, the claim under `<issuer>/lti/claim/api` is gone,
 `auth/flows/lti/helpers/platform-api.ts` is `platform-memberships.ts`, each LTI connection signs with a key of its own,
-and the app's `ltiContextRole` learns which channel type it answers for.
+and the app's `ltiContextRole` learns which channel type it answers for. A channel's tabs of LTI tools are rows of its
+Tabs card, a channel holds one tab of an LTI tool, and a module's `channelTabs` source is gone.
 
 ## What & why
 
@@ -28,6 +29,7 @@ registration finds its courses' channels again.
 Every app: one migration with hand-written statements, and `clientCacheVersion` rises. Two connected apps upgrade
 together. An LTI connection registered before holds no key: it launches, and reads members once registered again. An
 app's `ltiContextRole` and LTI tests it edited need a look. The `lti` sign-in method no longer needs `services.oauth`.
+A channel that held two tabs of one LTI tool keeps the first.
 
 ## Run
 
@@ -50,6 +52,8 @@ No script: manual.
 13. As an LTI tool, have each connected platform's admin register the app again with a new registration link and re-point the platform's existing links at the new registration, then delete the old connection: the next launch through the new one takes its courses over with their channels and members. Until the delete, the old connection keeps them and they say it must register again.
 14. Step 13 is the whole upgrade path for a connection made before this, since no app runs one in production; re-seed a database that holds such connections.
 15. Where app code calls `ltiRegistrationRequest()`, pass the connection's id; where it signs for a platform with `currentSigningKey`, sign with `connectionSigningKey` of the connection.
+16. Keep the step of `data.sql` that deletes a channel's second tab of one LTI tool before its unique index: the first stays.
+17. Where a module of the app registers a `channelTabs` source, or app code reads `getChannelTabSources` or `useChannelDataTabs`, drop it: the only tabs that data adds are the LTI tools' (`useLtiTabs`). A channel layout that passes `useChannelTabOptions(channel)` to its bar and renders `SlotTabHost` in its `$tool` route shows them as before, and a `TabsArrangementCard` lists them with the declared tabs, with nothing of the app's own. A channel layout without a `$tool` route neither shows nor offers them: add one where its channels should hold LTI tabs. An LTI tab's `$tool` param is now `lti-<installation id>`.
 
 ## Verify
 

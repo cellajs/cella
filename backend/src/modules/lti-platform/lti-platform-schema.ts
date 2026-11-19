@@ -154,10 +154,48 @@ export const ltiResourceLinkParamSchema = tenantOrgParamSchema.extend({ ltiResou
 
 export const listLtiInstallationsQuerySchema = pageQuerySchema.extend({ orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc') });
 
-/** Oldest first by default: the order the channel's tabs show. */
+/** Oldest first by default: the order a channel's tabs of LTI tools follow until the channel arranges them. */
 export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
   ...channelRefSchema.shape,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
+});
+
+export const listPlaceableLtiInstallationsQuerySchema = pageQuerySchema.extend({
+  ...channelRefSchema.shape,
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
+});
+
+/** An approved LTI tool as the tabs of one channel offer it. */
+export const placeableLtiInstallationSchema = z.object({
+  id: z.string().describe('The installation, which `installationId` places'),
+  name: z.string(),
+  readsMembers: z
+    .boolean()
+    .describe('Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as'),
+  placeable: z
+    .boolean()
+    .describe('Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it'),
+  context: z
+    .object({
+      channelType: channelEntityTypeSchema,
+      channelId: z.string(),
+      name: z.string().nullable().describe('Null for a course above the channel that the caller may not read'),
+    })
+    .nullable()
+    .describe('The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is'),
+});
+
+export const listLtiInstallationResourceLinksQuerySchema = pageQuerySchema.extend({
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
+});
+
+/** Where an installation has a tab: its resource link and the channel it sits in. */
+export const ltiInstallationResourceLinkSchema = z.object({
+  id: z.string().describe('The resource link'),
+  channelType: channelEntityTypeSchema,
+  channelId: z.string(),
+  channelName: z.string(),
+  deletable: z.boolean().describe('Whether the caller may delete it: they may update its channel'),
 });
 
 const resourceLinkCustomSchema = customParametersSchema.describe(

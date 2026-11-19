@@ -44,7 +44,7 @@ Then the channel row's `toolsConfig` applies the channel's own order and hidden 
 
 **Page tabs.** A layout route names its tabs slot in `staticData.tabsSlot`, and its bar merges child routes that declare `staticData.navTab` with that slot's tools, rendered through a one-line `$tool` route. An entity link targets the layout route without a tab: the layout redirects to the first visible tab, and so does a navigation to a hidden one.
 
-**Data tabs.** Tabs that data defines, such as a channel's LTI resource links, come from a module's `channelTabs`: a query that lists a channel's tabs, which follow the declared ones in that order, and a `render` that `SlotTabHost` calls through the `$tool` route. They keep no place in the stored arrangement.
+**LTI tabs.** A channel's tabs of LTI tools come from data, its LTI resource links, and open through its `$tool` route. They take a place in the stored arrangement like declared tabs, by an id that names the LTI tool, and follow the declared ones until the channel orders them. The Tabs card places and removes them: no stored hidden id hides one. A layout without a `$tool` route shows none, and its Tabs card offers none.
 
 **Adding content.** A settings tool is a card built from the tool bases in `modules/entities/channel-settings-tools.tsx` (the danger zone is `dangerToolBase` with `DeleteToolCard`, and a channel below the organization archives through `archiveToolBase` with `ArchiveToolCard`), on a settings route that renders `<ChannelSettingsPage entity={...} />`. Such a channel's page shows `ArchivedBanner` under its header while it is archived. A tabs tool needs only its channel's `$tool` route. `ToolCard` and `TabsArrangementCard` are the card shells.
 

@@ -52,7 +52,7 @@ describe('isPlacementHidden', () => {
 
     withSurface(slot, { hidden: ['extra'] }, () => {
       expect(isPlacementHidden(slot, { ...item, locked: true }, {})).toBe(true);
-      expect(isPlacementHidden(slot, { id: 'general', label: key('c:general'), order: 10 }, {})).toBe(false);
+      expect(isPlacementHidden(slot, { id: 'general', order: 10 }, {})).toBe(false);
     });
   });
 });

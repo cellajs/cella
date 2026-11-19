@@ -253,6 +253,9 @@ import type {
   ListLtiContextsData,
   ListLtiContextsErrors,
   ListLtiContextsResponses,
+  ListLtiInstallationResourceLinksData,
+  ListLtiInstallationResourceLinksErrors,
+  ListLtiInstallationResourceLinksResponses,
   ListLtiInstallationsData,
   ListLtiInstallationsErrors,
   ListLtiInstallationsResponses,
@@ -277,6 +280,9 @@ import type {
   ListOrganizationsData,
   ListOrganizationsErrors,
   ListOrganizationsResponses,
+  ListPlaceableLtiInstallationsData,
+  ListPlaceableLtiInstallationsErrors,
+  ListPlaceableLtiInstallationsResponses,
   ListRequestsData,
   ListRequestsErrors,
   ListRequestsResponses,
@@ -517,6 +523,7 @@ import {
   zListInvitationsResponse,
   zListLtiConnectionsResponse,
   zListLtiContextsResponse,
+  zListLtiInstallationResourceLinksResponse,
   zListLtiInstallationsResponse,
   zListLtiMembersResponse,
   zListLtiResourceLinksResponse,
@@ -525,6 +532,7 @@ import {
   zListMyMembershipsResponse,
   zListNotificationsResponse,
   zListOrganizationsResponse,
+  zListPlaceableLtiInstallationsResponse,
   zListRequestsResponse,
   zListServiceAccountsResponse,
   zListTenantsResponse,
@@ -2179,6 +2187,61 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get placeable LTI installations
+ *
+ * The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there, which takes the right to update that course when it is a channel above. Requires permission to update the channel.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable** ·· [listPlaceableLtiInstallations](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable) ·· _lti-platform · cella_
+ *
+ * @param {listPlaceableLtiInstallationsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string} options.query.channelId - `string`
+ * @param {enum} options.query.channelType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listPlaceableLtiInstallations = <ThrowOnError extends boolean = true>(
+  options: Options<ListPlaceableLtiInstallationsData, ThrowOnError>,
+): RequestResult<ListPlaceableLtiInstallationsResponses, ListPlaceableLtiInstallationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListPlaceableLtiInstallationsResponses, ListPlaceableLtiInstallationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListPlaceableLtiInstallationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable',
+    ...options,
+  });
+
+/**
+ * Get resource links of LTI installation
+ *
+ * Every channel of the organization where an LTI tool has a tab, by name, and whether the caller may remove each: the courses whose people it may read follow from them. Requires permission to update the organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links** ·· [listLtiInstallationResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links) ·· _lti-platform · cella_
+ *
+ * @param {listLtiInstallationResourceLinksData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiInstallationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listLtiInstallationResourceLinks = <ThrowOnError extends boolean = true>(
+  options: Options<ListLtiInstallationResourceLinksData, ThrowOnError>,
+): RequestResult<ListLtiInstallationResourceLinksResponses, ListLtiInstallationResourceLinksErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListLtiInstallationResourceLinksResponses, ListLtiInstallationResourceLinksErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListLtiInstallationResourceLinksResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links',
+    ...options,
+  });
+
+/**
  * Approve LTI installation
  *
  * Approves a pending LTI tool: its service account becomes active, its launches may carry the personal fields released here, and its own tokens the access scopes granted here, each one the LTI tool asked for. Disable it later as a service account.
@@ -2261,7 +2324,7 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI resource links
  *
- * The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.
+ * The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [listLtiResourceLinks](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *
@@ -2289,7 +2352,7 @@ export const listLtiResourceLinks = <ThrowOnError extends boolean = true>(
 /**
  * Create LTI resource link
  *
- * Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.
+ * Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it; a channel holds one tab of an installation. Requires permission to update the channel, and the course it launches as when that is a channel above it.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [createLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *

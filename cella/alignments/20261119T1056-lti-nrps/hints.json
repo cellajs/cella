@@ -2,5 +2,6 @@
   { "type": "create", "kind": "column", "entity": ["public", "lti_contexts", "memberships_url"] },
   { "type": "create", "kind": "column", "entity": ["public", "lti_contexts", "issuer"] },
   { "type": "create", "kind": "index", "entity": ["public", "lti_contexts", "lti_contexts_tenant_id_issuer_context_id_idx"] },
-  { "type": "create", "kind": "index", "entity": ["public", "lti_contexts", "lti_contexts_connection_id_idx"] }
+  { "type": "create", "kind": "index", "entity": ["public", "lti_contexts", "lti_contexts_connection_id_idx"] },
+  { "type": "create", "kind": "index", "entity": ["public", "lti_resource_links", "lti_resource_links_channel_id_installation_id_idx"] }
 ]

@@ -8,7 +8,9 @@ import {
   createLtiResourceLink,
   deleteLtiResourceLink,
   getOrganization,
+  listLtiInstallationResourceLinks,
   listLtiMembers,
+  listPlaceableLtiInstallations,
   startLtiLaunch,
   startLtiToolRegistration,
   updateLtiInstallation,
@@ -563,6 +565,50 @@ describe('LTI installation API access', async () => {
       } finally {
         policyMatrix.user = configured;
       }
+    });
+  });
+
+  describe("a channel's tabs of LTI tools", () => {
+    // Contract: a channel's Tabs card shows whose people placing a tab lets an LTI tool read, the LTI tools card every
+    // channel where it reads them, and a channel holds one tab of an LTI tool.
+    it('lists the approved LTI tools a channel may place, where an LTI tool has its tabs, and refuses a second tab', async () => {
+      const org = await orgWithAdmin();
+      const reader = await installLtiTool(org);
+      const silent = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] }, placed: false });
+      await installLtiTool(org, { approval: null, placed: false });
+      const channel = { channelType: 'organization' as const, channelId: org.org.id };
+
+      const placeable = await call(listPlaceableLtiInstallations, { path: org.path, query: channel, headers: org.headers });
+      const context = { ...channel, name: org.org.name };
+      expect((placeable.data as { results: unknown[] }).results).toEqual([
+        { id: reader.installationId, name: 'Peer review', readsMembers: true, placeable: true, context },
+        { id: silent.installationId, name: 'Peer review', readsMembers: false, placeable: true, context },
+      ]);
+
+      const path = { ...org.path, ltiInstallationId: reader.installationId };
+      const tabs = await call(listLtiInstallationResourceLinks, { path, headers: org.headers });
+      expect((tabs.data as { results: unknown[] }).results).toEqual([
+        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, deletable: true },
+      ]);
+
+      const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };
+      await expectRefusal(await call(createLtiResourceLink, { path: org.path, body: again, headers: org.headers }), 409, 'resource_already_exists');
+    });
+
+    // Attack: only who may update the channel places a tab, sees what it may place there, or lists where an LTI tool has
+    // tabs. A tab lets the LTI tool read the course's people.
+    it('refuses a member who may not update the channel', async () => {
+      const org = await orgWithAdmin();
+      const ltiTool = await installLtiTool(org, { placed: false });
+      const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+      const headers = { ...defaultHeaders, Cookie: member.sessionCookie };
+      const channel = { channelType: 'organization' as const, channelId: org.org.id };
+
+      await expectRefusal(await call(listPlaceableLtiInstallations, { path: org.path, query: channel, headers }), 403, 'forbidden');
+      const body = { ...channel, installationId: ltiTool.installationId, title: 'Peer review' };
+      await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers }), 403, 'forbidden');
+      const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
+      await expectRefusal(await call(listLtiInstallationResourceLinks, { path, headers }), 403, 'forbidden');
     });
   });
 });

@@ -162,24 +162,28 @@ export async function deleteTenantLtiRegistration(ctx: DbContext, { id, tenantId
   await ctx.var.db.delete(oauthClientsTable).where(and(eq(oauthClientsTable.id, id), eq(oauthClientsTable.tenantId, tenantId)));
 }
 
-interface FindLtiResourceLinksOpts {
-  tenantId: string;
-  channelId: string;
-  order: OrderDirection;
-}
+/** The resource links of one channel of the tenant, or those of one installation in an organization. */
+type FindLtiResourceLinksOpts = { tenantId: string; order: OrderDirection } & (
+  | { channelId: string }
+  | { installationId: string; organizationId: string }
+);
 
-/** The resource links placed in one channel of the tenant, in `order` of creation. */
-export async function findLtiResourceLinks(ctx: DbContext, { tenantId, channelId, order }: FindLtiResourceLinksOpts) {
+/** The resource links placed in one channel, or the ones that place one installation in an organization, in `order` of creation. */
+export async function findLtiResourceLinks(ctx: DbContext, { tenantId, order, ...where }: FindLtiResourceLinksOpts) {
   const orderBy = getOrderColumns({
     sort: 'createdAt',
     order,
     columns: { createdAt: ltiResourceLinksTable.createdAt },
     tieBreaker: ltiResourceLinksTable.id,
   });
+  const placedBy =
+    'channelId' in where
+      ? eq(ltiResourceLinksTable.channelId, where.channelId)
+      : and(eq(ltiResourceLinksTable.installationId, where.installationId), eq(ltiResourceLinksTable.organizationId, where.organizationId));
   return ctx.var.db
     .select()
     .from(ltiResourceLinksTable)
-    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
+    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), placedBy))
     .orderBy(...orderBy);
 }
 

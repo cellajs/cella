@@ -5,6 +5,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { settledAfterMountMs, useDelayedFlag } from '~/hooks/use-delayed-flag';
 import {
   type DataTab,
+  dataTabOrder,
   getSlotDescriptors,
   isPlacementHidden,
   type PlacementDescriptor,
@@ -28,7 +29,7 @@ export type PageTab = TabLabel & {
   activeOptions?: LinkComponentProps['activeOptions'];
 };
 
-/** What a surface's tabs resolve with: the placement inputs, and the tabs data adds after the declared ones. */
+/** What a surface's tabs resolve with: the placement inputs, and the tabs data adds, arranged with the declared ones. */
 export interface NavTabOptions extends ResolvePlacementOptions {
   dataTabs?: readonly DataTab[];
 }
@@ -67,6 +68,15 @@ const toolParam = (params: unknown) => (params as { tool?: string } | undefined)
 const findActiveTab = (candidates: NavCandidate[], toolId: string | undefined, fullPath: string | undefined) =>
   toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === fullPath);
 
+/** The `$tool` child of a layout route, which opens its registry tabs and the tabs data adds; undefined for a layout without one. */
+const getToolHost = (parentRouteId: string): AnyRoute | undefined => {
+  const parentRoute: AnyRoute | undefined = getRoutesById()[parentRouteId];
+  return parentRoute && getChildRoutes(parentRoute).find((route) => route.path === '$tool');
+};
+
+/** Whether a layout route can open the tabs data adds, such as an LTI tool's: it has a `$tool` child. */
+export const hostsDataTabs = (parentRouteId: string): boolean => !!getToolHost(parentRouteId);
+
 /**
  * Every tab a surface declares, ungated and unordered: child routes with `staticData.navTab`, plus the tools of the parent's
  * `staticData.tabsSlot` through its `$tool` child. {@link resolveNavTabs} gates and orders them.
@@ -89,7 +99,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
     .filter((tab): tab is NavCandidate => tab !== null);
 
   // Registry tabs: the surface's slot tools, linked through its `$tool` host child.
-  const hostChild = children.find((route) => route.path === '$tool');
+  const hostChild = getToolHost(parentRouteId);
   const registryCandidates: NavCandidate[] =
     slot && hostChild
       ? getSlotDescriptors(slot).map((tool) => ({
@@ -104,14 +114,15 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   return [...routeCandidates, ...registryCandidates];
 }
 
-/** The data tabs of a surface, through its `$tool` host child; none without one. */
-function getDataTabs(parentRouteId: string, dataTabs: readonly DataTab[]): PageTab[] {
-  const parentRoute: AnyRoute | undefined = getRoutesById()[parentRouteId];
-  const hostChild = parentRoute && getChildRoutes(parentRoute).find((route) => route.path === '$tool');
+/** The data tabs of a surface as candidates, through its `$tool` host child; none without one. `locked`: no stored id hides one. */
+function getDataTabCandidates(parentRouteId: string, dataTabs: readonly DataTab[]) {
+  const hostChild = getToolHost(parentRouteId);
   if (!hostChild) return [];
   return dataTabs.map(({ id, title }) => ({
     id,
     text: title,
+    order: dataTabOrder,
+    locked: true,
     path: hostChild.fullPath as PageTab['path'],
     // Cast: preserve the surface's own params (tenant/org), set only the host's `$tool` id
     params: ((prev: Record<string, string>) => ({ ...prev, tool: id })) as PageTab['params'],
@@ -119,16 +130,17 @@ function getDataTabs(parentRouteId: string, dataTabs: readonly DataTab[]): PageT
 }
 
 /**
- * {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0,
- * lower first), then the data tabs in their own order.
+ * {@link getNavTabCandidates} and the data tabs, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted
+ * on `order` (default 0, lower first; a data tab after the declared ones), the channel's stored order first.
  */
 function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: NavTabOptions = {}): PageTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
 
-  const resolved = resolvePlacementList(slot, getNavTabCandidates(parentRouteId), options);
-  const declared: PageTab[] = resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
-  return [...declared, ...getDataTabs(parentRouteId, dataTabs)];
+  const candidates = [...getNavTabCandidates(parentRouteId), ...getDataTabCandidates(parentRouteId, dataTabs)];
+  return resolvePlacementList(slot, candidates, options).map(({ id, path, params, ...tab }) =>
+    'text' in tab ? { id, text: tab.text, path, params } : { id, label: tab.label, path, params },
+  );
 }
 
 /**

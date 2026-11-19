@@ -11,3 +11,7 @@ DELETE FROM "lti_contexts" AS "later" USING "lti_contexts" AS "first" WHERE "lat
 -- In the generated migration, right after `ALTER TABLE "identities" ADD COLUMN "tenant_id" varchar(24);`: an LTI identity
 -- belongs to the tenant of the connection it came through last. One whose connection is gone keeps none and is found no more.
 UPDATE "identities" SET "tenant_id" = "connections"."tenant_id" FROM "connections" WHERE "identities"."kind" = 'lti' AND "connections"."id" = "identities"."connection_id";--> statement-breakpoint
+
+-- In the generated migration, right before `CREATE UNIQUE INDEX "lti_resource_links_channel_id_installation_id_idx"`: a
+-- channel keeps its first tab of each LTI tool.
+DELETE FROM "lti_resource_links" AS "later" USING "lti_resource_links" AS "first" WHERE "later"."channel_id" = "first"."channel_id" AND "later"."installation_id" = "first"."installation_id" AND ("later"."created_at", "later"."id") > ("first"."created_at", "first"."id");--> statement-breakpoint

@@ -1,13 +1,12 @@
 import type { ModuleConfig } from 'shared/module-registry';
 import type { StreamSignalType } from 'shared/stream-signal-types';
 import type { ChannelModuleConfig, ProductModuleConfig } from '~/lib/entity-modules';
-import type { ChannelTabSource, Tool } from '~/lib/placements';
+import type { Tool } from '~/lib/placements';
 import type { StreamSignalHandler } from '~/query/realtime/signal-handlers';
 
 /** A frontend module's registration: shared metadata plus frontend-only capabilities. */
 interface FrontendModule extends ModuleConfig {
   tools?: Tool[];
-  channelTabs?: ChannelTabSource;
   /** The channel entity this module owns: its menu section, list query and members-table defaults. */
   channel?: ChannelModuleConfig;
   /** The product entity this module owns: its members-table icon and defaults. */

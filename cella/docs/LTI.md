@@ -8,7 +8,7 @@ LTI lets one app, the platform, open another, the LTI tool, in a frame on its pa
 
 ## Two roles
 
-Your app is a **platform** when it hosts other apps: an admin installs an LTI tool, approves it and places it as a tab of a channel. Turn it on with `has.ltiPlatform`, which lets the app frame any HTTPS origin.
+Your app is a **platform** when it hosts other apps: an admin installs an LTI tool and approves it, and a channel switches its tab on. Turn it on with `has.ltiPlatform`, which lets the app frame any HTTPS origin.
 
 Your app is an **LTI tool** when a learning platform, such as another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
 
@@ -44,6 +44,14 @@ The admin changes the grant later on the LTI tool's tile, which asks the second 
 
 Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
+## Tabs
+
+A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant among the channel's own tabs. Whoever may update the channel switches an LTI tool's tab on or off and drags it among the others, and the tab bar follows that one order. A channel holds one tab of an LTI tool, named after it.
+
+Switching a tab on takes the right to update the channel and, when the tab launches as a course above it, that course. Someone without it sees the row off, with the reason. When the LTI tool may read course members, the card asks first, naming the course whose people it will read and saying when that course is the one above. Switching the tab off removes it.
+
+Under LTI tools in organization settings, each LTI tool lists the channels where it has a tab, each a link. An admin sees there every course whose people the LTI tool reads, and removes a tab from any channel they may update.
+
 ## A launch
 
 A person opens an LTI tool's tab on the platform. From that click to the page inside the frame:
@@ -61,8 +69,6 @@ The platform's storage replaces a cookie for the launch state. Every launch chec
 An installed LTI tool reads a course's members as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
 Its reach follows its tabs, read at every request for the course the address names. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Removing the last tab, or the channel, takes that away. Nothing about a tab is stored on the installation.
-
-Adding a tab takes the right to update the channel it sits in and its course, when that is a channel above it.
 
 A launch with a course carries the NRPS claim to an LTI tool granted `user:read`: the course's membership address and the service version, 2.0. A launch without a course, or of an LTI tool granted nothing, carries none.
 
@@ -161,4 +167,4 @@ Development turns both roles on, and `pnpm seed` connects two seeded organizatio
 
 Open that tab to land in the second organization inside the frame, as a new person carrying your name. Moments later the jobs worker imports the first organization's members into the second, with their names.
 
-To walk the registration by hand, create a registration link under LTI connections in one organization, paste it under LTI tools in another, approve the LTI tool and add its tab.
+To walk the registration by hand, create a registration link under LTI connections in one organization, paste it under LTI tools in another, approve the LTI tool and switch its tab on in the Tabs card of the organization's settings.

@@ -2007,6 +2007,73 @@ export const zListLtiInstallationsResponse = z.object({
   totalSize: z.int().gte(0),
 });
 
+export const zListPlaceableLtiInstallationsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zListPlaceableLtiInstallationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  channelId: z.string().max(50),
+  channelType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * Placeable LTI installations
+ */
+export const zListPlaceableLtiInstallationsResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      readsMembers: z.boolean(),
+      placeable: z.boolean(),
+      context: z
+        .object({
+          channelType: z.enum(['organization']),
+          channelId: z.string(),
+          name: z.string().nullable(),
+        })
+        .nullable(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zListLtiInstallationResourceLinksPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+export const zListLtiInstallationResourceLinksQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt asc'),
+});
+
+/**
+ * Resource links of the installation
+ */
+export const zListLtiInstallationResourceLinksResponse = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      channelType: z.enum(['organization']),
+      channelId: z.string(),
+      channelName: z.string(),
+      deletable: z.boolean(),
+    }),
+  ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
 export const zApproveLtiInstallationBody = z.object({
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])).max(3),
   grantedScopes: z

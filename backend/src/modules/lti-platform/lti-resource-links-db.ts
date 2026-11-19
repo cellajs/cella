@@ -1,4 +1,4 @@
-import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
@@ -10,9 +10,10 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
- * An LTI tool placed in a channel: a resource link, whose id is the LTI `resource_link.id`. It goes with its channel
- * (the organization foreign key and the channel id columns below it) and with its installation. A tenant table read
- * through queries, outside RLS like memberships: the organization scope of a request is its isolation.
+ * An LTI tool placed in a channel: a resource link, whose id is the LTI `resource_link.id`, and the channel's one tab
+ * of that LTI tool. It goes with its channel (the organization foreign key and the channel id columns below it) and
+ * with its installation. A tenant table read through queries, outside RLS like memberships: the organization scope of
+ * a request is its isolation.
  */
 export const ltiResourceLinksTable = snakeCase.table(
   'lti_resource_links',
@@ -35,7 +36,7 @@ export const ltiResourceLinksTable = snakeCase.table(
     ...auditColumns(),
   },
   (table) => [
-    index('lti_resource_links_channel_id_idx').on(table.channelId),
+    uniqueIndex('lti_resource_links_channel_id_installation_id_idx').on(table.channelId, table.installationId),
     index('lti_resource_links_installation_id_idx').on(table.installationId),
     organizationForeignKey(table),
   ],

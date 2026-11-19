@@ -1,12 +1,14 @@
 import { CheckboxGroup } from '@base-ui/react/checkbox-group';
 import { Field } from '@base-ui/react/field';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
-import { BlocksIcon, CheckIcon, KeyRoundIcon, PlusIcon, PowerIcon, PowerOffIcon, XIcon } from 'lucide-react';
+import { BlocksIcon, CheckIcon, KeyRoundIcon, PowerIcon, PowerOffIcon, XIcon } from 'lucide-react';
 import { type MouseEvent, useId, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { LtiInstallation, LtiResourceLink } from 'sdk';
-import { zApproveLtiInstallationBody, zCreateLtiResourceLinkBody } from 'sdk/zod.gen';
+import type { LtiInstallation } from 'sdk';
+import { zApproveLtiInstallationBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -17,30 +19,20 @@ import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { scopeLabel } from '~/modules/common/scope-badges';
 import {
+  ltiInstallationResourceLinksQueryOptions,
   useApproveLtiInstallationMutation,
-  useCreateLtiResourceLinkMutation,
   useDeleteLtiResourceLinkMutation,
   useRejectLtiInstallationMutation,
   useSetLtiInstallationStatusMutation,
   useUpdateLtiInstallationMutation,
 } from '~/modules/lti-platform/query';
+import type { EntityRoute } from '~/modules/navigation/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import {
-  FieldContent,
-  FieldLabel,
-  FieldLayout,
-  FieldTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/modules/ui/field';
-import { Input } from '~/modules/ui/input';
+import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import type { QueryOrgContext } from '~/query/types';
+import { getChannelPageRoute } from '~/utils/channel-route';
 import { dateShort } from '~/utils/date-short';
 import { formResolver } from '~/utils/form-resolver';
 
@@ -165,65 +157,42 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
   );
 }
 
-const tabSchema = zCreateLtiResourceLinkBody.pick({ title: true });
-
-/** The tabs that launch this installation in the organization: remove one, or add one under a title. */
-function InstallationTabs({
-  installation,
-  organization,
-  links,
-}: {
-  installation: LtiInstallation;
-  organization: EnrichedOrganization;
-  links: LtiResourceLink[];
-}) {
+/**
+ * Every channel where the LTI tool has a tab, linked, each removable by whoever may update it: the courses whose people
+ * it reads follow from them. Channels place and remove tabs in their own Tabs card.
+ */
+function InstallationTabs({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
-  const { mutate: create, isPending } = useCreateLtiResourceLinkMutation();
+  const { data } = useQuery(ltiInstallationResourceLinksQueryOptions(path, installation.id));
   const { mutate: remove } = useDeleteLtiResourceLinkMutation();
-  const path = { tenantId: organization.tenantId, organizationId: organization.id };
-  const form = useForm<z.infer<typeof tabSchema>>({ resolver: formResolver(tabSchema), defaultValues: { title: installation.name } });
-
-  const onSubmit = ({ title }: z.infer<typeof tabSchema>) =>
-    create(
-      { path, body: { channelType: 'organization', channelId: organization.id, installationId: installation.id, title } },
-      { onSuccess: () => form.reset({ title: installation.name }) },
-    );
+  const links = data?.results ?? [];
 
   return (
     <div className="flex flex-col gap-2">
       <span className="group-label text-xs">{t('c:tabs')}</span>
-      {links.map((link) => (
-        <div key={link.id} className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
-          <span className="min-w-0 grow truncate">{link.title}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('c:remove_resource', { resource: t('c:tab') })}
-            onClick={() => remove({ path: { ...path, ltiResourceLinkId: link.id }, channelId: link.channelId })}
-          >
-            <XIcon className="size-4" />
-          </Button>
-        </div>
-      ))}
-      <Form {...form}>
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem name="title" className="grow">
-                <FormControl>
-                  <Input {...field} aria-label={t('c:title')} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+      {links.map((link) => {
+        const route: EntityRoute = getChannelPageRoute({ ...path, channelType: link.channelType, channelId: link.channelId });
+        return (
+          <div key={link.id} className="flex min-h-10 items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
+            <Link {...route} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
+              {link.channelName}
+            </Link>
+            <span className="text-muted-foreground grow">{t(`c:${link.channelType}`)}</span>
+            {link.deletable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`${link.channelName}: ${t('c:remove_resource', { resource: t('c:tab') })}`}
+                onClick={() => remove({ path: { ...path, ltiResourceLinkId: link.id }, channelId: link.channelId })}
+              >
+                <XIcon className="size-4" />
+              </Button>
             )}
-          />
-          <SubmitButton variant="secondary" icon={<PlusIcon />} loading={isPending}>
-            {t('c:add_resource', { resource: t('c:tab') })}
-          </SubmitButton>
-        </form>
-      </Form>
+          </div>
+        );
+      })}
+      {data && !links.length && <p className="text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:tabs') })}</p>}
+      <p className="text-muted-foreground text-sm">{t('c:lti_tool_tabs.text')}</p>
     </div>
   );
 }
@@ -291,12 +260,10 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
 interface LtiInstallationTileProps {
   installation: LtiInstallation;
   organization: EnrichedOrganization;
-  /** The organization's resource links that launch this installation. */
-  resourceLinks: LtiResourceLink[];
 }
 
-/** One installed LTI tool: a waiting one is approved or rejected, an approved one disabled or enabled and placed as tabs. */
-export function LtiInstallationTile({ installation, organization, resourceLinks }: LtiInstallationTileProps) {
+/** One installed LTI tool: a waiting one is approved or rejected, an approved one disabled or enabled, with where it has tabs. */
+export function LtiInstallationTile({ installation, organization }: LtiInstallationTileProps) {
   const { t } = useTranslation();
   const approveRef = useRef<HTMLButtonElement>(null);
   const { mutate: reject } = useRejectLtiInstallationMutation();
@@ -337,7 +304,7 @@ export function LtiInstallationTile({ installation, organization, resourceLinks 
       lead={
         !isPending && (
           <>
-            <InstallationTabs installation={installation} organization={organization} links={resourceLinks} />
+            <InstallationTabs installation={installation} path={path} />
             {installation.requestedScopes.length > 0 && <InstallationApiAccess installation={installation} path={path} />}
           </>
         )

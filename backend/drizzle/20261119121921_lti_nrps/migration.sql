@@ -1,4 +1,5 @@
 DROP INDEX "lti_contexts_connection_id_context_id_idx";--> statement-breakpoint
+DROP INDEX "lti_resource_links_channel_id_idx";--> statement-breakpoint
 ALTER TABLE "lti_contexts" ADD COLUMN "issuer" varchar(255);--> statement-breakpoint
 UPDATE "lti_contexts" SET "issuer" = "connections"."issuer" FROM "connections" WHERE "connections"."id" = "lti_contexts"."connection_id";--> statement-breakpoint
 ALTER TABLE "lti_contexts" ALTER COLUMN "issuer" SET NOT NULL;--> statement-breakpoint
@@ -14,6 +15,8 @@ DROP INDEX "identities_kind_provider_subject_idx";--> statement-breakpoint
 CREATE UNIQUE INDEX "identities_kind_provider_subject_idx" ON "identities" ("kind","provider","subject") WHERE "kind" <> 'lti';--> statement-breakpoint
 CREATE UNIQUE INDEX "lti_contexts_tenant_id_issuer_context_id_idx" ON "lti_contexts" ("tenant_id","issuer","context_id");--> statement-breakpoint
 CREATE INDEX "lti_contexts_connection_id_idx" ON "lti_contexts" ("connection_id");--> statement-breakpoint
+DELETE FROM "lti_resource_links" AS "later" USING "lti_resource_links" AS "first" WHERE "later"."channel_id" = "first"."channel_id" AND "later"."installation_id" = "first"."installation_id" AND ("later"."created_at", "later"."id") > ("first"."created_at", "first"."id");--> statement-breakpoint
+CREATE UNIQUE INDEX "lti_resource_links_channel_id_installation_id_idx" ON "lti_resource_links" ("channel_id","installation_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "identities_lti_tenant_subject_idx" ON "identities" ("tenant_id","provider","subject") WHERE "kind" = 'lti';--> statement-breakpoint
 ALTER TABLE "identities" ADD CONSTRAINT "identities_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "lti_contexts" DROP CONSTRAINT "lti_contexts_connection_id_connections_id_fkey", ADD CONSTRAINT "lti_contexts_connection_id_connections_id_fkey" FOREIGN KEY ("connection_id") REFERENCES "connections"("id") ON DELETE SET NULL;--> statement-breakpoint

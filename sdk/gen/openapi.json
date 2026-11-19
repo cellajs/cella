@@ -3352,7 +3352,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 100
+                    "maxItems": 100,
+                    "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                   },
                   "hidden": {
                     "type": "array",
@@ -3360,7 +3361,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 100
+                    "maxItems": 100,
+                    "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                   }
                 }
               },
@@ -3373,7 +3375,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 100
+                    "maxItems": 100,
+                    "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                   },
                   "hidden": {
                     "type": "array",
@@ -3381,7 +3384,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 100
+                    "maxItems": 100,
+                    "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                   }
                 }
               }
@@ -11051,6 +11055,378 @@
         }
       }
     },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listPlaceableLtiInstallations",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get placeable LTI installations",
+        "description": "The approved LTI tools of the organization's tenant, as a channel's tabs offer them: whether each reads course members, the course a tab there launches as, and whether the caller may place it there, which takes the right to update that course when it is a channel above. Requires permission to update the channel.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["organization"]
+            },
+            "required": true,
+            "name": "channelType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Placeable LTI installations",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
+                      "name": "Peer review",
+                      "readsMembers": true,
+                      "placeable": true,
+                      "context": {
+                        "channelType": "organization",
+                        "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
+                        "name": "Biology department"
+                      }
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The installation, which `installationId` places"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "readsMembers": {
+                            "type": "boolean",
+                            "description": "Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as"
+                          },
+                          "placeable": {
+                            "type": "boolean",
+                            "description": "Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it"
+                          },
+                          "context": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "channelType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              },
+                              "channelId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": ["string", "null"],
+                                "description": "Null for a course above the channel that the caller may not read"
+                              }
+                            },
+                            "required": ["channelType", "channelId", "name"],
+                            "description": "The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is"
+                          }
+                        },
+                        "required": ["id", "name", "readsMembers", "placeable", "context"]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLtiInstallationResourceLinks",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Get resource links of LTI installation",
+        "description": "Every channel of the organization where an LTI tool has a tab, by name, and whether the caller may remove each: the courses whose people it may read follow from them. Requires permission to update the organization.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt asc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource links of the installation",
+            "content": {
+              "application/json": {
+                "example": {
+                  "results": [
+                    {
+                      "id": "3e3a0b8f-0277-4a58-b194-e7f5a5dc9874",
+                      "channelType": "organization",
+                      "channelId": "de11c6a6-5299-4c67-86a1-882e603e60d3",
+                      "channelName": "Biology department",
+                      "deletable": true
+                    }
+                  ],
+                  "totalSize": 1
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The resource link"
+                          },
+                          "channelType": {
+                            "type": "string",
+                            "enum": ["organization"]
+                          },
+                          "channelId": {
+                            "type": "string"
+                          },
+                          "channelName": {
+                            "type": "string"
+                          },
+                          "deletable": {
+                            "type": "boolean",
+                            "description": "Whether the caller may delete it: they may update its channel"
+                          }
+                        },
+                        "required": ["id", "channelType", "channelId", "channelName", "deletable"]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:approve": {
       "post": {
         "security": [
@@ -11365,7 +11741,7 @@
         "operationId": "listLtiResourceLinks",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI resource links",
-        "description": "The LTI tools placed in a channel, by default in the order their tabs show. Requires permission to read the channel.",
+        "description": "The LTI tools placed in a channel, by default in the order their tabs follow until the channel's own tab order names them. Requires permission to read the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11542,7 +11918,7 @@
         "operationId": "createLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Create LTI resource link",
-        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
+        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it; a channel holds one tab of an installation. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -16728,7 +17104,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                           },
                           "hidden": {
                             "type": ["array", "null"],
@@ -16736,7 +17113,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                           }
                         }
                       },
@@ -16749,7 +17127,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                           },
                           "hidden": {
                             "type": ["array", "null"],
@@ -16757,7 +17136,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                           }
                         }
                       }
@@ -16865,7 +17245,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                           },
                           "hidden": {
                             "type": ["array", "null"],
@@ -16873,7 +17254,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                           }
                         }
                       },
@@ -16886,7 +17268,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab"
                           },
                           "hidden": {
                             "type": ["array", "null"],
@@ -16894,7 +17277,8 @@
                               "type": "string",
                               "maxLength": 255
                             },
-                            "maxItems": 100
+                            "maxItems": 100,
+                            "description": "Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden"
                           }
                         }
                       }

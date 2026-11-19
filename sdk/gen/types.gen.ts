@@ -794,11 +794,23 @@ export type Organization = {
   archived: boolean;
   toolsConfig: {
     'organization.settings'?: {
+      /**
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+       */
       order?: Array<string>;
+      /**
+       * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+       */
       hidden?: Array<string>;
     };
     'organization.tabs'?: {
+      /**
+       * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+       */
       order?: Array<string>;
+      /**
+       * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+       */
       hidden?: Array<string>;
     };
   };
@@ -4737,6 +4749,188 @@ export type ListLtiInstallationsResponses = {
 
 export type ListLtiInstallationsResponse = ListLtiInstallationsResponses[keyof ListLtiInstallationsResponses];
 
+export type ListPlaceableLtiInstallationsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    channelId: string;
+    channelType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations:list-placeable';
+};
+
+export type ListPlaceableLtiInstallationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListPlaceableLtiInstallationsError = ListPlaceableLtiInstallationsErrors[keyof ListPlaceableLtiInstallationsErrors];
+
+export type ListPlaceableLtiInstallationsResponses = {
+  /**
+   * Placeable LTI installations
+   */
+  200: {
+    results: Array<{
+      /**
+       * The installation, which `installationId` places
+       */
+      id: string;
+      name: string;
+      /**
+       * Whether an admin granted it reading course members: a tab lets it read the people of the course the tab launches as
+       */
+      readsMembers: boolean;
+      /**
+       * Whether the caller may place it in the channel: they may update the course a tab there launches as, when that is a channel above it
+       */
+      placeable: boolean;
+      /**
+       * The course a tab in the channel launches as, an LTI context: the channel itself or a channel above it; null when none is
+       */
+      context: {
+        channelType: 'organization';
+        channelId: string;
+        /**
+         * Null for a course above the channel that the caller may not read
+         */
+        name: string | null;
+      } | null;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListPlaceableLtiInstallationsResponse = ListPlaceableLtiInstallationsResponses[keyof ListPlaceableLtiInstallationsResponses];
+
+export type ListLtiInstallationResourceLinksData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:list-resource-links';
+};
+
+export type ListLtiInstallationResourceLinksErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListLtiInstallationResourceLinksError = ListLtiInstallationResourceLinksErrors[keyof ListLtiInstallationResourceLinksErrors];
+
+export type ListLtiInstallationResourceLinksResponses = {
+  /**
+   * Resource links of the installation
+   */
+  200: {
+    results: Array<{
+      /**
+       * The resource link
+       */
+      id: string;
+      channelType: 'organization';
+      channelId: string;
+      channelName: string;
+      /**
+       * Whether the caller may delete it: they may update its channel
+       */
+      deletable: boolean;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListLtiInstallationResourceLinksResponse = ListLtiInstallationResourceLinksResponses[keyof ListLtiInstallationResourceLinksResponses];
+
 export type ApproveLtiInstallationData = {
   body: {
     /**
@@ -7379,11 +7573,23 @@ export type UpdateOrganizationData = {
     };
     toolsConfig?: {
       'organization.settings'?: {
+        /**
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+         */
         order?: Array<string> | null;
+        /**
+         * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+         */
         hidden?: Array<string> | null;
       } | null;
       'organization.tabs'?: {
+        /**
+         * Tool and tab ids in display order; in a tabs slot, `lti-{installationId}` names an LTI tool's tab
+         */
         order?: Array<string> | null;
+        /**
+         * Tool and tab ids the channel hides; an LTI tool's tab is removed, never hidden
+         */
         hidden?: Array<string> | null;
       } | null;
     };
