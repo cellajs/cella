@@ -1905,7 +1905,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI contexts
  *
- * The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.
+ * The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-contexts** ·· [listLtiContexts](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/organizations/{organizationId}/lti-contexts) ·· _connections · cella_
  *
@@ -1915,6 +1915,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.pageToken - `string` (optional)
  * @param {integer=} options.query.maxPageSize - `integer` (optional)
  * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string=} options.query.connectionId - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2263,7 +2264,7 @@ export const listLtiResourceLinks = <ThrowOnError extends boolean = true>(
 /**
  * Create LTI resource link
  *
- * Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.
+ * Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links** ·· [createLtiResourceLink](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links) ·· _lti-platform · cella_
  *

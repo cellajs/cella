@@ -14,7 +14,7 @@ A service account is tenant-scoped and holds role bindings like a member does. "
 
 A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column.
 
-An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)). Then it acts on its own, within the scopes the admin granted: placing it in a channel gives it that channel's least privileged role.
+An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)). Then it acts on its own, within the scopes the admin granted: a tab gives it the least privileged role of the tab's course, the channel a launch names as its context.
 
 The other way round, each LTI platform the app is connected to as an LTI tool has a service account in the app. The import of a course's members writes as it. It shows in no list and takes no API key.
 

@@ -48,13 +48,8 @@ interface ImportTarget {
  * @returns False when the person needs a seat and the tenant's member limit leaves none; nothing is written then.
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMemberRow) => {
-  const admitted = await admitLtiPerson(ctx, {
-    connection,
-    organization,
-    memberQuota,
-    person: { sub: person.id, name: person.name, email: person.email },
-    by,
-  });
+  const { id: sub, name, given_name: givenName, family_name: familyName, email } = person;
+  const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return false;
   const role = ltiContextRole({ ltiRoles: person.roles, connection });
   await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
@@ -71,8 +66,9 @@ interface ImportLtiMembersOpts extends PlatformFetchOptions {
  * connection's service account, and records how it ran on the context. It adds and updates, never removes, and
  * touches no one the platform did not list. Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
- * or a channel that is archived or gone, ends it at once.
- * @throws What `readLtiMembers` throws: a failed read, recorded as `read_retrying` or, on the last attempt, `read_failed`.
+ * or a channel that is archived or gone, ends it at once, and a deleted connection ends it unrecorded.
+ * @throws What fails after the connection's service account is known, such as a failed read or a role the app's mapping
+ *   does not take: recorded as `read_retrying` or, on the last attempt, `read_failed`.
  */
 export async function importLtiMembersOp(contextId: string, { lastAttempt = true, ...options }: ImportLtiMembersOpts = {}) {
   const context = await findLtiContextById(dbCtx, { id: contextId });
@@ -80,28 +76,32 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
   if (!context?.apiUrl || !context.membersUrl || !connection || !isLtiConnection(connection)) return;
 
   const by = await connectionServiceAccountId(dbCtx, connection);
+  if (!by) return;
   const record = (readCount: number, issue: LtiImportIssue | null) => recordLtiImport(dbCtx, { id: context.id, readCount, issue, by });
-  const [tenant, organization, channel] = await Promise.all([
-    findTenant(dbCtx, { where: eq(tenantsTable.id, connection.tenantId) }),
-    findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId }),
-    resolveEntity(dbCtx, { entityType: context.channelType, identifier: context.channelId }),
-  ]);
-  // Joining an archived channel is a create inside it, which an archive refuses.
-  if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
 
-  const read = await readLtiMembers(connection, { apiUrl: context.apiUrl, membersUrl: context.membersUrl }, options).catch(async (error: unknown) => {
+  try {
+    const [tenant, organization, channel] = await Promise.all([
+      findTenant(dbCtx, { where: eq(tenantsTable.id, connection.tenantId) }),
+      findOrganizationByTenant(dbCtx, { tenantId: connection.tenantId }),
+      resolveEntity(dbCtx, { entityType: context.channelType, identifier: context.channelId }),
+    ]);
+    // Joining an archived channel is a create inside it, which an archive refuses.
+    if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
+
+    const read = await readLtiMembers(connection, { apiUrl: context.apiUrl, membersUrl: context.membersUrl }, options);
+    if ('refusal' in read) return record(0, read.refusal);
+
+    const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
+    let issue: LtiImportIssue | null = read.issue;
+    for (const person of read.people) {
+      if (!(await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person)))) issue = 'member_limit';
+    }
+    await record(read.people.length, issue);
+    log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });
+  } catch (error) {
     await record(0, lastAttempt ? 'read_failed' : 'read_retrying');
     throw error;
-  });
-  if ('refusal' in read) return record(0, read.refusal);
-
-  const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
-  let issue: LtiImportIssue | null = read.issue;
-  for (const person of read.people) {
-    if (!(await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person)))) issue = 'member_limit';
   }
-  await record(read.people.length, issue);
-  log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });
 }
 
 /** The member import's job: a payload names the context row, and the handler reads everything else again. */

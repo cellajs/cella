@@ -1,1 +1,0 @@
-ALTER TABLE "service_accounts" DROP CONSTRAINT "service_accounts_connection_id_connections_id_fkey", ADD CONSTRAINT "service_accounts_connection_id_connections_id_fkey" FOREIGN KEY ("connection_id") REFERENCES "connections"("id") ON DELETE SET NULL;

@@ -108,10 +108,12 @@ export const insertConnection = async (ctx: DbContext, { values }: { values: Ins
 
 /**
  * Locks a connection's row until the caller's transaction ends, leaving rows that reference it free to be written:
- * what hangs off one connection is made one transaction after the other.
+ * what hangs off one connection, and its delete, run one transaction after the other.
+ * @returns False when no such connection exists, also once a delete that held the lock committed.
  */
 export const lockConnection = async (ctx: DbContext, { id }: { id: string }) => {
-  await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('no key update');
+  const rows = await ctx.var.db.select({ id: connectionsTable.id }).from(connectionsTable).where(eq(connectionsTable.id, id)).for('no key update');
+  return rows.length > 0;
 };
 
 interface UpdateConnectionOpts {

@@ -22,6 +22,7 @@ import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lt
 import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
+import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant } from '#/modules/tenants/tenants-queries';
@@ -70,14 +71,15 @@ const embeddedPageUrl = (channel: MembershipEntity) =>
  * held. Checks the launch (`validateLtiLaunch`), maps its context to a channel (`ltiContextChannelType`), finds or
  * creates the person (`admitLtiPerson`), applies the mapped role (`applyLtiRole`) and records the context with the
  * platform's API addresses it trusts, and the LTI deployment of a connection that held none, all in one transaction.
- * Then it starts the embedded session: no MFA challenge, the launch is the proof. A launch by the context's Instructor
- * or Administrator asks for a member import (`requestLtiMemberImport`) without waiting for it.
+ * In an archived channel a member keeps their role. Then it starts the embedded session: no MFA challenge, the launch
+ * is the proof. A launch by the context's Instructor or Administrator asks for a member import
+ * (`requestLtiMemberImport`) without waiting for it.
  * @returns The embedded page of the channel to redirect to.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
- *   `channel_archived` for a context whose channel is archived, 403 `lti_member_limit` for a person who needs a seat
- *   while none is left, 403 `lti_deployment_unknown` when another first launch recorded a different deployment, 409
- *   `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel at once, and what
- *   `findLaunchConnection` and `validateLtiLaunch` throw.
+ *   `channel_archived` for a person the launch would add to an archived channel, 403 `lti_member_limit` for a person
+ *   who needs a seat while none is left, 403 `lti_deployment_unknown` when another first launch recorded a different
+ *   deployment, 409 `lti_context_not_set_up`, 409 `write_conflict` when another launch created the context's channel
+ *   at once, and what `findLaunchConnection` and `validateLtiLaunch` throw.
  */
 export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof ltiFinishFormSchema>): Promise<string> {
   if (ctx.req.header('Sec-Fetch-Site') !== 'same-origin') throw new AppError(403, 'lti_launch_cross_site', 'warn');
@@ -102,8 +104,6 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
     context && ltiContextChannelType !== 'organization'
       ? await planLtiContextChannel(dbCtx, { connectionId: connection.id, context, ltiRoles })
       : { channel: organization };
-  // Joining an archived channel is a create inside it, which an archive refuses.
-  if ('channel' in plan && plan.channel.archived) throw new AppError(403, 'channel_archived', 'warn', { entityType: plan.channel.entityType });
   const deploymentId = launch[ltiClaims.deploymentId];
   const platformApi = launchPlatformApi(connection, claims);
   const { sub, name, given_name: givenName, family_name: familyName, email } = launch;
@@ -145,7 +145,11 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
         throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId: context.id } });
     }
 
-    await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiContextRole({ ltiRoles, connection }), by: userId });
+    // Joining an archived channel is a create inside it, which an archive refuses; a member keeps the role they hold.
+    if (channel.archived) {
+      const [membership] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [userId], channelId: channel.id });
+      if (!membership) throw new AppError(403, 'channel_archived', 'warn', { entityType: channel.entityType });
+    } else await applyLtiRole(txCtx, { organization, channel, userId, seat, role: ltiContextRole({ ltiRoles, connection }), by: userId });
     // Validation let any deployment through to a connection that held none: another first launch may have recorded one since.
     if (!connection.config.deploymentIds.length && !(await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by: userId }))) {
       throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });

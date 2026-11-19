@@ -66,6 +66,8 @@ export const recordLtiImport = async (ctx: DbContext, { id, readCount, issue, by
 interface FindOrganizationLtiContextsOpts {
   tenantId: string;
   organizationId: string;
+  /** One connection's contexts; every connection's when omitted. */
+  connectionId?: string;
   /** By when a launch first recorded the context. */
   order: OrderDirection;
   offset: number;
@@ -73,14 +75,18 @@ interface FindOrganizationLtiContextsOpts {
 }
 
 /**
- * A page of the LTI contexts mapped to the organization's channels, of every connection of its tenant, each with its
- * channel, and the total.
+ * A page of the LTI contexts mapped to the organization's channels, of one connection of its tenant or of all, each
+ * with its channel, and the total.
  */
 export async function findOrganizationLtiContexts(
   ctx: DbContext,
-  { tenantId, organizationId, order, offset, limit }: FindOrganizationLtiContextsOpts,
+  { tenantId, organizationId, connectionId, order, offset, limit }: FindOrganizationLtiContextsOpts,
 ) {
-  const where = and(eq(ltiContextsTable.tenantId, tenantId), eq(ltiContextsTable.organizationId, organizationId));
+  const where = and(
+    eq(ltiContextsTable.tenantId, tenantId),
+    eq(ltiContextsTable.organizationId, organizationId),
+    connectionId ? eq(ltiContextsTable.connectionId, connectionId) : undefined,
+  );
   const orderBy = getOrderColumns({ sort: 'createdAt', order, columns: { createdAt: ltiContextsTable.createdAt }, tieBreaker: ltiContextsTable.id });
   const itemsQuery = ctx.var.db
     .select()

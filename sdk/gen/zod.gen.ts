@@ -1774,6 +1774,7 @@ export const zListLtiContextsQuery = z.object({
   pageToken: z.string().max(2048).optional(),
   maxPageSize: z.int().gte(0).optional(),
   skip: z.int().gte(0).optional().default(0),
+  connectionId: z.uuid().optional(),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
 });
 

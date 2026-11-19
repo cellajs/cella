@@ -1,5 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { eq } from 'drizzle-orm';
 import { decodeJwt, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import {
@@ -15,7 +16,9 @@ import {
 } from 'sdk';
 import { type AccessScope, appConfig, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { baseDb as db } from '#/db/db';
 import { lisContextRoles, ltiApiClaim, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
@@ -285,15 +288,23 @@ describe('LTI installation API access', async () => {
     expect(await response.json()).toEqual({ error: 'invalid_client_metadata', error_description: 'Refused: jwks_uri' });
   });
 
-  // Attack: a grant of a scope no route reads would turn on with the first route that does. Only a read one is recorded and granted.
-  it('records only the scopes a route reads, and refuses granting another', async () => {
+  // Attack: a grant of a scope no route reads would turn on with the first route that does. Only a read one is recorded,
+  // and a registration recorded before that filter, which holds another, still gets only a read one granted.
+  it('records only the scopes a route reads, and refuses granting another that a registration holds', async () => {
     const org = await orgWithAdmin();
     const ltiTool = await installLtiTool(org, { scope: 'user:read organization:read', approval: null, placed: false });
+    const [registered] = await db.select().from(oauthClientsTable).where(eq(oauthClientsTable.id, ltiTool.clientId));
+    expect(registered.requestedScopes).toEqual(['user:read']);
+    await db
+      .update(oauthClientsTable)
+      .set({ requestedScopes: ['user:read', 'organization:read'] })
+      .where(eq(oauthClientsTable.id, ltiTool.clientId));
+
     const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
     const approval = { releasedFields: [], grantedScopes: ['organization:read'] satisfies AccessScope[] };
-    await expectRefusal(await call(approveLtiInstallation, { path, body: approval, headers: org.headers }), 400, 'lti_scope_not_requested');
+    await expectRefusal(await call(approveLtiInstallation, { path, body: approval, headers: org.headers }), 400, 'lti_scope_not_grantable');
     const approved = await call(approveLtiInstallation, { path, body: { releasedFields: [], grantedScopes: ['user:read'] }, headers: org.headers });
-    expect(approved.data).toMatchObject({ requestedScopes: ['user:read'], grantedScopes: ['user:read'] });
+    expect(approved.data).toMatchObject({ grantedScopes: ['user:read'] });
   });
 
   // Privacy: a row carries the personal fields the installation releases, and nothing else about the person.

@@ -23,6 +23,8 @@ export interface AccessScopes {
   required: (entityType: AccessScopedEntityType, action: EntityActionType) => AccessScope;
   /** The scopes in a space-separated `scope` value that this vocabulary knows; anything else is dropped. */
   parse: (value: string | undefined | null) => AccessScope[];
+  /** Whether `held` holds `scope`: the scope itself, or the `write` scope of its type for a `read` one. */
+  covers: (held: readonly AccessScope[], scope: AccessScope) => boolean;
   /**
    * Whether a key's or token's scopes cover the action. An unscoped one (`null` or absent) always does; people are read
    * with `user:read` alone, so a scoped one without it reads no one.
@@ -43,15 +45,21 @@ export const deriveAccessScopes = (policyMatrix: PolicyMatrix): AccessScopes => 
   const all: AccessScopes['all'] = [...offered, ...people];
   const known = new Set<string>(all);
   const required: AccessScopes['required'] = (type, action) => `${type}:${action === 'read' ? 'read' : 'write'}`;
+  const writeOfRead = new Map(types.map((type): [AccessScope, AccessScope] => [`${type}:read`, `${type}:write`]));
+  const covers: AccessScopes['covers'] = (held, scope) => {
+    const write = writeOfRead.get(scope);
+    return held.includes(scope) || (!!write && held.includes(write));
+  };
   return {
     all,
     offered,
     required,
     parse: (value) => (value ?? '').split(' ').filter((scope): scope is AccessScope => known.has(scope)),
+    covers,
     allows: (scopes, type, action) => {
       if (scopes == null) return true;
       if (type === 'user') return action === 'read' && scopes.includes('user:read');
-      return scopes.includes(required(type, action)) || (action === 'read' && scopes.includes(`${type}:write`));
+      return covers(scopes, required(type, action));
     },
   };
 };

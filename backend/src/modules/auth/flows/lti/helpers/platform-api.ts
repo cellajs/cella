@@ -53,11 +53,11 @@ interface PlatformTokenAddresses {
 
 /**
  * Where a platform's token comes from: its token endpoint, and the audience of the client assertion, its authorization
- * server when it names one. Both lie on the issuer's origin, since the app signs with one key for every platform:
- * registration refuses a platform otherwise, and a connection stored otherwise signs nothing.
+ * server when it names one. Both lie on the issuer's origin, since the app signs with one key for every platform: a
+ * connection whose addresses lie elsewhere registers and launches, and signs nothing.
  * @returns Undefined when either lies on another origin.
  */
-export const platformTokenAddresses = ({ issuer, tokenEndpoint, authorizationServer }: PlatformTokenAddresses) => {
+const platformTokenAddresses = ({ issuer, tokenEndpoint, authorizationServer }: PlatformTokenAddresses) => {
   const audience = authorizationServer ?? tokenEndpoint;
   return onIssuerOrigin(issuer, tokenEndpoint) && onIssuerOrigin(issuer, audience) ? { tokenEndpoint, audience } : undefined;
 };
@@ -184,11 +184,13 @@ const platformToken = async (
   return { accessToken };
 };
 
-/** A row of a platform's member list as the import reads it (`listLtiMembers` of the platform's API). */
+/** A row of a platform's member list as the import reads it (`listLtiMembers` of the platform's API): the claims a launch reads. */
 const memberRowSchema = z.object({
   id: ltiIdSchema,
   roles: z.array(z.string().max(maxLength.url)).max(100),
   name: profileClaim,
+  given_name: profileClaim,
+  family_name: profileClaim,
   email: profileClaim,
 });
 

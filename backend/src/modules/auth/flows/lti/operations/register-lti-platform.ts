@@ -4,7 +4,7 @@ import { baseDb } from '#/db/db';
 import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
-import { isUnder, type PlatformFetchOptions, parseJson, platformTokenAddresses } from '#/modules/auth/flows/lti/helpers/platform-api';
+import { isUnder, type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
 import {
   type LtiPlatformConfiguration,
@@ -39,8 +39,6 @@ const fetchPlatformConfiguration = async (address: string, options: PlatformFetc
   if (!parsed.success) throw invalidConfiguration('members');
   // A configuration served from elsewhere could name any issuer, and the app would trust launches signed in its name.
   if (!isUnder(configurationUrl, new URL(parsed.data.issuer))) throw invalidConfiguration('issuer');
-  const { issuer, token_endpoint: tokenEndpoint, authorization_server: authorizationServer } = parsed.data;
-  if (!platformTokenAddresses({ issuer, tokenEndpoint, authorizationServer })) throw invalidConfiguration('token_endpoint');
   if (!supportsLtiTool(parsed.data)) throw new AppError(400, 'lti_platform_unsupported', 'warn', { meta: { issuer: parsed.data.issuer } });
   return parsed.data;
 };

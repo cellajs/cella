@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "service_accounts_oauth_client_idx" ON "service_accounts" ("tenant_id","oauth_client_id");

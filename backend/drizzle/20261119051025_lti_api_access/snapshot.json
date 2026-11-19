@@ -2,9 +2,9 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "18776807-de20-4440-8e20-e6417476e3d9",
+  "id": "f619bbb5-4ee1-47b3-94e3-0b0e62bd4420",
   "prevIds": [
-    "590d1b65-d01e-4495-97f3-54dee9630aad"
+    "c1e6b883-70d0-462b-9cf6-d07aecc07f08"
   ],
   "footprints": [
     {
@@ -102,6 +102,42 @@
       "statementTarget": [
         "column",
         "public",
+        "lti_installations",
+        "granted_scopes"
+      ],
+      "writes": [
+        "s|col|public.lti_installations.granted_scopes",
+        "n|col|public.lti_installations.granted_scopes",
+        "e|col|public.lti_installations.granted_scopes"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "requested_scopes"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.requested_scopes",
+        "n|col|public.oauth_clients.requested_scopes",
+        "e|col|public.oauth_clients.requested_scopes"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
         "service_accounts",
         "connection_id"
       ],
@@ -113,6 +149,27 @@
       "reads": [
         "n|tbl|public.service_accounts",
         "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "service_accounts",
+        "service_accounts_oauth_client_idx"
+      ],
+      "writes": [
+        "s|idx|public.service_accounts_oauth_client_idx",
+        "n|idx|public.service_accounts_oauth_client_idx",
+        "e|idx|public.service_accounts_oauth_client_idx",
+        "n|rel|public.service_accounts_oauth_client_idx"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.tenant_id",
+        "n|col|public.service_accounts.oauth_client_id"
       ]
     },
     {
@@ -133,29 +190,6 @@
         "n|tbl|public.service_accounts",
         "n|sch|public",
         "n|col|public.service_accounts.connection_id"
-      ]
-    },
-    {
-      "statementType": "create_fk",
-      "statementTarget": [
-        "table",
-        "public",
-        "service_accounts"
-      ],
-      "writes": [
-        "s|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
-        "n|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
-        "e|fk|public.service_accounts.service_accounts_connection_id_connections_id_fkey",
-        "n|con|public.service_accounts.service_accounts_connection_id_connections_id_fkey"
-      ],
-      "reads": [
-        "n|tbl|public.service_accounts",
-        "n|sch|public",
-        "n|tbl|public.connections",
-        "n|sch|public",
-        "n|col|public.service_accounts.connection_id",
-        "n|col|public.connections.id",
-        "e|uniqueness|public.connections.id"
       ]
     }
   ],
@@ -244,6 +278,38 @@
       "op": "create",
       "row": {
         "schema": "public",
+        "table": "lti_installations",
+        "name": "granted_scopes",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "requested_scopes",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
         "table": "service_accounts",
         "name": "connection_id",
         "type": "uuid",
@@ -254,6 +320,37 @@
         "generated": null,
         "identity": null,
         "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "service_accounts",
+        "name": "service_accounts_oauth_client_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "tenant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "oauth_client_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
       }
     },
     {
@@ -278,26 +375,6 @@
         "method": "btree",
         "concurrently": false,
         "entityType": "indexes"
-      }
-    },
-    {
-      "op": "create",
-      "row": {
-        "schema": "public",
-        "table": "service_accounts",
-        "name": "service_accounts_connection_id_connections_id_fkey",
-        "nameExplicit": false,
-        "columns": [
-          "connection_id"
-        ],
-        "schemaTo": "public",
-        "tableTo": "connections",
-        "columnsTo": [
-          "id"
-        ],
-        "onUpdate": "NO ACTION",
-        "onDelete": "CASCADE",
-        "entityType": "fks"
       }
     }
   ]

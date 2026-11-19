@@ -29,13 +29,13 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 };
 
 /**
- * The access an installation's placements imply, read at every request: the least privileged role of its type on each
- * course (`placementContext`) the installation is placed in or below. Nothing is stored: a removed tab or a deleted
- * channel takes it away at once.
+ * The access an installation's placements in the route's organization imply, read at every request: the least
+ * privileged role of its type on each course (`placementContext`) the installation is placed in or below. Nothing is
+ * stored: a removed tab or a deleted channel takes it away at once.
  */
-const placementBindings = async (installationId: string): Promise<RoleBinding[]> => {
+const placementBindings = async (installationId: string, organizationId?: string): Promise<RoleBinding[]> => {
   const bindings = new Map<string, RoleBinding>();
-  for (const placement of await findLtiPlacements(dbCtx, { installationId })) {
+  for (const placement of await findLtiPlacements(dbCtx, { installationId, organizationId })) {
     const context = placementContext(placement);
     if (!context) continue;
     const { channelType, channelId } = context;
@@ -74,7 +74,8 @@ export const ltiToolGuard = xMiddleware(
     await challengeRefusal(ctx, ref, async () => {
       const token = await verifyAccessToken(jwt, { tenantId: target.tenantId });
       const found = await resolveInstallationToken(token);
-      setServiceActor(ctx, { ...found.account, bindings: await placementBindings(found.account.id) }, token.scopes);
+      const bindings = await placementBindings(found.account.id, target.organizationId?.toLowerCase());
+      setServiceActor(ctx, { ...found.account, bindings }, token.scopes);
       ctx.set('ltiInstallation', found);
     });
     return serviceBurstLimiter(ctx, next);

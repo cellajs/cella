@@ -93,7 +93,7 @@ export type Env = {
     /** The content of this browser's step-up cookie (`userGuard` only): the session's step-up stamp counts only with it. */
     stepUpCookie?: string;
     /** The installed LTI tool the request acts as, with its registration and approval (`ltiToolGuard` only). */
-    ltiInstallation: LtiInstallationRecord;
+    ltiInstallation?: LtiInstallationRecord;
     requestId: string;
     db: DbOrTx;
     tenantId: string;

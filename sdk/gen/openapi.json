@@ -9796,7 +9796,7 @@
         "operationId": "listLtiContexts",
         "tags": ["connections", "cella"],
         "summary": "Get LTI contexts",
-        "description": "The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+        "description": "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9853,6 +9853,17 @@
             "required": false,
             "description": "Results to pass over after the page token's position, or from the start without a token.",
             "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Lists the contexts of this LTI connection only"
+            },
+            "required": false,
+            "description": "Lists the contexts of this LTI connection only",
+            "name": "connectionId",
             "in": "query"
           },
           {
@@ -11410,7 +11421,7 @@
         "operationId": "createLtiResourceLink",
         "tags": ["lti-platform", "cella"],
         "summary": "Create LTI resource link",
-        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.",
+        "description": "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },

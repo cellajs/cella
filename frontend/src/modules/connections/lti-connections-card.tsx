@@ -1,4 +1,4 @@
-import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { GraduationCapIcon, LinkIcon, TrashIcon } from 'lucide-react';
 import { type MouseEvent, Suspense, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -22,6 +22,7 @@ import {
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
+import { getQueryItems } from '~/query/basic/mutate-query';
 import type { QueryOrgContext } from '~/query/types';
 import { dateRelative } from '~/utils/date-mini';
 import { clockTime, dateShort } from '~/utils/date-short';
@@ -61,7 +62,9 @@ function ImportState({ context }: { context: LtiContext }) {
 /** The courses a platform launched the app from, each with the channel it maps to and how its people were last imported. */
 function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connectionId: string }) {
   const { t } = useTranslation();
-  const contexts = useSuspenseQuery(ltiContextsQueryOptions(path)).data.results.filter((context) => context.connectionId === connectionId);
+  const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(ltiContextsQueryOptions(path, connectionId));
+  const contexts = getQueryItems(data);
+  const total = data.pages.at(-1)?.totalSize ?? contexts.length;
   return (
     <>
       {contexts.length === 0 && <p className="text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:lti_contexts') })}</p>}
@@ -77,6 +80,11 @@ function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connect
           </li>
         ))}
       </ul>
+      {hasNextPage && (
+        <Button variant="ghost" className="w-full" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+          {t('c:show_more', { count: total - contexts.length })}
+        </Button>
+      )}
     </>
   );
 }

@@ -20,7 +20,7 @@ type LtiToolContext = { var: OrgContext['var'] & Pick<Env['Variables'], 'ltiInst
  * personal claims a launch would carry, as a launch decides them.
  * @throws AppError 404 `not_found` with the channel's `entityType` for a channel that is no such course, as for any
  *   channel the caller may not read; 403 `forbidden` (`entityType: 'user'`) when the binding or the token's scopes read
- *   no people there.
+ *   no people there; 500 on a route without `ltiToolGuard`, which sets no installation.
  */
 export async function getLtiMembersOp(
   ctx: LtiToolContext,
@@ -28,6 +28,7 @@ export async function getLtiMembersOp(
   { offset, limit }: PageWindow,
 ) {
   const { actor, organizationId, ltiInstallation } = ctx.var;
+  if (!ltiInstallation) throw new AppError(500, 'server_error', 'error', { meta: { reason: 'lti_installation_missing' } });
   const missing = () => new AppError(404, 'not_found', 'warn', { entityType: channelType });
   if (!actor.bindings.some((binding) => binding.channelType === channelType && binding.channelId === channelId)) throw missing();
   const channel = await resolveEntity(ctx, { entityType: channelType, identifier: channelId });

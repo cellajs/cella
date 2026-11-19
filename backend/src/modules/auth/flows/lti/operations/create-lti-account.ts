@@ -72,12 +72,8 @@ export const createLtiAccount = async (ctx: DbContext, { connection, person, sig
 export const nameLtiAccount = async (ctx: DbContext, { userId, person, by }: { userId: UserId; person: LtiPerson; by: ActorId }) => {
   const name = releasedName(person);
   if (!name || (await findUserById(ctx, { id: userId }))?.name !== placeholderName()) return;
-  const [proven, passkeys, identities] = await Promise.all([
-    isProvenAccount(ctx, { userId }),
-    findPasskeyCredentialsByUser(ctx, { userId }),
-    countUserIdentities(ctx, { userId }),
-  ]);
-  if (proven || passkeys.length || identities > 1) return;
+  if (await isProvenAccount(ctx, { userId })) return;
+  if ((await findPasskeyCredentialsByUser(ctx, { userId })).length || (await countUserIdentities(ctx, { userId })) > 1) return;
   await updateUser(ctx, { id: userId, values: { name, givenName: person.givenName, familyName: person.familyName, ...updateStamps(by) } });
   log.info('LTI account named', { userId });
 };

@@ -4026,6 +4026,10 @@ export type ListLtiContextsData = {
      */
     skip?: number;
     /**
+     * Lists the contexts of this LTI connection only
+     */
+    connectionId?: string;
+    /**
      * A field to order by, then `asc` or `desc`; ascending when left out.
      */
     orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';

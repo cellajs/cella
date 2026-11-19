@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, getColumns, isNotNull, sql } from 'drizzle-orm';
-import { type AccessScope, type ChannelEntityType, hierarchy } from 'shared';
+import { type AccessScope, appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
@@ -15,6 +15,7 @@ import { servedUserSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
 import type { OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -191,9 +192,20 @@ export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }
   return found;
 }
 
-/** Every resource link that places the installation, in whichever channel. */
-export async function findLtiPlacements(ctx: DbContext, { installationId }: { installationId: string }) {
-  return ctx.var.db.select().from(ltiResourceLinksTable).where(eq(ltiResourceLinksTable.installationId, installationId));
+/** What `placementContext` reads of a resource link: its channel and the channel id columns above it. */
+const placementSelect = pick(getColumns(ltiResourceLinksTable), [
+  'channelType',
+  'channelId',
+  ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
+]);
+
+/** The channels of every resource link that places the installation, in the organization when one is given. */
+export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId }: { installationId: string; organizationId?: string }) {
+  const inOrganization = organizationId ? eq(ltiResourceLinksTable.organizationId, organizationId) : undefined;
+  return ctx.var.db
+    .select(placementSelect)
+    .from(ltiResourceLinksTable)
+    .where(and(eq(ltiResourceLinksTable.installationId, installationId), inOrganization));
 }
 
 interface FindLtiMembersPageOpts {

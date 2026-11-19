@@ -4,6 +4,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
+import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
 import {
   deleteLtiResourceLink,
   findLtiInstallation,
@@ -59,10 +60,11 @@ interface CreateLtiResourceLinkInput {
 }
 
 /**
- * Places an approved LTI installation of the tenant in a channel, for a caller who may update the channel. Its own
- * token then reads the people of the channel's course (`ltiToolGuard`).
- * @throws AppError 404 `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_approved` for one
- *   that waits for an approval, and what `getValidChannel` throws.
+ * Places an approved LTI installation of the tenant in a channel, for a caller who may update the channel and the
+ * course it launches as (`placementContext`). Its own token then reads the people of that course (`ltiToolGuard`).
+ * @throws AppError 403 `lti_context_update_required` for a caller who may not update a course above the channel, 404
+ *   `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_approved` for one that waits for an
+ *   approval, and what `getValidChannel` throws.
  */
 export async function createLtiResourceLinkOp(
   ctx: UserContext,
@@ -70,6 +72,13 @@ export async function createLtiResourceLinkOp(
 ) {
   const { tenantId } = ctx.var;
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
+  const course = placementContext({ channelType, channelId, ...channelIdColumnsOf(entity) });
+  if (course && course.channelId !== channelId) {
+    await getValidChannel(ctx, course.channelId, course.channelType, 'update').catch((error: unknown) => {
+      if (!(error instanceof AppError) || (error.type !== 'forbidden' && error.type !== 'not_found')) throw error;
+      throw new AppError(403, 'lti_context_update_required', 'warn', { entityType: course.channelType });
+    });
+  }
   const found = await findLtiInstallation(ctx, { id: installationId, tenantId });
   if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
   if (!found.installation.approvedAt) throw new AppError(409, 'lti_installation_not_approved', 'warn', { meta: { installationId } });

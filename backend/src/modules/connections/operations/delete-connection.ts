@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { revokeConnectionSessions } from '#/modules/auth/core';
 import type { ConnectionKind } from '#/modules/connections/connections-db';
-import { deleteConnection, findConnectionById } from '#/modules/connections/connections-queries';
+import { deleteConnection, findConnectionById, lockConnection } from '#/modules/connections/connections-queries';
 import { disableConnectionServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { log } from '#/utils/logger';
 
@@ -18,6 +18,8 @@ export async function deleteConnectionOp(ctx: UserContext, { id, kind }: { id: s
     const txCtx = { var: { db: tx } };
     const connection = await findConnectionById(txCtx, { id, tenantId });
     if (!connection || (kind && connection.kind !== kind)) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
+    // An import that is making the connection's service account holds this lock: the disable below then finds the account.
+    await lockConnection(txCtx, { id });
 
     // Before the delete, which clears the sessions' `connectionId`.
     await revokeConnectionSessions(txCtx, { connectionId: id, by: ctx.var.user.id });

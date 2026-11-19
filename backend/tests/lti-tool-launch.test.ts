@@ -30,6 +30,7 @@ import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/regis
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { lockTenantQuota } from '#/modules/tenants/quota-lock';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
@@ -84,7 +85,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   type Platform = Awaited<ReturnType<typeof fakePlatform>>;
 
-  /** A tenant's active connection to `platform`, as a registration stores it. */
+  /**
+   * A tenant's active connection to `platform`, as a registration stores it. Its token endpoint sits on another host,
+   * as Brightspace's and Schoology's do: a launch never reads it.
+   */
   async function connect(platform: Platform, deploymentIds = ['deployment-1']) {
     const org = await createTestOrganization();
     const issuer = `https://${platform.name}.example.com`;
@@ -99,7 +103,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         status: 'active',
         config: {
           authorizationEndpoint: `${issuer}/authorize`,
-          tokenEndpoint: `${issuer}/token`,
+          tokenEndpoint: `https://auth.${platform.name}.example.net/token`,
           jwksUri: platform.jwksUri,
           productFamilyCode: 'test',
           version: '1',
@@ -462,6 +466,20 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage((await launch(connected)).response, 403, 'lti_member_limit');
     expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
     expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
+  });
+
+  // Attack: an archive refuses joining a channel, and a launch is no way around it; a member is never locked out.
+  it('refuses a launch that would add a person to an archived course, and lets a member in with the role they hold', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    await db.insert(identitiesTable).values({ userId: member.id, kind: 'lti', provider: connected.issuer, subject: 'lms-member', email: null });
+    // The template's course is the organization, which only a direct write archives.
+    await db.update(organizationsTable).set({ archived: true }).where(eq(organizationsTable.id, connected.org.id));
+
+    await expectRefusalPage((await launch(connected)).response, 403, 'channel_archived');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.provider, connected.issuer))).toHaveLength(1);
+    expect((await launch(connected, { sub: 'lms-member' })).response.status).toBe(303);
+    expect(await orgMembershipOf(member.id, connected.org.id)).toMatchObject({ role: adminRole });
   });
 
   // Attack: an invitation and a launch that both count the last seat free pass the limit together, unless one lock orders them.

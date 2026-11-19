@@ -3,7 +3,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiImportIssues } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { orderByQuerySchema, pageQuerySchema } from '#/schemas';
+import { orderByQuerySchema, pageQuerySchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 /** What a platform opens the registration link with. */
@@ -92,7 +92,10 @@ export const ltiFinishFormSchema = z.object({
 });
 
 /** The LTI contexts of an organization, the courses launched most recently first by default. */
-export const listLtiContextsQuerySchema = pageQuerySchema.extend({ orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc') });
+export const listLtiContextsQuerySchema = pageQuerySchema.extend({
+  connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
+});
 
 export const ltiContextSchema = z.object({
   id: z.string(),

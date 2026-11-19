@@ -1,19 +1,23 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { decodeJwt } from 'jose';
 import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
+  createApiKey,
   createLtiRegistrationLink,
   createLtiResourceLink,
+  deleteLtiConnection,
   getMe,
   listLtiContexts,
+  listServiceAccounts,
   startLtiLaunch,
   startLtiToolRegistration,
   updateLtiInstallation,
+  updateServiceAccount,
 } from 'sdk';
 import { type AccessScope, appConfig, buildSubjectFromEntity, checkAccess, hierarchy } from 'shared';
 import { embeddedSessionHeader } from 'shared/utils/embedded-session';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles } from '#/lib/lti-vocabulary';
@@ -22,6 +26,7 @@ import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-api';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
+import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { importLtiMembersOp, ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
@@ -30,6 +35,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
 import { currentSigningKey, ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -62,7 +68,7 @@ const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 const pageExchange = (page: string): { key: string; value?: string; next?: string } =>
   JSON.parse(decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'));
 
-type MemberRow = { id: string; roles: string[]; name?: string };
+type MemberRow = { id: string; roles: string[]; name?: string; given_name?: string; family_name?: string };
 
 /** A platform built on the template, answered in-process: a token named after the assertion's client, and the pages `page` answers. */
 function fakePlatformApi(page: (url: URL) => { results: MemberRow[]; nextPageToken?: string }, tokenError?: string) {
@@ -99,15 +105,8 @@ describe('LTI member import from a platform built on the template', async () => 
     return { org, admin, path, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } };
   }
 
-  /**
-   * A tenant connected to a platform at `issuer`, with a context of its organization whose launch named the platform's
-   * API. `stored` replaces addresses as a connection or a launch stored them before the app checked them.
-   */
-  async function connectToFakePlatform(
-    issuer = 'https://platform-a.example.com',
-    clientId = `client-${nanoid(6)}`,
-    stored: { tokenEndpoint?: string; authorizationServer?: string; apiUrl?: string } = {},
-  ) {
+  /** A tenant connected to a platform at `issuer`, with a context of its organization whose launch named the platform's API. */
+  async function connectToFakePlatform(issuer = 'https://platform-a.example.com', clientId = `client-${nanoid(6)}`) {
     const side = await orgWithAdmin();
     const [connection] = await db
       .insert(connectionsTable)
@@ -120,8 +119,7 @@ describe('LTI member import from a platform built on the template', async () => 
         status: 'active',
         config: {
           authorizationEndpoint: `${issuer}/authorize`,
-          tokenEndpoint: stored.tokenEndpoint ?? `${issuer}/token`,
-          ...(stored.authorizationServer && { authorizationServer: stored.authorizationServer }),
+          tokenEndpoint: `${issuer}/token`,
           jwksUri: `${issuer}/jwks`,
           productFamilyCode: 'test',
           version: '1',
@@ -129,14 +127,18 @@ describe('LTI member import from a platform built on the template', async () => 
         },
       })
       .returning();
-    const apiUrl = stored.apiUrl ?? `${issuer}/api/tenants/platform-tenant`;
-    const context = await upsertLtiContext(
+    return { ...side, issuer, clientId, connection, context: await addCourse(side, connection.id, `${issuer}/api/tenants/platform-tenant`) };
+  }
+
+  /** A context of the side's organization whose launch named the platform's API at `apiUrl`. */
+  const addCourse = (side: Awaited<ReturnType<typeof orgWithAdmin>>, connectionId: string, apiUrl: string) =>
+    upsertLtiContext(
       { var: { db } },
       {
         values: {
           tenantId: side.org.tenantId,
           organizationId: side.org.id,
-          connectionId: connection.id,
+          connectionId,
           contextId: 'course-1',
           types: [],
           channelType: 'organization',
@@ -147,8 +149,6 @@ describe('LTI member import from a platform built on the template', async () => 
         by: side.admin.id,
       },
     );
-    return { ...side, issuer, clientId, connection, context };
-  }
 
   const contextRow = async (id: string) => (await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.id, id)))[0];
 
@@ -425,7 +425,8 @@ describe('LTI member import from a platform built on the template', async () => 
   });
 
   // One seat rule for invitations, launches and imports: whoever needs a seat when none is left stays out, and the
-  // rest go on. Attack: a name the platform lists never replaces the name of an account someone signs in to.
+  // rest go on. A name the platform lists in parts names an account as a launch's parts do. Attack: a name the
+  // platform lists never replaces the name of an account someone signs in to.
   it('leaves out who needs a seat at the member limit, goes on with the rest, and names only a placeholder account', async () => {
     const side = await connectToFakePlatform();
     await db.insert(identitiesTable).values({ userId: side.admin.id, kind: 'lti', provider: side.issuer, subject: 'lms-teacher', email: null });
@@ -438,7 +439,7 @@ describe('LTI member import from a platform built on the template', async () => 
     const api = fakePlatformApi(() => ({
       results: [
         { id: 'lms-new', roles: [lisContextRoles.learner], name: 'Ada Lovelace' },
-        { id: 'lms-early', roles: [lisContextRoles.learner], name: 'Grace Hopper' },
+        { id: 'lms-early', roles: [lisContextRoles.learner], given_name: 'Grace', family_name: 'Hopper' },
         { id: 'lms-teacher', roles: [lisContextRoles.instructor], name: 'Someone Else' },
       ],
     }));
@@ -470,7 +471,7 @@ describe('LTI member import from a platform built on the template', async () => 
   // Attack: the app signs with one key for every platform. Someone who registers a platform of their own names the
   // victim platform as the audience of the assertion and its own host as the token endpoint, to receive an assertion
   // the victim accepts; or names the victim's token endpoint and a course there, to read its people into their own
-  // organization. Registration refuses both, and a connection stored before that signs nothing and sends nothing.
+  // organization. Such a platform registers, as Brightspace and Schoology do, and its import signs and sends nothing.
   describe('a platform that names another host than its issuer for its token', () => {
     const attacker = 'https://attacker.example.com';
     const victim = 'https://victim.example.com';
@@ -479,7 +480,7 @@ describe('LTI member import from a platform built on the template', async () => 
         name: 'its own token endpoint and the victim as the audience',
         tokenEndpoint: `${attacker}/token`,
         authorizationServer: victim,
-        apiUrl: undefined,
+        apiUrl: `${attacker}/api/tenants/attacker`,
       },
       {
         name: "the victim's token endpoint and a course there",
@@ -489,45 +490,99 @@ describe('LTI member import from a platform built on the template', async () => 
       },
     ];
 
-    it.each(variants)('refuses to register a platform that names $name', async ({ tokenEndpoint, authorizationServer }) => {
+    it.each(variants)('registers a platform that names $name, and signs and sends nothing to import', async (variant) => {
       const side = await orgWithAdmin();
       const link = await call(createLtiRegistrationLink, { path: side.path, headers: side.headers });
       const requests: URL[] = [];
       const transport: GuardedTransport = async ({ url }) => {
         requests.push(url);
         if (url.pathname === '/register') return Response.json({ client_id: 'victim-client' }, { status: 201 });
-        const configuration = ltiPlatformConfiguration({ jwksUri: `${attacker}/jwks`, tokenEndpoint });
+        const configuration = ltiPlatformConfiguration({ jwksUri: `${attacker}/jwks`, tokenEndpoint: variant.tokenEndpoint });
         return Response.json({
           ...configuration,
           issuer: attacker,
           authorization_endpoint: `${attacker}/authorize`,
           registration_endpoint: `${attacker}/register`,
-          authorization_server: authorizationServer,
+          authorization_server: variant.authorizationServer,
         });
       };
-      vi.mocked(currentSigningKey).mockClear();
 
-      const registering = registerLtiPlatformOp(
+      const connection = await registerLtiPlatformOp(
         { link: new URL((link.data as { url: string }).url).searchParams.get('link') ?? '', openid_configuration: `${attacker}/lti/configuration` },
         { transport, resolve: loopback },
       );
-      await expect(registering).rejects.toMatchObject({ status: 400, type: 'lti_configuration_invalid' });
-      expect(requests.map(({ href }) => href)).toEqual([`${attacker}/lti/configuration`]);
-      expect(currentSigningKey).not.toHaveBeenCalled();
-      expect(await db.select().from(connectionsTable).where(eq(connectionsTable.issuer, attacker))).toEqual([]);
-    });
-
-    it.each(variants)('signs nothing and sends nothing for a connection stored with $name', async (stored) => {
-      const side = await connectToFakePlatform(attacker, 'victim-client', stored);
-      const api = fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+      expect(connection.config).toMatchObject({ tokenEndpoint: variant.tokenEndpoint });
+      const context = await addCourse(side, connection.id, variant.apiUrl);
+      requests.length = 0;
       vi.mocked(currentSigningKey).mockClear();
 
-      await importLtiMembersOp(side.context.id, api.options);
-      expect(api.requests).toEqual([]);
+      await importLtiMembersOp(context.id, { transport, resolve: loopback });
+      expect(requests).toEqual([]);
       expect(currentSigningKey).not.toHaveBeenCalled();
-      expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 0, importIssue: 'address_refused' });
+      expect(await contextRow(context.id)).toMatchObject({ importReadCount: 0, importIssue: 'address_refused' });
       expect(await ltiIdentities(attacker)).toEqual([]);
     });
+  });
+
+  // Attack: the account an import wrote as stays when its connection goes, and never falls to the tenant's admins, who
+  // could turn it on again and give it a key.
+  it("keeps the service account of a deleted connection disabled and out of the admins' reach", async () => {
+    const side = await connectToFakePlatform();
+    await importLtiMembersOp(
+      side.context.id,
+      fakePlatformApi(() => ({ results: [{ id: 'lms-student', roles: [lisContextRoles.learner] }] })).options,
+    );
+    const deleted = await call(deleteLtiConnection, { path: { ...side.path, connectionId: side.connection.id }, headers: side.headers });
+    expect(deleted.response.status).toBe(204);
+
+    const [account] = await db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.connectionId, side.connection.id));
+    expect(account.status).toBe('disabled');
+    const listed = await call(listServiceAccounts, { path: side.path, headers: side.headers });
+    expect((listed.data as { results: { id: string }[] }).results.map(({ id }) => id)).not.toContain(account.id);
+    const path = { ...side.path, serviceAccountId: account.id };
+    await expectRefusal(await call(updateServiceAccount, { path, body: { status: 'active' }, headers: side.headers }), 404, 'not_found');
+    await expectRefusal(await call(createApiKey, { path, body: { name: 'key', scopes: null }, headers: side.headers }), 404, 'not_found');
+  });
+
+  // A delete while an import makes the connection's account would find no account to disable and leave it active,
+  // unless it waits for the import's lock on the connection.
+  it('disables the account an import makes while its connection is deleted', async () => {
+    const side = await connectToFakePlatform();
+    const { connection } = side;
+    if (!isLtiConnection(connection)) throw new Error('no LTI connection');
+    let release = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: (pid: number) => void = () => {};
+    const made = new Promise<number>((resolve) => {
+      holding = resolve;
+    });
+    const importing = db.transaction(async (tx) => {
+      await connectionServiceAccountId({ var: { db: tx } }, connection);
+      const { rows } = await tx.execute<{ pid: number }>(sql`select pg_backend_pid() as pid`);
+      holding(rows[0].pid);
+      await released;
+    });
+    onTestFinished(async () => {
+      release();
+      await importing.catch(() => undefined);
+    });
+    const pid = await made;
+
+    const deleting = call(deleteLtiConnection, { path: { ...side.path, connectionId: connection.id }, headers: side.headers });
+    await vi.waitFor(async () => {
+      const { rows } = await db.execute<{ waiting: number }>(
+        sql`select count(*)::int as waiting from pg_stat_activity where ${pid} = any(pg_blocking_pids(pid))`,
+      );
+      expect(rows[0].waiting).toBe(1);
+    });
+    release();
+    await importing;
+
+    expect((await deleting).response.status).toBe(204);
+    const [account] = await db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.connectionId, connection.id));
+    expect(account.status).toBe('disabled');
   });
 
   // Attack: a course list tells which platforms an organization trusts and how its imports ran; it is for whoever may update the organization.

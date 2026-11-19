@@ -97,13 +97,13 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
 }
 
 /**
- * Disables the account an LTI connection writes as and clears its reference, ahead of the connection's delete: the
- * account stays, so what it wrote keeps naming it.
+ * Disables the account an LTI connection writes as, at the connection's delete. The account stays, and what it wrote
+ * keeps naming it. It keeps the connection's id too: no admin comes to manage it.
  */
 export async function disableConnectionServiceAccount(ctx: DbContext, { connectionId, by }: { connectionId: string; by: ActorId }) {
   await ctx.var.db
     .update(serviceAccountsTable)
-    .set({ status: 'disabled', connectionId: null, ...updateStamps(by) })
+    .set({ status: 'disabled', ...updateStamps(by) })
     .where(eq(serviceAccountsTable.connectionId, connectionId));
 }
 

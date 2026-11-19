@@ -112,7 +112,7 @@ export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI contexts',
     description:
-      "The courses of every LTI connection of the organization's tenant that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+      "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
     request: { params: tenantOrgParamSchema, query: listLtiContextsQuerySchema },
     responses: { 200: json('LTI contexts', paginationSchema(ltiContextSchema), { results: [mockLtiContextResponse()], totalSize: 1 }) },
   }),

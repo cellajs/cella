@@ -27,19 +27,21 @@ domains the LTI tool declares, as its launch addresses must.
 As an LTI tool, the app asks for `user:read` and, after a teacher's launch, a `lti.import-members` job makes everyone
 the platform lists a member. It writes as a service account per connection (`connectionId`), which no tenant route
 reaches, no API key opens and the quota leaves out; deleting the connection keeps it, disabled. The LTI connections card
-lists each connection's courses with how their last import ran, read from `listLtiContexts`.
+lists each connection's courses, a page at a time, with how their last import ran, read from `listLtiContexts`.
 
 A launch and an import give roles by one rule (`applyLtiRole`): never an organization role that may update the
 organization, as the permission engine decides. Both take a seat of the tenant's member limit under its quota lock, as an
-invitation now does too, and neither joins an archived channel: such a launch is refused with a page. The app signs a
-client assertion only for a connection whose token endpoint, authorization server and API lie on its issuer's origin,
-and registration refuses a platform whose configuration breaks that.
+invitation now does too, and neither adds anyone to an archived channel: such a launch is refused with a page, and a
+member of the channel gets in with the role they hold. The app signs a client assertion only for a connection whose
+token endpoint, authorization server and API lie on its issuer's origin; a platform that names them elsewhere still
+registers and launches.
 
 ## Blast radius
 
 Every app: its tests fail until `pnpm generate` adds the columns. An app with channels below the organization: an
-installed LTI tool reads the course its tab sits in or below, as `ltiContextTypes` names it, and imported members of such
-a channel arrive with the organization role its `organizationRoles` maps to. An LTI tool registered at the app as a
+installed LTI tool reads the course its tab sits in or below, as `ltiContextTypes` names it, adding a tab below a course
+takes `update` on the course too, and imported members of such a channel arrive with the organization role its
+`organizationRoles` maps to. An LTI tool registered at the app as a
 platform before this asked for no scope: it gets no token until it registers again. App code that gives a tenant two
 service accounts for one registered app now fails the unique index. An app whose `ltiContextRole` maps an LTI role to an organization role that may update the
 organization now gets the highest role below it, at a launch too. An LTI connection registered before this keeps

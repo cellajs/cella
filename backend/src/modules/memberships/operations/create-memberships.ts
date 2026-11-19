@@ -13,7 +13,7 @@ import { mailWithinCaps } from '#/modules/memberships/operations/mail-invitation
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
+import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
@@ -67,9 +67,12 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
   const mailedAgain = resends.filter(({ invitation }) => invitation.status === 'pending' || raisedIds.has(invitation.id));
   const mailNow = held ? [] : [...invites, ...mailedAgain].map(({ email }) => email);
 
+  // Outside the transaction: the caps' store waits for a pool connection, which must not happen under the quota lock.
+  const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length : 0 });
+
   // One transaction: the seats are counted under the lock a launch and an import count under, and what a module writes
   // for a membership (`membershipColumns`) commits with it.
-  const { createdMemberships, inserted, taken } = await db.transaction(async (tx) => {
+  const writing = db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const seats = {
       tenantId,
@@ -81,7 +84,6 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
     };
     if (!(await hasFreeSeats(txCtx, seats))) throw new AppError(403, 'restrict_by_org', 'warn', { entityType: channelType });
 
-    const taken = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length : 0 });
     const createdMemberships = await insertMemberships(txCtx, {
       items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })),
     });
@@ -100,7 +102,15 @@ export async function createMembershipsOp(ctx: UserContext, { emails, role, chan
       })),
     });
     await raiseInvitations(txCtx, { ids: [...raisedIds], role, by: user.id, release: !held });
-    return { createdMemberships, inserted, taken };
+    return { createdMemberships, inserted };
+  });
+  // Refused seats or a failed write send no mail: what the take reserved goes back.
+  const { createdMemberships, inserted } = await writing.catch(async (error: unknown) => {
+    await refundInvitationMails(
+      ctx,
+      taken.emails.filter((email) => !taken.heldBack.has(email)),
+    );
+    throw error;
   });
   for (const { userId } of adds) invalidateCache.user(userId);
 

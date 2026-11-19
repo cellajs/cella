@@ -49,7 +49,7 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
   // No recorded key means client authentication did not run for this request: grant nothing.
   if (!key) return [];
   const held = key.scopes;
-  return accessScopes.offered.filter((scope) => !held || held.some((scoped) => scoped === scope || scoped === scope.replace(/:read$/, ':write')));
+  return accessScopes.offered.filter((scope) => !held || accessScopes.covers(held, scope));
 }
 
 /**

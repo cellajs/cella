@@ -30,8 +30,8 @@ interface AdmitLtiPersonOpts {
 /**
  * The account of a person a platform names, under the lock of their `lti` identity (the platform's issuer and `sub`)
  * that a launch and an import of them both take. It is found by that identity, or made (`createLtiAccount`). A person
- * who holds no seat needs a free one under the tenant's member limit (`hasFreeSeats`). A launch records the sign-in on
- * the identity, the proof that verifies it.
+ * who holds no seat needs a free one under the tenant's member limit (`hasFreeSeats`). Both keep the email the
+ * platform released on the identity, and a launch records the sign-in there, the proof that verifies it.
  * @returns The account and its seat; undefined when the person needs a seat and none is left, with nothing written.
  */
 export const admitLtiPerson = async (
@@ -45,15 +45,9 @@ export const admitLtiPerson = async (
   if (!seat && !(await hasFreeSeats(ctx, { tenantId: organization.tenantId, organizationId: organization.id, quota: memberQuota }))) return;
   if (!identity) return { userId: await createLtiAccount(ctx, { connection, person, signedInAt }) };
 
-  if (signedInAt) {
-    const values = {
-      lastSignInAt: signedInAt,
-      verifiedAt: identity.verifiedAt ?? signedInAt,
-      connectionId: connection.id,
-      email: person.email ?? null,
-    };
-    await updateIdentity(ctx, { id: identity.id, values });
-  }
+  const email = person.email ?? null;
+  const signIn = signedInAt ? { lastSignInAt: signedInAt, verifiedAt: identity.verifiedAt ?? signedInAt, connectionId: connection.id } : undefined;
+  if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
   await nameLtiAccount(ctx, { userId: identity.userId, person, by: by ?? identity.userId });
   return { userId: identity.userId, seat };
 };

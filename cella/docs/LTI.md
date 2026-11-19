@@ -10,7 +10,7 @@ LTI lets one app, the platform, open another, the LTI tool, in a frame on its pa
 
 Your app is a **platform** when it hosts other apps: an admin installs an LTI tool, approves it and places it as a tab of a channel. Turn it on with `has.ltiPlatform`, which lets the app frame any HTTPS origin.
 
-Your app is an **LTI tool** when a learning platform, such as Canvas or another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
+Your app is an **LTI tool** when a learning platform, such as another app on the template, opens it inside a course. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
 
 An app can be both. Either role needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. As an LTI tool, the app fetches the platform's configuration and keys server to server. As a platform, it stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. Outside development, each needs a public HTTPS address.
 
@@ -20,7 +20,7 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
-The app refuses a platform whose token endpoint or authorization server sits on another host than its issuer, such as Canvas: it signs for its issuer's host alone.
+A platform whose token endpoint or authorization server sits on another host than its issuer, such as Brightspace or Schoology, registers and launches the app. The app reads no course members from it: it signs for its issuer's host alone.
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval.
 
@@ -54,6 +54,8 @@ An installed LTI tool reads the app's API as itself, within the scopes the admin
 
 Its reach follows its tabs, read at every request. A tab gives the installation the least privileged role of its course: the channel a launch names as its context, also when the tab sits in a channel below it. Removing the last tab, or the channel, takes that away. Nothing about a tab is stored on the installation.
 
+Adding a tab takes the right to update the channel it sits in and its course, when that is a channel above it.
+
 With `user:read`, its token lists the people of such a course, as far as that role sees them: each person's id, their LTI roles there and the personal claims a launch carries.
 
 The platform's configuration names its issuer as the authorization server, and an LTI tool addresses its assertion there.
@@ -82,7 +84,7 @@ Each person listed gets the account their own launch finds later, and the role a
 
 The platform decides who is in a course. A person an admin removes in your app is added again by the next launch or import while the platform lists them: remove them on the platform.
 
-The import writes as a service account of the connection, which no admin manages and which stays, disabled, when the connection is deleted. A person who needs a seat when the member limit leaves none is left out, and the import goes on with the rest.
+The import writes as a service account of the connection, which no admin manages. Deleting the connection disables it, and it stays out of the admins' reach: no admin turns it on again or gives it an API key. A person who needs a seat when the member limit leaves none is left out, and the import goes on with the rest.
 
 Under LTI connections, each connection lists its courses, the channel each maps to and how its last import went: how many people it read and when, or why it stopped short. The reasons are:
 
@@ -107,7 +109,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A course not set up yet:** a student who arrives before any instructor is asked to have an instructor open it first.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
-- **An archived course:** the launch is refused, as joining it is.
+- **An archived course:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the course under LTI connections says why, and the members imported before stay.

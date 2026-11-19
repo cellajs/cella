@@ -115,7 +115,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create LTI resource link',
     description:
-      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel.",
+      "Places an approved LTI installation of the organization's tenant in a channel, as a tab that launches it. Requires permission to update the channel, and the course it launches as when that is a channel above it.",
     request: { params: tenantOrgParamSchema, body: jsonBody(createLtiResourceLinkBodySchema) },
     responses: { 201: json('LTI resource link', ltiResourceLinkSchema), ...errors(409) },
   }),
@@ -182,7 +182,7 @@ export const ltiLaunchRoutes = createXRoutes(['lti-platform', 'cella'], {
 
 /**
  * The routes an installed LTI tool calls with a token of its own (`ltiToolGuard`), for the courses it is placed in or
- * below. A route behind that guard belongs here: the scopes these routes declare are all an installation can hold.
+ * below. `ltiToolScopes` reads the scopes of this list alone.
  */
 const ltiToolRouteDrafts = {
   listLtiMembers: xRoute({
