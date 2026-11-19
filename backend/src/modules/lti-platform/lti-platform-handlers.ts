@@ -7,7 +7,6 @@ import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRou
 import {
   approveLtiInstallationOp,
   deleteLtiInstallationOp,
-  rejectLtiInstallationOp,
   updateLtiInstallationOp,
 } from '#/modules/lti-platform/operations/decide-lti-installation';
 import { getLtiInstallationsOp } from '#/modules/lti-platform/operations/get-lti-installations';
@@ -46,11 +45,6 @@ app.openapi(ltiPlatformRoutes.approveLtiInstallation, async (ctx) => {
 
 app.openapi(ltiPlatformRoutes.updateLtiInstallation, async (ctx) => {
   return ctx.json(await updateLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId, ctx.req.valid('json')), 200);
-});
-
-app.openapi(ltiPlatformRoutes.rejectLtiInstallation, async (ctx) => {
-  await rejectLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId);
-  return ctx.body(null, 204);
 });
 
 app.openapi(ltiPlatformRoutes.deleteLtiInstallation, async (ctx) => {

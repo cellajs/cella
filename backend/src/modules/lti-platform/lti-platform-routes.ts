@@ -118,17 +118,6 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: ltiInstallationParamSchema, body: jsonBody(updateLtiInstallationBodySchema) },
     responses: { 200: json('Updated installation', ltiInstallationSchema), ...errors(409) },
   }),
-  rejectLtiInstallation: xRoute({
-    method: 'post',
-    path: '/{ltiInstallationId}/~reject',
-    xEnabledBy: { feature: 'ltiPlatform' },
-    xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
-    xRateLimiter: [singlePointsLimiter],
-    summary: 'Reject LTI installation',
-    description: 'Rejects a pending LTI tool. It never acted: its installation and its registration are deleted.',
-    request: { params: ltiInstallationParamSchema },
-    responses: { 204: { description: 'Installation rejected' }, ...errors(409) },
-  }),
   deleteLtiInstallation: xRoute({
     method: 'delete',
     path: '/{ltiInstallationId}',
@@ -137,7 +126,7 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI installation',
     description:
-      'Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.',
+      'Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.',
     request: { params: ltiInstallationParamSchema },
     responses: { 204: { description: 'Installation deleted' } },
   }),

@@ -376,7 +376,7 @@ export const zStreamError = z.object({
 });
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.
  */
 export const zLtiInstallation = z.object({
   id: z.string(),
@@ -2097,17 +2097,6 @@ export const zUpdateLtiInstallationPath = z.object({
  * Updated installation
  */
 export const zUpdateLtiInstallationResponse = zLtiInstallation;
-
-export const zRejectLtiInstallationPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  ltiInstallationId: z.string().max(50),
-});
-
-/**
- * Installation rejected
- */
-export const zRejectLtiInstallationResponse = z.void();
 
 export const zListLtiTabsPath = z.object({
   tenantId: z.string().max(50),

@@ -76,8 +76,8 @@ export async function findLtiInstallation(ctx: DbContext, { id, tenantId }: { id
 }
 
 /**
- * One installation of the tenant, its service account row locked until the transaction ends: an approval and a
- * rejection of one installation run one after the other. Undefined when the tenant has no such installation.
+ * One installation of the tenant, its service account row locked until the transaction ends: an approval, an update
+ * and a delete of one installation run one after the other. Undefined when the tenant has no such installation.
  */
 export async function lockLtiInstallation(ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) {
   const [found] = await installationJoin(ctx)

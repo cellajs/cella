@@ -338,9 +338,6 @@ import type {
   RegisterLtiPlatformData,
   RegisterLtiPlatformErrors,
   RegisterLtiPlatformResponses,
-  RejectLtiInstallationData,
-  RejectLtiInstallationErrors,
-  RejectLtiInstallationResponses,
   RemovePushSubscriptionData,
   RemovePushSubscriptionErrors,
   RemovePushSubscriptionResponses,
@@ -549,7 +546,6 @@ import {
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
   zRedeemLinkTokenResponse,
-  zRejectLtiInstallationResponse,
   zRemovePushSubscriptionResponse,
   zRemoveUserFactorResponse,
   zResendInvitationResponse,
@@ -2250,7 +2246,7 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI installation
  *
- * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
+ * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [deleteLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
  *
@@ -2297,29 +2293,6 @@ export const updateLtiInstallation = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Reject LTI installation
- *
- * Rejects a pending LTI tool. It never acted: its installation and its registration are deleted.
- *
- * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject** ·· [rejectLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject) ·· _lti-platform · cella_
- *
- * @param {rejectLtiInstallationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.ltiInstallationId - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
- */
-export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
-  options: Options<RejectLtiInstallationData, ThrowOnError>,
-): RequestResult<RejectLtiInstallationResponses, RejectLtiInstallationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<RejectLtiInstallationResponses, RejectLtiInstallationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zRejectLtiInstallationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject',
-    ...options,
   });
 
 /**

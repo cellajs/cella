@@ -3,7 +3,7 @@ breaking: true
 clientCacheBump: true
 caughtBy: compiler
 generate: true
-grep: ltiInstitutionRolesIn, countLtiImportsSince, maxCoursesPerHour, readAsLauncher, lti_resource_links, lti_installations, approveLtiInstallation, updateLtiInstallationScopes, placementContext, findLtiPlacements, lti_context_update_required, add_lti_tab_above, ltiRolesFor, ltiInstitutionRolesFor, ltiRolesIn, ltiContextChannelType, ltiContextRole, createLtiContextChannel, LtiContextChannelFacts, planLtiContextChannel, lti_context_not_set_up, lti_launch_no_roles
+grep: rejectLtiInstallation, rejectLtiInstallationOp, useRejectLtiInstallationMutation, ltiInstitutionRolesIn, countLtiImportsSince, maxCoursesPerHour, readAsLauncher, lti_resource_links, lti_installations, approveLtiInstallation, updateLtiInstallationScopes, placementContext, findLtiPlacements, lti_context_update_required, add_lti_tab_above, ltiRolesFor, ltiInstitutionRolesFor, ltiRolesIn, ltiContextChannelType, ltiContextRole, createLtiContextChannel, LtiContextChannelFacts, planLtiContextChannel, lti_context_not_set_up, lti_launch_no_roles
 ---
 
 # LTI tabs and audiences
@@ -51,7 +51,8 @@ No script: manual.
 11. Where app code calls `ltiRolesIn`, pass the person's id and their membership row in the channel in place of an access; a launch's roles come from `ltiLaunchRoles`, which also sends institution roles; `ltiInstitutionRolesIn` is gone; `readAsLauncher` answers the person's `memberships` in place of `access`.
 12. Where app code calls `countLtiImportsSince`, call `sumLtiImportsSince`, which also answers the people the imports read; a connection imports at most `maxCoursesPerHour` (150) courses and `maxPeoplePerHour` people an hour.
 13. Where the app's `appError.json` overrides `lti_context_not_set_up` or `lti_launch_no_roles`, check its text against the new meaning, and add `lti_launch_no_context` and `lti_channel_type_not_allowed` where it translates errors.
-14. Where the app sets its own `clientCacheVersion`, raise it.
+14. Where app code or a client calls `rejectLtiInstallation` (`POST lti-installations/{ltiInstallationId}/~reject`), call `deleteLtiInstallation`, which deletes an LTI tool in any state, a waiting one included; `rejectLtiInstallationOp` and `useRejectLtiInstallationMutation` are gone.
+15. Where the app sets its own `clientCacheVersion`, raise it.
 
 ## Verify
 

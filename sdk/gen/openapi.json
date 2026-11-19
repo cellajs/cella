@@ -2458,7 +2458,7 @@
           "status": {
             "type": "string",
             "enum": ["pending", "active", "disabled"],
-            "description": "`pending` until an admin approves or rejects it"
+            "description": "`pending` until an admin approves it, or rejects it by deleting it"
           },
           "approvedAt": {
             "type": ["string", "null"]
@@ -2594,7 +2594,7 @@
           "createdBy",
           "updatedBy"
         ],
-        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.",
+        "description": "An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.",
         "example": {
           "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
           "clientId": "cee45ffc-5154-4244-971c-f20f8bf45639",
@@ -11542,7 +11542,7 @@
         "operationId": "deleteLtiInstallation",
         "tags": ["lti-platform", "cella"],
         "summary": "Delete LTI installation",
-        "description": "Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.",
+        "description": "Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11592,76 +11592,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "rejectLtiInstallation",
-        "tags": ["lti-platform", "cella"],
-        "summary": "Reject LTI installation",
-        "description": "Rejects a pending LTI tool. It never acted: its installation and its registration are deleted.",
-        "x-enabled-by": {
-          "feature": "ltiPlatform"
-        },
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "ltiInstallationId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Installation rejected"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

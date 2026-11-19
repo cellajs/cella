@@ -126,28 +126,8 @@ export async function updateLtiInstallationOp(ctx: UserContext, id: string, chan
 }
 
 /**
- * Rejects a pending installation, which never acted: it is deleted with the registration private to the tenant. Its
- * actor stays as a bare id, as a deleted account's does.
- * @throws AppError what `getManagedServiceAccount` and `lockPendingInstallation` throw.
- */
-export async function rejectLtiInstallationOp(ctx: UserContext, id: string) {
-  const { tenantId } = ctx.var;
-  await getManagedServiceAccount(ctx, id);
-
-  const rejected = await ctx.var.db.transaction(async (tx) => {
-    const txCtx = { var: { db: tx } };
-    const found = await lockPendingInstallation(txCtx, { id, tenantId });
-    await deleteTenantLtiRegistration(txCtx, { id: found.client.id, tenantId });
-    return found;
-  });
-  invalidateCache.serviceAccount(rejected.account);
-
-  log.info('LTI installation rejected', { installationId: id, tenantId, clientId: rejected.client.id });
-}
-
-/**
- * Deletes an installation in any state, as a rejection deletes a pending one: its registration private to the tenant,
- * and with it the service account, its side row, its tabs and their live launch records. Its tokens rest on the
+ * Deletes an installation in any state, a waiting one when an admin rejects it: its registration private to the
+ * tenant, and with it the service account, its side row, its tabs and their live launch records. Its tokens rest on the
  * installation, which the guard reads at every request. Its account is not kept the way a connection's import account
  * is: its routes only read, and no row names it as its writer.
  * @throws AppError 404 `not_found` for no LTI installation of the tenant, and what `getManagedServiceAccount` throws.

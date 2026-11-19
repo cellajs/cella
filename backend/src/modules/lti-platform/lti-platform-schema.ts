@@ -154,7 +154,7 @@ export const ltiInstallationSchema = z
     channelTypes: z
       .array(z.enum(ltiTabChannelTypes))
       .describe('The channel types an admin allowed it a tab in: only there a channel switches its tab on'),
-    status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves or rejects it'),
+    status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves it, or rejects it by deleting it'),
     approvedAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
@@ -162,7 +162,7 @@ export const ltiInstallationSchema = z
   })
   .openapi('LtiInstallation', {
     description:
-      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.',
+      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.',
     example: mockLtiInstallationResponse(),
     'x-tags': schemaTags('data', 'lti-platform', 'cella'),
   });

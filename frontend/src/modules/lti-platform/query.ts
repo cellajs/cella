@@ -18,8 +18,6 @@ import {
   listLtiInstallationTabs,
   listLtiResourceLinks,
   listLtiTabs,
-  type RejectLtiInstallationData,
-  rejectLtiInstallation,
   type StartLtiLaunchData,
   type StartLtiLaunchResponse,
   type StartLtiToolRegistrationData,
@@ -57,7 +55,6 @@ const ltiPlatformKeys = {
     ['lti-platform', 'installation-tabs', tenantId, ...(installationId ? [installationId] : [])] as const,
   startRegistration: ['lti-platform', 'start-registration'] as const,
   approve: ['lti-platform', 'approve'] as const,
-  reject: ['lti-platform', 'reject'] as const,
   delete: ['lti-platform', 'delete'] as const,
   setStatus: ['lti-platform', 'set-status'] as const,
   update: ['lti-platform', 'update'] as const,
@@ -162,17 +159,6 @@ export const useApproveLtiInstallationMutation = () =>
       setCachedInstallation(path, approved.id, () => approved);
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
       toaster.success(t('c:success.approve_lti_tool', { name: approved.name }));
-    },
-  });
-
-export const useRejectLtiInstallationMutation = () =>
-  useMutation<void, ApiError, MutationData<RejectLtiInstallationData>>({
-    mutationKey: ltiPlatformKeys.reject,
-    mutationFn: async ({ path }) => {
-      await withStepUp(() => rejectLtiInstallation({ path }));
-    },
-    onSuccess: (_, { path }) => {
-      setCachedInstallation(path, path.ltiInstallationId, () => null);
     },
   });
 

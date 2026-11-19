@@ -476,7 +476,7 @@ export type StreamError = {
 };
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.
  */
 export type LtiInstallation = {
   /**
@@ -524,7 +524,7 @@ export type LtiInstallation = {
    */
   channelTypes: Array<'organization'>;
   /**
-   * `pending` until an admin approves or rejects it
+   * `pending` until an admin approves it, or rejects it by deleting it
    */
   status: 'pending' | 'active' | 'disabled';
   approvedAt: string | null;
@@ -5033,55 +5033,6 @@ export type UpdateLtiInstallationResponses = {
 };
 
 export type UpdateLtiInstallationResponse = UpdateLtiInstallationResponses[keyof UpdateLtiInstallationResponses];
-
-export type RejectLtiInstallationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    ltiInstallationId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject';
-};
-
-export type RejectLtiInstallationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type RejectLtiInstallationError = RejectLtiInstallationErrors[keyof RejectLtiInstallationErrors];
-
-export type RejectLtiInstallationResponses = {
-  /**
-   * Installation rejected
-   */
-  204: void;
-};
-
-export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
 
 export type ListLtiTabsData = {
   body?: never;

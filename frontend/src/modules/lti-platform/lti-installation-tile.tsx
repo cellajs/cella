@@ -25,7 +25,6 @@ import {
   useApproveLtiInstallationMutation,
   useDeleteLtiInstallationMutation,
   useDeleteLtiResourceLinkMutation,
-  useRejectLtiInstallationMutation,
   useSetLtiInstallationStatusMutation,
   useUpdateLtiInstallationMutation,
 } from '~/modules/lti-platform/query';
@@ -415,7 +414,8 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
   const { t } = useTranslation();
   const approveRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
-  const { mutate: reject } = useRejectLtiInstallationMutation();
+  // Rejecting a waiting LTI tool deletes it, as deleting does in any state
+  const { mutate: reject } = useDeleteLtiInstallationMutation();
   const { mutate: setStatus, isPending: settingStatus } = useSetLtiInstallationStatusMutation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const isPending = installation.status === 'pending';
