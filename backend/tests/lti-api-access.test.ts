@@ -545,8 +545,8 @@ describe('LTI installation API access', async () => {
   });
 
   describe('the members route refuses', () => {
-    // Attack: an installation reads only the courses its placements imply. On a course none of them launches as, it is
-    // bound to nothing, and the tenant refuses it as any such actor.
+    // Attack: an installation reads only the channels where it has a tab that opens. In any other channel it is bound
+    // to nothing, and the tenant refuses it as any such actor.
     it('a channel the installation is not placed in, or no longer, and a channel of another organization', async () => {
       const org = await orgWithAdmin();
       const other = await orgWithAdmin();
@@ -734,7 +734,7 @@ describe('LTI installation API access', async () => {
 
     // Attack: only an organization admin who stepped up deletes an LTI tool, and only one of their own tenant. A deleted
     // LTI tool keeps nothing: a token minted before is refused, its tabs are gone, and its old tab and a launch started
-    // there answer as a tab that does not exist.
+    // there answer as a tab that does not exist. A rejection from a stale tile leaves one another admin approved.
     it('deletes an LTI tool with its tabs, launches and tokens for an admin who stepped up, and refuses anyone else', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
@@ -752,6 +752,8 @@ describe('LTI installation API access', async () => {
       const other = await orgWithAdmin();
       const elsewhere = { ...other.path, ltiInstallationId: ltiTool.installationId };
       await expectRefusal(await call(deleteLtiInstallation, { path: elsewhere, headers: other.headers }), 404, 'not_found');
+      const rejected = await call(deleteLtiInstallation, { path, query: { status: 'pending' }, headers: org.headers });
+      await expectRefusal(rejected, 409, 'lti_installation_not_pending');
       expect((await readMembers(org, token)).response.status).toBe(200);
 
       expect((await call(deleteLtiInstallation, { path, headers: org.headers })).response.status).toBe(204);
@@ -766,7 +768,8 @@ describe('LTI installation API access', async () => {
       // A waiting one too, which its tile rejects
       const waiting = await installLtiTool(org, { approval: null, placed: false });
       const waitingPath = { ...org.path, ltiInstallationId: waiting.installationId };
-      expect((await call(deleteLtiInstallation, { path: waitingPath, headers: org.headers })).response.status).toBe(204);
+      const reject = await call(deleteLtiInstallation, { path: waitingPath, query: { status: 'pending' }, headers: org.headers });
+      expect(reject.response.status).toBe(204);
       const listed = await call(listLtiInstallations, { path: org.path, headers: org.headers });
       expect((listed.data as { results: unknown[] }).results).toEqual([]);
     });

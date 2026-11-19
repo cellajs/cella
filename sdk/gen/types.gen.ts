@@ -583,7 +583,7 @@ export type LtiResourceLink = {
     [key: string]: string;
   };
   /**
-   * Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id
+   * Whether the tab is on: it shows and launches, and lets the LTI tool read who is in its channel if that is an LTI context. Off, it keeps its id
    */
   enabled: boolean;
   /**
@@ -4829,7 +4829,7 @@ export type ListLtiInstallationTabsResponses = {
       channelId: string;
       channelName: string;
       /**
-       * Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel
+       * Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel, one that is an LTI context
        */
       enabled: boolean;
       /**
@@ -4931,7 +4931,12 @@ export type DeleteLtiInstallationData = {
     organizationId: string;
     ltiInstallationId: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays
+     */
+    status?: 'pending';
+  };
   url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}';
 };
 
@@ -4952,6 +4957,10 @@ export type DeleteLtiInstallationErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
   /**
    * Too many requests
    */
@@ -5352,7 +5361,7 @@ export type UpdateLtiResourceLinkData = {
      */
     audience?: 'members' | 'editors';
     /**
-     * Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs
+     * Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type
      */
     enabled?: boolean;
   };

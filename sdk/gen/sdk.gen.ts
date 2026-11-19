@@ -1823,7 +1823,7 @@ export const getLtiKeySet = <ThrowOnError extends boolean = true>(
 /**
  * Finish an LTI launch
  *
- * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with a context of no course or group type, signs in only a person known here as a member of the organization, and changes nothing. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
+ * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
  *
  * **POST /auth/lti/finish** ·· [finishLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/finish) ·· _auth · cella_
  *
@@ -2246,7 +2246,7 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI installation
  *
- * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
+ * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete with `status=pending`. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [deleteLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
  *
@@ -2254,7 +2254,8 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.ltiInstallationId - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ * @param {enum=} options.query.status - `enum` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
   options: Options<DeleteLtiInstallationData, ThrowOnError>,

@@ -19,6 +19,7 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { scopeLabel } from '~/modules/common/scope-badges';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { LtiToolOrigin } from '~/modules/lti-platform/lti-tool-origin';
 import {
   ltiInstallationTabsQueryOptions,
@@ -66,7 +67,7 @@ function FieldList({ fields }: { fields: PersonalField[] }) {
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
-/** An access scope as an admin decides on it: people are read only in the courses where the LTI tool has a tab, with the shared fields. */
+/** An access scope as an admin decides on it: people are read only in the LTI contexts where it has a tab that is on. */
 const ltiScopeLabel = (t: TFunction, scope: AccessScope) => (scope === 'user:read' ? t('c:lti_scope_user_read') : scopeLabel(t, scope));
 
 const approveSchema = zApproveLtiInstallationBody;
@@ -178,6 +179,7 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
                     </FieldLabel>
                   ))}
                 </CheckboxGroup>
+                {!field.value?.length && <p className="text-sm">{t('c:lti_tab_channel_types.none')}</p>}
                 <FormMessage />
               </FormItem>
             )}
@@ -195,8 +197,9 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
 }
 
 /**
- * Every tab of the LTI tool, linked to its channel, with whom it opens for, the ones switched off marked off. Whoever may update a tab's channel
- * removes it for good here, after a confirmation; channels switch their tabs on and off in their own Tabs card.
+ * Every tab of the LTI tool, linked to its channel, with whom it opens for, the ones switched off marked off. Whoever
+ * may update a tab's channel removes it for good here, after a confirmation; channels switch their tabs on and off in
+ * their own Tabs card.
  */
 function InstallationTabs({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
@@ -228,7 +231,7 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
                 <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
                 {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
               </div>
-              <span className="text-muted-foreground text-xs">{t(`c:lti_audience.${tab.audience}`, { resource: t(`c:${tab.channelType}`) })}</span>
+              <span className="text-muted-foreground text-xs">{t(`c:lti_audience.${tab.audience}`)}</span>
             </div>
             {tab.deletable && (
               <Button
@@ -353,6 +356,7 @@ function InstallationChannelTypes({ installation, path }: { installation: LtiIns
           <GrantRow key={channelType} label={t(`c:${channelType}`)} granted={allowed} grantLabel="c:allow" disabled={isPending} onChange={onChange} />
         );
       })}
+      {!installation.channelTypes.length && <p className="text-sm">{t('c:lti_tab_channel_types.none')}</p>}
       <p className="text-muted-foreground text-sm">{t('c:lti_tab_channel_types.text')}</p>
     </div>
   );
@@ -398,7 +402,17 @@ function DeleteLtiToolForm({ installation, path }: { installation: LtiInstallati
         resource="c:lti_tool"
         pending={isPending}
         onCancel={close}
-        onDelete={() => remove({ path: { ...path, ltiInstallationId: installation.id } }, { onSuccess: close })}
+        onDelete={() =>
+          remove(
+            { path: { ...path, ltiInstallationId: installation.id } },
+            {
+              onSuccess: () => {
+                close();
+                toaster.success(t('c:success.delete_resource', { resource: t('c:lti_tool') }));
+              },
+            },
+          )
+        }
       />
     </div>
   );
@@ -439,7 +453,11 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
       title: <NamedText i18nKey="c:confirm.reject_lti_tool" name={installation.name} />,
       label: 'c:reject',
       icon: XIcon,
-      onConfirm: () => reject({ path: { ...path, ltiInstallationId: installation.id } }),
+      onConfirm: () =>
+        reject(
+          { path: { ...path, ltiInstallationId: installation.id }, query: { status: 'pending' } },
+          { onSuccess: () => toaster.success(t('c:success.reject_lti_tool', { name: installation.name })) },
+        ),
     });
 
   const toggleStatus = () =>

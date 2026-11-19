@@ -539,9 +539,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
   });
 
   // Attack: a launch without a course, such as a platform's navigation outside one, is no way into the organization. It
-  // signs in only a person a launch in a context or an import made a member here, and writes no membership, role or
-  // seat. A context of no LIS type, such as Canvas's account and user navigation, is one without a course.
-  it('signs in only a known member from a launch without a course, and writes nothing', async () => {
+  // signs in only a person a launch in a context or an import made a member here, and adds no membership, role or
+  // seat. A context whose types name no LIS course or group, such as Canvas's account and user navigation, counts as
+  // none.
+  it('signs in only a known member from a launch without a course, and adds no membership, role or seat', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const memberships = () => db.select().from(membershipsTable).where(eq(membershipsTable.organizationId, connected.org.id));
     const outsideCourse = [{ [ltiClaims.context]: undefined }, { [ltiClaims.context]: { id: 'account-1', type: ['Account'] } }];
@@ -872,7 +873,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
   }
 
   // One app is the platform in one tenant and the LTI tool in another, and launches itself, as the development seed does.
-  it('launches itself: a placement in one tenant opens the other tenant as an embedded session of a new account', async () => {
+  it('launches itself: a tab in one tenant opens the other tenant as an embedded session of a new account', async () => {
     const oauth: TestOauthServer = await startTestOauthServer();
     try {
       const { toolSide, platformSide, connection, finished } = await launchItself(oauth);

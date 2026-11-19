@@ -307,7 +307,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
     type Connected = Awaited<ReturnType<typeof connectThroughRegistration>>;
 
-    /** A launch of the placement by the person `cookie` signs in, played through both sides as the browser plays it. */
+    /** A launch of the tab by the person `cookie` signs in, played through both sides as the browser plays it. */
     async function launch({ platformSide, resourceLinkId }: Connected, cookie: string) {
       const started = await call(startLtiLaunch, {
         path: { ...platformSide.path, ltiResourceLinkId: resourceLinkId },

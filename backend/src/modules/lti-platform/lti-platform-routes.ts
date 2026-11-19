@@ -13,6 +13,7 @@ import {
 import {
   approveLtiInstallationBodySchema,
   createLtiResourceLinkBodySchema,
+  deleteLtiInstallationQuerySchema,
   initiateLtiLoginQuerySchema,
   listLtiInstallationsQuerySchema,
   listLtiInstallationTabsQuerySchema,
@@ -126,9 +127,9 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete LTI installation',
     description:
-      'Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.',
-    request: { params: ltiInstallationParamSchema },
-    responses: { 204: { description: 'Installation deleted' } },
+      'Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete with `status=pending`. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.',
+    request: { params: ltiInstallationParamSchema, query: deleteLtiInstallationQuerySchema },
+    responses: { 204: { description: 'Installation deleted' }, ...errors(409) },
   }),
 });
 

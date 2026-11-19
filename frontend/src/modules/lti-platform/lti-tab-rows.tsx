@@ -14,6 +14,7 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { LtiToolOrigin, sharesNameAmong } from '~/modules/lti-platform/lti-tool-origin';
 import { ltiTabsQueryOptions, useCreateLtiResourceLinkMutation, useUpdateLtiResourceLinkMutation } from '~/modules/lti-platform/query';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
@@ -51,9 +52,9 @@ export function LtiTabOrigin({ row }: { row: LtiTabRow }) {
   return <LtiToolOrigin launchOrigins={row.tab.launchOrigins} createdAt={row.tab.createdAt} />;
 }
 
-/** Whose people the row's LTI tool reads while its tab is on, whoever the tab opens for. */
+/** Whose people the row's LTI tool reads while its tab is on and opens, whoever the tab opens for. */
 export function LtiTabReads({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
-  if (!row.tab.readsMembers || !row.tab.resourceLink?.enabled) return null;
+  if (!row.tab.readsMembers || !row.tab.resourceLink?.enabled || row.tab.refusal) return null;
   return (
     <span className="text-muted-foreground text-xs leading-tight">
       <NamedText i18nKey="c:lti_tab_reads.text" name={channel.name} />
@@ -78,7 +79,6 @@ type LtiAudience = LtiResourceLink['audience'];
 const audienceIcons = { members: UsersIcon, editors: PencilIcon } as const satisfies Record<LtiAudience, IconComponent>;
 
 interface LtiAudienceChoiceProps {
-  channel: EnrichedChannel;
   /** The tab's audience now; none for a tab never placed. */
   current?: LtiAudience;
   onChoose: (audience: LtiAudience) => void;
@@ -88,12 +88,11 @@ interface LtiAudienceChoiceProps {
  * Whom a tab opens for, as dropdowner items: its channel's members, or those who may change the channel. A label wraps
  * where a confirmation's width cuts it.
  */
-function LtiAudienceChoice({ channel, current, onChoose }: LtiAudienceChoiceProps) {
+function LtiAudienceChoice({ current, onChoose }: LtiAudienceChoiceProps) {
   const { t } = useTranslation();
-  const resource = t(`c:${channel.entityType}`);
   return zLtiResourceLink.shape.audience.options.map((audience) => (
     <DropdownActionItem key={audience} icon={audienceIcons[audience]} selected={audience === current} onSelect={() => onChoose(audience)}>
-      <span className="min-w-0 grow text-left">{t(`c:lti_audience.${audience}`, { resource })}</span>
+      <span className="min-w-0 grow text-left">{t(`c:lti_audience.${audience}`)}</span>
       <CheckIcon className={cn('text-success size-4 shrink-0', audience !== current && 'invisible')} />
     </DropdownActionItem>
   ));
@@ -112,7 +111,7 @@ export function LtiTabAudience({ channel, row, tabIndex }: { channel: EnrichedCh
   const id = `lti-tab-audience-${link.id}`;
   const choose = (next: LtiAudience) => next !== audience && update({ path, body: { audience: next } });
   const open = () =>
-    dropdowner.getState().create(<LtiAudienceChoice channel={channel} current={audience} onChoose={choose} />, {
+    dropdowner.getState().create(<LtiAudienceChoice current={audience} onChoose={choose} />, {
       id,
       triggerId: id,
       triggerRef,
@@ -126,10 +125,11 @@ export function LtiTabAudience({ channel, row, tabIndex }: { channel: EnrichedCh
       variant="ghost"
       size="micro"
       tabIndex={tabIndex}
+      aria-label={`${row.name}: ${t(`c:lti_audience.${audience}`)}`}
       className="text-muted-foreground -ml-1 w-fit font-normal"
       onClick={open}
     >
-      {t(`c:lti_audience.${audience}`, { resource: t(`c:${channel.entityType}`) })}
+      {t(`c:lti_audience.${audience}`)}
       <ChevronDownIcon className="size-3" />
     </Button>
   );
@@ -144,8 +144,9 @@ interface LtiTabSwitchProps {
 }
 
 /**
- * Switches an LTI tool's tab on and off, keeping its resource link. Switching on asks whom it opens for, and names whose
- * people the LTI tool then reads where it may.
+ * Switches an LTI tool's tab on and off, keeping its resource link. Switching on asks whom it opens for, names whose
+ * people the LTI tool then reads where it may, and tells a person without a membership in the channel that a tab for
+ * its members never opens for them.
  */
 export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchProps) {
   const { t } = useTranslation();
@@ -155,6 +156,8 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
   const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
   const { tab } = row;
   const link = tab.resourceLink;
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
 
   const switchOff = () => {
     onToggle();
@@ -171,13 +174,20 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
     openConfirm(trigger, {
       id: `switch-on-lti-tab-${tab.id}`,
       title: (
-        <NamedText
-          i18nKey={tab.readsMembers ? 'c:confirm.add_lti_tab' : 'c:confirm.add_lti_tab_for'}
-          name={tab.name}
-          values={{ channel: channel.name }}
-        />
+        <>
+          <NamedText
+            i18nKey={tab.readsMembers ? 'c:confirm.add_lti_tab_reads' : 'c:confirm.add_lti_tab'}
+            name={row.name}
+            values={{ channel: channel.name }}
+          />
+          {!isMember && (
+            <span className="text-muted-foreground mt-1 block">
+              <NamedText i18nKey="c:lti_tab_not_member.text" name={channel.name} />
+            </span>
+          )}
+        </>
       ),
-      content: <LtiAudienceChoice channel={channel} current={link?.audience} onChoose={switchOn} />,
+      content: <LtiAudienceChoice current={link?.audience} onChoose={switchOn} />,
     });
 
   const onCheckedChange = (checked: boolean) => {

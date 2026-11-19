@@ -180,7 +180,7 @@ describe('LTI platform', async () => {
       'forbidden',
       'approve',
     );
-    await expectRefusal(await call(deleteLtiInstallation, { path, headers: asMember.headers }), 403, 'forbidden', 'reject');
+    await expectRefusal(await call(deleteLtiInstallation, { path, headers: asMember.headers }), 403, 'forbidden', 'delete');
   });
 
   it('refuses an approval that releases a field the LTI tool did not ask for', async () => {

@@ -12,8 +12,9 @@ export type LtiReleasableField = (typeof ltiReleasableFields)[number];
 
 /**
  * What an LTI tool's installation holds beside its service account: the personal fields its launches and member rows
- * may carry, the access scopes its own tokens may carry, the channel types it may get a tab in and the admin's approval. The account's status decides whether
- * the installation may act. An auth table outside RLS, like the service account it extends.
+ * may carry, the access scopes its own tokens may carry, the channel types it may get a tab in and the admin's
+ * approval. The account's status decides whether the installation may act. An auth table outside RLS, like the service
+ * account it extends.
  */
 export const ltiInstallationsTable = snakeCase.table('lti_installations', {
   serviceAccountId: uuid()

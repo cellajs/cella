@@ -130,6 +130,13 @@ export const updateLtiInstallationBodySchema = z.object({
 /** The path of one LTI installation in its organization. */
 export const ltiInstallationParamSchema = tenantOrgParamSchema.extend({ ltiInstallationId: validIdSchema });
 
+export const deleteLtiInstallationQuerySchema = z.object({
+  status: z
+    .enum(['pending'])
+    .optional()
+    .describe('Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays'),
+});
+
 export const ltiInstallationSchema = z
   .object({
     id: z.string().describe('The installation: its service account, and the `deployment_id` the LTI tool knows it by'),
@@ -233,7 +240,9 @@ export const ltiInstallationTabSchema = z.object({
   channelType: channelEntityTypeSchema,
   channelId: z.string(),
   channelName: z.string(),
-  enabled: z.boolean().describe('Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel'),
+  enabled: z
+    .boolean()
+    .describe('Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel, one that is an LTI context'),
   audience: ltiAudienceSchema,
   deletable: z.boolean().describe('Whether the caller may remove it: they may update its channel'),
 });
@@ -256,7 +265,7 @@ export const updateLtiResourceLinkBodySchema = z.object({
   enabled: z
     .boolean()
     .optional()
-    .describe('Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs'),
+    .describe("Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type"),
 });
 
 export const ltiResourceLinkSchema = z
@@ -267,7 +276,11 @@ export const ltiResourceLinkSchema = z
     installationId: z.string().describe('The LTI installation it launches'),
     title: z.string(),
     custom: z.record(z.string(), z.string()),
-    enabled: z.boolean().describe('Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id'),
+    enabled: z
+      .boolean()
+      .describe(
+        'Whether the tab is on: it shows and launches, and lets the LTI tool read who is in its channel if that is an LTI context. Off, it keeps its id',
+      ),
     audience: ltiAudienceSchema,
     createdAt: z.string(),
     updatedAt: z.string().nullable(),

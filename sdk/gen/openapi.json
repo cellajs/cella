@@ -50,7 +50,7 @@
           },
           "ltiToolGuard": {
             "name": "LTI tool",
-            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the channels where it has a tab that is on, within the scopes an admin granted."
+            "description": "Works only with an access token of an installed LTI tool. The request acts as its installation in the LTI contexts where it has a tab that is on, within the scopes an admin granted."
           },
           "orgGuard": {
             "name": "Organization",
@@ -2667,7 +2667,7 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the tab is on: it shows, launches and lets the LTI tool read who is in its channel. Off, it keeps its id"
+            "description": "Whether the tab is on: it shows and launches, and lets the LTI tool read who is in its channel if that is an LTI context. Off, it keeps its id"
           },
           "audience": {
             "type": "string",
@@ -9599,7 +9599,7 @@
         "operationId": "finishLtiLaunch",
         "tags": ["auth", "cella"],
         "summary": "Finish an LTI launch",
-        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with a context of no course or group type, signs in only a person known here as a member of the organization, and changes nothing. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -11226,7 +11226,7 @@
                           },
                           "enabled": {
                             "type": "boolean",
-                            "description": "Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel"
+                            "description": "Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel, one that is an LTI context"
                           },
                           "audience": {
                             "type": "string",
@@ -11543,7 +11543,7 @@
         "operationId": "deleteLtiInstallation",
         "tags": ["lti-platform", "cella"],
         "summary": "Delete LTI installation",
-        "description": "Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.",
+        "description": "Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete with `status=pending`. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11576,6 +11576,17 @@
             "required": true,
             "name": "ltiInstallationId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["pending"],
+              "description": "Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays"
+            },
+            "required": false,
+            "description": "Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays",
+            "name": "status",
+            "in": "query"
           }
         ],
         "responses": {
@@ -11593,6 +11604,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12197,7 +12211,7 @@
                   },
                   "enabled": {
                     "type": "boolean",
-                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs"
+                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type"
                   }
                 }
               }
@@ -12228,7 +12242,7 @@
                   },
                   "enabled": {
                     "type": "boolean",
-                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool in a channel type that holds tabs"
+                    "description": "Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type"
                   }
                 }
               }

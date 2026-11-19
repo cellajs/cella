@@ -2072,6 +2072,10 @@ export const zDeleteLtiInstallationPath = z.object({
   ltiInstallationId: z.string().max(50),
 });
 
+export const zDeleteLtiInstallationQuery = z.object({
+  status: z.enum(['pending']).optional(),
+});
+
 /**
  * Installation deleted
  */
