@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
   createLtiResourceLink,
+  deleteLtiInstallation,
   deleteLtiResourceLink,
   getOrganization,
   listLtiInstallationTabs,
@@ -43,6 +44,7 @@ import {
   type TestOauthServer,
 } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
+import { insertStaleSession } from './security/session-helpers';
 import { createAppClient } from './test-client';
 
 // The template's answers in the files an app fills: an app's own answers leave these tests as they are.
@@ -571,39 +573,41 @@ describe('LTI installation API access', async () => {
   });
 
   describe("a channel's tabs of LTI tools", () => {
-    // Contract: a channel's Tabs card shows whose people a tab lets an LTI tool read and why one cannot be placed, the
-    // LTI tools card every channel where it has a tab, a channel holds one tab of an LTI tool, and a disabled one is
-    // placed nowhere.
+    // Contract: a channel's Tabs card shows whose people a tab lets an LTI tool read, why one cannot be placed and what
+    // tells two of one name apart, the LTI tools card every channel where it has a tab, a channel holds one tab of an
+    // LTI tool, and a disabled one is placed nowhere and listed only where it has a tab.
     it('lists the LTI tabs of a channel and those of an LTI tool, and refuses a second tab and a disabled LTI tool', async () => {
       const org = await orgWithAdmin();
       const reader = await installLtiTool(org);
       const silent = await installLtiTool(org, { approval: { releasedFields: [], grantedScopes: [] }, placed: false });
-      const disabled = await installLtiTool(org, { placed: false });
-      await call(updateServiceAccount, {
-        path: { ...org.path, serviceAccountId: disabled.installationId },
-        body: { status: 'disabled' },
-        headers: org.headers,
-      });
+      const disabled = await installLtiTool(org);
+      const unplaced = await installLtiTool(org, { placed: false });
+      for (const { installationId } of [disabled, unplaced])
+        await call(updateServiceAccount, {
+          path: { ...org.path, serviceAccountId: installationId },
+          body: { status: 'disabled' },
+          headers: org.headers,
+        });
       await installLtiTool(org, { approval: null, placed: false });
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
       const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
       const context = { ...channel, name: org.org.name };
-      const placed = { id: reader.resourceLinkId, title: 'Peer review', enabled: true };
+      const tab = { name: 'Peer review', domain: ltiToolHost, createdAt: expect.any(String), context };
+      const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true });
       expect((tabs.data as { results: unknown[] }).results).toEqual([
-        { id: reader.installationId, name: 'Peer review', status: 'active', readsMembers: true, refusal: null, context, resourceLink: placed },
-        { id: silent.installationId, name: 'Peer review', status: 'active', readsMembers: false, refusal: null, context, resourceLink: null },
+        { ...tab, id: reader.installationId, status: 'active', readsMembers: true, refusal: null, resourceLink: placed(reader.resourceLinkId) },
+        { ...tab, id: silent.installationId, status: 'active', readsMembers: false, refusal: null, resourceLink: null },
         {
+          ...tab,
           id: disabled.installationId,
-          name: 'Peer review',
           status: 'disabled',
           readsMembers: true,
           refusal: 'lti_installation_disabled',
-          context,
-          resourceLink: null,
+          resourceLink: placed(disabled.resourceLinkId),
         },
       ]);
-      const body = { ...channel, installationId: disabled.installationId, title: 'Peer review' };
+      const body = { ...channel, installationId: unplaced.installationId, title: 'Peer review' };
       await expectRefusal(await call(createLtiResourceLink, { path: org.path, body, headers: org.headers }), 409, 'lti_installation_disabled');
 
       const path = { ...org.path, ltiInstallationId: reader.installationId };
@@ -636,6 +640,38 @@ describe('LTI installation API access', async () => {
 
       expect((await switchTab(true)).data).toMatchObject({ id: ltiTool.resourceLinkId, enabled: true });
       expect((await readMembers(org, token)).response.status).toBe(200);
+    });
+
+    // Attack: only an organization admin who stepped up deletes an LTI tool, and only one of their own tenant. A deleted
+    // LTI tool keeps nothing: a token minted before is refused, its tabs are gone, and its old tab and a launch started
+    // there answer as a tab that does not exist.
+    it('deletes an LTI tool with its tabs, launches and tokens for an admin who stepped up, and refuses anyone else', async () => {
+      const org = await orgWithAdmin();
+      const ltiTool = await installLtiTool(org);
+      const token = await tokenOf(ltiTool);
+      const linkPath = { ...org.path, ltiResourceLinkId: ltiTool.resourceLinkId };
+      const started = await call(startLtiLaunch, { path: linkPath, headers: org.headers });
+      const launchToken = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
+      const path = { ...org.path, ltiInstallationId: ltiTool.installationId };
+
+      const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+      const asMember = { ...defaultHeaders, Cookie: member.sessionCookie };
+      await expectRefusal(await call(deleteLtiInstallation, { path, headers: asMember }), 403, 'forbidden');
+      const stale = await insertStaleSession(org.admin);
+      await expectRefusal(await call(deleteLtiInstallation, { path, headers: stale.headers }), 403, 'step_up_required');
+      const other = await orgWithAdmin();
+      const elsewhere = { ...other.path, ltiInstallationId: ltiTool.installationId };
+      await expectRefusal(await call(deleteLtiInstallation, { path: elsewhere, headers: other.headers }), 404, 'not_found');
+      expect((await readMembers(org, token)).response.status).toBe(200);
+
+      expect((await call(deleteLtiInstallation, { path, headers: org.headers })).response.status).toBe(204);
+      await expectRefusal(await readMembers(org, token), 401, 'unauthorized');
+      const channel = { channelType: 'organization' as const, channelId: org.org.id };
+      const bar = await call(listLtiResourceLinks, { path: org.path, query: channel, headers: org.headers });
+      expect((bar.data as { results: unknown[] }).results).toEqual([]);
+      await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: org.headers }), 404, 'not_found');
+      const page = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${launchToken}`));
+      expect(page.status).toBe(401);
     });
 
     // Attack: only who may update the channel places a tab, switches or removes it, sees what it may place there, or lists

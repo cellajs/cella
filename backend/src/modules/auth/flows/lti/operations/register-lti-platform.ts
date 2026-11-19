@@ -1,12 +1,14 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
+import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { updateStamps } from '#/db/utils/stamps';
+import { extractPgError } from '#/lib/error';
 import { guardedFetch } from '#/lib/guarded-fetch';
 import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
-import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
+import { readHandoffToken, spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-fetch';
 import { ltiRegistrationRequest } from '#/modules/auth/flows/lti/helpers/registration-request';
@@ -86,19 +88,40 @@ const registerAtPlatform = async ({ configuration, connectionId, registrationTok
 };
 
 /**
+ * The link's tenant, refused while it holds as many LTI connections as its quota allows (`assertLtiConnectionRoom`).
+ * @throws AppError 401 `lti-registration_not_found` for a tenant gone since the link was made, 403 `lti_connection_limit`.
+ */
+const assertTenantRoom = async (ctx: DbContext, tenantId: string) => {
+  const tenant = await findTenant(ctx, { where: eq(tenantsTable.id, tenantId) });
+  if (!tenant) throw new AppError(401, 'lti-registration_not_found', 'warn');
+  await assertLtiConnectionRoom(ctx, tenant);
+};
+
+/** Whether a write failed on the unique pair of issuer and client id: the platform gave a client id it gave before. */
+const isClientIdTaken = (error: unknown) => {
+  const pgError = extractPgError(error);
+  return pgError?.code === '23505' && pgError.constraint === 'connections_issuer_client_id_idx';
+};
+
+/**
  * Registers the app as an LTI tool at a platform by Dynamic Registration, from the frame the platform opened the
- * registration link in. The link is spent first, so any outcome takes a new one. Then the platform's configuration
- * is read and checked, and the connection is stored `pending` with a key pair of its own (`mintConnectionKey`), for
- * the link's tenant and written by the admin who created the link, while the tenant holds fewer than its quota of LTI
- * connections (`assertLtiConnectionRoom`). Its key set answers from then on: a platform such
- * as Brightspace reads it while it handles the registration. The app registers with that key set, and the connection
- * turns active with the client id the platform gave; a refused registration deletes it.
+ * registration link in. What the app decides alone comes first, and leaves the link for another try: a link unknown or
+ * expired, and a tenant at its quota of LTI connections. Every outcome after the first request to the platform takes a
+ * new link: the link is spent before it. The platform's configuration is read and checked, and the connection
+ * is stored `pending` with a key pair of its own (`mintConnectionKey`), for the link's tenant and written by the admin
+ * who created the link, under the tenant's quota lock. Its key set answers from then on: a platform such as Brightspace
+ * reads it while it handles the registration. The app registers with that key set, and the connection turns active
+ * with the client id the platform gave; a refused registration deletes it.
  * @throws AppError 401 `lti-registration_not_found` or `lti-registration_expired`, 400 `lti_configuration_invalid`,
  *   `lti_platform_unsupported` or `lti_registration_refused`, 403 `lti_connection_limit`, what `guardedFetch` throws,
- *   and 409 when the platform already registered this client id.
+ *   and 409 `lti_platform_already_connected` when the platform gave a client id it gave the app before.
  */
 export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQuerySchema>, options: PlatformFetchOptions = {}) => {
-  const link = await spendHandoffToken({ kind: 'lti-registration', rawToken: query.link });
+  const kind = 'lti-registration';
+  const link = await readHandoffToken({ kind, rawToken: query.link });
+  // Read without the quota lock, which the insert takes: this check only spares the link, the insert's decides.
+  await assertTenantRoom(dbCtx, link.tenantId);
+  await spendHandoffToken({ kind, rawToken: query.link, id: link.id });
 
   const configuration = await fetchPlatformConfiguration(query.openid_configuration, options);
   const platform = configuration[ltiPlatformConfigurationMember];
@@ -115,11 +138,8 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
   const privateJwk = await mintConnectionKey(id);
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const tenant = await findTenant(txCtx, { where: eq(tenantsTable.id, link.tenantId) });
-    // The link goes with its tenant: a tenant deleted since the link was spent leaves no link.
-    if (!tenant) throw new AppError(401, 'lti-registration_not_found', 'warn');
-    await lockTenantQuota(txCtx, { tenantId: tenant.id, key: 'ltiConnection' });
-    await assertLtiConnectionRoom(txCtx, tenant);
+    await lockTenantQuota(txCtx, { tenantId: link.tenantId, key: 'ltiConnection' });
+    await assertTenantRoom(txCtx, link.tenantId);
     await insertConnection(txCtx, {
       values: {
         id,
@@ -158,6 +178,7 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
     return connection;
   } catch (error) {
     await deleteConnection(dbCtx, { id, tenantId: link.tenantId });
+    if (isClientIdTaken(error)) throw new AppError(409, 'lti_platform_already_connected', 'warn', { meta: { issuer: configuration.issuer } });
     throw error;
   }
 };

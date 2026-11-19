@@ -9160,7 +9160,7 @@
         "operationId": "registerLtiPlatform",
         "tags": ["auth", "cella"],
         "summary": "Register at an LTI platform",
-        "description": "The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Spends the one-use link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. Any LTI platform may frame the page, which holds no session.",
+        "description": "The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Checks the one-use link and the tenant's quota of LTI connections, then spends the link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. A refusal before the link is spent leaves it usable. Any LTI platform may frame the page, which holds no session.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9203,19 +9203,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Registered\n\nA page with one line of text that sends the platform the close message."
+            "description": "Registered\n\nA page with one line of text that sends the platform the close message as it loads."
           },
           "400": {
-            "description": "Registration refused\n\nThe same page, naming why the platform or its configuration was refused."
+            "description": "Registration refused\n\nA page naming why the platform or its configuration was refused, with a button that sends the close message."
           },
           "401": {
-            "description": "Registration link refused\n\nThe same page: the link was used before, never existed or expired."
+            "description": "Registration link refused\n\nThe refusal page: the link was used before, never existed or expired."
           },
           "403": {
-            "description": "Connection limit reached\n\nThe same page: the tenant holds as many LTI connections as its quota allows."
+            "description": "Connection limit reached\n\nThe refusal page: the tenant holds as many LTI connections as its quota allows. The link stays usable."
           },
           "409": {
-            "description": "Already registered\n\nThe same page: the platform registered this client id before."
+            "description": "Already registered\n\nThe refusal page: the platform gave a client id it gave the app before."
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11504,6 +11504,71 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteLtiInstallation",
+        "tags": ["lti-platform", "cella"],
+        "summary": "Delete LTI installation",
+        "description": "Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.",
+        "x-enabled-by": {
+          "feature": "ltiPlatform"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "ltiInstallationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Installation deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
       }
     },
     "/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject": {
@@ -11586,7 +11651,7 @@
         "operationId": "listLtiTabs",
         "tags": ["lti-platform", "cella"],
         "summary": "Get LTI tabs",
-        "description": "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
+        "description": "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },
@@ -11687,6 +11752,8 @@
                     {
                       "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
                       "name": "Peer review",
+                      "domain": "peer-review.example.com",
+                      "createdAt": "2024-09-19T11:48:50.276Z",
                       "status": "active",
                       "readsMembers": true,
                       "refusal": null,
@@ -11718,6 +11785,14 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "domain": {
+                            "type": "string",
+                            "description": "The domain the LTI tool names itself by: with `createdAt`, what tells two LTI tools of one name apart"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "When the LTI tool was added"
                           },
                           "status": {
                             "type": "string",
@@ -11768,7 +11843,7 @@
                             "description": "The tab once placed, on or off; null for an LTI tool never placed in the channel"
                           }
                         },
-                        "required": ["id", "name", "status", "readsMembers", "refusal", "context", "resourceLink"]
+                        "required": ["id", "name", "domain", "createdAt", "status", "readsMembers", "refusal", "context", "resourceLink"]
                       }
                     },
                     "nextPageToken": {

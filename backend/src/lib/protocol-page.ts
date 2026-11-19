@@ -4,13 +4,15 @@ import { html, raw } from 'hono/html';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+import { resourceErrorTexts } from '#/core/error';
 import { toClientError } from '#/lib/error';
 
 /** Any HTTPS page, plain HTTP ones too in development and test: who may frame a page that holds nothing but text. */
 export const anyFrameAncestor = appConfig.mode === 'development' || appConfig.mode === 'test' ? 'https: http:' : 'https:';
 
 // The page's one style, admitted by its hash: in a launch frame it reads as text of the app around it, not as a bare document.
-const pageStyle = 'body{font:14px/1.5 system-ui,sans-serif;margin:1.5rem}h1{font-size:1.125rem;font-weight:600;margin:0 0 .5rem}';
+const pageStyle =
+  'body{font:14px/1.5 system-ui,sans-serif;margin:1.5rem}h1{font-size:1.125rem;font-weight:600;margin:0 0 .5rem}button{font:inherit;padding:.25rem .75rem}';
 const pageStyleSrc = `'sha256-${createHash('sha256').update(pageStyle).digest('base64')}'`;
 
 interface ProtocolPageOpts {
@@ -55,8 +57,18 @@ export const protocolPage = (ctx: Context<Env>, { body, script, frameAncestors, 
   );
 };
 
-/** A refused protocol step: the error's translated title and text, on a page with no script and no form. */
-export const refusalPage = (ctx: Context<Env>, err: unknown, frameAncestors: string) => {
+/**
+ * What a page shows of a refused protocol step: the error's translated title and text, naming the entity type the
+ * error is about as the frontend names it (`resourceErrorTexts`), and its status.
+ */
+export const refusalOf = (ctx: Context<Env>, err: unknown) => {
   const refusal = toClientError(err, { path: ctx.req.path, method: ctx.req.method }, { exposeServerMessage: false });
-  return protocolPage(ctx, { body: html`<h1>${refusal.title}</h1><p>${refusal.detail}</p>`, frameAncestors, status: refusal.status });
+  const resourceTexts = resourceErrorTexts(refusal.type, refusal.entityType);
+  return { title: resourceTexts?.title ?? refusal.title, text: resourceTexts?.text ?? refusal.detail, status: refusal.status };
+};
+
+/** A refused protocol step: the error's title and text (`refusalOf`), on a page with no script and no form. */
+export const refusalPage = (ctx: Context<Env>, err: unknown, frameAncestors: string) => {
+  const { title, text, status } = refusalOf(ctx, err);
+  return protocolPage(ctx, { body: html`<h1>${title}</h1><p>${text}</p>`, frameAncestors, status });
 };

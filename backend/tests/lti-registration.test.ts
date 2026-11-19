@@ -182,8 +182,9 @@ describe('LTI registration', async () => {
   });
 
   // Attack: a tenant that adds connections without end holds every slot of the member import. Past its quota, a link is
-  // refused, and so is a registration through a link minted before.
-  it("refuses a registration link and a registration past the tenant's quota of LTI connections", async () => {
+  // refused, and so is a registration through a link minted before, which creates nothing and asks nothing of the
+  // platform. That refusal leaves the link usable once the tenant has room again.
+  it("refuses a registration link and a registration past the tenant's quota of LTI connections, keeping the link", async () => {
     const { org, user, link } = await mintLink();
     const quota = appConfig.defaultRestrictions.quotas.ltiConnection ?? 0;
     const config = {
@@ -218,6 +219,10 @@ describe('LTI registration', async () => {
       403,
       'lti_connection_limit',
     );
+
+    await db.delete(connectionsTable).where(eq(connectionsTable.issuer, 'https://held-0.example.edu'));
+    await registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, platform.options);
+    expect(platform.registrations).toHaveLength(1);
   });
 
   it('refuses a member creating a registration link', async () => {

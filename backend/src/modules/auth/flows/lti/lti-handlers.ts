@@ -2,10 +2,8 @@ import type { z } from '@hono/zod-openapi';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
-import { toClientError } from '#/lib/error';
-import { i18n } from '#/lib/i18n';
 import { launchStepRefusalPage, type StorageExchange, storagePage } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
-import { registrationPage } from '#/modules/auth/flows/lti/helpers/registration-page';
+import { registeredPage, registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { authLtiRoutes, ltiContextRoutes } from '#/modules/auth/flows/lti/lti-routes';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
 import { finishLtiLaunchOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
@@ -18,14 +16,13 @@ import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>();
 
-// A refusal answers the same page with its own status: the platform's frame shows the outcome either way.
+// A refusal answers a page with its own status: the platform's frame shows the outcome either way.
 app.openapi(authLtiRoutes.registerLtiPlatform, async (ctx) => {
   try {
     await registerLtiPlatformOp(ctx.req.valid('query'));
-    return registrationPage(ctx, i18n.t('backend:lti.registered'), 200);
+    return registeredPage(ctx);
   } catch (err) {
-    const refusal = toClientError(err, { path: ctx.req.path, method: ctx.req.method }, { exposeServerMessage: false });
-    return registrationPage(ctx, refusal.title, refusal.status);
+    return registrationRefusalPage(ctx, err);
   }
 });
 

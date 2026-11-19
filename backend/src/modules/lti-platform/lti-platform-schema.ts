@@ -175,10 +175,12 @@ const ltiTabContextSchema = z.object({
   name: z.string().nullable().describe('Null for a course above the channel that the caller may not read'),
 });
 
-/** An approved LTI tool as a tab of one channel, placed or not. */
+/** An approved LTI tool as a tab of one channel, placed or not; a disabled one only where it has a tab. */
 export const ltiTabSchema = z.object({
   id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
   name: z.string(),
+  domain: z.string().describe('The domain the LTI tool names itself by: with `createdAt`, what tells two LTI tools of one name apart'),
+  createdAt: z.string().describe('When the LTI tool was added'),
   status: z.enum(serviceAccountStatuses).describe('`active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then'),
   readsMembers: z
     .boolean()

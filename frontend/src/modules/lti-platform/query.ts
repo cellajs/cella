@@ -7,7 +7,9 @@ import {
   type CreateLtiResourceLinkData,
   type CreateLtiResourceLinkResponse,
   createLtiResourceLink,
+  type DeleteLtiInstallationData,
   type DeleteLtiResourceLinkData,
+  deleteLtiInstallation,
   deleteLtiResourceLink,
   type ListLtiTabsResponse,
   type LtiInstallation,
@@ -56,6 +58,7 @@ const ltiPlatformKeys = {
   startRegistration: ['lti-platform', 'start-registration'] as const,
   approve: ['lti-platform', 'approve'] as const,
   reject: ['lti-platform', 'reject'] as const,
+  delete: ['lti-platform', 'delete'] as const,
   setStatus: ['lti-platform', 'set-status'] as const,
   update: ['lti-platform', 'update'] as const,
   createResourceLink: ['lti-platform', 'create-resource-link'] as const,
@@ -85,7 +88,10 @@ export const ltiResourceLinksQueryOptions = (channel: ResourceLinkChannel) =>
       ),
   });
 
-/** A channel's tabs of LTI tools, for a user who may update it: every approved LTI tool, oldest first, with its tab once placed. */
+/**
+ * A channel's tabs of LTI tools, for a user who may update it: every approved LTI tool, a disabled one only where it has a
+ * tab, oldest first, with its tab once placed.
+ */
 export const ltiTabsQueryOptions = (channel: ResourceLinkChannel) =>
   queryOptions({
     queryKey: ltiPlatformKeys.tabs(channel.tenantId, channel.id),
@@ -167,6 +173,22 @@ export const useRejectLtiInstallationMutation = () =>
     },
     onSuccess: (_, { path }) => {
       setCachedInstallation(path, path.ltiInstallationId, () => null);
+    },
+  });
+
+/** Deletes an installation in any state, asking the step-up an approval asks; its tabs leave every channel's bar and card. */
+export const useDeleteLtiInstallationMutation = () =>
+  useMutation<void, ApiError, MutationData<DeleteLtiInstallationData>>({
+    mutationKey: ltiPlatformKeys.delete,
+    mutationFn: async ({ path }) => {
+      await withStepUp(() => deleteLtiInstallation({ path }));
+    },
+    onSuccess: (_, { path }) => {
+      setCachedInstallation(path, path.ltiInstallationId, () => null);
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      queryClient.removeQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, path.ltiInstallationId) });
+      toaster.success(t('c:success.delete_resource', { resource: t('c:lti_tool') }));
     },
   });
 
