@@ -85,6 +85,8 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
+The login and launch pages may be framed by the platform's authorization origin and by the origins in `ltiFrameAncestors`. Their messages go to the authorization origin alone, and only its answers count. Canvas frames the LTI tool in the school's page and signs in on a host of its own: list every host the school serves Canvas on.
+
 ## Serving members
 
 An installed LTI tool reads the members of an LTI context as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
@@ -206,7 +208,7 @@ Under LTI connections, each connection lists its LTI contexts, the channel each 
 
 ## Embedded pages
 
-A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. These are the only pages another site may frame, and only the origins your mode lists may do so.
+A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. Only the origins your mode lists may frame them, and no page of the app outside a registration or a launch may be framed at all.
 
 The embedded session lives in a cookie of its own, kept per platform site by the browser. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
 
@@ -244,7 +246,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
-- Launches from Canvas: its sign-in host is not the host that frames the page.
+- A launch from a live Canvas: none has been run, and what the app sends Canvas follows Canvas's code alone.
 - Roles named by the app itself, in the `custom` claim as Canvas sends its own.
 
 ## Try it locally

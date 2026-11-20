@@ -256,9 +256,9 @@ export const config = {
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as readonly BaseAuthStrategies[],
   enabledOAuthProviders: ['github'] as const,
   /**
-   * The origins of the LTI platforms whose pages may frame the app's embedded pages (under `/embed/`), per mode while
-   * `enabledAuthStrategies` names `lti`: the frontend's CSP for those documents lists them in `frame-ancestors`. Empty
-   * lets no page frame them.
+   * The origins of the LTI platforms whose pages may frame the app as an LTI tool, per mode while `enabledAuthStrategies`
+   * names `lti`: its embedded pages (under `/embed/`), whose frontend CSP lists them in `frame-ancestors`, and its
+   * login and launch pages, beside the platform's authorization origin. Empty lets no page frame the embedded pages.
    */
   ltiFrameAncestors: [] as string[],
   /**

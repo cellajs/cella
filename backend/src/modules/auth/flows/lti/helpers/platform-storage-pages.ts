@@ -55,8 +55,9 @@ if (frame && frame !== window) frame.postMessage(message, data.origin);
 else refuse();`;
 
 /**
- * The login page, which puts the nonce's value into platform storage, or the launch page, which reads it back. Only the
- * platform's own origin may frame it.
+ * The login page, which puts the nonce's value into platform storage, or the launch page, which reads it back. The
+ * platform's authorization origin and the origins `ltiFrameAncestors` lists may frame it: Canvas frames the LTI tool
+ * in the school's page and signs in on a host of its own. Its message goes to the authorization origin alone.
  */
 export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
   const data = JSON.stringify({ ...exchange, fields: undefined, refusal: i18n.t('backend:lti.storage_unanswered') });
@@ -68,7 +69,8 @@ export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
     : '';
   const body = html`<p id="status" data-exchange="${data}"></p>
     ${form}`;
-  return protocolPage(ctx, { body, script: storageScript, frameAncestors: exchange.origin, formAction: "'self'" });
+  const frameAncestors = [exchange.origin, ...appConfig.ltiFrameAncestors].join(' ');
+  return protocolPage(ctx, { body, script: storageScript, frameAncestors, formAction: "'self'" });
 };
 
 /**

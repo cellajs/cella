@@ -199,6 +199,31 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(embeddedCookieOf(response).cookie).toBeUndefined();
   };
 
+  // Contract: Canvas frames the LTI tool in the school's page and signs in on a host of its own. The login and launch
+  // pages let that host and the origins `ltiFrameAncestors` lists frame them, and message that host alone.
+  it('lets the authorization origin and the listed origins frame the login and launch pages, which message the authorization origin alone', async () => {
+    onTestFinished(overrideConfig(appConfig, { ltiFrameAncestors: ['https://school.instructure.com'] }));
+    const connected = await connect(await fakePlatform('canvas'));
+    // `connect` puts the authorization endpoint under the issuer.
+    const authorization = connected.issuer;
+    const framing = `frame-ancestors ${authorization} https://school.instructure.com`;
+    const frameAncestorsOf = (page: Response) =>
+      page.headers
+        .get('Content-Security-Policy')
+        ?.split('; ')
+        .find((directive) => directive.startsWith('frame-ancestors'));
+
+    const started = await login(connected);
+    expect([frameAncestorsOf(started.page), started.exchange.origin]).toEqual([framing, authorization]);
+    const launchPage = await fetchApp('/auth/lti/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: authorization },
+      body: new URLSearchParams({ id_token: await sign(launchClaims(connected, started.nonce), connected.platform), state: started.state }),
+    });
+    const read = pageExchange(await launchPage.text());
+    expect([frameAncestorsOf(launchPage), read.subject, read.origin]).toEqual([framing, 'lti.get_data', authorization]);
+  });
+
   // An attacker holds a platform registration of their own, a launch of someone else, or a frame beside the app's.
   it('refuses forged, replayed, misdirected and incomplete launches, and creates no account for them', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
