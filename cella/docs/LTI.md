@@ -139,7 +139,7 @@ As an LTI tool, your app also reads who is in a course by NRPS, before any of th
 
 The import starts when an Instructor or Administrator of the course launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports at most 150 different courses in any hour: a class whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports a limited number of different courses in any hour: a class whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
 
 A course past either number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
