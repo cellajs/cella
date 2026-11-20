@@ -61,9 +61,9 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     expect(requoted.error).toBeUndefined();
     expect((renamed.data as { restrictions: Restrictions }).restrictions).toEqual(defaultRestrictions());
     expect((requoted.data as { restrictions: Restrictions }).restrictions).toEqual({ ...defaultRestrictions(), quotas });
-    // A restrictions update stores the full shape.
+    // The update merges onto what the row stores, which names no permission: the config keeps deciding it.
     const [stored] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenant.id));
-    expect(stored.restrictions).toEqual({ ...defaultRestrictions(), quotas });
+    expect(stored.restrictions).toEqual({ quotas, rateLimits: defaultRestrictions().rateLimits });
   });
 });
 
@@ -133,6 +133,32 @@ describe('restrictions of a new tenant', async () => {
       expect(restrictions.quotas.serviceAccount).toBe(7);
     },
   );
+
+  it('must not freeze the config into a tenant through an update of one restriction', async () => {
+    const admin = await createSystemAdminUser(`tenants-${nanoid(8)}@test.com`);
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
+    const { tenantId } = await createTestOrganization();
+    const name = `Requoted tenant ${nanoid(8)}`;
+
+    const updated = await call(updateTenant, { path: { tenantId }, body: { name, restrictions: { quotas: { apiKey: 9 } } }, headers });
+
+    expect(updated.error).toBeUndefined();
+    const [stored] = await db.select({ restrictions: tenantsTable.restrictions }).from(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    expect(stored.restrictions).toEqual({ quotas: { apiKey: 9 } });
+
+    const { quotas, allowUnregisteredClients } = appConfig.defaultRestrictions;
+    onTestFinished(
+      overrideConfig(appConfig.defaultRestrictions, {
+        allowUnregisteredClients: !allowUnregisteredClients,
+        quotas: { ...quotas, serviceAccount: 7 },
+      }),
+    );
+    const listed = await call(listTenants, { query: { q: name }, headers });
+
+    const [{ restrictions }] = (listed.data as { results: Tenant[] }).results;
+    expect(restrictions.quotas).toMatchObject({ apiKey: 9, serviceAccount: 7 });
+    expect(restrictions.allowUnregisteredClients).toBe(!allowUnregisteredClients);
+  });
 });
 
 /**

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
+import { config } from 'shared/config/config.default';
 import { mockPaginated, mockTenantId, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
-import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { mockActorRef } from '#/schemas/entity-base-mocks';
 
 export const mockTenantResponse = (key = 'tenant:default') =>
@@ -14,7 +14,8 @@ export const mockTenantResponse = (key = 'tenant:default') =>
       status: 'active' as const,
       statusChangedAt: timestamps.createdAt,
       expiresAt: null,
-      restrictions: defaultRestrictions(),
+      // The base config: the example reads alike in every mode `pnpm sdk` runs in.
+      restrictions: config.defaultRestrictions,
       authStrategies: [],
       createdBy: mockActorRef(`${key}:created-by`),
       updatedBy: null,

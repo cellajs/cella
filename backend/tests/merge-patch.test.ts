@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from './fixtures';
 import { adminDb, createSystemAdminUser, createTestSession } from './helpers';
@@ -59,7 +58,6 @@ describe('Merge patch updates', async () => {
   it("merges a tenant's restrictions member by member, and null gives a member its default again", async () => {
     const admin = await createSystemAdminUser(`merge-patch-${nanoid(8)}@security-test.com`);
     const cookie = await createTestSession(admin);
-    const defaults = defaultRestrictions();
     const patch = (restrictions: object) => patchAt(`/tenants/${tenant.tenantId}`, cookie, { restrictions });
     const stored = async () => {
       const [row] = await adminDb.select({ restrictions: tenantsTable.restrictions }).from(tenantsTable).where(eq(tenantsTable.id, tenant.tenantId));
@@ -68,14 +66,9 @@ describe('Merge patch updates', async () => {
 
     expect(await patch({ quotas: { organization: 7 }, rateLimits: { invitationEmailsPerDay: 3 } })).toBe(200);
     expect(await patch({ quotas: { user: 9 } })).toBe(200);
-    expect(await stored()).toEqual({
-      ...defaults,
-      quotas: { ...defaults.quotas, organization: 7, user: 9 },
-      rateLimits: { ...defaults.rateLimits, invitationEmailsPerDay: 3 },
-    });
+    expect(await stored()).toEqual({ quotas: { organization: 7, user: 9 }, rateLimits: { invitationEmailsPerDay: 3 } });
 
     expect(await patch({ quotas: { organization: null } })).toBe(200);
-    const { organization: _removed, ...quotas } = { ...defaults.quotas, user: 9 };
-    expect(await stored()).toEqual({ ...defaults, quotas, rateLimits: { ...defaults.rateLimits, invitationEmailsPerDay: 3 } });
+    expect(await stored()).toEqual({ quotas: { user: 9 }, rateLimits: { invitationEmailsPerDay: 3 } });
   });
 });

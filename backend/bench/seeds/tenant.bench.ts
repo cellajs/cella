@@ -5,7 +5,7 @@ import { TENANT_ID } from './ids';
 
 /**
  * Upserts a bench tenant without an attachment cap and with a points budget no scenario spends. The seeded attachments
- * pass the default cap of 100, which refuses every create past it.
+ * pass the default attachment cap, which refuses every create past it.
  */
 export async function upsertBenchTenant(pool: BenchSeedContext['pool'], id: string, name: string, now: string): Promise<void> {
   const patch = { quotas: { attachment: 'unlimited' }, rateLimits: { apiPointsPerHour: 10_000_000 } } satisfies MergePatch<Restrictions>;

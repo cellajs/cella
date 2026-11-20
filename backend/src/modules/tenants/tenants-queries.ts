@@ -103,6 +103,12 @@ export const findTenant = async (ctx: DbContext, { where, forUpdate = false }: F
   return row ? toTenant(row) : undefined;
 };
 
+/** The restrictions patch a tenant's row stores, without the config under it; `{}` for an unknown id, which stores none. */
+export const findStoredRestrictions = async (ctx: DbContext, { id }: { id: string }) => {
+  const [row] = await ctx.var.db.select({ restrictions: tenantsTable.restrictions }).from(tenantsTable).where(eq(tenantsTable.id, id));
+  return row?.restrictions ?? {};
+};
+
 interface TenantCreatorOpts {
   createdBy: string;
 }

@@ -25,11 +25,11 @@ export const defaultRestrictions = (): Restrictions => {
 /** Whether `used` fits under `cap`. */
 const withinCap = (cap: RestrictionCap, used: number): boolean => cap === 'unlimited' || used <= cap;
 
-/** The restrictions a new tenant of `kind` starts with: the defaults, with the kind's patch (`appConfig.tenantKinds`) laid over. */
-export const kindRestrictions = (kind: TenantKind): Restrictions => {
+/** What a new tenant of `kind` stores: the kind's patch (`appConfig.tenantKinds`), which every read lays over the defaults. */
+export const kindRestrictionsPatch = (kind: TenantKind): MergePatch<Restrictions> => {
   // The config literal types each kind by its own keys; the shared type names the optional patch.
   const kindConfig: TenantKindConfig = appConfig.tenantKinds[kind];
-  return applyMergePatch(defaultRestrictions(), kindConfig.restrictions ?? {});
+  return kindConfig.restrictions ?? {};
 };
 
 /** The kinds whose tenants an admin list shows when the request names none. */
