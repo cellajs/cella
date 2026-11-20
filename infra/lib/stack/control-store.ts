@@ -25,7 +25,12 @@ export interface Rotations {
   keys?: RotationRecord;
   /** The last rotation of the secrets the engine checks: database role passwords and generated values. */
   secrets?: RotationRecord;
+  /** The last change of an operator value, in "Env vars & secrets" or by an import: it rotates nothing, only replaces the machines. */
+  values?: RotationRecord;
 }
+
+/** What a rotation rotated, each kind with its own last record. */
+export type RotationKind = 'keys' | 'secrets' | 'values';
 
 /** One version or delete marker of an object, as `ListObjectVersions` lists it, newest first. */
 interface ObjectVersion {
@@ -151,6 +156,7 @@ export function parseRotations(text: string): Rotations {
   const rotations: Rotations = { counter: raw.counter };
   if (raw.keys !== undefined) rotations.keys = parseRotationRecord('keys', raw.keys);
   if (raw.secrets !== undefined) rotations.secrets = parseRotationRecord('secrets', raw.secrets);
+  if (raw.values !== undefined) rotations.values = parseRotationRecord('values', raw.values);
   return rotations;
 }
 
@@ -161,7 +167,7 @@ export async function readRotations(s3: S3Like, bucket: string, stack: string): 
 }
 
 /** Record a rotation of one kind: the counter rises, so every machine a deploy keeps from before it is replaced. */
-export function withRotation(rotations: Rotations, kind: 'keys' | 'secrets', record: RotationRecord): Rotations {
+export function withRotation(rotations: Rotations, kind: RotationKind, record: RotationRecord): Rotations {
   return { ...rotations, counter: rotations.counter + 1, [kind]: record };
 }
 
@@ -173,7 +179,7 @@ export async function recordRotation(opts: {
   s3: S3Like;
   bucket: string;
   stack: string;
-  kind: 'keys' | 'secrets';
+  kind: RotationKind;
   by: string;
   now?: Date;
 }): Promise<Rotations> {

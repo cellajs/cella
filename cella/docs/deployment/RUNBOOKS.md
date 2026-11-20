@@ -146,7 +146,7 @@ The worker makes a new slot when it starts again. Every client then refetches on
 
 ## Seed the admin by hand
 
-Fix a wrong admin email in **Env vars & secrets**. Then run a deploy that makes a new backend machine, such as **Rotate secrets**. A machine keeps the env file it booted with. The new machine's boot seeds the admin while the users table is empty.
+Fix a wrong admin email in **Env vars & secrets** and take the deploy it offers, which replaces every machine. The new backend machine's boot seeds the admin while the users table is empty.
 
 On staging, **More** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
 

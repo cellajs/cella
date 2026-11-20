@@ -116,11 +116,12 @@ describe('acquireLock / releaseLock', () => {
 });
 
 describe('rotations', () => {
-  it('raises the counter at every rotation, of either kind, and keeps the last record of the other', () => {
+  it('raises the counter at every rotation, of any kind, and keeps the last record of the others', () => {
     const once = withRotation({ counter: 0 }, 'keys', { at: 'a', by: 'x' });
     const twice = withRotation(once, 'secrets', { at: 'b', by: 'y' });
-    expect(twice).toEqual({ counter: 2, keys: { at: 'a', by: 'x' }, secrets: { at: 'b', by: 'y' } });
-    expect(parseRotations(JSON.stringify(twice))).toEqual(twice);
+    const thrice = withRotation(twice, 'values', { at: 'c', by: 'z' });
+    expect(thrice).toEqual({ counter: 3, keys: { at: 'a', by: 'x' }, secrets: { at: 'b', by: 'y' }, values: { at: 'c', by: 'z' } });
+    expect(parseRotations(JSON.stringify(thrice))).toEqual(thrice);
   });
 
   it('writes the rotation conditional on the object it read, so a racing write fails loudly', async () => {

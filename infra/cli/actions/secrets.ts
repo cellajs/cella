@@ -7,6 +7,7 @@ import { type RuntimeSecretDefinition, runtimeSecrets } from '../../lib/runtime-
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient, type SecretManagerSecret } from '../../lib/scaleway/scaleway-secret-manager';
+import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { isEnvFileDeliverable } from '../../lib/utils/env-file';
 import { errorMessage } from '../../lib/utils/errors';
@@ -27,11 +28,20 @@ import { confirm, PromptBack } from '../prompts/back';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, type MenuSelectOptions, menuSelect } from '../prompts/menu-select';
 import { leaveRow } from '../prompts/what-now';
-import { ActionEnded, autoAcceptDefaults, confirmOrDefault, type InfraContext, pointTo } from '../shared';
+import {
+  ActionEnded,
+  acquireStackLockOrExit,
+  autoAcceptDefaults,
+  confirmOrDefault,
+  endsAction,
+  type InfraContext,
+  pointTo,
+  stackNameFor,
+} from '../shared';
 import { acquireIdentityKey, acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 import { lastSecretsRotation, runRotateSecrets } from './rotate-secrets';
-import { runStartDeploy, startBlockedTarget } from './start-deploy';
+import { redeployAfterRotation, startBlockedTarget } from './start-deploy';
 
 /** The prompts of the pick: Esc in a select steps back and resolves to {@link ESCAPED}. */
 export interface SecretsPrompts {
@@ -333,19 +343,50 @@ async function blockedOnValues(context: InfraContext, observer: KeyPair): Promis
 }
 
 /**
- * After a write: a deploy that ended blocked, on a missing secret among others, is started again; else a changed value is offered a deploy.
- * Without the operator key nothing was written on it, and no blocked deploy is looked for.
+ * Record a change of operator values as a rotation, under the lease. A machine keeps the env file of its first boot, and a deploy replaces
+ * only machines booted under another commit, retry counter or rotation: the raised counter makes the next one replace them all.
+ */
+async function recordValuesChange(context: InfraContext, operator: OperatorKey): Promise<void> {
+  const { appConfig } = context;
+  const stack = stackNameFor(context);
+  const state = stateKeyOf(operator, context.projectId);
+  const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'record-values' });
+  try {
+    const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
+    const rotations = await recordRotation({ s3, bucket: deriveInfra(appConfig).naming.bootDiagBucket, stack, kind: 'values', by: controlActor() });
+    console.info(pc.dim(`\nRotation ${rotations.counter} recorded: the next deploy replaces every machine.`));
+  } finally {
+    await lock.release();
+  }
+}
+
+/** Run a deploy that ended blocked, on a missing secret among others, once more: true when it started. */
+async function restartBlocked(context: InfraContext, operator: OperatorKey): Promise<boolean> {
+  return startBlockedTarget(context, operator).catch((error) => {
+    console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('deploy')} does.`);
+    return false;
+  });
+}
+
+/**
+ * After a write: the change is recorded as a rotation, then a blocked deploy is started again, or the live release is offered a deploy on
+ * new machines. A mint wrote on the Owner key alone, and the record asks for the operator key. Without a change, a blocked deploy is looked
+ * for only when the operator key is in hand.
  */
 export async function offerDeploy(context: InfraContext, operator: OperatorKey | undefined, changed: boolean): Promise<void> {
-  const restarted = operator
-    ? await startBlockedTarget(context, operator).catch((error) => {
-        console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): ${pointTo('deploy')} does.`);
-        return false;
-      })
-    : false;
-  if (!changed || restarted) return;
-  console.info('\nA new value reaches the machines at the next deploy.');
-  if (await confirmOrDefault({ message: 'Deploy now, so the machines get it?', default: false })) await runStartDeploy(context);
+  if (!changed) {
+    if (operator) await restartBlocked(context, operator);
+    return;
+  }
+  const key = operator ?? (await acquireOperatorKey(context));
+  await recordValuesChange(context, key);
+  if (await restartBlocked(context, key)) return;
+  console.info('The running machines keep the values they booted with until a deploy replaces them.');
+  if (!(await confirmOrDefault({ message: 'Deploy the live release again, so the machines get the new values?', default: false }))) return;
+  await redeployAfterRotation(context, key).catch((error) => {
+    if (endsAction(error)) throw error;
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): ${pointTo('deploy')} does.`);
+  });
 }
 
 /**
