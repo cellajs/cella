@@ -48,7 +48,7 @@ The platform takes any registration Dynamic Registration admits: it records the 
 
 An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
-The approval dialog also shows every site launches go to and the site whose keys act as the LTI tool. The domain an LTI tool names itself by is a label its addresses need not match. The dialog links the home page, terms and privacy policy the LTI tool names by HTTPS addresses, each with the host it goes to.
+The approval dialog also shows every site launches go to and the site whose keys act as the LTI tool. It links the home page, terms and privacy policy the LTI tool names by HTTPS addresses, each with the host it goes to.
 
 An LTI tool may also ask for the scope of an LTI service the app serves, today Names and Role Provisioning Services (NRPS), which lists a context's members. The app records it as the access scope it stands for, `user:read`. The approval dialog lists it under API access, none chosen by default.
 
@@ -98,6 +98,8 @@ The platform's storage replaces a cookie for the launch state. Every launch chec
 A connection's login and launch pages may be framed by its own platform alone: the origin of its authorization endpoint, and the origin of its own pages when its configuration names one at registration. Their messages go to the authorization origin alone, and only its answers count.
 
 Canvas names its pages' host as its account domain: the domain the admin registers from. Register from the host people use Canvas on. A school that reaches Canvas on a second host cannot launch from that host. A connection registered before the app kept this origin is framed by the authorization origin alone, and in a hosted Canvas the browser refuses that frame: register it again.
+
+List the school's own Canvas host in `ltiFrameAncestors`: the embedded page a launch ends on is framed there, and Canvas's issuer and sign-in hosts are the wrong entries.
 
 ## Serving members
 
@@ -191,7 +193,7 @@ So members are read from any platform that registers the app by Dynamic Registra
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules.
 
-A read of the whole list is the platform's word on who is in the context. The app records the memberships a context gives in its own page and the seat that comes with them, and which of them a list held. After a read that names an active member, a person an earlier list held loses such a recorded membership once this list leaves them out or names them Inactive.
+A read of the whole list is the platform's word on who is in the context. The app records the memberships a context gives in its own channel and the seat that comes with them, and which of them a list held. After a read that names an active member, a person an earlier list held loses such a recorded membership once this list leaves them out or names them Inactive.
 
 Their seat in the organization goes too, when LTI gave it, nothing else holds them there and its role may not update the organization. Their account stays, and a later launch or import admits them again.
 
@@ -201,7 +203,7 @@ The import removes nobody after a read cut short, a failed or refused read, a re
 
 One limit: a page without a link to the next is the end of the list. A platform that leaves that link off a page ends what the context gave everyone listed past it.
 
-A membership with no record is never ended by a list: one an invitation gave, a parent page's membership that came along with the context's, and every membership given before the app kept records. An admin removes those. A person who keeps such a membership in the organization keeps their seat too.
+A membership with no record is never ended by a list: one an invitation gave, a parent channel's membership that came along with the context's, and every membership given before the app kept records. An admin removes those. A person who keeps such a membership in the organization keeps their seat too. When a list ends a person's membership in the context's channel, they keep what the parent channel's membership lets them read.
 
 An account an import made for someone who never launched is deleted after a retention period, once it holds no membership and its connection is gone. An account that ever signed in stays.
 
